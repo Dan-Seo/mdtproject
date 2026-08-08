@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>根拠パネル（計算DAG） — モックアップ</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div class="mock-banner">
+  モックアップ — 数値・出典・条項はすべてダミーです。実際の規準原文との照合は行っていません。
+</div>
+
+<div class="wrap">
+  <nav class="crumb"><a href="./index.html">← 一覧に戻る</a></nav>
+
+  <header class="page">
+    <h1>数量と根拠パネル</h1>
+    <p class="sub">仮説 H2 — 承認・社内説明の場面でこの画面が使えるかを伺います</p>
+  </header>
+
+  <p class="hint">下表の<span class="qty">下線付きの数量</span>をクリックすると、その数字がどう出たかが右下に開きます。</p>
+
+  <h2>鉄筋数量（2F 躯体）</h2>
+  <div class="scroll">
+  <table>
+    <thead>
+      <tr><th style="width:100px">部材種別</th><th style="width:90px">径</th><th style="width:110px">鋼種</th>
+      <th class="num" style="width:150px">設計数量 (kg)</th><th class="num" style="width:150px">所要数量 (kg)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>柱</td><td>D25</td><td>SD345</td>
+        <td class="num"><span class="qty" data-row="col-d25">8,420</span></td>
+        <td class="num">8,757</td></tr>
+      <tr><td>柱</td><td>D13</td><td>SD295A</td>
+        <td class="num"><span class="qty" data-row="col-d13">1,960</span></td>
+        <td class="num">2,038</td></tr>
+      <tr><td>梁</td><td>D25</td><td>SD345</td>
+        <td class="num"><span class="qty" data-row="gir-d25">6,180</span></td>
+        <td class="num">6,427</td></tr>
+      <tr><td>梁</td><td>D13</td><td>SD295A</td>
+        <td class="num"><span class="qty" data-row="gir-d13">1,240</span></td>
+        <td class="num">1,290</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="hint">所要数量 = 設計数量 × 1.04（躯体鉄筋の標準割増。山留め壁・杭は別の値であり対象外です）</p>
+
+  <div class="panel" id="panel">
+    <h3 id="panel-title">根拠パネル — 数量をクリックしてください</h3>
+    <div id="panel-body">
+      <p class="hint" style="margin:0">
+        合計から元の入力・適用した条項・丸めまでの計算経路を、途切れずに遡れることを示します。
+      </p>
+    </div>
+  </div>
+
+  <footer class="note">
+    製品版では、この計算経路がすべての数量について自動生成され、監査用JSONとして書き出されます。<br>
+    未検証の規準数値が計算に寄与している場合は状態が <code>UNVERIFIED_RULE</code> となり、
+    透かし付きの照合用出力しかできません。発注用の確定はできません。
+  </footer>
+</div>
+
+<script>
+(function () {
+  var DAG = {
+    'col-d25': {
+      title: '柱 D25 SD345 — 設計数量 8,420 kg',
+      nodes: [
+        ['node',  'sum', '合計 8,420 kg', '柱12本の合計（部材ID順に整列して加算）'],
+        ['lvl1',  'multiply', 'C1 (2F) — 1,284 kg', '単位質量 × 総延長 × 本数'],
+        ['lvl2',  'input', '主筋 12-D25', '入力: members.C1.rebar.main / 図面 S-04 柱リスト'],
+        ['lvl2',  'rule',  '単位質量 3.98 kg/m', 'JIS G 3112 呼び名D25 公称単位質量'],
+        ['lvl2',  'sum',   '1本あたり総延長 26.9 m', '純長 + 定着 + 継手'],
+        ['lvl3',  'input', '純長 3.20 m', '入力: 階高 3.60 − 梁せい 0.40'],
+        ['lvl3',  'rule',  '定着長さ 0.88 m', '標準仕様書 5.3.4 表5.3.3（環境: 屋内 / Fc24）'],
+        ['lvl3',  'rule',  '継手長さ 1.10 m', '標準仕様書 5.3.5（重ね継手 / D25）'],
+        ['lvl1',  'multiply', 'C2 (2F) — 1,072 kg', '同上'],
+        ['lvl1',  'node', '… 他10部材', 'すべて同じ経路で展開できます']
+      ],
+      meta: {
+        'ruleId': 'rebar.column.mainbar.length',
+        'rulesetVersion': '0.1.0-draft (rulesetHash 3f9c…d21a)',
+        'engineVersion': 'a41c7e9 (git commit SHA)',
+        '丸め': '中間計算は mm 単位切り上げ、最終表示は kg 小数第0位',
+        '状態': 'UNVERIFIED_RULE — 独立検討者の承認前'
+      }
+    },
+    'col-d13': {
+      title: '柱 D13 SD295A — 設計数量 1,960 kg',
+      nodes: [
+        ['node',  'sum', '合計 1,960 kg', '柱12本の帯筋合計'],
+        ['lvl1',  'multiply', 'C1 (2F) — 286 kg', '1本の帯筋長 × 本数 × 単位質量'],
+        ['lvl2',  'input', '帯筋 D13 @100', '入力: members.C1.rebar.hoop / 図面 S-04'],
+        ['lvl2',  'rule',  '帯筋1本の長さ 3.02 m', '断面 800×800 − かぶり30×2、フック長を加算'],
+        ['lvl2',  'rule',  '本数 33本', '配筋区間 3,200 mm ÷ ピッチ 100 + 1'],
+        ['lvl2',  'rule',  '単位質量 0.995 kg/m', 'JIS G 3112 呼び名D13']
+      ],
+      meta: {
+        'ruleId': 'rebar.column.hoop.length',
+        'rulesetVersion': '0.1.0-draft (rulesetHash 3f9c…d21a)',
+        'engineVersion': 'a41c7e9 (git commit SHA)',
+        '丸め': '本数は切り上げ後に +1',
+        '状態': 'UNVERIFIED_RULE — 独立検討者の承認前'
+      }
+    },
+    'gir-d25': {
+      title: '梁 D25 SD345 — 設計数量 6,180 kg',
+      nodes: [
+        ['node',  'sum', '合計 6,180 kg', '梁18本の主筋合計'],
+        ['lvl1',  'multiply', 'G1 (2F) — 512 kg', '上端筋・下端筋を区間別に集計'],
+        ['lvl2',  'input', '上端筋 4-D25 / 2-D25 / 4-D25', '入力: members.G1.rebar.top / 図面 S-05 梁リスト'],
+        ['lvl2',  'input', '下端筋 2-D25 / 4-D25 / 2-D25', '入力: members.G1.rebar.bottom / 図面 S-05'],
+        ['lvl2',  'rule',  '端部定着 0.94 m', '標準仕様書 5.3.4（柱内定着 / D25）'],
+        ['lvl2',  'rule',  '継手位置と長さ 1.10 m', '標準仕様書 5.3.5（応力の小さい位置）'],
+        ['lvl2',  'rule',  '単位質量 3.98 kg/m', 'JIS G 3112 呼び名D25']
+      ],
+      meta: {
+        'ruleId': 'rebar.girder.mainbar.length',
+        'rulesetVersion': '0.1.0-draft (rulesetHash 3f9c…d21a)',
+        'engineVersion': 'a41c7e9 (git commit SHA)',
+        '丸め': '中間計算は mm 単位切り上げ',
+        '状態': 'UNVERIFIED_RULE — 独立検討者の承認前'
+      }
+    },
+    'gir-d13': {
+      title: '梁 D13 SD295A — 設計数量 1,240 kg',
+      nodes: [
+        ['node',  'sum', '合計 1,240 kg', '梁18本のあばら筋合計'],
+        ['lvl1',  'multiply', 'G1 (2F) — 98 kg', 'あばら筋1本長 × 本数 × 単位質量'],
+        ['lvl2',  'input', 'あばら筋 D13 @200', '入力: members.G1.rebar.stirrup / 図面 S-05'],
+        ['lvl2',  'rule',  '1本の長さ 2.18 m', '断面 400×800 − かぶり30×2、フック長を加算'],
+        ['lvl2',  'rule',  '本数 34本', '配筋区間 6,600 mm ÷ ピッチ 200 + 1']
+      ],
+      meta: {
+        'ruleId': 'rebar.girder.stirrup.length',
+        'rulesetVersion': '0.1.0-draft (rulesetHash 3f9c…d21a)',
+        'engineVersion': 'a41c7e9 (git commit SHA)',
+        '丸め': '本数は切り上げ後に +1',
+        '状態': 'UNVERIFIED_RULE — 独立検討者の承認前'
+      }
+    }
+  };
+
+  var title = document.getElementById('panel-title');
+  var body = document.getElementById('panel-body');
+
+  function render(key) {
+    var d = DAG[key];
+    if (!d) return;
+    title.textContent = '根拠パネル — ' + d.title;
+
+    var html = '<div class="dag">';
+    d.nodes.forEach(function (n) {
+      html += '<div class="' + n[0] + '">'
+        + '<span class="op">[' + n[1] + ']</span> '
+        + escapeHtml(n[2])
+        + '<br><span class="src ' + '">' + '&nbsp;&nbsp;↳ ' + escapeHtml(n[3]) + '</span>'
+        + '</div>';
+    });
+    html += '</div>';
+
+    html += '<dl class="meta" style="margin-top:16px">';
+    Object.keys(d.meta).forEach(function (k) {
+      html += '<dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(d.meta[k]) + '</dd>';
+    });
+    html += '</dl>';
+
+    body.innerHTML = html;
+    document.getElementById('panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  document.querySelectorAll('.qty[data-row]').forEach(function (el) {
+    el.addEventListener('click', function () { render(el.dataset.row); });
+  });
+})();
+</script>
+
+</body>
+</html>

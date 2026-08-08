@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>配筋表の直接入力 — モックアップ</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div class="mock-banner">
+  モックアップ — 入力は保存されません。計算も行いません。入力操作の速さだけを確認するための画面です。
+</div>
+
+<div class="wrap">
+  <nav class="crumb"><a href="./index.html">← 一覧に戻る</a></nav>
+
+  <header class="page">
+    <h1>配筋表の直接入力</h1>
+    <p class="sub">仮説 H7 — 同一の代表1フロアを入力していただき、現状のExcel作業と時間・誤りを比較します</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="col">柱リスト</button>
+    <button role="tab" aria-selected="false" data-tab="gir">梁リスト</button>
+    <button role="tab" aria-selected="false" data-tab="cov">かぶり厚さ</button>
+  </div>
+
+  <section data-panel="col">
+    <div class="toolbar">
+      <button class="act" data-add="col">行を追加</button>
+      <button class="act" data-dup="col">選択行を複製</button>
+      <span class="hint">Tab で右へ、Enter で下へ移動します。同じ断面の柱は複製で増やせます。</span>
+    </div>
+    <div class="scroll">
+    <table id="tbl-col">
+      <thead>
+        <tr>
+          <th style="width:110px">部材符号</th><th style="width:90px">階</th>
+          <th style="width:120px">断面 B×D (mm)</th>
+          <th>主筋</th><th style="width:150px">帯筋</th>
+          <th style="width:130px">帯筋ピッチ (mm)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>C1</td><td>2F</td><td>800×800</td><td>12-D25</td><td>D13</td><td class="num">100</td></tr>
+        <tr><td>C2</td><td>2F</td><td>700×700</td><td>10-D25</td><td>D13</td><td class="num">100</td></tr>
+        <tr><td>C3</td><td>2F</td><td>700×700</td><td>8-D22</td><td>D13</td><td class="num">150</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section data-panel="gir" hidden>
+    <div class="toolbar">
+      <button class="act" data-add="gir">行を追加</button>
+      <button class="act" data-dup="gir">選択行を複製</button>
+      <span class="hint">端部・中央部で主筋が変わる場合は左端・中央・右端をそれぞれ入力します。</span>
+    </div>
+    <div class="scroll">
+    <table id="tbl-gir">
+      <thead>
+        <tr>
+          <th style="width:110px">部材符号</th><th style="width:90px">階</th>
+          <th style="width:120px">断面 B×D (mm)</th>
+          <th>上端筋 (左/中/右)</th><th>下端筋 (左/中/右)</th>
+          <th style="width:110px">あばら筋</th><th style="width:110px">ピッチ (mm)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>G1</td><td>2F</td><td>400×800</td><td>4-D25 / 2-D25 / 4-D25</td><td>2-D25 / 4-D25 / 2-D25</td><td>D13</td><td class="num">200</td></tr>
+        <tr><td>G2</td><td>2F</td><td>400×700</td><td>3-D22 / 2-D22 / 3-D22</td><td>2-D22 / 3-D22 / 2-D22</td><td>D10</td><td class="num">200</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section data-panel="cov" hidden>
+    <p class="hint">
+      かぶり厚さは部材ごとではなく、<strong>部材種別・環境条件ごとに一度</strong>入力します。
+      図面に特記のある部材だけ個別に上書きしてください。
+    </p>
+    <div class="scroll">
+    <table id="tbl-cov">
+      <thead>
+        <tr><th style="width:140px">部材種別</th><th style="width:160px">環境条件</th>
+        <th style="width:150px">設計かぶり (mm)</th><th>出典（図面番号・特記仕様）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>柱</td><td>屋内</td><td class="num">30</td><td>S-02 特記仕様書</td></tr>
+        <tr><td>柱</td><td>屋外</td><td class="num">40</td><td>S-02 特記仕様書</td></tr>
+        <tr><td>梁</td><td>屋内</td><td class="num">30</td><td>S-02 特記仕様書</td></tr>
+        <tr><td>梁</td><td>屋外</td><td class="num">40</td><td>S-02 特記仕様書</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer class="note">
+    入力欄はすべて編集できますが保存されません。ページを再読み込みすると初期状態に戻ります。<br>
+    実際の製品では入力の欠落・参照切れ・寸法の矛盾を計算前に検出します。
+  </footer>
+</div>
+
+<script>
+(function () {
+  // 全セルを編集可能にする（保存はしない — 入力動線の計測だけが目的）
+  document.querySelectorAll('tbody td').forEach(function (td) {
+    var v = td.textContent.trim();
+    var input = document.createElement('input');
+    input.value = v;
+    if (td.classList.contains('num')) input.inputMode = 'numeric';
+    td.textContent = '';
+    td.appendChild(input);
+  });
+
+  // タブ切り替え
+  var tabs = document.querySelectorAll('.tabs button');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', String(b === btn)); });
+      document.querySelectorAll('[data-panel]').forEach(function (p) {
+        p.hidden = p.dataset.panel !== btn.dataset.tab;
+      });
+    });
+  });
+
+  function tableOf(key) { return document.getElementById('tbl-' + key); }
+
+  function blankRow(tbl) {
+    var cols = tbl.tHead.rows[0].cells.length;
+    var tr = document.createElement('tr');
+    for (var i = 0; i < cols; i++) {
+      var td = document.createElement('td');
+      var ref = tbl.tBodies[0].rows[0].cells[i];
+      if (ref && ref.classList.contains('num')) td.classList.add('num');
+      var input = document.createElement('input');
+      td.appendChild(input);
+      tr.appendChild(td);
+    }
+    return tr;
+  }
+
+  document.querySelectorAll('[data-add]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tbl = tableOf(btn.dataset.add);
+      var tr = blankRow(tbl);
+      tbl.tBodies[0].appendChild(tr);
+      tr.querySelector('input').focus();
+    });
+  });
+
+  // 「選択行を複製」— フォーカス中の行、なければ最終行を複製
+  document.querySelectorAll('[data-dup]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tbl = tableOf(btn.dataset.dup);
+      var rows = tbl.tBodies[0].rows;
+      var active = document.activeElement;
+      var src = (active && active.closest && active.closest('tr')) || rows[rows.length - 1];
+      if (!src || src.parentElement !== tbl.tBodies[0]) src = rows[rows.length - 1];
+      var clone = src.cloneNode(true);
+      var srcInputs = src.querySelectorAll('input');
+      clone.querySelectorAll('input').forEach(function (inp, i) {
+        inp.value = srcInputs[i] ? srcInputs[i].value : '';
+      });
+      tbl.tBodies[0].insertBefore(clone, src.nextSibling);
+      clone.querySelector('input').focus();
+      clone.querySelector('input').select();
+    });
+  });
+
+  // Enter で下の行の同じ列へ
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var el = e.target;
+    if (el.tagName !== 'INPUT') return;
+    var td = el.parentElement, tr = td.parentElement;
+    var idx = Array.prototype.indexOf.call(tr.cells, td);
+    var next = tr.nextElementSibling;
+    if (next && next.cells[idx]) {
+      e.preventDefault();
+      var inp = next.cells[idx].querySelector('input');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
