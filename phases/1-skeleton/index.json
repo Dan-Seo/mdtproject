@@ -64,7 +64,7 @@
       "status": "completed",
       "summary": "src/components/quantity/TakeoffPane.tsx에 12열·층/그룹/철근 계층과 算出式·出典/inferred UI 추가; 행 ID는 1階|C|C1|主筋, hover는 setHoverRow(line.id), 그룹 선택·자동 스크롤 연동",
       "started_at": "2026-08-09T19:58:00+0900",
-      "completed_at": "2026-08-09T20:05:37+0900"
+      "completed_at": "2026-08-09T20:06:20+0900"
     },
     {
       "step": 8,
