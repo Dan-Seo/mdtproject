@@ -40,7 +40,7 @@
       "status": "completed",
       "summary": "QuantityLine의 1階|C|C1|主筋 행 ID·부재별 길이/본수·箇所·設計数量/所要数量·RuleHit[] 필드를 집계하고 storySubtotals(), grandTotal(), hasInferred(), inferredRules() 순수 헬퍼를 추가",
       "started_at": "2026-08-09T19:27:02+0900",
-      "completed_at": "2026-08-09T19:34:40+0900"
+      "completed_at": "2026-08-09T19:35:38+0900"
     },
     {
       "step": 5,
