@@ -13,6 +13,7 @@ export interface AppShellProps {
   planActions?: ReactNode
   section?: ReactNode
   viewer?: ReactNode
+  viewerActions?: ReactNode
   takeoff?: ReactNode
   takeoffActions?: ReactNode
 }
@@ -54,6 +55,7 @@ export function AppShell({
   planActions,
   section,
   viewer,
+  viewerActions,
   takeoff,
   takeoffActions,
 }: AppShellProps) {
@@ -109,7 +111,11 @@ export function AppShell({
             </Pane>
           </div>
           <div className={styles.rightColumn}>
-            <Pane id="viewer-pane" title={t(locale, 'pane.viewer')}>
+            <Pane
+              id="viewer-pane"
+              title={t(locale, 'pane.viewer')}
+              actions={viewerActions}
+            >
               {viewer}
             </Pane>
             <Pane

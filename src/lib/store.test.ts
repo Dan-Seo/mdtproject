@@ -25,7 +25,16 @@ describe('useAppStore', () => {
       hoverRowId: null,
       locale: 'ja',
       activeStoryId: '1F',
+      viewerMode: 'member',
     })
+  })
+
+  it('starts in the member view and toggles to the building view', () => {
+    expect(useAppStore.getInitialState().viewerMode).toBe('member')
+
+    useAppStore.getState().setViewerMode('building')
+
+    expect(useAppStore.getState().viewerMode).toBe('building')
   })
 
   it('selectMember updates sel and switches to the member story', () => {

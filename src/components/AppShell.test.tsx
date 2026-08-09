@@ -52,6 +52,12 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: '2階' })).toBeInTheDocument()
   })
 
+  it('renders viewer actions in the viewer pane header', () => {
+    render(<AppShell viewerActions={<button type="button">建物</button>} />)
+
+    expect(screen.getByRole('button', { name: '建物' })).toBeInTheDocument()
+  })
+
   it('renders takeoff actions in the takeoff pane header', () => {
     render(
       <AppShell takeoffActions={<button type="button">書き出し</button>} />,

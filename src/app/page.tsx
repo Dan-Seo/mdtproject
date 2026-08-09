@@ -8,6 +8,7 @@ import {
 } from '@/components/quantity/TakeoffPane'
 import { SectionTable } from '@/components/section/SectionTable'
 import { Viewer3D } from '@/components/viewer/Viewer3D'
+import { ViewerTabs } from '@/components/viewer/ViewerTabs'
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       planActions={<StoryTabs />}
       section={<SectionTable />}
       viewer={<Viewer3D />}
+      viewerActions={<ViewerTabs />}
       takeoff={<TakeoffPane />}
       takeoffActions={<TakeoffActions />}
     />

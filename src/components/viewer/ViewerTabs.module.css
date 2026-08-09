@@ -1,0 +1,22 @@
+.viewerTabs {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.viewerTab {
+  height: 100%;
+  padding: 0 var(--space-xs);
+  border: 0;
+  border-left: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.viewerTabActive {
+  background: var(--color-canvas-soft);
+  color: var(--color-primary);
+}

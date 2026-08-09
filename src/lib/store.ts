@@ -15,17 +15,22 @@ export interface Selection {
 
 export type Locale = 'ja' | 'ko'
 
+/** 3D 페인의 페인-로컬 탭 (DESIGN.md §7): 部材 = 선택 부재 1개, 建物 = 전 부재 */
+export type ViewerMode = 'member' | 'building'
+
 export interface AppState {
   project: Project
   sel: Selection
   hoverRowId: string | null
   locale: Locale
   activeStoryId: string
+  viewerMode: ViewerMode
   selectMember(memberId: string): void
   selectGroup(groupId: string, memberId: string): void
   setHoverRow(rowId: string | null): void
   setLocale(locale: Locale): void
   setActiveStory(storyId: string): void
+  setViewerMode(mode: ViewerMode): void
   updateProject(updater: (project: Project) => Project): void
 }
 
@@ -61,6 +66,7 @@ export const useAppStore = create<AppState>((set) => ({
   activeStoryId:
     initialProject.members.find(({ id }) => id === initialSel.memberId)
       ?.storyId ?? initialProject.stories[0].id,
+  viewerMode: 'member',
   selectMember(memberId) {
     set(({ project }) => {
       const member = findMember(project, memberId)
@@ -90,6 +96,9 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setActiveStory(storyId) {
     set({ activeStoryId: storyId })
+  },
+  setViewerMode(mode) {
+    set({ viewerMode: mode })
   },
   updateProject(updater) {
     set(({ project }) => ({ project: updater(project) }))
