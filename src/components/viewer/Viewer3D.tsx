@@ -14,6 +14,11 @@ import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
 import {
+  buildingLayout,
+  groupInstancesByRadius,
+  type BuildingLayout,
+} from './building'
+import {
   CAMERA_FOV_DEGREES,
   easeOutCubic,
   fitCamera,
@@ -53,6 +58,10 @@ interface SelectedColumnView {
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
 
+type ViewerView =
+  | { mode: 'member'; column: SelectedColumnView }
+  | { mode: 'building'; layout: BuildingLayout }
+
 interface CameraTween {
   from: CameraFit
   to: CameraFit
@@ -71,6 +80,8 @@ interface ViewerRuntime {
   contentMaterials: THREE.Material[]
   normalMaterial: THREE.MeshStandardMaterial | null
   highlightMaterial: THREE.MeshStandardMaterial | null
+  concreteNormalMaterial: THREE.MeshStandardMaterial | null
+  concreteSelectedMaterial: THREE.MeshStandardMaterial | null
   pickableMeshes: THREE.Mesh[]
   // 카메라 연출 상태 — 씬 콘텐츠(rebuild 수명)가 아니라 마운트 수명이다.
   cameraTween: CameraTween | null
@@ -101,6 +112,8 @@ function disposeContent(runtime: ViewerRuntime): void {
   runtime.contentMaterials = []
   runtime.normalMaterial = null
   runtime.highlightMaterial = null
+  runtime.concreteNormalMaterial = null
+  runtime.concreteSelectedMaterial = null
   runtime.pickableMeshes = []
 }
 
@@ -341,13 +354,46 @@ function applyHighlight(
   }
 }
 
+/** 콘텐츠 바운즈에 그림자·fog·카메라 연출을 맞춘다 — 두 모드 공통. */
+function frameContent(runtime: ViewerRuntime, bounds: Bounds): void {
+  fitShadowToBounds(runtime.directionalLight, bounds)
+
+  const fitted = fitCamera(bounds)
+  const fogDistance =
+    Math.hypot(
+      fitted.position[0] - fitted.target[0],
+      fitted.position[1] - fitted.target[1],
+      fitted.position[2] - fitted.target[2],
+    ) * MILLIMETRES_TO_SCENE
+  runtime.scene.fog = new THREE.Fog(
+    BACKGROUND_COLOR,
+    fogDistance * 1.6,
+    fogDistance * 4,
+  )
+  startCameraTween(runtime, fitted)
+}
+
 function rebuildScene(
   runtime: ViewerRuntime,
-  view: SelectedColumnView | null,
+  view: ViewerView | null,
   hoverRowId: string | null,
 ): void {
   disposeContent(runtime)
-  if (view === null || view.rebars.length === 0) return
+  if (view === null) return
+
+  if (view.mode === 'building') {
+    rebuildBuildingScene(runtime, view.layout)
+    return
+  }
+  rebuildMemberScene(runtime, view.column, hoverRowId)
+}
+
+function rebuildMemberScene(
+  runtime: ViewerRuntime,
+  view: SelectedColumnView,
+  hoverRowId: string | null,
+): void {
+  if (view.rebars.length === 0) return
 
   const content = new THREE.Group()
   const normalMaterial = new THREE.MeshStandardMaterial({
@@ -390,22 +436,138 @@ function rebuildScene(
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
-  fitShadowToBounds(runtime.directionalLight, bounds)
-
-  const fitted = fitCamera(bounds)
-  const fogDistance =
-    Math.hypot(
-      fitted.position[0] - fitted.target[0],
-      fitted.position[1] - fitted.target[1],
-      fitted.position[2] - fitted.target[2],
-    ) * MILLIMETRES_TO_SCENE
-  runtime.scene.fog = new THREE.Fog(
-    BACKGROUND_COLOR,
-    fogDistance * 1.6,
-    fogDistance * 4,
-  )
-  startCameraTween(runtime, fitted)
+  frameContent(runtime, bounds)
   applyHighlight(runtime, hoverRowId)
+}
+
+function rebuildBuildingScene(
+  runtime: ViewerRuntime,
+  layout: BuildingLayout,
+): void {
+  const content = new THREE.Group()
+  const steelMaterial = new THREE.MeshStandardMaterial({
+    color: REBAR_COLOR,
+    metalness: 0.6,
+    roughness: 0.35,
+  })
+  const concreteMaterial = new THREE.MeshStandardMaterial({
+    color: CONCRETE_COLOR,
+    transparent: true,
+    opacity: 0.18,
+    roughness: 0.9,
+    metalness: 0,
+    depthWrite: false,
+  })
+  const concreteSelectedMaterial = new THREE.MeshStandardMaterial({
+    color: CONCRETE_COLOR,
+    transparent: true,
+    opacity: 0.18,
+    roughness: 0.9,
+    metalness: 0,
+    depthWrite: false,
+    emissive: HIGHLIGHT_COLOR,
+    emissiveIntensity: 0.3,
+  })
+  const outlineMaterial = new THREE.LineBasicMaterial({ color: OUTLINE_COLOR })
+  const materials: THREE.Material[] = [
+    steelMaterial,
+    concreteMaterial,
+    concreteSelectedMaterial,
+    outlineMaterial,
+  ]
+  const pickableMeshes: THREE.Mesh[] = []
+
+  for (const box of layout.boxes) {
+    const geometry = new THREE.BoxGeometry(
+      box.size[0] * MILLIMETRES_TO_SCENE,
+      box.size[1] * MILLIMETRES_TO_SCENE,
+      box.size[2] * MILLIMETRES_TO_SCENE,
+    )
+    const mesh = new THREE.Mesh(geometry, concreteMaterial)
+    mesh.position.copy(vector(box.center))
+    mesh.receiveShadow = true
+    mesh.userData.memberId = box.memberId
+    content.add(mesh)
+    pickableMeshes.push(mesh)
+
+    const outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      outlineMaterial,
+    )
+    outline.position.copy(mesh.position)
+    content.add(outline)
+  }
+
+  // 철근은 표시 반경별 InstancedMesh — 단위 높이 실린더를 Y 스케일로 늘인다 (R4).
+  const matrix = new THREE.Matrix4()
+  const position = new THREE.Vector3()
+  const quaternion = new THREE.Quaternion()
+  const scale = new THREE.Vector3()
+  const direction = new THREE.Vector3()
+
+  for (const [radius, instances] of groupInstancesByRadius(layout.rebar)) {
+    const geometry = new THREE.CylinderGeometry(
+      radius * MILLIMETRES_TO_SCENE,
+      radius * MILLIMETRES_TO_SCENE,
+      1,
+      CYLINDER_RADIAL_SEGMENTS,
+    )
+    const instanced = new THREE.InstancedMesh(
+      geometry,
+      steelMaterial,
+      instances.length,
+    )
+    const memberIds: string[] = []
+
+    instances.forEach((instance, index) => {
+      const from = vector(instance.from)
+      const to = vector(instance.to)
+      direction.copy(to).sub(from)
+      const length = Math.max(direction.length(), Number.EPSILON)
+      if (direction.lengthSq() === 0) direction.copy(Y_AXIS)
+      position.copy(from).add(to).multiplyScalar(0.5)
+      quaternion.setFromUnitVectors(Y_AXIS, direction.normalize())
+      scale.set(1, length, 1)
+      matrix.compose(position, quaternion, scale)
+      instanced.setMatrixAt(index, matrix)
+      memberIds.push(instance.memberId)
+    })
+    instanced.instanceMatrix.needsUpdate = true
+    instanced.castShadow = true
+    instanced.userData.memberIds = memberIds
+    content.add(instanced)
+    pickableMeshes.push(instanced)
+  }
+
+  addGround(content, layout.bounds, materials)
+
+  runtime.content = content
+  runtime.contentMaterials = materials
+  runtime.concreteNormalMaterial = concreteMaterial
+  runtime.concreteSelectedMaterial = concreteSelectedMaterial
+  runtime.pickableMeshes = pickableMeshes
+  runtime.scene.add(content)
+  frameContent(runtime, layout.bounds)
+}
+
+/** 建物 뷰에서 선택 부재의 콘크리트만 강조 재질로 스왑한다. */
+function applyBuildingSelection(
+  runtime: ViewerRuntime,
+  selectedMemberId: string | null,
+): void {
+  const { concreteNormalMaterial, concreteSelectedMaterial } = runtime
+  if (concreteNormalMaterial === null || concreteSelectedMaterial === null) {
+    return
+  }
+
+  for (const mesh of runtime.pickableMeshes) {
+    const memberId: unknown = mesh.userData.memberId
+    if (typeof memberId !== 'string') continue
+    mesh.material =
+      memberId === selectedMemberId
+        ? concreteSelectedMaterial
+        : concreteNormalMaterial
+  }
 }
 
 function selectedColumnView(
@@ -447,28 +609,44 @@ export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
+  const selectMember = useAppStore(({ selectMember }) => selectMember)
   const locale = useAppStore(({ locale }) => locale)
   const project = useAppStore(({ project }) => project)
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectedGroup = useAppStore(({ sel }) => sel.group)
   const hoverRowId = useAppStore(({ hoverRowId: rowId }) => rowId)
+  const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
   const { rebars, lines } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
+  const selectMemberRef = useRef(selectMember)
   const hoverRowIdRef = useRef(hoverRowId)
   setHoverRowRef.current = setHoverRow
+  selectMemberRef.current = selectMember
   hoverRowIdRef.current = hoverRowId
 
-  const view = useMemo(
-    () =>
-      selectedColumnView(
-        selectedMemberId,
-        selectedGroup,
-        project,
-        rebars,
-        lines,
-      ),
-    [lines, project, rebars, selectedGroup, selectedMemberId],
+  // 建物 레이아웃은 선택과 무관하다 — 선택 변경마다 씬을 재구성하지 않는다.
+  const layout = useMemo(
+    () => (viewerMode === 'building' ? buildingLayout(project, rebars) : null),
+    [project, rebars, viewerMode],
   )
+  const column = useMemo(
+    () =>
+      viewerMode === 'member'
+        ? selectedColumnView(
+            selectedMemberId,
+            selectedGroup,
+            project,
+            rebars,
+            lines,
+          )
+        : null,
+    [lines, project, rebars, selectedGroup, selectedMemberId, viewerMode],
+  )
+  const view = useMemo((): ViewerView | null => {
+    if (layout !== null) return { mode: 'building', layout }
+    if (column !== null) return { mode: 'member', column }
+    return null
+  }, [column, layout])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -525,6 +703,8 @@ export function Viewer3D() {
       contentMaterials: [],
       normalMaterial: null,
       highlightMaterial: null,
+      concreteNormalMaterial: null,
+      concreteSelectedMaterial: null,
       pickableMeshes: [],
       cameraTween: null,
       lastInteractionAt: performance.now(),
@@ -563,8 +743,21 @@ export function Viewer3D() {
       )
       raycaster.setFromCamera(pointer, camera)
       const hit = raycaster.intersectObjects(runtime.pickableMeshes, false)[0]
-      const rowId = hit?.object.userData.rowId
-      if (typeof rowId === 'string') setHoverRowRef.current(rowId)
+      if (hit === undefined) return
+
+      // 部材 뷰: 철근 → 내역서 행. 建物 뷰: 콘크리트/철근 → 부재 선택.
+      const { rowId, memberId, memberIds } = hit.object.userData
+      if (typeof rowId === 'string') {
+        setHoverRowRef.current(rowId)
+        return
+      }
+      const pickedMemberId =
+        Array.isArray(memberIds) && typeof hit.instanceId === 'number'
+          ? (memberIds[hit.instanceId] as unknown)
+          : memberId
+      if (typeof pickedMemberId === 'string') {
+        selectMemberRef.current(pickedMemberId)
+      }
     }
     renderer.domElement.addEventListener('click', handleClick)
 
@@ -615,11 +808,20 @@ export function Viewer3D() {
   useEffect(() => {
     const runtime = runtimeRef.current
     if (runtime === null) return
+    applyBuildingSelection(runtime, selectedMemberId)
+  }, [selectedMemberId, view])
+
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
     runtime.renderer.domElement.setAttribute(
       'aria-label',
-      t(locale, 'viewer.canvas'),
+      t(
+        locale,
+        viewerMode === 'building' ? 'viewer.canvasBuilding' : 'viewer.canvas',
+      ),
     )
-  }, [locale])
+  }, [locale, viewerMode])
 
   const selectedKind = project.members.find(
     ({ id }) => id === selectedMemberId,

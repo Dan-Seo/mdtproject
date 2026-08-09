@@ -144,6 +144,7 @@ describe('Viewer3D', () => {
       hoverRowId: null,
       activeStoryId: '1F',
       locale: 'ja',
+      viewerMode: 'member',
     })
   })
 
@@ -188,6 +189,20 @@ describe('Viewer3D', () => {
 
     expect(screen.getByText(/M3/)).toBeInTheDocument()
     expect(screen.queryByText('配筋データなし')).not.toBeInTheDocument()
+  })
+
+  it('renders the building view and picks a member back into the selection', () => {
+    useAppStore.setState({
+      viewerMode: 'building',
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y2' },
+    })
+    render(<Viewer3D />)
+
+    const canvas = screen.getByLabelText('建物全体の3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+
+    // RaycasterMock은 첫 pickable(첫 콘크리트 박스 = 1F-X1Y1)을 반환한다.
+    expect(useAppStore.getState().sel.memberId).toBe('1F-X1Y1')
   })
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
