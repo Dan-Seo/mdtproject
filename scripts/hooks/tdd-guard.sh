@@ -42,8 +42,32 @@ needs_test() {
   # 기준이라, 정규화하지 않으면 layout.tsx·.claude/ 같은 면제가 통째로 무시된다.
   FILE_PATH=$(printf '%s' "$1" | tr '\\' '/')
 
+  # 면제 판정에 쓰는 경로. `.claude/worktrees/<name>/` 아래는 인프라가 아니라
+  # 저장소 체크아웃이므로 그 접두사를 떼고 저장소 기준으로 본다. 떼지 않으면
+  # 아래 `.claude/*` 면제가 워크트리 전체를 삼켜 가드가 통째로 죽는다 —
+  # 정확히 이 가드가 막으려는 "조용한 무력화"다.
+  # 파일 존재 확인은 원래 절대경로(FILE_PATH)로 해야 하므로 따로 둔다.
+  # 워크트리 안에 워크트리가 있을 수 있으므로 남지 않을 때까지 벗긴다.
+  # 매 회 최소 `.claude/worktrees/` 만큼 짧아지므로 반드시 끝난다.
+  REL_PATH=$FILE_PATH
+  while :; do
+    case "$REL_PATH" in
+      */.claude/worktrees/*|.claude/worktrees/*)
+        REL_PATH=${REL_PATH#*.claude/worktrees/}
+        REL_PATH=${REL_PATH#*/}
+        ;;
+      */.codex/worktrees/*|.codex/worktrees/*)
+        REL_PATH=${REL_PATH#*.codex/worktrees/}
+        REL_PATH=${REL_PATH#*/}
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
   # 테스트 파일 자체를 수정하는 건 허용
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     *test*|*spec*|*.test.*|*.spec.*|*__tests__*)
       return 1
       ;;
@@ -52,35 +76,35 @@ needs_test() {
   # .claude/·.codex/ 인프라(설정·훅·슬래시 커맨드)와 workflows/ 오케스트레이션 스크립트는 TDD 비대상 — 허용.
   # 이유: 워크플로우 스크립트는 런타임이 주입하는 전역(agent/pipeline/log)에 의존하는 오케스트레이션
   #       정의로, lib/services 비즈니스 로직이 아니며 유닛 테스트를 붙일 수 없다.
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     .claude/*|*/.claude/*|.codex/*|*/.codex/*|workflows/*|*/workflows/*)
       return 1
       ;;
   esac
 
   # 설정/타입/스타일 파일은 테스트 불필요 — 허용
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     *.json|*.css|*.scss|*.md|*.yml|*.yaml|*.env*|*.config.*|*tailwind*|*postcss*|*next.config*|*tsconfig*)
       return 1
       ;;
   esac
 
   # types/ 폴더는 테스트 불필요 — 허용
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     types/*|*/types/*|*/types.ts|types.ts|*/types.d.ts|types.d.ts)
       return 1
       ;;
   esac
 
   # Next.js 프레임워크 파일은 허용 (layout, page, loading, error, not-found, global styles)
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     */layout.tsx|*/layout.ts|*/page.tsx|*/page.ts|*/loading.tsx|*/error.tsx|*/not-found.tsx|*/globals.css)
       return 1
       ;;
   esac
 
   # lib/ 또는 소스 파일이면 테스트 파일 존재 여부 확인
-  case "$FILE_PATH" in
+  case "$REL_PATH" in
     *.ts|*.tsx|*.js|*.jsx) ;;
     *) return 1 ;;
   esac

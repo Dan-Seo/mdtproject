@@ -56,6 +56,17 @@ check ALLOW "$WIN_ROOT\\src\\app\\layout.tsx"          "Next.js 프레임워크 
 check ALLOW "$WIN_ROOT\\src\\app\\page.tsx"            "page.tsx는 면제 — 정규화 회귀 탐지용"
 check ALLOW "$WIN_ROOT\\src\\domain\\rules\\types.ts"  "타입 전용 파일은 면제"
 
+# .claude/ 인프라 면제가 .claude/worktrees/ 아래 저장소 체크아웃까지 삼키면,
+# 워크트리에서 작업하는 동안 가드가 통째로 죽는다. 기본 저장소에서 돌릴 때도
+# 잡히도록 경로를 직접 만들어 확인한다.
+echo "tdd-guard: 워크트리 경로"
+check DENY  "$ROOT/.claude/worktrees/wt/src/lib/brand-new-module.ts" \
+  "워크트리 안 신규 모듈도 차단"
+check ALLOW "$ROOT/.claude/hooks/some-hook.ts" \
+  ".claude/ 인프라 자체는 여전히 면제"
+check DENY  "$WIN_ROOT\\.claude\\worktrees\\wt\\src\\lib\\brand-new-module.ts" \
+  "백슬래시 워크트리 경로도 차단"
+
 if [ "$FAILED" -ne 0 ]; then
   echo "tdd-guard.spec: 실패"
   exit 1
