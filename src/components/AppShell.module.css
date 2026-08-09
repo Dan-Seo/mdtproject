@@ -1,0 +1,148 @@
+.shell {
+  display: grid;
+  grid-template-rows: 52px minmax(0, 1fr);
+  height: 100vh;
+  min-width: 760px;
+  overflow: hidden;
+  background: var(--color-canvas);
+  color: var(--text-body);
+}
+
+.appHeader {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
+  align-items: center;
+  padding: 0 var(--space-base);
+  background: var(--surface-card);
+  border-bottom: var(--border-hairline);
+}
+
+.wordmark {
+  color: var(--color-primary);
+  font-size: var(--type-title-sm-size);
+  font-weight: 600;
+  letter-spacing: -0.16px;
+}
+
+.projectName {
+  overflow: hidden;
+  color: var(--text-ink);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localeToggle {
+  display: flex;
+  justify-self: end;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.localeButton {
+  min-height: 28px;
+  padding: 0 var(--space-xs);
+  border: 0;
+  border-right: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.localeButton:last-child {
+  border-right: 0;
+}
+
+.localeButtonActive {
+  background: var(--color-canvas-soft);
+  color: var(--color-primary);
+}
+
+.shellMain {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.warningBanner {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-xs) var(--space-base);
+  border-bottom: 1px solid var(--color-error);
+  background: var(--color-canvas-soft);
+  color: var(--color-error);
+  font-size: var(--type-caption-size);
+}
+
+.warningTitle {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(392px, 34%) 1fr;
+  gap: 1px;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--hairline);
+}
+
+.leftColumn,
+.rightColumn {
+  display: grid;
+  gap: 1px;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--hairline);
+}
+
+.leftColumn {
+  grid-template-rows: minmax(0, 3fr) minmax(0, 1fr);
+}
+
+.rightColumn {
+  grid-template-rows: minmax(0, 44%) minmax(0, 56%);
+}
+
+.pane {
+  display: grid;
+  grid-template-rows: 38px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface-card);
+}
+
+.paneHeader {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 var(--space-sm);
+  border-bottom: var(--border-hairline);
+  background: var(--surface-card);
+}
+
+.paneTitle {
+  color: var(--text-ink);
+}
+
+.paneBody {
+  min-height: 0;
+  overflow: auto;
+  background: var(--surface-card);
+}
+
+.sourceNotice {
+  display: flex;
+  gap: var(--space-base);
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-base);
+  border-top: var(--border-hairline);
+  background: var(--color-canvas);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
