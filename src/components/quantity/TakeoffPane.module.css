@@ -1,0 +1,194 @@
+.tableFrame {
+  width: 100%;
+  min-height: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 1240px;
+  border-spacing: 0;
+  border-collapse: separate;
+  font-size: var(--type-caption-size);
+}
+
+.table th,
+.table td {
+  padding: var(--space-xs);
+  border-right: var(--border-hairline-soft);
+  border-bottom: var(--border-hairline);
+  background: var(--surface-card);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table th:last-child,
+.table td:last-child {
+  border-right: 0;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--color-canvas-soft);
+  color: var(--text-muted);
+  font-size: var(--type-caption-uppercase-size);
+  font-weight: var(--type-caption-uppercase-weight);
+  letter-spacing: var(--type-caption-uppercase-ls);
+}
+
+.table .numericCell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table .requiredColumn {
+  border-left: 2px solid var(--text-ink);
+  background: var(--color-canvas-soft);
+}
+
+.storyRow th,
+.storyRow td {
+  border-top: var(--border-hairline-strong);
+  background: var(--color-canvas);
+  color: var(--text-ink);
+  font-weight: 600;
+}
+
+.storyRow .requiredColumn {
+  background: var(--color-canvas-soft);
+}
+
+.groupRow {
+  cursor: pointer;
+}
+
+.groupRow th {
+  color: var(--text-body-strong);
+  font-weight: 600;
+}
+
+.selectedGroupRow th {
+  border-left: 3px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  color: var(--color-primary);
+}
+
+.lineRow {
+  cursor: pointer;
+}
+
+.lineRow:hover td {
+  background: var(--color-canvas-soft);
+}
+
+.lineRow:hover .requiredColumn {
+  background: var(--color-canvas);
+}
+
+.rebarCell {
+  padding-left: 30px !important;
+}
+
+.rebarCell > span:first-child {
+  margin-right: var(--space-xxs);
+}
+
+.inferredWarning {
+  color: var(--color-error);
+  font-size: var(--type-caption-uppercase-size);
+}
+
+.shapeIcon {
+  display: block;
+  color: var(--text-muted);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.unitMass {
+  color: var(--text-muted);
+}
+
+.sourceChips {
+  display: flex;
+  max-width: 280px;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+  white-space: normal;
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--space-xxs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+}
+
+a.sourceChip {
+  border-bottom: var(--border-hairline);
+}
+
+.inferredSourceChip,
+a.inferredSourceChip {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.disabledSourceChip {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.noteInput {
+  width: 112px;
+  min-height: 28px;
+  padding: 0 var(--space-xxs);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-body);
+  font: inherit;
+}
+
+.noteInput:focus {
+  border-color: var(--hairline);
+  background: var(--color-canvas-soft);
+}
+
+.formulaRow td {
+  padding: 0;
+  background: var(--color-canvas-soft);
+}
+
+.formulaRow pre {
+  margin: 0;
+  padding: var(--space-sm) 30px;
+  color: var(--text-body);
+  font-family: var(--font-mono);
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-lh);
+  white-space: pre-wrap;
+}
+
+.totalRow th,
+.totalRow td {
+  border-top: 2px solid var(--text-ink);
+  color: var(--text-ink);
+  font-weight: 600;
+}
+
+.totalRow .requiredColumn {
+  background: var(--color-canvas-soft);
+}
