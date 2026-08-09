@@ -48,7 +48,7 @@
       "status": "completed",
       "summary": "src/lib/store.ts의 project·sel·hoverRowId·locale·activeStoryId와 selectMember/selectGroup/setHoverRow/setLocale/setActiveStory/updateProject 액션, useTakeoff(): { rebars, lines, hasInferred, inferredRules }, t(locale,key) ja fallback, src/components/AppShell.tsx의 plan/section/viewer/takeoff 슬롯 및 4페인·고지 구현",
       "started_at": "2026-08-09T19:35:38+0900",
-      "completed_at": "2026-08-09T19:44:14+0900"
+      "completed_at": "2026-08-09T19:45:19+0900"
     },
     {
       "step": 6,
