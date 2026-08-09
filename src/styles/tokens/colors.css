@@ -1,0 +1,60 @@
+/* design/kijun-design-system/tokens/colors.css 에서 복사. 제품 빌드 경로로 편입 (2026-08). */
+/* Kijun colors — base palette, then semantic aliases. Never inline hex in components. */
+:root{
+/* ---- base palette ---- */
+--kj-orange:#f54e00;
+--kj-orange-active:#d04200;
+--kj-cream-50:#fafaf7;
+--kj-cream-100:#f7f7f4;
+--kj-white:#ffffff;
+--kj-warm-200:#efeee8;
+--kj-warm-300:#e6e5e0;
+--kj-warm-400:#cfcdc4;
+--kj-warm-500:#a09c92;
+--kj-warm-600:#807d72;
+--kj-warm-700:#5a5852;
+--kj-warm-900:#26251e;
+--kj-peach:#dfa88f;
+--kj-mint:#9fc9a2;
+--kj-sky:#9fbbe0;
+--kj-lavender:#c0a8dd;
+--kj-gold:#c08532;
+--kj-green:#1f8a65;
+--kj-crimson:#cf2d56;
+
+/* ---- brand action (the only brand voltage — use scarcely) ---- */
+--color-primary:var(--kj-orange);
+--color-primary-active:var(--kj-orange-active);
+--color-on-primary:var(--kj-white);
+
+/* ---- surfaces ---- */
+--color-canvas:var(--kj-cream-100);
+--color-canvas-soft:var(--kj-cream-50);
+--surface-card:var(--kj-white);
+--surface-strong:var(--kj-warm-300);
+
+/* ---- hairlines (the only depth system) ---- */
+--hairline:var(--kj-warm-300);
+--hairline-soft:var(--kj-warm-200);
+--hairline-strong:var(--kj-warm-400);
+
+/* ---- text ---- */
+--text-ink:var(--kj-warm-900);
+--text-body:var(--kj-warm-700);
+--text-body-strong:var(--kj-warm-900);
+--text-muted:var(--kj-warm-600);
+--text-muted-soft:var(--kj-warm-500);
+--text-on-primary:var(--kj-white);
+--text-on-ink:var(--kj-cream-100);
+
+/* ---- agent timeline pastels — in-product agent visualizations ONLY ---- */
+--timeline-thinking:var(--kj-peach);
+--timeline-grep:var(--kj-mint);
+--timeline-read:var(--kj-sky);
+--timeline-edit:var(--kj-lavender);
+--timeline-done:var(--kj-gold);
+
+/* ---- semantic status ---- */
+--color-success:var(--kj-green);
+--color-error:var(--kj-crimson);
+}

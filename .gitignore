@@ -4,6 +4,10 @@ __pycache__/
 out/
 next-env.d.ts
 tsconfig.tsbuildinfo
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
 
 # phase execution outputs
 phases/**/phase*-output.json

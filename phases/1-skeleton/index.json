@@ -5,7 +5,8 @@
     {
       "step": 0,
       "name": "project-setup",
-      "status": "pending",
+      "status": "completed",
+      "summary": "Next 15.5.23·React 19.2.8·TypeScript 5.9.3·Tailwind 3.4.17·Vitest 4.1.10 설치; Vitest domain 프로젝트, src/styles/styles.css 토큰, YAML Vitest inline raw/Next raw-loader+asset/source 구성",
       "started_at": "2026-08-09T18:49:22+0900"
     },
     {

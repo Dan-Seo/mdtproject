@@ -1,0 +1,19 @@
+/* design/kijun-design-system/tokens/spacing.css 에서 복사. 제품 빌드 경로로 편입 (2026-08). */
+/* 4px base unit. 80px section rhythm. */
+:root{
+--space-xxs:4px;
+--space-xs:8px;
+--space-sm:12px;
+--space-base:16px;
+--space-md:20px;
+--space-lg:24px;
+--space-xl:32px;
+--space-xxl:48px;
+--space-section:80px;
+--space-cta-band:96px;
+
+--container-max:1200px;
+--nav-height:64px;
+--grid-gap:24px;
+--card-gap:16px;
+}
