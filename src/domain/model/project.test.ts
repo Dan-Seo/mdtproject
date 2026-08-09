@@ -11,7 +11,9 @@ import {
   memberGroupKey,
   serializeProject,
   setNote,
+  storyElevation,
   type Project,
+  type Story,
 } from './project'
 
 const columnSection: ColumnSection = {
@@ -64,6 +66,28 @@ function createProject(members: Member[] = [column]): Project {
     members,
   }
 }
+
+describe('storyElevation', () => {
+  const stories: Story[] = [
+    { id: '1F', name: '1階', height: 4200 },
+    { id: '2F', name: '2階', height: 3800 },
+    { id: '3F', name: '3階', height: 3800 },
+  ]
+
+  it('accumulates the heights of the stories below in array order', () => {
+    expect(storyElevation(stories, '1F')).toBe(0)
+    expect(storyElevation(stories, '2F')).toBe(4200)
+    expect(storyElevation(stories, '3F')).toBe(8000)
+  })
+
+  it('returns 0 for the only story of a single-story project', () => {
+    expect(storyElevation([stories[0]], '1F')).toBe(0)
+  })
+
+  it('throws on an unknown story id', () => {
+    expect(() => storyElevation(stories, 'RF')).toThrow('Story not found: RF')
+  })
+})
 
 describe('grid helpers', () => {
   it('returns grid point counts and cumulative coordinates in mm', () => {

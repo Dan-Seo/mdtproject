@@ -60,6 +60,17 @@ export function gridPoint(
   }
 }
 
+/** 층 바닥의 누적 표고(mm). stories 배열 순서대로 아래층 height를 누적한다. */
+export function storyElevation(stories: Story[], storyId: string): number {
+  const index = stories.findIndex(({ id }) => id === storyId)
+
+  if (index < 0) {
+    throw new Error(`Story not found: ${storyId}`)
+  }
+
+  return stories.slice(0, index).reduce((sum, story) => sum + story.height, 0)
+}
+
 export function findSection(project: Project, sectionId: string): Section {
   const section = project.sections.find(({ id }) => id === sectionId)
 
