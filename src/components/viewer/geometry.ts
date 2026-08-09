@@ -47,6 +47,11 @@ export function rebarRadius(size: BarSize): number {
  * `Rebar`는 「대표 1본 + 本数」로 모델링된다 — 수량은 그것으로 충분하지만
  * 3D는 실제 本数만큼 그려야 한다. 배치는 규準値가 아니라 작도 규칙이므로
  * 룰팩을 타지 않고 단면 치수와 대표 배근 위치에서만 유도한다.
+ *
+ * domain의 points는 かぶり면 기준 중심선이지만, 표시 반경(rebarRadius)이
+ * 과장돼 있으므로 표시 공간에서는 그대로 그리면 帯筋과 主筋이 관통한다.
+ * 帯筋은 표시 반경만큼, 主筋은 帯筋 표시 지름 + 主筋 표시 반경만큼 안쪽으로
+ * 넣어 帯筋 바깥면이 かぶり면에, 主筋 표면이 帯筋 안쪽면에 접하게 한다.
  */
 export function rebarPlacements(
   rebar: Rebar,
@@ -60,22 +65,45 @@ export function rebarPlacements(
     ])
   }
 
-  // 主筋: かぶり 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
-  const [inset] = rebar.points[0]
-  const width = section.b - 2 * inset
-  const depth = section.d - 2 * inset
+  // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
+  const [insetX, , insetZ] = rebar.points[0]
+  const inward =
+    2 * rebarRadius(section.hoop.size) + rebarRadius(rebar.size)
+  const width = Math.max(0, section.b - 2 * (insetX + inward))
+  const depth = Math.max(0, section.d - 2 * (insetZ + inward))
   const perimeter = 2 * (width + depth)
 
   return Array.from({ length: rebar.count }, (_, index): Point3 => {
     const walked = (index * perimeter) / rebar.count
 
-    if (walked <= width) return [walked, 0, 0]
-    if (walked <= width + depth) return [width, 0, walked - width]
-    if (walked <= 2 * width + depth) {
-      return [width - (walked - width - depth), 0, depth]
+    if (walked <= width) return [inward + walked, 0, inward]
+    if (walked <= width + depth) {
+      return [inward + width, 0, inward + walked - width]
     }
-    return [0, 0, depth - (walked - 2 * width - depth)]
+    if (walked <= 2 * width + depth) {
+      return [inward + width - (walked - width - depth), 0, inward + depth]
+    }
+    return [inward, 0, inward + depth - (walked - 2 * width - depth)]
   })
+}
+
+// 帯筋 중심선을 かぶり면에서 표시 반경만큼 안쪽으로 넣는다. 퇴화 단면에서
+// 사각형이 반전되지 않도록 반폭으로 클램프한다.
+function hoopDisplayPoints(points: Point3[], radius: number): Point3[] {
+  const xs = points.map((point) => point[0])
+  const zs = points.map((point) => point[2])
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minZ = Math.min(...zs)
+  const maxZ = Math.max(...zs)
+  const insetX = Math.min(radius, (maxX - minX) / 2)
+  const insetZ = Math.min(radius, (maxZ - minZ) / 2)
+
+  return points.map(([x, y, z]) => [
+    Math.min(Math.max(x, minX + insetX), maxX - insetX),
+    y,
+    Math.min(Math.max(z, minZ + insetZ), maxZ - insetZ),
+  ])
 }
 
 function translate(point: Point3, offset: Point3): Point3 {
@@ -86,8 +114,11 @@ export function rebarSegments(
   rebar: Rebar,
   section: ColumnSection,
 ): Segment[] {
-  const { points } = rebar
   const radius = rebarRadius(rebar.size)
+  const points =
+    rebar.shape === 'hoop'
+      ? hoopDisplayPoints(rebar.points, radius)
+      : rebar.points
 
   return rebarPlacements(rebar, section).flatMap((offset) => {
     const placed = points.map((point) => translate(point, offset))

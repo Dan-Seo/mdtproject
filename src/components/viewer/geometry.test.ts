@@ -61,6 +61,12 @@ const section: ColumnSection = {
   hoop: { size: 'D13', pitch: 100 },
 }
 
+const HOOP_DISPLAY_RADIUS = rebarRadius(hoop.size)
+const MAIN_DISPLAY_RADIUS = rebarRadius(main.size)
+// 主筋 축이 かぶり 모서리에서 안쪽으로 밀리는 표시 오프셋:
+// 帯筋 표시 지름 + 主筋 표시 반경 → 主筋 표면이 帯筋 안쪽면에 접한다.
+const MAIN_INWARD = 2 * HOOP_DISPLAY_RADIUS + MAIN_DISPLAY_RADIUS
+
 function subtract(left: Point3, right: Point3): Point3 {
   return [left[0] - right[0], left[1] - right[1], left[2] - right[2]]
 }
@@ -90,37 +96,180 @@ function corners({ min, max }: Bounds): Point3[] {
   )
 }
 
+function expectPointCloseTo(actual: Point3, expected: Point3): void {
+  expect(actual[0]).toBeCloseTo(expected[0])
+  expect(actual[1]).toBeCloseTo(expected[1])
+  expect(actual[2]).toBeCloseTo(expected[2])
+}
+
+function distanceToSegmentXZ(point: Point3, from: Point3, to: Point3): number {
+  const [px, , pz] = point
+  const [ax, , az] = from
+  const [bx, , bz] = to
+  const abx = bx - ax
+  const abz = bz - az
+  const lengthSq = abx * abx + abz * abz
+  const t =
+    lengthSq === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((px - ax) * abx + (pz - az) * abz) / lengthSq))
+
+  return Math.hypot(px - (ax + t * abx), pz - (az + t * abz))
+}
+
 describe('rebarSegments', () => {
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
     const segments = rebarSegments({ ...hoop, count: 3 }, section)
 
-    // 닫힌 4점 帯筋 × 3본
+    // 닫힌 4점 帯筋 × 3본 — 중심선은 かぶり면에서 표시 반경만큼 안쪽
     expect(segments).toHaveLength(12)
-    expect(segments[0].from).toEqual(hoop.points[0])
-    expect(segments[4].from).toEqual([
-      hoop.points[0][0],
-      hoop.points[0][1] + section.hoop.pitch,
-      hoop.points[0][2],
+    expectPointCloseTo(segments[0].from, [
+      hoop.points[0][0] + HOOP_DISPLAY_RADIUS,
+      0,
+      hoop.points[0][2] + HOOP_DISPLAY_RADIUS,
+    ])
+    expectPointCloseTo(segments[4].from, [
+      hoop.points[0][0] + HOOP_DISPLAY_RADIUS,
+      section.hoop.pitch,
+      hoop.points[0][2] + HOOP_DISPLAY_RADIUS,
     ])
   })
 
-  it('emits one 主筋 per 本数 spread around the かぶり perimeter', () => {
+  it('keeps the 帯筋 outer display surface on the かぶり face', () => {
+    const segments = rebarSegments({ ...hoop, count: 1 }, section)
+    const xs = segments.flatMap(({ from, to }) => [from[0], to[0]])
+    const zs = segments.flatMap(({ from, to }) => [from[2], to[2]])
+
+    expect(Math.min(...xs) - HOOP_DISPLAY_RADIUS).toBeCloseTo(40)
+    expect(Math.max(...xs) + HOOP_DISPLAY_RADIUS).toBeCloseTo(760)
+    expect(Math.min(...zs) - HOOP_DISPLAY_RADIUS).toBeCloseTo(40)
+    expect(Math.max(...zs) + HOOP_DISPLAY_RADIUS).toBeCloseTo(760)
+  })
+
+  it('emits one 主筋 per 本数 spread around the 帯筋 inner perimeter', () => {
     const segments = rebarSegments(main, section)
 
     expect(segments).toHaveLength(main.count)
 
-    const footprints = segments.map(({ from }) => `${from[0]},${from[2]}`)
+    const footprints = segments.map(
+      ({ from }) => `${from[0].toFixed(3)},${from[2].toFixed(3)}`,
+    )
     expect(new Set(footprints).size).toBe(main.count)
 
-    // 전부 かぶり 안쪽 사각형의 변 위에 있어야 한다.
+    // 전부 主筋 축 사각형(かぶり + MAIN_INWARD 인셋)의 변 위에 있어야 한다.
     const [inset] = main.points[0]
+    const low = inset + MAIN_INWARD
     for (const { from } of segments) {
       const onEdge =
-        from[0] === inset ||
-        from[2] === inset ||
-        from[0] === section.b - inset ||
-        from[2] === section.d - inset
+        Math.abs(from[0] - low) < 1e-9 ||
+        Math.abs(from[2] - low) < 1e-9 ||
+        Math.abs(from[0] - (section.b - low)) < 1e-9 ||
+        Math.abs(from[2] - (section.d - low)) < 1e-9
       expect(onEdge).toBe(true)
+    }
+  })
+
+  it('keeps every 主筋 surface tangent to the 帯筋 inner face, never crossing', () => {
+    const hoopSegments = rebarSegments({ ...hoop, count: 1 }, section)
+    const mainSegments = rebarSegments(main, section)
+    const contact = HOOP_DISPLAY_RADIUS + MAIN_DISPLAY_RADIUS
+
+    for (const { from } of mainSegments) {
+      const distances = hoopSegments.map((segment) =>
+        distanceToSegmentXZ(from, segment.from, segment.to),
+      )
+
+      // 가장 가까운 帯筋 변에 정확히 접하고, 어느 변도 관통하지 않는다.
+      expect(Math.min(...distances)).toBeCloseTo(contact)
+      for (const distance of distances) {
+        expect(distance).toBeGreaterThanOrEqual(contact - 1e-6)
+      }
+    }
+  })
+
+  it('offsets both axes independently for a rectangular section', () => {
+    const rectangular: ColumnSection = { ...section, b: 900, d: 600 }
+    const rectangularHoop: Rebar = {
+      ...hoop,
+      count: 1,
+      points: [
+        [40, 0, 40],
+        [860, 0, 40],
+        [860, 0, 560],
+        [40, 0, 560],
+      ],
+    }
+
+    const hoopSegments = rebarSegments(rectangularHoop, rectangular)
+    const xs = hoopSegments.flatMap(({ from, to }) => [from[0], to[0]])
+    const zs = hoopSegments.flatMap(({ from, to }) => [from[2], to[2]])
+    expect(Math.min(...xs)).toBeCloseTo(40 + HOOP_DISPLAY_RADIUS)
+    expect(Math.max(...xs)).toBeCloseTo(860 - HOOP_DISPLAY_RADIUS)
+    expect(Math.min(...zs)).toBeCloseTo(40 + HOOP_DISPLAY_RADIUS)
+    expect(Math.max(...zs)).toBeCloseTo(560 - HOOP_DISPLAY_RADIUS)
+
+    for (const { from } of rebarSegments(main, rectangular)) {
+      expect(from[0]).toBeGreaterThanOrEqual(40 + MAIN_INWARD - 1e-9)
+      expect(from[0]).toBeLessThanOrEqual(900 - 40 - MAIN_INWARD + 1e-9)
+      expect(from[2]).toBeGreaterThanOrEqual(40 + MAIN_INWARD - 1e-9)
+      expect(from[2]).toBeLessThanOrEqual(600 - 40 - MAIN_INWARD + 1e-9)
+    }
+  })
+
+  it('respects asymmetric かぶり insets per axis', () => {
+    const asymmetric: Rebar = {
+      ...main,
+      points: [
+        [30, -875, 50],
+        [30, 5200, 50],
+      ],
+    }
+
+    const segments = rebarSegments(asymmetric, section)
+    expectPointCloseTo(segments[0].from, [
+      30 + MAIN_INWARD,
+      -875,
+      50 + MAIN_INWARD,
+    ])
+    for (const { from } of segments) {
+      expect(from[0]).toBeGreaterThanOrEqual(30 + MAIN_INWARD - 1e-9)
+      expect(from[0]).toBeLessThanOrEqual(section.b - 30 - MAIN_INWARD + 1e-9)
+      expect(from[2]).toBeGreaterThanOrEqual(50 + MAIN_INWARD - 1e-9)
+      expect(from[2]).toBeLessThanOrEqual(section.d - 50 - MAIN_INWARD + 1e-9)
+    }
+  })
+
+  it('clamps degenerate sections instead of inverting the walk rectangle', () => {
+    const tiny: ColumnSection = { ...section, b: 200, d: 200 }
+
+    const mainSegments = rebarSegments({ ...main, count: 4 }, tiny)
+    expect(mainSegments).toHaveLength(4)
+    for (const { from } of mainSegments) {
+      expect(Number.isFinite(from[0])).toBe(true)
+      expect(Number.isFinite(from[2])).toBe(true)
+      expect(from[0]).toBeGreaterThanOrEqual(40)
+      expect(from[0]).toBeLessThanOrEqual(160)
+      expect(from[2]).toBeGreaterThanOrEqual(40)
+      expect(from[2]).toBeLessThanOrEqual(160)
+    }
+
+    const tinyHoop: Rebar = {
+      ...hoop,
+      count: 1,
+      points: [
+        [40, 0, 40],
+        [60, 0, 40],
+        [60, 0, 60],
+        [40, 0, 60],
+      ],
+    }
+    for (const { from, to } of rebarSegments(tinyHoop, tiny)) {
+      for (const point of [from, to]) {
+        expect(point[0]).toBeGreaterThanOrEqual(40)
+        expect(point[0]).toBeLessThanOrEqual(60)
+        expect(point[2]).toBeGreaterThanOrEqual(40)
+        expect(point[2]).toBeLessThanOrEqual(60)
+      }
     }
   })
 
@@ -128,11 +277,18 @@ describe('rebarSegments', () => {
     const segments = rebarSegments({ ...hoop, count: 1 }, section)
 
     expect(segments).toHaveLength(4)
-    expect(segments.at(-1)).toEqual({
-      from: [40, 0, 760],
-      to: [40, 0, 40],
-      radius: rebarRadius('D13'),
-    })
+    const last = segments[segments.length - 1]
+    expect(last.radius).toBeCloseTo(rebarRadius('D13'))
+    expectPointCloseTo(last.from, [
+      40 + HOOP_DISPLAY_RADIUS,
+      0,
+      760 - HOOP_DISPLAY_RADIUS,
+    ])
+    expectPointCloseTo(last.to, [
+      40 + HOOP_DISPLAY_RADIUS,
+      0,
+      40 + HOOP_DISPLAY_RADIUS,
+    ])
   })
 
   it('does not close an open 主筋', () => {
