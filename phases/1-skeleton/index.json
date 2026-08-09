@@ -53,7 +53,10 @@
     {
       "step": 6,
       "name": "input-panes",
-      "status": "pending"
+      "status": "completed",
+      "summary": "src/components/plan/PlanEditor.tsx·grid.ts와 src/components/section/SectionTable.tsx 추가; spanCoordinates·generateGridMembers·updateProjectSpans로 격자·부재를 재생성하고 selectMember/activeStoryId/sel로 평면·층 탭·단면일람 선택을 연동",
+      "started_at": "2026-08-09T19:45:19+0900",
+      "completed_at": "2026-08-09T19:56:32+0900"
     },
     {
       "step": 7,

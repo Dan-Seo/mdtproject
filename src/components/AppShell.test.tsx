@@ -31,6 +31,12 @@ describe('AppShell', () => {
     ).toBeInTheDocument()
   })
 
+  it('renders plan actions in the plan pane header', () => {
+    render(<AppShell planActions={<button type="button">2階</button>} />)
+
+    expect(screen.getByRole('button', { name: '2階' })).toBeInTheDocument()
+  })
+
   it('renders the source notice and the prominent M1 warning banner', () => {
     render(<AppShell />)
 

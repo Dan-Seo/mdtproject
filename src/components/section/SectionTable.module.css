@@ -1,0 +1,93 @@
+.tableFrame {
+  min-width: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: var(--type-caption-size);
+}
+
+.table th,
+.table td {
+  padding: var(--space-xxs);
+  border-right: var(--border-hairline-soft);
+  border-bottom: var(--border-hairline);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th:last-child,
+.table td:last-child {
+  border-right: 0;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-canvas-soft);
+  color: var(--text-muted);
+  font-size: var(--type-caption-uppercase-size);
+  font-weight: var(--type-caption-uppercase-weight);
+  letter-spacing: var(--type-caption-uppercase-ls);
+}
+
+.table tbody tr {
+  background: var(--surface-card);
+  cursor: pointer;
+}
+
+.selectedRow {
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent) !important;
+  color: var(--color-primary);
+}
+
+.selectedRow td:first-child {
+  border-left: 3px solid var(--color-primary);
+}
+
+.markInput,
+.numberInput,
+.select {
+  height: 28px;
+  min-width: 0;
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-body);
+  font: inherit;
+  font-family: var(--font-mono);
+}
+
+.markInput,
+.numberInput {
+  padding: 0 var(--space-xxs);
+}
+
+.markInput {
+  width: 48px;
+}
+
+.numberInput {
+  width: 58px;
+  text-align: right;
+}
+
+.select {
+  padding: 0 var(--space-xxs);
+}
+
+.compoundField,
+.girderMainField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xxs);
+}
+
+.girderMainField {
+  display: grid;
+  grid-template-columns: auto 52px auto 64px auto 52px;
+}

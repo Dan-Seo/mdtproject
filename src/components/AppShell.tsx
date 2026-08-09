@@ -9,6 +9,7 @@ import styles from './AppShell.module.css'
 
 export interface AppShellProps {
   plan?: ReactNode
+  planActions?: ReactNode
   section?: ReactNode
   viewer?: ReactNode
   takeoff?: ReactNode
@@ -18,9 +19,10 @@ interface PaneProps {
   id: string
   title: string
   children?: ReactNode
+  actions?: ReactNode
 }
 
-function Pane({ id, title, children }: PaneProps) {
+function Pane({ id, title, children, actions }: PaneProps) {
   const titleId = `${id}-title`
 
   return (
@@ -29,13 +31,20 @@ function Pane({ id, title, children }: PaneProps) {
         <h2 id={titleId} className={`${styles.paneTitle} t-caption-uppercase`}>
           {title}
         </h2>
+        {actions}
       </header>
       <div className={styles.paneBody}>{children}</div>
     </section>
   )
 }
 
-export function AppShell({ plan, section, viewer, takeoff }: AppShellProps) {
+export function AppShell({
+  plan,
+  planActions,
+  section,
+  viewer,
+  takeoff,
+}: AppShellProps) {
   const projectName = useAppStore(({ project }) => project.name)
   const locale = useAppStore(({ locale }) => locale)
   const setLocale = useAppStore(({ setLocale }) => setLocale)
@@ -72,7 +81,11 @@ export function AppShell({ plan, section, viewer, takeoff }: AppShellProps) {
 
         <div className={styles.workspace}>
           <div className={styles.leftColumn}>
-            <Pane id="plan-pane" title={t(locale, 'pane.plan')}>
+            <Pane
+              id="plan-pane"
+              title={t(locale, 'pane.plan')}
+              actions={planActions}
+            >
               {plan}
             </Pane>
             <Pane id="section-pane" title={t(locale, 'pane.section')}>

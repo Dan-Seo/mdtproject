@@ -119,6 +119,7 @@
 
 .paneHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   height: 38px;
   padding: 0 var(--space-sm);
