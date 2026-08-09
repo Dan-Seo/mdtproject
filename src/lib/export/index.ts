@@ -199,7 +199,11 @@ function workbookHeaders(locale: Locale): string[] {
   ]
 }
 
-function dataRow(line: QuantityLine, locale: Locale): WorkbookRowSpec {
+function dataRow(
+  line: QuantityLine,
+  locale: Locale,
+  note: string,
+): WorkbookRowSpec {
   return row(
     'data',
     [
@@ -217,7 +221,7 @@ function dataRow(line: QuantityLine, locale: Locale): WorkbookRowSpec {
       cell(line.designKg, { numberFormat: THREE_DECIMALS }),
       cell(line.requiredKg, { numberFormat: THREE_DECIMALS }),
       cell(lineSources(line, locale)),
-      cell(''),
+      cell(note),
       cell(line.formula),
     ],
     line.id,
@@ -250,7 +254,9 @@ export function buildTakeoffWorkbook(
       'header',
       workbookHeaders(locale).map((header) => cell(header)),
     ),
-    ...lines.map((line) => dataRow(line, locale)),
+    ...lines.map((line) =>
+      dataRow(line, locale, project.notes?.[line.id] ?? ''),
+    ),
   )
 
   const total = grandTotal(lines)

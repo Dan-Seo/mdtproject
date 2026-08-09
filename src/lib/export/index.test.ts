@@ -113,6 +113,22 @@ describe('buildTakeoffWorkbook', () => {
     expect(firstDataRow?.cells[12].numberFormat).toBe('0.000')
   })
 
+  it('writes the stored 備考 into the note column', () => {
+    const input = sampleInput()
+    const lineId = input.lines[0].id
+    const spec = buildTakeoffWorkbook({
+      ...input,
+      project: { ...input.project, notes: { [lineId]: '要確認' } },
+      locale: 'ja',
+    })
+    const rows = spec.rows.filter(({ kind }) => kind === 'data')
+    const noted = rows.find(({ id }) => id === lineId)
+    const others = rows.filter(({ id }) => id !== lineId)
+
+    expect(noted?.cells[14].value).toBe('要確認')
+    expect(others.every(({ cells }) => cells[14].value === '')).toBe(true)
+  })
+
   it('includes source document names, editions, URLs, scope and modification notice', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })

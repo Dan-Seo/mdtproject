@@ -4,6 +4,19 @@ import { createSampleProject } from '@/domain/model/sample-project'
 
 import { useAppStore } from './store'
 
+describe('useAppStore initial state', () => {
+  it('lands with a 柱 already selected so the 3D pane is not empty', () => {
+    const { sel, activeStoryId, project } = useAppStore.getInitialState()
+
+    expect(sel.memberId).not.toBeNull()
+    expect(sel.group).not.toBeNull()
+
+    const member = project.members.find(({ id }) => id === sel.memberId)
+    expect(member?.kind).toBe('柱')
+    expect(member?.storyId).toBe(activeStoryId)
+  })
+})
+
 describe('useAppStore', () => {
   beforeEach(() => {
     useAppStore.setState({

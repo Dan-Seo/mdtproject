@@ -10,6 +10,7 @@ import {
   gridPointCount,
   memberGroupKey,
   serializeProject,
+  setNote,
   type Project,
 } from './project'
 
@@ -146,5 +147,45 @@ describe('project serialization', () => {
     })
 
     expect(() => deserializeProject(incompatible)).toThrow()
+  })
+
+  it('round-trips 備考 notes', () => {
+    const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+})
+
+describe('setNote', () => {
+  it('stores a note without mutating the original Project', () => {
+    const project = createProject()
+    const next = setNote(project, '1階|C|C1|主筋', '要確認')
+
+    expect(next.notes).toEqual({ '1階|C|C1|主筋': '要確認' })
+    expect(project.notes).toBeUndefined()
+  })
+
+  it('replaces an existing note for the same line', () => {
+    const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
+    const next = setNote(project, '1階|C|C1|主筋', '確認済')
+
+    expect(next.notes).toEqual({ '1階|C|C1|主筋': '確認済' })
+  })
+
+  it('drops the key when the note is cleared so empty strings do not pile up', () => {
+    const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
+    const next = setNote(project, '1階|C|C1|主筋', '')
+
+    expect(next.notes).toEqual({})
+  })
+
+  it('keeps notes for other lines untouched', () => {
+    const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
+    const next = setNote(project, '1階|C|C1|帯筋', 'ピッチ確認')
+
+    expect(next.notes).toEqual({
+      '1階|C|C1|主筋': '要確認',
+      '1階|C|C1|帯筋': 'ピッチ確認',
+    })
   })
 })

@@ -97,6 +97,12 @@
   margin-top: var(--space-xxs);
 }
 
+/* 파괴적 조작은 편집 조작과 붙여 두지 않는다 (docs/UX.md §3.6).
+   편집 그룹 내부는 4px, 삭제 앞은 16px로 띄워 그룹을 가른다. */
+.removeButton {
+  margin-left: var(--space-sm);
+}
+
 .removeButton:disabled {
   color: var(--text-muted-soft);
   cursor: default;

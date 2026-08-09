@@ -25,6 +25,8 @@ export interface Project {
   stories: Story[]
   sections: Section[]
   members: Member[]
+  /** 내역서 備考. QuantityLine.id를 키로 쓴다. 값이 없는 행은 키 자체가 없다. */
+  notes?: Record<string, string>
 }
 
 export function gridPointCount(grid: Grid): { nx: number; ny: number } {
@@ -142,6 +144,19 @@ export function beamDepthAbove(project: Project, member: Member): number {
   }
 
   return Math.max(...depths)
+}
+
+export function setNote(
+  project: Project,
+  lineId: string,
+  note: string,
+): Project {
+  const notes = { ...project.notes }
+
+  if (note === '') delete notes[lineId]
+  else notes[lineId] = note
+
+  return { ...project, notes }
 }
 
 export function serializeProject(project: Project): string {
