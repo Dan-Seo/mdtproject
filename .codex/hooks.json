@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|shell.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/tdd-guard.sh",
+            "statusMessage": "TDD 가드 확인 중"
+          }
+        ]
+      },
+      {
+        "matcher": "shell.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/dangerous-command-guard.sh",
+            "statusMessage": "위험 명령 확인 중"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run lint && npm run build && npm run test",
+            "timeout": 900,
+            "statusMessage": "lint · build · test 실행 중"
+          }
+        ]
+      }
+    ]
+  }
+}
