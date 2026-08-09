@@ -33,6 +33,7 @@ done
 | `uc6-locale.js` | ja↔ko 전환. 도메인 용어(柱·主筋·帯筋)는 일본어 유지 (ADR-008) |
 | `uc7-source-and-formula.js` | 出典 chip·`inferred` ▲·算出式 전개 (출처 표시는 법적 의무) |
 | `uc8-xlsx-export.js` | xlsx 다운로드 트리거 (Blob 가로채기) |
+| `uc9-building-view.js` | 3D 페인 「部材｜建物」 탭 전환 · 建物 뷰 캔버스 · 부재 클릭 → 4페인 연동 |
 
 ## 왜 유닛테스트로 안 되는가
 
@@ -41,7 +42,8 @@ jsdom에서 재현되지 않는 것만 여기에 둔다.
 - **하이드레이션 타이밍** — 数量 표는 SSR HTML에 이미 있고 3D 캔버스는 하이드레이션 후에 생긴다.
   `canvas`를 기다리지 않고 DOM을 읽으면 하이드레이션 이전 상태를 본다.
 - **실제 히트 테스트** — SVG 부재의 클릭 가능 영역이 시각적 마커와 일치하는지.
-- **WebGL** — three.js 씬이 실제로 그려지는지.
+- **WebGL** — three.js 씬이 실제로 그려지는지. 환경맵(PMREM)·그림자·톤매핑은 유닛테스트에서
+  `PMREMGenerator`/`WebGLRenderer`를 목으로 대체하므로, 실 GPU 동작은 여기(uc1·uc9)가 유일한 커버다.
 - **파일 다운로드** — exceljs가 만든 Blob의 크기·MIME·파일명.
 
 ## 알려진 함정
