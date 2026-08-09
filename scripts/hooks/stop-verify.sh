@@ -1,5 +1,10 @@
 #!/bin/bash
-# Stop Verify Hook — 턴이 끝날 때 lint·build·test로 검증한다.
+# Stop Verify Hook — 턴이 끝날 때 lint·typecheck·build·test로 검증한다.
+#
+# typecheck가 따로 필요한 이유: build는 테스트 파일을 타입체크하지 않고, eslint는
+# 타입 인지 룰이 없으며, vitest는 esbuild 트랜스파일이라 타입을 보지 않는다. 셋 다
+# 통과하는데 tsc는 실패하는 상태가 실제로 있었다. 규준 판정을 골든테스트에 맡기는
+# 프로젝트에서 테스트 코드가 타입 검사 밖에 있으면 안 된다 (ADR-010).
 #
 # Codex Stop 이벤트 계약:
 #   - exit 0일 때 stdout은 JSON이어야 한다. plain text는 invalid로 처리된다.
@@ -25,7 +30,7 @@ if [ ! -f "$ROOT/package.json" ]; then
   exit 0
 fi
 
-for SCRIPT in lint build test; do
+for SCRIPT in lint typecheck build test; do
   if [ -z "$(jq -r --arg s "$SCRIPT" '.scripts[$s] // empty' "$ROOT/package.json" 2>/dev/null)" ]; then
     exit 0
   fi
@@ -53,7 +58,7 @@ if [ -f "$GUARD_SPEC" ]; then
   GUARD_STATUS=$?
 fi
 
-OUTPUT=$(cd "$ROOT" && npm run lint 2>&1 && npm run build 2>&1 && npm run test 2>&1)
+OUTPUT=$(cd "$ROOT" && npm run lint 2>&1 && npm run typecheck 2>&1 && npm run build 2>&1 && npm run test 2>&1)
 STATUS=$?
 
 if [ "$STATUS" -eq 0 ] && [ "$GUARD_STATUS" -ne 0 ]; then
@@ -71,7 +76,7 @@ fi
 
 # 컨텍스트를 아끼려고 꼬리만 넘긴다. jq -n으로 만들어 따옴표·개행을 정확히 이스케이프한다.
 TAIL=$(echo "$OUTPUT" | tail -40)
-REASON="${DEV_HINT}lint · build · test가 실패했습니다 (exit ${STATUS}). 아래 출력을 보고 원인을 고친 뒤 다시 실행하세요.
+REASON="${DEV_HINT}lint · typecheck · build · test가 실패했습니다 (exit ${STATUS}). 아래 출력을 보고 원인을 고친 뒤 다시 실행하세요.
 
 ${TAIL}"
 

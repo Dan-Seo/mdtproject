@@ -130,20 +130,14 @@ function contributingRules(
   }
 }
 
+// 同じ符号の柱でも接する大梁のせいが違えば帯筋本数が変わる。加工長と本数を
+// 行キーに含め、内訳書の別行として分ける。
+export function quantityLineId(groupId: string, rebar: Rebar): string {
+  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}`
+}
+
 function assertCompatible(existing: GroupedLine, rebar: Rebar): void {
   const { line } = existing
-  if (line.lengthMm !== rebar.length) {
-    throw new Error(
-      `Inconsistent lengthMm in quantity group ${line.id}: ` +
-        `${line.lengthMm} !== ${rebar.length}`,
-    )
-  }
-  if (line.countPerMember !== rebar.count) {
-    throw new Error(
-      `Inconsistent countPerMember in quantity group ${line.id}: ` +
-        `${line.countPerMember} !== ${rebar.count}`,
-    )
-  }
   if (line.size !== rebar.size || line.shape !== rebar.shape) {
     throw new Error(`Inconsistent size or shape in quantity group ${line.id}`)
   }
@@ -185,7 +179,7 @@ export function aggregateQuantity(
     }
 
     const groupId = memberGroupKey(project, member)
-    const id = `${groupId}|${rebar.role}`
+    const id = quantityLineId(groupId, rebar)
     const contributions = contributingRules(
       pack,
       member,

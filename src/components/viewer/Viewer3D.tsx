@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { ColumnSection, Member } from '@/domain/model/member'
 import { findSection, type Story } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
-import type { QuantityLine } from '@/domain/quantity'
+import { quantityLineId, type QuantityLine } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
@@ -36,7 +36,7 @@ interface SelectedColumnView {
   section: ColumnSection
   story: Story
   rebars: Rebar[]
-  rowIds: Map<Rebar['role'], QuantityLine['id']>
+  rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
 
 interface ViewerRuntime {
@@ -190,7 +190,7 @@ function rebuildScene(
   addMemberOutline(content, view, materials)
 
   for (const rebar of view.rebars) {
-    const rowId = view.rowIds.get(rebar.role)
+    const rowId = view.rowIds.get(rebar.id)
     if (rowId === undefined) {
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
@@ -246,9 +246,13 @@ function selectedColumnView(
   }
 
   const selectedRebars = rebars.filter((rebar) => rebar.memberId === memberId)
-  const selectedLines = lines.filter(({ groupId }) => groupId === selectedGroup)
+  const selectedLineIds = new Set(
+    lines.filter(({ groupId }) => groupId === selectedGroup).map(({ id }) => id),
+  )
   const rowIds = new Map(
-    selectedLines.map((line) => [line.role, line.id]),
+    selectedRebars
+      .map((rebar) => [rebar.id, quantityLineId(selectedGroup, rebar)] as const)
+      .filter(([, lineId]) => selectedLineIds.has(lineId)),
   )
 
   return { member, section, story, rebars: selectedRebars, rowIds }

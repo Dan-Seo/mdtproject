@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh"
