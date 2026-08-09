@@ -604,3 +604,34 @@ class TestCheckBlockers:
         with pytest.raises(SystemExit) as exc_info:
             inst._check_blockers()
         assert exc_info.value.code == 2
+
+
+# ---------------------------------------------------------------------------
+# 콘솔 인코딩
+# ---------------------------------------------------------------------------
+
+class TestForceUtf8Output:
+    """Windows 콘솔 기본 코드페이지(cp949 등)는 '✓'·'◐'를 인코딩하지 못한다.
+    step이 성공해도 진행 출력 한 줄 때문에 UnicodeEncodeError로 죽는다."""
+
+    def test_reconfigures_stdout_and_stderr(self):
+        out, err = MagicMock(), MagicMock()
+        with patch.object(ex.sys, "stdout", out), patch.object(ex.sys, "stderr", err):
+            ex._force_utf8_output()
+        out.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
+        err.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
+
+    def test_tolerates_stream_without_reconfigure(self):
+        class Bare:
+            pass
+
+        with patch.object(ex.sys, "stdout", Bare()), patch.object(ex.sys, "stderr", Bare()):
+            ex._force_utf8_output()  # 예외가 나면 실패
+
+    def test_main_forces_utf8_before_running(self):
+        with patch.object(ex, "_force_utf8_output") as mock_force, \
+             patch.object(ex, "StepExecutor") as mock_exec, \
+             patch.object(ex.sys, "argv", ["execute.py", "0-mvp"]):
+            ex.main()
+        assert mock_force.called
+        assert mock_exec.called
