@@ -432,10 +432,35 @@ class TestInvokeCodex:
             executor._invoke_codex(step, "PREAMBLE\n")
 
         cmd = mock_run.call_args[0][0]
-        assert cmd[0] == "codex"
+        assert os.path.basename(cmd[0]).lower().startswith("codex")
         assert cmd[1] == "exec"
         assert "--dangerously-bypass-approvals-and-sandbox" in cmd
         assert "--json" in cmd
+
+    def test_resolves_executable_through_pathext(self, executor):
+        """Windows에서 codex는 npm이 깐 셔뱅(codex.CMD)이다. CreateProcess는 PATHEXT를
+        적용하지 않으므로 이름만 넘기면 FileNotFoundError로 죽는다."""
+        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
+        step = {"step": 2, "name": "ui"}
+        resolved = r"C:\Users\x\AppData\Roaming\npm\codex.CMD"
+
+        with patch("shutil.which", return_value=resolved) as mock_which, \
+             patch("subprocess.run", return_value=mock_result) as mock_run:
+            executor._invoke_codex(step, "preamble")
+
+        mock_which.assert_called_once_with("codex")
+        assert mock_run.call_args[0][0][0] == resolved
+
+    def test_falls_back_to_bare_name_when_not_resolvable(self, executor):
+        """PATH에 없으면 이름 그대로 넘겨 codex가 없다는 에러가 그대로 드러나게 한다."""
+        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
+        step = {"step": 2, "name": "ui"}
+
+        with patch("shutil.which", return_value=None), \
+             patch("subprocess.run", return_value=mock_result) as mock_run:
+            executor._invoke_codex(step, "preamble")
+
+        assert mock_run.call_args[0][0][0] == "codex"
 
     def test_hooks_are_not_skipped(self, executor):
         """.codex/hooks.json은 파일이 바뀔 때마다 untrusted로 돌아간다.

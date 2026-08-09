@@ -10,6 +10,7 @@ import argparse
 import contextlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -239,8 +240,12 @@ class StepExecutor:
         # argv로 넘기면 Windows 명령줄 길이 제한(32767자)에 걸린다.
         # --dangerously-bypass-hook-trust: .codex/hooks.json은 내용이 바뀔 때마다 untrusted로
         # 돌아가고, untrusted 훅은 조용히 건너뛴다. 우회하지 않으면 TDD 가드가 안 걸린다.
+        # Windows에서 codex는 npm이 깐 셔뱅(codex.CMD)이다. CreateProcess는 PATHEXT를
+        # 적용하지 않으므로 "codex"만 넘기면 FileNotFoundError로 죽는다. which로 해석한다.
+        # 못 찾으면 이름 그대로 넘겨 "codex가 없다"는 에러가 그대로 드러나게 둔다.
+        codex_bin = shutil.which("codex") or "codex"
         result = subprocess.run(
-            ["codex", "exec", "--dangerously-bypass-approvals-and-sandbox",
+            [codex_bin, "exec", "--dangerously-bypass-approvals-and-sandbox",
              "--dangerously-bypass-hook-trust", "--json", "-"],
             cwd=self._root, input=prompt, capture_output=True, text=True,
             encoding="utf-8", timeout=1800,
