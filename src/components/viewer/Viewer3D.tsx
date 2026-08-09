@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
 import type { ColumnSection, Member } from '@/domain/model/member'
 import { findSection, type Story } from '@/domain/model/project'
@@ -29,7 +30,10 @@ const REBAR_COLOR = 0xb8b3a6
 const HIGHLIGHT_COLOR = 0xf54e00
 const OUTLINE_COLOR = 0x4a483c
 const BACKGROUND_COLOR = 0x1b1a14
+const CONCRETE_COLOR = 0x55524a
+const GRID_COLOR_SOFT = 0x2a2820
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
+const LIGHT_DIRECTION = new THREE.Vector3(4, 8, 6).normalize()
 
 interface SelectedColumnView {
   member: Member
@@ -44,6 +48,8 @@ interface ViewerRuntime {
   camera: THREE.PerspectiveCamera
   renderer: THREE.WebGLRenderer
   controls: OrbitControls
+  directionalLight: THREE.DirectionalLight
+  envTexture: THREE.Texture
   content: THREE.Group | null
   contentMaterials: THREE.Material[]
   normalMaterial: THREE.MeshStandardMaterial | null
@@ -124,6 +130,106 @@ function addMemberOutline(
   materials.push(material)
 }
 
+function addConcreteSolid(
+  content: THREE.Group,
+  view: SelectedColumnView,
+  materials: THREE.Material[],
+): void {
+  const { section, story } = view
+  const material = new THREE.MeshStandardMaterial({
+    color: CONCRETE_COLOR,
+    transparent: true,
+    opacity: 0.14,
+    roughness: 0.9,
+    metalness: 0,
+    depthWrite: false,
+  })
+  const solid = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      section.b * MILLIMETRES_TO_SCENE,
+      story.height * MILLIMETRES_TO_SCENE,
+      section.d * MILLIMETRES_TO_SCENE,
+    ),
+    material,
+  )
+
+  solid.position.set(
+    (section.b * MILLIMETRES_TO_SCENE) / 2,
+    (story.height * MILLIMETRES_TO_SCENE) / 2,
+    (section.d * MILLIMETRES_TO_SCENE) / 2,
+  )
+  solid.receiveShadow = true
+  content.add(solid)
+  materials.push(material)
+}
+
+function addGround(
+  content: THREE.Group,
+  bounds: Bounds,
+  materials: THREE.Material[],
+): void {
+  const centerX = ((bounds.min[0] + bounds.max[0]) / 2) * MILLIMETRES_TO_SCENE
+  const centerZ = ((bounds.min[2] + bounds.max[2]) / 2) * MILLIMETRES_TO_SCENE
+  const floorY = bounds.min[1] * MILLIMETRES_TO_SCENE
+  const span =
+    Math.max(bounds.max[0] - bounds.min[0], bounds.max[2] - bounds.min[2]) *
+    MILLIMETRES_TO_SCENE *
+    3
+
+  const grid = new THREE.GridHelper(span, 24, OUTLINE_COLOR, GRID_COLOR_SOFT)
+  grid.position.set(centerX, floorY, centerZ)
+  content.add(grid)
+  materials.push(
+    ...(Array.isArray(grid.material) ? grid.material : [grid.material]),
+  )
+
+  const shadowMaterial = new THREE.ShadowMaterial({ opacity: 0.3 })
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(span, span),
+    shadowMaterial,
+  )
+  plane.rotation.x = -Math.PI / 2
+  // 그리드보다 살짝 아래 — z-fight 방지
+  plane.position.set(centerX, floorY - 0.002, centerZ)
+  plane.receiveShadow = true
+  content.add(plane)
+  materials.push(shadowMaterial)
+}
+
+function fitShadowToBounds(
+  light: THREE.DirectionalLight,
+  bounds: Bounds,
+): void {
+  const center = new THREE.Vector3(
+    (bounds.min[0] + bounds.max[0]) / 2,
+    (bounds.min[1] + bounds.max[1]) / 2,
+    (bounds.min[2] + bounds.max[2]) / 2,
+  ).multiplyScalar(MILLIMETRES_TO_SCENE)
+  const radius = Math.max(
+    0.001,
+    (Math.hypot(
+      bounds.max[0] - bounds.min[0],
+      bounds.max[1] - bounds.min[1],
+      bounds.max[2] - bounds.min[2],
+    ) /
+      2) *
+      MILLIMETRES_TO_SCENE,
+  )
+
+  light.position.copy(center).addScaledVector(LIGHT_DIRECTION, radius * 2.5)
+  light.target.position.copy(center)
+  light.target.updateMatrixWorld()
+
+  const shadowCamera = light.shadow.camera
+  shadowCamera.left = -radius * 1.4
+  shadowCamera.right = radius * 1.4
+  shadowCamera.top = radius * 1.4
+  shadowCamera.bottom = -radius * 1.4
+  shadowCamera.near = radius * 0.5
+  shadowCamera.far = radius * 5
+  shadowCamera.updateProjectionMatrix()
+}
+
 function createSegmentMesh(
   segment: ReturnType<typeof rebarSegments>[number],
   material: THREE.MeshStandardMaterial,
@@ -146,6 +252,7 @@ function createSegmentMesh(
 
   mesh.position.copy(from).add(to).multiplyScalar(0.5)
   mesh.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize())
+  mesh.castShadow = true
   mesh.userData.rowId = rowId
   return mesh
 }
@@ -176,18 +283,23 @@ function rebuildScene(
   const content = new THREE.Group()
   const normalMaterial = new THREE.MeshStandardMaterial({
     color: REBAR_COLOR,
-    metalness: 0.35,
-    roughness: 0.5,
+    metalness: 0.6,
+    roughness: 0.35,
   })
   const highlightMaterial = new THREE.MeshStandardMaterial({
     color: HIGHLIGHT_COLOR,
-    metalness: 0.35,
-    roughness: 0.5,
+    metalness: 0.6,
+    roughness: 0.35,
+    emissive: HIGHLIGHT_COLOR,
+    emissiveIntensity: 0.35,
   })
   const materials: THREE.Material[] = [normalMaterial, highlightMaterial]
   const pickableMeshes: THREE.Mesh[] = []
+  const bounds = columnBounds(view)
 
   addMemberOutline(content, view, materials)
+  addConcreteSolid(content, view, materials)
+  addGround(content, bounds, materials)
 
   for (const rebar of view.rebars) {
     const rowId = view.rowIds.get(rebar.id)
@@ -209,8 +321,20 @@ function rebuildScene(
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
+  fitShadowToBounds(runtime.directionalLight, bounds)
 
-  const fitted = fitCamera(columnBounds(view))
+  const fitted = fitCamera(bounds)
+  const fogDistance =
+    Math.hypot(
+      fitted.position[0] - fitted.target[0],
+      fitted.position[1] - fitted.target[1],
+      fitted.position[2] - fitted.target[2],
+    ) * MILLIMETRES_TO_SCENE
+  runtime.scene.fog = new THREE.Fog(
+    BACKGROUND_COLOR,
+    fogDistance * 1.6,
+    fogDistance * 4,
+  )
   runtime.camera.position.copy(vector(fitted.position))
   runtime.controls.target.set(
     fitted.target[0] * MILLIMETRES_TO_SCENE,
@@ -300,23 +424,41 @@ export function Viewer3D() {
     )
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.1
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.domElement.className = styles.canvas
     mount.appendChild(renderer.domElement)
+
+    // metalness는 반사할 환경이 있어야 산다 — RoomEnvironment를 PMREM으로 굽는다.
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+    scene.environment = envTexture
+    scene.environmentIntensity = 0.6
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = CONTROLS_DAMPING
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x37352d, 1.4))
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.2)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x37352d, 0.5))
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
     directionalLight.position.set(4, 8, 6)
+    directionalLight.castShadow = true
+    directionalLight.shadow.mapSize.set(2048, 2048)
+    directionalLight.shadow.bias = -0.0005
     scene.add(directionalLight)
+    scene.add(directionalLight.target)
 
     const runtime: ViewerRuntime = {
       scene,
       camera,
       renderer,
       controls,
+      directionalLight,
+      envTexture,
       content: null,
       contentMaterials: [],
       normalMaterial: null,
@@ -368,6 +510,7 @@ export function Viewer3D() {
       renderer.domElement.removeEventListener('click', handleClick)
       observer.disconnect()
       disposeContent(runtime)
+      envTexture.dispose()
       controls.dispose()
       renderer.dispose()
       renderer.domElement.remove()

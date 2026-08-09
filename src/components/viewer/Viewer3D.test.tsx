@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),
   rendererDispose: vi.fn(),
   resizeDisconnect: vi.fn(),
+  envTextureDispose: vi.fn(),
+  rendererInstances: [] as Array<{
+    shadowMap: { enabled: boolean; type: number }
+    toneMapping: number
+    outputColorSpace: string
+  }>,
 }))
 
 vi.mock('three', async (importOriginal) => {
@@ -22,8 +28,13 @@ vi.mock('three', async (importOriginal) => {
 
   class WebGLRendererMock {
     domElement = document.createElement('canvas')
+    shadowMap = { enabled: false, type: 0 }
+    toneMapping = 0
+    toneMappingExposure = 1
+    outputColorSpace = ''
 
     constructor() {
+      mocks.rendererInstances.push(this)
       this.domElement.getBoundingClientRect = () =>
         ({
           bottom: 360,
@@ -44,6 +55,12 @@ vi.mock('three', async (importOriginal) => {
     dispose = mocks.rendererDispose
   }
 
+  // 실 PMREM은 WebGL 컨텍스트가 필요하다. 환경맵의 실 동작은 e2e가 커버한다.
+  class PMREMGeneratorMock {
+    fromScene = () => ({ texture: { dispose: mocks.envTextureDispose } })
+    dispose = vi.fn()
+  }
+
   class RaycasterMock {
     setFromCamera = vi.fn()
     intersectObjects(objects: import('three').Object3D[]) {
@@ -53,6 +70,7 @@ vi.mock('three', async (importOriginal) => {
 
   return {
     ...actual,
+    PMREMGenerator: PMREMGeneratorMock,
     Raycaster: RaycasterMock,
     WebGLRenderer: WebGLRendererMock,
   }
@@ -64,9 +82,16 @@ vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
     enableDamping = false
     dampingFactor = 0
     update = vi.fn()
+    addEventListener = vi.fn()
     dispose = mocks.controlsDispose
   },
 }))
+
+vi.mock('three/examples/jsm/environments/RoomEnvironment.js', () => ({
+  RoomEnvironment: class RoomEnvironmentMock {},
+}))
+
+import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three'
 
 import { Viewer3D } from './Viewer3D'
 
@@ -107,6 +132,8 @@ describe('Viewer3D', () => {
     mocks.controlsDispose.mockClear()
     mocks.rendererDispose.mockClear()
     mocks.resizeDisconnect.mockClear()
+    mocks.envTextureDispose.mockClear()
+    mocks.rendererInstances.length = 0
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
@@ -130,6 +157,17 @@ describe('Viewer3D', () => {
     expect(mocks.controlsDispose).toHaveBeenCalledOnce()
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
+    expect(mocks.envTextureDispose).toHaveBeenCalledOnce()
+  })
+
+  it('enables shadows, tone mapping, colour space and an environment map', () => {
+    render(<Viewer3D />)
+
+    const [renderer] = mocks.rendererInstances
+    expect(renderer.shadowMap.enabled).toBe(true)
+    expect(renderer.shadowMap.type).toBe(PCFSoftShadowMap)
+    expect(renderer.toneMapping).toBe(ACESFilmicToneMapping)
+    expect(renderer.outputColorSpace).toBe(SRGBColorSpace)
   })
 
   it('translates its own chrome instead of hardcoding Japanese', () => {
