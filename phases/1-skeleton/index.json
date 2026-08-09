@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "domain-model",
-      "status": "pending"
+      "status": "completed",
+      "summary": "Member/Section/Grid/Story/Project 타입(src/domain/model/member.ts, project.ts), 순수 조회·직렬화 함수와 createSampleProject() 추가",
+      "started_at": "2026-08-09T19:07:39+0900",
+      "completed_at": "2026-08-09T19:12:27+0900"
     },
     {
       "step": 2,
