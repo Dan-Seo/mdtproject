@@ -15,11 +15,11 @@ src/
 │   ├── rebar/            # 철근 생성기 (柱, 大梁)
 │   └── quantity/         # 물량 집계 (設計数量 → 할증률 조회 → 所要数量)
 ├── rulepack/
-│   └── jp-mlit/          # YAML 룰팩 (定着·重ね継手·帯筋 피치·折曲げ·かぶり·할증률)
+│   └── jp-mlit/          # YAML 룰팩 (定着·重ね継手·折曲げ·かぶり·할증률)
 ├── lib/                  # 직렬화, IndexedDB, exceljs, glTF, i18n
 └── locales/              # ja.json (기본), ko.json (fallback → ja)
 tests/
-└── golden/               # 標準詳細図 표 ↔ 엔진 출력 대조
+└── golden/               # 標準仕様書·수량적산기준 표 ↔ 엔진 출력 대조
 ```
 
 템플릿에 있던 `services/`(외부 API 래퍼)는 두지 않는다. 외부 API를 호출하지 않는다.
@@ -45,9 +45,11 @@ tests/
     doc: 公共建築工事標準仕様書（建築工事編）令和7年版
     edition: 令和7年3月21日 国営建技第5号
     url: https://www.mlit.go.jp/gobuild/content/001888816.pdf
-    page: null         # 원문 대조 시 채운다. null이면 confidence는 inferred여야 한다
-  confidence: stated   # stated | inferred
+    page: null         # 원문 대조로 쪽을 특정하면 채운다
+  confidence: inferred # stated | inferred — page가 null이면 stated일 수 없다
 ```
+
+M0 이전에는 모든 항목이 `inferred`다. 쪽을 특정한 항목만 `stated`로 올린다.
 
 `confidence: inferred`는 원문에 명시되지 않아 추론으로 채운 값이거나, 원문 대조를 아직 하지 않은 값이다. 이 목록이 곧 "일본 실무자를 만나면 물어볼 질문 목록"이다. `source.page`가 없는 항목이 `stated`일 수는 없다 — 로더가 이를 검사한다.
 
