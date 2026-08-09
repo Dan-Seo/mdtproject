@@ -59,6 +59,13 @@ check ALLOW "$WIN_ROOT\\src\\domain\\rules\\types.ts"  "타입 전용 파일은 
 # .claude/ 인프라 면제가 .claude/worktrees/ 아래 저장소 체크아웃까지 삼키면,
 # 워크트리에서 작업하는 동안 가드가 통째로 죽는다. 기본 저장소에서 돌릴 때도
 # 잡히도록 경로를 직접 만들어 확인한다.
+# `*test*`·`*spec*` 처럼 넓은 패턴은 이름에 test/spec이 들어간 평범한 모듈까지
+# 면제해 가드에 구멍을 낸다. 진짜 테스트 파일만 면제되는지 본다.
+echo "tdd-guard: 이름만 test/spec인 모듈"
+check DENY  "$ROOT/src/lib/latest-rules.ts"  "이름에 test가 들어간 모듈은 면제 아님"
+check DENY  "$ROOT/src/lib/spec-builder.ts"  "이름에 spec이 들어간 모듈은 면제 아님"
+check DENY  "$ROOT/src/domain/contest.ts"    "test로 끝나는 이름도 면제 아님"
+
 echo "tdd-guard: 워크트리 경로"
 check DENY  "$ROOT/.claude/worktrees/wt/src/lib/brand-new-module.ts" \
   "워크트리 안 신규 모듈도 차단"

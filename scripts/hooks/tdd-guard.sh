@@ -66,9 +66,11 @@ needs_test() {
     esac
   done
 
-  # 테스트 파일 자체를 수정하는 건 허용
+  # 테스트 파일 자체와 tests/ 아래는 허용.
+  # `*test*`·`*spec*` 처럼 넓게 잡으면 latest-rules.ts·contest.ts 같은 평범한
+  # 모듈이 이름만으로 면제되어 가드에 구멍이 난다 — 확장자와 디렉터리로 좁힌다.
   case "$REL_PATH" in
-    *test*|*spec*|*.test.*|*.spec.*|*__tests__*)
+    *.test.*|*.spec.*|*__tests__*|tests/*|*/tests/*)
       return 1
       ;;
   esac
