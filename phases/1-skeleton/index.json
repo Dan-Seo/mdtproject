@@ -72,7 +72,7 @@
       "status": "completed",
       "summary": "three.js Viewer3D와 순수 geometry 변환(rebarSegments·rebarRadius·fitCamera), 선택 부재 전용 와이어프레임·8각 철근·행 hover/레이캐스트 연동 및 WebGL mock 테스트 추가",
       "started_at": "2026-08-09T20:06:20+0900",
-      "completed_at": "2026-08-09T20:16:45+0900"
+      "completed_at": "2026-08-09T20:17:49+0900"
     },
     {
       "step": 9,
