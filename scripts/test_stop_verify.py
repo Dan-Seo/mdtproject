@@ -55,6 +55,18 @@ class TestSkips:
         r = run_hook(project)
         assert r.stdout.strip() == ""
 
+    def test_incomplete_scripts_is_silent(self, project):
+        """package.json은 생겼지만 lint·build·test가 아직 다 없는 스캐폴딩 도중 구간."""
+        (project / "package.json").write_text(
+            json.dumps({"name": "t", "scripts": {"lint": NOOP}}), encoding="utf-8")
+        r = run_hook(project)
+        assert r.stdout.strip() == ""
+
+    def test_no_scripts_field_is_silent(self, project):
+        (project / "package.json").write_text('{"name": "t"}', encoding="utf-8")
+        r = run_hook(project)
+        assert r.stdout.strip() == ""
+
     def test_already_continued_is_silent(self, project):
         """stop_hook_active면 다시 이어붙이지 않는다 — 무한 루프 방지."""
         write_package_json(project, FAIL, NOOP, NOOP)

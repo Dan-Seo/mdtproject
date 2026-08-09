@@ -17,10 +17,19 @@ fi
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
-# 프로젝트가 아직 스캐폴딩되지 않았으면(package.json 없음) 검증할 대상이 없다.
+# 스캐폴딩 도중에는 게이트를 걸지 않는다. 걸면 M0~M1 내내 매 턴이 막힌다.
+#   - package.json이 아직 없다 → 검증 대상 자체가 없다
+#   - package.json은 생겼지만 lint·build·test가 아직 다 정의되지 않았다
+#     → `npm run`이 "Missing script"로 실패해 무의미한 차단이 된다
 if [ ! -f "$ROOT/package.json" ]; then
   exit 0
 fi
+
+for SCRIPT in lint build test; do
+  if [ -z "$(jq -r --arg s "$SCRIPT" '.scripts[$s] // empty' "$ROOT/package.json" 2>/dev/null)" ]; then
+    exit 0
+  fi
+done
 
 OUTPUT=$(cd "$ROOT" && npm run lint 2>&1 && npm run build 2>&1 && npm run test 2>&1)
 STATUS=$?
