@@ -1,0 +1,18 @@
+spec:
+  short: 標準仕様書
+  doc: 公共建築工事標準仕様書（建築工事編）
+  edition: 令和7年版（最終改定 令和7年5月12日）
+  publisher: 国土交通省 大臣官房官庁営繕部
+  url: https://www.mlit.go.jp/gobuild/content/001888816.pdf
+quantity:
+  short: 数量積算基準
+  doc: 公共建築数量積算基準
+  edition: 令和5年3月29日改定（国営積第8号）
+  publisher: 国土交通省 大臣官房官庁営繕部
+  url: https://www.mlit.go.jp/common/001178206.pdf
+jis:
+  short: JIS G 3112
+  doc: 鉄筋コンクリート用棒鋼
+  edition: null
+  publisher: 日本産業標準調査会
+  url: null

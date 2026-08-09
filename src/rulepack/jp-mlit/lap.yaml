@@ -1,0 +1,9 @@
+- key: lap.L1
+  label: 重ね継手長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 24, grade: SD345, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない

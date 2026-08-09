@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "rulepack",
-      "status": "pending"
+      "status": "completed",
+      "summary": "jp-mlit YAML 룰팩 9개 key(cover.minimum, anchorage.L2, lap.L1, bend.inside-diameter, bend.hook90, bend.hook135, rounding.length, markup.rate, unit-mass.value)와 parseRulePack(files), lookupRule(pack,key,conditions), lookupMarkup(pack,memberClass), lookupUnitMass(pack,size) 구현; RuleHit는 key·label·expr·conditions·value·unit·source·confidence·note 필드 제공",
+      "started_at": "2026-08-09T19:13:24+0900",
+      "completed_at": "2026-08-09T19:19:32+0900"
     },
     {
       "step": 3,

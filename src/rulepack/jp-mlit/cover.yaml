@@ -1,0 +1,19 @@
+- key: cover.minimum
+  label: 柱のかぶり厚さ
+  expr: 40mm
+  conditions: { memberKind: 柱 }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+
+- key: cover.minimum
+  label: 大梁のかぶり厚さ
+  expr: 40mm
+  conditions: { memberKind: 大梁 }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない

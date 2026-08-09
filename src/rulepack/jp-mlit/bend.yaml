@@ -1,0 +1,39 @@
+- key: bend.inside-diameter
+  label: 帯筋の折曲げ内法直径
+  expr: 4d
+  conditions: { barRole: 帯筋 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+
+- key: bend.hook90
+  label: 90°フック余長
+  expr: 8d
+  conditions: {}
+  value: 8
+  unit: d
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+
+- key: bend.hook135
+  label: 135°フック余長
+  expr: 6d
+  conditions: {}
+  value: 6
+  unit: d
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+
+- key: rounding.length
+  label: 加工長の丸め単位
+  expr: 10mm単位に切上げ
+  conditions: {}
+  value: 10
+  unit: mm
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: 出典未確認 — 根拠文書を特定できていない（M1 プレースホルダ）

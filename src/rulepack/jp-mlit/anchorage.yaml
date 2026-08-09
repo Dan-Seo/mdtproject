@@ -1,0 +1,9 @@
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 24, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
