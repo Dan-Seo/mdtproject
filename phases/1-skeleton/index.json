@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "rebar-column",
-      "status": "pending"
+      "status": "completed",
+      "summary": "Rebar(id·memberId·role·size·shape·points·closed·length·count·rules·formula) 타입과 generateColumnRebar({ member, section, story, beamDepthAbove }, pack) 구현; 主筋은 cover.minimum·anchorage.L2·lap.L1·rounding.length, 帯筋은 cover.minimum·bend.hook135·rounding.length 룰 key를 추적",
+      "started_at": "2026-08-09T19:20:42+0900",
+      "completed_at": "2026-08-09T19:26:11+0900"
     },
     {
       "step": 4,
