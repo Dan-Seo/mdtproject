@@ -1,0 +1,11 @@
+/* Hairline-only depth. There are no drop shadows in Kijun — these tokens exist so that
+   "elevation" always resolves to a border, never a shadow. */
+:root{
+--elevation-flat:none;
+--elevation-card:none;
+--shadow-none:none;
+--border-hairline:1px solid var(--hairline);
+--border-hairline-soft:1px solid var(--hairline-soft);
+--border-hairline-strong:1px solid var(--hairline-strong);
+--focus-ring:0 0 0 2px var(--color-canvas),0 0 0 4px var(--kj-warm-400);
+}

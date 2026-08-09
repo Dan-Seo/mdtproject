@@ -1,0 +1,7 @@
+/* Kijun type stack.
+   KijunGothic is a licensed display+text face and is NOT distributed with this system.
+   Documented open-source substitute: Inter (weight 400 for display, -1.5% tracking).
+   Code surfaces: JetBrains Mono.
+   Both substitutes are loaded from Google Fonts — swap this file for self-hosted
+   @font-face rules once the licensed binaries are available. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");

@@ -1,0 +1,14 @@
+/* Base document defaults. */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{margin:0;background:var(--color-canvas);color:var(--text-body);font-family:var(--font-sans);font-size:var(--type-body-md-size);line-height:1.5;text-wrap:pretty}
+h1,h2,h3,h4{color:var(--text-ink);font-weight:400;margin:0}
+h1{font-size:var(--type-display-mega-size);line-height:1.1;letter-spacing:-2.16px}
+h2{font-size:var(--type-display-lg-size);line-height:1.2;letter-spacing:-.72px}
+h3{font-size:var(--type-display-md-size);line-height:1.25;letter-spacing:-.325px}
+h4{font-size:var(--type-display-sm-size);line-height:1.3;letter-spacing:-.11px}
+p{margin:0}
+code,pre,kbd{font-family:var(--font-mono);font-size:var(--type-code-size)}
+a{color:var(--text-ink);text-decoration:none;border-bottom:1px solid var(--hairline-strong);transition:color .15s ease,border-color .15s ease}
+a:hover{color:var(--color-primary);border-bottom-color:var(--color-primary)}
+::selection{background:var(--kj-peach);color:var(--text-ink)}
+*:focus-visible{outline:none;box-shadow:var(--focus-ring)}
