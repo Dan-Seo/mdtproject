@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
@@ -123,6 +123,26 @@ describe('Viewer3D', () => {
     expect(mocks.controlsDispose).toHaveBeenCalledOnce()
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
+  })
+
+  it('translates its own chrome instead of hardcoding Japanese', () => {
+    useAppStore.setState({
+      sel: { group: null, memberId: null },
+      locale: 'ko',
+    })
+    render(<Viewer3D />)
+
+    expect(screen.getByText('부재를 선택')).toBeInTheDocument()
+    expect(screen.getByText('치수 판독용이 아님')).toBeInTheDocument()
+    expect(screen.getByText('배근 데이터 없음')).toBeInTheDocument()
+  })
+
+  it('says 大梁 is out of scope instead of showing an empty viewer', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-X'))
+    render(<Viewer3D />)
+
+    expect(screen.getByText(/M3/)).toBeInTheDocument()
+    expect(screen.queryByText('配筋データなし')).not.toBeInTheDocument()
   })
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {

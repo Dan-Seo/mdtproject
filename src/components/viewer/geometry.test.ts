@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import type { ColumnSection } from '@/domain/model/member'
 import type { Rebar } from '@/domain/model/rebar'
 
 import {
@@ -48,6 +49,18 @@ const hoop: Rebar = {
   formula: 'test',
 }
 
+const section: ColumnSection = {
+  id: 'section-C1',
+  kind: '柱',
+  mark: 'C1',
+  b: 800,
+  d: 800,
+  fc: 24,
+  grade: 'SD345',
+  main: { size: 'D25', count: 12 },
+  hoop: { size: 'D13', pitch: 100 },
+}
+
 function subtract(left: Point3, right: Point3): Point3 {
   return [left[0] - right[0], left[1] - right[1], left[2] - right[2]]
 }
@@ -78,8 +91,41 @@ function corners({ min, max }: Bounds): Point3[] {
 }
 
 describe('rebarSegments', () => {
+  it('emits segments for every 本 of 帯筋, not just the representative', () => {
+    const segments = rebarSegments({ ...hoop, count: 3 }, section)
+
+    // 닫힌 4점 帯筋 × 3본
+    expect(segments).toHaveLength(12)
+    expect(segments[0].from).toEqual(hoop.points[0])
+    expect(segments[4].from).toEqual([
+      hoop.points[0][0],
+      hoop.points[0][1] + section.hoop.pitch,
+      hoop.points[0][2],
+    ])
+  })
+
+  it('emits one 主筋 per 本数 spread around the かぶり perimeter', () => {
+    const segments = rebarSegments(main, section)
+
+    expect(segments).toHaveLength(main.count)
+
+    const footprints = segments.map(({ from }) => `${from[0]},${from[2]}`)
+    expect(new Set(footprints).size).toBe(main.count)
+
+    // 전부 かぶり 안쪽 사각형의 변 위에 있어야 한다.
+    const [inset] = main.points[0]
+    for (const { from } of segments) {
+      const onEdge =
+        from[0] === inset ||
+        from[2] === inset ||
+        from[0] === section.b - inset ||
+        from[2] === section.d - inset
+      expect(onEdge).toBe(true)
+    }
+  })
+
   it('includes the last-to-first segment for a closed 帯筋', () => {
-    const segments = rebarSegments(hoop)
+    const segments = rebarSegments({ ...hoop, count: 1 }, section)
 
     expect(segments).toHaveLength(4)
     expect(segments.at(-1)).toEqual({
@@ -90,7 +136,7 @@ describe('rebarSegments', () => {
   })
 
   it('does not close an open 主筋', () => {
-    const segments = rebarSegments(main)
+    const segments = rebarSegments({ ...main, count: 1 }, section)
 
     expect(segments).toHaveLength(1)
     expect(segments).not.toContainEqual({

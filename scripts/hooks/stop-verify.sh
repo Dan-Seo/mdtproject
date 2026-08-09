@@ -31,8 +31,39 @@ for SCRIPT in lint build test; do
   fi
 done
 
+# next dev와 next build는 같은 .next를 쓴다. dev 서버를 켜둔 채 빌드하면
+# webpack-runtime이 어긋나 "Cannot read properties of undefined (reading 'call')"로
+# 프리렌더가 깨진다 — 코드와 무관한 실패라 원인 추적에 시간이 샌다. 미리 알려준다.
+DEV_HINT=""
+if command -v netstat >/dev/null 2>&1 &&
+   netstat -ano 2>/dev/null | grep -qE 'LISTENING.*:(300[0-9]|30[1-9][0-9])\b'; then
+  DEV_HINT="주의: dev 서버가 떠 있는 상태로 빌드했습니다. next dev와 next build는 .next를
+공유하므로 프리렌더가 깨질 수 있습니다. 아래 실패가 프리렌더 오류라면 dev 서버를 내리고
+다시 확인하세요.
+
+"
+fi
+
+# 훅 자체의 회귀도 본다. tdd-guard는 조용히 무력화되는 실패 모드를 가진다.
+GUARD_SPEC="$ROOT/scripts/hooks/tdd-guard.spec.sh"
+GUARD_OUTPUT=""
+GUARD_STATUS=0
+if [ -f "$GUARD_SPEC" ]; then
+  GUARD_OUTPUT=$(bash "$GUARD_SPEC" 2>&1)
+  GUARD_STATUS=$?
+fi
+
 OUTPUT=$(cd "$ROOT" && npm run lint 2>&1 && npm run build 2>&1 && npm run test 2>&1)
 STATUS=$?
+
+if [ "$STATUS" -eq 0 ] && [ "$GUARD_STATUS" -ne 0 ]; then
+  REASON="TDD 가드 훅이 자체 테스트에 실패했습니다. 가드가 무력화되면 아무 경고 없이
+전부 통과하므로 먼저 고쳐야 합니다.
+
+${GUARD_OUTPUT}"
+  jq -n --arg reason "$REASON" '{decision: "block", reason: $reason}'
+  exit 0
+fi
 
 if [ "$STATUS" -eq 0 ]; then
   exit 0
@@ -40,7 +71,7 @@ fi
 
 # 컨텍스트를 아끼려고 꼬리만 넘긴다. jq -n으로 만들어 따옴표·개행을 정확히 이스케이프한다.
 TAIL=$(echo "$OUTPUT" | tail -40)
-REASON="lint · build · test가 실패했습니다 (exit ${STATUS}). 아래 출력을 보고 원인을 고친 뒤 다시 실행하세요.
+REASON="${DEV_HINT}lint · build · test가 실패했습니다 (exit ${STATUS}). 아래 출력을 보고 원인을 고친 뒤 다시 실행하세요.
 
 ${TAIL}"
 

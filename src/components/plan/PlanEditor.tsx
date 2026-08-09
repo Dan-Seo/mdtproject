@@ -109,30 +109,34 @@ function PlanMember({
     const x = transform.x(point.x)
     const y = transform.y(point.y)
 
+    // 라벨은 그룹 밖에 둔다 — 안에 있으면 그룹 bbox가 라벨까지 감싸
+    // 클릭 중심이 마커를 벗어나 大梁 히트영역으로 밀린다.
     return (
-      <g
-        className={`${styles.member} ${
-          selected ? styles.memberSelected : ''
-        }`}
-        role="button"
-        tabIndex={0}
-        aria-label={`${section.mark} ${member.id}`}
-        aria-pressed={selected}
-        onClick={select}
-        onKeyDown={(event) => activateMember(event, select)}
-      >
-        <rect
-          className={styles.column}
-          x={x - 7}
-          y={y - 7}
-          width="14"
-          height="14"
-          rx="2"
-        />
+      <>
+        <g
+          className={`${styles.member} ${
+            selected ? styles.memberSelected : ''
+          }`}
+          role="button"
+          tabIndex={0}
+          aria-label={`${section.mark} ${member.id}`}
+          aria-pressed={selected}
+          onClick={select}
+          onKeyDown={(event) => activateMember(event, select)}
+        >
+          <rect
+            className={styles.column}
+            x={x - 7}
+            y={y - 7}
+            width="14"
+            height="14"
+            rx="2"
+          />
+        </g>
         <text className={styles.memberLabel} x={x + 10} y={y - 9}>
           {section.mark}
         </text>
-      </g>
+      </>
     )
   }
 

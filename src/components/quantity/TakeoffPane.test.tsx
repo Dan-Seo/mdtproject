@@ -83,6 +83,35 @@ describe('TakeoffPane', () => {
     )
   })
 
+  it('localises the 形状 label instead of hardcoding Japanese', () => {
+    const lines = takeoffLines()
+    useAppStore.setState({ locale: 'ko' })
+
+    render(<TakeoffTable lines={lines} />)
+
+    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    expect(within(row).getByLabelText('직선')).toBeInTheDocument()
+    expect(within(row).queryByLabelText('直線')).not.toBeInTheDocument()
+  })
+
+  it('states that 大梁 is excluded from the quantities', () => {
+    render(<TakeoffPane />)
+
+    expect(screen.getByRole('note')).toHaveTextContent('大梁')
+    expect(screen.getByRole('note')).toHaveTextContent('M3')
+  })
+
+  it('omits the 大梁 notice when the project has no 大梁', () => {
+    // 柱만 남기면 beamDepthAbove가 실패하므로, 부재가 없는 신규 안건 상태로 본다.
+    useAppStore.setState({
+      project: { ...createSampleProject(), members: [] },
+    })
+
+    render(<TakeoffPane />)
+
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
+
   it('shows a row warning only from QuantityLine.inferred', () => {
     const lines = takeoffLines()
     const inferredLine = lines[0]
@@ -132,6 +161,25 @@ describe('TakeoffPane', () => {
     expect(useAppStore.getState().sel).toEqual(initialSelection)
 
     fireEvent.mouseLeave(row)
+
+    expect(useAppStore.getState().hoverRowId).toBeNull()
+    expect(useAppStore.getState().sel).toEqual(initialSelection)
+  })
+
+  it('drives the highlight axis from keyboard focus, not only hover', () => {
+    useAppStore.setState({
+      sel: { group: '2階|C|C1', memberId: '2F-X2Y2' },
+    })
+    const initialSelection = useAppStore.getState().sel
+    render(<TakeoffPane />)
+
+    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    fireEvent.focus(row)
+
+    expect(useAppStore.getState().hoverRowId).toBe('1階|C|C1|主筋')
+    expect(useAppStore.getState().sel).toEqual(initialSelection)
+
+    fireEvent.blur(row)
 
     expect(useAppStore.getState().hoverRowId).toBeNull()
     expect(useAppStore.getState().sel).toEqual(initialSelection)
@@ -197,6 +245,33 @@ describe('TakeoffPane', () => {
     expect(chip).toHaveAttribute('aria-disabled', 'true')
     expect(chip).toHaveAttribute('title', expect.stringContaining('未確保'))
     expect(chip.closest('a')).toBeNull()
+  })
+
+  it('stores a typed 備考 in the Project instead of dropping it', () => {
+    render(<TakeoffPane />)
+
+    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    fireEvent.change(within(row).getByLabelText('1階|C|C1|主筋 備考'), {
+      target: { value: '要確認' },
+    })
+
+    expect(useAppStore.getState().project.notes).toEqual({
+      '1階|C|C1|主筋': '要確認',
+    })
+    expect(
+      within(screen.getByTestId('quantity-line-1階|C|C1|主筋')).getByLabelText(
+        '1階|C|C1|主筋 備考',
+      ),
+    ).toHaveValue('要確認')
+  })
+
+  it('keeps an unavailable source chip reachable by keyboard', () => {
+    render(<TakeoffPane />)
+
+    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const chip = within(row).getByText('JIS G 3112')
+
+    expect(chip).toHaveAttribute('tabindex', '0')
   })
 
   it('shows the rulepack markup and exports the current project as xlsx', async () => {

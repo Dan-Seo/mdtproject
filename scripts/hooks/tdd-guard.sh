@@ -38,7 +38,9 @@ fi
 # --- 경로 한 개 판정: 0 = 테스트 없이 편집 불가(차단), 1 = 허용 ---
 
 needs_test() {
-  FILE_PATH="$1"
+  # Claude(Windows)는 백슬래시 절대경로를 준다. 아래 case 패턴은 전부 슬래시
+  # 기준이라, 정규화하지 않으면 layout.tsx·.claude/ 같은 면제가 통째로 무시된다.
+  FILE_PATH=$(printf '%s' "$1" | tr '\\' '/')
 
   # 테스트 파일 자체를 수정하는 건 허용
   case "$FILE_PATH" in

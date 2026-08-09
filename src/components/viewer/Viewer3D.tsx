@@ -9,6 +9,7 @@ import { findSection, type Story } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import type { QuantityLine } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
 import {
@@ -85,10 +86,12 @@ function columnBounds(view: SelectedColumnView): Bounds {
 
   for (const rebar of rebars) {
     const radius = rebarRadius(rebar.size)
-    for (const point of rebar.points) {
-      for (let axis = 0; axis < point.length; axis += 1) {
-        bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
-        bounds.max[axis] = Math.max(bounds.max[axis], point[axis] + radius)
+    for (const segment of rebarSegments(rebar, section)) {
+      for (const point of [segment.from, segment.to]) {
+        for (let axis = 0; axis < point.length; axis += 1) {
+          bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
+          bounds.max[axis] = Math.max(bounds.max[axis], point[axis] + radius)
+        }
       }
     }
   }
@@ -192,7 +195,7 @@ function rebuildScene(
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
 
-    for (const segment of rebarSegments(rebar)) {
+    for (const segment of rebarSegments(rebar, view.section)) {
       const mesh = createSegmentMesh(segment, normalMaterial, rowId)
       if (mesh === null) continue
       content.add(mesh)
@@ -255,6 +258,7 @@ export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
+  const locale = useAppStore(({ locale }) => locale)
   const project = useAppStore(({ project }) => project)
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectedGroup = useAppStore(({ sel }) => sel.group)
@@ -293,7 +297,6 @@ export function Viewer3D() {
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.domElement.className = styles.canvas
-    renderer.domElement.setAttribute('aria-label', '選択部材の配筋3D')
     mount.appendChild(renderer.domElement)
 
     const controls = new OrbitControls(camera, renderer.domElement)
@@ -380,15 +383,36 @@ export function Viewer3D() {
     applyHighlight(runtime, hoverRowId)
   }, [hoverRowId])
 
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
+    runtime.renderer.domElement.setAttribute(
+      'aria-label',
+      t(locale, 'viewer.canvas'),
+    )
+  }, [locale])
+
+  const selectedKind = project.members.find(
+    ({ id }) => id === selectedMemberId,
+  )?.kind
+
   return (
     <div ref={mountRef} className={styles.viewer}>
       <div className={styles.meta}>
         <span className={styles.memberId}>
-          {selectedMemberId ?? '部材を選択'}
+          {selectedMemberId ?? t(locale, 'viewer.selectMember')}
         </span>
-        <span className={styles.scaleNotice}>寸法判読用ではない</span>
+        <span className={styles.scaleNotice}>
+          {t(locale, 'viewer.scaleNotice')}
+        </span>
       </div>
-      {view === null && <div className={styles.empty}>配筋データなし</div>}
+      {view === null && (
+        <div className={styles.empty}>
+          {selectedKind === '大梁'
+            ? t(locale, 'viewer.girderPending')
+            : t(locale, 'viewer.empty')}
+        </div>
+      )}
     </div>
   )
 }

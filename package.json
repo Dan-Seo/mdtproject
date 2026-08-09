@@ -8,7 +8,8 @@
     "build": "next build",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:golden": "vitest run tests/golden"
+    "test:golden": "vitest run tests/golden",
+    "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
