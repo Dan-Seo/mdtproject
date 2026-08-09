@@ -17,9 +17,12 @@ import {
   type QuantityLine,
 } from '@/domain/quantity'
 import type { RuleHit } from '@/domain/rules/types'
+import { lookupMarkup } from '@/domain/rules/lookup'
+import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
+import { jpMlitRulePack } from '@/rulepack'
 
 import styles from './TakeoffPane.module.css'
 
@@ -518,4 +521,49 @@ function LineRows({
 export function TakeoffPane() {
   const { lines } = useTakeoff()
   return <TakeoffTable lines={lines} />
+}
+
+export function TakeoffActions() {
+  const project = useAppStore(({ project }) => project)
+  const locale = useAppStore(({ locale }) => locale)
+  const { lines } = useTakeoff()
+  const markupRate = useMemo(() => {
+    const rates = [
+      ...new Set(
+        project.members.map(
+          ({ memberClass }) =>
+            lookupMarkup(jpMlitRulePack, memberClass).value,
+        ),
+      ),
+    ]
+
+    if (rates.length !== 1) {
+      throw new Error('Takeoff header requires exactly one markup rate')
+    }
+
+    return rates[0]
+  }, [project])
+  const formattedMarkup = new Intl.NumberFormat(
+    locale === 'ja' ? 'ja-JP' : 'ko-KR',
+    { style: 'percent', maximumFractionDigits: 2 },
+  ).format(markupRate)
+
+  const exportWorkbook = () => {
+    void exportTakeoffXlsx({ project, lines, locale })
+  }
+
+  return (
+    <div className={styles.takeoffActions}>
+      <span className={styles.markupBadge}>
+        {t(locale, 'takeoff.markup')} {formattedMarkup}
+      </span>
+      <button
+        type="button"
+        className={styles.exportButton}
+        onClick={exportWorkbook}
+      >
+        {t(locale, 'takeoff.export')}
+      </button>
+    </div>
+  )
 }

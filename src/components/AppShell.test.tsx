@@ -37,6 +37,14 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: '2階' })).toBeInTheDocument()
   })
 
+  it('renders takeoff actions in the takeoff pane header', () => {
+    render(
+      <AppShell takeoffActions={<button type="button">書き出し</button>} />,
+    )
+
+    expect(screen.getByRole('button', { name: '書き出し' })).toBeInTheDocument()
+  })
+
   it('renders the source notice and the prominent M1 warning banner', () => {
     render(<AppShell />)
 

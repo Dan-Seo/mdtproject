@@ -13,6 +13,7 @@ export interface AppShellProps {
   section?: ReactNode
   viewer?: ReactNode
   takeoff?: ReactNode
+  takeoffActions?: ReactNode
 }
 
 interface PaneProps {
@@ -44,6 +45,7 @@ export function AppShell({
   section,
   viewer,
   takeoff,
+  takeoffActions,
 }: AppShellProps) {
   const projectName = useAppStore(({ project }) => project.name)
   const locale = useAppStore(({ locale }) => locale)
@@ -96,7 +98,11 @@ export function AppShell({
             <Pane id="viewer-pane" title={t(locale, 'pane.viewer')}>
               {viewer}
             </Pane>
-            <Pane id="takeoff-pane" title={t(locale, 'pane.takeoff')}>
+            <Pane
+              id="takeoff-pane"
+              title={t(locale, 'pane.takeoff')}
+              actions={takeoffActions}
+            >
               {takeoff}
             </Pane>
           </div>

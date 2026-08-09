@@ -192,3 +192,41 @@ a.inferredSourceChip {
 .totalRow .requiredColumn {
   background: var(--color-canvas-soft);
 }
+
+.takeoffActions {
+  display: flex;
+  gap: var(--space-xxs);
+  align-items: center;
+}
+
+.markupBadge,
+.exportButton {
+  min-height: 26px;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.markupBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+}
+
+.exportButton {
+  color: var(--text-ink);
+  cursor: pointer;
+}
+
+.exportButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.exportButton:active {
+  background: var(--color-canvas-soft);
+}

@@ -4,16 +4,26 @@ import {
   render,
   renderHook,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
 import { grandTotal, storySubtotals } from '@/domain/quantity'
+import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
 
-import { TakeoffPane, TakeoffTable } from './TakeoffPane'
+import {
+  TakeoffActions,
+  TakeoffPane,
+  TakeoffTable,
+} from './TakeoffPane'
+
+vi.mock('@/lib/export', () => ({
+  exportTakeoffXlsx: vi.fn().mockResolvedValue(undefined),
+}))
 
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())
@@ -34,6 +44,7 @@ describe('TakeoffPane', () => {
       configurable: true,
       value: vi.fn(),
     })
+    vi.mocked(exportTakeoffXlsx).mockClear()
   })
 
   it('renders the twelve DESIGN §4 headers in order', () => {
@@ -186,5 +197,19 @@ describe('TakeoffPane', () => {
     expect(chip).toHaveAttribute('aria-disabled', 'true')
     expect(chip).toHaveAttribute('title', expect.stringContaining('未確保'))
     expect(chip.closest('a')).toBeNull()
+  })
+
+  it('shows the rulepack markup and exports the current project as xlsx', async () => {
+    render(<TakeoffActions />)
+
+    expect(screen.getByText('割増 4%')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+
+    await waitFor(() => expect(exportTakeoffXlsx).toHaveBeenCalledOnce())
+    expect(exportTakeoffXlsx).toHaveBeenCalledWith({
+      project: useAppStore.getState().project,
+      lines: expect.any(Array),
+      locale: 'ja',
+    })
   })
 })
