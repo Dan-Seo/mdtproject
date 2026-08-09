@@ -1,0 +1,20 @@
+{
+  "source": {
+    "doc": "公共建築数量積算基準",
+    "edition": "令和5年3月29日改定（国営積第8号）",
+    "page": 20,
+    "section": "鉄筋",
+    "quote": "鉄筋について、その所要数量を求めるときは、その設計数量の４％の割増を標準とする"
+  },
+  "supported": {
+    "memberClass": "躯体",
+    "size": "D25",
+    "designKg": 1000,
+    "requiredKg": 1040
+  },
+  "unsupported": {
+    "memberClass": "山留め壁",
+    "expectation": "throw"
+  },
+  "rounding": "なし（ドメインは raw number）"
+}

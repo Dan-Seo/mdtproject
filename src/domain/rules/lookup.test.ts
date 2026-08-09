@@ -76,7 +76,11 @@ describe('lookupRule', () => {
 })
 
 describe('specialized lookups', () => {
-  const markup = entry('markup.rate', { memberClass: '躯体' }, 0.04)
+  const markup = entry(
+    'markup.rate',
+    { memberClass: '躯体' },
+    Number.EPSILON,
+  )
   const unitMass = entry('unit-mass.value', { size: 'D13' }, 0.995)
   const pack: RulePack = { id: 'test', entries: [markup, unitMass] }
 
