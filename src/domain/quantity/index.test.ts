@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ColumnSection, Member } from '../model/member'
 import {
   beamDepthAbove,
+  columnEnds,
   findSection,
   type Project,
   type Story,
@@ -193,6 +194,7 @@ describe('aggregateQuantity', () => {
           section: columnSection,
           story,
           beamDepthAbove: beamDepthAbove(project, member),
+          ends: columnEnds(project, member),
         },
         jpMlitRulePack,
       )

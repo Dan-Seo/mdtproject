@@ -13,6 +13,7 @@ import { useAppStore } from '@/lib/store'
 
 const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),
+  controlsTargetSet: vi.fn(),
   rendererDispose: vi.fn(),
   resizeDisconnect: vi.fn(),
   envTextureDispose: vi.fn(),
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
     toneMapping: number
     outputColorSpace: string
   }>,
+  pickableCounts: [] as number[],
 }))
 
 vi.mock('three', async (importOriginal) => {
@@ -64,6 +66,7 @@ vi.mock('three', async (importOriginal) => {
   class RaycasterMock {
     setFromCamera = vi.fn()
     intersectObjects(objects: import('three').Object3D[]) {
+      mocks.pickableCounts.push(objects.length)
       return objects.length === 0 ? [] : [{ object: objects[0] }]
     }
   }
@@ -78,7 +81,7 @@ vi.mock('three', async (importOriginal) => {
 
 vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
   OrbitControls: class OrbitControlsMock {
-    target = { set: vi.fn() }
+    target = { set: mocks.controlsTargetSet }
     enableDamping = false
     dampingFactor = 0
     update = vi.fn()
@@ -130,10 +133,12 @@ class ResizeObserverMock {
 describe('Viewer3D', () => {
   beforeEach(() => {
     mocks.controlsDispose.mockClear()
+    mocks.controlsTargetSet.mockClear()
     mocks.rendererDispose.mockClear()
     mocks.resizeDisconnect.mockClear()
     mocks.envTextureDispose.mockClear()
     mocks.rendererInstances.length = 0
+    mocks.pickableCounts.length = 0
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
@@ -219,5 +224,103 @@ describe('Viewer3D', () => {
     })
 
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
+  })
+
+  it('builds one pickable mesh per takeoff row instead of one per segment', () => {
+    render(<Viewer3D />)
+
+    fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+
+    // 柱 C1 は 主筋 と 帯筋 の 2 行。セグメントは 156 本ある。
+    expect(mocks.pickableCounts.at(-1)).toBe(2)
+  })
+
+  it('does not re-frame the camera while an unrelated field is edited', () => {
+    render(<Viewer3D />)
+    const framesAfterMount = mocks.controlsTargetSet.mock.calls.length
+    expect(framesAfterMount).toBeGreaterThan(0)
+
+    act(() =>
+      useAppStore
+        .getState()
+        .updateProject((project) => ({
+          ...project,
+          notes: { '1階|C|C1|主筋': '要確認' },
+        })),
+    )
+
+    expect(mocks.controlsTargetSet.mock.calls).toHaveLength(framesAfterMount)
+  })
+
+  it('does not tear the scene down when a non-geometry field changes', async () => {
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    const dispose = vi.spyOn(THREE.BufferGeometry.prototype, 'dispose')
+
+    act(() =>
+      useAppStore
+        .getState()
+        .updateProject((project) => ({
+          ...project,
+          notes: { '1階|C|C1|主筋': '要確認' },
+        })),
+    )
+
+    expect(dispose).not.toHaveBeenCalled()
+    dispose.mockRestore()
+  })
+
+  it('rebuilds the scene when the 断面 actually changes', async () => {
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    const dispose = vi.spyOn(THREE.BufferGeometry.prototype, 'dispose')
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, hoop: { ...section.hoop, pitch: 200 } }
+            : section,
+        ),
+      })),
+    )
+
+    expect(dispose).toHaveBeenCalled()
+    dispose.mockRestore()
+  })
+
+  it('keeps the camera while the 断面 of the selected member is edited', () => {
+    render(<Viewer3D />)
+    const framesAfterMount = mocks.controlsTargetSet.mock.calls.length
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, main: { ...section.main, count: 20 } }
+            : section,
+        ),
+      })),
+    )
+
+    expect(mocks.controlsTargetSet.mock.calls).toHaveLength(framesAfterMount)
+  })
+
+  it('re-frames the camera when a different member is selected', () => {
+    render(<Viewer3D />)
+    const framesAfterMount = mocks.controlsTargetSet.mock.calls.length
+
+    act(() => useAppStore.getState().selectMember('2F-X2Y2'))
+
+    expect(
+      mocks.controlsTargetSet.mock.calls.length,
+    ).toBeGreaterThan(framesAfterMount)
   })
 })

@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 import type { ColumnSection, Member } from '@/domain/model/member'
-import { findSection, type Story } from '@/domain/model/project'
+import { findSection, type Project, type Story } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import { quantityLineId, type QuantityLine } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
@@ -24,8 +25,10 @@ import {
   fitCamera,
   flyInStartPose,
   lerpCameraFit,
+  rebarBatches,
   rebarRadius,
   rebarSegments,
+  type RebarBatch,
   type Bounds,
   type CameraFit,
   type Point3,
@@ -87,6 +90,8 @@ interface ViewerRuntime {
   cameraTween: CameraTween | null
   lastInteractionAt: number
   initialFitDone: boolean
+  /** 마지막으로 카메라를 맞춘 대상(부재/모드). 같은 대상을 편집하는 동안은 시점을 뺏지 않는다. */
+  fittedTargetKey: string | null
 }
 
 function vector(point: Point3): THREE.Vector3 {
@@ -264,30 +269,54 @@ function fitShadowToBounds(
   shadowCamera.updateProjectionMatrix()
 }
 
-function createSegmentMesh(
-  segment: ReturnType<typeof rebarSegments>[number],
+/**
+ * 한 내역서 행의 모든 세그먼트를 **하나의 지오메트리**로 합친다. 기둥 1개가
+ * 세그먼트 156개인데 메시로 156개를 만들면 드로우콜도 156회이고, 편집 때마다
+ * 그만큼 폐기·재생성한다. 강조 단위가 어차피 행이므로 행이 곧 메시다.
+ */
+function createBatchMesh(
+  batch: RebarBatch,
   material: THREE.MeshStandardMaterial,
-  rowId: QuantityLine['id'],
 ): THREE.Mesh | null {
-  const from = vector(segment.from)
-  const to = vector(segment.to)
-  const direction = to.clone().sub(from)
-  const length = direction.length()
+  const parts: THREE.BufferGeometry[] = []
 
-  if (length === 0) return null
+  for (const segment of batch.segments) {
+    const from = vector(segment.from)
+    const to = vector(segment.to)
+    const direction = to.clone().sub(from)
+    const length = direction.length()
 
-  const geometry = new THREE.CylinderGeometry(
-    segment.radius * MILLIMETRES_TO_SCENE,
-    segment.radius * MILLIMETRES_TO_SCENE,
-    length,
-    CYLINDER_RADIAL_SEGMENTS,
-  )
-  const mesh = new THREE.Mesh(geometry, material)
+    if (length === 0) continue
 
-  mesh.position.copy(from).add(to).multiplyScalar(0.5)
-  mesh.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize())
+    const part = new THREE.CylinderGeometry(
+      segment.radius * MILLIMETRES_TO_SCENE,
+      segment.radius * MILLIMETRES_TO_SCENE,
+      length,
+      CYLINDER_RADIAL_SEGMENTS,
+    )
+    const placement = new THREE.Matrix4()
+      .makeRotationFromQuaternion(
+        new THREE.Quaternion().setFromUnitVectors(
+          Y_AXIS,
+          direction.normalize(),
+        ),
+      )
+      .setPosition(from.clone().add(to).multiplyScalar(0.5))
+
+    part.applyMatrix4(placement)
+    parts.push(part)
+  }
+
+  if (parts.length === 0) return null
+
+  const merged = mergeGeometries(parts)
+  for (const part of parts) part.dispose()
+
+  if (merged === null) return null
+
+  const mesh = new THREE.Mesh(merged, material)
   mesh.castShadow = true
-  mesh.userData.rowId = rowId
+  mesh.userData.rowId = batch.rowId
   return mesh
 }
 
@@ -354,8 +383,36 @@ function applyHighlight(
   }
 }
 
-/** 콘텐츠 바운즈에 그림자·fog·카메라 연출을 맞춘다 — 두 모드 공통. */
-function frameContent(runtime: ViewerRuntime, bounds: Bounds): void {
+/** 建物 뷰에서 선택 부재의 콘크리트만 강조 재질로 스왑한다. */
+function applyBuildingSelection(
+  runtime: ViewerRuntime,
+  selectedMemberId: string | null,
+): void {
+  const { concreteNormalMaterial, concreteSelectedMaterial } = runtime
+  if (concreteNormalMaterial === null || concreteSelectedMaterial === null) {
+    return
+  }
+
+  for (const mesh of runtime.pickableMeshes) {
+    const memberId: unknown = mesh.userData.memberId
+    if (typeof memberId !== 'string') continue
+    mesh.material =
+      memberId === selectedMemberId
+        ? concreteSelectedMaterial
+        : concreteNormalMaterial
+  }
+}
+
+/**
+ * 콘텐츠 바운즈에 그림자·fog를 맞춘다 — 두 모드 공통. 시점은 대상(부재/모드)이
+ * 바뀔 때만 다시 잡는다. 같은 부재의 단면을 손보는 동안 카메라가 튀면
+ * 사용자가 맞춰 둔 각도를 매 입력마다 잃는다 (docs/UX.md §4.2).
+ */
+function frameContent(
+  runtime: ViewerRuntime,
+  bounds: Bounds,
+  targetKey: string,
+): void {
   fitShadowToBounds(runtime.directionalLight, bounds)
 
   const fitted = fitCamera(bounds)
@@ -370,7 +427,11 @@ function frameContent(runtime: ViewerRuntime, bounds: Bounds): void {
     fogDistance * 1.6,
     fogDistance * 4,
   )
-  startCameraTween(runtime, fitted)
+
+  if (runtime.fittedTargetKey !== targetKey) {
+    startCameraTween(runtime, fitted)
+    runtime.fittedTargetKey = targetKey
+  }
 }
 
 function rebuildScene(
@@ -379,7 +440,10 @@ function rebuildScene(
   hoverRowId: string | null,
 ): void {
   disposeContent(runtime)
-  if (view === null) return
+  if (view === null) {
+    runtime.fittedTargetKey = null
+    return
+  }
 
   if (view.mode === 'building') {
     rebuildBuildingScene(runtime, view.layout)
@@ -393,7 +457,10 @@ function rebuildMemberScene(
   view: SelectedColumnView,
   hoverRowId: string | null,
 ): void {
-  if (view.rebars.length === 0) return
+  if (view.rebars.length === 0) {
+    runtime.fittedTargetKey = null
+    return
+  }
 
   const content = new THREE.Group()
   const normalMaterial = new THREE.MeshStandardMaterial({
@@ -416,18 +483,19 @@ function rebuildMemberScene(
   addConcreteSolid(content, view, materials)
   addGround(content, bounds, materials)
 
-  for (const rebar of view.rebars) {
+  const entries = view.rebars.map((rebar) => {
     const rowId = view.rowIds.get(rebar.id)
     if (rowId === undefined) {
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
+    return { rowId, rebar }
+  })
 
-    for (const segment of rebarSegments(rebar, view.section)) {
-      const mesh = createSegmentMesh(segment, normalMaterial, rowId)
-      if (mesh === null) continue
-      content.add(mesh)
-      pickableMeshes.push(mesh)
-    }
+  for (const batch of rebarBatches(entries, view.section)) {
+    const mesh = createBatchMesh(batch, normalMaterial)
+    if (mesh === null) continue
+    content.add(mesh)
+    pickableMeshes.push(mesh)
   }
 
   runtime.content = content
@@ -436,7 +504,7 @@ function rebuildMemberScene(
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
-  frameContent(runtime, bounds)
+  frameContent(runtime, bounds, `member:${view.member.id}`)
   applyHighlight(runtime, hoverRowId)
 }
 
@@ -547,27 +615,40 @@ function rebuildBuildingScene(
   runtime.concreteSelectedMaterial = concreteSelectedMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
-  frameContent(runtime, layout.bounds)
+  frameContent(runtime, layout.bounds, 'building')
 }
 
-/** 建物 뷰에서 선택 부재의 콘크리트만 강조 재질로 스왑한다. */
-function applyBuildingSelection(
-  runtime: ViewerRuntime,
-  selectedMemberId: string | null,
-): void {
-  const { concreteNormalMaterial, concreteSelectedMaterial } = runtime
-  if (concreteNormalMaterial === null || concreteSelectedMaterial === null) {
-    return
-  }
+/**
+ * 씬을 다시 지을 이유가 되는 값만 모은 키. `Project`가 바뀔 때마다 `rebars`·
+ * `lines` 배열은 새로 만들어지므로 참조 비교로는 매번 재생성된다 — 備考 한 글자에
+ * 기둥 전체를 폐기하고 다시 만들지 않으려면 내용으로 비교해야 한다.
+ */
+function geometryKey(view: SelectedColumnView): string {
+  return JSON.stringify([
+    view.member.id,
+    view.section.b,
+    view.section.d,
+    view.section.hoop,
+    view.story.height,
+    view.rebars.map(({ role, size, count, closed, points }) => [
+      role,
+      size,
+      count,
+      closed,
+      points,
+    ]),
+    [...view.rowIds],
+  ])
+}
 
-  for (const mesh of runtime.pickableMeshes) {
-    const memberId: unknown = mesh.userData.memberId
-    if (typeof memberId !== 'string') continue
-    mesh.material =
-      memberId === selectedMemberId
-        ? concreteSelectedMaterial
-        : concreteNormalMaterial
-  }
+/** 建物 뷰의 재구성 사유: 격자·층·단면·부재 구성이 바뀔 때만. 備考는 들어가지 않는다. */
+function buildingGeometryKey(project: Project): string {
+  return JSON.stringify([
+    project.grid,
+    project.stories,
+    project.sections,
+    project.members,
+  ])
 }
 
 function selectedColumnView(
@@ -647,6 +728,13 @@ export function Viewer3D() {
     if (column !== null) return { mode: 'member', column }
     return null
   }, [column, layout])
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const sceneKey = useMemo(() => {
+    if (view === null) return ''
+    if (view.mode === 'building') return `b:${buildingGeometryKey(project)}`
+    return `m:${geometryKey(view.column)}`
+  }, [project, view])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -709,6 +797,7 @@ export function Viewer3D() {
       cameraTween: null,
       lastInteractionAt: performance.now(),
       initialFitDone: false,
+      fittedTargetKey: null,
     }
     runtimeRef.current = runtime
 
@@ -796,8 +885,8 @@ export function Viewer3D() {
   useEffect(() => {
     const runtime = runtimeRef.current
     if (runtime === null) return
-    rebuildScene(runtime, view, hoverRowIdRef.current)
-  }, [view])
+    rebuildScene(runtime, viewRef.current, hoverRowIdRef.current)
+  }, [sceneKey])
 
   useEffect(() => {
     const runtime = runtimeRef.current

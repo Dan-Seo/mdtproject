@@ -10,6 +10,7 @@ import {
   fitCamera,
   flyInStartPose,
   lerpCameraFit,
+  rebarBatches,
   rebarRadius,
   rebarSegments,
   type Bounds,
@@ -388,6 +389,55 @@ describe('fitCamera', () => {
     expect(Math.max(...projected)).toBeCloseTo(projectedLimit, 10)
     expect(projected.every((value) => value <= projectedLimit + 1e-12)).toBe(
       true,
+    )
+  })
+})
+
+describe("rebarBatches", () => {
+  it("emits one batch per takeoff row, not per segment", () => {
+    const batches = rebarBatches(
+      [
+        { rowId: "1階|C|C1|主筋", rebar: main },
+        { rowId: "1階|C|C1|帯筋", rebar: hoop },
+      ],
+      section,
+    )
+
+    expect(batches).toHaveLength(2)
+    expect(batches.map(({ rowId }) => rowId)).toEqual([
+      "1階|C|C1|主筋",
+      "1階|C|C1|帯筋",
+    ])
+  })
+
+  it("keeps every segment the per-rebar builder would have produced", () => {
+    const batches = rebarBatches(
+      [
+        { rowId: "1階|C|C1|主筋", rebar: main },
+        { rowId: "1階|C|C1|帯筋", rebar: hoop },
+      ],
+      section,
+    )
+    const total = batches.reduce((sum, { segments }) => sum + segments.length, 0)
+    const expected =
+      rebarSegments(main, section).length + rebarSegments(hoop, section).length
+
+    expect(total).toBe(expected)
+    expect(batches[0].segments).toEqual(rebarSegments(main, section))
+  })
+
+  it("merges rebars that share a row into a single batch", () => {
+    const batches = rebarBatches(
+      [
+        { rowId: "1階|C|C1|主筋", rebar: main },
+        { rowId: "1階|C|C1|主筋", rebar: { ...main, id: "other" } },
+      ],
+      section,
+    )
+
+    expect(batches).toHaveLength(1)
+    expect(batches[0].segments).toHaveLength(
+      rebarSegments(main, section).length * 2,
     )
   })
 })

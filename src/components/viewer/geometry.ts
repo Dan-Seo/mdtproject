@@ -140,6 +140,34 @@ export function rebarSegments(
   })
 }
 
+export interface RebarBatch {
+  rowId: string
+  segments: Segment[]
+}
+
+/**
+ * 3D의 강조 단위는 내역서 **행**이다(DESIGN.md §3.2). 세그먼트마다 메시를 두면
+ * 기둥 하나에 156개가 생기는데, 행 단위로 묶으면 2개로 끝나고 강조는 행 그대로
+ * 재질 1회 교체가 된다. 묶는 단위를 도메인의 단위와 일치시킨 것이지 임의의
+ * 배칭이 아니다.
+ */
+export function rebarBatches(
+  entries: { rowId: string; rebar: Rebar }[],
+  section: ColumnSection,
+): RebarBatch[] {
+  const batches = new Map<string, RebarBatch>()
+
+  for (const { rowId, rebar } of entries) {
+    const segments = rebarSegments(rebar, section)
+    const batch = batches.get(rowId)
+
+    if (batch) batch.segments.push(...segments)
+    else batches.set(rowId, { rowId, segments })
+  }
+
+  return [...batches.values()]
+}
+
 function subtract(left: Point3, right: Point3): Point3 {
   return [left[0] - right[0], left[1] - right[1], left[2] - right[2]]
 }

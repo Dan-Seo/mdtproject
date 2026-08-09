@@ -127,6 +127,54 @@ function touchesColumn(
   )
 }
 
+/**
+ * 柱主筋の端部条件 (R7)。
+ *
+ * 층간 접합부에는 이음이 **한 번만** 있어야 한다. 예전에는 모든 층이
+ * 「階高 ＋ 定着 ＋ 継手」를 받아 접합부가 아래층의 継手와 위층의 定着으로
+ * 두 번 계상됐다. 접합부의 継手는 **위층 부재가 부담**하고, 定着은 스택의
+ * 양 끝(기초·최상단)에만 붙는다.
+ *
+ * 스택 순서는 `stories` 배열 순서를 그대로 신뢰한다 — Story에 레벨 값이 없다.
+ * 조문이 아니라 관행에 따른 배분이므로 이 규칙 자체는 검증되지 않은 전제다.
+ */
+export interface ColumnEnds {
+  bottom: '定着' | '継手'
+  top: '定着' | 'なし'
+}
+
+export function columnEnds(project: Project, member: Member): ColumnEnds {
+  const { position } = member
+
+  if (member.kind !== '柱' || !isColumnPosition(position)) {
+    throw new Error(`columnEnds requires a 柱: ${member.id}`)
+  }
+
+  const level = project.stories.findIndex(({ id }) => id === member.storyId)
+  if (level < 0) {
+    throw new Error(`Story not found: ${member.storyId}`)
+  }
+
+  const hasColumnAtLevel = (candidateLevel: number): boolean => {
+    const story = project.stories[candidateLevel]
+    if (story === undefined) return false
+
+    return project.members.some(
+      (candidate) =>
+        candidate.kind === '柱' &&
+        candidate.storyId === story.id &&
+        isColumnPosition(candidate.position) &&
+        candidate.position.ix === position.ix &&
+        candidate.position.iy === position.iy,
+    )
+  }
+
+  return {
+    bottom: hasColumnAtLevel(level - 1) ? '継手' : '定着',
+    top: hasColumnAtLevel(level + 1) ? 'なし' : '定着',
+  }
+}
+
 export function beamDepthAbove(project: Project, member: Member): number {
   if (member.kind !== '柱' || !isColumnPosition(member.position)) {
     throw new Error(`beamDepthAbove requires a 柱: ${member.id}`)

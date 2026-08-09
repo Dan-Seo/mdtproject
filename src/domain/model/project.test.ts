@@ -4,6 +4,7 @@ import type { ColumnSection, GirderSection, Member } from './member'
 import {
   PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
+  columnEnds,
   deserializeProject,
   findSection,
   gridPoint,
@@ -177,6 +178,100 @@ describe('project serialization', () => {
     const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
 
     expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+})
+
+describe('columnEnds', () => {
+  function stackColumn(storyId: string, ix: number, iy: number): Member {
+    return {
+      id: `${storyId}-X${ix + 1}Y${iy + 1}`,
+      kind: '柱',
+      memberClass: '躯体',
+      sectionId: 'section-C1',
+      storyId,
+      position: { ix, iy },
+    }
+  }
+
+  function stackProject(members: Member[]): Project {
+    return {
+      ...createProject(members),
+      stories: [
+        { id: '1F', name: '1階', height: 4200 },
+        { id: '2F', name: '2階', height: 3600 },
+      ],
+    }
+  }
+
+  const twoStories = [
+    stackColumn('1F', 1, 1),
+    stackColumn('2F', 1, 1),
+  ]
+
+  it('anchors into the foundation at the lowest story and hands the joint upwards', () => {
+    const project = stackProject(twoStories)
+
+    expect(columnEnds(project, twoStories[0])).toEqual({
+      bottom: '定着',
+      top: 'なし',
+    })
+  })
+
+  it('makes the upper column carry the 継手 and anchor at the roof', () => {
+    const project = stackProject(twoStories)
+
+    expect(columnEnds(project, twoStories[1])).toEqual({
+      bottom: '継手',
+      top: '定着',
+    })
+  })
+
+  it('anchors at both ends when the column stands alone in its stack', () => {
+    const project = stackProject([twoStories[0]])
+
+    expect(columnEnds(project, twoStories[0])).toEqual({
+      bottom: '定着',
+      top: '定着',
+    })
+  })
+
+  it('ignores a column that sits on a different grid point', () => {
+    const project = stackProject([
+      stackColumn('1F', 1, 1),
+      stackColumn('2F', 0, 0),
+    ])
+
+    expect(columnEnds(project, stackColumn('1F', 1, 1))).toEqual({
+      bottom: '定着',
+      top: '定着',
+    })
+  })
+
+  it('reads the stack order from the stories array', () => {
+    const reversed: Project = {
+      ...stackProject(twoStories),
+      stories: [
+        { id: '2F', name: '2階', height: 3600 },
+        { id: '1F', name: '1階', height: 4200 },
+      ],
+    }
+
+    // 배열이 뒤집히면 2F가 최하층으로 해석된다 — 순서가 곧 스택이다.
+    expect(columnEnds(reversed, twoStories[1]).bottom).toBe('定着')
+    expect(columnEnds(reversed, twoStories[0]).bottom).toBe('継手')
+  })
+
+  it('rejects a member that is not a 柱', () => {
+    const beam: Member = {
+      id: '1F-G1-X1Y1-X',
+      kind: '大梁',
+      memberClass: '躯体',
+      sectionId: shallowGirderSection.id,
+      storyId: '1F',
+      position: { axis: 'X', ix: 0, iy: 0 },
+    }
+
+    expect(() => columnEnds(stackProject(twoStories), beam)).toThrow()
   })
 })
 

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   beamDepthAbove,
+  columnEnds,
   findSection,
   type Project,
 } from '@/domain/model/project'
@@ -34,6 +35,7 @@ function sampleInput(): { project: Project; lines: QuantityLine[] } {
         section,
         story,
         beamDepthAbove: beamDepthAbove(project, member),
+        ends: columnEnds(project, member),
       },
       jpMlitRulePack,
     )
