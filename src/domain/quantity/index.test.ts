@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, Member } from '../model/member'
-import type { Project, Story } from '../model/project'
+import {
+  beamDepthAbove,
+  findSection,
+  type Project,
+  type Story,
+} from '../model/project'
+import { createSampleProject } from '../model/sample-project'
 import type { Rebar } from '../model/rebar'
+import { generateColumnRebar } from '../rebar/column'
 import { jpMlitRulePack } from '../../rulepack'
 import {
   aggregateQuantity,
@@ -111,7 +118,7 @@ describe('aggregateQuantity', () => {
 
     expect(lines).toHaveLength(1)
     expect(lines[0]).toMatchObject({
-      id: '1階|C|C1|主筋',
+      id: '1階|C|C1|主筋|1000|12',
       groupId: '1階|C|C1',
       storyName: '1階',
       memberKind: '柱',
@@ -125,34 +132,83 @@ describe('aggregateQuantity', () => {
     })
   })
 
-  it('throws when lengthMm differs inside the same group and role', () => {
+  it('splits one 符号 into separate rows when lengthMm differs', () => {
     const project = projectWithStories([
       { id: '1F', name: '1階', height: 4200 },
     ])
     const [first, second] = project.members
 
-    expect(() =>
-      aggregateQuantity(
-        project,
-        [mainRebar(first.id), mainRebar(second.id, { length: 1010 })],
-        jpMlitRulePack,
-      ),
-    ).toThrow(/length/i)
+    const lines = aggregateQuantity(
+      project,
+      [mainRebar(first.id), mainRebar(second.id, { length: 1010 })],
+      jpMlitRulePack,
+    )
+
+    expect(lines).toHaveLength(2)
+    expect(new Set(lines.map(({ id }) => id)).size).toBe(2)
+    expect(lines.map(({ lengthMm }) => lengthMm)).toEqual([1000, 1010])
+    expect(lines.map(({ places }) => places)).toEqual([1, 1])
+    expect(lines.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
   })
 
-  it('throws when countPerMember differs inside the same group and role', () => {
+  it('splits one 符号 into separate rows when countPerMember differs', () => {
     const project = projectWithStories([
       { id: '1F', name: '1階', height: 4200 },
     ])
     const [first, second] = project.members
 
-    expect(() =>
-      aggregateQuantity(
-        project,
-        [mainRebar(first.id), mainRebar(second.id, { count: 16 })],
-        jpMlitRulePack,
+    const lines = aggregateQuantity(
+      project,
+      [mainRebar(first.id), mainRebar(second.id, { count: 16 })],
+      jpMlitRulePack,
+    )
+
+    expect(lines).toHaveLength(2)
+    expect(new Set(lines.map(({ id }) => id)).size).toBe(2)
+    expect(lines.map(({ countPerMember }) => countPerMember)).toEqual([12, 16])
+    expect(lines.map(({ places }) => places)).toEqual([1, 1])
+  })
+
+  it('aggregates 柱 of one 符号 sitting under 大梁 of differing せい', () => {
+    const sample = createSampleProject()
+    const project: Project = {
+      ...sample,
+      sections: sample.sections.map((section) =>
+        section.id === 'section-G2' && section.kind === '大梁'
+          ? { ...section, depth: 600 }
+          : section,
       ),
-    ).toThrow(/count/i)
+    }
+    const rebars = project.members.flatMap((member) => {
+      if (member.kind !== '柱') return []
+
+      const columnSection = findSection(project, member.sectionId)
+      if (columnSection.kind !== '柱') throw new Error('expected a 柱 section')
+      const story = project.stories.find(({ id }) => id === member.storyId)
+      if (!story) throw new Error('expected a story')
+
+      return generateColumnRebar(
+        {
+          member,
+          section: columnSection,
+          story,
+          beamDepthAbove: beamDepthAbove(project, member),
+        },
+        jpMlitRulePack,
+      )
+    })
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const hoops = lines.filter(
+      ({ role, storyName }) => role === '帯筋' && storyName === '1階',
+    )
+
+    expect(hoops.length).toBeGreaterThan(1)
+    expect(new Set(hoops.map(({ countPerMember }) => countPerMember)).size).toBe(
+      hoops.length,
+    )
+    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(9)
+    expect(hoops.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
   })
 
   it('propagates an inferred contributing rule to the whole row', () => {
