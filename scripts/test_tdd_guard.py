@@ -49,20 +49,20 @@ def patch_text(*headers: str) -> str:
 
 
 def codex_apply_patch_payload(patch: str) -> dict:
-    """freeform apply_patch 툴 — tool_input이 패치 문자열 자체."""
+    """문서상의 실제 포맷 — tool_name은 apply_patch, 패치는 tool_input.command 문자열."""
     return {
         "hook_event_name": "PreToolUse",
         "tool_name": "apply_patch",
-        "tool_input": patch,
+        "tool_input": {"command": patch},
     }
 
 
-def codex_shell_payload(patch: str) -> dict:
-    """shell 툴로 apply_patch를 실행하는 형태."""
+def codex_bash_payload(patch: str) -> dict:
+    """Bash 툴로 apply_patch를 실행하는 형태. Bash도 tool_input.command를 쓴다."""
     return {
         "hook_event_name": "PreToolUse",
-        "tool_name": "shell",
-        "tool_input": {"command": ["apply_patch", patch]},
+        "tool_name": "Bash",
+        "tool_input": {"command": f"apply_patch <<'EOF'\n{patch}\nEOF"},
     }
 
 
@@ -116,11 +116,18 @@ class TestCodexInput:
         assert out["hookSpecificOutput"]["permissionDecision"] == "deny"
         assert "bar" in out["hookSpecificOutput"]["permissionDecisionReason"]
 
-    def test_blocks_updated_source_via_shell(self, project):
-        payload = codex_shell_payload(patch_text("*** Update File: src/lib/baz.ts"))
+    def test_blocks_updated_source_via_bash(self, project):
+        payload = codex_bash_payload(patch_text("*** Update File: src/lib/baz.ts"))
         out = run_guard(project, payload)
         assert out is not None
         assert "baz" in out["hookSpecificOutput"]["permissionDecisionReason"]
+
+    def test_extraction_is_shape_agnostic(self, project):
+        """tool_input 모양이 바뀌어도(중첩·배열) 패치 헤더를 찾아낸다."""
+        patch = patch_text("*** Add File: src/lib/nested.ts")
+        payload = {"hook_event_name": "PreToolUse", "tool_name": "apply_patch",
+                   "tool_input": {"args": {"parts": [patch]}}}
+        assert run_guard(project, payload) is not None
 
     def test_allows_when_test_exists(self, project):
         add_test_file(project, "src/lib/bar.test.ts")

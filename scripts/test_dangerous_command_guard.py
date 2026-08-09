@@ -34,9 +34,10 @@ def claude_bash(command: str) -> dict:
             "tool_input": {"command": command}}
 
 
-def codex_shell(*argv: str) -> dict:
-    return {"hook_event_name": "PreToolUse", "tool_name": "shell",
-            "tool_input": {"command": list(argv)}}
+def codex_bash(command: str) -> dict:
+    """Codex의 셸 툴은 tool_name이 `Bash`이고 tool_input.command는 문자열이다."""
+    return {"hook_event_name": "PreToolUse", "tool_name": "Bash",
+            "tool_input": {"command": command}}
 
 
 DANGEROUS = [
@@ -58,8 +59,8 @@ class TestBlocks:
         assert hso["permissionDecisionReason"]
 
     @pytest.mark.parametrize("cmd", DANGEROUS)
-    def test_blocks_codex_shell(self, cmd):
-        assert run_guard(codex_shell("bash", "-lc", cmd)) is not None
+    def test_blocks_codex_bash(self, cmd):
+        assert run_guard(codex_bash(cmd)) is not None
 
 
 class TestAllows:
