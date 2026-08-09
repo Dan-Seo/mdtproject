@@ -37,8 +37,22 @@ function input(
     section,
     story,
     beamDepthAbove: 750,
+    // 既定は「下は継手・上は定着」＝ スタック最上段の柱。
+    ends: { bottom: '継手', top: '定着' },
     ...overrides,
   }
+}
+
+const mainDiameter = Number(section.main.size.replace(/^D/, ''))
+const conditions = { fc: section.fc, grade: section.grade, hook: false }
+const anchorage =
+  lookupRule(jpMlitRulePack, 'anchorage.L2', conditions).value * mainDiameter
+const lap =
+  lookupRule(jpMlitRulePack, 'lap.L1', conditions).value * mainDiameter
+const roundingUnit = lookupRule(jpMlitRulePack, 'rounding.length', {}).value
+
+function rounded(length: number): number {
+  return Math.ceil(length / roundingUnit) * roundingUnit
 }
 
 function byRole(
@@ -86,10 +100,11 @@ describe('generateColumnRebar', () => {
       }
     }
 
+    // 端部の順（下端 → 上端）で並ぶ。既定入力は 下端 継手・上端 定着。
     expect(byRole(generated, '主筋').rules).toEqual([
       'cover.minimum',
-      'anchorage.L2',
       'lap.L1',
+      'anchorage.L2',
       'rounding.length',
     ])
     expect(byRole(generated, '帯筋').rules).toEqual([
@@ -97,6 +112,93 @@ describe('generateColumnRebar', () => {
       'bend.hook135',
       'rounding.length',
     ])
+  })
+
+  it('counts the storey joint once instead of adding 定着 and 継手 to every storey (R7)', () => {
+    const lower = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '定着', top: 'なし' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+    const upper = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '継手', top: '定着' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(lower.length).toBe(rounded(story.height + anchorage))
+    expect(upper.length).toBe(rounded(story.height + lap + anchorage))
+
+    // 2층 스택 합계는 「기초 定着 ＋ 접합부 継手 1회 ＋ 지붕 定着」뿐이다.
+    // 예전에는 층마다 定着＋継手가 붙어 継手 하나를 더 세고 있었다.
+    const doubleCounted = rounded(story.height + anchorage + lap) * 2
+
+    expect(lower.length + upper.length).toBeLessThan(doubleCounted)
+    expect(doubleCounted - (lower.length + upper.length)).toBe(lap)
+  })
+
+  it('anchors both ends when the column is alone in its stack', () => {
+    const main = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '定着', top: '定着' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(main.length).toBe(rounded(story.height + 2 * anchorage))
+  })
+
+  it('extends the 3D geometry by exactly what each end contributes', () => {
+    const main = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '継手', top: 'なし' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(main.points[0][1]).toBe(-lap)
+    expect(main.points[1][1]).toBe(story.height)
+  })
+
+  it('cites 重ね継手 only on the rows that actually carry a joint', () => {
+    const withoutLap = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '定着', top: '定着' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+    const withLap = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '継手', top: '定着' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(withoutLap.rules).not.toContain('lap.L1')
+    expect(withoutLap.formula).not.toContain('重ね継手')
+    expect(withLap.rules).toContain('lap.L1')
+  })
+
+  it('cites 定着 only on the rows that actually reach a stack end', () => {
+    const interior = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '継手', top: 'なし' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(interior.rules).not.toContain('anchorage.L2')
+    expect(interior.formula).not.toContain('定着')
+    expect(interior.length).toBe(rounded(story.height + lap))
   })
 
   it('uses the supplied 主筋 count without structurally recalculating it', () => {

@@ -10,7 +10,7 @@ import {
 } from 'react'
 
 import type { RebarShape } from '@/domain/model/rebar'
-import { memberGroupKey } from '@/domain/model/project'
+import { memberGroupKey, setNote } from '@/domain/model/project'
 import {
   grandTotal,
   storySubtotals,
@@ -78,13 +78,9 @@ function groupsByStory(lines: QuantityLine[]): Map<string, QuantityGroup[]> {
   )
 }
 
-function shapeLabel(shape: RebarShape): string {
-  if (shape === 'straight') return '直線'
-  if (shape === 'hook90') return '90°フック'
-  return '閉鎖形'
-}
-
 function ShapeIcon({ shape }: { shape: RebarShape }) {
+  const locale = useAppStore(({ locale }) => locale)
+
   return (
     <svg
       className={styles.shapeIcon}
@@ -92,7 +88,7 @@ function ShapeIcon({ shape }: { shape: RebarShape }) {
       width="32"
       height="18"
       role="img"
-      aria-label={shapeLabel(shape)}
+      aria-label={t(locale, `shape.${shape}`)}
     >
       {shape === 'straight' && <path d="M3 9H29" />}
       {shape === 'hook90' && <path d="M3 14H23V4H29" />}
@@ -147,7 +143,9 @@ function SourceChip({ rule }: { rule: RuleHit }) {
     return (
       <span
         className={className}
+        role="link"
         aria-disabled="true"
+        tabIndex={0}
         title={title}
         onClick={stopRowInteraction}
       >
@@ -206,6 +204,25 @@ function InferredWarning({ line }: { line: QuantityLine }) {
 
 function isActivationKey(event: KeyboardEvent<HTMLTableRowElement>): boolean {
   return event.key === 'Enter' || event.key === ' '
+}
+
+function NoteInput({ lineId }: { lineId: string }) {
+  const note = useAppStore(({ project }) => project.notes?.[lineId] ?? '')
+  const updateProject = useAppStore(({ updateProject }) => updateProject)
+
+  return (
+    <input
+      className={styles.noteInput}
+      value={note}
+      aria-label={`${lineId} 備考`}
+      onChange={(event) => {
+        const next = event.currentTarget.value
+        updateProject((project) => setNote(project, lineId, next))
+      }}
+      onClick={stopRowInteraction}
+      onKeyDown={(event) => event.stopPropagation()}
+    />
+  )
 }
 
 export function TakeoffTable({ lines }: TakeoffTableProps) {
@@ -475,6 +492,8 @@ function LineRows({
         }}
         onMouseEnter={() => setHoverRow(line.id)}
         onMouseLeave={() => setHoverRow(null)}
+        onFocus={() => setHoverRow(line.id)}
+        onBlur={() => setHoverRow(null)}
       >
         <td className={styles.rebarCell}>
           <span>{line.role}</span>
@@ -499,12 +518,7 @@ function LineRows({
           <SourceChips rules={line.rules} />
         </td>
         <td>
-          <input
-            className={styles.noteInput}
-            aria-label={`${line.id} 備考`}
-            onClick={stopRowInteraction}
-            onKeyDown={(event) => event.stopPropagation()}
-          />
+          <NoteInput lineId={line.id} />
         </td>
       </tr>
       {expanded && (
@@ -520,7 +534,21 @@ function LineRows({
 
 export function TakeoffPane() {
   const { lines } = useTakeoff()
-  return <TakeoffTable lines={lines} />
+  const locale = useAppStore(({ locale }) => locale)
+  const hasGirder = useAppStore(({ project }) =>
+    project.members.some(({ kind }) => kind === '大梁'),
+  )
+
+  return (
+    <>
+      {hasGirder && (
+        <p className={styles.pendingNotice} role="note">
+          {t(locale, 'takeoff.girderPending')}
+        </p>
+      )}
+      <TakeoffTable lines={lines} />
+    </>
+  )
 }
 
 export function TakeoffActions() {

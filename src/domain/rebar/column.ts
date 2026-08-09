@@ -1,6 +1,6 @@
 import type { BarSize, ColumnSection, Member } from '../model/member'
 import type { Rebar } from '../model/rebar'
-import type { Story } from '../model/project'
+import type { ColumnEnds, Story } from '../model/project'
 import { lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
@@ -9,6 +9,8 @@ export interface ColumnRebarInput {
   section: ColumnSection
   story: Story
   beamDepthAbove: number
+  /** 스택 안에서의 단부 조건. `columnEnds()`가 판정한다 (R7). */
+  ends: ColumnEnds
 }
 
 function barDiameter(size: BarSize): number {
@@ -44,7 +46,7 @@ export function generateColumnRebar(
   input: ColumnRebarInput,
   pack: RulePack,
 ): Rebar[] {
-  const { member, section, story, beamDepthAbove } = input
+  const { member, section, story, beamDepthAbove, ends } = input
   const commonConditions = {
     fc: section.fc,
     grade: section.grade,
@@ -66,8 +68,42 @@ export function generateColumnRebar(
   const mainDiameter = barDiameter(section.main.size)
   const anchorageLength = millimetres(anchorageRule, mainDiameter)
   const lapLength = millimetres(lapRule, mainDiameter)
-  const mainRawLength = story.height + anchorageLength + lapLength
+
+  // 端部条件ごとの伸び (R7)。接合部の継手は上階柱が持ち、定着はスタックの
+  // 両端にしか付かない。どちらでもない端は 0 — 相手側で既に数えている。
+  const bottomExtension =
+    ends.bottom === '継手' ? lapLength : anchorageLength
+  const topExtension = ends.top === '定着' ? anchorageLength : 0
+  const mainRawLength = story.height + bottomExtension + topExtension
   const mainLength = roundLength(mainRawLength, roundingRule)
+
+  const endTerms: string[] = []
+  const mainRuleKeys: string[] = [coverRule.key]
+
+  if (ends.bottom === '継手') {
+    endTerms.push(
+      `下端 重ね継手長さ L1 ${lapRule.value}d(${lapLength})`,
+    )
+    mainRuleKeys.push(lapRule.key)
+  } else {
+    endTerms.push(
+      `下端 定着長さ L2 ${anchorageRule.value}d(${anchorageLength})`,
+    )
+    mainRuleKeys.push(anchorageRule.key)
+  }
+
+  if (ends.top === '定着') {
+    endTerms.push(
+      `上端 定着長さ L2 ${anchorageRule.value}d(${anchorageLength})`,
+    )
+    if (!mainRuleKeys.includes(anchorageRule.key)) {
+      mainRuleKeys.push(anchorageRule.key)
+    }
+  } else {
+    endTerms.push('上端 上階柱が継手を負担 0')
+  }
+
+  mainRuleKeys.push(roundingRule.key)
 
   const hoopDiameter = barDiameter(section.hoop.size)
   const hook135Length = millimetres(hook135Rule, hoopDiameter)
@@ -86,22 +122,16 @@ export function generateColumnRebar(
     size: section.main.size,
     shape: 'straight',
     points: [
-      [cover, -anchorageLength, cover],
-      [cover, story.height + lapLength, cover],
+      [cover, -bottomExtension, cover],
+      [cover, story.height + topExtension, cover],
     ],
     closed: false,
     length: mainLength,
     count: section.main.count,
-    rules: [
-      coverRule.key,
-      anchorageRule.key,
-      lapRule.key,
-      roundingRule.key,
-    ],
+    rules: mainRuleKeys,
     formula:
-      `加工長 ＝ 階高 ${story.height} ＋ 定着長さ L2 ` +
-      `${anchorageRule.value}d(${anchorageLength}) ＋ 重ね継手長さ L1 ` +
-      `${lapRule.value}d(${lapLength}) ＝ ${mainRawLength} → ` +
+      `加工長 ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
+      `＝ ${mainRawLength} → ` +
       `${roundingRule.value}mm単位切上げ ${mainLength} ／ ` +
       `配置基準 ＝ かぶり厚さ ${cover} ／ ` +
       `本数 ＝ 断面一覧の主筋本数 ${section.main.count}`,

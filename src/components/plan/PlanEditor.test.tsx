@@ -31,6 +31,16 @@ describe('PlanEditor', () => {
     expect(member).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('keeps the 柱 mark label out of the clickable group so it matches the marker', () => {
+    render(<PlanEditor />)
+
+    const member = screen.getByRole('button', { name: 'C1 1F-X1Y1' })
+
+    expect(member.querySelector('rect')).not.toBeNull()
+    expect(member.querySelector('text')).toBeNull()
+    expect(screen.getAllByText('C1')).toHaveLength(9)
+  })
+
   it('adds an X span and regenerates the project grid members', () => {
     render(<PlanEditor />)
 

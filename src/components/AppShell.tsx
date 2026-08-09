@@ -1,11 +1,12 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
 import styles from './AppShell.module.css'
+import { PaneBoundary } from './PaneBoundary'
 
 export interface AppShellProps {
   plan?: ReactNode
@@ -25,6 +26,9 @@ interface PaneProps {
 
 function Pane({ id, title, children, actions }: PaneProps) {
   const titleId = `${id}-title`
+  const project = useAppStore(({ project }) => project)
+  const locale = useAppStore(({ locale }) => locale)
+  const failureLabel = t(locale, 'pane.failure')
 
   return (
     <section className={styles.pane} aria-labelledby={titleId}>
@@ -32,9 +36,15 @@ function Pane({ id, title, children, actions }: PaneProps) {
         <h2 id={titleId} className={`${styles.paneTitle} t-caption-uppercase`}>
           {title}
         </h2>
-        {actions}
+        <PaneBoundary label={failureLabel} resetKey={project}>
+          {actions}
+        </PaneBoundary>
       </header>
-      <div className={styles.paneBody}>{children}</div>
+      <div className={styles.paneBody}>
+        <PaneBoundary label={failureLabel} resetKey={project}>
+          {children}
+        </PaneBoundary>
+      </div>
     </section>
   )
 }
@@ -51,8 +61,12 @@ export function AppShell({
   const locale = useAppStore(({ locale }) => locale)
   const setLocale = useAppStore(({ setLocale }) => setLocale)
 
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
   return (
-    <div className={styles.shell} lang={locale}>
+    <div className={styles.shell}>
       <header className={styles.appHeader}>
         <div className={styles.wordmark}>{t(locale, 'app.wordmark')}</div>
         <div className={`${styles.projectName} t-body-sm`}>{projectName}</div>
@@ -74,7 +88,7 @@ export function AppShell({
       </header>
 
       <main className={styles.shellMain}>
-        <aside className={styles.warningBanner} role="alert">
+        <aside className={styles.warningBanner} role="status">
           <span className={styles.warningTitle}>
             {t(locale, 'warning.m1.title')}
           </span>

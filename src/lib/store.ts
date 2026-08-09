@@ -41,12 +41,26 @@ function findMember(project: Project, memberId: string) {
 
 const initialProject = createSampleProject()
 
+/**
+ * 첫 화면에서 3D 페인이 비어 있지 않도록 대표 柱를 미리 선택한다 (docs/UX.md §4.1).
+ */
+function initialSelection(project: Project): Selection {
+  const member = project.members.find(({ kind }) => kind === '柱')
+  if (!member) return { group: null, memberId: null }
+
+  return { group: memberGroupKey(project, member), memberId: member.id }
+}
+
+const initialSel = initialSelection(initialProject)
+
 export const useAppStore = create<AppState>((set) => ({
   project: initialProject,
-  sel: { group: null, memberId: null },
+  sel: initialSel,
   hoverRowId: null,
   locale: 'ja',
-  activeStoryId: initialProject.stories[0].id,
+  activeStoryId:
+    initialProject.members.find(({ id }) => id === initialSel.memberId)
+      ?.storyId ?? initialProject.stories[0].id,
   selectMember(memberId) {
     set(({ project }) => {
       const member = findMember(project, memberId)

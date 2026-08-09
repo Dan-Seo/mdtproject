@@ -3,19 +3,23 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 import type { ColumnSection, Member } from '@/domain/model/member'
 import { findSection, type Story } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import type { QuantityLine } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
 import {
   CAMERA_FOV_DEGREES,
   fitCamera,
+  rebarBatches,
   rebarRadius,
   rebarSegments,
+  type RebarBatch,
   type Bounds,
   type Point3,
 } from './geometry'
@@ -48,6 +52,8 @@ interface ViewerRuntime {
   normalMaterial: THREE.MeshStandardMaterial | null
   highlightMaterial: THREE.MeshStandardMaterial | null
   pickableMeshes: THREE.Mesh[]
+  /** 마지막으로 카메라를 맞춘 부재. 같은 부재를 편집하는 동안은 시점을 뺏지 않는다. */
+  fittedMemberId: string | null
 }
 
 function vector(point: Point3): THREE.Vector3 {
@@ -85,10 +91,12 @@ function columnBounds(view: SelectedColumnView): Bounds {
 
   for (const rebar of rebars) {
     const radius = rebarRadius(rebar.size)
-    for (const point of rebar.points) {
-      for (let axis = 0; axis < point.length; axis += 1) {
-        bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
-        bounds.max[axis] = Math.max(bounds.max[axis], point[axis] + radius)
+    for (const segment of rebarSegments(rebar, section)) {
+      for (const point of [segment.from, segment.to]) {
+        for (let axis = 0; axis < point.length; axis += 1) {
+          bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
+          bounds.max[axis] = Math.max(bounds.max[axis], point[axis] + radius)
+        }
       }
     }
   }
@@ -121,29 +129,53 @@ function addMemberOutline(
   materials.push(material)
 }
 
-function createSegmentMesh(
-  segment: ReturnType<typeof rebarSegments>[number],
+/**
+ * 한 내역서 행의 모든 세그먼트를 **하나의 지오메트리**로 합친다. 기둥 1개가
+ * 세그먼트 156개인데 메시로 156개를 만들면 드로우콜도 156회이고, 편집 때마다
+ * 그만큼 폐기·재생성한다. 강조 단위가 어차피 행이므로 행이 곧 메시다.
+ */
+function createBatchMesh(
+  batch: RebarBatch,
   material: THREE.MeshStandardMaterial,
-  rowId: QuantityLine['id'],
 ): THREE.Mesh | null {
-  const from = vector(segment.from)
-  const to = vector(segment.to)
-  const direction = to.clone().sub(from)
-  const length = direction.length()
+  const parts: THREE.BufferGeometry[] = []
 
-  if (length === 0) return null
+  for (const segment of batch.segments) {
+    const from = vector(segment.from)
+    const to = vector(segment.to)
+    const direction = to.clone().sub(from)
+    const length = direction.length()
 
-  const geometry = new THREE.CylinderGeometry(
-    segment.radius * MILLIMETRES_TO_SCENE,
-    segment.radius * MILLIMETRES_TO_SCENE,
-    length,
-    CYLINDER_RADIAL_SEGMENTS,
-  )
-  const mesh = new THREE.Mesh(geometry, material)
+    if (length === 0) continue
 
-  mesh.position.copy(from).add(to).multiplyScalar(0.5)
-  mesh.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize())
-  mesh.userData.rowId = rowId
+    const part = new THREE.CylinderGeometry(
+      segment.radius * MILLIMETRES_TO_SCENE,
+      segment.radius * MILLIMETRES_TO_SCENE,
+      length,
+      CYLINDER_RADIAL_SEGMENTS,
+    )
+    const placement = new THREE.Matrix4()
+      .makeRotationFromQuaternion(
+        new THREE.Quaternion().setFromUnitVectors(
+          Y_AXIS,
+          direction.normalize(),
+        ),
+      )
+      .setPosition(from.clone().add(to).multiplyScalar(0.5))
+
+    part.applyMatrix4(placement)
+    parts.push(part)
+  }
+
+  if (parts.length === 0) return null
+
+  const merged = mergeGeometries(parts)
+  for (const part of parts) part.dispose()
+
+  if (merged === null) return null
+
+  const mesh = new THREE.Mesh(merged, material)
+  mesh.userData.rowId = batch.rowId
   return mesh
 }
 
@@ -168,7 +200,10 @@ function rebuildScene(
   hoverRowId: string | null,
 ): void {
   disposeContent(runtime)
-  if (view === null || view.rebars.length === 0) return
+  if (view === null || view.rebars.length === 0) {
+    runtime.fittedMemberId = null
+    return
+  }
 
   const content = new THREE.Group()
   const normalMaterial = new THREE.MeshStandardMaterial({
@@ -186,18 +221,19 @@ function rebuildScene(
 
   addMemberOutline(content, view, materials)
 
-  for (const rebar of view.rebars) {
+  const entries = view.rebars.map((rebar) => {
     const rowId = view.rowIds.get(rebar.role)
     if (rowId === undefined) {
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
+    return { rowId, rebar }
+  })
 
-    for (const segment of rebarSegments(rebar)) {
-      const mesh = createSegmentMesh(segment, normalMaterial, rowId)
-      if (mesh === null) continue
-      content.add(mesh)
-      pickableMeshes.push(mesh)
-    }
+  for (const batch of rebarBatches(entries, view.section)) {
+    const mesh = createBatchMesh(batch, normalMaterial)
+    if (mesh === null) continue
+    content.add(mesh)
+    pickableMeshes.push(mesh)
   }
 
   runtime.content = content
@@ -207,17 +243,48 @@ function rebuildScene(
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
 
-  const fitted = fitCamera(columnBounds(view))
-  runtime.camera.position.copy(vector(fitted.position))
-  runtime.controls.target.set(
-    fitted.target[0] * MILLIMETRES_TO_SCENE,
-    fitted.target[1] * MILLIMETRES_TO_SCENE,
-    fitted.target[2] * MILLIMETRES_TO_SCENE,
-  )
-  runtime.camera.lookAt(runtime.controls.target)
-  runtime.camera.updateProjectionMatrix()
-  runtime.controls.update()
+  // 시점은 부재를 바꿀 때만 다시 잡는다. 같은 부재의 단면을 손보는 동안
+  // 카메라가 튀면 사용자가 맞춰 둔 각도를 매 입력마다 잃는다 (docs/UX.md §4.2).
+  if (runtime.fittedMemberId !== view.member.id) {
+    const fitted = fitCamera(columnBounds(view))
+    runtime.camera.position.copy(vector(fitted.position))
+    runtime.controls.target.set(
+      fitted.target[0] * MILLIMETRES_TO_SCENE,
+      fitted.target[1] * MILLIMETRES_TO_SCENE,
+      fitted.target[2] * MILLIMETRES_TO_SCENE,
+    )
+    runtime.camera.lookAt(runtime.controls.target)
+    runtime.camera.updateProjectionMatrix()
+    runtime.controls.update()
+    runtime.fittedMemberId = view.member.id
+  }
+
   applyHighlight(runtime, hoverRowId)
+}
+
+/**
+ * 씬을 다시 지을 이유가 되는 값만 모은 키. `Project`가 바뀔 때마다 `rebars`·
+ * `lines` 배열은 새로 만들어지므로 참조 비교로는 매번 재생성된다 — 備考 한 글자에
+ * 기둥 전체를 폐기하고 다시 만들지 않으려면 내용으로 비교해야 한다.
+ */
+function geometryKey(view: SelectedColumnView | null): string {
+  if (view === null) return ''
+
+  return JSON.stringify([
+    view.member.id,
+    view.section.b,
+    view.section.d,
+    view.section.hoop,
+    view.story.height,
+    view.rebars.map(({ role, size, count, closed, points }) => [
+      role,
+      size,
+      count,
+      closed,
+      points,
+    ]),
+    [...view.rowIds],
+  ])
 }
 
 function selectedColumnView(
@@ -255,6 +322,7 @@ export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
+  const locale = useAppStore(({ locale }) => locale)
   const project = useAppStore(({ project }) => project)
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectedGroup = useAppStore(({ sel }) => sel.group)
@@ -276,6 +344,9 @@ export function Viewer3D() {
       ),
     [lines, project, rebars, selectedGroup, selectedMemberId],
   )
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const sceneKey = useMemo(() => geometryKey(view), [view])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -293,7 +364,6 @@ export function Viewer3D() {
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.domElement.className = styles.canvas
-    renderer.domElement.setAttribute('aria-label', '選択部材の配筋3D')
     mount.appendChild(renderer.domElement)
 
     const controls = new OrbitControls(camera, renderer.domElement)
@@ -315,6 +385,7 @@ export function Viewer3D() {
       normalMaterial: null,
       highlightMaterial: null,
       pickableMeshes: [],
+      fittedMemberId: null,
     }
     runtimeRef.current = runtime
 
@@ -371,8 +442,8 @@ export function Viewer3D() {
   useEffect(() => {
     const runtime = runtimeRef.current
     if (runtime === null) return
-    rebuildScene(runtime, view, hoverRowIdRef.current)
-  }, [view])
+    rebuildScene(runtime, viewRef.current, hoverRowIdRef.current)
+  }, [sceneKey])
 
   useEffect(() => {
     const runtime = runtimeRef.current
@@ -380,15 +451,36 @@ export function Viewer3D() {
     applyHighlight(runtime, hoverRowId)
   }, [hoverRowId])
 
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
+    runtime.renderer.domElement.setAttribute(
+      'aria-label',
+      t(locale, 'viewer.canvas'),
+    )
+  }, [locale])
+
+  const selectedKind = project.members.find(
+    ({ id }) => id === selectedMemberId,
+  )?.kind
+
   return (
     <div ref={mountRef} className={styles.viewer}>
       <div className={styles.meta}>
         <span className={styles.memberId}>
-          {selectedMemberId ?? '部材を選択'}
+          {selectedMemberId ?? t(locale, 'viewer.selectMember')}
         </span>
-        <span className={styles.scaleNotice}>寸法判読用ではない</span>
+        <span className={styles.scaleNotice}>
+          {t(locale, 'viewer.scaleNotice')}
+        </span>
       </div>
-      {view === null && <div className={styles.empty}>配筋データなし</div>}
+      {view === null && (
+        <div className={styles.empty}>
+          {selectedKind === '大梁'
+            ? t(locale, 'viewer.girderPending')
+            : t(locale, 'viewer.empty')}
+        </div>
+      )}
     </div>
   )
 }

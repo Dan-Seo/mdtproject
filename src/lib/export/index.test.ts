@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   beamDepthAbove,
+  columnEnds,
   findSection,
   type Project,
 } from '@/domain/model/project'
@@ -34,6 +35,7 @@ function sampleInput(): { project: Project; lines: QuantityLine[] } {
         section,
         story,
         beamDepthAbove: beamDepthAbove(project, member),
+        ends: columnEnds(project, member),
       },
       jpMlitRulePack,
     )
@@ -111,6 +113,22 @@ describe('buildTakeoffWorkbook', () => {
     expect(firstDataRow?.cells[10].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[11].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[12].numberFormat).toBe('0.000')
+  })
+
+  it('writes the stored 備考 into the note column', () => {
+    const input = sampleInput()
+    const lineId = input.lines[0].id
+    const spec = buildTakeoffWorkbook({
+      ...input,
+      project: { ...input.project, notes: { [lineId]: '要確認' } },
+      locale: 'ja',
+    })
+    const rows = spec.rows.filter(({ kind }) => kind === 'data')
+    const noted = rows.find(({ id }) => id === lineId)
+    const others = rows.filter(({ id }) => id !== lineId)
+
+    expect(noted?.cells[14].value).toBe('要確認')
+    expect(others.every(({ cells }) => cells[14].value === '')).toBe(true)
   })
 
   it('includes source document names, editions, URLs, scope and modification notice', () => {

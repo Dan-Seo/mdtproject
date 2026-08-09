@@ -1,4 +1,4 @@
-import type { BarSize } from '@/domain/model/member'
+import type { BarSize, ColumnSection } from '@/domain/model/member'
 import type { Rebar } from '@/domain/model/rebar'
 
 export type Point3 = [number, number, number]
@@ -43,24 +43,98 @@ export function rebarRadius(size: BarSize): number {
   )
 }
 
-export function rebarSegments(rebar: Rebar): Segment[] {
-  const { points } = rebar
-  const radius = rebarRadius(rebar.size)
-  const segments = points.slice(1).map((to, index) => ({
-    from: points[index],
-    to,
-    radius,
-  }))
-
-  if (rebar.closed && points.length > 1) {
-    segments.push({
-      from: points[points.length - 1],
-      to: points[0],
-      radius,
-    })
+/**
+ * `Rebar`는 「대표 1본 + 本数」로 모델링된다 — 수량은 그것으로 충분하지만
+ * 3D는 실제 本数만큼 그려야 한다. 배치는 규準値가 아니라 작도 규칙이므로
+ * 룰팩을 타지 않고 단면 치수와 대표 배근 위치에서만 유도한다.
+ */
+export function rebarPlacements(
+  rebar: Rebar,
+  section: ColumnSection,
+): Point3[] {
+  if (rebar.shape === 'hoop') {
+    return Array.from({ length: rebar.count }, (_, index) => [
+      0,
+      index * section.hoop.pitch,
+      0,
+    ])
   }
 
-  return segments
+  // 主筋: かぶり 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
+  const [inset] = rebar.points[0]
+  const width = section.b - 2 * inset
+  const depth = section.d - 2 * inset
+  const perimeter = 2 * (width + depth)
+
+  return Array.from({ length: rebar.count }, (_, index): Point3 => {
+    const walked = (index * perimeter) / rebar.count
+
+    if (walked <= width) return [walked, 0, 0]
+    if (walked <= width + depth) return [width, 0, walked - width]
+    if (walked <= 2 * width + depth) {
+      return [width - (walked - width - depth), 0, depth]
+    }
+    return [0, 0, depth - (walked - 2 * width - depth)]
+  })
+}
+
+function translate(point: Point3, offset: Point3): Point3 {
+  return [point[0] + offset[0], point[1] + offset[1], point[2] + offset[2]]
+}
+
+export function rebarSegments(
+  rebar: Rebar,
+  section: ColumnSection,
+): Segment[] {
+  const { points } = rebar
+  const radius = rebarRadius(rebar.size)
+
+  return rebarPlacements(rebar, section).flatMap((offset) => {
+    const placed = points.map((point) => translate(point, offset))
+    const segments = placed.slice(1).map((to, index) => ({
+      from: placed[index],
+      to,
+      radius,
+    }))
+
+    if (rebar.closed && placed.length > 1) {
+      segments.push({
+        from: placed[placed.length - 1],
+        to: placed[0],
+        radius,
+      })
+    }
+
+    return segments
+  })
+}
+
+export interface RebarBatch {
+  rowId: string
+  segments: Segment[]
+}
+
+/**
+ * 3D의 강조 단위는 내역서 **행**이다(DESIGN.md §3.2). 세그먼트마다 메시를 두면
+ * 기둥 하나에 156개가 생기는데, 행 단위로 묶으면 2개로 끝나고 강조는 행 그대로
+ * 재질 1회 교체가 된다. 묶는 단위를 도메인의 단위와 일치시킨 것이지 임의의
+ * 배칭이 아니다.
+ */
+export function rebarBatches(
+  entries: { rowId: string; rebar: Rebar }[],
+  section: ColumnSection,
+): RebarBatch[] {
+  const batches = new Map<string, RebarBatch>()
+
+  for (const { rowId, rebar } of entries) {
+    const segments = rebarSegments(rebar, section)
+    const batch = batches.get(rowId)
+
+    if (batch) batch.segments.push(...segments)
+    else batches.set(rowId, { rowId, segments })
+  }
+
+  return [...batches.values()]
 }
 
 function subtract(left: Point3, right: Point3): Point3 {
