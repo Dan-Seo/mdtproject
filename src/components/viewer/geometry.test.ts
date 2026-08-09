@@ -6,10 +6,14 @@ import type { Rebar } from '@/domain/model/rebar'
 import {
   CAMERA_FOV_DEGREES,
   CAMERA_FRAME_MARGIN,
+  easeOutCubic,
   fitCamera,
+  flyInStartPose,
+  lerpCameraFit,
   rebarRadius,
   rebarSegments,
   type Bounds,
+  type CameraFit,
   type Point3,
 } from './geometry'
 
@@ -307,6 +311,54 @@ describe('rebarRadius', () => {
   it('returns the intentional display exaggeration instead of D10 actual size', () => {
     expect(rebarRadius('D10')).toBeCloseTo(22.4)
     expect(rebarRadius('D10')).not.toBe(10)
+  })
+})
+
+describe('easeOutCubic', () => {
+  it('eases from 0 to 1 and clamps outside the range', () => {
+    expect(easeOutCubic(0)).toBe(0)
+    expect(easeOutCubic(1)).toBe(1)
+    expect(easeOutCubic(0.5)).toBeCloseTo(0.875)
+    expect(easeOutCubic(-1)).toBe(0)
+    expect(easeOutCubic(2)).toBe(1)
+  })
+})
+
+describe('lerpCameraFit', () => {
+  const from: CameraFit = { position: [0, 0, 0], target: [10, 10, 10] }
+  const to: CameraFit = { position: [100, 200, 300], target: [30, 10, 50] }
+
+  it('returns the endpoints at t=0 and t=1 and blends between', () => {
+    expect(lerpCameraFit(from, to, 0)).toEqual(from)
+    expect(lerpCameraFit(from, to, 1)).toEqual(to)
+
+    const mid = lerpCameraFit(from, to, 0.5)
+    expect(mid.position).toEqual([50, 100, 150])
+    expect(mid.target).toEqual([20, 10, 30])
+  })
+})
+
+describe('flyInStartPose', () => {
+  const fit: CameraFit = { position: [100, 50, 0], target: [0, 50, 0] }
+
+  it('keeps the target and scales the camera distance', () => {
+    const pose = flyInStartPose(fit, Math.PI / 2, 1.35)
+
+    expect(pose.target).toEqual(fit.target)
+    const distance = Math.hypot(
+      pose.position[0] - fit.target[0],
+      pose.position[1] - fit.target[1],
+      pose.position[2] - fit.target[2],
+    )
+    expect(distance).toBeCloseTo(100 * 1.35)
+  })
+
+  it('rotates around the vertical axis through the target', () => {
+    const pose = flyInStartPose(fit, Math.PI / 2, 1)
+
+    expect(pose.position[0]).toBeCloseTo(0)
+    expect(pose.position[1]).toBeCloseTo(50)
+    expect(pose.position[2]).toBeCloseTo(-100)
   })
 })
 

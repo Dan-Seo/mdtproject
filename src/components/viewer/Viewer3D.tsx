@@ -15,10 +15,14 @@ import { useAppStore } from '@/lib/store'
 
 import {
   CAMERA_FOV_DEGREES,
+  easeOutCubic,
   fitCamera,
+  flyInStartPose,
+  lerpCameraFit,
   rebarRadius,
   rebarSegments,
   type Bounds,
+  type CameraFit,
   type Point3,
 } from './geometry'
 import styles from './Viewer3D.module.css'
@@ -34,6 +38,12 @@ const CONCRETE_COLOR = 0x55524a
 const GRID_COLOR_SOFT = 0x2a2820
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
 const LIGHT_DIRECTION = new THREE.Vector3(4, 8, 6).normalize()
+const FLY_IN_DURATION_MS = 900
+const TRANSITION_DURATION_MS = 550
+const FLY_IN_YAW_RADIANS = -Math.PI / 9
+const FLY_IN_DISTANCE_SCALE = 1.35
+const AUTO_ROTATE_DELAY_MS = 8000
+const AUTO_ROTATE_SPEED = 0.5
 
 interface SelectedColumnView {
   member: Member
@@ -41,6 +51,13 @@ interface SelectedColumnView {
   story: Story
   rebars: Rebar[]
   rowIds: Map<Rebar['id'], QuantityLine['id']>
+}
+
+interface CameraTween {
+  from: CameraFit
+  to: CameraFit
+  startedAt: number
+  duration: number
 }
 
 interface ViewerRuntime {
@@ -55,6 +72,10 @@ interface ViewerRuntime {
   normalMaterial: THREE.MeshStandardMaterial | null
   highlightMaterial: THREE.MeshStandardMaterial | null
   pickableMeshes: THREE.Mesh[]
+  // 카메라 연출 상태 — 씬 콘텐츠(rebuild 수명)가 아니라 마운트 수명이다.
+  cameraTween: CameraTween | null
+  lastInteractionAt: number
+  initialFitDone: boolean
 }
 
 function vector(point: Point3): THREE.Vector3 {
@@ -257,6 +278,54 @@ function createSegmentMesh(
   return mesh
 }
 
+function toSceneFit(fit: CameraFit): CameraFit {
+  const scale = (point: Point3): Point3 => [
+    point[0] * MILLIMETRES_TO_SCENE,
+    point[1] * MILLIMETRES_TO_SCENE,
+    point[2] * MILLIMETRES_TO_SCENE,
+  ]
+
+  return { position: scale(fit.position), target: scale(fit.target) }
+}
+
+function applyCameraFit(runtime: ViewerRuntime, fit: CameraFit): void {
+  runtime.camera.position.set(...fit.position)
+  runtime.controls.target.set(...fit.target)
+  runtime.camera.lookAt(runtime.controls.target)
+  runtime.camera.updateProjectionMatrix()
+  runtime.controls.update()
+}
+
+function startCameraTween(runtime: ViewerRuntime, fittedMm: CameraFit): void {
+  const to = toSceneFit(fittedMm)
+  let from: CameraFit
+  let duration: number
+
+  if (runtime.initialFitDone) {
+    from = {
+      position: runtime.camera.position.toArray() as Point3,
+      target: [
+        runtime.controls.target.x,
+        runtime.controls.target.y,
+        runtime.controls.target.z,
+      ],
+    }
+    duration = TRANSITION_DURATION_MS
+  } else {
+    from = flyInStartPose(to, FLY_IN_YAW_RADIANS, FLY_IN_DISTANCE_SCALE)
+    duration = FLY_IN_DURATION_MS
+    runtime.initialFitDone = true
+  }
+
+  runtime.cameraTween = {
+    from,
+    to,
+    startedAt: performance.now(),
+    duration,
+  }
+  applyCameraFit(runtime, from)
+}
+
 function applyHighlight(
   runtime: ViewerRuntime,
   hoverRowId: string | null,
@@ -335,15 +404,7 @@ function rebuildScene(
     fogDistance * 1.6,
     fogDistance * 4,
   )
-  runtime.camera.position.copy(vector(fitted.position))
-  runtime.controls.target.set(
-    fitted.target[0] * MILLIMETRES_TO_SCENE,
-    fitted.target[1] * MILLIMETRES_TO_SCENE,
-    fitted.target[2] * MILLIMETRES_TO_SCENE,
-  )
-  runtime.camera.lookAt(runtime.controls.target)
-  runtime.camera.updateProjectionMatrix()
-  runtime.controls.update()
+  startCameraTween(runtime, fitted)
   applyHighlight(runtime, hoverRowId)
 }
 
@@ -442,6 +503,7 @@ export function Viewer3D() {
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = CONTROLS_DAMPING
+    controls.autoRotateSpeed = AUTO_ROTATE_SPEED
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x37352d, 0.5))
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
@@ -464,8 +526,17 @@ export function Viewer3D() {
       normalMaterial: null,
       highlightMaterial: null,
       pickableMeshes: [],
+      cameraTween: null,
+      lastInteractionAt: performance.now(),
+      initialFitDone: false,
     }
     runtimeRef.current = runtime
+
+    // 사용자가 잡으면 사용자가 이긴다 — 연출을 즉시 끊는다.
+    controls.addEventListener('start', () => {
+      runtime.cameraTween = null
+      runtime.lastInteractionAt = performance.now()
+    })
 
     const observer = new ResizeObserver((entries) => {
       const { width, height } = entries[0]?.contentRect ?? {
@@ -499,6 +570,17 @@ export function Viewer3D() {
 
     let animationFrame = 0
     const renderFrame = () => {
+      const tween = runtime.cameraTween
+      if (tween !== null) {
+        const progress = (performance.now() - tween.startedAt) / tween.duration
+        const fit = lerpCameraFit(tween.from, tween.to, easeOutCubic(progress))
+        camera.position.set(...fit.position)
+        controls.target.set(...fit.target)
+        if (progress >= 1) runtime.cameraTween = null
+      }
+      controls.autoRotate =
+        runtime.cameraTween === null &&
+        performance.now() - runtime.lastInteractionAt > AUTO_ROTATE_DELAY_MS
       controls.update()
       renderer.render(scene, camera)
       animationFrame = window.requestAnimationFrame(renderFrame)

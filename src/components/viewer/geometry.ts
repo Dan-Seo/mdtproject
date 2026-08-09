@@ -185,6 +185,56 @@ function assertBounds(bounds: Bounds): void {
   }
 }
 
+export function easeOutCubic(t: number): number {
+  const clamped = Math.min(Math.max(t, 0), 1)
+  return 1 - (1 - clamped) ** 3
+}
+
+export function lerpCameraFit(
+  from: CameraFit,
+  to: CameraFit,
+  t: number,
+): CameraFit {
+  const mix = (left: Point3, right: Point3): Point3 => [
+    left[0] + (right[0] - left[0]) * t,
+    left[1] + (right[1] - left[1]) * t,
+    left[2] + (right[2] - left[2]) * t,
+  ]
+
+  return {
+    position: mix(from.position, to.position),
+    target: mix(from.target, to.target),
+  }
+}
+
+/**
+ * 플라이인 시작 포즈: 자동 프레이밍 포즈를 타깃 중심으로 yaw 회전시키고
+ * 거리를 배율만큼 벌린다. 첫 로드 연출의 출발점이다.
+ */
+export function flyInStartPose(
+  fit: CameraFit,
+  yawRadians: number,
+  distanceScale: number,
+): CameraFit {
+  const offset = subtract(fit.position, fit.target)
+  const cos = Math.cos(yawRadians)
+  const sin = Math.sin(yawRadians)
+  const rotated: Point3 = [
+    offset[0] * cos + offset[2] * sin,
+    offset[1],
+    -offset[0] * sin + offset[2] * cos,
+  ]
+
+  return {
+    position: [
+      fit.target[0] + rotated[0] * distanceScale,
+      fit.target[1] + rotated[1] * distanceScale,
+      fit.target[2] + rotated[2] * distanceScale,
+    ],
+    target: fit.target,
+  }
+}
+
 export function fitCamera(bounds: Bounds): CameraFit {
   assertBounds(bounds)
 
