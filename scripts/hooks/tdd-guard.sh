@@ -6,23 +6,19 @@
 # Claude(.claude/settings.json)와 Codex(.codex/hooks.json) 양쪽에서 공유한다.
 # 훅 출력 와이어 포맷(hookSpecificOutput.permissionDecision)은 두 도구가 동일하고,
 # 편집 대상을 표현하는 입력만 다르다:
-#   - Claude Edit|Write                     → tool_input.file_path (한 개, 절대경로)
-#   - Codex apply_patch / shell(apply_patch) → 패치 본문의
-#                                             '*** Add|Update File: <path>' 헤더 (여러 개, 상대경로)
+#   - Claude Edit|Write   → tool_input.file_path (한 개, 절대경로)
+#   - Codex apply_patch   → tool_input.command 가 패치 본문이고, 그 안의
+#                           '*** Add|Update File: <path>' 헤더가 대상이다 (여러 개, 상대경로)
 
 INPUT=$(cat)
 
 # --- 편집 대상 경로 추출 ---
 
-FILE_PATHS=$(echo "$INPUT" | jq -r '
-  if (.tool_input | type) == "object" then (.tool_input.file_path // empty) else empty end
-' 2>/dev/null)
+FILE_PATHS=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 
 if [ -z "$FILE_PATHS" ]; then
-  # Codex: apply_patch는 freeform 문자열, shell은 command 배열 안에 패치가 실려 온다.
-  # tool_input 어디에 있든 문자열을 전부 모아 패치 헤더를 찾는다.
   # Delete File은 대상이 사라지므로 테스트를 요구하지 않는다 — Add/Update만 본다.
-  FILE_PATHS=$(echo "$INPUT" | jq -r '[.tool_input | .. | strings] | join("\n")' 2>/dev/null \
+  FILE_PATHS=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null \
     | tr -d '\r' \
     | sed -nE 's/^\*\*\* (Add|Update) File: (.+)$/\2/p')
 fi

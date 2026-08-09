@@ -1,18 +1,17 @@
 #!/bin/bash
-# Dangerous Command Guard Hook — PreToolUse (shell 계열 툴)
+# Dangerous Command Guard Hook — PreToolUse (matcher: Bash)
 # 되돌릴 수 없는 명령을 실행하려 하면 차단한다.
 #
 # Claude(.claude/settings.json)와 Codex(.codex/hooks.json) 양쪽에서 공유한다.
 # 판정 결과는 exit code가 아니라 훅 출력 JSON으로 낸다 — 두 도구가 같은 와이어 포맷
 # (hookSpecificOutput.permissionDecision)을 쓰고, exit code 해석은 도구마다 다르기 때문.
 #
-# 입력의 명령 표현이 다르므로 tool_input 안의 문자열을 전부 모아서 검사한다:
-#   - Claude Bash  → tool_input.command (문자열)
-#   - Codex shell  → tool_input.command (배열: ["bash","-lc","..."])
+# 셸 명령은 두 도구 모두 tool_input.command 문자열로 온다
+# (Claude는 tool_name `Bash`, Codex도 정규 툴 이름이 `Bash`다).
 
 INPUT=$(cat)
 
-CMD=$(echo "$INPUT" | jq -r '[.tool_input | .. | strings] | join("\n")' 2>/dev/null)
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
 if [ -z "$CMD" ]; then
   exit 0
