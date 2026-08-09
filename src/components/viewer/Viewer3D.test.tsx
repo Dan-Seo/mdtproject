@@ -1,7 +1,14 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
 
 const mocks = vi.hoisted(() => ({
@@ -151,6 +158,11 @@ describe('Viewer3D', () => {
   })
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
+    const { result } = renderHook(() => useTakeoff())
+    const mainLine = result.current.lines.find(
+      ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
+    )
+    expect(mainLine).toBeDefined()
     render(<Viewer3D />)
 
     fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
@@ -158,7 +170,7 @@ describe('Viewer3D', () => {
       clientY: 180,
     })
 
-    expect(useAppStore.getState().hoverRowId).toBe('1階|C|C1|主筋')
+    expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
   })
 
   it('builds one pickable mesh per takeoff row instead of one per segment', () => {

@@ -1,0 +1,39 @@
+// UC-7: 산출 근거 — source chip / inferred ▲ / 算出式 펼치기 (법적 의무 표시)
+const page = await browser.getPage("kijun");
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.waitForSelector("canvas");
+
+const firstLineId = await page.evaluate(
+  () => document.querySelector("[data-testid^='quantity-line-']").getAttribute("data-testid")
+);
+
+const before = await page.evaluate(() => ({
+  formulaRows: document.querySelectorAll("[data-testid^='formula-']").length,
+  chips: [...document.querySelectorAll("[class*='_sourceChip__']")].map((c) => ({
+    text: c.textContent.trim(),
+    tag: c.tagName,
+    href: c.getAttribute("href"),
+    disabled: c.getAttribute("aria-disabled"),
+    title: c.getAttribute("title"),
+  })),
+  inferredMarks: [...document.querySelectorAll("[class*='inferredWarning']")].map((s) => ({
+    text: s.textContent.trim(),
+    ariaLabel: s.getAttribute("aria-label"),
+    title: s.getAttribute("title"),
+  })),
+}));
+
+await page.locator("[data-testid^='quantity-line-']").first().click();
+
+const after = await page.evaluate(() => ({
+  formulaRows: [...document.querySelectorAll("[data-testid^='formula-']")].map((r) => ({
+    id: r.getAttribute("data-testid"),
+    formula: r.textContent.trim(),
+  })),
+  expandedRows: [...document.querySelectorAll("[data-testid^='quantity-line-'][aria-expanded='true']")].map(
+    (r) => r.getAttribute("data-testid")
+  ),
+}));
+
+console.log(JSON.stringify({ firstLineId, before, after }, null, 2));
+console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc7-formula.png")));

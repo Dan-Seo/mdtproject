@@ -30,6 +30,16 @@ function takeoffLines() {
   return result.current.lines
 }
 
+// 行 id は加工長・本数まで含むので、書き下さずに集計結果から引く。
+function lineFor(role: '主筋' | '帯筋') {
+  const line = takeoffLines().find(
+    (candidate) => candidate.groupId === '1階|C|C1' && candidate.role === role,
+  )
+
+  if (!line) throw new Error(`QuantityLine not found: ${role}`)
+  return line
+}
+
 describe('TakeoffPane', () => {
   beforeEach(() => {
     useAppStore.setState({
@@ -72,24 +82,24 @@ describe('TakeoffPane', () => {
 
   it('formats 長さ in metres with three decimal places', () => {
     const lines = takeoffLines()
-    const line = lines.find(({ id }) => id === '1階|C|C1|主筋')
-    expect(line).toBeDefined()
+    const line = lineFor('主筋')
 
     render(<TakeoffTable lines={lines} />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${line.id}`)
     expect(within(row).getAllByRole('cell')[3]).toHaveTextContent(
-      (line!.lengthMm / 1000).toFixed(3),
+      (line.lengthMm / 1000).toFixed(3),
     )
   })
 
   it('localises the 形状 label instead of hardcoding Japanese', () => {
     const lines = takeoffLines()
+    const lineId = lineFor('主筋').id
     useAppStore.setState({ locale: 'ko' })
 
     render(<TakeoffTable lines={lines} />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
     expect(within(row).getByLabelText('직선')).toBeInTheDocument()
     expect(within(row).queryByLabelText('直線')).not.toBeInTheDocument()
   })
@@ -135,29 +145,31 @@ describe('TakeoffPane', () => {
   })
 
   it('does not select or expand a row when a source link is clicked', () => {
+    const lineId = lineFor('主筋').id
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
     fireEvent.click(within(row).getAllByRole('link')[0])
 
     expect(useAppStore.getState().sel).toEqual({
       group: null,
       memberId: null,
     })
-    expect(screen.queryByTestId('formula-1階|C|C1|主筋')).not.toBeInTheDocument()
+    expect(screen.queryByTestId(`formula-${lineId}`)).not.toBeInTheDocument()
   })
 
   it('updates hoverRowId without changing sel', () => {
+    const lineId = lineFor('主筋').id
     useAppStore.setState({
       sel: { group: '2階|C|C1', memberId: '2F-X2Y2' },
     })
     const initialSelection = useAppStore.getState().sel
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
     fireEvent.mouseEnter(row)
 
-    expect(useAppStore.getState().hoverRowId).toBe('1階|C|C1|主筋')
+    expect(useAppStore.getState().hoverRowId).toBe(lineId)
     expect(useAppStore.getState().sel).toEqual(initialSelection)
 
     fireEvent.mouseLeave(row)
@@ -173,10 +185,11 @@ describe('TakeoffPane', () => {
     const initialSelection = useAppStore.getState().sel
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const lineId = lineFor('主筋').id
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
     fireEvent.focus(row)
 
-    expect(useAppStore.getState().hoverRowId).toBe('1階|C|C1|主筋')
+    expect(useAppStore.getState().hoverRowId).toBe(lineId)
     expect(useAppStore.getState().sel).toEqual(initialSelection)
 
     fireEvent.blur(row)
@@ -187,14 +200,13 @@ describe('TakeoffPane', () => {
 
   it('expands the exact domain formula when a rebar row is clicked', () => {
     const lines = takeoffLines()
-    const line = lines.find(({ id }) => id === '1階|C|C1|帯筋')
-    expect(line).toBeDefined()
+    const line = lineFor('帯筋')
     render(<TakeoffTable lines={lines} />)
 
-    fireEvent.click(screen.getByTestId(`quantity-line-${line!.id}`))
+    fireEvent.click(screen.getByTestId(`quantity-line-${line.id}`))
 
-    expect(screen.getByTestId(`formula-${line!.id}`)).toHaveTextContent(
-      line!.formula,
+    expect(screen.getByTestId(`formula-${line.id}`)).toHaveTextContent(
+      line.formula,
     )
   })
 
@@ -237,9 +249,10 @@ describe('TakeoffPane', () => {
   })
 
   it('renders unavailable sources as disabled chips instead of links', () => {
+    const lineId = lineFor('主筋').id
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
     const chip = within(row).getByText('JIS G 3112')
 
     expect(chip).toHaveAttribute('aria-disabled', 'true')
@@ -250,17 +263,18 @@ describe('TakeoffPane', () => {
   it('stores a typed 備考 in the Project instead of dropping it', () => {
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
-    fireEvent.change(within(row).getByLabelText('1階|C|C1|主筋 備考'), {
+    const lineId = lineFor('主筋').id
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
+    fireEvent.change(within(row).getByLabelText(`${lineId} 備考`), {
       target: { value: '要確認' },
     })
 
     expect(useAppStore.getState().project.notes).toEqual({
-      '1階|C|C1|主筋': '要確認',
+      [lineId]: '要確認',
     })
     expect(
-      within(screen.getByTestId('quantity-line-1階|C|C1|主筋')).getByLabelText(
-        '1階|C|C1|主筋 備考',
+      within(screen.getByTestId(`quantity-line-${lineId}`)).getByLabelText(
+        `${lineId} 備考`,
       ),
     ).toHaveValue('要確認')
   })
@@ -268,7 +282,7 @@ describe('TakeoffPane', () => {
   it('keeps an unavailable source chip reachable by keyboard', () => {
     render(<TakeoffPane />)
 
-    const row = screen.getByTestId('quantity-line-1階|C|C1|主筋')
+    const row = screen.getByTestId(`quantity-line-${lineFor('主筋').id}`)
     const chip = within(row).getByText('JIS G 3112')
 
     expect(chip).toHaveAttribute('tabindex', '0')

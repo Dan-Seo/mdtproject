@@ -216,8 +216,10 @@ describe('buildTakeoffWorkbook', () => {
 
     const { Workbook } = await import('exceljs')
     const workbook = new Workbook()
-    const bytes = Buffer.from(await downloadedBlob!.arrayBuffer())
-    await workbook.xlsx.load(bytes)
+    // exceljs の index.d.ts は自前で `interface Buffer extends ArrayBuffer` を
+    // モジュール内に宣言している。load が取るのは Node の Buffer ではなく
+    // ArrayBuffer なので、Blob の ArrayBuffer をそのまま渡す。
+    await workbook.xlsx.load(await downloadedBlob!.arrayBuffer())
     const worksheet = workbook.getWorksheet('数量内訳書')
 
     expect(worksheet?.getCell('A1').value).toBe(
@@ -225,5 +227,6 @@ describe('buildTakeoffWorkbook', () => {
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
     expect(worksheet?.getCell('P3').value).toBe('算出式')
-  })
+    // exceljs の動的 import は npm ci 直後の初回だけ既定の5秒を超えることがある。
+  }, 20000)
 })
