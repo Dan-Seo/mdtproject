@@ -27,3 +27,39 @@ npx eslint $staged
 
 echo "pre-commit: tsc --noEmit"
 npx tsc --noEmit
+
+# ── LLM 퀵 패스 ────────────────────────────────────────────────
+# 리뷰 대상(src/tests/package.json/yaml)이 staged일 때만 claude -p 단일 호출로
+# critical 위반을 스캔한다. critical → 커밋 차단, 그 외 → 알리고 통과.
+# API 오류·타임아웃(90초)은 fail-open — 네트워크 장애가 커밋을 막지 않는다.
+review_targets=$(git diff --cached --name-only --diff-filter=ACMR |
+  grep -E '^(src/|tests/|package\.json$)|\.yaml$' || true)
+
+if [ -n "$review_targets" ]; then
+  echo "pre-commit: LLM 퀵 패스 (critical 스캔, 최대 90초)"
+  # shellcheck disable=SC2086
+  verdict=$(git diff --cached -- $review_targets | timeout 90 claude -p "$(cat <<'PROMPT'
+너는 커밋 직전 스캔이다. stdin으로 받은 staged diff에서 아래 critical 위반만 찾아라. 도구 없이 diff만으로 판정하라.
+1. .ts/.tsx 코드의 배근 규준 수치 리터럴 하드코딩 (定着·重ね継手·折曲げ·かぶり·할증률 등). 예외: 단위 변환 상수(1000 등), 기하 계산, 출처가 명기된 테스트 픽스처 기대값
+2. 네트워크 전송 코드 (fetch·XMLHttpRequest·WebSocket·sendBeacon·axios)
+3. src/domain/ 파일의 react·react-dom·next·three·zustand·exceljs import
+4. 할증률 조회가 범위 밖 입력에 기본값을 조용히 반환 (throw 해야 함 — ADR-014)
+5. 主筋 본수·帯筋 피치를 룰팩에서 조회하는 코드 (단면일람 입력값이어야 함 — ADR-012)
+
+출력 규칙 — 아래 형식 외 다른 텍스트 절대 금지:
+- 위반 발견: 줄마다 CRITICAL|파일경로:라인|한 문장
+- critical은 아니지만 알릴 가치가 있으면: 줄마다 INFO|파일경로:라인|한 문장
+- 아무것도 없으면: OK
+PROMPT
+)" --model sonnet 2>/dev/null || echo FAILOPEN)
+
+  if printf '%s\n' "$verdict" | grep -q '^FAILOPEN$'; then
+    echo "pre-commit: LLM 퀵 패스 실패(타임아웃/오류) — fail-open 통과" >&2
+  elif printf '%s\n' "$verdict" | grep -q '^CRITICAL|'; then
+    echo "pre-commit: critical 위반 — 커밋을 차단한다 (오탐이면 git commit --no-verify)" >&2
+    printf '%s\n' "$verdict" | grep -E '^(CRITICAL|INFO)\|' >&2
+    exit 1
+  else
+    printf '%s\n' "$verdict" | grep -E '^INFO\|' >&2 || true
+  fi
+fi
