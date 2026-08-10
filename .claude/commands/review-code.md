@@ -5,6 +5,17 @@ argument-hint: [PR번호]
 
 변경 사항을 3개 차원의 서브에이전트로 병렬 리뷰하라. 빌드·lint·테스트 실행과 문서 정합 검사는 `/review` 소관이므로 여기서 하지 않는다.
 
+## 심각도 정의 (모든 finding·코멘트·집계의 공통 기준)
+
+| 심각도 | 기준 | 이 프로젝트의 구체 예 |
+|--------|------|----------------------|
+| 🔴 critical | 머지 불가 — CLAUDE.md CRITICAL 위반, 산정 결과 오류, 데이터 유출 | `.ts`의 규준 수치 리터럴(定着 40d 등), 도면 데이터 fetch 전송, `src/domain`의 React import, mm↔m 변환 누락 |
+| 🟠 major | 특정 조건에서 결함 — 수정 후 머지 | 할증률 범위 밖 기본값 4% 반환, project 제자리 변이로 캐시 stale, formula injection 새 경로, 규준 기능의 골든 픽스처 부재, dispose 누락 |
+| 🟡 minor | 동작하지만 위험 소지·관례 이탈 | 신규 의존성 추가, 요청 없는 추상화·유연성, 테스트는 있으나 경계 케이스 누락 |
+| ⚪ nit | 스타일·표현 수준 권고 | 네이밍, 주석, 사소한 중복 |
+
+**출력 포맷은 고정이다** — 인라인 코멘트 4줄, 요약의 판정·집계 블록. 후속 게이트(실습 2)가 이 포맷을 입력으로 파싱한다.
+
 전달된 인자: "$ARGUMENTS" — 숫자면 PR 번호(PR 모드), 비어 있으면 로컬 모드.
 
 ## 1단계 — 모드·범위 확정 (메인 에이전트)
@@ -43,15 +54,16 @@ const FINDINGS_SCHEMA = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['file', 'line', 'severity', 'check', 'evidence', 'why', 'fix'],
+        required: ['file', 'line', 'severity', 'title', 'tldr', 'good', 'fix', 'evidence'],
         properties: {
           file: { type: 'string', description: '리포 루트 기준 상대 경로' },
           line: { type: 'integer', description: '변경 후 파일 기준 라인 번호' },
-          severity: { type: 'string', enum: ['high', 'medium', 'low'] },
-          check: { type: 'string', description: '위반한 검사 항목 라벨' },
-          evidence: { type: 'string', description: '해당 라인의 실제 코드 1-2줄 인용' },
-          why: { type: 'string', description: '왜 문제인지 한 문장' },
-          fix: { type: 'string', description: '수정 방안 한 문장' },
+          severity: { type: 'string', enum: ['critical', 'major', 'minor', 'nit'] },
+          title: { type: 'string', description: '코멘트 1행: 문제를 요약한 제목' },
+          tldr: { type: 'string', description: '코멘트 2행: 왜 문제인지 한 문장' },
+          good: { type: 'string', description: '코멘트 3행: 이 변경에서 인정할 점 한 줄 (의도·부분적으로 올바른 접근)' },
+          fix: { type: 'string', description: '코멘트 4행: 수정 제안 — 반드시 코드로 제시' },
+          evidence: { type: 'string', description: '해당 라인의 실제 코드 1-2줄 인용 (검증용 — 코멘트에는 미출력)' },
         },
       },
     },
@@ -71,7 +83,8 @@ diff 전문: ${A.diffPath} 를 Read로 읽어라. 판정에 맥락이 필요하�
 - diff의 변경분과 신규 파일만 대상이다. 기존 코드의 이슈는 이번 변경이 같은 패턴을 확장할 때만 보고한다.
 - 모든 finding에 정확한 file·line(변경 후 기준)과 실제 코드 인용(evidence)이 필수다. Read로 확인하지 않은 추측 금지.
 - 확신이 없으면 반환하지 마라. 0건이 정상 결과다. 최대 10건, 심각도 높은 순.
-- severity: high = CLAUDE.md CRITICAL 위반·산정 결과 오류·데이터 유출 직결 / medium = 조건부 결함 / low = 권고.
+- severity 4단계: critical = CLAUDE.md CRITICAL 위반·산정 결과 오류·데이터 유출 / major = 특정 조건에서 결함(경계값·캐시 무효화·인젝션 경로·골든 픽스처 부재) / minor = 동작하나 위험 소지·관례 이탈 / nit = 스타일 권고.
+- fix 는 반드시 코드로 제시하라 (한 줄 스니펫 가능). good 에는 이 변경에서 인정할 점을 한 줄 쓴다.
 - 대상이 30개 파일을 넘으면 src/rulepack → src/domain → src/lib → 컴포넌트 순으로 우선 읽어라.`
 
 const DIMENSIONS = [
@@ -93,11 +106,11 @@ const DIMENSIONS = [
     prompt: COMMON + `
 
 차원: security — 변경으로 데이터가 새는가. 검사 항목:
-1. 서버 전송 코드의 등장 자체가 무조건 high: fetch, axios, XMLHttpRequest, WebSocket, sendBeacon, 외부 analytics·SDK. 이 앱은 클라이언트 온리이고 현재 네트워크 코드가 0건이다 — 신규 등장 = 즉시 finding
-2. exceljs formula injection 경로 확장: 사용자 자유 텍스트가 셀 값으로 들어가는 새 경로(= + - @ 시작 값 무이스케이프)는 medium. 기존 2개 경로(src/lib/export/index.ts 의 mark·notes)는 보고 금지
+1. 서버 전송 코드의 등장 자체가 무조건 critical: fetch, axios, XMLHttpRequest, WebSocket, sendBeacon, 외부 analytics·SDK. 이 앱은 클라이언트 온리이고 현재 네트워크 코드가 0건이다 — 신규 등장 = 즉시 finding
+2. exceljs formula injection 경로 확장: 사용자 자유 텍스트가 셀 값으로 들어가는 새 경로(= + - @ 시작 값 무이스케이프)는 major. 기존 2개 경로(src/lib/export/index.ts 의 mark·notes)는 보고 금지
 3. XSS: dangerouslySetInnerHTML, innerHTML 직접 대입, href 에 사용자 입력
-4. eval·new Function 등 동적 코드 실행 도입 — 특히 룰팩 expr 필드 처리에 들어오면 high
-5. package.json 신규 dependency: 존재를 low 로 보고 (필요성 판단은 취합 단계 몫)`,
+4. eval·new Function 등 동적 코드 실행 도입 — 특히 룰팩 expr 필드 처리에 들어오면 critical
+5. package.json 신규 dependency: 존재를 minor 로 보고 (필요성 판단은 취합 단계 몫)`,
   },
   {
     key: 'architecture',
@@ -122,7 +135,7 @@ for (let i = 0; i < DIMENSIONS.length; i++) {
   for (const f of results[i].findings) raw.push({ ...f, dimension: DIMENSIONS[i].key })
 }
 
-const SEV = { high: 0, medium: 1, low: 2 }
+const SEV = { critical: 0, major: 1, minor: 2, nit: 3 }
 const valid = raw.filter(f => f.file && f.line > 0 && f.evidence && f.evidence.trim().length > 0)
 
 const byFile = {}
@@ -139,12 +152,12 @@ for (const file of Object.keys(byFile).sort()) {
     if (cur && f.line === cur.line) {
       if (cur.dimensions.indexOf(f.dimension) < 0) cur.dimensions.push(f.dimension)
       if (SEV[f.severity] < SEV[cur.severity]) {
-        cur.severity = f.severity; cur.check = f.check
-        cur.evidence = f.evidence; cur.why = f.why; cur.fix = f.fix
+        cur.severity = f.severity; cur.title = f.title; cur.tldr = f.tldr
+        cur.good = f.good; cur.fix = f.fix; cur.evidence = f.evidence
       }
     } else {
-      cur = { file: f.file, line: f.line, severity: f.severity, check: f.check,
-              evidence: f.evidence, why: f.why, fix: f.fix, dimensions: [f.dimension] }
+      cur = { file: f.file, line: f.line, severity: f.severity, title: f.title, tldr: f.tldr,
+              good: f.good, fix: f.fix, evidence: f.evidence, dimensions: [f.dimension] }
       findings.push(cur)
     }
   }
@@ -158,29 +171,32 @@ return { findings, failedDimensions }
 
 ## 3단계 — 보고 (메인 에이전트)
 
-Workflow 반환값으로 아래 순서의 마크다운을 출력한다 (전체 요약 → 인라인 상세):
+Workflow 반환값으로 아래 순서의 마크다운을 출력한다 (전체 요약 → 인라인 상세). 포맷은 고정 — 후속 게이트의 파싱 입력이다.
 
-**전체 요약**
-- 리뷰 범위: {PR #n "제목" | 워킹 트리 | main...HEAD}, 대상 파일 N개
-- 차원별 건수: correctness n / security n / architecture n. `failedDimensions`가 있으면 `⚠ {차원} 리뷰 실패 — 결과 없음` 명시
-- 판단: high ≥ 1 → **수정 필요** / medium만 → **항목별 검토** / low만·0건 → **머지 가능**. 실패 차원이 있으면 판단문에 "(일부 차원 미완료)" 단서를 붙인다
+**전체 요약** (판정 → 집계 → critical·major 나열 순)
+- 판정: 🔴 critical ≥ 1 → **Blocked** / 🟠 major ≥ 1 → **Changes Requested** / 그 외(🟡·⚪만 또는 0건) → **Approve**. 실패 차원이 있으면 판정 옆에 "(일부 차원 미완료)" 단서
+- 심각도 집계: `🔴 n · 🟠 n · 🟡 n · ⚪ n` + 리뷰 범위({PR #n "제목" | 워킹 트리 | main...HEAD}, 대상 파일 N개). `failedDimensions`가 있으면 `⚠ {차원} 리뷰 실패 — 결과 없음` 명시
+- **critical·major만** `path:line — [심각도] 제목` 형식으로 나열한다. minor·nit는 집계 숫자로만 요약에 나타나고 상세는 아래 인라인에
 
-**인라인 상세** — 파일별로 그룹:
+**인라인 상세** — 파일별로 그룹, finding마다 본문 **4줄 고정**:
 ```
-#### `path:line` — {severity} · {차원들}
-> {evidence}
-
-{why} — {fix}
+#### `path:line` · {차원들}
+[{🔴|🟠|🟡|⚪} {severity}] {title}
+TL;DR: {tldr}
+✓ Good: {good}
+→ Fix: {fix — 코드로}
 ```
 
-**0건이면**: 표·상세 생략, "3개 차원 모두 지적 없음. 리뷰 범위 {scope}, 대상 파일 N개" 한 줄 — 범위 명기가 "안 봤음"과 "깨끗함"을 구분한다.
+**0건이면**: 판정 **Approve**와 "3개 차원 모두 지적 없음. 리뷰 범위 {scope}, 대상 파일 N개" 한 줄 — 범위 명기가 "안 봤음"과 "깨끗함"을 구분한다.
 
 ### PR 모드 추가 동작 (finding ≥ 1건일 때만)
 
 1. 위 마크다운을 대화에 먼저 출력한다.
 2. 저장한 diff의 훅크 헤더(@@)와 대조해 각 finding의 line이 훅크 범위 안인지 확인한다. 밖이면 comments에서 빼고 리뷰 body 하단 "diff 범위 밖 지적" 목록으로 옮긴다 (GitHub API 제약).
-3. 스크래치패드에 payload.json 작성: `{ "commit_id": "<headRefOid>", "event": "COMMENT", "body": "<전체 요약(+diff 밖 지적)>", "comments": [{ "path", "line", "side": "RIGHT", "body": "[{severity}·{차원}] {why} — {fix}" }] }`
-4. `gh api repos/{owner}/{repo}/pulls/<n>/reviews --input payload.json` — 1회 호출로 리뷰 하나에 인라인 코멘트 전부를 담는다. 실패 시 재시도하지 않고 오류를 보고한다.
+3. 스크래치패드에 payload.json 작성: `{ "commit_id": "<headRefOid>", "event": "COMMENT", "body": "<전체 요약(판정·집계·critical·major 나열 + diff 밖 지적)>", "comments": [{ "path", "line", "side": "RIGHT", "body": "<4줄 고정>" }] }`. 각 인라인 코멘트 body는 4줄 고정:
+   `[{🔴|🟠|🟡|⚪} {severity}] {title}` / `TL;DR: {tldr}` / `✓ Good: {good}` / `→ Fix: {fix — 코드로}`
+4. `event`는 항상 `COMMENT`다 — 판정(Approve/Changes Requested/Blocked)은 body 텍스트로 표기한다. GitHub는 본인 PR에 APPROVE·REQUEST_CHANGES 리뷰를 거부하므로 event에 판정을 싣지 않는다.
+5. `gh api repos/{owner}/{repo}/pulls/<n>/reviews --input payload.json` — 1회 호출로 리뷰 하나에 인라인 코멘트 전부를 담는다. 실패 시 재시도하지 않고 오류를 보고한다.
 
 ## 실패 처리
 
