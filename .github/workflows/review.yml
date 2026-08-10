@@ -1,0 +1,30 @@
+name: review-code
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true # 연속 push 시 이전 리뷰를 취소한다
+
+jobs:
+  review:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 인라인 리뷰 코멘트 게시
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "/review-code ${{ github.event.pull_request.number }}"
+          claude_args: |
+            --allowedTools "Bash(gh:*),Bash(git:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
+        env:
+          GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용

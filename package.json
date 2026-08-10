@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
-    "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh"
+    "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
+    "hooks:install": "git config core.hooksPath scripts/githooks"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

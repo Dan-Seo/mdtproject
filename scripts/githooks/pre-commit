@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# 결정적 가드만 수행한다 — LLM 리뷰(/review-code)는 CI(GitHub Actions)가 담당한다.
+# 설치: npm run hooks:install  (git config core.hooksPath scripts/githooks)
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.tsx' '*.mjs')
+
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+echo "pre-commit: eslint ($(printf '%s\n' "$staged" | wc -l)개 staged 파일)"
+# shellcheck disable=SC2086
+npx eslint $staged
+
+echo "pre-commit: tsc --noEmit"
+npx tsc --noEmit
