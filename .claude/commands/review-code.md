@@ -92,7 +92,7 @@ const DIMENSIONS = [
     key: 'correctness',
     prompt: COMMON + `
 
-차원: correctness — 변경으로 계산·동작이 틀리는가. 검사 항목:
+차원: correctness — 너는 계산·동작의 버그만 본다. 아래 검사 항목 밖의 이슈(규칙 위반·데이터 유출 등)는 발견해도 보고하지 마라 — 다른 차원 에이전트의 소관이다. 검사 항목:
 1. 단위 혼동: mm↔m 변환(1000 나누기) 누락·중복, kg/m 단가와 길이 단위 불일치
 2. 경계값: 할증률 범위 밖 입력에 기본값 4% 반환(throw 해야 함 — ADR-014), 미지원 케이스에 조용한 기본값 반환, off-by-one, 0 나눗셈, 빈 배열
 3. zustand 변이: set() 밖 상태 변이, project 내부를 제자리 mutate 한 뒤 같은 참조로 set — src/lib/hooks/useTakeoff.ts 의 1-entry 캐시가 project 참조 동일성을 키로 쓰므로 제자리 변이는 화면 stale 로 직결된다
@@ -105,7 +105,7 @@ const DIMENSIONS = [
     key: 'security',
     prompt: COMMON + `
 
-차원: security — 변경으로 데이터가 새는가. 검사 항목:
+차원: security — 너는 데이터가 새는 경로만 본다. 아래 검사 항목 밖의 이슈(계산 버그·규칙 위반 등)는 발견해도 보고하지 마라 — 다른 차원 에이전트의 소관이다. 검사 항목:
 1. 서버 전송 코드의 등장 자체가 무조건 critical: fetch, axios, XMLHttpRequest, WebSocket, sendBeacon, 외부 analytics·SDK. 이 앱은 클라이언트 온리이고 현재 네트워크 코드가 0건이다 — 신규 등장 = 즉시 finding
 2. exceljs formula injection 경로 확장: 사용자 자유 텍스트가 셀 값으로 들어가는 새 경로(= + - @ 시작 값 무이스케이프)는 major. 기존 2개 경로(src/lib/export/index.ts 의 mark·notes)는 보고 금지
 3. XSS: dangerouslySetInnerHTML, innerHTML 직접 대입, href 에 사용자 입력
@@ -116,7 +116,7 @@ const DIMENSIONS = [
     key: 'architecture',
     prompt: COMMON + `
 
-차원: architecture — 프로젝트 규칙을 지켰는가.
+차원: architecture — 너는 프로젝트 규칙·구조 위반만 본다. 아래 검사 항목 밖의 이슈(계산 버그·데이터 유출 등)는 발견해도 보고하지 마라 — 다른 차원 에이전트의 소관이다.
 먼저 CLAUDE.md, docs/ADR.md, docs/ARCHITECTURE.md 세 파일을 Read 하라. 검사 항목:
 1. CLAUDE.md 의 CRITICAL·아키텍처 규칙 전부를 변경분에 대조하라. 단 서버 전송 금지 규칙은 security 차원 소관이므로 보고하지 마라
 2. 오탐 예외: 단위 변환 상수(1000 등)·기하 계산 숫자·출처가 명기된 tests/golden 픽스처의 숫자는 규준 수치 리터럴 위반이 아니다
@@ -171,7 +171,9 @@ return { findings, failedDimensions }
 
 ## 3단계 — 보고 (메인 에이전트)
 
-Workflow 반환값으로 아래 순서의 마크다운을 출력한다 (전체 요약 → 인라인 상세). 포맷은 고정 — 후속 게이트의 파싱 입력이다.
+**심각도 재조정 (출력 전 필수)**: 각 finding의 severity를 맨 위 심각도 정의표와 대조해 재검토한다 — 서브에이전트의 판정을 그대로 믿지 않는다. 같은 행을 2개 이상 차원이 지적했으면(dimensions 복수) 상향을 검토한다. 조정한 finding은 인라인 상세 1행에 `(재조정 {이전}→{이후})`를 병기한다.
+
+재조정을 마친 findings로 아래 순서의 마크다운을 출력한다 (전체 요약 → 인라인 상세). 포맷은 고정 — 후속 게이트의 파싱 입력이다.
 
 **전체 요약** (판정 → 집계 → critical·major 나열 순)
 - 판정: 🔴 critical ≥ 1 → **Blocked** / 🟠 major ≥ 1 → **Changes Requested** / 그 외(🟡·⚪만 또는 0건) → **Approve**. 실패 차원이 있으면 판정 옆에 "(일부 차원 미완료)" 단서
