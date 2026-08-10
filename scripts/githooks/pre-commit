@@ -3,6 +3,18 @@
 # 설치: npm run hooks:install  (git config core.hooksPath scripts/githooks)
 set -euo pipefail
 
+# 시크릿 커밋 가드 — 토큰 패턴이 staged 변경에 있으면 파일명만 알리고 차단한다
+secret_pattern='sk-ant-[A-Za-z0-9_-]{10,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+leaked=$(git diff --cached --name-only --diff-filter=ACMR | while IFS= read -r f; do
+  git show ":$f" 2>/dev/null | grep -qE "$secret_pattern" && printf '%s\n' "$f"
+done || true)
+if [ -n "$leaked" ]; then
+  echo "pre-commit: 시크릿으로 보이는 문자열이 있어 커밋을 차단한다:" >&2
+  printf '  %s\n' $leaked >&2
+  echo "키는 GitHub Secrets(gh secret set)로만 주입한다. 오탐이면 git commit --no-verify." >&2
+  exit 1
+fi
+
 staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.tsx' '*.mjs')
 
 if [ -z "$staged" ]; then
