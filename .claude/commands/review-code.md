@@ -14,7 +14,7 @@ argument-hint: [PR번호]
 | 🟡 minor | 동작하지만 위험 소지·관례 이탈 | 신규 의존성 추가, 요청 없는 추상화·유연성, 테스트는 있으나 경계 케이스 누락 |
 | ⚪ nit | 스타일·표현 수준 권고 | 네이밍, 주석, 사소한 중복 |
 
-**출력 포맷은 고정이다** — 인라인 코멘트 4줄, 요약의 판정·집계 블록. 후속 게이트(실습 2)가 이 포맷을 입력으로 파싱한다.
+**출력 포맷은 고정이다** — 인라인 코멘트 4줄, 요약의 판정·집계 블록. 자동 승인·머지 게이트가 요약 끝의 게이트 마커를 파싱하므로, 심각도 판정이 곧 머지 가능 여부다.
 
 전달된 인자: "$ARGUMENTS" — 숫자면 PR 번호(PR 모드), 비어 있으면 로컬 모드.
 
@@ -176,9 +176,14 @@ return { findings, failedDimensions }
 재조정을 마친 findings로 아래 순서의 마크다운을 출력한다 (전체 요약 → 인라인 상세). 포맷은 고정 — 후속 게이트의 파싱 입력이다.
 
 **전체 요약** (판정 → 집계 → critical·major 나열 순)
-- 판정: 🔴 critical ≥ 1 → **Blocked** / 🟠 major ≥ 1 → **Changes Requested** / 그 외(🟡·⚪만 또는 0건) → **Approve**. 실패 차원이 있으면 판정 옆에 "(일부 차원 미완료)" 단서
+- 판정 — 게이트 동작과 1:1로 대응하므로 어휘를 바꾸지 말 것:
+  🔴 critical ≥ 1 → **Blocked**(승인·머지 없음) / 🟠 major ≥ 1 → **Changes Requested**(승인·머지 없음) / 🟡 minor ≥ 1 → **Approve — 머지는 사람이** / 그 외(⚪만 또는 0건) → **Approve — 자동 머지**.
+  실패 차원이 있으면 판정 옆에 "(일부 차원 미완료)" 단서를 붙인다 — 이때 게이트는 판정과 무관하게 보류한다
 - 심각도 집계: `🔴 n · 🟠 n · 🟡 n · ⚪ n` + 리뷰 범위({PR #n "제목" | 워킹 트리 | main...HEAD}, 대상 파일 N개). `failedDimensions`가 있으면 `⚠ {차원} 리뷰 실패 — 결과 없음` 명시
 - **critical·major만** `path:line — [심각도] 제목` 형식으로 나열한다. minor·nit는 집계 숫자로만 요약에 나타나고 상세는 아래 인라인에
+- **마지막 줄에 게이트 마커**를 넣는다 (재조정 후 집계 기준, 필드 5개 전부 필수):
+  `<!-- review-code-gate: {"critical":n,"major":n,"minor":n,"nit":n,"failed_dimensions":n} -->`
+  `failed_dimensions`는 `failedDimensions` 배열의 길이다. 이 한 줄이 자동 승인·머지 게이트(`scripts/ci/review-verdict.sh`)의 유일한 입력이므로 형식을 바꾸지 말 것 — 누락되면 게이트는 보류로 처리한다
 
 **인라인 상세** — 파일별로 그룹, finding마다 본문 **4줄 고정**:
 ```
@@ -189,15 +194,17 @@ TL;DR: {tldr}
 → Fix: {fix — 코드로}
 ```
 
-**0건이면**: 판정 **Approve**와 "3개 차원 모두 지적 없음. 리뷰 범위 {scope}, 대상 파일 N개" 한 줄 — 범위 명기가 "안 봤음"과 "깨끗함"을 구분한다.
+**0건이면**: 판정 **Approve**와 "3개 차원 모두 지적 없음. 리뷰 범위 {scope}, 대상 파일 N개" 한 줄 — 범위 명기가 "안 봤음"과 "깨끗함"을 구분한다. 게이트 마커는 0건일 때도 반드시 붙인다.
 
-### PR 모드 추가 동작 (finding ≥ 1건일 때만)
+### PR 모드 추가 동작
+
+**finding 0건이어도 리뷰를 게시한다** — 게시하지 않으면 후속 게이트가 "리뷰 안 돎"과 "깨끗함"을 구분하지 못해 보류로 처리한다. 0건일 때는 `comments`를 빈 배열로 두고 body만 보낸다.
 
 1. 위 마크다운을 대화에 먼저 출력한다.
 2. 저장한 diff의 훅크 헤더(@@)와 대조해 각 finding의 line이 훅크 범위 안인지 확인한다. 밖이면 comments에서 빼고 리뷰 body 하단 "diff 범위 밖 지적" 목록으로 옮긴다 (GitHub API 제약).
-3. 스크래치패드에 payload.json 작성: `{ "commit_id": "<headRefOid>", "event": "COMMENT", "body": "<전체 요약(판정·집계·critical·major 나열 + diff 밖 지적)>", "comments": [{ "path", "line", "side": "RIGHT", "body": "<4줄 고정>" }] }`. 각 인라인 코멘트 body는 4줄 고정:
+3. 스크래치패드에 payload.json 작성: `{ "commit_id": "<headRefOid>", "event": "COMMENT", "body": "<전체 요약(판정·집계·critical·major 나열 + diff 밖 지적 + 게이트 마커)>", "comments": [{ "path", "line", "side": "RIGHT", "body": "<4줄 고정>" }] }`. 각 인라인 코멘트 body는 4줄 고정:
    `[{🔴|🟠|🟡|⚪} {severity}] {title}` / `TL;DR: {tldr}` / `✓ Good: {good}` / `→ Fix: {fix — 코드로}`
-4. `event`는 항상 `COMMENT`다 — 판정(Approve/Changes Requested/Blocked)은 body 텍스트로 표기한다. GitHub는 본인 PR에 APPROVE·REQUEST_CHANGES 리뷰를 거부하므로 event에 판정을 싣지 않는다.
+4. `event`는 항상 `COMMENT`다 — 판정은 body 텍스트와 게이트 마커로만 표기한다. 실제 승인·머지는 리뷰 잡과 분리된 `gate` 잡이 마커를 읽고 수행하므로(리뷰 잡에는 머지 권한이 없다), 이 스킬이 event로 승인을 시도해서는 안 된다. GitHub는 리뷰 작성자와 PR 작성자가 같으면 APPROVE·REQUEST_CHANGES를 거부하는데, 이 스킬은 Claude가 연 PR에서도 돌기 때문이다.
 5. `gh api repos/{owner}/{repo}/pulls/<n>/reviews --input payload.json` — 1회 호출로 리뷰 하나에 인라인 코멘트 전부를 담는다. 실패 시 재시도하지 않고 오류를 보고한다.
 
 ## 실패 처리

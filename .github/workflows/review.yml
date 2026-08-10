@@ -1,0 +1,112 @@
+name: review-code
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true # 연속 push 시 이전 리뷰를 취소한다
+
+jobs:
+  review:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 인라인 리뷰 코멘트 게시
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "/review-code ${{ github.event.pull_request.number }}"
+          claude_args: |
+            --allowedTools "Bash(gh:*),Bash(git:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
+        env:
+          GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
+
+  # 결정적 검증 — LLM 판정과 무관하게 통과해야 하는 기준선.
+  # main에 브랜치 보호가 없으므로 gate의 needs 연결이 자동 머지를 막는 유일한 수단이다.
+  verify:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  # 리뷰가 남긴 게이트 마커로 승인·머지를 결정한다.
+  # 리뷰 잡과 분리한 이유는 권한이다 — 머지 권한(contents: write)을 LLM 잡에 주지 않는다.
+  gate:
+    needs: [review, verify]
+    # 앞 잡이 실패해도 돈다 — 스테일 자동 승인을 철회해야 하기 때문이다
+    if: ${{ !cancelled() && !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 자동 머지
+      pull-requests: write # 자동 승인·스테일 승인 철회
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 판정
+        id: verdict
+        env:
+          VERIFY: ${{ needs.verify.result }}
+        run: |
+          # 결정적 검증이 깨졌으면 리뷰 판정을 볼 것도 없이 보류다
+          if [ "$VERIFY" != "success" ]; then
+            printf 'decision=hold\nreason=lint·typecheck·test·build 검증 %s — 승인·머지를 금지한다\n' "$VERIFY" \
+              | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
+            | jq -s 'add // []' \
+            | bash scripts/ci/review-verdict.sh \
+            | tee -a "$GITHUB_OUTPUT"
+
+      - name: 자동 승인
+        if: steps.verdict.outputs.decision == 'approve' || steps.verdict.outputs.decision == 'merge'
+        env:
+          REASON: ${{ steps.verdict.outputs.reason }}
+        run: gh pr review "$PR" --approve --body "자동 승인 — $REASON"
+
+      - name: 자동 머지
+        if: steps.verdict.outputs.decision == 'merge'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        # --match-head-commit: 판정 후 새 커밋이 올라왔으면 머지하지 않는다
+        run: |
+          gh pr merge "$PR" --merge --match-head-commit "$HEAD_SHA" --subject "merge: $TITLE (#$PR)"
+
+      - name: 스테일 자동 승인 철회
+        if: steps.verdict.outputs.decision == 'hold'
+        env:
+          REASON: ${{ steps.verdict.outputs.reason }}
+        # 이전 커밋에서 받은 자동 승인이 남아 있으면 "critical·major면 승인 금지"가 깨진다
+        run: |
+          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
+            | jq -s 'add // [] | map(select(.user.login == "github-actions[bot]" and .state == "APPROVED")) | .[].id' \
+            | while read -r id; do
+                echo "자동 승인 $id 철회"
+                gh api -X PUT "repos/${{ github.repository }}/pulls/$PR/reviews/$id/dismissals" \
+                  -f message="자동 승인 철회 — $REASON" -f event=DISMISS
+              done
