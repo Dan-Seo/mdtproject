@@ -1,0 +1,31 @@
+name: ci
+
+# main의 기본 CI. review.yml의 verify는 PR 이벤트 전용이라 main 자체가 깨진 사실을
+# 잡지 못한다 — 여기서 잡는다. 이 워크플로가 실패하면 oncall.yml이 깨어난다 (사고 대응).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true # 연속 push 시 이전 실행을 취소한다
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
