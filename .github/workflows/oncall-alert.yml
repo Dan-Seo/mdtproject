@@ -1,0 +1,112 @@
+name: oncall-alert
+
+# prod alert 1차 방어선의 판정부. 서버리스 핸들러(src/app/api/oncall/alert)가
+# 시크릿 검증·멱등 선삽입을 마치고 repository_dispatch로 위임한 alert를 받아,
+# 헤드리스 에이전트(/oncall-triage)가 노이즈/신호를 판정한다.
+# 노이즈 → job summary 기록만. 신호 → 분석을 담아 GitHub Issue로 escalation.
+#
+# prod read-only: 판정 잡은 contents: read다 — 에이전트는 코드를 고치지도,
+# 푸시하지도 못한다. 멱등 ref 청소만 별도 잡(cleanup)에 contents: write를 준다.
+# 루프 없음: repository_dispatch는 인증된 호출로만 발생하고, 이슈 생성은
+# 어떤 워크플로도 트리거하지 않는다.
+on:
+  repository_dispatch:
+    types: [posthog-alert]
+
+concurrency:
+  group: oncall-alert-${{ github.event.client_payload.issue_id }}
+  cancel-in-progress: false # 같은 이슈의 연속 발화는 순서대로 — dedup 프리체크가 흡수한다
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 최근 커밋 대조에 git log가 필요하다
+
+      - name: 페이로드 파일화·라벨 보증
+        # 페이로드는 env로만 받는다 — YAML 인터폴레이션에 섞으면 issue_name의
+        # 특수문자가 스크립트 주입이 된다. 에이전트에게는 파일로만 전달한다.
+        run: |
+          mkdir -p .oncall
+          printf '%s' "$PAYLOAD" | jq . > .oncall/alert-payload.json
+          gh label create oncall-alert --color B60205 \
+            --description "prod alert escalation (oncall-alert.yml)" || true
+
+      - name: dedup 프리체크
+        id: dedup
+        # 같은 PostHog 이슈로 이미 열린 escalation이 있으면 에이전트를 돌리지 않고
+        # 재발화 코멘트만 남긴다 — 중복 이슈도, 중복 판정 비용도 만들지 않는다.
+        run: |
+          ISSUE_ID=$(jq -r '.issue_id // empty' .oncall/alert-payload.json)
+          KIND=$(jq -r '.kind // "?"' .oncall/alert-payload.json)
+          FIRED=$(jq -r '.fired_at // "?"' .oncall/alert-payload.json)
+          if [ -z "$ISSUE_ID" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "페이로드에 issue_id 없음 — 판정 불가, 종료" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          existing=$(gh issue list --state open --label oncall-alert \
+            --search "$ISSUE_ID" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "재발화: kind=${KIND}, fired_at=${FIRED} — oncall-alert 워크플로가 중복으로 판정해 새 이슈를 만들지 않았다. ([run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "dedup: 기존 이슈 #${existing}에 재발화 코멘트 추가" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 노이즈/신호 판정 (헤드리스 에이전트)
+        if: steps.dedup.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # OIDC 앱 토큰 교환을 건너뛴다 — review.yml과 같은 이유
+          github_token: ${{ github.token }}
+          prompt: |
+            /oncall-triage prod alert가 들어왔다. .oncall/alert-payload.json을 읽고
+            스킬 절차대로 노이즈/신호를 판정하라. 경계면 신호로 기울이되 확신도를 낮음으로 표기하라.
+          claude_args: |
+            --allowedTools "Skill,Read,Grep,Glob,Write,Bash(git log:*),Bash(git show:*),Bash(git diff:*),Bash(jq:*),Bash(curl:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(gh issue comment:*)"
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST: https://us.posthog.com
+          POSTHOG_PROJECT_ID: "552164"
+
+      - name: 판정 기록을 job summary로
+        if: always()
+        run: |
+          if [ -f .oncall/triage-summary.md ]; then
+            cat .oncall/triage-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # 멱등 ref(refs/oncall/alerts/<YYYYMMDD>-<id>) 청소 — 14일 지난 것만 지운다.
+  # triage와 분리한 이유: ref 삭제에 필요한 contents: write를 에이전트 잡에 주지 않는다.
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: 오래된 멱등 ref 삭제
+        run: |
+          cutoff=$(date -u -d '14 days ago' +%Y%m%d)
+          gh api "repos/${{ github.repository }}/git/matching-refs/oncall/alerts/" \
+            --paginate --jq '.[].ref' | while read -r ref; do
+            day=$(printf '%s' "$ref" | sed -nE 's|^refs/oncall/alerts/([0-9]{8})-.*|\1|p')
+            # 패턴이 안 맞는 ref는 건드리지 않는다 — 삭제 대상은 알람 멱등 ref뿐
+            if [ -n "$day" ] && [ "$day" -lt "$cutoff" ]; then
+              echo "삭제: $ref"
+              gh api -X DELETE "repos/${{ github.repository }}/git/refs/${ref#refs/}"
+            fi
+          done
