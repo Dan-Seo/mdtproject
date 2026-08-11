@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
+    "eval": "tsx --env-file-if-exists=.env evals/harness/run.ts",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
     "hooks:install": "git config core.hooksPath scripts/githooks"
   },
@@ -23,6 +24,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/js-yaml": "^4.0.9",
@@ -38,6 +40,7 @@
     "postcss": "^8.5.26",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }

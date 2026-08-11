@@ -34,6 +34,7 @@ export default defineConfig({
             'src/rulepack/**/*.test.ts',
             'src/app/api/**/*.test.ts', // API 라우트는 node 환경 (oncall alert 핸들러)
             'tests/**/*.test.ts',
+            'evals/harness/**/*.test.ts',
           ],
         },
       },
