@@ -72,6 +72,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'unauthorized' }, { status: 401 })
   }
 
+  // Content-Length가 있으면 본문을 읽기 전에 거른다. 없으면(chunked) 읽은 뒤
+  // 길이로 거른다 — 후자는 버퍼링 자체는 막지 못하는 한계가 있다.
+  const contentLength = Number(request.headers.get('content-length') ?? '0')
+  if (contentLength > 64_000) {
+    return Response.json({ error: 'payload too large' }, { status: 413 })
+  }
   const raw = await request.text()
   if (raw.length > 64_000) {
     return Response.json({ error: 'payload too large' }, { status: 413 })
@@ -79,7 +85,13 @@ export async function POST(request: Request): Promise<Response> {
 
   let payload: Record<string, unknown>
   try {
-    payload = JSON.parse(raw) as Record<string, unknown>
+    const parsed: unknown = JSON.parse(raw)
+    // JSON.parse('null')·배열·원시값은 성공하므로 여기서 걸러야 아래 필드 접근이
+    // TypeError(=500)로 새지 않는다
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return Response.json({ error: 'invalid json' }, { status: 400 })
+    }
+    payload = parsed as Record<string, unknown>
   } catch {
     return Response.json({ error: 'invalid json' }, { status: 400 })
   }
@@ -91,17 +103,26 @@ export async function POST(request: Request): Promise<Response> {
   // fired_at은 필수다 — 멱등키와 ref 날짜를 결정하는 값이라, 없으면 재전송이
   // UTC 자정을 넘길 때 다른 ref가 생겨 멱등이 깨진다. PostHog 목적지 템플릿은
   // 우리가 정의하는 계약이므로(docs/ONCALL-ALERT.md) 요구해도 된다.
-  if (!KINDS.includes(kind) || !issueId || !firedDate || Number.isNaN(firedDate.getTime())) {
+  // issue_id는 PostHog UUID다 — 형태를 강제해야 CI의 쿼리 조립·검색에 개행·특수문자가
+  // 흘러들지 않는다 (다중행 문자열은 여기서 400으로 끊긴다)
+  if (
+    !KINDS.includes(kind) ||
+    !/^[0-9a-fA-F-]{8,64}$/.test(issueId) ||
+    !firedDate ||
+    Number.isNaN(firedDate.getTime())
+  ) {
     return Response.json(
-      { error: 'kind(issue_created|issue_reopened|spike), issue_id, fired_at(ISO) required' },
+      { error: 'kind(issue_created|issue_reopened|spike), issue_id(uuid), fired_at(ISO) required' },
       { status: 400 },
     )
   }
 
   // 같은 발화(firing)의 재전송은 같은 id·같은 날짜, 새 발화는 새 id —
-  // 전부 fired_at에서 결정되므로 수신 시각과 무관하다.
-  const id = sha256(`${kind}|${issueId}|${firedAt}`).slice(0, 32)
-  const day = firedDate.toISOString().slice(0, 10).replaceAll('-', '')
+  // 전부 fired_at에서 결정되므로 수신 시각과 무관하다. 해시 입력은 정규화된
+  // ISO 문자열이다 — 같은 시각의 다른 표기(+00:00 등)가 다른 id가 되면 안 된다.
+  const firedIso = firedDate.toISOString()
+  const id = sha256(`${kind}|${issueId}|${firedIso}`).slice(0, 32)
+  const day = firedIso.slice(0, 10).replaceAll('-', '')
   const refName = `refs/oncall/alerts/${day}-${id}`
 
   // ref는 기존 오브젝트를 가리켜야 하므로 main HEAD sha를 읽는다
@@ -117,7 +138,15 @@ export async function POST(request: Request): Promise<Response> {
     body: JSON.stringify({ ref: refName, sha: headSha }),
   })
   if (refRes.status === 422) {
-    return Response.json({ status: 'duplicate', id }, { status: 200 })
+    // 422는 중복만이 아니다 — ruleset 거부·오브젝트 부재도 422다. 중복이 아닌
+    // 422를 duplicate로 답하면 PostHog가 재전송을 멈춰 알림이 소리 없이 사라진다.
+    const msg = String(
+      ((await refRes.json().catch(() => ({}))) as { message?: string }).message ?? '',
+    )
+    if (/already exists/i.test(msg)) {
+      return Response.json({ status: 'duplicate', id }, { status: 200 })
+    }
+    return Response.json({ error: 'idempotency insert failed' }, { status: 502 })
   }
   if (!refRes.ok) {
     return Response.json({ error: 'idempotency insert failed' }, { status: 502 })
@@ -135,6 +164,8 @@ export async function POST(request: Request): Promise<Response> {
   // CI 위임 — 판정·분석은 oncall-alert.yml의 헤드리스 에이전트가 한다.
   // CI 에이전트가 읽게 될 자유 텍스트 필드는 전부 sanitize를 거친다 —
   // issue_name만 거르면 issue_url 등 다른 필드로 인젝션이 우회된다.
+  // fetch 자체가 throw(네트워크 오류)해도 보상 삭제 분기에 도달해야 한다 —
+  // 선삽입 ref가 남으면 이후 재전송이 전부 duplicate로 먹혀 알림이 영구 유실된다
   const dispatchRes = await githubFetch(token, `/repos/${repo}/dispatches`, {
     method: 'POST',
     body: JSON.stringify({
@@ -145,13 +176,13 @@ export async function POST(request: Request): Promise<Response> {
         issue_id: issueId,
         issue_name: sanitize(payload.issue_name, 200),
         issue_url: sanitize(payload.issue_url, 300),
-        fired_at: firedAt,
+        fired_at: firedIso,
         occurrences,
         received_at: new Date().toISOString(),
       },
     }),
-  })
-  if (!dispatchRes.ok) {
+  }).catch(() => null)
+  if (!dispatchRes || !dispatchRes.ok) {
     // 선삽입한 ref가 남으면 재전송이 영원히 duplicate로 먹혀 알림이 유실된다 — 보상 삭제
     const delRes = await githubFetch(
       token,

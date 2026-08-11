@@ -35,7 +35,9 @@ const validPayload = {
 // 기본값은 전부 성공 — 각 테스트가 필요한 실패만 덮어쓴다.
 function mockGitHub(overrides: {
   refCreateStatus?: number
+  refCreateMessage?: string
   dispatchStatus?: number
+  dispatchThrows?: boolean
   headRefStatus?: number
   deleteStatus?: number
 } = {}) {
@@ -56,9 +58,17 @@ function mockGitHub(overrides: {
       )
     }
     if (method === 'POST' && url.endsWith('/git/refs')) {
-      return new Response('{}', { status: overrides.refCreateStatus ?? 201 })
+      const status = overrides.refCreateStatus ?? 201
+      const body =
+        status === 422
+          ? JSON.stringify({
+              message: overrides.refCreateMessage ?? 'Reference already exists',
+            })
+          : '{}'
+      return new Response(body, { status })
     }
     if (method === 'POST' && url.endsWith('/dispatches')) {
+      if (overrides.dispatchThrows) throw new TypeError('fetch failed')
       return new Response(null, { status: overrides.dispatchStatus ?? 204 })
     }
     if (method === 'DELETE') {
@@ -109,6 +119,20 @@ describe('페이로드 검증', () => {
   it('JSON이 아니면 400이다', async () => {
     mockGitHub()
     const res = await POST(makeRequest('not-json{{{', SECRET))
+    expect(res.status).toBe(400)
+  })
+
+  it('본문이 null·배열이면 400이다 — 크래시(500)로 새지 않는다', async () => {
+    mockGitHub()
+    expect((await POST(makeRequest('null', SECRET))).status).toBe(400)
+    expect((await POST(makeRequest('[1,2]', SECRET))).status).toBe(400)
+  })
+
+  it('issue_id가 UUID 형태가 아니면(개행 포함 등) 400이다', async () => {
+    mockGitHub()
+    const res = await POST(
+      makeRequest({ ...validPayload, issue_id: 'abcd1234\n`inject`' }, SECRET),
+    )
     expect(res.status).toBe(400)
   })
 
@@ -200,6 +224,32 @@ describe('멱등 선삽입 + dispatch', () => {
     const res = await POST(makeRequest(validPayload, SECRET))
     expect(res.status).toBe(502)
     expect(calls.some((c) => c.url.endsWith('/dispatches'))).toBe(false)
+  })
+
+  it('중복이 아닌 422(ruleset 거부 등)는 502다 — duplicate 200이면 알림이 소리 없이 사라진다', async () => {
+    mockGitHub({ refCreateStatus: 422, refCreateMessage: 'Ref update rejected by ruleset' })
+    const res = await POST(makeRequest(validPayload, SECRET))
+    expect(res.status).toBe(502)
+  })
+
+  it('dispatch fetch가 throw해도 보상 삭제가 실행되고 502다', async () => {
+    const calls = mockGitHub({ dispatchThrows: true })
+    const res = await POST(makeRequest(validPayload, SECRET))
+    expect(res.status).toBe(502)
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(true)
+  })
+
+  it('같은 시각의 다른 표기는 같은 ref가 된다 — 표기 차이로 멱등이 깨지지 않는다', async () => {
+    const calls = mockGitHub()
+    await POST(makeRequest({ ...validPayload, fired_at: '2026-08-11T06:01:34Z' }, SECRET))
+    await POST(
+      makeRequest({ ...validPayload, fired_at: '2026-08-11T06:01:34.000+00:00' }, SECRET),
+    )
+    const refs = calls
+      .filter((c) => c.method === 'POST' && c.url.endsWith('/git/refs'))
+      .map((c) => (c.body as { ref: string }).ref)
+    expect(refs).toHaveLength(2)
+    expect(refs[0]).toBe(refs[1])
   })
 
   it('dispatch가 실패하면 보상으로 ref를 지우고 502를 반환한다 — 재전송이 살아남는다', async () => {
