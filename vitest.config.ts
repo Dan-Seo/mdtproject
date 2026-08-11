@@ -45,6 +45,7 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./vitest.ui.setup.test.ts'],
           include: [
+            'instrumentation-client.test.ts',
             'src/components/**/*.test.ts',
             'src/components/**/*.test.tsx',
             'src/app/**/*.test.tsx',

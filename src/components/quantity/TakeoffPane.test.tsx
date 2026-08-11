@@ -25,6 +25,13 @@ vi.mock('@/lib/export', () => ({
   exportTakeoffXlsx: vi.fn().mockResolvedValue(undefined),
 }))
 
+const { capture, captureException } = vi.hoisted(() => ({
+  capture: vi.fn(),
+  captureException: vi.fn(),
+}))
+
+vi.mock('posthog-js', () => ({ default: { capture, captureException } }))
+
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())
   return result.current.lines
@@ -55,6 +62,8 @@ describe('TakeoffPane', () => {
       value: vi.fn(),
     })
     vi.mocked(exportTakeoffXlsx).mockClear()
+    capture.mockClear()
+    captureException.mockClear()
   })
 
   it('renders the twelve DESIGN §4 headers in order', () => {
@@ -208,6 +217,9 @@ describe('TakeoffPane', () => {
     expect(screen.getByTestId(`formula-${line.id}`)).toHaveTextContent(
       line.formula,
     )
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'takeoff',
+    })
   })
 
   it('renders story subtotals and the grand total from domain helpers', () => {
@@ -300,5 +312,48 @@ describe('TakeoffPane', () => {
       lines: expect.any(Array),
       locale: 'ja',
     })
+  })
+
+  // 파일이 실제로 내려간 뒤에만 발화해야 퍼널의 마지막 칸이 "받았다"를 뜻한다.
+  // 미검증 룰팩 항목이 섞인 채로도 내보내는지가 ADR-015가 걸어둔 가설이다.
+  it('reports the export only after the workbook resolves, with the inferred rules it carried', async () => {
+    render(<TakeoffActions />)
+
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+    expect(capture).not.toHaveBeenCalledWith(
+      'takeoff_exported',
+      expect.anything(),
+    )
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith('takeoff_exported', {
+        locale: 'ja',
+        line_count: expect.any(Number),
+        has_inferred: expect.any(Boolean),
+        inferred_rules: expect.any(Array),
+      }),
+    )
+  })
+
+  it('reports a failed export instead of dropping the rejection', async () => {
+    const failure = new Error('exceljs chunk failed to load')
+    vi.mocked(exportTakeoffXlsx).mockRejectedValueOnce(failure)
+
+    render(<TakeoffActions />)
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+
+    await waitFor(() =>
+      expect(captureException).toHaveBeenCalledWith(failure, {
+        stage: 'takeoff_export',
+      }),
+    )
+    expect(capture).toHaveBeenCalledWith('takeoff_export_failed', {
+      locale: 'ja',
+      line_count: expect.any(Number),
+    })
+    expect(capture).not.toHaveBeenCalledWith(
+      'takeoff_exported',
+      expect.anything(),
+    )
   })
 })

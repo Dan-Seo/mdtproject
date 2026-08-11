@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from 'react'
+import posthog from 'posthog-js'
 
 import type { RebarShape } from '@/domain/model/rebar'
 import { memberGroupKey, setNote } from '@/domain/model/project'
@@ -254,6 +255,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
 
   const selectQuantityGroup = (groupId: string, memberId: string) => {
     selectGroup(groupId, memberId)
+    posthog.capture('member_selected', { source: 'takeoff' })
   }
 
   const toggleLine = (line: QuantityLine, memberId: string) => {
@@ -554,7 +556,7 @@ export function TakeoffPane() {
 export function TakeoffActions() {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
-  const { lines } = useTakeoff()
+  const { lines, hasInferred, inferredRules } = useTakeoff()
   const markupRate = useMemo(() => {
     const rates = [
       ...new Set(
@@ -577,7 +579,26 @@ export function TakeoffActions() {
   ).format(markupRate)
 
   const exportWorkbook = () => {
-    void exportTakeoffXlsx({ project, lines, locale })
+    // 클릭이 아니라 결과에 이벤트를 건다 — 내보내기는 이 제품의 산출물이고,
+    // 클릭 시점에 성공을 기록하면 exceljs 청크 실패가 성공으로 집계된다.
+    // 룰팩 key만 싣는다. 치수·본수는 도면 데이터라 브라우저 밖으로 내보내지 않는다.
+    exportTakeoffXlsx({ project, lines, locale }).then(
+      () => {
+        posthog.capture('takeoff_exported', {
+          locale,
+          line_count: lines.length,
+          has_inferred: hasInferred,
+          inferred_rules: inferredRules.map(({ key }) => key),
+        })
+      },
+      (error: unknown) => {
+        posthog.captureException(error, { stage: 'takeoff_export' })
+        posthog.capture('takeoff_export_failed', {
+          locale,
+          line_count: lines.length,
+        })
+      },
+    )
   }
 
   return (
