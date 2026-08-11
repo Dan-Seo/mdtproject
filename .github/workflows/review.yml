@@ -90,7 +90,8 @@ jobs:
         run: gh pr review "$PR" --approve --body "자동 승인 — $REASON"
 
       - name: 자동 머지
-        if: steps.verdict.outputs.decision == 'merge'
+        # oncall/* 는 CI 실패 자동 수정 PR(oncall.yml) — 머지는 반드시 사람이 한다
+        if: steps.verdict.outputs.decision == 'merge' && !startsWith(github.event.pull_request.head.ref, 'oncall/')
         env:
           TITLE: ${{ github.event.pull_request.title }}
         # --match-head-commit: 판정 후 새 커밋이 올라왔으면 머지하지 않는다

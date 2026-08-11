@@ -1,0 +1,219 @@
+name: oncall
+
+# main CI(ci.yml)가 실패했을 때만 깨어나는 사고 대응 워크플로.
+# 헤드리스 에이전트가 실패 잡 로그만 근거로 근본 원인을 분석해 수정 브랜치를 만들고
+# draft PR을 연다. 머지는 언제나 사람이 한다 — review.yml의 gate가 oncall/* 브랜치의
+# 자동 머지를 제외하고, GITHUB_TOKEN이 만든 PR 이벤트는 워크플로를 다시 트리거하지 않는다.
+#
+# 무한루프 방지 구조:
+#  - oncall은 main에 절대 푸시하지 않는다 (oncall/fix-* 브랜치 + draft PR만).
+#  - ci.yml은 main push에만 반응하므로 oncall/* 브랜치는 CI를 트리거하지 않는다.
+#  - head_branch != main(봇·oncall 브랜치)과 포크발 실행은 아래 guard에서 skip.
+#  - gate 자동 머지(github-actions[bot])가 main을 깨는 경우는 실제 사고이므로
+#    actor 기반 skip은 하지 않는다 — 대응해도 위 구조상 루프가 닫히지 않는다.
+#
+# prod(= main, Vercel 자동 배포)는 read-only: 에이전트에 push·gh 도구를 주지 않고,
+# 워크플로의 푸시 대상은 oncall/* 로 하드코딩·가드한다.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+
+concurrency:
+  group: oncall
+  cancel-in-progress: false # 진행 중인 사고 대응을 새 실패가 죽이지 않는다
+
+jobs:
+  guard:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+    steps:
+      - name: 열린 oncall PR 중복 확인
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # main이 깨진 채 push가 이어지면 실패마다 PR이 쌓인다 — 사고 대응은 한 번에 하나만.
+        run: |
+          open=$(gh pr list -R "${{ github.repository }}" --state open --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("oncall/"))] | length')
+          if [ "$open" -gt 0 ]; then
+            echo "열린 oncall PR ${open}건 — 새 대응을 만들지 않는다"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  fix:
+    needs: guard
+    if: needs.guard.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # oncall/fix-* 브랜치 푸시
+      pull-requests: write # draft PR 생성
+      issues: write # 수정 불가 시 분석 이슈
+      actions: read # 실패 런 로그 조회
+    env:
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main # 실패 시점 이후 push가 있어도 최신 main을 고친다 — PR 충돌 방지
+          fetch-depth: 0 # 원인 커밋 추적에 git log/show가 필요하다
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: 실패 잡 로그 수집·시크릿 마스킹
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 에이전트에는 마스킹을 거친 로그 파일만 준다 — gh로 원본을 직접 읽을 수 없다.
+        run: |
+          mkdir -p .oncall
+          gh run view "$RUN_ID" -R "${{ github.repository }}" --log-failed \
+            > "$RUNNER_TEMP/raw-failure.log" || true
+          tail -n 4000 "$RUNNER_TEMP/raw-failure.log" \
+            | bash scripts/ci/scrub-secrets.sh > .oncall/failure.log
+          if [ ! -s .oncall/failure.log ]; then
+            echo "(실패 로그를 가져오지 못했다 — 런 페이지를 직접 볼 것: $RUN_URL)" > .oncall/failure.log
+          fi
+          wc -l .oncall/failure.log
+
+      - name: 근본 원인 분석·수정 (헤드리스 에이전트)
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            너는 이 저장소의 oncall 사고 대응 에이전트다. main의 CI(lint·typecheck·test·build)가 깨졌다.
+            지금 체크아웃은 최신 main이고 npm ci는 끝나 있다.
+
+            사실:
+            - 실패 커밋: ${{ github.event.workflow_run.head_sha }} (git show·git log로 변경 내용을 볼 것)
+            - 실패 잡 로그(시크릿 마스킹, 꼬리 4000줄): .oncall/failure.log — 원인 분석의 1차 근거다
+
+            할 일:
+            1. .oncall/failure.log에서 실패한 명령과 오류를 특정하라.
+            2. 그 명령을 로컬에서 재실행해 실패를 재현하라. 재현되지 않으면 아무것도 수정하지 말고 4로 가라.
+            3. 근본 원인을 고치는 최소한의 외과적 수정을 하라. CLAUDE.md의 규칙(룰팩 수치 하드코딩 금지,
+               src/domain 순수 TS 등)을 지켜라. 테스트를 출력에 맞춰 약화시키지 마라 — 구현이 잘못됐으면
+               구현을 고치고, 테스트가 잘못됐다고 판단하면 그 근거를 보고서에 명시하라.
+               수정 후 실패했던 명령을 다시 돌려 통과를 확인하라.
+            4. .oncall/pr-body.md에 보고서를 작성하라. 형식:
+               - 1행: fix(범위): 한 줄 요약  ← conventional commit 형식. PR·커밋 제목으로 쓴다
+               - 이후 섹션: ## 무엇이 깨졌나 / ## 왜 깨졌나 (근본 원인) / ## 어떻게 고쳤나 / ## 검증 (재실행 명령과 결과)
+               - 재현 불가·수정 불가면 수정 없이 분석과 다음 조치 제안만 써라.
+
+            금지:
+            - git commit·push, gh 사용 — 브랜치·커밋·PR은 워크플로가 만든다
+            - .github/workflows/** 수정 — GITHUB_TOKEN으로 푸시할 수 없다. 필요하면 보고서에 제안만 써라
+            - 로그 원문 대량 인용, 자격증명·토큰처럼 보이는 문자열을 보고서에 옮기는 것
+            - .oncall/ 밖에 보고 파일을 만드는 것
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(npm:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      - name: 수정 여부 판정
+        id: changes
+        # workflow: GITHUB_TOKEN은 워크플로 파일 변경을 푸시할 수 없다 → PR 대신 이슈로 보고
+        run: |
+          if [ -n "$(git status --porcelain -- .github/workflows)" ]; then
+            echo "changed=workflow" >> "$GITHUB_OUTPUT"
+          elif [ -n "$(git status --porcelain -- . ':!.oncall')" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 수정 재검증
+        id: verify
+        if: steps.changes.outputs.changed == 'true'
+        continue-on-error: true # 검증 실패도 PR 본문에 기록하고 PR은 연다
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: 제목·본문 구성
+        id: body
+        env:
+          CHANGED: ${{ steps.changes.outputs.changed }}
+          VERIFY: ${{ steps.verify.outcome }}
+        # 에이전트가 쓴 본문도 게시 전에 한 번 더 마스킹한다 (이중 방벽)
+        run: |
+          SCRUB=scripts/ci/scrub-secrets.sh
+          FALLBACK_TITLE="fix(ci): main CI 실패 자동 대응 (run ${RUN_ID})"
+          if [ -f .oncall/pr-body.md ]; then
+            TITLE=$(head -n1 .oncall/pr-body.md | sed -E 's/^#+ *//' | bash "$SCRUB")
+            BODY_TAIL=$(tail -n +2 .oncall/pr-body.md)
+          else
+            TITLE="$FALLBACK_TITLE"
+            BODY_TAIL="에이전트가 보고서(.oncall/pr-body.md)를 남기지 못했다. 실패 런을 직접 확인할 것."
+          fi
+          [ -n "$TITLE" ] || TITLE="$FALLBACK_TITLE"
+
+          case "$CHANGED" in
+            true)
+              if [ "$VERIFY" = "success" ]; then STATUS="✅ lint·typecheck·test·build 통과"
+              else STATUS="❌ 재검증 실패 — 수정을 신뢰하지 말고 분석만 참고할 것"; fi ;;
+            workflow) STATUS="⚠️ 수정이 .github/workflows를 건드려 푸시 불가 — 분석만 보고" ;;
+            *) STATUS="⏭️ 수정 없음 — 분석만 보고" ;;
+          esac
+
+          {
+            echo "> [!IMPORTANT]"
+            echo "> oncall 자동 대응 — 머지는 사람이 판단한다. gate의 자동 머지는 oncall/* 브랜치를 제외한다."
+            echo
+            echo "- 실패 런: ${RUN_URL}"
+            echo "- 실패 커밋: ${HEAD_SHA}"
+            echo "- 워크플로 재검증: ${STATUS}"
+            echo
+            printf '%s\n' "$BODY_TAIL"
+          } | bash "$SCRUB" > "$RUNNER_TEMP/report-body.md"
+          printf 'title=%s\n' "$TITLE" >> "$GITHUB_OUTPUT"
+
+      - name: 수정 브랜치 푸시·draft PR 생성
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.body.outputs.title }}
+        run: |
+          BRANCH="oncall/fix-${RUN_ID}"
+          # prod(main) read-only 가드 — 푸시 대상이 oncall/* 가 아니면 즉시 실패
+          case "$BRANCH" in oncall/*) ;; *) echo "가드 위반: $BRANCH"; exit 1 ;; esac
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A -- . ':!.oncall'
+          git commit -m "$TITLE" -m "oncall 자동 수정 — 실패 런 ${RUN_URL}"
+          # --force: 이전 시도가 푸시 후 PR 생성 전에 죽었어도 재실행이 막히지 않는다 (봇 전용 네임스페이스)
+          git push --force origin "HEAD:refs/heads/${BRANCH}"
+          # draft가 원칙: 사람이 검토 후 ready로 전환해야 리뷰·verify·gate가 돈다.
+          # draft를 지원하지 않는 요금제면 일반 PR로 연다 — gate의 oncall/* 제외가 자동 머지를 막는다.
+          gh pr create --draft --base main --head "$BRANCH" \
+            --title "$TITLE" --body-file "$RUNNER_TEMP/report-body.md" \
+          || gh pr create --base main --head "$BRANCH" \
+            --title "$TITLE" --body-file "$RUNNER_TEMP/report-body.md"
+
+      - name: 수정 불가 — 분석 이슈로 보고
+        if: steps.changes.outputs.changed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.body.outputs.title }}
+        # 빈 diff로는 PR을 열 수 없다 — 분석이라도 사람에게 전달한다
+        run: |
+          gh issue create -R "${{ github.repository }}" \
+            --title "oncall: ${TITLE}" \
+            --body-file "$RUNNER_TEMP/report-body.md"
