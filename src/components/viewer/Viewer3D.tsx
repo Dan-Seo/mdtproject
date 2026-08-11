@@ -81,7 +81,12 @@ interface ViewerRuntime {
   directionalLight: THREE.DirectionalLight
   envTexture: THREE.Texture
   content: THREE.Group | null
-  contentMaterials: THREE.Material[]
+  /**
+   * 머티리얼은 씬 콘텐츠가 아니라 **마운트 수명**이다. 재구축마다 새로 만들어 폐기하면
+   * 그때마다 WebGL 프로그램이 삭제·재링크된다 — 断面 편집 1회당 프로그램 5개가
+   * 다시 링크되고 있었고, 그 드라이버 스톨이 편집 지연의 대부분이었다.
+   */
+  materialPool: Map<MaterialKey, THREE.Material>
   normalMaterial: THREE.MeshStandardMaterial | null
   highlightMaterial: THREE.MeshStandardMaterial | null
   concreteNormalMaterial: THREE.MeshStandardMaterial | null
@@ -93,6 +98,31 @@ interface ViewerRuntime {
   initialFitDone: boolean
   /** 마지막으로 카메라를 맞춘 대상(부재/모드). 같은 대상을 편집하는 동안은 시점을 뺏지 않는다. */
   fittedTargetKey: string | null
+}
+
+type MaterialKey =
+  | 'rebar'
+  | 'buildingRebar'
+  | 'rebarHighlight'
+  | 'outline'
+  | 'concrete'
+  | 'grid'
+  | 'shadow'
+  | 'buildingConcrete'
+  | 'buildingConcreteSelected'
+
+/** 풀에 있으면 그대로 쓰고 없으면 만들어 넣는다. 폐기는 언마운트에서만 한다. */
+function pooledMaterial<T extends THREE.Material>(
+  runtime: ViewerRuntime,
+  key: MaterialKey,
+  create: () => T,
+): T {
+  const cached = runtime.materialPool.get(key)
+  if (cached !== undefined) return cached as T
+
+  const created = create()
+  runtime.materialPool.set(key, created)
+  return created
 }
 
 function vector(point: Point3): THREE.Vector3 {
@@ -112,10 +142,9 @@ function disposeContent(runtime: ViewerRuntime): void {
 
   runtime.scene.remove(content)
   for (const geometry of geometries) geometry.dispose()
-  for (const material of new Set(runtime.contentMaterials)) material.dispose()
+  // 머티리얼은 폐기하지 않는다 — 풀이 소유하고 언마운트에서 한 번만 정리한다.
 
   runtime.content = null
-  runtime.contentMaterials = []
   runtime.normalMaterial = null
   runtime.highlightMaterial = null
   runtime.concreteNormalMaterial = null
@@ -148,7 +177,7 @@ function columnBounds(view: SelectedColumnView): Bounds {
 function addMemberOutline(
   content: THREE.Group,
   view: SelectedColumnView,
-  materials: THREE.Material[],
+  runtime: ViewerRuntime,
 ): void {
   const { section, story } = view
   const box = new THREE.BoxGeometry(
@@ -157,7 +186,11 @@ function addMemberOutline(
     section.d * MILLIMETRES_TO_SCENE,
   )
   const edges = new THREE.EdgesGeometry(box)
-  const material = new THREE.LineBasicMaterial({ color: OUTLINE_COLOR })
+  const material = pooledMaterial(
+    runtime,
+    'outline',
+    () => new THREE.LineBasicMaterial({ color: OUTLINE_COLOR }),
+  )
   const outline = new THREE.LineSegments(edges, material)
 
   box.dispose()
@@ -167,23 +200,27 @@ function addMemberOutline(
     (section.d * MILLIMETRES_TO_SCENE) / 2,
   )
   content.add(outline)
-  materials.push(material)
 }
 
 function addConcreteSolid(
   content: THREE.Group,
   view: SelectedColumnView,
-  materials: THREE.Material[],
+  runtime: ViewerRuntime,
 ): void {
   const { section, story } = view
-  const material = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.14,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-  })
+  const material = pooledMaterial(
+    runtime,
+    'concrete',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.14,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+      }),
+  )
   const solid = new THREE.Mesh(
     new THREE.BoxGeometry(
       section.b * MILLIMETRES_TO_SCENE,
@@ -200,13 +237,12 @@ function addConcreteSolid(
   )
   solid.receiveShadow = true
   content.add(solid)
-  materials.push(material)
 }
 
 function addGround(
   content: THREE.Group,
   bounds: Bounds,
-  materials: THREE.Material[],
+  runtime: ViewerRuntime,
 ): void {
   const centerX = ((bounds.min[0] + bounds.max[0]) / 2) * MILLIMETRES_TO_SCENE
   const centerZ = ((bounds.min[2] + bounds.max[2]) / 2) * MILLIMETRES_TO_SCENE
@@ -217,13 +253,27 @@ function addGround(
     3
 
   const grid = new THREE.GridHelper(span, 24, OUTLINE_COLOR, GRID_COLOR_SOFT)
+  // GridHelper는 머티리얼을 스스로 만든다. 처음 것을 풀에 넣어두고, 이후에는 갓 만들어진
+  // 것을 버리고 풀의 것을 쓴다 — 아직 렌더된 적이 없어 프로그램을 잡기 전이라 버려도 된다.
+  const gridMaterial = pooledMaterial(
+    runtime,
+    'grid',
+    () => (Array.isArray(grid.material) ? grid.material[0] : grid.material),
+  )
+  if (grid.material !== gridMaterial) {
+    for (const own of Array.isArray(grid.material) ? grid.material : [grid.material]) {
+      own.dispose()
+    }
+    grid.material = gridMaterial
+  }
   grid.position.set(centerX, floorY, centerZ)
   content.add(grid)
-  materials.push(
-    ...(Array.isArray(grid.material) ? grid.material : [grid.material]),
-  )
 
-  const shadowMaterial = new THREE.ShadowMaterial({ opacity: 0.3 })
+  const shadowMaterial = pooledMaterial(
+    runtime,
+    'shadow',
+    () => new THREE.ShadowMaterial({ opacity: 0.3 }),
+  )
   const plane = new THREE.Mesh(
     new THREE.PlaneGeometry(span, span),
     shadowMaterial,
@@ -233,7 +283,6 @@ function addGround(
   plane.position.set(centerX, floorY - 0.002, centerZ)
   plane.receiveShadow = true
   content.add(plane)
-  materials.push(shadowMaterial)
 }
 
 function fitShadowToBounds(
@@ -464,25 +513,34 @@ function rebuildMemberScene(
   }
 
   const content = new THREE.Group()
-  const normalMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-  })
-  const highlightMaterial = new THREE.MeshStandardMaterial({
-    color: HIGHLIGHT_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-    emissive: HIGHLIGHT_COLOR,
-    emissiveIntensity: 0.35,
-  })
-  const materials: THREE.Material[] = [normalMaterial, highlightMaterial]
+  const normalMaterial = pooledMaterial(
+    runtime,
+    'rebar',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+      }),
+  )
+  const highlightMaterial = pooledMaterial(
+    runtime,
+    'rebarHighlight',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: HIGHLIGHT_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        emissive: HIGHLIGHT_COLOR,
+        emissiveIntensity: 0.35,
+      }),
+  )
   const pickableMeshes: THREE.Mesh[] = []
   const bounds = columnBounds(view)
 
-  addMemberOutline(content, view, materials)
-  addConcreteSolid(content, view, materials)
-  addGround(content, bounds, materials)
+  addMemberOutline(content, view, runtime)
+  addConcreteSolid(content, view, runtime)
+  addGround(content, bounds, runtime)
 
   const entries = view.rebars.map((rebar) => {
     const rowId = view.rowIds.get(rebar.id)
@@ -500,7 +558,6 @@ function rebuildMemberScene(
   }
 
   runtime.content = content
-  runtime.contentMaterials = materials
   runtime.normalMaterial = normalMaterial
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
@@ -514,36 +571,52 @@ function rebuildBuildingScene(
   layout: BuildingLayout,
 ): void {
   const content = new THREE.Group()
-  const steelMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-  })
-  const concreteMaterial = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.18,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-  })
-  const concreteSelectedMaterial = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.18,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-    emissive: HIGHLIGHT_COLOR,
-    emissiveIntensity: 0.3,
-  })
-  const outlineMaterial = new THREE.LineBasicMaterial({ color: OUTLINE_COLOR })
-  const materials: THREE.Material[] = [
-    steelMaterial,
-    concreteMaterial,
-    concreteSelectedMaterial,
-    outlineMaterial,
-  ]
+  // 파라미터는 部材 뷰의 철근과 같지만 **항목을 나눈다.** 여기는 InstancedMesh라
+  // USE_INSTANCING 정의가 붙은 별도 프로그램이 필요하고, 하나를 공유하면 탭을 오갈 때마다
+  // 그 사이를 오가며 프로그램을 다시 잡는다 (viewerTab 5.3 → 11ms로 확인).
+  const steelMaterial = pooledMaterial(
+    runtime,
+    'buildingRebar',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+      }),
+  )
+  const concreteMaterial = pooledMaterial(
+    runtime,
+    'buildingConcrete',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+      }),
+  )
+  const concreteSelectedMaterial = pooledMaterial(
+    runtime,
+    'buildingConcreteSelected',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+        emissive: HIGHLIGHT_COLOR,
+        emissiveIntensity: 0.3,
+      }),
+  )
+  const outlineMaterial = pooledMaterial(
+    runtime,
+    'outline',
+    () => new THREE.LineBasicMaterial({ color: OUTLINE_COLOR }),
+  )
   const pickableMeshes: THREE.Mesh[] = []
 
   for (const box of layout.boxes) {
@@ -608,10 +681,9 @@ function rebuildBuildingScene(
     pickableMeshes.push(instanced)
   }
 
-  addGround(content, layout.bounds, materials)
+  addGround(content, layout.bounds, runtime)
 
   runtime.content = content
-  runtime.contentMaterials = materials
   runtime.concreteNormalMaterial = concreteMaterial
   runtime.concreteSelectedMaterial = concreteSelectedMaterial
   runtime.pickableMeshes = pickableMeshes
@@ -789,7 +861,7 @@ export function Viewer3D() {
       directionalLight,
       envTexture,
       content: null,
-      contentMaterials: [],
+      materialPool: new Map(),
       normalMaterial: null,
       highlightMaterial: null,
       concreteNormalMaterial: null,
@@ -891,6 +963,8 @@ export function Viewer3D() {
       )
       observer.disconnect()
       disposeContent(runtime)
+      for (const material of runtime.materialPool.values()) material.dispose()
+      runtime.materialPool.clear()
       envTexture.dispose()
       controls.dispose()
       renderer.dispose()

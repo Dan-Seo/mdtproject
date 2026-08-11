@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "start": "next start",
+    "perf": "node scripts/perf/measure.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
-    "hooks:install": "git config core.hooksPath scripts/githooks"
+    "hooks:install": "git config core.hooksPath scripts/githooks",
+    "perf:interaction": "node scripts/perf/interaction.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
@@ -33,9 +36,11 @@
     "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.5.4",
+    "chrome-launcher": "^1.2.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.23",
     "jsdom": "^30.0.1",
+    "lighthouse": "^13.4.1",
     "postcss": "^8.5.26",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.17",
