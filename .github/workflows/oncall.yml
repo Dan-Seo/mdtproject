@@ -96,6 +96,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # OIDC 앱 토큰 교환을 건너뛴다 — review.yml과 같은 이유 (id-token 권한 불필요)
+          github_token: ${{ github.token }}
           prompt: |
             너는 이 저장소의 oncall 사고 대응 에이전트다. main의 CI(lint·typecheck·test·build)가 깨졌다.
             지금 체크아웃은 최신 main이고 npm ci는 끝나 있다.

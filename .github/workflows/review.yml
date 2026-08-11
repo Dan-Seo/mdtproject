@@ -23,6 +23,10 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # OIDC 앱 토큰 교환을 건너뛴다 (id-token 권한·앱 설치 불필요).
+          # 리뷰 코멘트가 github-actions[bot] 명의로 게시되어야
+          # gate의 review-verdict.sh(BOT_LOGIN 기본값)가 마커를 인정한다.
+          github_token: ${{ github.token }}
           prompt: "/review-code ${{ github.event.pull_request.number }}"
           claude_args: |
             --allowedTools "Bash(gh:*),Bash(git:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
