@@ -24,6 +24,7 @@ tests/
 ```
 
 템플릿에 있던 `services/`(외부 API 래퍼)는 두지 않는다. 외부 API를 호출하지 않는다.
+유일한 예외는 운영 알림 수신 라우트(`app/api/oncall`)의 GitHub API 호출이다 (ADR-017).
 
 `types/`를 따로 두지 않고 `domain/model/`에 둔다. 타입과 그 타입을 다루는 순수 함수가 붙어 있는 편이 낫다.
 

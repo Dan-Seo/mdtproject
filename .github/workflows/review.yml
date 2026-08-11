@@ -42,17 +42,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
 
-      # 진단용(임시): 리뷰가 게시되지 않는 문제를 추적하기 위해 실행 트랜스크립트를
-      # 보존한다. GITHUB_TOKEN은 잡 종료와 함께 만료되므로 기록에 남아도 죽은 값이다.
-      # 원인이 잡히면 이 스텝은 제거할 것.
-      - name: 리뷰 실행 기록 보존
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: review-execution-log
-          path: /home/runner/work/_temp/claude-execution-output.json
-          retention-days: 3
-
   # 결정적 검증 — LLM 판정과 무관하게 통과해야 하는 기준선.
   # main에 브랜치 보호가 없으므로 gate의 needs 연결이 자동 머지를 막는 유일한 수단이다.
   verify:

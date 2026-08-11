@@ -67,7 +67,8 @@ repository_dispatch에 필요.) 만든 토큰은 아래 Vercel env로만 들어�
 ```
 
 템플릿 변수명은 PostHog 목적지 편집 화면의 변수 목록을 따를 것 — 핸들러가 요구하는
-필수 필드는 `kind`·`issue_id` 두 개다 (`fired_at`은 멱등 정밀도용, 권장).
+필수 필드는 `kind`(위 세 값 중 하나)·`issue_id`·`fired_at`(ISO 시각) 세 개다.
+`fired_at`이 멱등키와 ref 날짜를 결정하므로 빠지면 400이다.
 설정 후 **Test function**으로 200 `{"status":"dispatched"}`를 확인한다.
 
 ## 판정 기준 요약

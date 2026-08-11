@@ -30,14 +30,33 @@ function secretMatches(provided: string, expected: string): boolean {
   return timingSafeEqual(a, b)
 }
 
-function githubHeaders(token: string): Record<string, string> {
-  return {
-    authorization: `Bearer ${token}`,
-    accept: 'application/vnd.github+json',
-    'user-agent': 'kijun-oncall-alert',
-    'content-type': 'application/json',
-  }
+// 모든 GitHub 호출은 이 헬퍼만 쓴다 — path만 받으므로 다른 호스트로의
+// egress가 문법적으로 불가능하다 (ADR-017의 단일 egress 계약).
+function githubFetch(
+  token: string,
+  path: string,
+  init?: Pick<RequestInit, 'method' | 'body'>,
+): Promise<Response> {
+  return fetch(`${GITHUB_API}${path}`, {
+    ...init,
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: 'application/vnd.github+json',
+      'user-agent': 'kijun-oncall-alert',
+      'content-type': 'application/json',
+    },
+  })
 }
+
+// 방문자가 정할 수 있는 텍스트(예외 메시지 등)에서 개행·백틱·$를 지우고 길이를
+// 자른다 — CI 에이전트 입력이 되므로 인젝션 탑재량을 줄인다.
+function sanitize(value: unknown, maxLength: number): string {
+  return (typeof value === 'string' ? value : '')
+    .replace(/[\r\n`$]/g, ' ')
+    .slice(0, maxLength)
+}
+
+const KINDS = ['issue_created', 'issue_reopened', 'spike']
 
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.ONCALL_WEBHOOK_SECRET
@@ -67,38 +86,34 @@ export async function POST(request: Request): Promise<Response> {
 
   const kind = typeof payload.kind === 'string' ? payload.kind : ''
   const issueId = typeof payload.issue_id === 'string' ? payload.issue_id : ''
-  if (!kind || !issueId) {
-    return Response.json({ error: 'kind and issue_id required' }, { status: 400 })
-  }
   const firedAt = typeof payload.fired_at === 'string' ? payload.fired_at : ''
-
-  // 같은 발화(firing)의 재전송은 같은 id, 새 발화는 새 id.
-  // fired_at이 없으면 본문 해시로 폴백 — 재전송은 여전히 같은 id로 잡힌다.
-  const id = sha256(`${kind}|${issueId}|${firedAt || sha256(raw)}`).slice(0, 32)
-  // 날짜도 결정적 입력에서 뽑는다 — 수신 시각을 쓰면 재전송이 UTC 자정을 넘길 때
-  // 다른 ref가 만들어져 멱등이 깨진다. fired_at이 없을 때만 수신 시각 폴백.
   const firedDate = firedAt ? new Date(firedAt) : null
-  const day = (firedDate && !Number.isNaN(firedDate.getTime()) ? firedDate : new Date())
-    .toISOString()
-    .slice(0, 10)
-    .replaceAll('-', '')
+  // fired_at은 필수다 — 멱등키와 ref 날짜를 결정하는 값이라, 없으면 재전송이
+  // UTC 자정을 넘길 때 다른 ref가 생겨 멱등이 깨진다. PostHog 목적지 템플릿은
+  // 우리가 정의하는 계약이므로(docs/ONCALL-ALERT.md) 요구해도 된다.
+  if (!KINDS.includes(kind) || !issueId || !firedDate || Number.isNaN(firedDate.getTime())) {
+    return Response.json(
+      { error: 'kind(issue_created|issue_reopened|spike), issue_id, fired_at(ISO) required' },
+      { status: 400 },
+    )
+  }
+
+  // 같은 발화(firing)의 재전송은 같은 id·같은 날짜, 새 발화는 새 id —
+  // 전부 fired_at에서 결정되므로 수신 시각과 무관하다.
+  const id = sha256(`${kind}|${issueId}|${firedAt}`).slice(0, 32)
+  const day = firedDate.toISOString().slice(0, 10).replaceAll('-', '')
   const refName = `refs/oncall/alerts/${day}-${id}`
 
-  const headers = githubHeaders(token)
-
   // ref는 기존 오브젝트를 가리켜야 하므로 main HEAD sha를 읽는다
-  const headRes = await fetch(`${GITHUB_API}/repos/${repo}/git/ref/heads/main`, {
-    headers,
-  })
+  const headRes = await githubFetch(token, `/repos/${repo}/git/ref/heads/main`)
   if (!headRes.ok) {
     return Response.json({ error: 'github head lookup failed' }, { status: 502 })
   }
   const headSha = ((await headRes.json()) as { object: { sha: string } }).object.sha
 
   // 멱등 선삽입 — 원자적 create-once. 이미 있으면 같은 알림의 재전송이다.
-  const refRes = await fetch(`${GITHUB_API}/repos/${repo}/git/refs`, {
+  const refRes = await githubFetch(token, `/repos/${repo}/git/refs`, {
     method: 'POST',
-    headers,
     body: JSON.stringify({ ref: refName, sha: headSha }),
   })
   if (refRes.status === 422) {
@@ -108,33 +123,40 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'idempotency insert failed' }, { status: 502 })
   }
 
-  // CI 위임 — 판정·분석은 oncall-alert.yml의 헤드리스 에이전트가 한다
-  const dispatchRes = await fetch(`${GITHUB_API}/repos/${repo}/dispatches`, {
+  // PostHog 목적지 템플릿은 숫자를 문자열로 치환하는 경우가 있다 — 둘 다 받는다
+  const occRaw = payload.occurrences
+  const occurrences =
+    typeof occRaw === 'number' && Number.isFinite(occRaw)
+      ? occRaw
+      : typeof occRaw === 'string' && occRaw.trim() !== '' && Number.isFinite(Number(occRaw))
+        ? Number(occRaw)
+        : null
+
+  // CI 위임 — 판정·분석은 oncall-alert.yml의 헤드리스 에이전트가 한다.
+  // CI 에이전트가 읽게 될 자유 텍스트 필드는 전부 sanitize를 거친다 —
+  // issue_name만 거르면 issue_url 등 다른 필드로 인젝션이 우회된다.
+  const dispatchRes = await githubFetch(token, `/repos/${repo}/dispatches`, {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       event_type: 'posthog-alert',
       client_payload: {
         id,
         kind,
         issue_id: issueId,
-        // 브라우저 예외 메시지 = 방문자가 정할 수 있는 텍스트. CI 에이전트의 입력이
-        // 되므로 개행·백틱·$를 지우고 200자로 잘라 인젝션 탑재량을 줄인다.
-        issue_name: (typeof payload.issue_name === 'string' ? payload.issue_name : '')
-          .replace(/[\r\n`$]/g, ' ')
-          .slice(0, 200),
-        issue_url: typeof payload.issue_url === 'string' ? payload.issue_url : '',
+        issue_name: sanitize(payload.issue_name, 200),
+        issue_url: sanitize(payload.issue_url, 300),
         fired_at: firedAt,
-        occurrences: typeof payload.occurrences === 'number' ? payload.occurrences : null,
+        occurrences,
         received_at: new Date().toISOString(),
       },
     }),
   })
   if (!dispatchRes.ok) {
     // 선삽입한 ref가 남으면 재전송이 영원히 duplicate로 먹혀 알림이 유실된다 — 보상 삭제
-    const delRes = await fetch(
-      `${GITHUB_API}/repos/${repo}/git/refs/${refName.replace('refs/', '')}`,
-      { method: 'DELETE', headers },
+    const delRes = await githubFetch(
+      token,
+      `/repos/${repo}/git/refs/${refName.replace('refs/', '')}`,
+      { method: 'DELETE' },
     ).catch(() => null)
     if (!delRes?.ok) {
       // 여기서 실패하면 이 발화는 재전송돼도 duplicate로 먹힌다 — 로그가 유일한 흔적
