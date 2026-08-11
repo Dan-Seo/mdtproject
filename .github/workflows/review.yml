@@ -64,6 +64,7 @@ jobs:
     permissions:
       contents: write # 자동 머지
       pull-requests: write # 자동 승인·스테일 승인 철회
+      actions: write # 머지 후 main CI 디스패치
     env:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}
@@ -101,6 +102,10 @@ jobs:
         # --match-head-commit: 판정 후 새 커밋이 올라왔으면 머지하지 않는다
         run: |
           gh pr merge "$PR" --merge --match-head-commit "$HEAD_SHA" --subject "merge: $TITLE (#$PR)"
+          # GITHUB_TOKEN의 머지 push는 push 워크플로를 트리거하지 않는다 (재귀 방지) —
+          # 그대로 두면 자동 머지로 main이 깨져도 ci가 안 돌아 oncall이 못 깨어난다.
+          # workflow_dispatch는 이 제한의 예외라서 명시 디스패치로 구멍을 닫는다.
+          gh workflow run ci --ref main
 
       - name: 스테일 자동 승인 철회
         if: steps.verdict.outputs.decision == 'hold'
