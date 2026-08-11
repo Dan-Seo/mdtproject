@@ -27,9 +27,18 @@ jobs:
           # 리뷰 코멘트가 github-actions[bot] 명의로 게시되어야
           # gate의 review-verdict.sh(BOT_LOGIN 기본값)가 마커를 인정한다.
           github_token: ${{ github.token }}
-          prompt: "/review-code ${{ github.event.pull_request.number }}"
+          prompt: |
+            /review-code ${{ github.event.pull_request.number }}
+
+            리마인더: PR 모드다 — 3단계의 게시(gh api …/pulls/N/reviews --input payload.json)까지
+            실행해야 임무가 끝난다. 요약 마크다운만 출력하고 멈추면 게이트 마커가 게시되지 않아
+            gate가 영원히 보류된다. 인라인 게시가 실패하면 스킬 6단계(body-only 재게시)를 따르라.
+          # 모델을 opus-5로 둔다 — sonnet은 보조 명령 거부를 만나면 게시 단계를 완주하지
+          # 못하는 것이 PR #5에서 4회 재현됐다 (판정자 모델을 상향하는 evals 컨벤션과 동일).
+          # 셸 유틸 allowlist는 그 거부 자체를 줄인다.
           claude_args: |
-            --allowedTools "Bash(gh:*),Bash(git:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
+            --model claude-opus-5
+            --allowedTools "Bash(gh:*),Bash(git:*),Bash(jq:*),Bash(cat:*),Bash(ls:*),Bash(mkdir:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
         env:
           GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
 

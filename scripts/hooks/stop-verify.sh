@@ -22,6 +22,13 @@ fi
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
+# CI(GitHub Actions)에서는 검증을 걸지 않는다 — 리뷰·트리아지 잡의 체크아웃에는
+# node_modules가 없어 exit 127로만 끝나고, 결정적 검증은 verify 잡이 따로 한다.
+# 이 훅이 CI 에이전트를 붙잡으면 턴 소진으로 리뷰 게시가 유실된다 (PR #5에서 재현).
+if [ "${CI:-}" = "true" ] || [ ! -d "$ROOT/node_modules" ]; then
+  exit 0
+fi
+
 # 스캐폴딩 도중에는 게이트를 걸지 않는다. 걸면 M0~M1 내내 매 턴이 막힌다.
 #   - package.json이 아직 없다 → 검증 대상 자체가 없다
 #   - package.json은 생겼지만 lint·build·test가 아직 다 정의되지 않았다

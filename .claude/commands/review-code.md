@@ -205,7 +205,8 @@ TL;DR: {tldr}
 3. 스크래치패드에 payload.json 작성: `{ "commit_id": "<headRefOid>", "event": "COMMENT", "body": "<전체 요약(판정·집계·critical·major 나열 + diff 밖 지적 + 게이트 마커)>", "comments": [{ "path", "line", "side": "RIGHT", "body": "<4줄 고정>" }] }`. 각 인라인 코멘트 body는 4줄 고정:
    `[{🔴|🟠|🟡|⚪} {severity}] {title}` / `TL;DR: {tldr}` / `✓ Good: {good}` / `→ Fix: {fix — 코드로}`
 4. `event`는 항상 `COMMENT`다 — 판정은 body 텍스트와 게이트 마커로만 표기한다. 실제 승인·머지는 리뷰 잡과 분리된 `gate` 잡이 마커를 읽고 수행하므로(리뷰 잡에는 머지 권한이 없다), 이 스킬이 event로 승인을 시도해서는 안 된다. GitHub는 리뷰 작성자와 PR 작성자가 같으면 APPROVE·REQUEST_CHANGES를 거부하는데, 이 스킬은 Claude가 연 PR에서도 돌기 때문이다.
-5. `gh api repos/{owner}/{repo}/pulls/<n>/reviews --input payload.json` — 1회 호출로 리뷰 하나에 인라인 코멘트 전부를 담는다. 실패 시 재시도하지 않고 오류를 보고한다.
+5. `gh api repos/{owner}/{repo}/pulls/<n>/reviews --input payload.json` — 1회 호출로 리뷰 하나에 인라인 코멘트 전부를 담는다.
+6. 5가 실패하면(전형: 인라인 코멘트 위치가 diff와 어긋나 GitHub가 리뷰 전체를 422로 거부) **인라인을 포기하고 body만으로 1회 재게시한다** — `comments`를 빈 배열로 바꾸고, 탈락한 인라인 상세(4줄 블록)는 body 하단 "인라인 게시 실패 — 본문 병기" 섹션으로 옮긴다. 리뷰가 아예 게시되지 않으면 게이트가 "리뷰 안 돎" 보류가 되어 판정 자체가 유실된다 — body-only로라도 게이트 마커는 반드시 도달시켜야 한다. 재게시마저 실패하면 그때 오류를 보고한다.
 
 ## 실패 처리
 
