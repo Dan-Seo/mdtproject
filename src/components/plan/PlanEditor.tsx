@@ -1,6 +1,7 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
+import posthog from 'posthog-js'
 
 import type { Member } from '@/domain/model/member'
 import {
@@ -75,7 +76,10 @@ export function StoryTabs() {
               selected ? styles.storyTabActive : ''
             }`}
             aria-selected={selected}
-            onClick={() => setActiveStory(story.id)}
+            onClick={() => {
+              setActiveStory(story.id)
+              posthog.capture('story_selected')
+            }}
           >
             {story.name}
           </button>
@@ -98,7 +102,11 @@ function PlanMember({
   const selectMember = useAppStore(({ selectMember }) => selectMember)
   const section = findSection(project, member.sectionId)
   const selected = selectedMemberId === member.id
-  const select = () => selectMember(member.id)
+  // 부재 id는 그리드 좌표를 담고 있어 보내지 않는다 — 어느 페인에서 골랐는지만 남긴다.
+  const select = () => {
+    selectMember(member.id)
+    posthog.capture('member_selected', { source: 'plan' })
+  }
 
   if (member.kind === '柱' && !('axis' in member.position)) {
     const point = gridPoint(
@@ -200,11 +208,18 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const spans = axis === 'x' ? project.grid.xSpans : project.grid.ySpans
   const axisLabel = axis.toUpperCase()
+  const editReported = useRef(false)
 
   const commit = (nextSpans: number[]) => {
     updateProject((current) =>
       updateProjectSpans(current, axis, nextSpans),
     )
+
+    // number input의 onChange는 "6000"을 치면 네 번 들어온다. 축마다 한 번으로 합쳐
+    // 이벤트가 타이핑 속도가 아니라 편집 여부를 세게 한다.
+    if (editReported.current) return
+    editReported.current = true
+    posthog.capture('grid_edited', { axis })
   }
 
   return (

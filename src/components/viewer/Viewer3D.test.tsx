@@ -18,6 +18,10 @@ import { sourceLabel } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+
+vi.mock('posthog-js', () => ({ default: { capture } }))
+
 const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),
   controlsTargetSet: vi.fn(),
@@ -204,6 +208,7 @@ function runNextAnimationFrame(): void {
 
 describe('Viewer3D', () => {
   beforeEach(() => {
+    capture.mockClear()
     mocks.controlsDispose.mockClear()
     mocks.controlsTargetSet.mockClear()
     mocks.rendererDispose.mockClear()
@@ -244,6 +249,21 @@ describe('Viewer3D', () => {
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
     expect(mocks.envTextureDispose).toHaveBeenCalledOnce()
+  })
+
+  // 컨텍스트 손실은 예외를 던지지 않는다 — 뷰어가 조용히 얼어붙고 경계도 걸리지 않으므로
+  // 여기서 보고하지 않으면 프로덕션에 흔적이 남지 않는다 (R4: 층당 철근 1만 개).
+  it('reports a lost WebGL context instead of freezing in silence', () => {
+    render(<Viewer3D />)
+
+    fireEvent(
+      screen.getByLabelText('選択部材の配筋3D'),
+      new Event('webglcontextlost'),
+    )
+
+    expect(capture).toHaveBeenCalledWith('viewer_webgl_context_lost', {
+      mode: 'member',
+    })
   })
 
   it('enables shadows, tone mapping, colour space and an environment map', () => {
@@ -582,6 +602,9 @@ describe('Viewer3D', () => {
 
     // RaycasterMock은 첫 pickable(첫 콘크리트 박스 = 1F-X1Y1)을 반환한다.
     expect(useAppStore.getState().sel.memberId).toBe('1F-X1Y1')
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'viewer',
+    })
   })
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
@@ -598,6 +621,8 @@ describe('Viewer3D', () => {
     })
 
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
+    // 3D 철근 → 내역서 행. 部材 뷰에서 3D가 하는 유일한 일이고 ADR-016 전제의 증거다.
+    expect(capture).toHaveBeenCalledWith('rebar_picked')
   })
 
   it('records pointermove without raycasting until the next frame', () => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, type ReactNode } from 'react'
+import posthog from 'posthog-js'
 
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
@@ -38,12 +39,20 @@ function Pane({ id, title, children, actions }: PaneProps) {
         <h2 id={titleId} className={`${styles.paneTitle} t-caption-uppercase`}>
           {title}
         </h2>
-        <PaneBoundary label={failureLabel} resetKey={project}>
+        <PaneBoundary
+          label={failureLabel}
+          pane={`${id}-actions`}
+          resetKey={project}
+        >
           {actions}
         </PaneBoundary>
       </header>
       <div className={styles.paneBody}>
-        <PaneBoundary label={failureLabel} resetKey={project}>
+        <PaneBoundary
+          label={failureLabel}
+          pane={`${id}-body`}
+          resetKey={project}
+        >
           {children}
         </PaneBoundary>
       </div>
@@ -83,7 +92,10 @@ export function AppShell({
                 locale === option ? styles.localeButtonActive : ''
               }`}
               aria-pressed={locale === option}
-              onClick={() => setLocale(option)}
+              onClick={() => {
+                setLocale(option)
+                posthog.capture('locale_changed', { locale: option })
+              }}
             >
               {t(locale, `locale.${option}`)}
             </button>

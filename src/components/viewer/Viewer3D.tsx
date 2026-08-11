@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import posthog from 'posthog-js'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -1358,16 +1359,28 @@ export function Viewer3D() {
       const { rowId } = hit.object.userData
       if (typeof rowId === 'string') {
         setHoverRowRef.current(rowId)
+        // 部材 뷰에서 3D가 하는 유일한 일이다 — 이게 안 쓰이면 ADR-016의 근거가 약해진다.
+        posthog.capture('rebar_picked')
         return
       }
       const pickedMemberId = memberIdFromHit(hit)
       if (pickedMemberId !== null) {
         selectMemberRef.current(pickedMemberId)
+        posthog.capture('member_selected', { source: 'viewer' })
       }
     }
     renderer.domElement.addEventListener('pointermove', handlePointerMove)
     renderer.domElement.addEventListener('pointerleave', handlePointerLeave)
     renderer.domElement.addEventListener('click', handleClick)
+
+    // 컨텍스트 손실은 던지지 않는다 — 캔버스가 그대로 얼어붙고 PaneBoundary도 걸리지
+    // 않는다. 복구는 시도하지 않고(마운트가 씬을 소유한다) 보고만 한다.
+    const handleContextLost = () => {
+      posthog.capture('viewer_webgl_context_lost', {
+        mode: viewRef.current?.mode ?? null,
+      })
+    }
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost)
 
     let animationFrame = 0
     const renderFrame = () => {
@@ -1405,6 +1418,10 @@ export function Viewer3D() {
       renderer.domElement.removeEventListener('pointermove', handlePointerMove)
       renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
       renderer.domElement.removeEventListener('click', handleClick)
+      renderer.domElement.removeEventListener(
+        'webglcontextlost',
+        handleContextLost,
+      )
       observer.disconnect()
       disposeContent(runtime)
       envTexture.dispose()
