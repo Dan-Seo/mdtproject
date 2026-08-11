@@ -13,6 +13,8 @@ const config = [
       'node_modules/**',
       '.next/**',
       '.claude/**',
+      '.pytest_cache/**',
+      '.cache/**',
       'design/**',
       'next-env.d.ts',
     ],
