@@ -5,17 +5,22 @@ name: oncall-alert
 # 헤드리스 에이전트(/oncall-triage)가 노이즈/신호를 판정한다.
 # 노이즈 → job summary 기록만. 신호 → 분석을 담아 GitHub Issue로 escalation.
 #
-# prod read-only: 판정 잡은 contents: read다 — 에이전트는 코드를 고치지도,
-# 푸시하지도 못한다. 멱등 ref 청소만 별도 잡(cleanup)에 contents: write를 준다.
+# 격리 설계 — 에이전트가 읽는 issue_name은 방문자가 정할 수 있는 텍스트(브라우저
+# 예외 메시지)라서 간접 프롬프트 인젝션을 전제로 짠다:
+#  - 에이전트 스텝에는 시크릿 env가 없다. PostHog 조회는 결정적 스텝이 선수행해
+#    파일로 주고, 이슈 게시도 결정적 스텝이 한다 — 하이재킹돼도 반출 수단이 없다.
+#  - 에이전트 도구에 네트워크(curl)·gh가 없다. 산출물은 .oncall/ 파일 두 개뿐.
+#  - 게시 직전 본문을 scrub-secrets.sh로 한 번 더 거른다.
+# prod read-only: 판정 잡은 contents: read. ref 삭제용 contents: write는
+# LLM이 없는 cleanup 잡에만 있다.
 # 루프 없음: repository_dispatch는 인증된 호출로만 발생하고, 이슈 생성은
 # 어떤 워크플로도 트리거하지 않는다.
+#
+# concurrency를 쓰지 않는 이유: 같은 그룹의 pending run이 대체되며 발화가
+# 유실된다. 중복은 핸들러의 멱등 ref와 아래 dedup 프리체크가 이미 흡수한다.
 on:
   repository_dispatch:
     types: [posthog-alert]
-
-concurrency:
-  group: oncall-alert-${{ github.event.client_payload.issue_id }}
-  cancel-in-progress: false # 같은 이슈의 연속 발화는 순서대로 — dedup 프리체크가 흡수한다
 
 jobs:
   triage:
@@ -54,6 +59,13 @@ jobs:
             echo "페이로드에 issue_id 없음 — 판정 불가, 종료" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # 핸들러가 문자열이면 통과시키는 값이다 — 이후 스텝(쿼리 조립)에 넣기 전에
+          # UUID 형태를 강제한다. 아니면 판정 불가로 종료 (fail-closed).
+          if ! printf '%s' "$ISSUE_ID" | grep -qE '^[0-9a-f-]{8,64}$'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "issue_id가 UUID 형태가 아님 — 판정 불가, 종료" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           existing=$(gh issue list --state open --label oncall-alert \
             --search "$ISSUE_ID" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
@@ -64,7 +76,29 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 노이즈/신호 판정 (헤드리스 에이전트)
+      - name: PostHog 사실 수집 (결정적 — 에이전트에 키를 주지 않는다)
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          PH: https://us.posthog.com/api/projects/552164
+        # 조회 실패는 null로 남긴다 — 에이전트는 null을 "조회 실패, 확신도 낮음"으로 다룬다.
+        run: |
+          ISSUE_ID=$(jq -r '.issue_id' .oncall/alert-payload.json)
+          AUTH="Authorization: Bearer $POSTHOG_API_KEY"
+          q() {
+            printf '%s' "$1" | sed "s/__ID__/$ISSUE_ID/g" \
+              | curl -sf -X POST -H "$AUTH" -H 'Content-Type: application/json' \
+                  "$PH/query/" -d @- || printf 'null'
+          }
+          issue=$(curl -sf -H "$AUTH" "$PH/error_tracking/issues/$ISSUE_ID/" || printf 'null')
+          stats=$(q '{"query":{"kind":"HogQLQuery","query":"SELECT count() AS occ, count(DISTINCT person_id) AS users, min(timestamp) AS first_seen, max(timestamp) AS last_seen FROM events WHERE event = '\''$exception'\'' AND properties.$exception_issue_id = '\''__ID__'\'' AND timestamp > now() - INTERVAL 7 DAY"}}')
+          envdist=$(q '{"query":{"kind":"HogQLQuery","query":"SELECT properties.$current_url AS url, properties.$lib AS lib, count() AS n FROM events WHERE event = '\''$exception'\'' AND properties.$exception_issue_id = '\''__ID__'\'' AND timestamp > now() - INTERVAL 7 DAY GROUP BY url, lib ORDER BY n DESC LIMIT 20"}}')
+          jq -n --argjson issue "$issue" --argjson stats "$stats" --argjson envdist "$envdist" \
+            '{issue: $issue, stats_7d: $stats, env_dist_7d: $envdist}' \
+            | bash scripts/ci/scrub-secrets.sh > .oncall/posthog-facts.json
+          wc -c .oncall/posthog-facts.json
+
+      - name: 노이즈/신호 판정 (헤드리스 에이전트 — 시크릿·네트워크 없음)
         if: steps.dedup.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
         with:
@@ -72,20 +106,44 @@ jobs:
           # OIDC 앱 토큰 교환을 건너뛴다 — review.yml과 같은 이유
           github_token: ${{ github.token }}
           prompt: |
-            /oncall-triage prod alert가 들어왔다. .oncall/alert-payload.json을 읽고
-            스킬 절차대로 노이즈/신호를 판정하라. 경계면 신호로 기울이되 확신도를 낮음으로 표기하라.
+            /oncall-triage prod alert가 들어왔다. .oncall/alert-payload.json과
+            .oncall/posthog-facts.json을 읽고 스킬 절차대로 노이즈/신호를 판정하라.
+            경계면 신호로 기울이되 확신도를 낮음으로 표기하라.
+            산출물은 .oncall/triage-verdict.json과 (신호면) .oncall/escalation-issue.md,
+            그리고 .oncall/triage-summary.md다 — 게시는 워크플로가 한다.
           claude_args: |
-            --allowedTools "Skill,Read,Grep,Glob,Write,Bash(git log:*),Bash(git show:*),Bash(git diff:*),Bash(jq:*),Bash(curl:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(gh issue comment:*)"
-        env:
-          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
-          POSTHOG_HOST: https://us.posthog.com
-          POSTHOG_PROJECT_ID: "552164"
+            --allowedTools "Skill,Read,Grep,Glob,Write,Bash(git log:*),Bash(git show:*),Bash(git diff:*),Bash(jq:*)"
 
-      - name: 판정 기록을 job summary로
+      - name: 판정 결과 게시 (결정적)
+        if: steps.dedup.outputs.skip != 'true'
+        # 이슈 게시는 여기서만 한다. 에이전트 산출물은 신뢰하지 않는 입력으로 다룬다 —
+        # 제목·본문 모두 scrub을 거치고, verdict 값은 signal일 때만 행동한다.
+        run: |
+          SCRUB=scripts/ci/scrub-secrets.sh
+          if [ ! -f .oncall/triage-verdict.json ]; then
+            echo "⚠ 에이전트가 verdict 파일을 남기지 못했다 — 판정 유실, 런 로그를 볼 것" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          VERDICT=$(jq -r '.verdict // "?"' .oncall/triage-verdict.json)
+          CONF=$(jq -r '.confidence // "?"' .oncall/triage-verdict.json)
+          echo "판정: ${VERDICT} (확신도 ${CONF})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$VERDICT" = "signal" ]; then
+            if [ ! -f .oncall/escalation-issue.md ]; then
+              echo "⚠ signal인데 escalation-issue.md가 없다 — 수동 확인 필요" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            TITLE=$(head -n1 .oncall/escalation-issue.md | sed -E 's/^#+ *//' | bash "$SCRUB")
+            tail -n +2 .oncall/escalation-issue.md | bash "$SCRUB" > "$RUNNER_TEMP/issue-body.md"
+            url=$(gh issue create --label oncall-alert \
+              --title "$TITLE" --body-file "$RUNNER_TEMP/issue-body.md")
+            echo "escalation: ${url}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 판정 근거를 job summary로
         if: always()
         run: |
           if [ -f .oncall/triage-summary.md ]; then
-            cat .oncall/triage-summary.md >> "$GITHUB_STEP_SUMMARY"
+            bash scripts/ci/scrub-secrets.sh < .oncall/triage-summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # 멱등 ref(refs/oncall/alerts/<YYYYMMDD>-<id>) 청소 — 14일 지난 것만 지운다.

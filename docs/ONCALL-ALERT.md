@@ -7,8 +7,8 @@ PostHog alert (issue created/reopened · spike)
   → HTTP Webhook: POST /api/oncall/alert        ← 서버리스 핸들러 (이 레포, Vercel)
       시크릿 검증 → 멱등 선삽입(GitHub ref) → repository_dispatch
   → oncall-alert.yml (CI)                        ← 판정은 여기서만
-      dedup 프리체크 → /oncall-triage 에이전트가 노이즈/신호 판정
-      노이즈: job summary 기록만 · 신호: 분석을 담아 GitHub Issue (라벨 oncall-alert)
+      dedup 프리체크 → PostHog 사실 수집(결정적) → /oncall-triage 에이전트 판정(무시크릿·무네트워크)
+      → 게시(결정적): 노이즈면 job summary 기록만 · 신호면 GitHub Issue (라벨 oncall-alert)
 ```
 
 - 서버리스는 `claude -p`를 못 띄우므로 핸들러는 검증·멱등·위임까지만 한다 (분석 금지).
@@ -17,6 +17,10 @@ PostHog alert (issue created/reopened · spike)
   14일 지난 ref는 oncall-alert.yml의 cleanup 잡이 지운다.
 - prod read-only: 판정 에이전트는 contents: read — 코드 수정·푸시 불가. 조치는
   이슈의 권장 액션까지이고, 실제 수정은 사람 또는 oncall CI 자동 수정(oncall.yml) 몫이다.
+- 인젝션 격리: 에이전트가 읽는 issue_name은 방문자가 정할 수 있는 텍스트이므로,
+  에이전트 스텝에는 시크릿 env·네트워크·gh가 없다. PostHog 조회는 결정적 스텝이
+  선수행해 파일로 주고, 이슈 게시도 결정적 스텝이 scrub을 거쳐 수행한다. 핸들러도
+  issue_name의 개행·백틱을 지우고 200자로 자른다.
 
 ## 활성화에 필요한 수동 설정 (1회)
 

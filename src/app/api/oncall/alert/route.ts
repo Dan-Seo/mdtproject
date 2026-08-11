@@ -13,7 +13,11 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 // 참고: 이 라우트는 PostHog 알림 메타데이터만 다룬다. 사용자 도면 데이터는
 // 여전히 서버로 오지 않는다 (CLAUDE.md CRITICAL의 취지 유지).
 
+// 이 라우트의 유일한 egress 대상. 다른 호스트를 추가하지 말 것 —
+// "클라이언트 온리" 전제의 유일한 서버측 예외이고 범위는 ADR-017이 계약한다.
 const GITHUB_API = 'https://api.github.com'
+
+export const runtime = 'nodejs'
 
 function sha256(text: string): string {
   return createHash('sha256').update(text).digest('hex')
@@ -71,7 +75,13 @@ export async function POST(request: Request): Promise<Response> {
   // 같은 발화(firing)의 재전송은 같은 id, 새 발화는 새 id.
   // fired_at이 없으면 본문 해시로 폴백 — 재전송은 여전히 같은 id로 잡힌다.
   const id = sha256(`${kind}|${issueId}|${firedAt || sha256(raw)}`).slice(0, 32)
-  const day = new Date().toISOString().slice(0, 10).replaceAll('-', '')
+  // 날짜도 결정적 입력에서 뽑는다 — 수신 시각을 쓰면 재전송이 UTC 자정을 넘길 때
+  // 다른 ref가 만들어져 멱등이 깨진다. fired_at이 없을 때만 수신 시각 폴백.
+  const firedDate = firedAt ? new Date(firedAt) : null
+  const day = (firedDate && !Number.isNaN(firedDate.getTime()) ? firedDate : new Date())
+    .toISOString()
+    .slice(0, 10)
+    .replaceAll('-', '')
   const refName = `refs/oncall/alerts/${day}-${id}`
 
   const headers = githubHeaders(token)
@@ -108,7 +118,11 @@ export async function POST(request: Request): Promise<Response> {
         id,
         kind,
         issue_id: issueId,
-        issue_name: typeof payload.issue_name === 'string' ? payload.issue_name : '',
+        // 브라우저 예외 메시지 = 방문자가 정할 수 있는 텍스트. CI 에이전트의 입력이
+        // 되므로 개행·백틱·$를 지우고 200자로 잘라 인젝션 탑재량을 줄인다.
+        issue_name: (typeof payload.issue_name === 'string' ? payload.issue_name : '')
+          .replace(/[\r\n`$]/g, ' ')
+          .slice(0, 200),
         issue_url: typeof payload.issue_url === 'string' ? payload.issue_url : '',
         fired_at: firedAt,
         occurrences: typeof payload.occurrences === 'number' ? payload.occurrences : null,
@@ -118,10 +132,14 @@ export async function POST(request: Request): Promise<Response> {
   })
   if (!dispatchRes.ok) {
     // 선삽입한 ref가 남으면 재전송이 영원히 duplicate로 먹혀 알림이 유실된다 — 보상 삭제
-    await fetch(
+    const delRes = await fetch(
       `${GITHUB_API}/repos/${repo}/git/refs/${refName.replace('refs/', '')}`,
       { method: 'DELETE', headers },
-    ).catch(() => undefined)
+    ).catch(() => null)
+    if (!delRes?.ok) {
+      // 여기서 실패하면 이 발화는 재전송돼도 duplicate로 먹힌다 — 로그가 유일한 흔적
+      console.error(`oncall: 보상 삭제 실패 ${refName} — 재전송이 duplicate로 먹힌다`)
+    }
     return Response.json({ error: 'dispatch failed' }, { status: 502 })
   }
 

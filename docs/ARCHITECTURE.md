@@ -4,6 +4,7 @@
 ```
 src/
 ├── app/                  # Next.js App Router — 페이지 셸만. 전부 클라이언트 컴포넌트
+│   └── api/oncall/       #   유일한 예외: 운영 알림 수신 라우트 (ADR-017)
 ├── components/
 │   ├── plan/             # 평면 입력 에디터
 │   ├── section/          # 부재 단면일람 테이블
