@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-12T16:13:37+0900",
       "summary": "柱/大梁 部材 뷰 유니온에 clear span과 양단 지점 柱 스텁을 추가하고 core·定着·重ね継手 zone 머티리얼 원복 및 girderPending 제거를 완료",
-      "completed_at": "2026-08-12T16:26:22+0900"
+      "completed_at": "2026-08-12T16:28:40+0900"
     },
     {
       "step": 2,
