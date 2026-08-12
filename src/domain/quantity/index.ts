@@ -108,8 +108,8 @@ function contributingRules(
   }
 }
 
-// 同じ符号の柱でも接する大梁のせいが違えば帯筋本数が変わる。加工長と本数を
-// 行キーに含め、内訳書の別行として分ける。
+// 同じ符号でも階高や内法長さが違えば設計長さ・設計本数が変わる（積算基準
+// 1通則2)・7)）。両方を行キーに含め、内訳書の別行として分ける。
 export function quantityLineId(groupId: string, rebar: Rebar): string {
   return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}`
 }

@@ -37,6 +37,12 @@ export interface RebarPlacement {
   startOffsetMm: number
   /** `stirrupPositions`가 산출한 마지막 잔여 간격 (mm). */
   lastGapMm: number
+  /**
+   * 이 배치가 실제로 만드는 위치 개수. 数量의 `Rebar.count`와 다를 수 있다 —
+   * 数量은 積算基準 1通則7)로 세고 배치는 초기 오프셋을 반영하기 때문이다 (ADR-019).
+   * 표시부가 같은 인자로 `stirrupPositions`를 다시 돌린 결과와 대조하는 값이다.
+   */
+  positionCount: number
 }
 
 export interface Rebar {
@@ -45,9 +51,19 @@ export interface Rebar {
   role: RebarRole
   size: BarSize
   shape: RebarShape
+  /** 加工形状. 3D 표시의 유일한 출처이며 `length`와 일치하지 않을 수 있다. */
   points: [number, number, number][]
   closed: boolean
+  /**
+   * 数量積算基準の**設計長さ** (mm) — 内訳書·kg 산출이 쓰는 값이다.
+   * フープ·スタラップ은 1通則2)가 「断面の設計寸法による周長、フックはない
+   * ものとする」로 정하므로 `points`가 그리는 加工長과 어긋난다 (ADR-019).
+   */
   length: number
+  /**
+   * 数量積算基準の**設計本数** — 1通則7)의 割付本数다.
+   * 배치가 만드는 실제 개수는 `placement.positionCount`이며 다를 수 있다.
+   */
   count: number
   /** 대표 1본을 실제 本数만큼 전개할 때 필요한 도메인 배치 입력. */
   placement?: RebarPlacement

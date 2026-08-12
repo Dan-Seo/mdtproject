@@ -1,0 +1,23 @@
+# 公共建築数量積算基準 第4編第3章第2節「鉄筋の計測・計算」— 数量の測り方。
+# 配筋詳細（定着・重ね継手・折曲げ・かぶり）は標準仕様書5章の他ファイルが持つ。
+# この節は寸法ではなく測り方を定めるので、値は「加算しない／加算する量」になる。
+
+- key: measure.hoop.length.addition
+  label: フープ・スタラップの設計長さに加える かぶり控除・フック
+  expr: 断面の設計寸法による周長 2×(b＋D) ＋ 0
+  conditions: {}
+  value: 0
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則2), page: 15 }
+  confidence: stated
+  note: 「フープ、スタラップの長さは、それぞれ柱、基礎梁、梁及び壁梁のコンクリートの断面の設計寸法による周長を鉄筋の長さとし、フックはないものとする」— かぶりを控除せず、フック余長も加えない
+
+- key: measure.distribution.addition
+  label: 割付本数に加える本数
+  expr: ⌈その部分の長さ ÷ 鉄筋の間隔⌉ ＋ 1
+  conditions: {}
+  value: 1
+  unit: 本
+  source: { ref: quantity, section: 第4編第3章第2節 1通則7), page: 15 }
+  confidence: stated
+  note: 「その部分の長さを鉄筋の間隔で除し、小数点以下第1位を切り上げた整数（同一の部分で間隔の異なる場合はその整数の和）に1を加える」

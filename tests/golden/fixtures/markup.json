@@ -2,9 +2,11 @@
   "source": {
     "doc": "公共建築数量積算基準",
     "edition": "令和5年3月29日改定（国営積第8号）",
-    "page": 20,
-    "section": "鉄筋",
-    "quote": "鉄筋について、その所要数量を求めるときは、その設計数量の４％の割増を標準とする"
+    "page": 15,
+    "pdfPage": 20,
+    "section": "第4編第3章第2節 1通則9)",
+    "quote": "鉄筋について、その所要数量を求めるときは、その設計数量の４％の割増を標準とする",
+    "pageNote": "page は紙面に印刷された頁番号。この文書では pdfPage = page + 5"
   },
   "supported": {
     "memberClass": "躯体",
@@ -15,13 +17,15 @@
   "unsupported": [
     {
       "memberClass": "山留め壁",
-      "page": 13,
+      "page": 8,
+      "pdfPage": 13,
       "documentedValue": 0.03,
       "reason": "MVP範囲外のためルールパックに登録せず、検索を失敗させる"
     },
     {
       "memberClass": "杭",
-      "page": 14,
+      "page": 9,
+      "pdfPage": 14,
       "documentedValue": 0.03,
       "reason": "MVP範囲外のためルールパックに登録せず、検索を失敗させる"
     }
