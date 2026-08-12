@@ -23,6 +23,10 @@
       "dir": "5-girder-continuous",
       "status": "completed",
       "completed_at": "2026-08-12T21:25:00+0900"
+    },
+    {
+      "dir": "6-section-import",
+      "status": "pending"
     }
   ]
 }

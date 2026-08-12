@@ -325,12 +325,16 @@ describe('TakeoffPane', () => {
 
     const lineId = lineFor('主筋').id
     const row = screen.getByTestId(`quantity-line-${lineId}`)
-    fireEvent.focus(row)
+    // 포커스는 행이 아니라 첫 칸 컨트롤에 온다 — tr에는 tabIndex가 없어 브라우저에서
+    // 행 자체는 포커스를 받지 못한다. 행에 직접 쏘면 도달 불가능한 상태를 검증하게 된다.
+    // tr의 onFocus/onBlur가 이걸 받는 건 focusin/focusout이 버블링되기 때문이다.
+    const disclosure = within(row).getByRole('button')
+    fireEvent.focus(disclosure)
 
     expect(useAppStore.getState().hoverRowId).toBe(lineId)
     expect(useAppStore.getState().sel).toEqual(initialSelection)
 
-    fireEvent.blur(row)
+    fireEvent.blur(disclosure)
 
     expect(useAppStore.getState().hoverRowId).toBeNull()
     expect(useAppStore.getState().sel).toEqual(initialSelection)
