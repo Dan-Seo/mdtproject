@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "girder-generator",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T13:09:39+0900",
+      "summary": "generateGirderRebar(input: GirderRebarInput, pack: RulePack): Rebar[]가 [上端筋, 下端筋, あばら筋] 3행을 생성하고 cover.minimum→cover.fabrication.addition→anchorage.L1(折曲げ 시 anchorage.L1h·anchorage.La·anchorage.bent.tail.minimum·anchorage.bent.projection.minimum), bend.hook135·stirrup.start-offset을 조회하며 x=스팬 방향/좌측 柱面 원점·y=梁 밑면·z=폭의 mm 로컬 좌표를 사용",
+      "completed_at": "2026-08-12T13:16:17+0900"
     },
     {
       "step": 5,
