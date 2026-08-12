@@ -25,7 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <title>Kijun 基準</title>
       <meta
         name="description"
-        content="公共建築工事標準仕様書に基づき、柱・大梁の配筋詳細と鉄筋数量をブラウザ上で算定するツール。図面データは端末外に送信しない。"
+        content="公共建築工事標準仕様書に基づき、柱・大梁の配筋詳細と鉄筋数量をブラウザ上で算定するツール（開発中・M2 未完了：ルールパック数値は原文抽出前の仮値。検収・発注には使用不可）。図面データは端末外に送信しない。"
       />
       <body>{children}</body>
     </html>

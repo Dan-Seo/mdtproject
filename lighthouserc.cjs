@@ -1,5 +1,12 @@
 // 브라우저 실측 회귀 게이트 (npm run lighthouse). main push의 ci.yml에서만 돈다.
 //
+// @lhci/cli는 devDependencies에 정확한 버전으로 고정한다 — npx로 되돌리지 말 것.
+// 리뷰가 양쪽으로 한 번씩 지적한 지점이라 결론을 여기 남긴다 (PR #12 minor / PR #13 minor).
+// npx는 최상위 버전만 핀하고 전이 의존은 실행 시점 semver 해석이라 무결성 해시가 없다.
+// 차단 게이트를 좌우하는 코드가 락파일 밖에 있는 쪽이, npm ci 표면이 넓어지는 쪽보다 나쁘다.
+// (PR #13이 제안한 `npm audit --audit-level=high` CI 게이트는 지금 넣으면 main이 즉시
+//  깨진다 — exceljs 전이 의존에 high 3건이 이미 있다. 별건으로 다룰 것.)
+//
 // 게이트를 거는 원칙 — **러너 속도에 흔들리지 않는 값에만 error를 건다.**
 // main CI가 실패하면 oncall.yml이 헤드리스 에이전트를 깨워 API 토큰을 쓴다. 타이밍
 // 지표(TBT·LCP·performance 점수)는 2코어 공유 러너에서 실행마다 수십 %씩 흔들리므로,
