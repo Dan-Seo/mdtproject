@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
+    "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs",
     "eval": "tsx --env-file-if-exists=.env evals/harness/run.ts",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
     "hooks:install": "git config core.hooksPath scripts/githooks"
