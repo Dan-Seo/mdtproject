@@ -43,6 +43,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
 
+      # 무게시 실패의 원인 진단용 — 스트림 로그는 잡 로그에 남지 않으므로
+      # 실행 전문(JSON)을 아티팩트로 올려 사후 분석을 가능하게 한다.
+      - name: 실행 로그 아티팩트
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-review-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: ignore
+
       # 리뷰 잡의 "무음 실패"를 빨간불로 바꾼다 — 에이전트가 리뷰를 게시하지 못하고
       # 종료해도 잡은 success로 끝나서, gate의 "게이트 마커 없음" 보류가 재시도 없이
       # 방치된다 (PR #8에서 3회 재현). 마커 리뷰가 이 커밋에 없으면 잡을 실패시켜
