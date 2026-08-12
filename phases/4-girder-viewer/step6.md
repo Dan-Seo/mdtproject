@@ -29,7 +29,7 @@ TDD로 진행하라. 테스트를 먼저 쓰고 구현하라.
 export interface LegendEntry {
   kind: '定着' | '重ね継手'
   lengthMm: number        // zone의 경로거리 폭 (pathToMm − pathFromMm)
-  ruleKey?: string        // 해당 길이를 만든 룰 키 (예: 'anchorage.L2') — rules에서 대조
+  ruleKey?: string        // 해당 길이를 만든 룰 키 (예: 'anchorage.L1') — rules에서 대조
 }
 export function legendEntries(rebars: Rebar[]): LegendEntry[]
 ```

@@ -54,9 +54,11 @@ export function generateColumnRebar(
     'cover.fabrication.addition',
     {},
   )
+  // 柱主筋の定着は表5.3.4の一般値 L1 (注1 — 注2〜4以外)。L2 は「割裂破壊の
+  // おそれのない箇所」限定 (注2) で、その判定材料を製品は持たないため一般値を使う。
   const anchorageRule = lookupRule(
     pack,
-    'anchorage.L2',
+    'anchorage.L1',
     commonConditions,
   )
   const lapRule = lookupRule(pack, 'lap.L1', commonConditions)
@@ -91,14 +93,14 @@ export function generateColumnRebar(
     mainRuleKeys.push(lapRule.key)
   } else {
     endTerms.push(
-      `下端 定着長さ L2 ${anchorageRule.value}d(${anchorageLength})`,
+      `下端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
     )
     mainRuleKeys.push(anchorageRule.key)
   }
 
   if (ends.top === '定着') {
     endTerms.push(
-      `上端 定着長さ L2 ${anchorageRule.value}d(${anchorageLength})`,
+      `上端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
     )
     if (!mainRuleKeys.includes(anchorageRule.key)) {
       mainRuleKeys.push(anchorageRule.key)

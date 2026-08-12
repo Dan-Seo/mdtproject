@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
+import type { ColumnSection } from '../model/member'
 import type { RuleEntry, RulePack } from './types'
-import { lookupMarkup, lookupRule, lookupUnitMass } from './lookup'
+import {
+  coverConditions,
+  lookupMarkup,
+  lookupRule,
+  lookupUnitMass,
+} from './lookup'
 
 function entry(
   key: string,
@@ -91,5 +97,42 @@ describe('specialized lookups', () => {
 
   it('looks up unit mass by BarSize', () => {
     expect(lookupUnitMass(pack, 'D13')).toBe(unitMass)
+  })
+})
+
+describe('coverConditions', () => {
+  const section: ColumnSection = {
+    id: 'section-C1',
+    kind: '柱',
+    mark: 'C1',
+    b: 800,
+    d: 800,
+    fc: 24,
+    grade: 'SD345',
+    exposure: '屋外',
+    finish: '仕上げなし',
+    main: { size: 'D25', count: 12 },
+    hoop: { size: 'D13', pitch: 100 },
+  }
+
+  it('pins the 表5.3.6 cover cell conditions to the section input', () => {
+    // 생성기(column.ts)와 집계기(quantity/index.ts)가 공유하는 단일 출처 —
+    // 조건 집합이 달라지면 두 경로가 서로 다른 셀을 보게 되므로 여기서 고정한다.
+    expect(coverConditions(section)).toEqual({
+      memberKind: '柱',
+      soilContact: false,
+      exposure: '屋外',
+      finish: '仕上げなし',
+    })
+  })
+
+  it('follows the section input for the 屋内・仕上げあり cell', () => {
+    expect(
+      coverConditions({
+        ...section,
+        exposure: '屋内',
+        finish: '仕上げあり',
+      }),
+    ).toMatchObject({ exposure: '屋内', finish: '仕上げあり' })
   })
 })

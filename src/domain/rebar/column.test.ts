@@ -48,7 +48,7 @@ function input(
 const mainDiameter = Number(section.main.size.replace(/^D/, ''))
 const conditions = { fc: section.fc, grade: section.grade, hook: false }
 const anchorage =
-  lookupRule(jpMlitRulePack, 'anchorage.L2', conditions).value * mainDiameter
+  lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).value * mainDiameter
 const lap =
   lookupRule(jpMlitRulePack, 'lap.L1', conditions).value * mainDiameter
 const minimumCover = lookupRule(jpMlitRulePack, 'cover.minimum', {
@@ -114,7 +114,7 @@ describe('generateColumnRebar', () => {
       'cover.minimum',
       'cover.fabrication.addition',
       'lap.L1',
-      'anchorage.L2',
+      'anchorage.L1',
     ])
     expect(byRole(generated, '帯筋').rules).toEqual([
       'cover.minimum',
@@ -205,7 +205,7 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(interior.rules).not.toContain('anchorage.L2')
+    expect(interior.rules).not.toContain('anchorage.L1')
     expect(interior.formula).not.toContain('定着')
     expect(interior.length).toBe(story.height + lap)
   })
@@ -242,7 +242,7 @@ describe('generateColumnRebar', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
     const main = byRole(generated, '主筋')
     const hoop = byRole(generated, '帯筋')
-    const anchorage = lookupRule(jpMlitRulePack, 'anchorage.L2', {
+    const anchorage = lookupRule(jpMlitRulePack, 'anchorage.L1', {
       fc: section.fc,
       grade: section.grade,
       hook: false,
@@ -268,7 +268,7 @@ describe('generateColumnRebar', () => {
     expect(hoop.points[0]).toEqual([fabricationCover, 0, fabricationCover])
     expect(hoop.length).toBe(expectedHoopLength)
     expect(main.formula).toContain(
-      `定着長さ L2 ${anchorage.value}d(${anchorage.value * mainDiameter})`,
+      `定着長さ L1 ${anchorage.value}d(${anchorage.value * mainDiameter})`,
     )
     expect(main.formula).toContain(
       `重ね継手長さ L1 ${lap.value}d(${lap.value * mainDiameter})`,
