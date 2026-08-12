@@ -110,7 +110,7 @@ describe('TakeoffPane', () => {
     expect(within(row).queryByLabelText('直線')).not.toBeInTheDocument()
   })
 
-  it('renders supported X大梁 rows and reports unsupported Y大梁 separately', () => {
+  it('renders continuous 大梁 rows without a stale 連続スパン notice', () => {
     const { lines, unsupportedMembers } = takeoffResult()
     const supportedGirderLines = lines.filter(
       ({ groupId }) => groupId === '1階|G|G1',
@@ -118,25 +118,15 @@ describe('TakeoffPane', () => {
 
     render(<TakeoffPane />)
 
-    expect(supportedGirderLines.map(({ role }) => role)).toEqual([
-      '上端筋',
-      '下端筋',
-      'あばら筋',
-    ])
+    expect(supportedGirderLines.map(({ role }) => role)).toEqual(
+      expect.arrayContaining(['上端筋', '下端筋', 'あばら筋']),
+    )
     for (const line of supportedGirderLines) {
       expect(screen.getByTestId(`quantity-line-${line.id}`)).toBeInTheDocument()
     }
 
-    const notice = screen.getByRole('note')
-    expect(notice).toHaveTextContent(`${unsupportedMembers.length}件`)
-    expect(within(notice).getAllByRole('listitem')).toHaveLength(
-      unsupportedMembers.length,
-    )
-    expect(notice).toHaveTextContent('G1（1階）')
-    expect(notice).toHaveTextContent('G2（2階）')
-    expect(notice).toHaveTextContent('連続スパン')
-    expect(notice).toHaveTextContent('M3b')
-    expect(notice).toHaveTextContent('通し筋')
+    expect(unsupportedMembers).toHaveLength(0)
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
 
     const table = screen.getByRole('table')
     expect(within(table).getAllByTestId(/^quantity-line-/)).toHaveLength(
@@ -164,13 +154,11 @@ describe('TakeoffPane', () => {
 
     const notice = screen.getByRole('note')
     expect(notice).toHaveTextContent('定着が支点柱に収まらない')
-    expect(notice).toHaveTextContent('M3b')
+    expect(notice).not.toHaveTextContent('M3b')
     expect(notice).toHaveTextContent('見直し')
   })
 
-  it('separates the per-reason follow-ups instead of running them together', () => {
-    // 사유가 둘이면 고지문도 둘이다 — 구분자 없이 이어 붙이면
-    // 「…見直しが必要連続スパン: …」처럼 한 문장으로 읽힌다.
+  it('does not retain the removed 連続スパン follow-up', () => {
     useAppStore.getState().updateProject((project) => ({
       ...project,
       sections: project.sections.map((section) =>
@@ -181,7 +169,9 @@ describe('TakeoffPane', () => {
     render(<TakeoffPane />)
 
     const plan = screen.getByTestId('unsupported-plan')
-    expect(plan.textContent?.split(' / ')).toHaveLength(2)
+    expect(plan.textContent?.split(' / ')).toHaveLength(1)
+    expect(plan).not.toHaveTextContent('連続スパン')
+    expect(plan).not.toHaveTextContent('M3b')
   })
 
   it('omits the unsupported-member notice when every member is supported', () => {

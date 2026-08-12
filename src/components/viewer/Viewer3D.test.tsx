@@ -402,12 +402,12 @@ describe('Viewer3D', () => {
     expect(legend).toHaveTextContent(sourceLabel(rule!))
   })
 
-  it('does not show a legend for an unsupported 大梁', () => {
+  it('shows the outer-end legend for a continuous-run owner', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
 
     render(<Viewer3D />)
 
-    expect(screen.queryByLabelText('定着・継手凡例')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('定着・継手凡例')).toBeInTheDocument()
   })
 
   it('shows the selected 柱 legend from 主筋 zones', () => {
@@ -464,14 +464,14 @@ describe('Viewer3D', () => {
     )
   })
 
-  it('shows the unsupported reason and no rebar mesh for a 連続スパン 大梁', () => {
+  it('renders rebar instead of an unsupported reason for a continuous-run owner', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
     render(<Viewer3D />)
 
-    expect(screen.getByText(/連続スパン/)).toBeInTheDocument()
+    expect(screen.queryByText(/連続スパン/)).not.toBeInTheDocument()
     const canvas = screen.getByLabelText('選択部材の配筋3D')
     fireEvent.click(canvas, { clientX: 320, clientY: 180 })
-    expect(mocks.pickableCounts.at(-1)).toBe(0)
+    expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
   })
 
   it('renders the building view and picks a member back into the selection', () => {

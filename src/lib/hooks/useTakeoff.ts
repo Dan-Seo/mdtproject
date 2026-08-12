@@ -7,8 +7,7 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
-  girderSpan,
-  girderSupport,
+  girderRun,
   type Project,
 } from '@/domain/model/project'
 import {
@@ -112,23 +111,15 @@ function buildTakeoff(project: Project): TakeoffResult {
       throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
     }
 
-    const support = girderSupport(project, member)
-    if (!support.supported) {
-      unsupportedMembers.push({
-        memberId: member.id,
-        mark: section.mark,
-        storyName: story.name,
-        reason: support.reason,
-      })
-      continue
-    }
-
     // 성립 불가 형상(定着·寸法)은 그 부재만 빼고 나머지 산정을 계속한다.
     // MemberUnsupportedError만 잡는다 — 룰팩 공백 같은 결함은 그대로 터진다.
     try {
+      const run = girderRun(project, member)
+      if (member.id !== run.ownerId) continue
+
       rebars.push(
         ...generateGirderRebar(
-          { member, section, span: girderSpan(project, member) },
+          { run, section },
           jpMlitRulePack,
         ),
       )

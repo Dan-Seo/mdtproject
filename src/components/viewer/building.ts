@@ -2,7 +2,6 @@ import type { MemberKind } from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
-  girderSupport,
   gridPoint,
   storyElevation,
   type Project,
@@ -168,8 +167,6 @@ export function buildingLayout(
           `大梁 member references a non-大梁 section: ${member.id}`,
         )
       }
-      if (!girderSupport(project, member).supported) continue
-
       const story = project.stories.find(({ id }) => id === member.storyId)
       if (!story) {
         throw new Error(`Story not found: ${member.storyId}`)

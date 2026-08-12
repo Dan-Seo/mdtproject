@@ -4,6 +4,7 @@ import type { GirderSection, Member } from '@/domain/model/member'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   findSection,
+  girderRun,
   girderSpan,
   gridPoint,
   gridPointCount,
@@ -90,7 +91,7 @@ function girderFixture(
     member,
     section,
     rebars: generateGirderRebar(
-      { member, section, span: girderSpan(source, member) },
+      { run: girderRun(source, member), section },
       jpMlitRulePack,
     ),
   }
@@ -170,12 +171,12 @@ describe('buildingLayout', () => {
     expect(hoops[0].from[2]).toBeCloseTo(offsetZ + 40 + rebarRadius('D13'))
   })
 
-  it('includes supported X 大梁 rebar and omits unsupported Y 大梁 rebar', () => {
+  it('includes both single-span and continuous-run 大梁 rebar', () => {
     const supportedX = girderFixture(project, '1F-G1-X1Y1-X')
-    const unsupportedY = girderFixture(project, '1F-G1-X1Y1-Y')
+    const continuousY = girderFixture(project, '1F-G1-X1Y1-Y')
     const layout = buildingLayout(project, [
       ...supportedX.rebars,
-      ...unsupportedY.rebars,
+      ...continuousY.rebars,
     ])
 
     expect(
@@ -185,9 +186,9 @@ describe('buildingLayout', () => {
     ).toBe(true)
     expect(
       layout.rebar.some(
-        ({ memberId }) => memberId === unsupportedY.member.id,
+        ({ memberId }) => memberId === continuousY.member.id,
       ),
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('maps an X-axis 大梁 上端筋 from the start 柱 face into world coordinates', () => {
@@ -289,22 +290,41 @@ describe('buildingLayout', () => {
       )!
       if (member.kind !== '大梁' || !('axis' in member.position)) continue
 
-      const span = girderSpan(project, member)
+      const run = girderRun(project, member)
+      const startMember = run.members[0]
+      const endMember = run.members.at(-1)!
+      if (
+        !('axis' in startMember.position) ||
+        !('axis' in endMember.position)
+      ) {
+        throw new Error('GirderRun contains a non-girder position')
+      }
+      const startSpan = run.spans[0]
+      const endSpan = run.spans.at(-1)!
       const start = gridPoint(
         project.grid,
-        member.position.ix,
-        member.position.iy,
+        startMember.position.ix,
+        startMember.position.iy,
       )
       const end =
         member.position.axis === 'X'
-          ? gridPoint(project.grid, member.position.ix + 1, member.position.iy)
-          : gridPoint(project.grid, member.position.ix, member.position.iy + 1)
+          ? gridPoint(
+              project.grid,
+              endMember.position.ix + 1,
+              endMember.position.iy,
+            )
+          : gridPoint(
+              project.grid,
+              endMember.position.ix,
+              endMember.position.iy + 1,
+            )
       const coordinate = member.position.axis === 'X' ? 0 : 2
       const startCenter = member.position.axis === 'X' ? start.x : start.y
       const endCenter = member.position.axis === 'X' ? end.x : end.y
       const exteriorStart =
-        startCenter - span.startSupportLengthAlongAxisMm / 2
-      const exteriorEnd = endCenter + span.endSupportLengthAlongAxisMm / 2
+        startCenter - startSpan.startSupportLengthAlongAxisMm / 2
+      const exteriorEnd =
+        endCenter + endSpan.endSupportLengthAlongAxisMm / 2
 
       for (const point of [instance.from, instance.to]) {
         expect(point[coordinate]).toBeGreaterThanOrEqual(exteriorStart)

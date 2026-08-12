@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
-import { gridPointCount } from '@/domain/model/project'
+import { girderRun, gridPointCount } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
 
 import { useTakeoff } from './useTakeoff'
@@ -12,13 +12,11 @@ describe('useTakeoff', () => {
     useAppStore.setState({ project: createSampleProject() })
   })
 
-  it('derives supported X大梁 rows and reports continuous Y大梁 separately', () => {
+  it('derives one 通し筋 pair per run and あばら筋 per member', () => {
     const { result } = renderHook(() => useTakeoff())
     const project = useAppStore.getState().project
     const { nx, ny } = gridPointCount(project.grid)
     const columnsPerStory = nx * ny
-    const supportedGirdersPerStory = (nx - 1) * ny
-    const unsupportedGirdersPerStory = nx * (ny - 1)
     const xGirderIds = new Set(
       project.members
         .filter(
@@ -26,16 +24,6 @@ describe('useTakeoff', () => {
             member.kind === '大梁' &&
             'axis' in member.position &&
             member.position.axis === 'X',
-        )
-        .map(({ id }) => id),
-    )
-    const yGirderIds = new Set(
-      project.members
-        .filter(
-          (member) =>
-            member.kind === '大梁' &&
-            'axis' in member.position &&
-            member.position.axis === 'Y',
         )
         .map(({ id }) => id),
     )
@@ -52,15 +40,8 @@ describe('useTakeoff', () => {
 
     expect(result.current.rebars.length).toBeGreaterThan(0)
     expect(result.current.lines.length).toBeGreaterThan(0)
-    expect(firstStoryG1Lines.map(({ role }) => role)).toEqual([
-      '上端筋',
-      '下端筋',
-      'あばら筋',
-    ])
-    expect(
-      girderLines.reduce((sum, { places }) => sum + places, 0),
-    ).toBe(
-      project.stories.length * supportedGirdersPerStory * 3,
+    expect(firstStoryG1Lines.map(({ role }) => role)).toEqual(
+      expect.arrayContaining(['上端筋', '下端筋', 'あばら筋']),
     )
     expect(
       firstStoryColumnLines
@@ -72,17 +53,21 @@ describe('useTakeoff', () => {
         .filter(({ role }) => role === '帯筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(columnsPerStory)
-    expect(result.current.unsupportedMembers).toHaveLength(
-      project.stories.length * unsupportedGirdersPerStory,
-    )
-    expect(result.current.unsupportedMembers).toContainEqual({
-      memberId: '1F-G1-X1Y1-Y',
-      mark: 'G1',
-      storyName: '1階',
-      reason: '連続スパン',
-    })
+    const yOwner = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-Y',
+    )!
+    const yRun = girderRun(project, yOwner)
     expect(
-      result.current.rebars.every(({ memberId }) => !yGirderIds.has(memberId)),
+      result.current.rebars
+        .filter(({ memberId }) => memberId === yRun.ownerId)
+        .map(({ role }) => role),
+    ).toEqual(['上端筋', '下端筋', 'あばら筋'])
+    expect(
+      yRun.members.every(({ id: memberId }) =>
+        result.current.rebars.some(
+          (rebar) => rebar.memberId === memberId && rebar.role === 'あばら筋',
+        ),
+      ),
     ).toBe(true)
     expect(
       [...xGirderIds].every((memberId) =>

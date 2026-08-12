@@ -14,7 +14,7 @@ import type {
 import {
   findSection,
   girderSpan,
-  girderSupport,
+  girderSupportSections,
   type GirderSpan,
   type Project,
   type Story,
@@ -123,6 +123,7 @@ interface SelectedGirderView {
   section: GirderSection
   story: Story
   span: GirderSpan
+  supportSections: { start: ColumnSection; end: ColumnSection }
   rebars: Rebar[]
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
@@ -233,7 +234,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
     ]
   }
 
-  const { section, span, story } = view
+  const { section, span, story, supportSections } = view
   const stubHeight = Math.min(story.height, section.depth * 2)
   const centerY = section.depth / 2
   const centerZ = section.b / 2
@@ -247,7 +248,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       size: [
         span.startSupportLengthAlongAxisMm,
         stubHeight,
-        span.startSupportWidthAcrossAxisMm,
+        span.axis === 'X' ? supportSections.start.d : supportSections.start.b,
       ],
       center: [
         -span.startSupportLengthAlongAxisMm / 2,
@@ -259,7 +260,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       size: [
         span.endSupportLengthAlongAxisMm,
         stubHeight,
-        span.endSupportWidthAcrossAxisMm,
+        span.axis === 'X' ? supportSections.end.d : supportSections.end.b,
       ],
       center: [
         span.clear + span.endSupportLengthAlongAxisMm / 2,
@@ -920,8 +921,12 @@ function geometryKey(view: SelectedSupportedMemberView): string {
           view.span.clear,
           view.span.startSupportLengthAlongAxisMm,
           view.span.endSupportLengthAlongAxisMm,
-          view.span.startSupportWidthAcrossAxisMm,
-          view.span.endSupportWidthAcrossAxisMm,
+          view.span.axis === 'X'
+            ? view.supportSections.start.d
+            : view.supportSections.start.b,
+          view.span.axis === 'X'
+            ? view.supportSections.end.d
+            : view.supportSections.end.b,
         ]
 
   return JSON.stringify([
@@ -1017,11 +1022,6 @@ function selectedMemberView(
     throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
   }
 
-  const support = girderSupport(project, member)
-  if (!support.supported) {
-    return { status: 'unsupported', member, reason: support.reason }
-  }
-
   return {
     status: 'supported',
     view: {
@@ -1030,6 +1030,7 @@ function selectedMemberView(
       section,
       story,
       span: girderSpan(project, member),
+      supportSections: girderSupportSections(project, member),
       ...rows,
     },
   }
