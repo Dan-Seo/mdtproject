@@ -49,11 +49,15 @@ const anchorage =
   lookupRule(jpMlitRulePack, 'anchorage.L2', conditions).value * mainDiameter
 const lap =
   lookupRule(jpMlitRulePack, 'lap.L1', conditions).value * mainDiameter
-const roundingUnit = lookupRule(jpMlitRulePack, 'rounding.length', {}).value
-
-function rounded(length: number): number {
-  return Math.ceil(length / roundingUnit) * roundingUnit
-}
+const minimumCover = lookupRule(jpMlitRulePack, 'cover.minimum', {
+  memberKind: section.kind,
+}).value
+const fabricationAddition = lookupRule(
+  jpMlitRulePack,
+  'cover.fabrication.addition',
+  {},
+).value
+const fabricationCover = minimumCover + fabricationAddition
 
 function byRole(
   generated: ReturnType<typeof generateColumnRebar>,
@@ -103,14 +107,14 @@ describe('generateColumnRebar', () => {
     // 端部の順（下端 → 上端）で並ぶ。既定入力は 下端 継手・上端 定着。
     expect(byRole(generated, '主筋').rules).toEqual([
       'cover.minimum',
+      'cover.fabrication.addition',
       'lap.L1',
       'anchorage.L2',
-      'rounding.length',
     ])
     expect(byRole(generated, '帯筋').rules).toEqual([
       'cover.minimum',
+      'cover.fabrication.addition',
       'bend.hook135',
-      'rounding.length',
     ])
   })
 
@@ -130,12 +134,12 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(lower.length).toBe(rounded(story.height + anchorage))
-    expect(upper.length).toBe(rounded(story.height + lap + anchorage))
+    expect(lower.length).toBe(story.height + anchorage)
+    expect(upper.length).toBe(story.height + lap + anchorage)
 
     // 2층 스택 합계는 「기초 定着 ＋ 접합부 継手 1회 ＋ 지붕 定着」뿐이다.
     // 예전에는 층마다 定着＋継手가 붙어 継手 하나를 더 세고 있었다.
-    const doubleCounted = rounded(story.height + anchorage + lap) * 2
+    const doubleCounted = (story.height + anchorage + lap) * 2
 
     expect(lower.length + upper.length).toBeLessThan(doubleCounted)
     expect(doubleCounted - (lower.length + upper.length)).toBe(lap)
@@ -150,7 +154,7 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(main.length).toBe(rounded(story.height + 2 * anchorage))
+    expect(main.length).toBe(story.height + 2 * anchorage)
   })
 
   it('extends the 3D geometry by exactly what each end contributes', () => {
@@ -198,7 +202,7 @@ describe('generateColumnRebar', () => {
 
     expect(interior.rules).not.toContain('anchorage.L2')
     expect(interior.formula).not.toContain('定着')
-    expect(interior.length).toBe(rounded(story.height + lap))
+    expect(interior.length).toBe(story.height + lap)
   })
 
   it('uses the supplied 主筋 count without structurally recalculating it', () => {
@@ -244,22 +248,36 @@ describe('generateColumnRebar', () => {
       hook: false,
     })
     const hook135 = lookupRule(jpMlitRulePack, 'bend.hook135', {})
-    const rounding = lookupRule(jpMlitRulePack, 'rounding.length', {})
     const mainDiameter = Number(section.main.size.replace(/^D/, ''))
     const hoopDiameter = Number(section.hoop.size.replace(/^D/, ''))
+    const expectedHoopLength =
+      2 *
+        (section.b - 2 * fabricationCover +
+          (section.d - 2 * fabricationCover)) +
+      2 * hook135.value * hoopDiameter
 
     expect(main.points).toHaveLength(2)
     expect(hoop.points).toHaveLength(4)
-    expect(main.length % rounding.value).toBe(0)
-    expect(hoop.length % rounding.value).toBe(0)
+    expect(main.points[0][0]).toBe(fabricationCover)
+    expect(main.points[0][2]).toBe(fabricationCover)
+    expect(hoop.points[0]).toEqual([fabricationCover, 0, fabricationCover])
+    expect(hoop.length).toBe(expectedHoopLength)
     expect(main.formula).toContain(
       `定着長さ L2 ${anchorage.value}d(${anchorage.value * mainDiameter})`,
     )
     expect(main.formula).toContain(
       `重ね継手長さ L1 ${lap.value}d(${lap.value * mainDiameter})`,
     )
-    expect(main.formula).toContain(`${rounding.expr.split('に')[0]}切上げ`)
-    expect(hoop.formula).toContain(`2×{(${section.b}−2×`)
+    const fabricationCoverFormula =
+      `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
+      `加算 ${fabricationAddition} ＝ ${fabricationCover}）`
+    expect(main.formula).toContain(fabricationCoverFormula)
+    expect(hoop.formula).toContain(fabricationCoverFormula)
+    expect(main.formula).not.toContain('切上げ')
+    expect(hoop.formula).not.toContain('切上げ')
+    expect(hoop.formula).toContain(
+      `2×{(${section.b}−2×${fabricationCover})＋`,
+    )
     expect(hoop.formula).toContain(
       `135°フック余長 ${hook135.value}d(${hook135.value * hoopDiameter})`,
     )

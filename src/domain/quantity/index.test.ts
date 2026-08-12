@@ -70,9 +70,9 @@ function mainRebar(memberId: string, overrides: Partial<Rebar> = {}): Rebar {
     count: 12,
     rules: [
       'cover.minimum',
+      'cover.fabrication.addition',
       'anchorage.L2',
       'lap.L1',
-      'rounding.length',
     ],
     formula: '主筋の算出式',
     ...overrides,
@@ -95,7 +95,11 @@ function hoopRebar(memberId: string): Rebar {
     closed: true,
     length: 4000,
     count: 36,
-    rules: ['cover.minimum', 'bend.hook135', 'rounding.length'],
+    rules: [
+      'cover.minimum',
+      'cover.fabrication.addition',
+      'bend.hook135',
+    ],
     formula: '帯筋の算出式',
   }
 }

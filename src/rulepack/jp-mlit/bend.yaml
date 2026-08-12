@@ -117,13 +117,3 @@
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
   confidence: inferred
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
-
-- key: rounding.length
-  label: 加工長の丸め単位
-  expr: 10mm単位に切上げ
-  conditions: {}
-  value: 10
-  unit: mm
-  source: { ref: spec, section: null, page: null }
-  confidence: inferred
-  note: 出典未確認 — 根拠文書を特定できていない（M1 プレースホルダ）

@@ -34,14 +34,6 @@ function millimetres(rule: RuleHit, diameter?: number): number {
   )
 }
 
-function roundLength(length: number, rounding: RuleHit): number {
-  if (rounding.unit !== 'mm' || rounding.value <= 0) {
-    throw new Error(`Rule ${rounding.key} must be a positive mm increment`)
-  }
-
-  return Math.ceil(length / rounding.value) * rounding.value
-}
-
 export function generateColumnRebar(
   input: ColumnRebarInput,
   pack: RulePack,
@@ -55,6 +47,11 @@ export function generateColumnRebar(
   const coverRule = lookupRule(pack, 'cover.minimum', {
     memberKind: section.kind,
   })
+  const fabricationCoverAdditionRule = lookupRule(
+    pack,
+    'cover.fabrication.addition',
+    {},
+  )
   const anchorageRule = lookupRule(
     pack,
     'anchorage.L2',
@@ -62,9 +59,12 @@ export function generateColumnRebar(
   )
   const lapRule = lookupRule(pack, 'lap.L1', commonConditions)
   const hook135Rule = lookupRule(pack, 'bend.hook135', {})
-  const roundingRule = lookupRule(pack, 'rounding.length', {})
 
-  const cover = millimetres(coverRule)
+  const minimumCover = millimetres(coverRule)
+  const fabricationCoverAddition = millimetres(
+    fabricationCoverAdditionRule,
+  )
+  const fabricationCover = minimumCover + fabricationCoverAddition
   const mainDiameter = barDiameter(section.main.size)
   const anchorageLength = millimetres(anchorageRule, mainDiameter)
   const lapLength = millimetres(lapRule, mainDiameter)
@@ -74,11 +74,13 @@ export function generateColumnRebar(
   const bottomExtension =
     ends.bottom === '継手' ? lapLength : anchorageLength
   const topExtension = ends.top === '定着' ? anchorageLength : 0
-  const mainRawLength = story.height + bottomExtension + topExtension
-  const mainLength = roundLength(mainRawLength, roundingRule)
+  const mainLength = story.height + bottomExtension + topExtension
 
   const endTerms: string[] = []
-  const mainRuleKeys: string[] = [coverRule.key]
+  const mainRuleKeys: string[] = [
+    coverRule.key,
+    fabricationCoverAdditionRule.key,
+  ]
 
   if (ends.bottom === '継手') {
     endTerms.push(
@@ -103,17 +105,17 @@ export function generateColumnRebar(
     endTerms.push('上端 上階柱が継手を負担 0')
   }
 
-  mainRuleKeys.push(roundingRule.key)
-
   const hoopDiameter = barDiameter(section.hoop.size)
   const hook135Length = millimetres(hook135Rule, hoopDiameter)
-  const hoopWidth = section.b - 2 * cover
-  const hoopDepth = section.d - 2 * cover
-  const hoopRawLength =
+  const hoopWidth = section.b - 2 * fabricationCover
+  const hoopDepth = section.d - 2 * fabricationCover
+  const hoopLength =
     2 * (hoopWidth + hoopDepth) + 2 * hook135Length
-  const hoopLength = roundLength(hoopRawLength, roundingRule)
   const hoopCount =
     Math.ceil((story.height - beamDepthAbove) / section.hoop.pitch) + 1
+  const fabricationCoverFormula =
+    `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
+    `加算 ${fabricationCoverAddition} ＝ ${fabricationCover}）`
 
   const main: Rebar = {
     id: `${member.id}|main`,
@@ -122,8 +124,12 @@ export function generateColumnRebar(
     size: section.main.size,
     shape: 'straight',
     points: [
-      [cover, -bottomExtension, cover],
-      [cover, story.height + topExtension, cover],
+      [fabricationCover, -bottomExtension, fabricationCover],
+      [
+        fabricationCover,
+        story.height + topExtension,
+        fabricationCover,
+      ],
     ],
     closed: false,
     length: mainLength,
@@ -131,9 +137,8 @@ export function generateColumnRebar(
     rules: mainRuleKeys,
     formula:
       `加工長 ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
-      `＝ ${mainRawLength} → ` +
-      `${roundingRule.value}mm単位切上げ ${mainLength} ／ ` +
-      `配置基準 ＝ かぶり厚さ ${cover} ／ ` +
+      `＝ ${mainLength} ／ ` +
+      `配置基準 ＝ ${fabricationCoverFormula} ／ ` +
       `本数 ＝ 断面一覧の主筋本数 ${section.main.count}`,
   }
 
@@ -144,20 +149,28 @@ export function generateColumnRebar(
     size: section.hoop.size,
     shape: 'hoop',
     points: [
-      [cover, 0, cover],
-      [section.b - cover, 0, cover],
-      [section.b - cover, 0, section.d - cover],
-      [cover, 0, section.d - cover],
+      [fabricationCover, 0, fabricationCover],
+      [section.b - fabricationCover, 0, fabricationCover],
+      [
+        section.b - fabricationCover,
+        0,
+        section.d - fabricationCover,
+      ],
+      [fabricationCover, 0, section.d - fabricationCover],
     ],
     closed: true,
     length: hoopLength,
     count: hoopCount,
-    rules: [coverRule.key, hook135Rule.key, roundingRule.key],
+    rules: [
+      coverRule.key,
+      fabricationCoverAdditionRule.key,
+      hook135Rule.key,
+    ],
     formula:
-      `加工長 ＝ 2×{(${section.b}−2×${cover})＋` +
-      `(${section.d}−2×${cover})} ＋ 2×135°フック余長 ` +
-      `${hook135Rule.value}d(${hook135Length}) ＝ ${hoopRawLength} → ` +
-      `${roundingRule.value}mm単位切上げ ${hoopLength} ／ ` +
+      `加工長 ＝ 2×{(${section.b}−2×${fabricationCover})＋` +
+      `(${section.d}−2×${fabricationCover})} ＋ 2×135°フック余長 ` +
+      `${hook135Rule.value}d(${hook135Length}) ＝ ${hoopLength} ／ ` +
+      `${fabricationCoverFormula} ／ ` +
       `本数 ＝ ⌈(階高 ${story.height} − 上部大梁せい ${beamDepthAbove}) ` +
       `÷ 帯筋ピッチ ${section.hoop.pitch}⌉ ＋ 1 ＝ ${hoopCount}`,
   }

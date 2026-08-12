@@ -221,7 +221,7 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     },
   )
 
-  it('matches the 加工用かぶり addition independently of length rounding', () => {
+  it('matches the 加工用かぶり addition as its own rule', () => {
     const entry = fabricationAdditionEntry
     const hit = lookupRule(jpMlitRulePack, entry.kind, entry.conditions)
 
@@ -230,6 +230,6 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     expect(hit.source.section).toBe(entry.table)
     expect(hit.source.page).toBe(entry.printedPage)
     expect(hit.confidence).toBe('inferred')
-    expect(hit.key).not.toBe('rounding.length')
+    expect(hit.key).toBe(entry.kind)
   })
 })
