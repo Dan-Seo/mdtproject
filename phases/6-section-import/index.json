@@ -7,7 +7,8 @@
       "name": "textitem-fixtures",
       "status": "completed",
       "started_at": "2026-08-12T23:12:47+0900",
-      "summary": "TextItem 픽스처 5부(1032/1772/1362/1157/1030개)를 좌상 원점·+y 아래·pt 좌표로 생성"
+      "summary": "TextItem 픽스처 5부(1032/1772/1362/1157/1030개)를 좌상 원점·+y 아래·pt 좌표로 생성",
+      "completed_at": "2026-08-12T23:25:24+0900"
     },
     {
       "step": 1,
