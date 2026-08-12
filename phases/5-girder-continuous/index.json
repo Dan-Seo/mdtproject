@@ -7,7 +7,8 @@
       "name": "girder-run",
       "status": "completed",
       "started_at": "2026-08-12T20:01:21+0900",
-      "summary": "GirderRun(axis/members/ownerId/spans/coreLengthMm) 스키마와 양방향 최대 연쇄 탐색을 추가하고 domain 및 최소 컴파일 호출부에서 girderSupport를 제거했으며, 通し筋은 런 외단에만 定着하고 継手는 근거 부재로 미계상 표기했다."
+      "summary": "GirderRun(axis/members/ownerId/spans/coreLengthMm) 스키마와 양방향 최대 연쇄 탐색을 추가하고 domain 및 최소 컴파일 호출부에서 girderSupport를 제거했으며, 通し筋은 런 외단에만 定着하고 継手는 근거 부재로 미계상 표기했다.",
+      "completed_at": "2026-08-12T20:13:00+0900"
     },
     {
       "step": 1,
