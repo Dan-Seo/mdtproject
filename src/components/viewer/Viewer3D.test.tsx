@@ -493,6 +493,38 @@ describe('Viewer3D', () => {
     expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
   })
 
+  it('spreads あばら筋 across every span of a continuous run', () => {
+    // あばら筋은 각 부재 자기 스팬 로컬(0 기준)이고 通し筋만 런 전체를 덮는다.
+    // 부재별 오프셋 배선이 빠지면 2번째 스팬 스터럽이 1번째 위에 겹쳐 x 범위가
+    // 반토막 나고 2번째 스팬에는 한 본도 남지 않는다 — 물량은 멀쩡해서 눈에만 보인다.
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+    render(<Viewer3D />)
+
+    // 레이어의 **모든** 메시를 합친다. 主筋은 코어와 양단 定着이 zone별로 쪼개져
+    // 있어 첫 메시만 보면 짧은 定着 조각이 잡히고 비교가 무의미해진다.
+    const spanX = (layer: string): number => {
+      const meshes = latestContent().children.filter(
+        (object): object is Mesh =>
+          object instanceof Mesh &&
+          !(object.geometry instanceof BoxGeometry) &&
+          object.userData.layer === layer,
+      )
+      if (meshes.length === 0) throw new Error(`${layer} mesh not built`)
+
+      const xs = meshes.flatMap((mesh) => {
+        mesh.geometry.computeBoundingBox()
+        const box = mesh.geometry.boundingBox
+        if (box === null) throw new Error(`${layer} geometry has no bounds`)
+        return [box.min.x, box.max.x]
+      })
+      return Math.max(...xs) - Math.min(...xs)
+    }
+
+    // 런 코어 11,200에 대해 스터럽은 ~11,100, 通し筋은 ~12,400을 덮는다(비 ≈0.9).
+    // 겹쳐 그리면 스터럽이 한 스팬 ~5,100으로 줄어 비가 ≈0.41로 떨어진다.
+    expect(spanX('hoop')).toBeGreaterThan(spanX('main') * 0.7)
+  })
+
   it('keeps the same geometry key when selection moves within one run', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
     render(<Viewer3D />)

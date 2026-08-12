@@ -46,9 +46,15 @@ describe('useTakeoff', () => {
 
     expect(result.current.rebars.length).toBeGreaterThan(0)
     expect(result.current.lines.length).toBeGreaterThan(0)
-    expect(firstStoryG1Lines.map(({ role }) => role)).toEqual(
-      expect.arrayContaining(['上端筋', '下端筋', 'あばら筋']),
-    )
+    // 単一 스팬 런 2개와 2스팬 런 1개가 만드는 행 구성을 그대로 박는다.
+    // あばら筋은 X·Y 스팬 内法이 같아 한 행으로 묶이고 places로 세어진다.
+    expect(firstStoryG1Lines.map(({ role }) => role)).toEqual([
+      '上端筋',
+      '下端筋',
+      'あばら筋',
+      '上端筋',
+      '下端筋',
+    ])
     // 샘플 1층: X 단일 스팬 런 3 + Y 2스팬 런 2 = 5런.
     // 같은 길이·符号는 QuantityLine 한 행으로 묶일 수 있으므로 places 합으로
     // 通し筋은 런 수, あばら筋은 실제 부재 수(3 + 2×2 = 7)를 검산한다.

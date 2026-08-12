@@ -34,6 +34,7 @@
   "takeoff.unsupported.reason.寸法不成立": "단면·内法 치수가 성립하지 않음",
   "takeoff.unsupported.plan.定着不成立": "定着不成立: 지점 柱 단면이나 스팬의 재검토 필요",
   "takeoff.unsupported.plan.寸法不成立": "寸法不成立: 단면이나 스팬의 재검토 필요",
+  "takeoff.spliceOmitted": "大梁 通し筋은 継手를 계상하지 않았습니다(定尺長さ 근거 없음) — 수량이 실제보다 적게 나옵니다",
   "viewer.selectMember": "부재를 선택",
   "viewer.scaleNotice": "치수 판독용이 아님",
   "viewer.empty": "배근 데이터 없음",

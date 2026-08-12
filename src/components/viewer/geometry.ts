@@ -397,23 +397,36 @@ export interface RebarBatch {
  * 행 안에서는 연속 경로 run마다 나누지만, 세그먼트마다 메시를 만들지는 않는다.
  * 같은 rowId를 유지하므로 여러 zone 배치도 하나의 행으로 함께 강조할 수 있다.
  */
+function shiftAlongAxis(segments: Segment[], offsetMm: number): Segment[] {
+  if (offsetMm === 0) return segments
+
+  return segments.map(({ from, to, radius }) => ({
+    from: [from[0] + offsetMm, from[1], from[2]] as Point3,
+    to: [to[0] + offsetMm, to[1], to[2]] as Point3,
+    radius,
+  }))
+}
+
 export function rebarBatches(
-  entries: { rowId: string; rebar: Rebar }[],
+  entries: { rowId: string; rebar: Rebar; originOffsetMm?: number }[],
   section: Section,
 ): RebarBatch[] {
   const batches = new Map<string, RebarBatch>()
 
-  for (const { rowId, rebar } of entries) {
+  for (const { rowId, rebar, originOffsetMm = 0 } of entries) {
     const layer = roleToLayer(rebar.role)
 
     rebarSegmentRuns(rebar, section).forEach(({ zone, segments }, runIndex) => {
       // 같은 row의 대표 철근이 여러 개면 동일 경로 run끼리 합치되, 양단에 같은
       // kind의 zone이 있어도 서로 다른 연속 구간이므로 runIndex로 분리한다.
       const key = JSON.stringify([rowId, layer, runIndex, zone])
+      // 오프셋은 **병합 전에** 건다. 連続スパン에서 두 스팬의 あばら筋은 길이·本数가
+      // 같아 같은 rowId로 합쳐지므로, 배치 단위로 옮기면 한쪽 오프셋이 사라진다.
+      const shifted = shiftAlongAxis(segments, originOffsetMm)
       const batch = batches.get(key)
 
-      if (batch) batch.segments.push(...segments)
-      else batches.set(key, { rowId, layer, zone, segments })
+      if (batch) batch.segments.push(...shifted)
+      else batches.set(key, { rowId, layer, zone, segments: shifted })
     })
   }
 

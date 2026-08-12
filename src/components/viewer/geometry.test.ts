@@ -673,6 +673,46 @@ describe('fitCamera', () => {
   })
 })
 
+describe('rebarBatches 런 오프셋', () => {
+  // 連続スパン에서 두 스팬의 あばら筋은 断面이 같으면 加工長·本数가 같아 **같은
+  // 내역 행**으로 묶인다. 그래서 오프셋을 배치 단위로 걸면 한쪽이 사라진다 —
+  // 병합 전에 철근 단위로 걸어야 2번째 스팬에 스터럽이 남는다.
+  const secondSpanStirrup: Rebar = {
+    ...girderStirrup,
+    id: '1F-G1-2|stirrup',
+    memberId: '1F-G1-2',
+  }
+  const rowId = '1階|G|G1|あばら筋'
+  const offsetMm = GIRDER_CLEAR_MM + 800
+
+  it('shifts a rebar into the run frame before merging same-row batches', () => {
+    const merged = rebarBatches(
+      [
+        { rowId, rebar: girderStirrup, originOffsetMm: 0 },
+        { rowId, rebar: secondSpanStirrup, originOffsetMm: offsetMm },
+      ],
+      girderSection,
+    )
+
+    expect(merged).toHaveLength(1)
+
+    const xs = merged[0].segments.flatMap(({ from, to }) => [from[0], to[0]])
+    expect(Math.min(...xs)).toBeLessThan(GIRDER_CLEAR_MM)
+    // 2번째 스팬이 첫 스팬 위에 겹치면 최대 x가 첫 스팬 内法을 못 넘는다.
+    expect(Math.max(...xs)).toBeGreaterThan(offsetMm)
+  })
+
+  it('leaves an unshifted rebar where the generator put it', () => {
+    const [batch] = rebarBatches(
+      [{ rowId, rebar: girderStirrup }],
+      girderSection,
+    )
+    const xs = batch.segments.flatMap(({ from, to }) => [from[0], to[0]])
+
+    expect(Math.max(...xs)).toBeLessThanOrEqual(GIRDER_CLEAR_MM)
+  })
+})
+
 describe('rebarBatches', () => {
   it('emits one batch per takeoff row, not per segment', () => {
     const batches = rebarBatches(

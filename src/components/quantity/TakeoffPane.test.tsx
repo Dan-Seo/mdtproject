@@ -118,15 +118,26 @@ describe('TakeoffPane', () => {
 
     render(<TakeoffPane />)
 
-    expect(supportedGirderLines.map(({ role }) => role)).toEqual(
-      expect.arrayContaining(['上端筋', '下端筋', 'あばら筋']),
-    )
+    // arrayContaining은 상위집합이면 통과한다 — 通し筋이 런당 1행이 아니라
+    // 부재당 1행으로 중복 생성되는 회귀를 못 잡는다. 행 구성을 그대로 박는다.
+    expect(supportedGirderLines.map(({ role }) => role)).toEqual([
+      '上端筋',
+      '下端筋',
+      'あばら筋',
+      '上端筋',
+      '下端筋',
+    ])
     for (const line of supportedGirderLines) {
       expect(screen.getByTestId(`quantity-line-${line.id}`)).toBeInTheDocument()
     }
 
     expect(unsupportedMembers).toHaveLength(0)
-    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+    // 未対応部材 고지만 없어야 한다. role='note' 전체를 막으면 継手 미계상처럼
+    // 정당한 고지가 새로 붙을 때 이 테스트가 그걸 막는 쪽으로 작동한다.
+    expect(
+      screen.queryByTestId('unsupported-plan'),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/未対応部材/)).not.toBeInTheDocument()
 
     const table = screen.getByRole('table')
     expect(within(table).getAllByTestId(/^quantity-line-/)).toHaveLength(
@@ -183,6 +194,28 @@ describe('TakeoffPane', () => {
     render(<TakeoffPane />)
 
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
+
+  it('always shows that 通し筋 quantities omit 継手', () => {
+    // 継手 미계상은 물량을 실제보다 적게 만든다 (R8). 접어야 보이는 산출식에만
+    // 두면 사용자가 모르고 발주에 쓴다 — 大梁 主筋 행이 있으면 항상 보여야 한다.
+    render(<TakeoffPane />)
+
+    const notice = screen.getByTestId('splice-omitted-notice')
+    expect(notice).toHaveTextContent('継手')
+    expect(notice).toHaveTextContent('定尺長さ')
+  })
+
+  it('does not claim omitted 継手 when there is no 大梁 to omit it for', () => {
+    useAppStore.setState({
+      project: { ...createSampleProject(), members: [] },
+    })
+
+    render(<TakeoffPane />)
+
+    expect(
+      screen.queryByTestId('splice-omitted-notice'),
+    ).not.toBeInTheDocument()
   })
 
   it('keeps two chips citing one table when their tooltips differ', () => {

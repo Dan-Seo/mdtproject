@@ -69,6 +69,7 @@ const run: GirderRun = {
   members: [member],
   ownerId: member.id,
   spans: [span],
+  memberOffsetsMm: [0],
   coreLengthMm: span.clear,
 }
 
@@ -285,6 +286,7 @@ describe('generateGirderRebar', () => {
       members: [member, secondMember],
       ownerId: member.id,
       spans: [span, secondSpan],
+      memberOffsetsMm: [0, span.clear + span.endSupportLengthAlongAxisMm],
       coreLengthMm: span.clear + span.endSupportLengthAlongAxisMm + secondSpan.clear,
     }
     const generated = generateGirderRebar(

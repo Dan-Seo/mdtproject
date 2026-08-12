@@ -242,9 +242,10 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
   const stubCenterY = section.depth - stubHeight / 2
   const centerZ = section.b / 2
   const boxes: ConcreteBox[] = []
-  let coreOffsetMm = 0
 
   run.spans.forEach((span, index) => {
+    // 런 좌표계 오프셋은 도메인이 준다 — 여기서 다시 누적하면 철근 배치와 갈린다.
+    const coreOffsetMm = run.memberOffsetsMm[index]
     boxes.push({
       size: [span.clear, section.depth, section.b],
       center: [coreOffsetMm + span.clear / 2, beamCenterY, centerZ],
@@ -279,12 +280,6 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
         centerZ,
       ],
     })
-
-    coreOffsetMm +=
-      span.clear +
-      (index < run.spans.length - 1
-        ? span.endSupportLengthAlongAxisMm
-        : 0)
   })
 
   return boxes
@@ -773,12 +768,28 @@ function rebuildMemberScene(
   addMemberConcrete(content, view, materials, runtime.clipPlane)
   addGround(content, bounds, materials)
 
+  // 通し筋은 런 원점 기준, あばら筋은 자기 스팬 원점 기준으로 만들어진다. 런을 한
+  // 프레임에 그리므로 부재별 오프셋을 걸어 맞춘다 — 通し筋의 memberId는 런 대표
+  // 부재라 오프셋 0이 되어 같은 조회로 함께 처리된다.
+  const originOffsetOf = (memberId: string): number => {
+    if (view.kind !== '大梁') return 0
+    const index = view.run.members.findIndex(({ id }) => id === memberId)
+    if (index === -1) {
+      throw new Error(`Rebar member is outside its run: ${memberId}`)
+    }
+    return view.run.memberOffsetsMm[index]
+  }
+
   const entries = view.rebars.map((rebar) => {
     const rowId = view.rowIds.get(rebar.id)
     if (rowId === undefined) {
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
-    return { rowId, rebar }
+    return {
+      rowId,
+      rebar,
+      originOffsetMm: originOffsetOf(rebar.memberId),
+    }
   })
 
   for (const batch of rebarBatches(entries, view.section)) {

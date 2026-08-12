@@ -253,6 +253,15 @@ export interface GirderRun {
   ownerId: string
   /** members와 같은 순서 */
   spans: GirderSpan[]
+  /**
+   * 런 원점(시작 柱の内側面)에서 각 스팬 시작면까지의 거리 (mm). members와 같은
+   * 순서이고 [0]은 0이다.
+   *
+   * 通し筋은 런 전체를 한 프레임에 덮지만 あばら筋은 각 부재 자기 스팬 로컬(0 기준)
+   * 이다. 런을 한 프레임에 그리는 쪽이 이 오프셋을 모르면 2번째 이후 스팬의
+   * あばら筋이 1번째 스팬 위에 겹친다.
+   */
+  memberOffsetsMm: number[]
   /** 通し筋 코어 길이 (mm) = Σ内法 ＋ Σ中間柱の軸方向せい */
   coreLengthMm: number
 }
@@ -320,19 +329,24 @@ export function girderRun(project: Project, member: Member): GirderRun {
   }
 
   const spans = members.map((candidate) => girderSpan(project, candidate))
-  const coreLengthMm = spans.reduce(
-    (total, span, index) =>
-      total +
-      span.clear +
-      (index < spans.length - 1 ? span.endSupportLengthAlongAxisMm : 0),
-    0,
-  )
+  // 스팬 시작면들의 누적 위치. 마지막 스팬 시작면 ＋ 그 内法이 코어 길이다 —
+  // 두 값을 따로 세면 곧 어긋나므로 한 번만 누적한다.
+  const memberOffsetsMm: number[] = []
+  let offsetMm = 0
+  for (const span of spans) {
+    memberOffsetsMm.push(offsetMm)
+    offsetMm += span.clear + span.endSupportLengthAlongAxisMm
+  }
+  const lastSpan = spans[spans.length - 1]
+  const coreLengthMm =
+    memberOffsetsMm[memberOffsetsMm.length - 1] + lastSpan.clear
 
   return {
     axis: position.axis,
     members,
     ownerId: members[0].id,
     spans,
+    memberOffsetsMm,
     coreLengthMm,
   }
 }

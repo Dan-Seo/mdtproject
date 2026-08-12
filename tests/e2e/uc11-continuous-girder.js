@@ -39,6 +39,8 @@ if (yLabel) {
 const selected = await page.evaluate(() => {
   const legend = document.querySelector("aside[aria-label='定着・継手凡例']");
   return {
+    viewerMemberId:
+      document.querySelector("[class*='memberId']")?.textContent?.trim() ?? null,
     canvasLabel: document.querySelector("canvas")?.getAttribute("aria-label") ?? null,
     emptyText: document.querySelector("[class*='empty']")?.textContent.trim() ?? null,
     legendChips: legend ? [...legend.querySelectorAll("li")].map((li) => li.textContent.trim()) : [],
@@ -87,6 +89,12 @@ checks.formulaNamesIntermediateColumn = throughFormula !== null;
 // 継手를 넣지 않았다는 사실이 산출식에 남아 있어야 한다 — 물량이 과소 계상된다.
 checks.formulaDeclaresSpliceOmitted = formulas.some((f) => f.includes("継手 ＝ 未計上"));
 
+// 런 部材 뷰는 스크린샷으로 남긴다 — あばら筋이 2번째 스팬에 실제로 놓였는지는
+// 좌표 단언(Viewer3D.test.tsx)이 보지만, 형상이 성립하는지는 눈으로 봐야 한다.
+console.log(
+  "SHOT " + (await saveScreenshot(await page.screenshot(), "uc11-run-member-view.png")),
+);
+
 // ── ④ 建物 뷰가 그대로 선다 ──────────────────────────────────────
 await page.click("[aria-label='表示切替'] [role='tab']:nth-of-type(2)");
 await page.waitForSelector("canvas[aria-label='建物全体の3D']");
@@ -95,7 +103,17 @@ checks.buildingViewRenders =
   (await page.evaluate(() => document.querySelector("canvas")?.getAttribute("aria-label"))) ===
   "建物全体の3D";
 
-console.log(JSON.stringify({ notice, yLabel, legendChips: selected.legendChips, throughFormula, checks }, null, 2));
+// 런 部材 뷰는 어느 스팬을 골라도 런 대표 부재를 보여준다 — 축이 뒤바뀌면
+// 선택 매핑이 깨진 것이다.
+checks.viewerShowsRunOwner = selected.viewerMemberId === "1F-G1-X1Y1-Y";
+
+console.log(
+  JSON.stringify(
+    { notice, yLabel, viewerMemberId: selected.viewerMemberId, legendChips: selected.legendChips, throughFormula, checks },
+    null,
+    2,
+  ),
+);
 console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc11-continuous-girder.png")));
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);

@@ -385,6 +385,26 @@ describe('girderRun', () => {
     expect(run.coreLengthMm).toBe(11200)
   })
 
+  it('places each span start in the run frame', () => {
+    // あばら筋은 각 부재 자기 스팬 로컬(0 기준)이라, 런을 한 프레임에 그리는 쪽이
+    // 이 오프셋 없이는 2번째 스팬 스터럽을 1번째 스팬 위에 겹쳐 그린다.
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-Y'))
+
+    expect(run.memberOffsetsMm).toEqual([0, 5200 + 800])
+    expect(run.memberOffsetsMm).toHaveLength(run.members.length)
+    // 오프셋과 코어 길이는 같은 누적에서 나와야 한다 — 따로 세면 곧 어긋난다.
+    expect(
+      run.memberOffsetsMm[run.memberOffsetsMm.length - 1] +
+        run.spans[run.spans.length - 1].clear,
+    ).toBe(run.coreLengthMm)
+  })
+
+  it('starts a single-span run at the origin', () => {
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-X'))
+
+    expect(run.memberOffsetsMm).toEqual([0])
+  })
+
   it('throws a plain Error when adjacent run members use mixed sections', () => {
     const first = sampleGirder('1F-G1-X1Y1-Y')
     const second = sampleGirder('1F-G1-X1Y2-Y')
