@@ -115,6 +115,30 @@ describe('useTakeoff', () => {
     ).toBe(true)
   })
 
+  it('keeps the other members when a 柱 turns out unbuildable', () => {
+    // 帯筋 初期オフセット은 이제 断面一覧 입력이라 사용자가 배치 구간을 넘길 수
+    // 있다. 大梁과 같이 그 부재만 빠져야 하고, 페인이 죽으면 안 된다.
+    useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) =>
+        section.kind === '柱'
+          ? { ...section, hoop: { ...section.hoop, startOffsetMm: 5000 } }
+          : section,
+      ),
+    }))
+
+    const { result } = renderHook(() => useTakeoff())
+
+    expect(
+      result.current.unsupportedMembers.some(
+        ({ reason }) => reason === '寸法不成立',
+      ),
+    ).toBe(true)
+    expect(result.current.lines.some(({ role }) => role === '上端筋')).toBe(
+      true,
+    )
+  })
+
   it('lets a real defect through instead of hiding it as unsupported', () => {
     // 룰팩 공백·타입 위반까지 미지원으로 흡수하면 결함이 화면에서 사라진다.
     useAppStore.getState().updateProject((project) => ({

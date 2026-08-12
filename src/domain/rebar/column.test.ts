@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ColumnSection, Member } from '../model/member'
 import type { ColumnEnds, Story } from '../model/project'
 import type { RebarRole, RebarZone } from '../model/rebar'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import { generateColumnRebar, type ColumnRebarInput } from './column'
@@ -440,4 +441,37 @@ describe('generateColumnRebar', () => {
         'ピッチ 100、始端オフセット 0）＝ 36',
     )
   })
+
+  it.each([
+    {
+      label: '初期オフセット',
+      section: {
+        ...section,
+        hoop: { ...section.hoop, startOffsetMm: 5000 },
+      },
+      beamDepthAbove: input().beamDepthAbove,
+    },
+    {
+      label: '上部大梁せい',
+      section,
+      beamDepthAbove: 4200,
+    },
+    {
+      label: '断面寸法',
+      section: { ...section, b: 50, d: 50 },
+      beamDepthAbove: input().beamDepthAbove,
+    },
+  ])(
+    'reports a non-viable 帯筋 配置区間 from $label as a member-level failure',
+    ({ section: columnSection, beamDepthAbove }) => {
+      // 둘 다 断面一覧 입력으로 도달 가능한 형상 불성립이다 — 부재 하나를
+      // 미지원으로 빼야 하고, 페인을 죽이는 결함으로 다루면 안 된다.
+      expect(() =>
+        generateColumnRebar(
+          { ...input(), section: columnSection, beamDepthAbove },
+          jpMlitRulePack,
+        ),
+      ).toThrow(MemberUnsupportedError)
+    },
+  )
 })

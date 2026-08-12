@@ -983,6 +983,15 @@ function selectedMemberView(
   }
   const rows = selectedRows(memberId, selectedGroup, rebars, lines)
 
+  // 부재 종류를 가리지 않는다 — 柱도 断面一覧 입력에 따라 형상이 성립하지
+  // 않을 수 있고, 그때 内訳는 未対応인데 3D만 지원으로 보이면 안 된다.
+  const unsupported = unsupportedMembers.find(
+    ({ memberId: unsupportedId }) => unsupportedId === memberId,
+  )
+  if (unsupported !== undefined) {
+    return { status: 'unsupported', member, reason: unsupported.reason }
+  }
+
   if (member.kind === '柱') {
     if (section.kind !== '柱') {
       throw new Error(`柱 member references a non-柱 section: ${member.id}`)
@@ -995,13 +1004,6 @@ function selectedMemberView(
 
   if (section.kind !== '大梁') {
     throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
-  }
-
-  const unsupported = unsupportedMembers.find(
-    ({ memberId: unsupportedId }) => unsupportedId === memberId,
-  )
-  if (unsupported !== undefined) {
-    return { status: 'unsupported', member, reason: unsupported.reason }
   }
 
   const support = girderSupport(project, member)

@@ -83,6 +83,22 @@ describe('SectionTable', () => {
     expect(section.hoop.startOffsetMm).toBe(50)
   })
 
+  it('ignores an emptied 初期オフセット instead of committing 0', () => {
+    // Number('')는 0이라 하한이 0인 필드에서는 빈 값이 통과한다 — 지우는 순간
+    // 本数(=물량)가 사용자가 의도하지 않은 시점에 바뀐다.
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 あばら筋 初期オフセット'), {
+      target: { value: '' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.stirrup.startOffsetMm).toBe(50)
+  })
+
   it('accepts 0 for 初期オフセット, unlike 寸法・ピッチ fields', () => {
     // 柱의 기본값이 0이다 — min=1인 공용 입력을 그대로 쓰면 입력조차 못 한다.
     render(<SectionTable />)

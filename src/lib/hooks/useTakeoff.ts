@@ -81,18 +81,30 @@ function buildTakeoff(project: Project): TakeoffResult {
         throw new Error(`柱 member references a non-柱 section: ${member.id}`)
       }
 
-      rebars.push(
-        ...generateColumnRebar(
-          {
-            member,
-            section,
-            story,
-            beamDepthAbove: beamDepthAbove(project, member),
-            ends: columnEnds(project, member),
-          },
-          jpMlitRulePack,
-        ),
-      )
+      // 柱도 大梁과 같다 — 성립 불가 형상은 그 부재만 빼고 계속한다.
+      try {
+        rebars.push(
+          ...generateColumnRebar(
+            {
+              member,
+              section,
+              story,
+              beamDepthAbove: beamDepthAbove(project, member),
+              ends: columnEnds(project, member),
+            },
+            jpMlitRulePack,
+          ),
+        )
+      } catch (error) {
+        if (!(error instanceof MemberUnsupportedError)) throw error
+
+        unsupportedMembers.push({
+          memberId: member.id,
+          mark: section.mark,
+          storyName: story.name,
+          reason: error.reason,
+        })
+      }
       continue
     }
 

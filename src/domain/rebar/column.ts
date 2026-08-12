@@ -1,6 +1,7 @@
 import type { BarSize, ColumnSection, Member } from '../model/member'
 import type { Rebar, RebarZone } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import { stirrupPositions } from './stirrup-layout'
@@ -135,7 +136,8 @@ export function generateColumnRebar(
   // 加工用かぶり×2 보다 작은 단면은 음수 加工長을 만들고, 그 값은 집계에서
   // 마이너스 kg로 조용히 흘러간다 — 조용히 틀린 값 대신 실패한다 (ADR-014).
   if (hoopWidth <= 0 || hoopDepth <= 0) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '寸法不成立',
       `帯筋 加工寸法 must be positive: ${member.id} ` +
         `(${section.b}×${section.d} − 2×加工用かぶり ${fabricationCover})`,
     )
@@ -148,7 +150,8 @@ export function generateColumnRebar(
   // 加工寸法 가드와 같은 이유로 실패한다.
   const hoopSpan = story.height - beamDepthAbove
   if (hoopSpan <= 0) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '寸法不成立',
       `帯筋 配置区間 must be positive: ${member.id} ` +
         `(階高 ${story.height} − 上部大梁せい ${beamDepthAbove})`,
     )
@@ -158,7 +161,8 @@ export function generateColumnRebar(
   const hoopStartOffsetMm = section.hoop.startOffsetMm
 
   if (hoopSpan <= 2 * hoopStartOffsetMm) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '寸法不成立',
       `帯筋 配置区間 must be positive: ${member.id} ` +
         `(配置区間 ${hoopSpan} ≤ 2×初期オフセット ${hoopStartOffsetMm})`,
     )

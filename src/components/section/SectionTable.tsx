@@ -47,6 +47,10 @@ function replaceSection(
 }
 
 function boundedNumber(value: string, minimum: number): number | null {
+  // Number('')는 0이다 — 하한이 0인 필드에서 빈 값이 통과하면 지우는 순간
+  // 本数(=물량)가 0 오프셋으로 덮인다.
+  if (value.trim() === '') return null
+
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= minimum ? parsed : null
 }
