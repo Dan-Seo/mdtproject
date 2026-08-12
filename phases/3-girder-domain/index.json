@@ -7,7 +7,8 @@
       "name": "girder-span",
       "status": "completed",
       "started_at": "2026-08-12T12:44:12+0900",
-      "summary": "GirderSpan(axis, centerSpan, clear, start/endFaceOffsetMm, start/endSupportLengthAlongAxisMm)을 추가하고 大梁 이외·양단 동일층 柱 결손·柱 단면 불일치·비양수 内法에서 throw"
+      "summary": "GirderSpan(axis, centerSpan, clear, start/endFaceOffsetMm, start/endSupportLengthAlongAxisMm)을 추가하고 大梁 이외·양단 동일층 柱 결손·柱 단면 불일치·비양수 内法에서 throw",
+      "completed_at": "2026-08-12T12:49:27+0900"
     },
     {
       "step": 1,
