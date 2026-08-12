@@ -234,6 +234,15 @@ describe('generateColumnRebar', () => {
     ).toThrow(/positive/)
   })
 
+  it('fails fast when the 上部大梁 depth consumes the whole storey height', () => {
+    expect(() =>
+      generateColumnRebar(
+        input({ beamDepthAbove: story.height }),
+        jpMlitRulePack,
+      ),
+    ).toThrow(/positive/)
+  })
+
   it('uses the supplied beamDepthAbove instead of a global constant', () => {
     const baseHoop = byRole(
       generateColumnRebar(input(), jpMlitRulePack),

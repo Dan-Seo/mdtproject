@@ -125,8 +125,18 @@ export function generateColumnRebar(
 
   const hoopLength =
     2 * (hoopWidth + hoopDepth) + 2 * hook135Length
-  const hoopCount =
-    Math.ceil((story.height - beamDepthAbove) / section.hoop.pitch) + 1
+
+  // 上部大梁せい가 階高 이상이면 배치 구간이 사라져 本数가 0 이하로 샌다 —
+  // 加工寸法 가드와 같은 이유로 실패한다.
+  const hoopSpan = story.height - beamDepthAbove
+  if (hoopSpan <= 0) {
+    throw new Error(
+      `帯筋 配置区間 must be positive: ${member.id} ` +
+        `(階高 ${story.height} − 上部大梁せい ${beamDepthAbove})`,
+    )
+  }
+
+  const hoopCount = Math.ceil(hoopSpan / section.hoop.pitch) + 1
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
     `加算 ${fabricationCoverAddition} ＝ ${fabricationCover}）`

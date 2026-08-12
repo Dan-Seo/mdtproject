@@ -72,16 +72,26 @@ def parse_d(cell: str | None) -> int:
     return int(match.group(1))
 
 
-def fc_band(cell: str | None) -> str:
+def fc_conditions(cell: str | None) -> dict[str, Any]:
+    """Fc帯 셀은 「30、33、36」처럼 이산값을 직접 열거한다 — 帯 표기와 함께
+    전개값(fcValues)도 전사한다 (골든테스트의 대역 전값 대조 근거)."""
     if not cell:
         raise ValueError("Expected an Fc band, received an empty cell")
 
     values = re.findall(r"\d+", normalized(cell))
     if not values:
         raise ValueError(f"Expected an Fc band, received {cell!r}")
-    if len(values) == 1:
-        return values[0]
-    return f"{values[0]}-{values[-1]}"
+
+    band = values[0] if len(values) == 1 else f"{values[0]}-{values[-1]}"
+    return {"fcBand": band, "fcValues": [int(value) for value in values]}
+
+
+# 呼び径帯の展開 — 製品の BarSize ユニオン範囲内 (D35・D38 はスコープ外)。
+# 帯 표기는 값을 열거하지 않으므로 이 매핑은 제품 스코프 결정이다.
+BAR_SIZE_VALUES = {
+    "D16以下": ["D10", "D13", "D16"],
+    "D19-D38": ["D19", "D22", "D25", "D29", "D32"],
+}
 
 
 def entry(
@@ -168,6 +178,7 @@ def extract_bend_entries(document: fitz.Document) -> list[dict[str, Any]]:
             conditions={
                 "grades": ["SD295", "SD345"],
                 "barSizeBand": "D16以下",
+                "barSizes": BAR_SIZE_VALUES["D16以下"],
             },
             value=parse_d(diameter_row[3]),
             unit="d",
@@ -179,6 +190,7 @@ def extract_bend_entries(document: fitz.Document) -> list[dict[str, Any]]:
             conditions={
                 "grades": ["SD295", "SD345"],
                 "barSizeBand": "D19-D38",
+                "barSizes": BAR_SIZE_VALUES["D19-D38"],
             },
             value=parse_d(diameter_row[4]),
             unit="d",
@@ -187,7 +199,11 @@ def extract_bend_entries(document: fitz.Document) -> list[dict[str, Any]]:
             table="表5.3.1",
             pdf_page=pdf_page,
             kind="bend.inside-diameter",
-            conditions={"grades": ["SD390"], "barSizeBand": "D19-D38"},
+            conditions={
+                "grades": ["SD390"],
+                "barSizeBand": "D19-D38",
+                "barSizes": BAR_SIZE_VALUES["D19-D38"],
+            },
             value=parse_d(diameter_row[5]),
             unit="d",
         ),
@@ -244,7 +260,7 @@ def extract_lap_entries(document: fitz.Document) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
 
     for grade, row in data_rows(rows, header_rows=1):
-        conditions = {"grade": grade, "fcBand": fc_band(row[1])}
+        conditions = {"grade": grade, **fc_conditions(row[1])}
         entries.extend(
             [
                 entry(
@@ -282,7 +298,7 @@ def extract_anchorage_entries(document: fitz.Document) -> list[dict[str, Any]]:
     )
 
     for grade, row in data_rows(rows, header_rows=3):
-        common = {"grade": grade, "fcBand": fc_band(row[1])}
+        common = {"grade": grade, **fc_conditions(row[1])}
         for kind, column, hook in columns:
             entries.append(
                 entry(
@@ -312,7 +328,7 @@ def extract_projection_entries(document: fitz.Document) -> list[dict[str, Any]]:
                 table="表5.3.5",
                 pdf_page=pdf_page,
                 kind="anchorage.La",
-                conditions={"grade": grade, "fcBand": fc_band(row[1])},
+                conditions={"grade": grade, **fc_conditions(row[1])},
                 value=parse_d(row[2]),
                 unit="d",
             )
@@ -376,20 +392,23 @@ def extract_bent_anchorage_conditions(document: fitz.Document) -> list[dict[str,
 def extract_lap_prohibition(document: fitz.Document) -> dict[str, Any]:
     # The clause begins on PDF page 33 (printed page 27), although 表5.3.4 is
     # located on PDF page 36. Record the clause's actual page, not the table page.
+    # 수치가 아닌 제약이므로 entries가 아니라 fixture.constraints로 분리한다 —
+    # 룰팩 스키마(value must be a finite number)와 섞이면 죽은 데이터가 된다.
     pdf_page = 33
     text = normalized(document[pdf_page - 1].get_text("text"))
     match = re.search(r"D(\d+)以上の異形鉄筋については、重ね継手を用いない", text)
     if not match:
         raise ValueError("Could not extract the D35-and-above lap prohibition")
 
-    return entry(
-        table="5.3.4(1)",
-        pdf_page=pdf_page,
-        kind="lap.prohibited.minimum-bar-size",
-        conditions={"barSizeBand": f"D{match.group(1)}以上"},
-        value=True,
-        unit="boolean",
-    )
+    return {
+        "table": "5.3.4(1)",
+        "pdfPage": pdf_page,
+        "printedPage": PAGE_META[pdf_page],
+        "kind": "lap.prohibited.minimum-bar-size",
+        "conditions": {"barSizeBand": f"D{match.group(1)}以上"},
+        "prohibited": True,
+        "imageRead": False,
+    }
 
 
 def extract_cover_entries(document: fitz.Document) -> list[dict[str, Any]]:
@@ -474,13 +493,13 @@ def main() -> None:
         render_tables(document)
         entries = [
             *extract_bend_entries(document),
-            extract_lap_prohibition(document),
             *extract_lap_entries(document),
             *extract_anchorage_entries(document),
             *extract_bent_anchorage_conditions(document),
             *extract_projection_entries(document),
             *extract_cover_entries(document),
         ]
+        constraints = [extract_lap_prohibition(document)]
     finally:
         document.close()
 
@@ -493,6 +512,7 @@ def main() -> None:
             "url": SOURCE_URL,
         },
         "entries": entries,
+        "constraints": constraints,
     }
     FIXTURE_PATH.parent.mkdir(parents=True, exist_ok=True)
     FIXTURE_PATH.write_text(
