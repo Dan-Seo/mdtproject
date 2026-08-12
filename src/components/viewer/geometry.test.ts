@@ -78,6 +78,12 @@ const main: Rebar = {
   formula: 'test',
 }
 
+// 階高 4200 − 上部大梁せい 750. 피치 100으로 나누어떨어지지 않는다 —
+// 마지막 帯筋이 内法 안에 남는지가 이 픽스처의 요점이다.
+const COLUMN_CLEAR_MM = 3450
+const columnHoopLayout = stirrupPositions(COLUMN_CLEAR_MM, 100, 0)
+const columnHoopPositions = columnHoopLayout.positionsMm
+
 const hoop: Rebar = {
   id: '1F-X1Y1|hoop',
   memberId: '1F-X1Y1',
@@ -92,7 +98,12 @@ const hoop: Rebar = {
   ],
   closed: true,
   length: 3040,
-  count: 36,
+  count: columnHoopPositions.length,
+  placement: {
+    axis: 'y',
+    clearMm: COLUMN_CLEAR_MM,
+    lastGapMm: columnHoopLayout.lastGapMm,
+  },
   ruleHits: [],
   formula: 'test',
 }
@@ -116,6 +127,19 @@ const MAIN_DISPLAY_RADIUS = rebarRadius(main.size)
 // 主筋 축이 かぶり 모서리에서 안쪽으로 밀리는 표시 오프셋:
 // 帯筋 표시 지름 + 主筋 표시 반경 → 主筋 표면이 帯筋 안쪽면에 접한다.
 const MAIN_INWARD = 2 * HOOP_DISPLAY_RADIUS + MAIN_DISPLAY_RADIUS
+
+// `stirrupPositions`는 시작·끝을 항상 포함하므로 최소 本数가 2다. 단면 방향
+// 기하만 보는 테스트는 이 헬퍼로 本数와 배치를 일관되게 맞춘다.
+function hoopOf(count: number): Rebar {
+  const clearMm = (count - 1) * section.hoop.pitch
+  const layout = stirrupPositions(clearMm, section.hoop.pitch, 0)
+
+  return {
+    ...hoop,
+    count: layout.positionsMm.length,
+    placement: { axis: 'y', clearMm, lastGapMm: layout.lastGapMm },
+  }
+}
 
 const girderSection: GirderSection = {
   id: 'section-G1',
@@ -240,6 +264,29 @@ function distanceToSegmentXZ(point: Point3, from: Point3, to: Point3): number {
   return Math.hypot(px - (ax + t * abx), pz - (az + t * abz))
 }
 
+describe('rebarPlacements for 柱', () => {
+  it('uses the domain stirrup layout for every 帯筋 y placement', () => {
+    const placements = rebarPlacements(hoop, section)
+
+    expect(placements).toEqual(
+      columnHoopPositions.map((y): Point3 => [0, y, 0]),
+    )
+  })
+
+  it('keeps the last 帯筋 inside the 内法 when the span does not divide by pitch', () => {
+    // index×pitch로 전개하면 마지막 本이 3500 — 内法 3450 밖에 그려진다.
+    const placements = rebarPlacements(hoop, section)
+    const lastY = placements[placements.length - 1][1]
+
+    expect(lastY).toBe(COLUMN_CLEAR_MM)
+    expect(lastY).toBeLessThan((hoop.count - 1) * section.hoop.pitch)
+  })
+
+  it('refuses a 帯筋 whose 本数 disagrees with the domain layout', () => {
+    expect(() => rebarPlacements({ ...hoop, count: 3 }, section)).toThrow()
+  })
+})
+
 describe('rebarPlacements for 大梁', () => {
   it.each([
     { rebar: girderTop, yDirection: -1 },
@@ -296,7 +343,7 @@ describe('rebarPlacements for 大梁', () => {
 
 describe('rebarSegments', () => {
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
-    const segments = rebarSegments({ ...hoop, count: 3 }, section)
+    const segments = rebarSegments(hoopOf(3), section)
 
     // 닫힌 4점 帯筋 × 3본 — 중심선은 かぶり면에서 표시 반경만큼 안쪽
     expect(segments).toHaveLength(12)
@@ -313,7 +360,7 @@ describe('rebarSegments', () => {
   })
 
   it('keeps the 帯筋 outer display surface on the かぶり face', () => {
-    const segments = rebarSegments({ ...hoop, count: 1 }, section)
+    const segments = rebarSegments(hoopOf(2), section)
     const xs = segments.flatMap(({ from, to }) => [from[0], to[0]])
     const zs = segments.flatMap(({ from, to }) => [from[2], to[2]])
 
@@ -347,7 +394,7 @@ describe('rebarSegments', () => {
   })
 
   it('keeps every 主筋 surface tangent to the 帯筋 inner face, never crossing', () => {
-    const hoopSegments = rebarSegments({ ...hoop, count: 1 }, section)
+    const hoopSegments = rebarSegments(hoopOf(2), section)
     const mainSegments = rebarSegments(main, section)
     const contact = HOOP_DISPLAY_RADIUS + MAIN_DISPLAY_RADIUS
 
@@ -367,8 +414,7 @@ describe('rebarSegments', () => {
   it('offsets both axes independently for a rectangular section', () => {
     const rectangular: ColumnSection = { ...section, b: 900, d: 600 }
     const rectangularHoop: Rebar = {
-      ...hoop,
-      count: 1,
+      ...hoopOf(2),
       points: [
         [40, 0, 40],
         [860, 0, 40],
@@ -431,8 +477,7 @@ describe('rebarSegments', () => {
     }
 
     const tinyHoop: Rebar = {
-      ...hoop,
-      count: 1,
+      ...hoopOf(2),
       points: [
         [40, 0, 40],
         [60, 0, 40],
@@ -451,17 +496,18 @@ describe('rebarSegments', () => {
   })
 
   it('includes the last-to-first segment for a closed 帯筋', () => {
-    const segments = rebarSegments({ ...hoop, count: 1 }, section)
+    const segments = rebarSegments(hoopOf(2), section)
 
-    expect(segments).toHaveLength(4)
-    const last = segments[segments.length - 1]
-    expect(last.radius).toBeCloseTo(rebarRadius('D13'))
-    expectPointCloseTo(last.from, [
+    // 4변 × 2본. 첫 본의 마지막 변이 4점째에서 1점째로 닫힌다.
+    expect(segments).toHaveLength(8)
+    const closing = segments[3]
+    expect(closing.radius).toBeCloseTo(rebarRadius('D13'))
+    expectPointCloseTo(closing.from, [
       40 + HOOP_DISPLAY_RADIUS,
       0,
       760 - HOOP_DISPLAY_RADIUS,
     ])
-    expectPointCloseTo(last.to, [
+    expectPointCloseTo(closing.to, [
       40 + HOOP_DISPLAY_RADIUS,
       0,
       40 + HOOP_DISPLAY_RADIUS,
@@ -642,8 +688,13 @@ describe('rebarBatches', () => {
       ],
       length: 1000,
       zones: [
-        { kind: '定着', pathFromMm: 0, pathToMm: 100 },
-        { kind: '定着', pathFromMm: 900, pathToMm: 1000 },
+        { kind: '定着', ruleKey: 'anchorage.L1', pathFromMm: 0, pathToMm: 100 },
+        {
+          kind: '定着',
+          ruleKey: 'anchorage.L1',
+          pathFromMm: 900,
+          pathToMm: 1000,
+        },
       ],
     }
 
@@ -678,7 +729,14 @@ describe('rebarBatches', () => {
         [100, 200, 50],
       ],
       length: 200,
-      zones: [{ kind: '定着', pathFromMm: 50, pathToMm: 150 }],
+      zones: [
+        {
+          kind: '定着',
+          ruleKey: 'anchorage.L1h',
+          pathFromMm: 50,
+          pathToMm: 150,
+        },
+      ],
     }
 
     const batches = rebarBatches(
@@ -702,7 +760,14 @@ describe('rebarBatches', () => {
         [100, 200, 50],
       ],
       length: 200,
-      zones: [{ kind: '定着', pathFromMm: 0, pathToMm: 100 }],
+      zones: [
+        {
+          kind: '定着',
+          ruleKey: 'anchorage.L1h',
+          pathFromMm: 0,
+          pathToMm: 100,
+        },
+      ],
     }
 
     const batches = rebarBatches(

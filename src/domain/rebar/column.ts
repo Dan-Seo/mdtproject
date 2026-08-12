@@ -83,6 +83,7 @@ export function generateColumnRebar(
   const mainZones: RebarZone[] = [
     {
       kind: ends.bottom === '継手' ? '重ね継手' : '定着',
+      ruleKey: ends.bottom === '継手' ? lapRule.key : anchorageRule.key,
       pathFromMm: 0,
       pathToMm: bottomExtension,
     },
@@ -91,6 +92,7 @@ export function generateColumnRebar(
   if (ends.top === '定着') {
     mainZones.push({
       kind: '定着',
+      ruleKey: anchorageRule.key,
       pathFromMm: mainLength - anchorageLength,
       pathToMm: mainLength,
     })

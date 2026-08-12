@@ -192,6 +192,10 @@ export interface GirderSpan {
   startSupportLengthAlongAxisMm: number
   /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
   endSupportLengthAlongAxisMm: number
+  /** 표시용 — 시작 柱의 축직각 치수 (mm). 지점 柱 탐색이 뷰어에 복제되지 않게 함께 싣는다 */
+  startSupportWidthAcrossAxisMm: number
+  /** 표시용 — 끝 柱의 축직각 치수 (mm) */
+  endSupportWidthAcrossAxisMm: number
   /** 지점 柱의 かぶり 조회 조건 — 端部条件은 大梁이 아니라 柱의 かぶり로 판정한다 */
   startSupportCover: Record<string, string | boolean>
   endSupportCover: Record<string, string | boolean>
@@ -268,6 +272,9 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
     endFaceOffsetMm,
     startSupportLengthAlongAxisMm,
     endSupportLengthAlongAxisMm,
+    startSupportWidthAcrossAxisMm:
+      axis === 'X' ? startSection.d : startSection.b,
+    endSupportWidthAcrossAxisMm: axis === 'X' ? endSection.d : endSection.b,
     startSupportCover: coverConditions(startSection),
     endSupportCover: coverConditions(endSection),
   }

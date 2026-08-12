@@ -24,7 +24,8 @@ export type ClipAxis = 'x' | 'y' | 'z'
 
 /**
  * mm 좌표계의 절단 위치를 THREE.Plane과 같은 normal/constant 형태로 만든다.
- * +축 normal이므로 ratio가 커질수록 남는 영역이 min 쪽에서 max 쪽으로 넓어진다.
+ * +축 normal에 constant = −position이므로 남는 영역은 [position, max]다 —
+ * ratio가 커질수록 좁아지고 ratio=1이면 전부 잘린다.
  * scene 단위 변환은 렌더러 경계에서만 수행한다.
  */
 export function clipPlaneForMm(
@@ -109,11 +110,7 @@ function columnRebarPlacements(
   section: ColumnSection,
 ): Point3[] {
   if (rebar.shape === 'hoop') {
-    return Array.from({ length: rebar.count }, (_, index) => [
-      0,
-      index * section.hoop.pitch,
-      0,
-    ])
+    return columnHoopPlacements(rebar, section)
   }
 
   // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
@@ -160,6 +157,30 @@ function girderMainPlacements(
 
     return [0, y, z]
   })
+}
+
+/**
+ * 帯筋 전개는 도메인 `stirrupPositions`가 유일한 출처다. index×pitch로 되풀이하면
+ * 内法이 피치로 나누어떨어지지 않을 때 마지막 本이 内法 밖에 그려진다.
+ */
+function columnHoopPlacements(rebar: Rebar, section: ColumnSection): Point3[] {
+  if (rebar.placement?.axis !== 'y') {
+    throw new Error(`帯筋 y-axis placement is missing: ${rebar.id}`)
+  }
+
+  const positions = stirrupPositions(
+    rebar.placement.clearMm,
+    section.hoop.pitch,
+    0,
+  ).positionsMm
+
+  if (positions.length !== rebar.count) {
+    throw new Error(
+      `帯筋 placement count mismatch: ${positions.length} !== ${rebar.count}`,
+    )
+  }
+
+  return positions.map((y): Point3 => [0, y, 0])
 }
 
 function girderStirrupPlacements(

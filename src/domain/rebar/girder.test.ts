@@ -60,6 +60,8 @@ const span: GirderSpan = {
   endFaceOffsetMm: 400,
   startSupportLengthAlongAxisMm: 800,
   endSupportLengthAlongAxisMm: 800,
+  startSupportWidthAcrossAxisMm: 800,
+  endSupportWidthAcrossAxisMm: 800,
   startSupportCover: supportCover,
   endSupportCover: supportCover,
 }
@@ -237,9 +239,15 @@ describe('generateGirderRebar', () => {
       )
 
       expect(main.zones).toEqual([
-        { kind: '定着', pathFromMm: 0, pathToMm: start.lengthMm },
         {
           kind: '定着',
+          ruleKey: start.lengthRule,
+          pathFromMm: 0,
+          pathToMm: start.lengthMm,
+        },
+        {
+          kind: '定着',
+          ruleKey: end.lengthRule,
           pathFromMm: main.length - end.lengthMm,
           pathToMm: main.length,
         },

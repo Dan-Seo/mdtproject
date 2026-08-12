@@ -237,6 +237,10 @@ describe('generateColumnRebar', () => {
       const expected: RebarZone[] = [
         {
           kind: bottomKind,
+          ruleKey:
+            bottomKind === '重ね継手'
+              ? lookupRule(jpMlitRulePack, 'lap.L1', conditions).key
+              : lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
           pathFromMm: 0,
           pathToMm: bottomLength,
         },
@@ -245,6 +249,7 @@ describe('generateColumnRebar', () => {
       if (topAnchored) {
         expected.push({
           kind: '定着',
+          ruleKey: lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
           pathFromMm: main.length - anchorage,
           pathToMm: main.length,
         })
@@ -287,7 +292,12 @@ describe('generateColumnRebar', () => {
     )
 
     expect(main.zones).toEqual([
-      { kind: '定着', pathFromMm: 0, pathToMm: anchorage },
+      {
+        kind: '定着',
+        ruleKey: lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
+        pathFromMm: 0,
+        pathToMm: anchorage,
+      },
     ])
   })
 

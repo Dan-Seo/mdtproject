@@ -115,7 +115,6 @@ interface SelectedGirderView {
   section: GirderSection
   story: Story
   span: GirderSpan
-  supportWidths: { start: number; end: number }
   rebars: Rebar[]
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
@@ -223,7 +222,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
     ]
   }
 
-  const { section, span, story, supportWidths } = view
+  const { section, span, story } = view
   const stubHeight = Math.min(story.height, section.depth * 2)
   const centerY = section.depth / 2
   const centerZ = section.b / 2
@@ -237,7 +236,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       size: [
         span.startSupportLengthAlongAxisMm,
         stubHeight,
-        supportWidths.start,
+        span.startSupportWidthAcrossAxisMm,
       ],
       center: [
         -span.startSupportLengthAlongAxisMm / 2,
@@ -249,7 +248,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       size: [
         span.endSupportLengthAlongAxisMm,
         stubHeight,
-        supportWidths.end,
+        span.endSupportWidthAcrossAxisMm,
       ],
       center: [
         span.clear + span.endSupportLengthAlongAxisMm / 2,
@@ -910,7 +909,8 @@ function geometryKey(view: SelectedSupportedMemberView): string {
           view.span.clear,
           view.span.startSupportLengthAlongAxisMm,
           view.span.endSupportLengthAlongAxisMm,
-          view.supportWidths,
+          view.span.startSupportWidthAcrossAxisMm,
+          view.span.endSupportWidthAcrossAxisMm,
         ]
 
   return JSON.stringify([
@@ -956,43 +956,6 @@ function selectedRows(
   )
 
   return { rebars: selectedRebars, rowIds }
-}
-
-function girderSupportWidths(
-  project: Project,
-  member: Member,
-): { start: number; end: number } {
-  if (member.kind !== '大梁' || !('axis' in member.position)) {
-    throw new Error(`girderSupportWidths requires a 大梁: ${member.id}`)
-  }
-
-  const { axis, ix, iy } = member.position
-  const endIx = axis === 'X' ? ix + 1 : ix
-  const endIy = axis === 'Y' ? iy + 1 : iy
-  const supportWidth = (supportIx: number, supportIy: number): number => {
-    const support = project.members.find(
-      (candidate) =>
-        candidate.kind === '柱' &&
-        candidate.storyId === member.storyId &&
-        !('axis' in candidate.position) &&
-        candidate.position.ix === supportIx &&
-        candidate.position.iy === supportIy,
-    )
-    if (support === undefined) {
-      throw new Error(`Missing support 柱 for 大梁: ${member.id}`)
-    }
-
-    const section = findSection(project, support.sectionId)
-    if (section.kind !== '柱') {
-      throw new Error(`柱 member references a non-柱 section: ${support.id}`)
-    }
-    return axis === 'X' ? section.d : section.b
-  }
-
-  return {
-    start: supportWidth(ix, iy),
-    end: supportWidth(endIx, endIy),
-  }
 }
 
 function selectedMemberView(
@@ -1049,7 +1012,6 @@ function selectedMemberView(
       section,
       story,
       span: girderSpan(project, member),
-      supportWidths: girderSupportWidths(project, member),
       ...rows,
     },
   }

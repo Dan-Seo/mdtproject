@@ -12,6 +12,11 @@ export type RebarShape = 'straight' | 'hook90' | 'hoop'
 
 export interface RebarZone {
   kind: '定着' | '重ね継手'
+  /**
+   * 이 구간 길이를 정한 룰 키. 산정부만 아는 사실이다 — 표시부가 형상·길이로
+   * 되짚으면 두 번째 규준 판정이 되어 도메인과 조용히 어긋난다.
+   */
+  ruleKey: string
   /** 철근 polyline 시작점부터의 누적 경로거리 (mm) */
   pathFromMm: number
   pathToMm: number

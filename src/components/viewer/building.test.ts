@@ -55,7 +55,10 @@ const hoop: Rebar = {
   ],
   closed: true,
   length: 3040,
+  // 帯筋 전개는 도메인 배치를 따르므로 本数와 内法이 서로 맞아야 한다
+  // (@100 × 内法 200 → 0·100·200의 3본).
   count: 3,
+  placement: { axis: 'y', clearMm: 200, lastGapMm: 100 },
   ruleHits: [],
   formula: 'test',
 }

@@ -138,9 +138,15 @@ function generateMain(
   )
   const length = span.clear + start.lengthMm + end.lengthMm
   const zones: RebarZone[] = [
-    { kind: '定着', pathFromMm: 0, pathToMm: start.lengthMm },
     {
       kind: '定着',
+      ruleKey: start.lengthRule,
+      pathFromMm: 0,
+      pathToMm: start.lengthMm,
+    },
+    {
+      kind: '定着',
+      ruleKey: end.lengthRule,
       pathFromMm: length - end.lengthMm,
       pathToMm: length,
     },
