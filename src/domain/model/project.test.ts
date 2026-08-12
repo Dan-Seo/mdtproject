@@ -7,6 +7,7 @@ import {
   columnEnds,
   deserializeProject,
   findSection,
+  girderSpan,
   gridPoint,
   gridPointCount,
   memberGroupKey,
@@ -158,6 +159,155 @@ describe('project lookup helpers', () => {
 
   it('throws when no same-story 大梁 touches the 柱', () => {
     expect(() => beamDepthAbove(createProject(), column)).toThrow()
+  })
+})
+
+describe('girderSpan', () => {
+  const rectangularColumnSection: ColumnSection = {
+    ...columnSection,
+    id: 'section-C-rectangular',
+    mark: 'C-rectangular',
+    b: 700,
+    d: 900,
+  }
+  const narrowColumnSection: ColumnSection = {
+    ...columnSection,
+    id: 'section-C-narrow',
+    mark: 'C-narrow',
+    b: 600,
+  }
+  const wideColumnSection: ColumnSection = {
+    ...columnSection,
+    id: 'section-C-wide',
+    mark: 'C-wide',
+    b: 1000,
+  }
+
+  function supportColumn(
+    id: string,
+    sectionId: string,
+    ix: number,
+    iy: number,
+  ): Member {
+    return {
+      id,
+      kind: '柱',
+      memberClass: '躯体',
+      sectionId,
+      storyId: '1F',
+      position: { ix, iy },
+    }
+  }
+
+  function girder(axis: 'X' | 'Y'): Member {
+    return {
+      id: `1F-G1-${axis}`,
+      kind: '大梁',
+      memberClass: '躯体',
+      sectionId: deepGirderSection.id,
+      storyId: '1F',
+      position: { axis, ix: 0, iy: 0 },
+    }
+  }
+
+  function spanProject(members: Member[]): Project {
+    return {
+      ...createProject(members),
+      grid: { xSpans: [6000], ySpans: [6000] },
+      sections: [
+        columnSection,
+        rectangularColumnSection,
+        narrowColumnSection,
+        wideColumnSection,
+        shallowGirderSection,
+        deepGirderSection,
+      ],
+    }
+  }
+
+  it('calculates the X-axis clear span between two 800 mm 柱 faces', () => {
+    const member = girder('X')
+    const project = spanProject([
+      supportColumn('start', columnSection.id, 0, 0),
+      supportColumn('end', columnSection.id, 1, 0),
+      member,
+    ])
+
+    expect(girderSpan(project, member)).toEqual({
+      axis: 'X',
+      centerSpan: 6000,
+      clear: 5200,
+      startFaceOffsetMm: 400,
+      endFaceOffsetMm: 400,
+      startSupportLengthAlongAxisMm: 800,
+      endSupportLengthAlongAxisMm: 800,
+    })
+  })
+
+  it('uses d as the support length for a Y-axis girder', () => {
+    const member = girder('Y')
+    const project = spanProject([
+      supportColumn('start', rectangularColumnSection.id, 0, 0),
+      supportColumn('end', rectangularColumnSection.id, 0, 1),
+      member,
+    ])
+
+    expect(girderSpan(project, member)).toEqual({
+      axis: 'Y',
+      centerSpan: 6000,
+      clear: 5100,
+      startFaceOffsetMm: 450,
+      endFaceOffsetMm: 450,
+      startSupportLengthAlongAxisMm: 900,
+      endSupportLengthAlongAxisMm: 900,
+    })
+  })
+
+  it('uses each end support dimension independently', () => {
+    const member = girder('X')
+    const project = spanProject([
+      supportColumn('start', narrowColumnSection.id, 0, 0),
+      supportColumn('end', wideColumnSection.id, 1, 0),
+      member,
+    ])
+
+    expect(girderSpan(project, member)).toMatchObject({
+      clear: 5200,
+      startFaceOffsetMm: 300,
+      endFaceOffsetMm: 500,
+      startSupportLengthAlongAxisMm: 600,
+      endSupportLengthAlongAxisMm: 1000,
+    })
+  })
+
+  it('throws when either end support 柱 is missing', () => {
+    const member = girder('X')
+    const project = spanProject([
+      supportColumn('start', columnSection.id, 0, 0),
+      member,
+    ])
+
+    expect(() => girderSpan(project, member)).toThrow()
+  })
+
+  it('throws when passed a 柱 member', () => {
+    const member = supportColumn('start', columnSection.id, 0, 0)
+
+    expect(() => girderSpan(spanProject([member]), member)).toThrow()
+  })
+
+  it('throws when the support faces leave no positive clear span', () => {
+    const member = girder('X')
+    const project: Project = {
+      ...spanProject([
+        supportColumn('start', columnSection.id, 0, 0),
+        supportColumn('end', columnSection.id, 1, 0),
+        member,
+      ]),
+      grid: { xSpans: [800], ySpans: [6000] },
+    }
+
+    expect(() => girderSpan(project, member)).toThrow()
   })
 })
 

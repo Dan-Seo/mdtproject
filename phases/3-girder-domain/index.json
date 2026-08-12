@@ -2,12 +2,43 @@
   "project": "Kijun",
   "phase": "3-girder-domain",
   "steps": [
-    { "step": 0, "name": "girder-span", "status": "pending" },
-    { "step": 1, "name": "rebar-zones-roles", "status": "pending" },
-    { "step": 2, "name": "girder-end-conditions", "status": "pending" },
-    { "step": 3, "name": "stirrup-layout", "status": "pending" },
-    { "step": 4, "name": "girder-generator", "status": "pending" },
-    { "step": 5, "name": "girder-support-sample", "status": "pending" },
-    { "step": 6, "name": "takeoff-ui-notice", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "girder-span",
+      "status": "completed",
+      "started_at": "2026-08-12T12:44:12+0900",
+      "summary": "GirderSpan(axis, centerSpan, clear, start/endFaceOffsetMm, start/endSupportLengthAlongAxisMm)을 추가하고 大梁 이외·양단 동일층 柱 결손·柱 단면 불일치·비양수 内法에서 throw"
+    },
+    {
+      "step": 1,
+      "name": "rebar-zones-roles",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "girder-end-conditions",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "stirrup-layout",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "girder-generator",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "girder-support-sample",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "takeoff-ui-notice",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-12T12:44:12+0900"
 }

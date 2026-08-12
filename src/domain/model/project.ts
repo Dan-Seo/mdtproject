@@ -1,4 +1,5 @@
 import type {
+  ColumnSection,
   ColumnPosition,
   GirderPosition,
   Member,
@@ -127,6 +128,93 @@ function touchesColumn(
     girder.ix === column.ix &&
     (girder.iy === column.iy || girder.iy + 1 === column.iy)
   )
+}
+
+export interface GirderSpan {
+  axis: 'X' | 'Y'
+  /** 그리드 교점 간 중심 스팬 (mm) */
+  centerSpan: number
+  /** 内法長さ (mm) — 양단 柱面 사이 */
+  clear: number
+  /** 시작 柱 중심 → 大梁 내측 柱面 오프셋 (mm) */
+  startFaceOffsetMm: number
+  /** 끝 柱 중심 → 大梁 내측 柱面 오프셋 (mm) */
+  endFaceOffsetMm: number
+  /** 정착 수용성 검사용 — 시작 柱의 축방향 전체 치수 (mm) */
+  startSupportLengthAlongAxisMm: number
+  /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
+  endSupportLengthAlongAxisMm: number
+}
+
+function supportColumnSection(
+  project: Project,
+  girder: Member,
+  ix: number,
+  iy: number,
+  end: 'start' | 'end',
+): ColumnSection {
+  const support = project.members.find(
+    (candidate) =>
+      candidate.kind === '柱' &&
+      candidate.storyId === girder.storyId &&
+      isColumnPosition(candidate.position) &&
+      candidate.position.ix === ix &&
+      candidate.position.iy === iy,
+  )
+
+  if (!support) {
+    throw new Error(`Missing ${end} support 柱 for 大梁: ${girder.id}`)
+  }
+
+  const section = findSection(project, support.sectionId)
+  if (section.kind !== '柱') {
+    throw new Error(`柱 member references a non-柱 section: ${support.id}`)
+  }
+
+  return section
+}
+
+export function girderSpan(project: Project, member: Member): GirderSpan {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderSpan requires a 大梁: ${member.id}`)
+  }
+
+  const { axis, ix, iy } = member.position
+  const endIx = axis === 'X' ? ix + 1 : ix
+  const endIy = axis === 'Y' ? iy + 1 : iy
+  const startPoint = gridPoint(project.grid, ix, iy)
+  const endPoint = gridPoint(project.grid, endIx, endIy)
+  const startSection = supportColumnSection(project, member, ix, iy, 'start')
+  const endSection = supportColumnSection(
+    project,
+    member,
+    endIx,
+    endIy,
+    'end',
+  )
+  const centerSpan =
+    axis === 'X' ? endPoint.x - startPoint.x : endPoint.y - startPoint.y
+  const startSupportLengthAlongAxisMm =
+    axis === 'X' ? startSection.b : startSection.d
+  const endSupportLengthAlongAxisMm =
+    axis === 'X' ? endSection.b : endSection.d
+  const startFaceOffsetMm = startSupportLengthAlongAxisMm / 2
+  const endFaceOffsetMm = endSupportLengthAlongAxisMm / 2
+  const clear = centerSpan - startFaceOffsetMm - endFaceOffsetMm
+
+  if (clear <= 0) {
+    throw new Error(`大梁 内法長さ must be positive: ${member.id} (${clear} mm)`)
+  }
+
+  return {
+    axis,
+    centerSpan,
+    clear,
+    startFaceOffsetMm,
+    endFaceOffsetMm,
+    startSupportLengthAlongAxisMm,
+    endSupportLengthAlongAxisMm,
+  }
 }
 
 /**
