@@ -1,9 +1,848 @@
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 45d
+  conditions: { fc: 18, grade: SD295, hook: false }
+  value: 45
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 40d
+  conditions: { fc: 18, grade: SD295, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 35d
+  conditions: { fc: 18, grade: SD295, hook: true }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 30d
+  conditions: { fc: 18, grade: SD295, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 21, grade: SD295, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 21, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 21, grade: SD295, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 21, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 24, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 27, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 24, grade: SD295, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 27, grade: SD295, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 24, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 27, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 24, grade: SD295, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 27, grade: SD295, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 30, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 36, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 30, grade: SD295, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 36, grade: SD295, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 30, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 36, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 30, grade: SD295, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 36, grade: SD295, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 50d
+  conditions: { fc: 18, grade: SD345, hook: false }
+  value: 50
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 40d
+  conditions: { fc: 18, grade: SD345, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 35d
+  conditions: { fc: 18, grade: SD345, hook: true }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 30d
+  conditions: { fc: 18, grade: SD345, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc18帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 45d
+  conditions: { fc: 21, grade: SD345, hook: false }
+  value: 45
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 21, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 21, grade: SD345, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 21, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 24, grade: SD345, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 27, grade: SD345, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
 - key: anchorage.L2
   label: 定着長さ L2（フックなし）
   expr: 35d
   conditions: { fc: 24, grade: SD345, hook: false }
   value: 35
   unit: d
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.4, page: 30 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 27, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 24, grade: SD345, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 27, grade: SD345, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 24, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 27, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 30, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 36, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 30, grade: SD345, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 30d
+  conditions: { fc: 36, grade: SD345, hook: false }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 30, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 36, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 30, grade: SD345, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 20d
+  conditions: { fc: 36, grade: SD345, hook: true }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 50d
+  conditions: { fc: 21, grade: SD390, hook: false }
+  value: 50
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 40d
+  conditions: { fc: 21, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 35d
+  conditions: { fc: 21, grade: SD390, hook: true }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 30d
+  conditions: { fc: 21, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc21帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 45d
+  conditions: { fc: 24, grade: SD390, hook: false }
+  value: 45
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 45d
+  conditions: { fc: 27, grade: SD390, hook: false }
+  value: 45
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 40d
+  conditions: { fc: 24, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 40d
+  conditions: { fc: 27, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 35d
+  conditions: { fc: 24, grade: SD390, hook: true }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 35d
+  conditions: { fc: 27, grade: SD390, hook: true }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 30d
+  conditions: { fc: 24, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 30d
+  conditions: { fc: 27, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc24-27帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 30, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1
+  label: 定着長さ L1（フックなし）
+  expr: 40d
+  conditions: { fc: 36, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 30, grade: SD390, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2
+  label: 定着長さ L2（フックなし）
+  expr: 35d
+  conditions: { fc: 36, grade: SD390, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 30, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L1h
+  label: 定着長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 36, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 30, grade: SD390, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.L2h
+  label: 定着長さ L2h（フックあり）
+  expr: 25d
+  conditions: { fc: 36, grade: SD390, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 18, grade: SD295 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc18帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 21, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc21帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 24, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 27, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 30, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 36, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 18, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc18帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 21, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc21帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 24, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 27, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 30, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 15d
+  conditions: { fc: 36, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 21, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc21帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 24, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 27, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc24-27帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 30, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
+
+- key: anchorage.La
+  label: 投影定着長さ La
+  expr: 20d
+  conditions: { fc: 36, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.5 Fc30-36帯）
