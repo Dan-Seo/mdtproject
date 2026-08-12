@@ -678,14 +678,15 @@ function rebuildBuildingScene(
     content.add(outline)
   }
 
-  // 철근은 표시 반경별 InstancedMesh — 단위 높이 실린더를 Y 스케일로 늘인다 (R4).
+  // 철근은 표시 반경·레이어별 InstancedMesh — 단위 높이 실린더를 Y 스케일로 늘인다 (R4).
   const matrix = new THREE.Matrix4()
   const position = new THREE.Vector3()
   const quaternion = new THREE.Quaternion()
   const scale = new THREE.Vector3()
   const direction = new THREE.Vector3()
 
-  for (const [radius, instances] of groupInstancesByRadius(layout.rebar)) {
+  for (const instances of groupInstancesByRadius(layout.rebar).values()) {
+    const { radius, layer } = instances[0]
     const geometry = new THREE.CylinderGeometry(
       radius * MILLIMETRES_TO_SCENE,
       radius * MILLIMETRES_TO_SCENE,
@@ -715,6 +716,7 @@ function rebuildBuildingScene(
     instanced.instanceMatrix.needsUpdate = true
     instanced.castShadow = true
     instanced.userData.memberIds = memberIds
+    instanced.userData.layer = layer
     content.add(instanced)
     pickableMeshes.push(instanced)
   }
