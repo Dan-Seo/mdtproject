@@ -93,6 +93,40 @@ describe('useTakeoff', () => {
     expect(result.current.inferredRules.length).toBeGreaterThan(0)
   })
 
+  it('keeps the other members when a 大梁 turns out unbuildable', () => {
+    // 지점 柱를 줄이면 直線も折曲げも収まらない — 사용자 입력만으로 도달한다.
+    // 그 부재만 미지원으로 빼고, 柱를 포함한 나머지 산정은 살아 있어야 한다.
+    useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) =>
+        section.kind === '柱' ? { ...section, b: 300, d: 300 } : section,
+      ),
+    }))
+
+    const { result } = renderHook(() => useTakeoff())
+
+    expect(
+      result.current.unsupportedMembers.some(
+        ({ reason }) => reason === '定着不成立',
+      ),
+    ).toBe(true)
+    expect(
+      result.current.lines.some(({ role }) => role === '主筋'),
+    ).toBe(true)
+  })
+
+  it('lets a real defect through instead of hiding it as unsupported', () => {
+    // 룰팩 공백·타입 위반까지 미지원으로 흡수하면 결함이 화면에서 사라진다.
+    useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) =>
+        section.kind === '大梁' ? { ...section, fc: 25 } : section,
+      ),
+    }))
+
+    expect(() => renderHook(() => useTakeoff())).toThrow(/not found/i)
+  })
+
   it('shares one computation across every consumer of the same Project', () => {
     // TakeoffPane · TakeoffActions · Viewer3D가 각각 호출한다. 각자 계산하면
     // 입력 한 글자에 파이프라인이 세 번 돈다.

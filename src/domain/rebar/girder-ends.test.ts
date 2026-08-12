@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { MemberUnsupportedError } from '../model/unsupported'
 import type { RuleHit, RulePack } from '../rules/types'
 import { lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
@@ -94,6 +95,18 @@ function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) 
     bentLengthMm,
     projectionMm,
     rawProjectionMm: millimetres(projection, diameter),
+    // 판정에 실제로 쓴 행들 — 지점 柱의 かぶり는 大梁 조건으로 되짚을 수 없어
+    // 판정 결과에 실려 나와야 근거 표시에서 살아남는다.
+    straightUsedRules: [straight, minimumCover, fabricationAddition],
+    bentUsedRules: [
+      straight,
+      bent,
+      projection,
+      tailMinimum,
+      projectionMinimum,
+      minimumCover,
+      fabricationAddition,
+    ],
   }
 }
 
@@ -111,6 +124,7 @@ describe('resolveGirderEnd', () => {
       lengthMm: expected.bentLengthMm,
       projectionMm: expected.projectionMm,
       direction: input.bendDirection,
+      usedRules: expected.bentUsedRules,
     })
   })
 
@@ -127,6 +141,7 @@ describe('resolveGirderEnd', () => {
       kind: '直線定着',
       lengthRule: 'anchorage.L1',
       lengthMm: expected.straightLengthMm,
+      usedRules: expected.straightUsedRules,
     })
   })
 
@@ -144,6 +159,7 @@ describe('resolveGirderEnd', () => {
       kind: '直線定着',
       lengthRule: 'anchorage.L1',
       lengthMm: expected.straightLengthMm,
+      usedRules: expected.straightUsedRules,
     })
   })
 
@@ -158,5 +174,21 @@ describe('resolveGirderEnd', () => {
         jpMlitRulePack,
       ),
     ).toThrow(/折曲げ定着.*収まらない/)
+  })
+
+  it('reports the unfitting 定着 as a member-level unsupported reason', () => {
+    // 지점 柱를 줄이면 사용자 입력만으로 도달한다 — 페인을 죽이는 결함이 아니라
+    // 그 부재를 산정할 수 없다는 판정이어야 한다 (M3a).
+    const expected = expectedRules(jpMlitRulePack)
+    const supportLengthMm =
+      expected.fabricationCoverMm + expected.rawProjectionMm - 1
+
+    try {
+      resolveGirderEnd({ ...input, supportLengthMm }, jpMlitRulePack)
+      expect.unreachable('resolveGirderEnd should have thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe('定着不成立')
+    }
   })
 })

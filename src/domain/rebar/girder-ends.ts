@@ -1,17 +1,27 @@
 import type { BarSize, SteelGrade } from '../model/member'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
+/** 판정에 실제로 쓴 룰 행 — 지점 柱의 かぶり처럼 大梁 조건으로는 되짚을 수 없다 */
+interface UsedRules {
+  usedRules: RuleHit[]
+}
+
 export type GirderEndDetail =
-  | { kind: '直線定着'; lengthRule: 'anchorage.L1'; lengthMm: number }
-  | {
+  | ({
+      kind: '直線定着'
+      lengthRule: 'anchorage.L1'
+      lengthMm: number
+    } & UsedRules)
+  | ({
       kind: '折曲げ定着'
       lengthRule: 'anchorage.L1h'
       projectionRule: 'anchorage.La'
       lengthMm: number
       projectionMm: number
       direction: '上' | '下'
-    }
+    } & UsedRules)
 
 export interface GirderEndInput {
   /** 지점 柱의 축방향 전체 치수 (GirderSpan의 *SupportLengthAlongAxisMm) */
@@ -98,11 +108,14 @@ export function resolveGirderEnd(
   const availableProjectionMm = input.supportLengthMm - fabricationCoverMm
   const straightLengthMm = millimetres(straightRule, diameter)
 
+  const coverRules = [minimumCoverRule, fabricationCoverAdditionRule]
+
   if (straightLengthMm <= availableProjectionMm) {
     return {
       kind: '直線定着',
       lengthRule: 'anchorage.L1',
       lengthMm: straightLengthMm,
+      usedRules: [straightRule, ...coverRules],
     }
   }
 
@@ -131,7 +144,8 @@ export function resolveGirderEnd(
   )
 
   if (projectionMm > availableProjectionMm) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '定着不成立',
       `折曲げ定着が支点柱に収まらない: ` +
         `必要投影 ${projectionMm} mm > 使用可能 ${availableProjectionMm} mm`,
     )
@@ -149,5 +163,14 @@ export function resolveGirderEnd(
     lengthMm,
     projectionMm,
     direction: input.bendDirection,
+    // 直線 L1 은 折曲げ 채택 판정의 비교원이므로 기여 룰로 남긴다
+    usedRules: [
+      straightRule,
+      bentRule,
+      projectionRule,
+      tailMinimumRule,
+      projectionMinimumRule,
+      ...coverRules,
+    ],
   }
 }

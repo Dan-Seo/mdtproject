@@ -10,6 +10,12 @@ quantity:
   edition: 令和5年3月29日改定（国営積第8号）
   publisher: 国土交通省 大臣官房官庁営繕部
   url: https://www.mlit.go.jp/common/001178206.pdf
+practice:
+  short: 実務慣行
+  doc: 出典なし（本プロジェクトの仮定値）
+  edition: null
+  publisher: Kijun
+  url: null
 jis:
   short: JIS G 3112
   doc: 鉄筋コンクリート用棒鋼

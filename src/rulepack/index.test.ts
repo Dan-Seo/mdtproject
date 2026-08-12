@@ -39,4 +39,15 @@ describe('jpMlitRulePack', () => {
       expect(['stated', 'inferred']).toContain(rule.confidence)
     }
   })
+
+  it('never attributes a placeless value to a real document', () => {
+    // 節·頁를 못 대는 값은 원문에 없는 값이다 — 그것을 실재 문서 출처로 표시하면
+    // UI·엑셀의 出典 표시가 거짓이 된다 (PDL1.0 출처 표시 의무). 관행 가정치는
+    // 관행 전용 ref로 귀속하고, 실재 문서 귀속에는 최소한 節을 요구한다.
+    const placeless = jpMlitRulePack.entries.filter(
+      ({ source }) => source.section === null && source.url !== null,
+    )
+
+    expect(placeless.map(({ key }) => key)).toEqual([])
+  })
 })

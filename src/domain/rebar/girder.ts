@@ -1,6 +1,7 @@
 import type { BarSize, GirderSection, Member } from '../model/member'
 import type { GirderSpan } from '../model/project'
 import type { Rebar, RebarZone } from '../model/rebar'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import {
@@ -36,20 +37,8 @@ function millimetres(rule: RuleHit, diameter?: number): number {
   )
 }
 
-function uniqueRuleKeys(keys: string[]): string[] {
-  return [...new Set(keys)]
-}
-
-function endRuleKeys(detail: GirderEndDetail): string[] {
-  if (detail.kind === '直線定着') return [detail.lengthRule]
-
-  return [
-    'anchorage.L1',
-    detail.lengthRule,
-    detail.projectionRule,
-    'anchorage.bent.tail.minimum',
-    'anchorage.bent.projection.minimum',
-  ]
+function uniqueRuleHits(hits: RuleHit[]): RuleHit[] {
+  return [...new Set(hits)]
 }
 
 function endFormula(label: '始端' | '終端', detail: GirderEndDetail): string {
@@ -174,11 +163,11 @@ function generateMain(
     length,
     count: row.count,
     zones,
-    rules: uniqueRuleKeys([
-      coverRule.key,
-      fabricationCoverAdditionRule.key,
-      ...endRuleKeys(start),
-      ...endRuleKeys(end),
+    ruleHits: uniqueRuleHits([
+      coverRule,
+      fabricationCoverAdditionRule,
+      ...start.usedRules,
+      ...end.usedRules,
     ]),
     formula:
       `加工長 ＝ 内法長さ ${span.clear} ＋ ${endFormula('始端', start)} ` +
@@ -248,7 +237,8 @@ export function generateGirderRebar(
   const stirrupDepthMm = section.depth - 2 * fabricationCoverMm
 
   if (stirrupWidthMm <= 0 || stirrupDepthMm <= 0) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '寸法不成立',
       `あばら筋 加工寸法 must be positive: ${member.id} ` +
         `(${section.b}×${section.depth} − 2×加工用かぶり ${fabricationCoverMm})`,
     )
@@ -283,11 +273,11 @@ export function generateGirderRebar(
     closed: true,
     length: stirrupLengthMm,
     count: layout.positionsMm.length,
-    rules: [
-      coverRule.key,
-      fabricationCoverAdditionRule.key,
-      hook135Rule.key,
-      startOffsetRule.key,
+    ruleHits: [
+      coverRule,
+      fabricationCoverAdditionRule,
+      hook135Rule,
+      startOffsetRule,
     ],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +

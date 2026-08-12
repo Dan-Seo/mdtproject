@@ -10,12 +10,7 @@ import {
   type Project,
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
-import {
-  coverConditions,
-  lookupMarkup,
-  lookupRule,
-  lookupUnitMass,
-} from '../rules/lookup'
+import { lookupMarkup, lookupUnitMass } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
 export interface QuantityLine {
@@ -71,33 +66,6 @@ function sectionLabel(section: Section): string {
     : `${section.b}×${section.depth}`
 }
 
-function ruleContext(
-  member: Member,
-  section: Section,
-  rebar: Rebar,
-): Record<string, unknown> {
-  return {
-    ...coverConditions(section),
-    memberClass: member.memberClass,
-    fc: section.fc,
-    grade: section.grade,
-    hook: rebar.shape === 'hook90',
-    barRole: rebar.role,
-    size: rebar.size,
-    detail:
-      section.kind === '大梁' ? '梁主筋の柱内定着' : undefined,
-  }
-}
-
-function contributionContext(
-  key: string,
-  context: Record<string, unknown>,
-): Record<string, unknown> {
-  // 折曲げ定着の採否判定には先に直線 L1 も寄与する。最終形状が hook90
-  // でも、この比較元だけは L1 の条件どおり hook:false で再取得する。
-  return key === 'anchorage.L1' ? { ...context, hook: false } : context
-}
-
 function ruleIdentity(rule: RuleHit): string {
   const conditions = Object.entries(rule.conditions).sort(
     ([left], [right]) => left.localeCompare(right),
@@ -118,13 +86,11 @@ function uniqueRules(rules: RuleHit[]): RuleHit[] {
 function contributingRules(
   pack: RulePack,
   member: Member,
-  section: Section,
   rebar: Rebar,
 ): { rules: RuleHit[]; unitMass: RuleHit; markup: RuleHit } {
-  const context = ruleContext(member, section, rebar)
-  const rebarRules = rebar.rules.map((key) =>
-    lookupRule(pack, key, contributionContext(key, context)),
-  )
+  // 산정부가 실제로 조회한 행을 그대로 쓴다 — 키에서 조회 조건을 되짚으면
+  // 되짚을 수 없는 조회(지점 柱의 かぶり)가 근거에서 사라진다.
+  const rebarRules = rebar.ruleHits
   const unitMass = lookupUnitMass(pack, rebar.size)
   const markup = lookupMarkup(pack, member.memberClass)
 
@@ -192,12 +158,7 @@ export function aggregateQuantity(
 
     const groupId = memberGroupKey(project, member)
     const id = quantityLineId(groupId, rebar)
-    const contributions = contributingRules(
-      pack,
-      member,
-      section,
-      rebar,
-    )
+    const contributions = contributingRules(pack, member, rebar)
     const existing = grouped.get(id)
 
     if (existing) {

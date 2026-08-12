@@ -5,6 +5,10 @@ import type {
   Member,
   Section,
 } from './member'
+import {
+  MemberUnsupportedError,
+  type UnsupportedReason,
+} from './unsupported'
 
 // v2 (2026-08-12): Section에 필수 필드 exposure·finish 추가 — v1 JSON은
 // deserializeProject의 버전 게이트에서 명시적으로 거부된다 (영속 v1 데이터 없음).
@@ -115,7 +119,7 @@ function isGirderPosition(
 
 export type GirderSupport =
   | { supported: true }
-  | { supported: false; reason: '連続スパン' }
+  | { supported: false; reason: UnsupportedReason }
 
 export function girderSupport(
   project: Project,
@@ -244,7 +248,10 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
   const clear = centerSpan - startFaceOffsetMm - endFaceOffsetMm
 
   if (clear <= 0) {
-    throw new Error(`大梁 内法長さ must be positive: ${member.id} (${clear} mm)`)
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `大梁 内法長さ must be positive: ${member.id} (${clear} mm)`,
+    )
   }
 
   return {

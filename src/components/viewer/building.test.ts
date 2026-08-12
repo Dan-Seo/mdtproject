@@ -23,7 +23,7 @@ const main: Rebar = {
   closed: false,
   length: 6080,
   count: 12,
-  rules: ['cover.minimum'],
+  ruleHits: [],
   formula: 'test',
 }
 
@@ -42,7 +42,7 @@ const hoop: Rebar = {
   closed: true,
   length: 3040,
   count: 3,
-  rules: ['cover.minimum'],
+  ruleHits: [],
   formula: 'test',
 }
 

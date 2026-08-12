@@ -18,6 +18,7 @@ import {
   type Project,
   type Story,
 } from './project'
+import { MemberUnsupportedError } from './unsupported'
 
 const columnSection: ColumnSection = {
   id: 'section-C1',
@@ -308,7 +309,14 @@ describe('girderSpan', () => {
       grid: { xSpans: [800], ySpans: [6000] },
     }
 
-    expect(() => girderSpan(project, member)).toThrow()
+    // スパン 편집만으로 도달한다 — 페인을 죽이는 결함이 아니라 부재 단위
+    // 미지원 판정으로 다뤄야 한다 (M3a).
+    expect(() => girderSpan(project, member)).toThrow(MemberUnsupportedError)
+    try {
+      girderSpan(project, member)
+    } catch (error) {
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+    }
   })
 })
 

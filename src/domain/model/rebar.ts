@@ -1,4 +1,5 @@
 import type { BarSize } from './member'
+import type { RuleHit } from '../rules/types'
 
 export type RebarRole =
   | '主筋'
@@ -27,6 +28,7 @@ export interface Rebar {
   length: number
   count: number
   zones?: RebarZone[]
-  rules: string[]
+  /** 이 철근을 산정하며 실제로 조회한 룰 행 그대로 — 키만 남기면 조회 조건을 잃는다 */
+  ruleHits: RuleHit[]
   formula: string
 }

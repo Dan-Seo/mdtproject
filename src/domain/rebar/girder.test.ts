@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { GirderSection, Member } from '../model/member'
 import type { GirderSpan } from '../model/project'
 import type { Rebar } from '../model/rebar'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import { resolveGirderEnd } from './girder-ends'
@@ -262,8 +263,9 @@ describe('generateGirderRebar', () => {
   })
 
   it('tracks only existing rules in a stable contribution order', () => {
-    const knownKeys = new Set(jpMlitRulePack.entries.map(({ key }) => key))
     const generated = generateGirderRebar(input(), jpMlitRulePack)
+    // 마지막 cover.minimum 은 端部条件을 판정한 지점 柱의 행이다 — 大梁 행과
+    // 조건이 다르므로 키만으로는 구분되지 않는다.
     const bentMainRules = [
       'cover.minimum',
       'cover.fabrication.addition',
@@ -272,11 +274,18 @@ describe('generateGirderRebar', () => {
       'anchorage.La',
       'anchorage.bent.tail.minimum',
       'anchorage.bent.projection.minimum',
+      'cover.minimum',
     ]
 
-    expect(byRole(generated, '上端筋').rules).toEqual(bentMainRules)
-    expect(byRole(generated, '下端筋').rules).toEqual(bentMainRules)
-    expect(byRole(generated, 'あばら筋').rules).toEqual([
+    expect(
+      byRole(generated, '上端筋').ruleHits.map(({ key }) => key),
+    ).toEqual(bentMainRules)
+    expect(
+      byRole(generated, '下端筋').ruleHits.map(({ key }) => key),
+    ).toEqual(bentMainRules)
+    expect(
+      byRole(generated, 'あばら筋').ruleHits.map(({ key }) => key),
+    ).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
       'bend.hook135',
@@ -284,11 +293,12 @@ describe('generateGirderRebar', () => {
     ])
 
     for (const rebar of generated) {
-      expect(new Set(rebar.rules).size).toBe(rebar.rules.length)
-      for (const key of rebar.rules) {
-        expect(knownKeys.has(key), `${key} should exist in the rule pack`).toBe(
-          true,
-        )
+      expect(new Set(rebar.ruleHits).size).toBe(rebar.ruleHits.length)
+      for (const hit of rebar.ruleHits) {
+        expect(
+          jpMlitRulePack.entries.includes(hit),
+          `${hit.key} should be a row of the rule pack`,
+        ).toBe(true)
       }
     }
   })
@@ -307,5 +317,47 @@ describe('generateGirderRebar', () => {
     }
 
     expect(byRole(generated, 'あばら筋').formula).toContain(coverFormula)
+  })
+
+  it('carries the 柱 かぶり row that decided the end condition, not just the 大梁 one', () => {
+    // 端部条件은 지점 柱의 かぶり로 판정한다. 키 문자열만 남기면 집계부가 大梁
+    // 조건으로 cover.minimum 을 되짚어 실제로 쓰지 않은 행을 근거로 표시한다 —
+    // 出典 표시와 inferred 기여 목록이 산출값과 어긋난다 (ADR-015).
+    const generated = generateGirderRebar(input(), jpMlitRulePack)
+    const top = byRole(generated, '上端筋')
+    const columnCovers = top.ruleHits.filter(
+      ({ key, conditions }) =>
+        key === 'cover.minimum' && conditions.memberKind === '柱',
+    )
+
+    expect(columnCovers).toHaveLength(1)
+    expect(columnCovers[0].value).toBe(
+      lookupRule(jpMlitRulePack, 'cover.minimum', {
+        memberKind: '柱',
+        soilContact: false,
+        exposure: '屋外',
+        finish: '仕上げなし',
+      }).value,
+    )
+    expect(
+      top.ruleHits.some(
+        ({ key, conditions }) =>
+          key === 'cover.minimum' && conditions.memberKind === '大梁',
+      ),
+    ).toBe(true)
+  })
+
+  it('reports an unbuildable あばら筋 section as a member-level unsupported reason', () => {
+    // 断面 b 를 加工用かぶり 두 겹보다 작게 줄이면 사용자 입력만으로 도달한다.
+    const narrow: GirderSection = { ...section, b: 2 * fabricationCover }
+
+    expect(() =>
+      generateGirderRebar(input({ section: narrow }), jpMlitRulePack),
+    ).toThrow(MemberUnsupportedError)
+    try {
+      generateGirderRebar(input({ section: narrow }), jpMlitRulePack)
+    } catch (error) {
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+    }
   })
 })

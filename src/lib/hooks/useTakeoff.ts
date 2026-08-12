@@ -12,6 +12,10 @@ import {
   type Project,
 } from '@/domain/model/project'
 import {
+  MemberUnsupportedError,
+  type UnsupportedReason,
+} from '@/domain/model/unsupported'
+import {
   aggregateQuantity,
   hasInferred as getHasInferred,
   inferredRules as getInferredRules,
@@ -35,7 +39,7 @@ export interface UnsupportedMember {
   memberId: string
   mark: string
   storyName: string
-  reason: '連続スパン'
+  reason: UnsupportedReason
 }
 
 /**
@@ -107,12 +111,25 @@ function buildTakeoff(project: Project): TakeoffResult {
       continue
     }
 
-    rebars.push(
-      ...generateGirderRebar(
-        { member, section, span: girderSpan(project, member) },
-        jpMlitRulePack,
-      ),
-    )
+    // 성립 불가 형상(定着·寸法)은 그 부재만 빼고 나머지 산정을 계속한다.
+    // MemberUnsupportedError만 잡는다 — 룰팩 공백 같은 결함은 그대로 터진다.
+    try {
+      rebars.push(
+        ...generateGirderRebar(
+          { member, section, span: girderSpan(project, member) },
+          jpMlitRulePack,
+        ),
+      )
+    } catch (error) {
+      if (!(error instanceof MemberUnsupportedError)) throw error
+
+      unsupportedMembers.push({
+        memberId: member.id,
+        mark: section.mark,
+        storyName: story.name,
+        reason: error.reason,
+      })
+    }
   }
 
   const lines = aggregateQuantity(project, rebars, jpMlitRulePack)

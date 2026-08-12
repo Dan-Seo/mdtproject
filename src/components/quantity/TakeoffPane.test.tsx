@@ -36,9 +36,10 @@ function takeoffResult() {
 }
 
 // 行 id は加工長・本数まで含むので、書き下さずに集計結果から引く。
-function lineFor(role: '主筋' | '帯筋') {
+function lineFor(role: '主筋' | '帯筋' | '上端筋') {
+  const groupId = role === '上端筋' ? '1階|G|G1' : '1階|C|C1'
   const line = takeoffLines().find(
-    (candidate) => candidate.groupId === '1階|C|C1' && candidate.role === role,
+    (candidate) => candidate.groupId === groupId && candidate.role === role,
   )
 
   if (!line) throw new Error(`QuantityLine not found: ${role}`)
@@ -147,6 +148,24 @@ describe('TakeoffPane', () => {
         '大梁の配筋は M3 で対応予定 — 現在の数量には含まれません。',
       ),
     ).not.toBeInTheDocument()
+  })
+
+  it('states a follow-up per reason instead of claiming M3b for all', () => {
+    // 定着 불성립은 通し筋으로 해소되지 않는다 — 전 건에 「M3b で対応予定」을
+    // 붙이면 고지가 거짓이 된다.
+    useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) =>
+        section.kind === '柱' ? { ...section, b: 300, d: 300 } : section,
+      ),
+    }))
+
+    render(<TakeoffPane />)
+
+    const notice = screen.getByRole('note')
+    expect(notice).toHaveTextContent('定着が支点柱に収まらない')
+    expect(notice).toHaveTextContent('M3b')
+    expect(notice).toHaveTextContent('見直し')
   })
 
   it('omits the unsupported-member notice when every member is supported', () => {
@@ -296,6 +315,17 @@ describe('TakeoffPane', () => {
     expect(chip).toHaveAttribute('aria-disabled', 'true')
     expect(chip).toHaveAttribute('title', expect.stringContaining('未確保'))
     expect(chip.closest('a')).toBeNull()
+  })
+
+  it('shows one chip per cited document location, not per rule row', () => {
+    // 大梁 上端筋은 大梁의 かぶり와 端部条件을 판정한 지점 柱의 かぶり를 둘 다
+    // 조회한다 — 서로 다른 행이지만 가리키는 표는 같은 表5.3.6 하나다.
+    const lineId = lineFor('上端筋').id
+    render(<TakeoffPane />)
+
+    const row = screen.getByTestId(`quantity-line-${lineId}`)
+
+    expect(within(row).getAllByText('標準仕様書 表5.3.6')).toHaveLength(1)
   })
 
   it('stores a typed 備考 in the Project instead of dropping it', () => {

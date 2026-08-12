@@ -30,9 +30,20 @@ const afterAdd = await probe();
 await page.click("button[aria-label='Xスパン 1を削除']");
 const afterRemove = await probe();
 
-// X스팬을 1개만 남을 때까지 제거 → 삭제 버튼 disabled 확인
-await page.click("button[aria-label='Xスパン 1を削除']");
-const afterMin = await probe();
+// X스팬을 1개만 남을 때까지 제거 → 삭제 버튼 disabled 확인.
+// disabled 버튼을 클릭하면 30초 대기 후 타임아웃하므로, 샘플 그리드의
+// X스팬 수에 의존하지 않게 enabled인 동안에만 누른다.
+const removable = (state) =>
+  state.removeDisabled.some(
+    (b) => b.label === "Xスパン 1を削除" && !b.disabled
+  );
+
+let state = afterRemove;
+while (removable(state)) {
+  await page.click("button[aria-label='Xスパン 1を削除']");
+  state = await probe();
+}
+const afterMin = state;
 
 console.log(JSON.stringify({ base, afterAdd, afterRemove, afterMin }, null, 2));
 console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc5-spans.png")));

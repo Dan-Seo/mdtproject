@@ -105,27 +105,27 @@ describe('generateColumnRebar', () => {
     })
   })
 
-  it('records only existing rule keys on every generated Rebar', () => {
-    const knownKeys = new Set(jpMlitRulePack.entries.map(({ key }) => key))
+  it('records only rows that came from the rule pack on every generated Rebar', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
 
     for (const rebar of generated) {
-      expect(rebar.rules.length).toBeGreaterThan(0)
-      for (const key of rebar.rules) {
-        expect(knownKeys.has(key), `${key} should exist in the rule pack`).toBe(
-          true,
-        )
+      expect(rebar.ruleHits.length).toBeGreaterThan(0)
+      for (const hit of rebar.ruleHits) {
+        expect(
+          jpMlitRulePack.entries.includes(hit),
+          `${hit.key} should be a row of the rule pack`,
+        ).toBe(true)
       }
     }
 
     // 端部の順（下端 → 上端）で並ぶ。既定入力は 下端 継手・上端 定着。
-    expect(byRole(generated, '主筋').rules).toEqual([
+    expect(byRole(generated, '主筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
       'lap.L1',
       'anchorage.L1',
     ])
-    expect(byRole(generated, '帯筋').rules).toEqual([
+    expect(byRole(generated, '帯筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
       'bend.hook135',
@@ -296,9 +296,9 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(withoutLap.rules).not.toContain('lap.L1')
+    expect(withoutLap.ruleHits.map(({ key }) => key)).not.toContain('lap.L1')
     expect(withoutLap.formula).not.toContain('重ね継手')
-    expect(withLap.rules).toContain('lap.L1')
+    expect(withLap.ruleHits.map(({ key }) => key)).toContain('lap.L1')
   })
 
   it('cites 定着 only on the rows that actually reach a stack end', () => {
@@ -310,7 +310,9 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(interior.rules).not.toContain('anchorage.L1')
+    expect(interior.ruleHits.map(({ key }) => key)).not.toContain(
+      'anchorage.L1',
+    )
     expect(interior.formula).not.toContain('定着')
     expect(interior.length).toBe(story.height + lap)
   })

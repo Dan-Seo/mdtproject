@@ -254,6 +254,6 @@
   conditions: {}
   value: 50
   unit: mm
-  source: { ref: spec, section: null, page: null }
+  source: { ref: practice, section: null, page: null }
   confidence: inferred
   note: 条文なし — 実務慣行の仮定値。第1あばら筋を柱面から50mm に置く。独立検討待ち (R2)
