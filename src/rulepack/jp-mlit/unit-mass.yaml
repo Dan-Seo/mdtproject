@@ -6,7 +6,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D13 単位質量
@@ -16,7 +16,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D16 単位質量
@@ -26,7 +26,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D19 単位質量
@@ -36,7 +36,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D22 単位質量
@@ -46,7 +46,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D25 単位質量
@@ -56,7 +56,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D29 単位質量
@@ -66,7 +66,7 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない
 
 - key: unit-mass.value
   label: D32 単位質量
@@ -76,4 +76,4 @@
   unit: kg/m
   source: { ref: jis, section: null, page: null }
   confidence: inferred
-  note: JIS G 3112の適用版・単位質量表は未確保 — M1 プレースホルダ
+  note: JIS G 3112 未確保 — JISC閲覧で版特定・転写するまで inferred。kg算出はM2の正式完了に含めない

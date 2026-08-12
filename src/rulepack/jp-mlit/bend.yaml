@@ -1,22 +1,92 @@
 - key: bend.inside-diameter
-  label: 帯筋の折曲げ内法直径
+  label: 折曲げ内法直径
+  expr: 3d
+  conditions: { grade: SD295, size: D16 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 3d
+  conditions: { grade: SD345, size: D16 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
   expr: 4d
-  conditions: { barRole: 帯筋 }
+  conditions: { grade: SD295, size: D19 }
   value: 4
   unit: d
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.1, page: 27 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
 
-- key: bend.hook90
-  label: 90°フック余長
-  expr: 8d
-  conditions: {}
-  value: 8
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD295, size: D38 }
+  value: 4
   unit: d
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.1, page: 27 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD345, size: D19 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD345, size: D38 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 5d
+  conditions: { grade: SD390, size: D19 }
+  value: 5
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 5d
+  conditions: { grade: SD390, size: D38 }
+  value: 5
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.hook180
+  label: 180°フック余長
+  expr: 4d
+  conditions: {}
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
+  confidence: inferred
+  note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
 
 - key: bend.hook135
   label: 135°フック余長
@@ -24,9 +94,29 @@
   conditions: {}
   value: 6
   unit: d
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
+
+- key: bend.hook90
+  label: 90°フック余長
+  expr: 8d
+  conditions: {}
+  value: 8
+  unit: d
+  source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
+  confidence: inferred
+  note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
+
+- key: bend.hook-tome
+  label: 幅止め筋のフック余長
+  expr: 4d
+  conditions: {}
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
+  confidence: inferred
+  note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
 
 - key: rounding.length
   label: 加工長の丸め単位

@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "rulepack-bend-cover",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T09:59:06+0900",
+      "summary": "bend.inside-diameter를 강종·경 구간 경계별 8개로 전개하고 bend.hook180·bend.hook135·bend.hook90·bend.hook-tome 이미지 판독 4개, cover.minimum 표 조합과 cover.fabrication.addition을 골든 대조했으며 JIS 단위질량 미확보 note를 정리했다.",
+      "completed_at": "2026-08-12T10:05:12+0900"
     },
     {
       "step": 3,
