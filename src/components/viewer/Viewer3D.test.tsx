@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
     outputColorSpace: string
   }>,
   pickableCounts: [] as number[],
+  pickableMeshes: [] as import('three').Object3D[][],
 }))
 
 vi.mock('three', async (importOriginal) => {
@@ -67,6 +68,7 @@ vi.mock('three', async (importOriginal) => {
     setFromCamera = vi.fn()
     intersectObjects(objects: import('three').Object3D[]) {
       mocks.pickableCounts.push(objects.length)
+      mocks.pickableMeshes.push([...objects])
       return objects.length === 0 ? [] : [{ object: objects[0] }]
     }
   }
@@ -139,6 +141,7 @@ describe('Viewer3D', () => {
     mocks.envTextureDispose.mockClear()
     mocks.rendererInstances.length = 0
     mocks.pickableCounts.length = 0
+    mocks.pickableMeshes.length = 0
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
@@ -188,12 +191,30 @@ describe('Viewer3D', () => {
     expect(screen.getByText('배근 데이터 없음')).toBeInTheDocument()
   })
 
-  it('says 大梁 is out of scope instead of showing an empty viewer', () => {
+  it('renders a supported 大梁 and maps a picked mesh to its 上端筋 row', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-X'))
+    const { result } = renderHook(() => useTakeoff())
+    const topLine = result.current.lines.find(
+      ({ groupId, role }) => groupId === '1階|G|G1' && role === '上端筋',
+    )
+    expect(topLine).toBeDefined()
     render(<Viewer3D />)
 
-    expect(screen.getByText(/M3/)).toBeInTheDocument()
-    expect(screen.queryByText('配筋データなし')).not.toBeInTheDocument()
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+
+    expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
+    expect(useAppStore.getState().hoverRowId).toBe(topLine?.id)
+  })
+
+  it('shows the unsupported reason and no rebar mesh for a 連続スパン 大梁', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+    render(<Viewer3D />)
+
+    expect(screen.getByText(/連続スパン/)).toBeInTheDocument()
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(mocks.pickableCounts.at(-1)).toBe(0)
   })
 
   it('renders the building view and picks a member back into the selection', () => {
@@ -236,6 +257,35 @@ describe('Viewer3D', () => {
 
     // 柱 C1 は 主筋の定着・コアと帯筋の3バッチ。セグメント単位には分けない。
     expect(mocks.pickableCounts.at(-1)).toBe(3)
+  })
+
+  it('restores each zone material after row highlighting is cleared', () => {
+    render(<Viewer3D />)
+
+    fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+
+    const anchorageMesh = mocks.pickableMeshes
+      .at(-1)
+      ?.find(({ userData }) => userData.zone === '定着')
+    const coreMesh = mocks.pickableMeshes
+      .at(-1)
+      ?.find(({ userData }) => userData.zone === null)
+    expect(anchorageMesh).toBeDefined()
+    expect(coreMesh).toBeDefined()
+    expect(anchorageMesh?.userData.layer).toBe('main')
+    const baseMaterial = anchorageMesh?.userData.baseMaterial
+    expect(baseMaterial).toBeDefined()
+    expect(baseMaterial).not.toBe(coreMesh?.userData.baseMaterial)
+    expect((anchorageMesh as import('three').Mesh).material).not.toBe(
+      baseMaterial,
+    )
+
+    act(() => useAppStore.getState().setHoverRow(null))
+
+    expect((anchorageMesh as import('three').Mesh).material).toBe(baseMaterial)
   })
 
   it('does not re-frame the camera while an unrelated field is edited', () => {

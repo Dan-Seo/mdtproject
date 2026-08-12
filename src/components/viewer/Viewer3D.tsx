@@ -6,11 +6,26 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
-import type { ColumnSection, Member } from '@/domain/model/member'
-import { findSection, type Project, type Story } from '@/domain/model/project'
+import type {
+  ColumnSection,
+  GirderSection,
+  Member,
+} from '@/domain/model/member'
+import {
+  findSection,
+  girderSpan,
+  girderSupport,
+  type GirderSpan,
+  type Project,
+  type Story,
+} from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
+import type { UnsupportedReason } from '@/domain/model/unsupported'
 import { quantityLineId, type QuantityLine } from '@/domain/quantity'
-import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import {
+  useTakeoff,
+  type UnsupportedMember,
+} from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
@@ -39,6 +54,8 @@ const MILLIMETRES_TO_SCENE = 0.001
 const CYLINDER_RADIAL_SEGMENTS = 8
 const CONTROLS_DAMPING = 0.08
 const REBAR_COLOR = 0xb8b3a6
+const ANCHORAGE_COLOR = 0x4f9f98
+const LAP_COLOR = 0xc2a34f
 const HIGHLIGHT_COLOR = 0xf54e00
 const OUTLINE_COLOR = 0x4a483c
 const BACKGROUND_COLOR = 0x1b1a14
@@ -54,6 +71,7 @@ const AUTO_ROTATE_DELAY_MS = 8000
 const AUTO_ROTATE_SPEED = 0.5
 
 interface SelectedColumnView {
+  kind: '柱'
   member: Member
   section: ColumnSection
   story: Story
@@ -61,8 +79,25 @@ interface SelectedColumnView {
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
 
+interface SelectedGirderView {
+  kind: '大梁'
+  member: Member
+  section: GirderSection
+  story: Story
+  span: GirderSpan
+  supportWidths: { start: number; end: number }
+  rebars: Rebar[]
+  rowIds: Map<Rebar['id'], QuantityLine['id']>
+}
+
+type SelectedSupportedMemberView = SelectedColumnView | SelectedGirderView
+
+type SelectedMemberView =
+  | { status: 'supported'; view: SelectedSupportedMemberView }
+  | { status: 'unsupported'; member: Member; reason: UnsupportedReason }
+
 type ViewerView =
-  | { mode: 'member'; column: SelectedColumnView }
+  | { mode: 'member'; member: SelectedSupportedMemberView }
   | { mode: 'building'; layout: BuildingLayout }
 
 interface CameraTween {
@@ -81,7 +116,6 @@ interface ViewerRuntime {
   envTexture: THREE.Texture
   content: THREE.Group | null
   contentMaterials: THREE.Material[]
-  normalMaterial: THREE.MeshStandardMaterial | null
   highlightMaterial: THREE.MeshStandardMaterial | null
   concreteNormalMaterial: THREE.MeshStandardMaterial | null
   concreteSelectedMaterial: THREE.MeshStandardMaterial | null
@@ -115,23 +149,93 @@ function disposeContent(runtime: ViewerRuntime): void {
 
   runtime.content = null
   runtime.contentMaterials = []
-  runtime.normalMaterial = null
   runtime.highlightMaterial = null
   runtime.concreteNormalMaterial = null
   runtime.concreteSelectedMaterial = null
   runtime.pickableMeshes = []
 }
 
-function columnBounds(view: SelectedColumnView): Bounds {
-  const { section, story, rebars } = view
-  const bounds: Bounds = {
-    min: [0, 0, 0],
-    max: [section.b, story.height, section.d],
+interface ConcreteBox {
+  size: Point3
+  center: Point3
+}
+
+function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
+  if (view.kind === '柱') {
+    const { section, story } = view
+    return [
+      {
+        size: [section.b, story.height, section.d],
+        center: [section.b / 2, story.height / 2, section.d / 2],
+      },
+    ]
   }
 
-  for (const rebar of rebars) {
+  const { section, span, story, supportWidths } = view
+  const stubHeight = Math.min(story.height, section.depth * 2)
+  const centerY = section.depth / 2
+  const centerZ = section.b / 2
+
+  return [
+    {
+      size: [span.clear, section.depth, section.b],
+      center: [span.clear / 2, centerY, centerZ],
+    },
+    {
+      size: [
+        span.startSupportLengthAlongAxisMm,
+        stubHeight,
+        supportWidths.start,
+      ],
+      center: [
+        -span.startSupportLengthAlongAxisMm / 2,
+        centerY,
+        centerZ,
+      ],
+    },
+    {
+      size: [
+        span.endSupportLengthAlongAxisMm,
+        stubHeight,
+        supportWidths.end,
+      ],
+      center: [
+        span.clear + span.endSupportLengthAlongAxisMm / 2,
+        centerY,
+        centerZ,
+      ],
+    },
+  ]
+}
+
+function memberBounds(view: SelectedSupportedMemberView): Bounds {
+  const boxes = concreteBoxes(view)
+  const first = boxes[0]
+  const bounds: Bounds = {
+    min: first.center.map(
+      (coordinate, axis) => coordinate - first.size[axis] / 2,
+    ) as Point3,
+    max: first.center.map(
+      (coordinate, axis) => coordinate + first.size[axis] / 2,
+    ) as Point3,
+  }
+
+  for (const box of boxes.slice(1)) {
+    for (let axis = 0; axis < box.center.length; axis += 1) {
+      bounds.min[axis] = Math.min(
+        bounds.min[axis],
+        box.center[axis] - box.size[axis] / 2,
+      )
+      bounds.max[axis] = Math.max(
+        bounds.max[axis],
+        box.center[axis] + box.size[axis] / 2,
+      )
+    }
+  }
+
+  for (const rebar of view.rebars) {
     const radius = rebarRadius(rebar.size)
-    for (const segment of rebarSegments(rebar, section)) {
+    for (const segment of rebarSegments(rebar, view.section)) {
       for (const point of [segment.from, segment.to]) {
         for (let axis = 0; axis < point.length; axis += 1) {
           bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
@@ -144,38 +248,15 @@ function columnBounds(view: SelectedColumnView): Bounds {
   return bounds
 }
 
-function addMemberOutline(
+function addMemberConcrete(
   content: THREE.Group,
-  view: SelectedColumnView,
+  view: SelectedSupportedMemberView,
   materials: THREE.Material[],
 ): void {
-  const { section, story } = view
-  const box = new THREE.BoxGeometry(
-    section.b * MILLIMETRES_TO_SCENE,
-    story.height * MILLIMETRES_TO_SCENE,
-    section.d * MILLIMETRES_TO_SCENE,
-  )
-  const edges = new THREE.EdgesGeometry(box)
-  const material = new THREE.LineBasicMaterial({ color: OUTLINE_COLOR })
-  const outline = new THREE.LineSegments(edges, material)
-
-  box.dispose()
-  outline.position.set(
-    (section.b * MILLIMETRES_TO_SCENE) / 2,
-    (story.height * MILLIMETRES_TO_SCENE) / 2,
-    (section.d * MILLIMETRES_TO_SCENE) / 2,
-  )
-  content.add(outline)
-  materials.push(material)
-}
-
-function addConcreteSolid(
-  content: THREE.Group,
-  view: SelectedColumnView,
-  materials: THREE.Material[],
-): void {
-  const { section, story } = view
-  const material = new THREE.MeshStandardMaterial({
+  const outlineMaterial = new THREE.LineBasicMaterial({
+    color: OUTLINE_COLOR,
+  })
+  const concreteMaterial = new THREE.MeshStandardMaterial({
     color: CONCRETE_COLOR,
     transparent: true,
     opacity: 0.14,
@@ -183,23 +264,27 @@ function addConcreteSolid(
     metalness: 0,
     depthWrite: false,
   })
-  const solid = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      section.b * MILLIMETRES_TO_SCENE,
-      story.height * MILLIMETRES_TO_SCENE,
-      section.d * MILLIMETRES_TO_SCENE,
-    ),
-    material,
-  )
 
-  solid.position.set(
-    (section.b * MILLIMETRES_TO_SCENE) / 2,
-    (story.height * MILLIMETRES_TO_SCENE) / 2,
-    (section.d * MILLIMETRES_TO_SCENE) / 2,
-  )
-  solid.receiveShadow = true
-  content.add(solid)
-  materials.push(material)
+  for (const box of concreteBoxes(view)) {
+    const geometry = new THREE.BoxGeometry(
+      box.size[0] * MILLIMETRES_TO_SCENE,
+      box.size[1] * MILLIMETRES_TO_SCENE,
+      box.size[2] * MILLIMETRES_TO_SCENE,
+    )
+    const outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      outlineMaterial,
+    )
+    const solid = new THREE.Mesh(geometry, concreteMaterial)
+    const center = vector(box.center)
+
+    outline.position.copy(center)
+    solid.position.copy(center)
+    solid.receiveShadow = true
+    content.add(outline, solid)
+  }
+
+  materials.push(outlineMaterial, concreteMaterial)
 }
 
 function addGround(
@@ -317,6 +402,9 @@ function createBatchMesh(
   const mesh = new THREE.Mesh(merged, material)
   mesh.castShadow = true
   mesh.userData.rowId = batch.rowId
+  mesh.userData.layer = batch.layer
+  mesh.userData.zone = batch.zone
+  mesh.userData.baseMaterial = material
   return mesh
 }
 
@@ -372,14 +460,17 @@ function applyHighlight(
   runtime: ViewerRuntime,
   hoverRowId: string | null,
 ): void {
-  const { normalMaterial, highlightMaterial } = runtime
-  if (normalMaterial === null || highlightMaterial === null) return
+  const { highlightMaterial } = runtime
+  if (highlightMaterial === null) return
 
   for (const mesh of runtime.pickableMeshes) {
+    const baseMaterial: unknown = mesh.userData.baseMaterial
+    if (!(baseMaterial instanceof THREE.Material)) continue
+
     mesh.material =
       hoverRowId !== null && mesh.userData.rowId === hoverRowId
         ? highlightMaterial
-        : normalMaterial
+        : baseMaterial
   }
 }
 
@@ -449,12 +540,12 @@ function rebuildScene(
     rebuildBuildingScene(runtime, view.layout)
     return
   }
-  rebuildMemberScene(runtime, view.column, hoverRowId)
+  rebuildMemberScene(runtime, view.member, hoverRowId)
 }
 
 function rebuildMemberScene(
   runtime: ViewerRuntime,
-  view: SelectedColumnView,
+  view: SelectedSupportedMemberView,
   hoverRowId: string | null,
 ): void {
   if (view.rebars.length === 0) {
@@ -463,8 +554,18 @@ function rebuildMemberScene(
   }
 
   const content = new THREE.Group()
-  const normalMaterial = new THREE.MeshStandardMaterial({
+  const coreMaterial = new THREE.MeshStandardMaterial({
     color: REBAR_COLOR,
+    metalness: 0.6,
+    roughness: 0.35,
+  })
+  const anchorageMaterial = new THREE.MeshStandardMaterial({
+    color: ANCHORAGE_COLOR,
+    metalness: 0.6,
+    roughness: 0.35,
+  })
+  const lapMaterial = new THREE.MeshStandardMaterial({
+    color: LAP_COLOR,
     metalness: 0.6,
     roughness: 0.35,
   })
@@ -475,12 +576,21 @@ function rebuildMemberScene(
     emissive: HIGHLIGHT_COLOR,
     emissiveIntensity: 0.35,
   })
-  const materials: THREE.Material[] = [normalMaterial, highlightMaterial]
+  const materials: THREE.Material[] = [
+    coreMaterial,
+    anchorageMaterial,
+    lapMaterial,
+    highlightMaterial,
+  ]
+  const zoneMaterials = {
+    core: coreMaterial,
+    定着: anchorageMaterial,
+    重ね継手: lapMaterial,
+  } satisfies Record<'core' | NonNullable<RebarBatch['zone']>, THREE.MeshStandardMaterial>
   const pickableMeshes: THREE.Mesh[] = []
-  const bounds = columnBounds(view)
+  const bounds = memberBounds(view)
 
-  addMemberOutline(content, view, materials)
-  addConcreteSolid(content, view, materials)
+  addMemberConcrete(content, view, materials)
   addGround(content, bounds, materials)
 
   const entries = view.rebars.map((rebar) => {
@@ -492,7 +602,10 @@ function rebuildMemberScene(
   })
 
   for (const batch of rebarBatches(entries, view.section)) {
-    const mesh = createBatchMesh(batch, normalMaterial)
+    const mesh = createBatchMesh(
+      batch,
+      batch.zone === null ? zoneMaterials.core : zoneMaterials[batch.zone],
+    )
     if (mesh === null) continue
     content.add(mesh)
     pickableMeshes.push(mesh)
@@ -500,7 +613,6 @@ function rebuildMemberScene(
 
   runtime.content = content
   runtime.contentMaterials = materials
-  runtime.normalMaterial = normalMaterial
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
@@ -623,19 +735,31 @@ function rebuildBuildingScene(
  * `lines` 배열은 새로 만들어지므로 참조 비교로는 매번 재생성된다 — 備考 한 글자에
  * 기둥 전체를 폐기하고 다시 만들지 않으려면 내용으로 비교해야 한다.
  */
-function geometryKey(view: SelectedColumnView): string {
+function geometryKey(view: SelectedSupportedMemberView): string {
+  const sectionGeometry =
+    view.kind === '柱'
+      ? [view.section.b, view.section.d, view.section.hoop]
+      : [
+          view.section.b,
+          view.section.depth,
+          view.section.stirrup,
+          view.span.clear,
+          view.span.startSupportLengthAlongAxisMm,
+          view.span.endSupportLengthAlongAxisMm,
+          view.supportWidths,
+        ]
+
   return JSON.stringify([
     view.member.id,
-    view.section.b,
-    view.section.d,
-    view.section.hoop,
+    sectionGeometry,
     view.story.height,
-    view.rebars.map(({ role, size, count, closed, points }) => [
+    view.rebars.map(({ role, size, count, closed, points, zones }) => [
       role,
       size,
       count,
       closed,
       points,
+      zones,
     ]),
     [...view.rowIds],
   ])
@@ -651,28 +775,12 @@ function buildingGeometryKey(project: Project): string {
   ])
 }
 
-function selectedColumnView(
-  memberId: string | null,
-  selectedGroup: string | null,
-  project: ReturnType<typeof useAppStore.getState>['project'],
+function selectedRows(
+  memberId: string,
+  selectedGroup: string,
   rebars: Rebar[],
   lines: QuantityLine[],
-): SelectedColumnView | null {
-  if (memberId === null || selectedGroup === null) return null
-
-  const member = project.members.find(({ id }) => id === memberId)
-  if (member === undefined || member.kind !== '柱') return null
-
-  const section = findSection(project, member.sectionId)
-  if (section.kind !== '柱') {
-    throw new Error(`柱 member references a non-柱 section: ${member.id}`)
-  }
-
-  const story = project.stories.find(({ id }) => id === member.storyId)
-  if (story === undefined) {
-    throw new Error(`Story not found: ${member.storyId}`)
-  }
-
+): Pick<SelectedSupportedMemberView, 'rebars' | 'rowIds'> {
   const selectedRebars = rebars.filter((rebar) => rebar.memberId === memberId)
   const selectedLineIds = new Set(
     lines.filter(({ groupId }) => groupId === selectedGroup).map(({ id }) => id),
@@ -683,7 +791,104 @@ function selectedColumnView(
       .filter(([, lineId]) => selectedLineIds.has(lineId)),
   )
 
-  return { member, section, story, rebars: selectedRebars, rowIds }
+  return { rebars: selectedRebars, rowIds }
+}
+
+function girderSupportWidths(
+  project: Project,
+  member: Member,
+): { start: number; end: number } {
+  if (member.kind !== '大梁' || !('axis' in member.position)) {
+    throw new Error(`girderSupportWidths requires a 大梁: ${member.id}`)
+  }
+
+  const { axis, ix, iy } = member.position
+  const endIx = axis === 'X' ? ix + 1 : ix
+  const endIy = axis === 'Y' ? iy + 1 : iy
+  const supportWidth = (supportIx: number, supportIy: number): number => {
+    const support = project.members.find(
+      (candidate) =>
+        candidate.kind === '柱' &&
+        candidate.storyId === member.storyId &&
+        !('axis' in candidate.position) &&
+        candidate.position.ix === supportIx &&
+        candidate.position.iy === supportIy,
+    )
+    if (support === undefined) {
+      throw new Error(`Missing support 柱 for 大梁: ${member.id}`)
+    }
+
+    const section = findSection(project, support.sectionId)
+    if (section.kind !== '柱') {
+      throw new Error(`柱 member references a non-柱 section: ${support.id}`)
+    }
+    return axis === 'X' ? section.d : section.b
+  }
+
+  return {
+    start: supportWidth(ix, iy),
+    end: supportWidth(endIx, endIy),
+  }
+}
+
+function selectedMemberView(
+  memberId: string | null,
+  selectedGroup: string | null,
+  project: Project,
+  rebars: Rebar[],
+  lines: QuantityLine[],
+  unsupportedMembers: UnsupportedMember[],
+): SelectedMemberView | null {
+  if (memberId === null || selectedGroup === null) return null
+
+  const member = project.members.find(({ id }) => id === memberId)
+  if (member === undefined) return null
+
+  const section = findSection(project, member.sectionId)
+  const story = project.stories.find(({ id }) => id === member.storyId)
+  if (story === undefined) {
+    throw new Error(`Story not found: ${member.storyId}`)
+  }
+  const rows = selectedRows(memberId, selectedGroup, rebars, lines)
+
+  if (member.kind === '柱') {
+    if (section.kind !== '柱') {
+      throw new Error(`柱 member references a non-柱 section: ${member.id}`)
+    }
+    return {
+      status: 'supported',
+      view: { kind: '柱', member, section, story, ...rows },
+    }
+  }
+
+  if (section.kind !== '大梁') {
+    throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
+  }
+
+  const unsupported = unsupportedMembers.find(
+    ({ memberId: unsupportedId }) => unsupportedId === memberId,
+  )
+  if (unsupported !== undefined) {
+    return { status: 'unsupported', member, reason: unsupported.reason }
+  }
+
+  const support = girderSupport(project, member)
+  if (!support.supported) {
+    return { status: 'unsupported', member, reason: support.reason }
+  }
+
+  return {
+    status: 'supported',
+    view: {
+      kind: '大梁',
+      member,
+      section,
+      story,
+      span: girderSpan(project, member),
+      supportWidths: girderSupportWidths(project, member),
+      ...rows,
+    },
+  }
 }
 
 export function Viewer3D() {
@@ -697,7 +902,7 @@ export function Viewer3D() {
   const selectedGroup = useAppStore(({ sel }) => sel.group)
   const hoverRowId = useAppStore(({ hoverRowId: rowId }) => rowId)
   const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
-  const { rebars, lines } = useTakeoff()
+  const { rebars, lines, unsupportedMembers } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
   const selectMemberRef = useRef(selectMember)
   const hoverRowIdRef = useRef(hoverRowId)
@@ -710,30 +915,41 @@ export function Viewer3D() {
     () => (viewerMode === 'building' ? buildingLayout(project, rebars) : null),
     [project, rebars, viewerMode],
   )
-  const column = useMemo(
+  const selectedMember = useMemo(
     () =>
       viewerMode === 'member'
-        ? selectedColumnView(
+        ? selectedMemberView(
             selectedMemberId,
             selectedGroup,
             project,
             rebars,
             lines,
+            unsupportedMembers,
           )
         : null,
-    [lines, project, rebars, selectedGroup, selectedMemberId, viewerMode],
+    [
+      lines,
+      project,
+      rebars,
+      selectedGroup,
+      selectedMemberId,
+      unsupportedMembers,
+      viewerMode,
+    ],
   )
   const view = useMemo((): ViewerView | null => {
     if (layout !== null) return { mode: 'building', layout }
-    if (column !== null) return { mode: 'member', column }
+    if (selectedMember?.status === 'supported') {
+      return { mode: 'member', member: selectedMember.view }
+    }
     return null
-  }, [column, layout])
+  }, [layout, selectedMember])
   const viewRef = useRef(view)
   viewRef.current = view
   const sceneKey = useMemo(() => {
     if (view === null) return ''
     if (view.mode === 'building') return `b:${buildingGeometryKey(project)}`
-    return `m:${geometryKey(view.column)}`
+    return `m:${geometryKey(view.member)}`
   }, [project, view])
 
   useEffect(() => {
@@ -789,7 +1005,6 @@ export function Viewer3D() {
       envTexture,
       content: null,
       contentMaterials: [],
-      normalMaterial: null,
       highlightMaterial: null,
       concreteNormalMaterial: null,
       concreteSelectedMaterial: null,
@@ -912,9 +1127,8 @@ export function Viewer3D() {
     )
   }, [locale, viewerMode])
 
-  const selectedKind = project.members.find(
-    ({ id }) => id === selectedMemberId,
-  )?.kind
+  const unsupportedReason =
+    selectedMember?.status === 'unsupported' ? selectedMember.reason : null
 
   return (
     <div ref={mountRef} className={styles.viewer}>
@@ -928,8 +1142,14 @@ export function Viewer3D() {
       </div>
       {view === null && (
         <div className={styles.empty}>
-          {selectedKind === '大梁'
-            ? t(locale, 'viewer.girderPending')
+          {unsupportedReason !== null
+            ? `${t(locale, 'viewer.unsupported.title')}: ${t(
+                locale,
+                `viewer.unsupported.reason.${unsupportedReason}`,
+              )} — ${t(
+                locale,
+                `viewer.unsupported.plan.${unsupportedReason}`,
+              )}`
             : t(locale, 'viewer.empty')}
         </div>
       )}
