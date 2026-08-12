@@ -21,7 +21,8 @@ export type GirderEndDetail =
        * 지배하면 그 길이는 表5.3.4에 없는 값이다 — L1h로 표시하면 근거가 거짓이 된다.
        */
       lengthRule: 'anchorage.L1h' | 'anchorage.bent.tail.minimum'
-      projectionRule: 'anchorage.La'
+      /** 投影長도 `max(La, 柱せい×3/4)` — 근거는 이긴 항에 붙는다 */
+      projectionRule: 'anchorage.La' | 'anchorage.bent.projection.minimum'
       /** max(L1h, 投影＋余長下限) — 算出式이 어느 항이 지배했는지 밝힐 수 있게 원항도 싣는다 */
       lengthMm: number
       l1hMm: number
@@ -151,7 +152,10 @@ export function resolveGirderEnd(
     kind: '折曲げ定着',
     lengthRule:
       l1hMm >= tailMinimumMm ? 'anchorage.L1h' : 'anchorage.bent.tail.minimum',
-    projectionRule: 'anchorage.La',
+    projectionRule:
+      laMm >= projectionMinimumMm
+        ? 'anchorage.La'
+        : 'anchorage.bent.projection.minimum',
     lengthMm,
     l1hMm,
     tailMinimumMm,

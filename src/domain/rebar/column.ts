@@ -5,12 +5,6 @@ import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import { stirrupPositions } from './stirrup-layout'
 
-/**
- * 柱 帯筋의 첫 본은 配置区間 시작면에 놓는다. 大梁 あばら筋과 달리 断面一覧에
- * 오프셋 입력이 없다 — 規準値가 아니라 이 제품의 작도 기준이다.
- */
-const HOOP_START_OFFSET_MM = 0
-
 export interface ColumnRebarInput {
   member: Member
   section: ColumnSection
@@ -160,10 +154,20 @@ export function generateColumnRebar(
     )
   }
 
+  // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
+  const hoopStartOffsetMm = section.hoop.startOffsetMm
+
+  if (hoopSpan <= 2 * hoopStartOffsetMm) {
+    throw new Error(
+      `帯筋 配置区間 must be positive: ${member.id} ` +
+        `(配置区間 ${hoopSpan} ≤ 2×初期オフセット ${hoopStartOffsetMm})`,
+    )
+  }
+
   const hoopLayout = stirrupPositions(
     hoopSpan,
     section.hoop.pitch,
-    HOOP_START_OFFSET_MM,
+    hoopStartOffsetMm,
   )
   const hoopCount = hoopLayout.positionsMm.length
   const fabricationCoverFormula =
@@ -219,7 +223,7 @@ export function generateColumnRebar(
       axis: 'y',
       clearMm: hoopSpan,
       pitchMm: section.hoop.pitch,
-      startOffsetMm: HOOP_START_OFFSET_MM,
+      startOffsetMm: hoopStartOffsetMm,
       lastGapMm: hoopLayout.lastGapMm,
     },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
@@ -230,7 +234,7 @@ export function generateColumnRebar(
       `${fabricationCoverFormula} ／ ` +
       `本数 ＝ 帯筋配置（配置区間 ${hoopSpan}［階高 ${story.height} ` +
       `− 上部大梁せい ${beamDepthAbove}］、ピッチ ${section.hoop.pitch}、` +
-      `始端オフセット ${HOOP_START_OFFSET_MM}）＝ ${hoopCount}`,
+      `始端オフセット ${hoopStartOffsetMm}）＝ ${hoopCount}`,
   }
 
   return [main, hoop]

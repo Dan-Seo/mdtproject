@@ -1354,14 +1354,15 @@ export function Viewer3D() {
     const rebar = selectedSupported.rebars.find(
       (candidate) => candidate.role === role,
     )
-    const pitchMm =
-      selectedSupported.kind === '柱'
-        ? selectedSupported.section.hoop.pitch
-        : selectedSupported.section.stirrup.pitch
-
+    // 피치도 placement에서 읽는다 — 단면에서 다시 집어오면 한 칩 안에 출처가
+    // 둘이 되고, 배치 규칙이 도메인 밖에 한 벌 더 생긴다.
     return rebar?.placement === undefined
       ? null
-      : { role, pitchMm, lastGapMm: rebar.placement.lastGapMm }
+      : {
+          role,
+          pitchMm: rebar.placement.pitchMm,
+          lastGapMm: rebar.placement.lastGapMm,
+        }
   })()
 
   return (

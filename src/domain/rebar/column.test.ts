@@ -28,7 +28,7 @@ const section: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 const story: Story = { id: '1F', name: '1階', height: 4200 }

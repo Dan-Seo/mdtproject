@@ -68,12 +68,34 @@ describe('SectionTable', () => {
     expect(section.stirrup.startOffsetMm).toBe(75)
   })
 
-  it('offers no 初期オフセット field on a 柱 — 帯筋 has no such input', () => {
+  it('keeps a user change to 帯筋 初期オフセット in Project', () => {
+    // 帯筋 오프셋도 本数(=물량)를 좌우하므로 제품 상수가 아니라 입력이다.
     render(<SectionTable />)
 
-    expect(
-      screen.queryByLabelText('C1 帯筋 初期オフセット'),
-    ).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('C1 帯筋 初期オフセット'), {
+      target: { value: '50' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-C1')
+    if (section?.kind !== '柱') throw new Error('Expected 柱 section')
+    expect(section.hoop.startOffsetMm).toBe(50)
+  })
+
+  it('accepts 0 for 初期オフセット, unlike 寸法・ピッチ fields', () => {
+    // 柱의 기본값이 0이다 — min=1인 공용 입력을 그대로 쓰면 입력조차 못 한다.
+    render(<SectionTable />)
+
+    const offset = screen.getByLabelText('G1 あばら筋 初期オフセット')
+    expect(offset).toHaveAttribute('min', '0')
+    fireEvent.change(offset, { target: { value: '0' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.stirrup.startOffsetMm).toBe(0)
   })
 
   it('selects a representative member when a section row is clicked', () => {

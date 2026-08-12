@@ -36,6 +36,11 @@ export interface ColumnSection {
   hoop: {
     size: BarSize
     pitch: number
+    /**
+     * 第1帯筋을 配置区間 시작면에서 얼마나 띄우는지. 規準에 값이 없고 本数를
+     * 좌우하므로 제품이 정하지 않는다 — 断面一覧의 입력이다 (ADR-012).
+     */
+    startOffsetMm: number
   }
 }
 

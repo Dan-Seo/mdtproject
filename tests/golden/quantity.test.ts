@@ -31,7 +31,7 @@ const section: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 1 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 function projectFor(memberClasses: string[]): Project {
