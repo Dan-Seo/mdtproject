@@ -6,6 +6,7 @@
     "url": "https://www.mlit.go.jp/common/001178206.pdf",
     "sha256": "801d7917e81369dd4eac551af76f00aba6fa7d7e8224703f162a0435b46d9a30",
     "chapter": "第4編 躯体 第3章 鉄筋 第2節 鉄筋の計測・計算",
+    "chapterShort": "第4編第3章第2節",
     "pageNote": "printedPage は紙面に印刷された頁番号、pdfPage は PDF の通し頁。この文書では pdfPage = printedPage + 5。ルールパックの source.page は printedPage で統一する。"
   },
 
@@ -49,7 +50,7 @@
       "pdfPage": 20,
       "quote": "フープ、スタラップの長さは、それぞれ柱、基礎梁、梁及び壁梁のコンクリートの断面の設計寸法による周長を鉄筋の長さとし、フックはないものとする。",
       "status": "covered",
-      "coveredBy": "hoopDesignLengthMm"
+      "coveredBy": "ルールパック measure.hoop.length.addition ＋ hoopDesignLengthMm"
     },
     {
       "id": "1通則3)",
@@ -89,7 +90,7 @@
       "pdfPage": 20,
       "quote": "鉄筋の割付本数が設計図書に記載されていない場合は、その部分の長さを鉄筋の間隔で除し、小数点以下第１位を切り上げた整数（同一の部分で間隔の異なる場合はその整数の和）に１を加える。",
       "status": "covered",
-      "coveredBy": "distributionCount"
+      "coveredBy": "ルールパック measure.distribution.addition ＋ distributionCount"
     },
     {
       "id": "1通則8)",

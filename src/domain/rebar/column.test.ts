@@ -143,9 +143,11 @@ describe('generateColumnRebar', () => {
       'lap.L1',
       'anchorage.L1',
     ])
-    // 帯筋の数量は積算基準の断面周長で決まる — かぶりは 3D 形状にしか効かず、
-    // フックは 1通則2) が計上しないと定めるので bend.hook135 は引かない。
+    // 帯筋の数量を決めるのは積算基準の2条項だ — それが出典に載らないと、
+    // 数量に効かないかぶり2行だけがその行の根拠として残る。
     expect(byRole(generated, '帯筋').ruleHits.map(({ key }) => key)).toEqual([
+      'measure.hoop.length.addition',
+      'measure.distribution.addition',
       'cover.minimum',
       'cover.fabrication.addition',
     ])
@@ -434,7 +436,6 @@ describe('generateColumnRebar', () => {
       `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
       `加算 ${fabricationAddition} ＝ ${fabricationCover}）`
     expect(main.formula).toContain(fabricationCoverFormula)
-    expect(hoop.formula).toContain(fabricationCoverFormula)
     expect(main.formula).not.toContain('切上げ')
     // 表示される項だけで数量を再現できなければ算出根拠の説明にならない。
     expect(hoop.formula).toContain(
@@ -444,11 +445,11 @@ describe('generateColumnRebar', () => {
     expect(hoop.formula).toContain(
       '設計本数 ＝ ⌈階高 4200 ÷ ピッチ 100⌉ ＋ 1 ＝ 43',
     )
-    // 3D 側の値が数量の項に混ざっていないこと。
-    expect(hoop.formula).toContain(
-      '配置区間 3450［階高 4200 − 上部大梁せい 750］',
-    )
-    expect(hoop.formula).toContain('数量には用いない')
+    // 内訳行は上部大梁せいの違う柱を束ねる。部材ごとに違う 3D 配置の項を
+    // 数量の算出式に載せると、束ねられた他の柱について嘘になる。
+    expect(hoop.formula).not.toContain('配置区間')
+    expect(hoop.formula).not.toContain('上部大梁せい')
+    expect(hoop.formula).not.toContain(fabricationCoverFormula)
   })
 
   it.each([

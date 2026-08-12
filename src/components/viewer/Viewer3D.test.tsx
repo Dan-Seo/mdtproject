@@ -611,7 +611,7 @@ describe('Viewer3D', () => {
     expect(mocks.pickableCounts).toHaveLength(1)
   })
 
-  it('shows 役割・径・本数・設計長さ from the hovered 部材 row', () => {
+  it('shows 役割・径・設計本数・設計長さ from the hovered 部材 row', () => {
     const { result } = renderHook(() => useTakeoff())
     const mainLine = result.current.lines.find(
       ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
@@ -630,7 +630,7 @@ describe('Viewer3D', () => {
     expect(within(tooltip).getByText(mainLine?.role ?? '')).toBeInTheDocument()
     expect(within(tooltip).getByText('径')).toBeInTheDocument()
     expect(within(tooltip).getByText(mainLine?.size ?? '')).toBeInTheDocument()
-    expect(within(tooltip).getByText('本数')).toBeInTheDocument()
+    expect(within(tooltip).getByText('設計本数')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(String(mainLine?.countPerMember))
     expect(within(tooltip).getByText('設計長さ')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)

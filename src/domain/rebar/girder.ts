@@ -204,6 +204,8 @@ function generateStirrup(
   coverRule: RuleHit,
   fabricationCoverAdditionRule: RuleHit,
   fabricationCoverMm: number,
+  hoopLengthAdditionRule: RuleHit,
+  distributionAdditionRule: RuleHit,
 ): Rebar {
   // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
   const startOffsetMm = section.stirrup.startOffsetMm
@@ -233,14 +235,18 @@ function generateStirrup(
   )
   // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
   // かぶりを控除した stirrupWidthMm·stirrupDepthMm は 3D 形状 (points) 専用。
-  const stirrupLengthMm = hoopDesignLengthMm(section.b, section.depth)
+  const stirrupLengthMm = hoopDesignLengthMm(
+    section.b,
+    section.depth,
+    hoopLengthAdditionRule,
+  )
   // 同 （３）梁3)＋1通則7) — 各梁ごとに、その部分の長さ÷間隔。「大梁」は躯体の
   // 区分で柱に接する内法部分なので、割るのは内法長さ。初期オフセットは関与しない。
-  const stirrupCount = distributionCount(span.clear, section.stirrup.pitch)
-  const fabricationCoverFormula =
-    `加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ ` +
-    `加算 ${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}）`
-
+  const stirrupCount = distributionCount(
+    span.clear,
+    section.stirrup.pitch,
+    distributionAdditionRule,
+  )
   return {
     id: `${member.id}|stirrup`,
     memberId: member.id,
@@ -268,15 +274,22 @@ function generateStirrup(
       lastGapMm: layout.lastGapMm,
       positionCount: layout.positionsMm.length,
     },
-    ruleHits: [coverRule, fabricationCoverAdditionRule],
+    ruleHits: [
+      hoopLengthAdditionRule,
+      distributionAdditionRule,
+      coverRule,
+      fabricationCoverAdditionRule,
+    ],
+    // 内訳行は同じ符号の梁を束ねる。内法長さが違っても割付本数が同じなら
+    // 一行になるので、内法長さは代表値だと断る。部材ごとに違う 3D 配置の項は
+    // 束ねられた他の梁について事実でなくなるため、ここには載せない。
     formula:
       `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.depth}) ` +
-      `＝ ${stirrupLengthMm}（数量積算基準 1通則2) — フックは計上しない） ／ ` +
+      `＝ ${stirrupLengthMm}` +
+      `（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
       `設計本数 ＝ ⌈内法長さ ${span.clear} ÷ ピッチ ` +
       `${section.stirrup.pitch}⌉ ＋ 1 ＝ ${stirrupCount}` +
-      `（同 （３）梁3)・1通則7) — 各梁ごと） ／ ` +
-      `3D 形状 ＝ ${fabricationCoverFormula} の内側、` +
-      `始端・終端オフセット ${startOffsetMm}（数量には用いない）`,
+      `（同 （３）梁3)・1通則7) — 各梁ごと、内法長さは代表値）`,
   }
 }
 
@@ -334,8 +347,18 @@ export function generateGirderRebar(
       bendDirection: '上',
     },
   )
-  // 135°フック余長は引かない — 積算基準 1通則2) が「フックはないものとする」と
-  // 定めるため、あばら筋の数量にも 3D 形状にも効かない。
+  // bend.hook135 を引かないのは積算基準 1通則2) が「フックはないものとする」と
+  // 定めるからで、その事実自体を measure.hoop.length.addition が出典付きで持つ。
+  const hoopLengthAdditionRule = lookupRule(
+    pack,
+    'measure.hoop.length.addition',
+    {},
+  )
+  const distributionAdditionRule = lookupRule(
+    pack,
+    'measure.distribution.addition',
+    {},
+  )
   const stirrups = run.members.map((member, index) =>
     generateStirrup(
       member,
@@ -344,6 +367,8 @@ export function generateGirderRebar(
       coverRule,
       fabricationCoverAdditionRule,
       fabricationCoverMm,
+      hoopLengthAdditionRule,
+      distributionAdditionRule,
     ),
   )
 

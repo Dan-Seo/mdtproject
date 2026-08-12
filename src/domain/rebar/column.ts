@@ -65,8 +65,19 @@ export function generateColumnRebar(
     commonConditions,
   )
   const lapRule = lookupRule(pack, 'lap.L1', commonConditions)
-  // 135°フック余長は帯筋の数量に効かない — 積算基準 1通則2) が「フックはない
-  // ものとする」と定めるため、bend.hook135 はここでは引かない。
+  // 帯筋の数量を決めるのは積算基準の2条項だ。bend.hook135 を引かないのは
+  // 1通則2) が「フックはないものとする」と定めるからで、その事実自体を
+  // measure.hoop.length.addition が出典付きで持つ。
+  const hoopLengthAdditionRule = lookupRule(
+    pack,
+    'measure.hoop.length.addition',
+    {},
+  )
+  const distributionAdditionRule = lookupRule(
+    pack,
+    'measure.distribution.addition',
+    {},
+  )
 
   const minimumCover = millimetres(coverRule)
   const fabricationCoverAddition = millimetres(
@@ -145,7 +156,11 @@ export function generateColumnRebar(
 
   // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
   // かぶりを控除した上の hoopWidth·hoopDepth は 3D 形状 (points) 専用である。
-  const hoopLength = hoopDesignLengthMm(section.b, section.d)
+  const hoopLength = hoopDesignLengthMm(
+    section.b,
+    section.d,
+    hoopLengthAdditionRule,
+  )
 
   // 上部大梁せい가 階高 이상이면 배치 구간이 사라져 本数가 0 이하로 샌다 —
   // 加工寸法 가드와 같은 이유로 실패한다.
@@ -177,7 +192,11 @@ export function generateColumnRebar(
   // 数量は積算基準 （２）柱3)＋1通則7) — 各階ごとに、その部分の長さ÷間隔。
   // 「各階柱」は躯体の区分で各階床板上面間なので、割るのは内法ではなく階高である。
   // 配置区間 hoopSpan と初期オフセットは 3D 形状 (placement) 専用。
-  const hoopCount = distributionCount(story.height, section.hoop.pitch)
+  const hoopCount = distributionCount(
+    story.height,
+    section.hoop.pitch,
+    distributionAdditionRule,
+  )
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
     `加算 ${fabricationCoverAddition} ＝ ${fabricationCover}）`
@@ -235,15 +254,20 @@ export function generateColumnRebar(
       lastGapMm: hoopLayout.lastGapMm,
       positionCount: hoopLayout.positionsMm.length,
     },
-    ruleHits: [coverRule, fabricationCoverAdditionRule],
+    ruleHits: [
+      hoopLengthAdditionRule,
+      distributionAdditionRule,
+      coverRule,
+      fabricationCoverAdditionRule,
+    ],
+    // 内訳行は複数の柱を束ねる。部材ごとに違う 3D 配置の項をここに書くと、
+    // 束ねられた他の柱について事実でない根拠を表示することになる —
+    // 数量を決めた項だけを載せ、配置は placement が持つ。
     formula:
       `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.d}) ` +
-      `＝ ${hoopLength}（数量積算基準 1通則2) — フックは計上しない） ／ ` +
+      `＝ ${hoopLength}（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
       `設計本数 ＝ ⌈階高 ${story.height} ÷ ピッチ ${section.hoop.pitch}⌉ ＋ 1 ` +
-      `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと） ／ ` +
-      `3D 形状 ＝ ${fabricationCoverFormula} の内側、配置区間 ${hoopSpan}` +
-      `［階高 ${story.height} − 上部大梁せい ${beamDepthAbove}］、` +
-      `始端・終端オフセット ${hoopStartOffsetMm}（数量には用いない）`,
+      `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと）`,
   }
 
   return [main, hoop]

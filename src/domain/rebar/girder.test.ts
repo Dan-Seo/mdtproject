@@ -403,9 +403,14 @@ describe('generateGirderRebar', () => {
     ).toEqual(bentMainRules)
     expect(
       byRole(generated, 'あばら筋').ruleHits.map(({ key }) => key),
-    // あばら筋の数量は積算基準の断面周長で決まる — かぶりは 3D 形状にしか効かず、
-    // フックは 1通則2) が計上しないと定めるので bend.hook135 は引かない。
-    ).toEqual(['cover.minimum', 'cover.fabrication.addition'])
+    // あばら筋の数量を決めるのは積算基準の2条項だ — それが出典に載らないと、
+    // 数量に効かないかぶり2行だけがその行の根拠として残る。
+    ).toEqual([
+      'measure.hoop.length.addition',
+      'measure.distribution.addition',
+      'cover.minimum',
+      'cover.fabrication.addition',
+    ])
 
     for (const rebar of generated) {
       expect(new Set(rebar.ruleHits).size).toBe(rebar.ruleHits.length)
@@ -431,7 +436,17 @@ describe('generateGirderRebar', () => {
       expect(main.formula).toContain(coverFormula)
     }
 
-    expect(byRole(generated, 'あばら筋').formula).toContain(coverFormula)
+    // あばら筋の数量にかぶりは効かない（1通則2)）。内訳行は内法長さの違う梁を
+    // 束ねうるので、部材ごとに違う 3D 配置の項も数量の算出式には載せない。
+    const stirrupFormula = byRole(generated, 'あばら筋').formula
+    expect(stirrupFormula).not.toContain(coverFormula)
+    expect(stirrupFormula).toContain(
+      '設計長さ ＝ 断面の設計寸法による周長 2×(400＋750) ＝ 2300',
+    )
+    expect(stirrupFormula).toContain(
+      '設計本数 ＝ ⌈内法長さ 5200 ÷ ピッチ 100⌉ ＋ 1 ＝ 53',
+    )
+    expect(stirrupFormula).toContain('内法長さは代表値')
   })
 
   it('carries the 柱 かぶり row that decided the end condition, not just the 大梁 one', () => {

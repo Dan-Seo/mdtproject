@@ -13,7 +13,7 @@ import {
 } from '../../src/domain/model/project'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
-import { lookupUnitMass } from '../../src/domain/rules/lookup'
+import { lookupRule, lookupUnitMass } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity-r5-ch3.json'
 
@@ -142,7 +142,14 @@ function roleOf(rebars: ReturnType<typeof columnRebarFor>, role: string) {
 
 describe('公共建築数量積算基準 令和5年改定 第4編第3章 fixture', () => {
   it('carries the source identity needed to re-check the original', () => {
-    for (const field of ['doc', 'edition', 'url', 'sha256', 'chapter']) {
+    for (const field of [
+      'doc',
+      'edition',
+      'url',
+      'sha256',
+      'chapter',
+      'chapterShort',
+    ]) {
       expect(fixture.source).toHaveProperty(field)
       expect(fixture.source[field as keyof typeof fixture.source]).not.toBe('')
     }
@@ -183,6 +190,41 @@ describe('1通則 前文 — 設計長さ × JIS の単位質量', () => {
 
     expect(unitMass.source.short).toBe('JIS G 3112')
     expect(unitMass.unit).toBe('kg/m')
+  })
+})
+
+describe('計測規則の出典がルールパックに載っている', () => {
+  // 数量を決めた条項が RuleHit にならないと、内訳行の出典チップにはその数量に
+  // 効かないかぶり行だけが残る。出典表示は法的義務なので空白にできない。
+  const cited = [
+    { key: 'measure.hoop.length.addition', clause: '1通則2)' },
+    { key: 'measure.distribution.addition', clause: '1通則7)' },
+  ]
+
+  it.each(cited)('$key cites $clause with its printed page', ({ key, clause }) => {
+    const entry = fixture.clauses.find(({ id }) => id === clause)!
+    const hit = lookupRule(jpMlitRulePack, key, {})
+
+    expect(hit.source.doc).toBe(fixture.source.doc)
+    expect(hit.source.edition).toBe(fixture.source.edition)
+    expect(hit.source.section).toBe(
+      `${fixture.source.chapterShort} ${clause}`,
+    )
+    expect(hit.source.page).toBe(entry.printedPage)
+    // 原文に明記された条項なので推定ではない。
+    expect(hit.confidence).toBe('stated')
+    expect(entry.status).toBe('covered')
+  })
+
+  it('attaches both to the 帯筋 and あばら筋 rows they govern', () => {
+    const hoop = roleOf(columnRebarFor(columnSection()), '帯筋')
+    const { rebars } = girderRebarFor([6000], columnSection(), girderSection())
+    const stirrup = roleOf(rebars, 'あばら筋')
+
+    for (const rebar of [hoop, stirrup]) {
+      const keys = rebar.ruleHits.map(({ key }) => key)
+      for (const { key } of cited) expect(keys).toContain(key)
+    }
   })
 })
 

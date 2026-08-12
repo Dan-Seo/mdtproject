@@ -60,7 +60,7 @@
   "viewer.legend.terminal": "말단",
   "viewer.tooltip.role": "역할",
   "viewer.tooltip.diameter": "경",
-  "viewer.tooltip.count": "본수",
+  "viewer.tooltip.count": "設計本数",
   "viewer.tooltip.length": "設計長さ",
   "viewer.tooltip.memberId": "부재 id",
   "viewer.tooltip.mark": "부호",
