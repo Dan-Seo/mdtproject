@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "import-ui",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T23:44:20+0900",
+      "summary": "PDF 후보를 행 단위로만 반영하고 빈칸은 기존값 유지·신규 符号는 동종 섹션 복제하며, 실물 PDF e2e에서 対象外 비반영과 내역·3D 생존까지 통과",
+      "completed_at": "2026-08-13T00:06:05+0900"
     },
     {
       "step": 3,
