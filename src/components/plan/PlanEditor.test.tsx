@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { gridPointCount } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
 
 import { PlanEditor, StoryTabs } from './PlanEditor'
@@ -35,13 +36,15 @@ describe('PlanEditor', () => {
     render(<PlanEditor />)
 
     const member = screen.getByRole('button', { name: 'C1 1F-X1Y1' })
+    const { nx, ny } = gridPointCount(useAppStore.getState().project.grid)
 
     expect(member.querySelector('rect')).not.toBeNull()
     expect(member.querySelector('text')).toBeNull()
-    expect(screen.getAllByText('C1')).toHaveLength(9)
+    expect(screen.getAllByText('C1')).toHaveLength(nx * ny)
   })
 
   it('adds an X span and regenerates the project grid members', () => {
+    const initialXSpans = useAppStore.getState().project.grid.xSpans
     render(<PlanEditor />)
 
     fireEvent.click(
@@ -49,12 +52,14 @@ describe('PlanEditor', () => {
     )
 
     const project = useAppStore.getState().project
-    expect(project.grid.xSpans).toEqual([6000, 6000, 6000])
+    const { nx, ny } = gridPointCount(project.grid)
+    expect(project.grid.xSpans.slice(0, -1)).toEqual(initialXSpans)
+    expect(project.grid.xSpans).toHaveLength(initialXSpans.length + 1)
     expect(
       project.members.filter(
         ({ storyId, kind }) => storyId === '1F' && kind === '柱',
       ),
-    ).toHaveLength(12)
+    ).toHaveLength(nx * ny)
   })
 
   it('updates a span value through updateProject', () => {

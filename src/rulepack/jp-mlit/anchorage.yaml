@@ -798,6 +798,26 @@
   confidence: inferred
   note: LLM転写 — 独立検討待ち（表5.3.4 Fc30-36帯）
 
+- key: anchorage.bent.tail.minimum
+  label: 仕口内折曲げ定着の余長下限
+  expr: 8d以上
+  conditions: {}
+  value: 8
+  unit: d
+  source: { ref: spec, section: 5.3.4(5)(ｲ)(b), page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち。仕口内折曲げ定着の余長は8d以上とする。
+
+- key: anchorage.bent.projection.minimum
+  label: 梁主筋の柱内定着の投影長下限
+  expr: 柱せいの3/4倍以上
+  conditions: { detail: 梁主筋の柱内定着 }
+  value: 0.75
+  unit: ratio
+  source: { ref: spec, section: 5.3.4(5)(ｲ)(c), page: 31 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち。梁主筋の柱内定着は柱せいの3/4倍以上とする。
+
 - key: anchorage.La
   label: 投影定着長さ La
   expr: 20d

@@ -6,12 +6,14 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  gridPointCount,
   type Project,
   type Story,
 } from '../model/project'
 import { createSampleProject } from '../model/sample-project'
 import type { Rebar } from '../model/rebar'
 import { generateColumnRebar } from '../rebar/column'
+import { coverConditions, lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import {
   aggregateQuantity,
@@ -34,6 +36,10 @@ const section: ColumnSection = {
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100 },
 }
+
+const coverHit = lookupRule(jpMlitRulePack, 'cover.minimum', {
+  ...coverConditions(section),
+})
 
 function projectWithStories(stories: Story[]): Project {
   const members: Member[] = stories.flatMap((story) =>
@@ -71,11 +77,19 @@ function mainRebar(memberId: string, overrides: Partial<Rebar> = {}): Rebar {
     closed: false,
     length: 1000,
     count: 12,
-    rules: [
-      'cover.minimum',
-      'cover.fabrication.addition',
-      'anchorage.L2',
-      'lap.L1',
+    ruleHits: [
+      coverHit,
+      lookupRule(jpMlitRulePack, 'cover.fabrication.addition', {}),
+      lookupRule(jpMlitRulePack, 'anchorage.L2', {
+        fc: 24,
+        grade: 'SD345',
+        hook: false,
+      }),
+      lookupRule(jpMlitRulePack, 'lap.L1', {
+        fc: 24,
+        grade: 'SD345',
+        hook: false,
+      }),
     ],
     formula: '主筋の算出式',
     ...overrides,
@@ -98,10 +112,10 @@ function hoopRebar(memberId: string): Rebar {
     closed: true,
     length: 4000,
     count: 36,
-    rules: [
-      'cover.minimum',
-      'cover.fabrication.addition',
-      'bend.hook135',
+    ruleHits: [
+      coverHit,
+      lookupRule(jpMlitRulePack, 'cover.fabrication.addition', {}),
+      lookupRule(jpMlitRulePack, 'bend.hook135', {}),
     ],
     formula: '帯筋の算出式',
   }
@@ -216,7 +230,8 @@ describe('aggregateQuantity', () => {
     expect(new Set(hoops.map(({ countPerMember }) => countPerMember)).size).toBe(
       hoops.length,
     )
-    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(9)
+    const { nx, ny } = gridPointCount(project.grid)
+    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(nx * ny)
     expect(hoops.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
   })
 

@@ -42,6 +42,18 @@ interface DirectEntry {
   imageRead: boolean
 }
 
+interface BentConditionEntry {
+  table: string
+  printedPage: number
+  kind:
+    | 'anchorage.bent.tail.minimum'
+    | 'anchorage.bent.projection.minimum'
+  conditions: Record<string, string>
+  value: number
+  unit: string
+  imageRead: boolean
+}
+
 interface CoverEntry {
   table: string
   printedPage: number
@@ -164,6 +176,15 @@ if (!fabricationAdditionEntry) {
   throw new Error('Fixture is missing cover.fabrication.addition')
 }
 
+const bentConditionEntries = (
+  fixture.entries as unknown as BentConditionEntry[]
+).filter(({ kind }) =>
+  [
+    'anchorage.bent.tail.minimum',
+    'anchorage.bent.projection.minimum',
+  ].includes(kind),
+)
+
 describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 tables', () => {
   it.each(expandedCases)(
     '$entry.kind Fc$conditions.fc $entry.conditions.grade matches $entry.table',
@@ -191,6 +212,20 @@ describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 
 })
 
 describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり tables', () => {
+  it.each(bentConditionEntries)(
+    '$kind matches the explicit condition in $table',
+    (entry) => {
+      const hit = lookupRule(jpMlitRulePack, entry.kind, entry.conditions)
+
+      expect(hit.value).toBe(entry.value)
+      expect(hit.unit).toBe(entry.unit)
+      expect(hit.source.section).toBe(entry.table)
+      expect(hit.source.page).toBe(entry.printedPage)
+      expect(hit.confidence).toBe('inferred')
+      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+    },
+  )
+
   it.each(bendInsideDiameterCases)(
     '$entry.kind $conditions.grade $conditions.size matches $entry.table',
     ({ entry, conditions }) => {
@@ -259,15 +294,15 @@ describe('픽스처 대조 완전성', () => {
     'bend.hook-tome',
     'cover.minimum',
     'cover.fabrication.addition',
+    'anchorage.bent.tail.minimum',
+    'anchorage.bent.projection.minimum',
   ])
-  // 룰팩 미수록 — 경량 콘크리트 가산과 折曲げ定着 상세는 아직 소비자가 없다.
+  // 룰팩 미수록 — 경량 콘크리트 가산은 아직 소비자가 없다.
   // 룰팩에 수록하는 시점에 covered로 옮겨 대조를 시작할 것.
   const deferredKinds = new Set([
     'lap.lightweight.addition',
     'anchorage.lightweight.addition',
     'anchorage.La.lightweight.addition',
-    'anchorage.bent.tail.minimum',
-    'anchorage.bent.projection.minimum',
   ])
 
   it('leaves no fixture entry uncompared', () => {
@@ -302,6 +337,9 @@ describe('픽스처 대조 완전성', () => {
         fabricationAdditionEntry.conditions,
       ),
     )
+    for (const entry of bentConditionEntries) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, entry.conditions))
+    }
 
     const uncompared = jpMlitRulePack.entries.filter(
       (rule) => coveredKinds.has(rule.key) && !hit.has(rule),

@@ -323,6 +323,22 @@ function ShearField({
           )
         }
       />
+      {section.kind === '大梁' && (
+        <NumberInput
+          label={`${section.mark} あばら筋 初期オフセット`}
+          value={section.stirrup.startOffsetMm}
+          onChange={(startOffsetMm) =>
+            update((current) =>
+              current.kind !== '大梁'
+                ? current
+                : {
+                    ...current,
+                    stirrup: { ...current.stirrup, startOffsetMm },
+                  },
+            )
+          }
+        />
+      )}
     </div>
   )
 }

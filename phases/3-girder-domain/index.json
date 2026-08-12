@@ -2,12 +2,63 @@
   "project": "Kijun",
   "phase": "3-girder-domain",
   "steps": [
-    { "step": 0, "name": "girder-span", "status": "pending" },
-    { "step": 1, "name": "rebar-zones-roles", "status": "pending" },
-    { "step": 2, "name": "girder-end-conditions", "status": "pending" },
-    { "step": 3, "name": "stirrup-layout", "status": "pending" },
-    { "step": 4, "name": "girder-generator", "status": "pending" },
-    { "step": 5, "name": "girder-support-sample", "status": "pending" },
-    { "step": 6, "name": "takeoff-ui-notice", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "girder-span",
+      "status": "completed",
+      "started_at": "2026-08-12T12:44:12+0900",
+      "summary": "GirderSpan(axis, centerSpan, clear, start/endFaceOffsetMm, start/endSupportLengthAlongAxisMm)을 추가하고 大梁 이외·양단 동일층 柱 결손·柱 단면 불일치·비양수 内法에서 throw",
+      "completed_at": "2026-08-12T12:49:27+0900"
+    },
+    {
+      "step": 1,
+      "name": "rebar-zones-roles",
+      "status": "completed",
+      "started_at": "2026-08-12T12:49:28+0900",
+      "summary": "RebarRole에 上端筋·下端筋·あばら筋 3종과 polyline 누적 경로거리 기반 RebarZone(定着·重ね継手)을 추가하고 柱 主筋이 하단 継手·定着 및 상단 定着 zones를 방출",
+      "completed_at": "2026-08-12T12:54:54+0900"
+    },
+    {
+      "step": 2,
+      "name": "girder-end-conditions",
+      "status": "completed",
+      "started_at": "2026-08-12T12:54:54+0900",
+      "summary": "GirderEndDetail을 直線定着/折曲げ定着 유니온으로 추가하고 加工用かぶり 수용성을 直線 → 折曲げ(La·余長 하한) → throw 순서로 판정",
+      "completed_at": "2026-08-12T13:04:09+0900"
+    },
+    {
+      "step": 3,
+      "name": "stirrup-layout",
+      "status": "completed",
+      "started_at": "2026-08-12T13:04:10+0900",
+      "summary": "stirrupPositions(clearMm, pitchMm, startOffsetMm)가 대칭 구간 [startOffsetMm, clearMm-startOffsetMm]에 pitch 간격으로 배치하고 잔여 시 끝점을 추가하며 inferred 룰 stirrup.start-offset을 신설",
+      "completed_at": "2026-08-12T13:09:38+0900"
+    },
+    {
+      "step": 4,
+      "name": "girder-generator",
+      "status": "completed",
+      "started_at": "2026-08-12T13:09:39+0900",
+      "summary": "generateGirderRebar(input: GirderRebarInput, pack: RulePack): Rebar[]가 [上端筋, 下端筋, あばら筋] 3행을 생성하고 cover.minimum→cover.fabrication.addition→anchorage.L1(折曲げ 시 anchorage.L1h·anchorage.La·anchorage.bent.tail.minimum·anchorage.bent.projection.minimum), bend.hook135·stirrup.start-offset을 조회하며 x=스팬 방향/좌측 柱面 원점·y=梁 밑면·z=폭의 mm 로컬 좌표를 사용",
+      "completed_at": "2026-08-12T13:18:03+0900"
+    },
+    {
+      "step": 5,
+      "name": "girder-support-sample",
+      "status": "completed",
+      "started_at": "2026-08-12T13:18:03+0900",
+      "summary": "girderSupport가 동일 story·axis·通り線의 인접 大梁을 連続スパン typed 미지원으로 판정하고 TakeoffResult.unsupportedMembers로 제외하며 샘플을 X 1스팬·Y 2스팬의 2×3 그리드로 변경",
+      "completed_at": "2026-08-12T13:26:43+0900"
+    },
+    {
+      "step": 6,
+      "name": "takeoff-ui-notice",
+      "status": "completed",
+      "started_at": "2026-08-12T13:26:43+0900",
+      "summary": "takeoff.unsupported.* i18n으로 미지원 건수·符号/층·連続スパン·M3b(通し筋) 고지를 제공하고 지원 X大梁 3행을 내역서·Excel kg 집계에 포함",
+      "completed_at": "2026-08-12T13:34:29+0900"
+    }
+  ],
+  "created_at": "2026-08-12T12:44:12+0900",
+  "completed_at": "2026-08-12T13:34:30+0900"
 }

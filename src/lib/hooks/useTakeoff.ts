@@ -7,8 +7,14 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  girderSpan,
+  girderSupport,
   type Project,
 } from '@/domain/model/project'
+import {
+  MemberUnsupportedError,
+  type UnsupportedReason,
+} from '@/domain/model/unsupported'
 import {
   aggregateQuantity,
   hasInferred as getHasInferred,
@@ -16,6 +22,7 @@ import {
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
+import { generateGirderRebar } from '@/domain/rebar/girder'
 import type { RuleHit } from '@/domain/rules/types'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
@@ -25,6 +32,14 @@ export interface TakeoffResult {
   lines: QuantityLine[]
   hasInferred: boolean
   inferredRules: RuleHit[]
+  unsupportedMembers: UnsupportedMember[]
+}
+
+export interface UnsupportedMember {
+  memberId: string
+  mark: string
+  storyName: string
+  reason: UnsupportedReason
 }
 
 /**
@@ -51,30 +66,72 @@ export function useTakeoff(): TakeoffResult {
 }
 
 function buildTakeoff(project: Project): TakeoffResult {
-  const rebars = project.members.flatMap((member) => {
-    if (member.kind !== '柱') return []
+  const rebars: Rebar[] = []
+  const unsupportedMembers: UnsupportedMember[] = []
 
+  for (const member of project.members) {
     const section = findSection(project, member.sectionId)
-    if (section.kind !== '柱') {
-      throw new Error(`柱 member references a non-柱 section: ${member.id}`)
-    }
-
     const story = project.stories.find(({ id }) => id === member.storyId)
     if (!story) {
       throw new Error(`Story not found: ${member.storyId}`)
     }
 
-    return generateColumnRebar(
-      {
-        member,
-        section,
-        story,
-        beamDepthAbove: beamDepthAbove(project, member),
-        ends: columnEnds(project, member),
-      },
-      jpMlitRulePack,
-    )
-  })
+    if (member.kind === '柱') {
+      if (section.kind !== '柱') {
+        throw new Error(`柱 member references a non-柱 section: ${member.id}`)
+      }
+
+      rebars.push(
+        ...generateColumnRebar(
+          {
+            member,
+            section,
+            story,
+            beamDepthAbove: beamDepthAbove(project, member),
+            ends: columnEnds(project, member),
+          },
+          jpMlitRulePack,
+        ),
+      )
+      continue
+    }
+
+    if (section.kind !== '大梁') {
+      throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
+    }
+
+    const support = girderSupport(project, member)
+    if (!support.supported) {
+      unsupportedMembers.push({
+        memberId: member.id,
+        mark: section.mark,
+        storyName: story.name,
+        reason: support.reason,
+      })
+      continue
+    }
+
+    // 성립 불가 형상(定着·寸法)은 그 부재만 빼고 나머지 산정을 계속한다.
+    // MemberUnsupportedError만 잡는다 — 룰팩 공백 같은 결함은 그대로 터진다.
+    try {
+      rebars.push(
+        ...generateGirderRebar(
+          { member, section, span: girderSpan(project, member) },
+          jpMlitRulePack,
+        ),
+      )
+    } catch (error) {
+      if (!(error instanceof MemberUnsupportedError)) throw error
+
+      unsupportedMembers.push({
+        memberId: member.id,
+        mark: section.mark,
+        storyName: story.name,
+        reason: error.reason,
+      })
+    }
+  }
+
   const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
 
   return {
@@ -82,5 +139,6 @@ function buildTakeoff(project: Project): TakeoffResult {
     lines,
     hasInferred: getHasInferred(lines),
     inferredRules: getInferredRules(lines),
+    unsupportedMembers,
   }
 }

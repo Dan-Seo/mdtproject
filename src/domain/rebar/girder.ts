@@ -1,0 +1,302 @@
+import type { BarSize, GirderSection, Member } from '../model/member'
+import type { GirderSpan } from '../model/project'
+import type { Rebar, RebarZone } from '../model/rebar'
+import { MemberUnsupportedError } from '../model/unsupported'
+import { coverConditions, lookupRule } from '../rules/lookup'
+import type { RuleHit, RulePack } from '../rules/types'
+import {
+  resolveGirderEnd,
+  type GirderEndDetail,
+} from './girder-ends'
+import { stirrupPositions } from './stirrup-layout'
+
+export interface GirderRebarInput {
+  member: Member
+  section: GirderSection
+  span: GirderSpan
+}
+
+function barDiameter(size: BarSize): number {
+  const diameter = Number(size.replace(/^D/, ''))
+
+  if (!Number.isFinite(diameter) || diameter <= 0) {
+    throw new Error(`Invalid BarSize: ${size}`)
+  }
+
+  return diameter
+}
+
+function millimetres(rule: RuleHit, diameter?: number): number {
+  if (rule.unit === 'mm') return rule.value
+  if (rule.unit === 'd' && diameter !== undefined) {
+    return rule.value * diameter
+  }
+
+  throw new Error(
+    `Rule ${rule.key} must use mm or use d with a supplied bar diameter`,
+  )
+}
+
+function uniqueRuleHits(hits: RuleHit[]): RuleHit[] {
+  return [...new Set(hits)]
+}
+
+function endFormula(label: '始端' | '終端', detail: GirderEndDetail): string {
+  if (detail.kind === '直線定着') {
+    return `${label} 直線定着 L1 ${detail.lengthMm}`
+  }
+
+  // lengthMm·projectionMm 은 최소치와의 max 결과다 — L1h·La 로 표기하면 表5.3.4·
+  // 表5.3.5 와 대조하는 검토자에게 근거가 틀린 것으로 보인다. 지배한 항을 밝힌다.
+  const verticalTailMm = detail.lengthMm - detail.projectionMm
+  return (
+    `${label} 折曲げ定着 加工長 ${detail.lengthMm}` +
+    `（投影 ${detail.projectionMm}［La ${detail.laMm} と 柱せい×投影下限 ` +
+    `${detail.projectionMinimumMm} の大］ ＋ 垂直余長 ${verticalTailMm}` +
+    `［L1h ${detail.l1hMm} と 投影＋余長下限 ${detail.tailMinimumMm} の大］）`
+  )
+}
+
+function mainPoints(
+  clearMm: number,
+  y: number,
+  z: number,
+  start: GirderEndDetail,
+  end: GirderEndDetail,
+): Rebar['points'] {
+  const points: Rebar['points'] = []
+
+  if (start.kind === '直線定着') {
+    points.push([-start.lengthMm, y, z])
+  } else {
+    const verticalTailMm = start.lengthMm - start.projectionMm
+    const direction = start.direction === '上' ? 1 : -1
+    points.push(
+      [
+        -start.projectionMm,
+        y + direction * verticalTailMm,
+        z,
+      ],
+      [-start.projectionMm, y, z],
+    )
+  }
+
+  if (end.kind === '直線定着') {
+    points.push([clearMm + end.lengthMm, y, z])
+  } else {
+    const verticalTailMm = end.lengthMm - end.projectionMm
+    const direction = end.direction === '上' ? 1 : -1
+    points.push(
+      [clearMm + end.projectionMm, y, z],
+      [
+        clearMm + end.projectionMm,
+        y + direction * verticalTailMm,
+        z,
+      ],
+    )
+  }
+
+  return points
+}
+
+function generateMain(
+  input: GirderRebarInput,
+  pack: RulePack,
+  coverRule: RuleHit,
+  fabricationCoverAdditionRule: RuleHit,
+  fabricationCoverMm: number,
+  row: {
+    id: 'top' | 'bottom'
+    role: '上端筋' | '下端筋'
+    count: number
+    y: number
+    bendDirection: '上' | '下'
+  },
+): Rebar {
+  const { member, section, span } = input
+  const endInput = {
+    barSize: section.main.size,
+    fc: section.fc,
+    grade: section.grade,
+    bendDirection: row.bendDirection,
+  }
+  const start = resolveGirderEnd(
+    {
+      ...endInput,
+      supportLengthMm: span.startSupportLengthAlongAxisMm,
+      supportCover: span.startSupportCover,
+    },
+    pack,
+  )
+  const end = resolveGirderEnd(
+    {
+      ...endInput,
+      supportLengthMm: span.endSupportLengthAlongAxisMm,
+      supportCover: span.endSupportCover,
+    },
+    pack,
+  )
+  const length = span.clear + start.lengthMm + end.lengthMm
+  const zones: RebarZone[] = [
+    { kind: '定着', pathFromMm: 0, pathToMm: start.lengthMm },
+    {
+      kind: '定着',
+      pathFromMm: length - end.lengthMm,
+      pathToMm: length,
+    },
+  ]
+  const fabricationCoverFormula =
+    `加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ ` +
+    `加算 ${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}）`
+
+  return {
+    id: `${member.id}|${row.id}`,
+    memberId: member.id,
+    role: row.role,
+    size: section.main.size,
+    shape:
+      start.kind === '折曲げ定着' || end.kind === '折曲げ定着'
+        ? 'hook90'
+        : 'straight',
+    points: mainPoints(
+      span.clear,
+      row.y,
+      fabricationCoverMm,
+      start,
+      end,
+    ),
+    closed: false,
+    length,
+    count: row.count,
+    zones,
+    ruleHits: uniqueRuleHits([
+      coverRule,
+      fabricationCoverAdditionRule,
+      ...start.usedRules,
+      ...end.usedRules,
+    ]),
+    formula:
+      `加工長 ＝ 内法長さ ${span.clear} ＋ ${endFormula('始端', start)} ` +
+      `＋ ${endFormula('終端', end)} ＝ ${length} ／ ` +
+      `配置基準 ＝ ${fabricationCoverFormula} ／ ` +
+      `本数 ＝ 断面一覧の${row.role}本数 ${row.count}`,
+  }
+}
+
+export function generateGirderRebar(
+  input: GirderRebarInput,
+  pack: RulePack,
+): Rebar[] {
+  const { member, section, span } = input
+  const coverRule = lookupRule(
+    pack,
+    'cover.minimum',
+    coverConditions(section),
+  )
+  const fabricationCoverAdditionRule = lookupRule(
+    pack,
+    'cover.fabrication.addition',
+    {},
+  )
+  const minimumCoverMm = millimetres(coverRule)
+  const fabricationCoverAdditionMm = millimetres(
+    fabricationCoverAdditionRule,
+  )
+  const fabricationCoverMm =
+    minimumCoverMm + fabricationCoverAdditionMm
+
+  const top = generateMain(
+    input,
+    pack,
+    coverRule,
+    fabricationCoverAdditionRule,
+    fabricationCoverMm,
+    {
+      id: 'top',
+      role: '上端筋',
+      count: section.main.topCount,
+      y: section.depth - fabricationCoverMm,
+      bendDirection: '下',
+    },
+  )
+  const bottom = generateMain(
+    input,
+    pack,
+    coverRule,
+    fabricationCoverAdditionRule,
+    fabricationCoverMm,
+    {
+      id: 'bottom',
+      role: '下端筋',
+      count: section.main.bottomCount,
+      y: fabricationCoverMm,
+      bendDirection: '上',
+    },
+  )
+
+  const hook135Rule = lookupRule(pack, 'bend.hook135', {})
+  const stirrupDiameter = barDiameter(section.stirrup.size)
+  const hook135LengthMm = millimetres(hook135Rule, stirrupDiameter)
+  // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
+  const startOffsetMm = section.stirrup.startOffsetMm
+  const stirrupWidthMm = section.b - 2 * fabricationCoverMm
+  const stirrupDepthMm = section.depth - 2 * fabricationCoverMm
+
+  if (stirrupWidthMm <= 0 || stirrupDepthMm <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `あばら筋 加工寸法 must be positive: ${member.id} ` +
+        `(${section.b}×${section.depth} − 2×加工用かぶり ${fabricationCoverMm})`,
+    )
+  }
+
+  if (span.clear <= 2 * startOffsetMm) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `あばら筋 配置区間 must be positive: ${member.id} ` +
+        `(内法 ${span.clear} ≤ 2×初期オフセット ${startOffsetMm})`,
+    )
+  }
+
+  const layout = stirrupPositions(
+    span.clear,
+    section.stirrup.pitch,
+    startOffsetMm,
+  )
+  const stirrupLengthMm =
+    2 * (stirrupWidthMm + stirrupDepthMm) + 2 * hook135LengthMm
+  const fabricationCoverFormula =
+    `加工用かぶり厚さ（最小かぶり ${minimumCoverMm} ＋ ` +
+    `加算 ${fabricationCoverAdditionMm} ＝ ${fabricationCoverMm}）`
+  const stirrup: Rebar = {
+    id: `${member.id}|stirrup`,
+    memberId: member.id,
+    role: 'あばら筋',
+    size: section.stirrup.size,
+    shape: 'hoop',
+    points: [
+      [0, fabricationCoverMm, fabricationCoverMm],
+      [0, section.depth - fabricationCoverMm, fabricationCoverMm],
+      [
+        0,
+        section.depth - fabricationCoverMm,
+        section.b - fabricationCoverMm,
+      ],
+      [0, fabricationCoverMm, section.b - fabricationCoverMm],
+    ],
+    closed: true,
+    length: stirrupLengthMm,
+    count: layout.positionsMm.length,
+    ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
+    formula:
+      `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +
+      `(${section.depth}−2×${fabricationCoverMm})} ＋ ` +
+      `2×135°フック余長 ${hook135Rule.value}d(${hook135LengthMm}) ` +
+      `＝ ${stirrupLengthMm} ／ ${fabricationCoverFormula} ／ ` +
+      `本数 ＝ あばら筋配置（内法長さ ${span.clear}、` +
+      `ピッチ ${section.stirrup.pitch}、始端・終端オフセット ${startOffsetMm}）` +
+      `＝ ${layout.positionsMm.length}`,
+  }
+
+  return [top, bottom, stirrup]
+}

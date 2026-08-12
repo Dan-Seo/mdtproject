@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { gridPointCount } from '@/domain/model/project'
 
 import { spanCoordinates, updateProjectSpans } from './grid'
 
@@ -18,14 +19,15 @@ describe('updateProjectSpans', () => {
     const firstStoryMembers = updated.members.filter(
       ({ storyId }) => storyId === '1F',
     )
+    const { nx, ny } = gridPointCount(updated.grid)
 
     expect(updated.grid.xSpans).toEqual([6000, 6000, 6000])
     expect(
       firstStoryMembers.filter(({ kind }) => kind === '柱'),
-    ).toHaveLength(12)
+    ).toHaveLength(nx * ny)
     expect(
       firstStoryMembers.filter(({ kind }) => kind === '大梁'),
-    ).toHaveLength(17)
+    ).toHaveLength((nx - 1) * ny + nx * (ny - 1))
   })
 
   it('keeps section assignments for members that remain on the grid', () => {

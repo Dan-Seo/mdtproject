@@ -169,14 +169,26 @@ function SourceChip({ rule }: { rule: RuleHit }) {
 }
 
 function SourceChips({ rules }: { rules: RuleHit[] }) {
+  // 조건이 다른 행이라도 가리키는 문헌 위치가 같으면 칩은 하나다 — 같은 표를
+  // 두 번 띄워도 읽는 쪽이 얻는 것이 없다. 기여 룰 목록(▲ 경고·inferred 집계)은
+  // 행 단위 그대로 유지되므로 근거의 완전성은 줄지 않는다.
+  const cited = [
+    ...new Map(
+      rules.map((rule) => [
+        [rule.source.doc, rule.source.section, rule.source.page].join(' / '),
+        rule,
+      ]),
+    ),
+  ]
+
   return (
     <div
       className={styles.sourceChips}
       onClick={stopRowInteraction}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      {rules.map((rule, index) => (
-        <SourceChip key={`${rule.key}-${index}`} rule={rule} />
+      {cited.map(([citation, rule]) => (
+        <SourceChip key={citation} rule={rule} />
       ))}
     </div>
   )
@@ -533,18 +545,37 @@ function LineRows({
 }
 
 export function TakeoffPane() {
-  const { lines } = useTakeoff()
+  const { lines, unsupportedMembers } = useTakeoff()
   const locale = useAppStore(({ locale }) => locale)
-  const hasGirder = useAppStore(({ project }) =>
-    project.members.some(({ kind }) => kind === '大梁'),
-  )
 
   return (
     <>
-      {hasGirder && (
-        <p className={styles.pendingNotice} role="note">
-          {t(locale, 'takeoff.girderPending')}
-        </p>
+      {unsupportedMembers.length > 0 && (
+        <div className={styles.unsupportedNotice} role="note">
+          <strong>
+            {t(locale, 'takeoff.unsupported.title')}{' '}
+            {unsupportedMembers.length}
+            {t(locale, 'takeoff.unsupported.count')}
+          </strong>
+          <ul className={styles.unsupportedList}>
+            {unsupportedMembers.map((member) => (
+              <li key={member.memberId}>
+                {member.mark}（{member.storyName}）—{' '}
+                {t(
+                  locale,
+                  `takeoff.unsupported.reason.${member.reason}`,
+                )}
+              </li>
+            ))}
+          </ul>
+          {[...new Set(unsupportedMembers.map(({ reason }) => reason))].map(
+            (reason) => (
+              <span key={reason}>
+                {t(locale, `takeoff.unsupported.plan.${reason}`)}
+              </span>
+            ),
+          )}
+        </div>
       )}
       <TakeoffTable lines={lines} />
     </>

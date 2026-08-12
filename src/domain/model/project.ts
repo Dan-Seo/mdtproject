@@ -1,13 +1,21 @@
 import type {
+  ColumnSection,
   ColumnPosition,
   GirderPosition,
   Member,
   Section,
 } from './member'
+import {
+  MemberUnsupportedError,
+  type UnsupportedReason,
+} from './unsupported'
+import { coverConditions } from '../rules/lookup'
 
 // v2 (2026-08-12): Section에 필수 필드 exposure·finish 추가 — v1 JSON은
 // deserializeProject의 버전 게이트에서 명시적으로 거부된다 (영속 v1 데이터 없음).
-export const PROJECT_SCHEMA_VERSION = 2
+// v3 (2026-08-12): GirderSection.stirrup에 필수 필드 startOffsetMm 추가. 規準에
+// 없는 배치값을 룰팩에 가짜 출처로 넣는 대신 입력으로 받는다 (ADR-012).
+export const PROJECT_SCHEMA_VERSION = 3
 
 export interface Grid {
   xSpans: number[]
@@ -112,6 +120,47 @@ function isGirderPosition(
   return 'axis' in position
 }
 
+export type GirderSupport =
+  | { supported: true }
+  | { supported: false; reason: UnsupportedReason }
+
+export function girderSupport(
+  project: Project,
+  member: Member,
+): GirderSupport {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderSupport requires a 大梁: ${member.id}`)
+  }
+
+  const position = member.position
+  const hasAdjacentGirder = project.members.some((candidate) => {
+    if (
+      candidate.kind !== '大梁' ||
+      candidate.storyId !== member.storyId ||
+      !isGirderPosition(candidate.position) ||
+      candidate.position.axis !== position.axis
+    ) {
+      return false
+    }
+
+    if (position.axis === 'X') {
+      return (
+        candidate.position.iy === position.iy &&
+        Math.abs(candidate.position.ix - position.ix) === 1
+      )
+    }
+
+    return (
+      candidate.position.ix === position.ix &&
+      Math.abs(candidate.position.iy - position.iy) === 1
+    )
+  })
+
+  return hasAdjacentGirder
+    ? { supported: false, reason: '連続スパン' }
+    : { supported: true }
+}
+
 function touchesColumn(
   girder: GirderPosition,
   column: ColumnPosition,
@@ -127,6 +176,101 @@ function touchesColumn(
     girder.ix === column.ix &&
     (girder.iy === column.iy || girder.iy + 1 === column.iy)
   )
+}
+
+export interface GirderSpan {
+  axis: 'X' | 'Y'
+  /** 그리드 교점 간 중심 스팬 (mm) */
+  centerSpan: number
+  /** 内法長さ (mm) — 양단 柱面 사이 */
+  clear: number
+  /** 시작 柱 중심 → 大梁 내측 柱面 오프셋 (mm) */
+  startFaceOffsetMm: number
+  /** 끝 柱 중심 → 大梁 내측 柱面 오프셋 (mm) */
+  endFaceOffsetMm: number
+  /** 정착 수용성 검사용 — 시작 柱의 축방향 전체 치수 (mm) */
+  startSupportLengthAlongAxisMm: number
+  /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
+  endSupportLengthAlongAxisMm: number
+  /** 지점 柱의 かぶり 조회 조건 — 端部条件은 大梁이 아니라 柱의 かぶり로 판정한다 */
+  startSupportCover: Record<string, string | boolean>
+  endSupportCover: Record<string, string | boolean>
+}
+
+function supportColumnSection(
+  project: Project,
+  girder: Member,
+  ix: number,
+  iy: number,
+  end: 'start' | 'end',
+): ColumnSection {
+  const support = project.members.find(
+    (candidate) =>
+      candidate.kind === '柱' &&
+      candidate.storyId === girder.storyId &&
+      isColumnPosition(candidate.position) &&
+      candidate.position.ix === ix &&
+      candidate.position.iy === iy,
+  )
+
+  if (!support) {
+    throw new Error(`Missing ${end} support 柱 for 大梁: ${girder.id}`)
+  }
+
+  const section = findSection(project, support.sectionId)
+  if (section.kind !== '柱') {
+    throw new Error(`柱 member references a non-柱 section: ${support.id}`)
+  }
+
+  return section
+}
+
+export function girderSpan(project: Project, member: Member): GirderSpan {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderSpan requires a 大梁: ${member.id}`)
+  }
+
+  const { axis, ix, iy } = member.position
+  const endIx = axis === 'X' ? ix + 1 : ix
+  const endIy = axis === 'Y' ? iy + 1 : iy
+  const startPoint = gridPoint(project.grid, ix, iy)
+  const endPoint = gridPoint(project.grid, endIx, endIy)
+  const startSection = supportColumnSection(project, member, ix, iy, 'start')
+  const endSection = supportColumnSection(
+    project,
+    member,
+    endIx,
+    endIy,
+    'end',
+  )
+  const centerSpan =
+    axis === 'X' ? endPoint.x - startPoint.x : endPoint.y - startPoint.y
+  const startSupportLengthAlongAxisMm =
+    axis === 'X' ? startSection.b : startSection.d
+  const endSupportLengthAlongAxisMm =
+    axis === 'X' ? endSection.b : endSection.d
+  const startFaceOffsetMm = startSupportLengthAlongAxisMm / 2
+  const endFaceOffsetMm = endSupportLengthAlongAxisMm / 2
+  const clear = centerSpan - startFaceOffsetMm - endFaceOffsetMm
+
+  if (clear <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `大梁 内法長さ must be positive: ${member.id} (${clear} mm)`,
+    )
+  }
+
+  return {
+    axis,
+    centerSpan,
+    clear,
+    startFaceOffsetMm,
+    endFaceOffsetMm,
+    startSupportLengthAlongAxisMm,
+    endSupportLengthAlongAxisMm,
+    startSupportCover: coverConditions(startSection),
+    endSupportCover: coverConditions(endSection),
+  }
 }
 
 /**

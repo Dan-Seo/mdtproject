@@ -12,7 +12,11 @@ import {
 } from '../../src/domain/model/project'
 import type { Rebar } from '../../src/domain/model/rebar'
 import { aggregateQuantity } from '../../src/domain/quantity'
-import { lookupUnitMass } from '../../src/domain/rules/lookup'
+import {
+  coverConditions,
+  lookupRule,
+  lookupUnitMass,
+} from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity.json'
 
@@ -65,7 +69,9 @@ function rebarFor(member: Member, designKg: number, size: BarSize): Rebar {
     closed: false,
     length,
     count: 1,
-    rules: ['cover.minimum'],
+    ruleHits: [
+      lookupRule(jpMlitRulePack, 'cover.minimum', coverConditions(section)),
+    ],
     formula: 'ゴールデンテスト入力から設計数量を再現',
   }
 }

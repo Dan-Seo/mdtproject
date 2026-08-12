@@ -1,3 +1,4 @@
+import { renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
@@ -14,6 +15,8 @@ import {
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
+import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
 import { buildTakeoffWorkbook, exportTakeoffXlsx } from './index'
@@ -48,6 +51,29 @@ function sampleInput(): { project: Project; lines: QuantityLine[] } {
 }
 
 describe('buildTakeoffWorkbook', () => {
+  it('includes generated 大梁 rows in the exported kg totals', () => {
+    const project = createSampleProject()
+    useAppStore.setState({ project })
+    const { result } = renderHook(() => useTakeoff())
+    const { lines } = result.current
+    const girderLines = lines.filter(
+      ({ memberKind }) => memberKind === '大梁',
+    )
+    const spec = buildTakeoffWorkbook({ project, lines, locale: 'ja' })
+    const exportedGirderRows = spec.rows.filter(
+      ({ kind, cells }) => kind === 'data' && cells[1].value === '大梁',
+    )
+    const totalRow = spec.rows.find(({ kind }) => kind === 'total')
+    const total = grandTotal(lines)
+
+    expect(girderLines.length).toBeGreaterThan(0)
+    expect(exportedGirderRows).toHaveLength(girderLines.length)
+    expect(exportedGirderRows.every(({ cells }) => Number(cells[11].value) > 0))
+      .toBe(true)
+    expect(totalRow?.cells[11].value).toBe(total.designKg)
+    expect(totalRow?.cells[12].value).toBe(total.requiredKg)
+  })
+
   it('puts the mandatory two-line watermark before every other row', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })

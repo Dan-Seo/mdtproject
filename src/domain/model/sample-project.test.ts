@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { beamDepthAbove } from './project'
+import { beamDepthAbove, gridPointCount } from './project'
 import { createSampleProject } from './sample-project'
 
 function expectPureJson(value: unknown): void {
@@ -22,11 +22,11 @@ function expectPureJson(value: unknown): void {
 }
 
 describe('createSampleProject', () => {
-  it('matches the M1 3×3, two-story section-list example', () => {
+  it('matches the M3a 2×3, two-story section-list example', () => {
     const project = createSampleProject()
 
     expect(project.grid).toEqual({
-      xSpans: [6000, 6000],
+      xSpans: [6000],
       ySpans: [6000, 6000],
     })
     expect(project.stories).toEqual([
@@ -65,16 +65,23 @@ describe('createSampleProject', () => {
     )
   })
 
-  it('contains 9 柱 and 12 大梁 per story', () => {
+  it('derives the 柱 and 大梁 counts per story from the grid', () => {
     const project = createSampleProject()
+    const { nx, ny } = gridPointCount(project.grid)
+    const columnCount = nx * ny
+    const girderCount = (nx - 1) * ny + nx * (ny - 1)
 
     for (const story of project.stories) {
       const storyMembers = project.members.filter(
         ({ storyId }) => storyId === story.id,
       )
 
-      expect(storyMembers.filter(({ kind }) => kind === '柱')).toHaveLength(9)
-      expect(storyMembers.filter(({ kind }) => kind === '大梁')).toHaveLength(12)
+      expect(storyMembers.filter(({ kind }) => kind === '柱')).toHaveLength(
+        columnCount,
+      )
+      expect(storyMembers.filter(({ kind }) => kind === '大梁')).toHaveLength(
+        girderCount,
+      )
     }
   })
 

@@ -1,5 +1,5 @@
 import type { BarSize, ColumnSection, Member } from '../model/member'
-import type { Rebar } from '../model/rebar'
+import type { Rebar, RebarZone } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
@@ -79,31 +79,46 @@ export function generateColumnRebar(
     ends.bottom === '継手' ? lapLength : anchorageLength
   const topExtension = ends.top === '定着' ? anchorageLength : 0
   const mainLength = story.height + bottomExtension + topExtension
+  const mainZones: RebarZone[] = [
+    {
+      kind: ends.bottom === '継手' ? '重ね継手' : '定着',
+      pathFromMm: 0,
+      pathToMm: bottomExtension,
+    },
+  ]
+
+  if (ends.top === '定着') {
+    mainZones.push({
+      kind: '定着',
+      pathFromMm: mainLength - anchorageLength,
+      pathToMm: mainLength,
+    })
+  }
 
   const endTerms: string[] = []
-  const mainRuleKeys: string[] = [
-    coverRule.key,
-    fabricationCoverAdditionRule.key,
+  const mainRuleHits: RuleHit[] = [
+    coverRule,
+    fabricationCoverAdditionRule,
   ]
 
   if (ends.bottom === '継手') {
     endTerms.push(
       `下端 重ね継手長さ L1 ${lapRule.value}d(${lapLength})`,
     )
-    mainRuleKeys.push(lapRule.key)
+    mainRuleHits.push(lapRule)
   } else {
     endTerms.push(
       `下端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
     )
-    mainRuleKeys.push(anchorageRule.key)
+    mainRuleHits.push(anchorageRule)
   }
 
   if (ends.top === '定着') {
     endTerms.push(
       `上端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
     )
-    if (!mainRuleKeys.includes(anchorageRule.key)) {
-      mainRuleKeys.push(anchorageRule.key)
+    if (!mainRuleHits.includes(anchorageRule)) {
+      mainRuleHits.push(anchorageRule)
     }
   } else {
     endTerms.push('上端 上階柱が継手を負担 0')
@@ -158,7 +173,8 @@ export function generateColumnRebar(
     closed: false,
     length: mainLength,
     count: section.main.count,
-    rules: mainRuleKeys,
+    zones: mainZones,
+    ruleHits: mainRuleHits,
     formula:
       `加工長 ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
       `＝ ${mainLength} ／ ` +
@@ -185,11 +201,7 @@ export function generateColumnRebar(
     closed: true,
     length: hoopLength,
     count: hoopCount,
-    rules: [
-      coverRule.key,
-      fabricationCoverAdditionRule.key,
-      hook135Rule.key,
-    ],
+    ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCover})＋` +
       `(${section.d}−2×${fabricationCover})} ＋ 2×135°フック余長 ` +

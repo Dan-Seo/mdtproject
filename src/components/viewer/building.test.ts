@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
-import { gridPoint } from '@/domain/model/project'
+import { gridPoint, gridPointCount } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 
 import { buildingLayout, groupInstancesByRadius } from './building'
@@ -23,7 +23,7 @@ const main: Rebar = {
   closed: false,
   length: 6080,
   count: 12,
-  rules: ['cover.minimum'],
+  ruleHits: [],
   formula: 'test',
 }
 
@@ -42,17 +42,25 @@ const hoop: Rebar = {
   closed: true,
   length: 3040,
   count: 3,
-  rules: ['cover.minimum'],
+  ruleHits: [],
   formula: 'test',
 }
 
 describe('buildingLayout', () => {
   it('creates one concrete box per member of the sample project', () => {
     const layout = buildingLayout(project, [])
+    const { nx, ny } = gridPointCount(project.grid)
+    const columnCount = nx * ny * project.stories.length
+    const girderCount =
+      ((nx - 1) * ny + nx * (ny - 1)) * project.stories.length
 
-    expect(layout.boxes).toHaveLength(42)
-    expect(layout.boxes.filter(({ kind }) => kind === '柱')).toHaveLength(18)
-    expect(layout.boxes.filter(({ kind }) => kind === '大梁')).toHaveLength(24)
+    expect(layout.boxes).toHaveLength(columnCount + girderCount)
+    expect(layout.boxes.filter(({ kind }) => kind === '柱')).toHaveLength(
+      columnCount,
+    )
+    expect(layout.boxes.filter(({ kind }) => kind === '大梁')).toHaveLength(
+      girderCount,
+    )
   })
 
   it('places a 2F column on the accumulated story elevation', () => {
@@ -113,7 +121,9 @@ describe('buildingLayout', () => {
     expect(layout.bounds.min[1]).toBeLessThanOrEqual(-875)
     expect(layout.bounds.max[1]).toBeGreaterThanOrEqual(7800)
     expect(layout.bounds.min[0]).toBeLessThanOrEqual(0)
-    expect(layout.bounds.max[0]).toBeGreaterThanOrEqual(12000)
+    expect(layout.bounds.max[0]).toBeGreaterThanOrEqual(
+      project.grid.xSpans.reduce((sum, span) => sum + span, 0),
+    )
   })
 
   it('throws when a rebar references an unknown member', () => {

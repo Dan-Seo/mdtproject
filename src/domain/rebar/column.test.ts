@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, Member } from '../model/member'
-import type { Story } from '../model/project'
+import type { ColumnEnds, Story } from '../model/project'
+import type { RebarRole, RebarZone } from '../model/rebar'
 import { lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import { generateColumnRebar, type ColumnRebarInput } from './column'
@@ -73,6 +74,14 @@ function byRole(
   return rebar!
 }
 
+describe('Rebar model', () => {
+  it('accepts the standard 大梁 row roles', () => {
+    const roles: RebarRole[] = ['上端筋', '下端筋', 'あばら筋']
+
+    expect(roles).toEqual(['上端筋', '下端筋', 'あばら筋'])
+  })
+})
+
 describe('generateColumnRebar', () => {
   it('generates the fixed C1 input as one 主筋 row and one 帯筋 row', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
@@ -96,27 +105,27 @@ describe('generateColumnRebar', () => {
     })
   })
 
-  it('records only existing rule keys on every generated Rebar', () => {
-    const knownKeys = new Set(jpMlitRulePack.entries.map(({ key }) => key))
+  it('records only rows that came from the rule pack on every generated Rebar', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
 
     for (const rebar of generated) {
-      expect(rebar.rules.length).toBeGreaterThan(0)
-      for (const key of rebar.rules) {
-        expect(knownKeys.has(key), `${key} should exist in the rule pack`).toBe(
-          true,
-        )
+      expect(rebar.ruleHits.length).toBeGreaterThan(0)
+      for (const hit of rebar.ruleHits) {
+        expect(
+          jpMlitRulePack.entries.includes(hit),
+          `${hit.key} should be a row of the rule pack`,
+        ).toBe(true)
       }
     }
 
     // 端部の順（下端 → 上端）で並ぶ。既定入力は 下端 継手・上端 定着。
-    expect(byRole(generated, '主筋').rules).toEqual([
+    expect(byRole(generated, '主筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
       'lap.L1',
       'anchorage.L1',
     ])
-    expect(byRole(generated, '帯筋').rules).toEqual([
+    expect(byRole(generated, '帯筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
       'bend.hook135',
@@ -175,6 +184,102 @@ describe('generateColumnRebar', () => {
     expect(main.points[1][1]).toBe(story.height)
   })
 
+  it.each(
+    [
+      {
+        ends: { bottom: '定着', top: '定着' },
+        bottomKind: '定着',
+        bottomLength: anchorage,
+        topAnchored: true,
+      },
+      {
+        ends: { bottom: '定着', top: 'なし' },
+        bottomKind: '定着',
+        bottomLength: anchorage,
+        topAnchored: false,
+      },
+      {
+        ends: { bottom: '継手', top: '定着' },
+        bottomKind: '重ね継手',
+        bottomLength: lap,
+        topAnchored: true,
+      },
+      {
+        ends: { bottom: '継手', top: 'なし' },
+        bottomKind: '重ね継手',
+        bottomLength: lap,
+        topAnchored: false,
+      },
+    ] satisfies {
+      ends: ColumnEnds
+      bottomKind: RebarZone['kind']
+      bottomLength: number
+      topAnchored: boolean
+    }[],
+  )(
+    'emits path-distance zones for $ends.bottom/$ends.top ends',
+    ({ ends, bottomKind, bottomLength, topAnchored }) => {
+      const main = byRole(
+        generateColumnRebar(input({ ends }), jpMlitRulePack),
+        '主筋',
+      )
+      const expected: RebarZone[] = [
+        {
+          kind: bottomKind,
+          pathFromMm: 0,
+          pathToMm: bottomLength,
+        },
+      ]
+
+      if (topAnchored) {
+        expected.push({
+          kind: '定着',
+          pathFromMm: main.length - anchorage,
+          pathToMm: main.length,
+        })
+      }
+
+      expect(main.zones).toEqual(expected)
+    },
+  )
+
+  it('keeps every zone within the 主筋 加工長 path', () => {
+    const endCombinations: ColumnEnds[] = [
+      { bottom: '定着', top: '定着' },
+      { bottom: '定着', top: 'なし' },
+      { bottom: '継手', top: '定着' },
+      { bottom: '継手', top: 'なし' },
+    ]
+
+    for (const ends of endCombinations) {
+      const main = byRole(
+        generateColumnRebar(input({ ends }), jpMlitRulePack),
+        '主筋',
+      )
+
+      expect(main.zones).toBeDefined()
+      for (const zone of main.zones ?? []) {
+        expect(zone.pathFromMm).toBeGreaterThanOrEqual(0)
+        expect(zone.pathFromMm).toBeLessThan(zone.pathToMm)
+        expect(zone.pathToMm).toBeLessThanOrEqual(main.length)
+      }
+    }
+  })
+
+  it('does not emit a zone for an end whose condition is なし', () => {
+    const main = byRole(
+      generateColumnRebar(
+        input({ ends: { bottom: '定着', top: 'なし' } }),
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    expect(main.zones).toEqual([
+      { kind: '定着', pathFromMm: 0, pathToMm: anchorage },
+    ])
+  })
+
   it('cites 重ね継手 only on the rows that actually carry a joint', () => {
     const withoutLap = byRole(
       generateColumnRebar(
@@ -191,9 +296,9 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(withoutLap.rules).not.toContain('lap.L1')
+    expect(withoutLap.ruleHits.map(({ key }) => key)).not.toContain('lap.L1')
     expect(withoutLap.formula).not.toContain('重ね継手')
-    expect(withLap.rules).toContain('lap.L1')
+    expect(withLap.ruleHits.map(({ key }) => key)).toContain('lap.L1')
   })
 
   it('cites 定着 only on the rows that actually reach a stack end', () => {
@@ -205,7 +310,9 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(interior.rules).not.toContain('anchorage.L1')
+    expect(interior.ruleHits.map(({ key }) => key)).not.toContain(
+      'anchorage.L1',
+    )
     expect(interior.formula).not.toContain('定着')
     expect(interior.length).toBe(story.height + lap)
   })
