@@ -160,11 +160,12 @@ const girderBottom: Rebar = {
 }
 
 const GIRDER_CLEAR_MM = 5250
-const girderStirrupPositions = stirrupPositions(
+const girderStirrupLayout = stirrupPositions(
   GIRDER_CLEAR_MM,
   girderSection.stirrup.pitch,
   girderSection.stirrup.startOffsetMm,
-).positionsMm
+)
+const girderStirrupPositions = girderStirrupLayout.positionsMm
 const girderStirrup: Rebar = {
   id: '1F-G1|stirrup',
   memberId: '1F-G1',
@@ -180,7 +181,11 @@ const girderStirrup: Rebar = {
   closed: true,
   length: 1980,
   count: girderStirrupPositions.length,
-  placement: { axis: 'x', clearMm: GIRDER_CLEAR_MM },
+  placement: {
+    axis: 'x',
+    clearMm: GIRDER_CLEAR_MM,
+    lastGapMm: girderStirrupLayout.lastGapMm,
+  },
   ruleHits: [],
   formula: 'test',
 }

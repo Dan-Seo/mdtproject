@@ -101,6 +101,65 @@
   letter-spacing: 0.03em;
 }
 
+.legend {
+  position: absolute;
+  bottom: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 2;
+  display: grid;
+  gap: var(--space-xxs);
+  max-width: calc(100% - var(--space-base));
+  padding: var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+  background: var(--surface-card);
+  color: var(--text-ink);
+  font-size: var(--type-caption-size);
+}
+
+.legendTitle {
+  color: var(--text-muted);
+  font-size: var(--type-caption-uppercase-size);
+  font-weight: var(--type-caption-uppercase-weight);
+  letter-spacing: var(--type-caption-uppercase-ls);
+}
+
+.legendList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendChip,
+.legendSpacing {
+  display: inline-flex;
+  gap: var(--space-xxs);
+  align-items: center;
+  min-height: var(--space-md);
+  padding: 0 var(--space-xxs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--color-canvas-soft);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.legendSwatch {
+  width: var(--space-xs);
+  height: var(--space-xs);
+  border-radius: var(--radius-xs);
+}
+
+.legendSpacing {
+  color: var(--text-muted);
+}
+
 .tooltip {
   position: absolute;
   top: 0;

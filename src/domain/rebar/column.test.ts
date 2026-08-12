@@ -6,6 +6,7 @@ import type { RebarRole, RebarZone } from '../model/rebar'
 import { lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import { generateColumnRebar, type ColumnRebarInput } from './column'
+import { stirrupPositions } from './stirrup-layout'
 
 const member: Member = {
   id: '1F-X2Y2',
@@ -87,6 +88,11 @@ describe('generateColumnRebar', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
     const main = byRole(generated, '主筋')
     const hoop = byRole(generated, '帯筋')
+    const expectedHoops = stirrupPositions(
+      story.height - input().beamDepthAbove,
+      section.hoop.pitch,
+      0,
+    )
 
     expect(generated).toHaveLength(2)
     expect(main).toMatchObject({
@@ -102,6 +108,11 @@ describe('generateColumnRebar', () => {
       shape: 'hoop',
       closed: true,
       count: 36,
+      placement: {
+        axis: 'y',
+        clearMm: story.height - input().beamDepthAbove,
+        lastGapMm: expectedHoops.lastGapMm,
+      },
     })
   })
 

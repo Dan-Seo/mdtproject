@@ -59,6 +59,8 @@
   "viewer.clip.axisY": "Y축",
   "viewer.clip.axisZ": "Z축",
   "viewer.clip.position": "절단 위치",
+  "viewer.legend.title": "定着·継手 범례",
+  "viewer.legend.terminal": "말단",
   "viewer.tooltip.role": "역할",
   "viewer.tooltip.diameter": "경",
   "viewer.tooltip.count": "본수",

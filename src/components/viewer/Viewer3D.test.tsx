@@ -9,8 +9,12 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { girderSpan } from '@/domain/model/project'
+import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
+import { lookupRule } from '@/domain/rules/lookup'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
+import { jpMlitRulePack } from '@/rulepack'
 
 const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),
@@ -127,6 +131,7 @@ import {
 } from 'three'
 
 import { Viewer3D } from './Viewer3D'
+import { REBAR_ZONE_COLORS } from './palette'
 
 class ResizeObserverMock {
   constructor(private readonly callback: ResizeObserverCallback) {}
@@ -332,6 +337,106 @@ describe('Viewer3D', () => {
 
     expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
     expect(useAppStore.getState().hoverRowId).toBe(topLine?.id)
+  })
+
+  it('shows the selected supported 大梁 zone legend from zones and rule hits', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-X'))
+    const { result } = renderHook(() => useTakeoff())
+    const top = result.current.rebars.find(
+      ({ memberId, role }) =>
+        memberId === '1F-G1-X1Y1-X' && role === '上端筋',
+    )
+    const lengthMm = top?.zones?.[0]
+      ? top.zones[0].pathToMm - top.zones[0].pathFromMm
+      : undefined
+    expect(lengthMm).toBeDefined()
+
+    const { container } = render(<Viewer3D />)
+
+    const legend = screen.getByLabelText('定着・継手凡例')
+    expect(legend).toHaveTextContent(
+      `定着 anchorage.L1h ${String(lengthMm)}`,
+    )
+    const swatch = container.querySelector('[data-zone-kind="定着"]')
+    expect(swatch).toHaveStyle({
+      backgroundColor: REBAR_ZONE_COLORS.定着,
+    })
+
+    fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    const anchorageMesh = mocks.pickableMeshes
+      .at(-1)
+      ?.find(({ userData }) => userData.zone === '定着')
+    const material = anchorageMesh?.userData.baseMaterial as
+      | import('three').MeshStandardMaterial
+      | undefined
+    expect(material?.color.getHexString()).toBe(
+      REBAR_ZONE_COLORS.定着.slice(1),
+    )
+  })
+
+  it('does not show a legend for an unsupported 大梁', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+
+    render(<Viewer3D />)
+
+    expect(screen.queryByLabelText('定着・継手凡例')).not.toBeInTheDocument()
+  })
+
+  it('shows the selected 柱 legend from 主筋 zones', () => {
+    const anchorageRule = lookupRule(jpMlitRulePack, 'anchorage.L1', {
+      fc: 24,
+      grade: 'SD345',
+      hook: false,
+    })
+    const expectedLengthMm = anchorageRule.value * 25
+
+    render(<Viewer3D />)
+
+    expect(screen.getByLabelText('定着・継手凡例')).toHaveTextContent(
+      `定着 ${anchorageRule.key} ${expectedLengthMm}`,
+    )
+  })
+
+  it('shows the あばら筋 input pitch and a different terminal gap', () => {
+    const pitch = 120
+    act(() => {
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-G1' && section.kind === '大梁'
+            ? { ...section, stirrup: { ...section.stirrup, pitch } }
+            : section,
+        ),
+      }))
+      useAppStore.getState().selectMember('1F-G1-X1Y1-X')
+    })
+    const project = useAppStore.getState().project
+    const member = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-X',
+    )
+    if (member === undefined) throw new Error('Sample 大梁 not found')
+    const section = project.sections.find(
+      ({ id }) => id === member.sectionId,
+    )
+    if (section === undefined || section.kind !== '大梁') {
+      throw new Error('Sample 大梁 section not found')
+    }
+    const span = girderSpan(project, member)
+    const { lastGapMm } = stirrupPositions(
+      span.clear,
+      pitch,
+      section.stirrup.startOffsetMm,
+    )
+    expect(lastGapMm).not.toBe(pitch)
+
+    render(<Viewer3D />)
+
+    expect(screen.getByLabelText('定着・継手凡例')).toHaveTextContent(
+      `あばら筋 @${pitch} (末端 ${lastGapMm})`,
+    )
   })
 
   it('shows the unsupported reason and no rebar mesh for a 連続スパン 大梁', () => {

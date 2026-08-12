@@ -3,6 +3,7 @@ import type { Rebar, RebarZone } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
+import { stirrupPositions } from './stirrup-layout'
 
 export interface ColumnRebarInput {
   member: Member
@@ -151,7 +152,8 @@ export function generateColumnRebar(
     )
   }
 
-  const hoopCount = Math.ceil(hoopSpan / section.hoop.pitch) + 1
+  const hoopLayout = stirrupPositions(hoopSpan, section.hoop.pitch, 0)
+  const hoopCount = hoopLayout.positionsMm.length
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
     `加算 ${fabricationCoverAddition} ＝ ${fabricationCover}）`
@@ -201,6 +203,11 @@ export function generateColumnRebar(
     closed: true,
     length: hoopLength,
     count: hoopCount,
+    placement: {
+      axis: 'y',
+      clearMm: hoopSpan,
+      lastGapMm: hoopLayout.lastGapMm,
+    },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCover})＋` +

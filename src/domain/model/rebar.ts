@@ -18,10 +18,12 @@ export interface RebarZone {
 }
 
 export interface RebarPlacement {
-  /** 반복 전개의 기준축. 현재 大梁 あばら筋은 스팬 로컬 x축을 쓴다. */
-  axis: 'x'
+  /** 반복 전개의 기준축. 大梁 あばら筋은 로컬 x, 柱 帯筋은 높이 y를 쓴다. */
+  axis: 'x' | 'y'
   /** `stirrupPositions`에 전달한 부재 内法 길이 (mm). */
   clearMm: number
+  /** `stirrupPositions`가 산출한 마지막 잔여 간격 (mm). */
+  lastGapMm: number
 }
 
 export interface Rebar {

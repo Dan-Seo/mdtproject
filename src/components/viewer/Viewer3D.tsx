@@ -53,6 +53,8 @@ import {
   type ClipAxis,
   type Point3,
 } from './geometry'
+import { legendEntries } from './legend'
+import { REBAR_ZONE_COLORS } from './palette'
 import { ViewerLayerControls } from './ViewerTabs'
 import styles from './Viewer3D.module.css'
 
@@ -60,8 +62,6 @@ const MILLIMETRES_TO_SCENE = 0.001
 const CYLINDER_RADIAL_SEGMENTS = 8
 const CONTROLS_DAMPING = 0.08
 const REBAR_COLOR = 0xb8b3a6
-const ANCHORAGE_COLOR = 0x4f9f98
-const LAP_COLOR = 0xc2a34f
 const HIGHLIGHT_COLOR = 0xf54e00
 const OUTLINE_COLOR = 0x4a483c
 const BACKGROUND_COLOR = 0x1b1a14
@@ -704,14 +704,14 @@ function rebuildMemberScene(
     clipShadows: true,
   })
   const anchorageMaterial = new THREE.MeshStandardMaterial({
-    color: ANCHORAGE_COLOR,
+    color: REBAR_ZONE_COLORS.定着,
     metalness: 0.6,
     roughness: 0.35,
     clippingPlanes: [runtime.clipPlane],
     clipShadows: true,
   })
   const lapMaterial = new THREE.MeshStandardMaterial({
-    color: LAP_COLOR,
+    color: REBAR_ZONE_COLORS.重ね継手,
     metalness: 0.6,
     roughness: 0.35,
     clippingPlanes: [runtime.clipPlane],
@@ -1376,6 +1376,26 @@ export function Viewer3D() {
 
   const unsupportedReason =
     selectedMember?.status === 'unsupported' ? selectedMember.reason : null
+  const selectedSupported =
+    selectedMember?.status === 'supported' ? selectedMember.view : null
+  const entries =
+    selectedSupported === null ? [] : legendEntries(selectedSupported.rebars)
+  const spacing = (() => {
+    if (selectedSupported === null) return null
+
+    const role = selectedSupported.kind === '柱' ? '帯筋' : 'あばら筋'
+    const rebar = selectedSupported.rebars.find(
+      (candidate) => candidate.role === role,
+    )
+    const pitchMm =
+      selectedSupported.kind === '柱'
+        ? selectedSupported.section.hoop.pitch
+        : selectedSupported.section.stirrup.pitch
+
+    return rebar?.placement === undefined
+      ? null
+      : { role, pitchMm, lastGapMm: rebar.placement.lastGapMm }
+  })()
 
   return (
     <div ref={mountRef} className={styles.viewer}>
@@ -1442,6 +1462,41 @@ export function Viewer3D() {
           }}
         />
       </div>
+      {entries.length > 0 && (
+        <aside
+          className={styles.legend}
+          aria-label={t(locale, 'viewer.legend.title')}
+        >
+          <span className={styles.legendTitle}>
+            {t(locale, 'viewer.legend.title')}
+          </span>
+          <ul className={styles.legendList}>
+            {entries.map((entry) => (
+              <li
+                key={`${entry.kind}|${entry.lengthMm}`}
+                className={styles.legendChip}
+              >
+                <span
+                  className={styles.legendSwatch}
+                  data-zone-kind={entry.kind}
+                  style={{ backgroundColor: REBAR_ZONE_COLORS[entry.kind] }}
+                  aria-hidden="true"
+                />
+                {[entry.kind, entry.ruleKey, entry.lengthMm]
+                  .filter((value) => value !== undefined)
+                  .join(' ')}
+              </li>
+            ))}
+            {spacing !== null && (
+              <li className={styles.legendSpacing}>
+                {spacing.role} @{spacing.pitchMm}
+                {spacing.lastGapMm !== spacing.pitchMm &&
+                  ` (${t(locale, 'viewer.legend.terminal')} ${spacing.lastGapMm})`}
+              </li>
+            )}
+          </ul>
+        </aside>
+      )}
       <div
         ref={tooltipRef}
         className={styles.tooltip}
