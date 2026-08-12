@@ -22,11 +22,19 @@ export interface RebarZone {
   pathToMm: number
 }
 
+/**
+ * 반복 전개를 재현하는 데 필요한 값 전부. 표시부가 단면에서 피치·오프셋을
+ * 다시 집어오면 배치 규칙이 두 곳에 박힌다 — `stirrupPositions` 인자를 그대로 싣는다.
+ */
 export interface RebarPlacement {
   /** 반복 전개의 기준축. 大梁 あばら筋은 로컬 x, 柱 帯筋은 높이 y를 쓴다. */
   axis: 'x' | 'y'
   /** `stirrupPositions`에 전달한 부재 内法 길이 (mm). */
   clearMm: number
+  /** `stirrupPositions`에 전달한 피치 (mm) — 断面一覧의 입력 그대로. */
+  pitchMm: number
+  /** `stirrupPositions`에 전달한 첫 본 오프셋 (mm). */
+  startOffsetMm: number
   /** `stirrupPositions`가 산출한 마지막 잔여 간격 (mm). */
   lastGapMm: number
 }

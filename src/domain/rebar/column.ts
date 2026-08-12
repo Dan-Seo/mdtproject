@@ -5,6 +5,12 @@ import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import { stirrupPositions } from './stirrup-layout'
 
+/**
+ * 柱 帯筋의 첫 본은 配置区間 시작면에 놓는다. 大梁 あばら筋과 달리 断面一覧에
+ * 오프셋 입력이 없다 — 規準値가 아니라 이 제품의 작도 기준이다.
+ */
+const HOOP_START_OFFSET_MM = 0
+
 export interface ColumnRebarInput {
   member: Member
   section: ColumnSection
@@ -154,7 +160,11 @@ export function generateColumnRebar(
     )
   }
 
-  const hoopLayout = stirrupPositions(hoopSpan, section.hoop.pitch, 0)
+  const hoopLayout = stirrupPositions(
+    hoopSpan,
+    section.hoop.pitch,
+    HOOP_START_OFFSET_MM,
+  )
   const hoopCount = hoopLayout.positionsMm.length
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
@@ -208,6 +218,8 @@ export function generateColumnRebar(
     placement: {
       axis: 'y',
       clearMm: hoopSpan,
+      pitchMm: section.hoop.pitch,
+      startOffsetMm: HOOP_START_OFFSET_MM,
       lastGapMm: hoopLayout.lastGapMm,
     },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],

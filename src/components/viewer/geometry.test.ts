@@ -102,6 +102,8 @@ const hoop: Rebar = {
   placement: {
     axis: 'y',
     clearMm: COLUMN_CLEAR_MM,
+    pitchMm: 100,
+    startOffsetMm: 0,
     lastGapMm: columnHoopLayout.lastGapMm,
   },
   ruleHits: [],
@@ -137,7 +139,13 @@ function hoopOf(count: number): Rebar {
   return {
     ...hoop,
     count: layout.positionsMm.length,
-    placement: { axis: 'y', clearMm, lastGapMm: layout.lastGapMm },
+    placement: {
+      axis: 'y',
+      clearMm,
+      pitchMm: section.hoop.pitch,
+      startOffsetMm: 0,
+      lastGapMm: layout.lastGapMm,
+    },
   }
 }
 
@@ -208,6 +216,8 @@ const girderStirrup: Rebar = {
   placement: {
     axis: 'x',
     clearMm: GIRDER_CLEAR_MM,
+    pitchMm: girderSection.stirrup.pitch,
+    startOffsetMm: girderSection.stirrup.startOffsetMm,
     lastGapMm: girderStirrupLayout.lastGapMm,
   },
   ruleHits: [],

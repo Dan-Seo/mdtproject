@@ -917,14 +917,19 @@ function geometryKey(view: SelectedSupportedMemberView): string {
     view.member.id,
     sectionGeometry,
     view.story.height,
-    view.rebars.map(({ role, size, count, closed, points, zones }) => [
-      role,
-      size,
-      count,
-      closed,
-      points,
-      zones,
-    ]),
+    // placement는 배치의 유일한 출처다 — 빼면 本数가 같은 배치 변경(上部大梁せい
+    // 미세 조정)이 씬을 옛 위치로 남긴다.
+    view.rebars.map(
+      ({ role, size, count, closed, points, zones, placement }) => [
+        role,
+        size,
+        count,
+        closed,
+        points,
+        zones,
+        placement,
+      ],
+    ),
     [...view.rowIds],
   ])
 }
@@ -1435,7 +1440,7 @@ export function Viewer3D() {
           <ul className={styles.legendList}>
             {entries.map((entry) => (
               <li
-                key={`${entry.kind}|${entry.lengthMm}`}
+                key={`${entry.kind}|${entry.ruleKey}|${entry.lengthMm}`}
                 className={styles.legendChip}
               >
                 <span

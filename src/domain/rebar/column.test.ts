@@ -111,6 +111,8 @@ describe('generateColumnRebar', () => {
       placement: {
         axis: 'y',
         clearMm: story.height - input().beamDepthAbove,
+        pitchMm: section.hoop.pitch,
+        startOffsetMm: 0,
         lastGapMm: expectedHoops.lastGapMm,
       },
     })

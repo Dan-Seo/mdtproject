@@ -808,6 +808,29 @@ describe('Viewer3D', () => {
     dispose.mockRestore()
   })
 
+  it('rebuilds when the 帯筋 배치 moves without changing 本数', async () => {
+    // 上部大梁せい 750→740이면 配置区間이 3450→3460이 되지만 本数는 36 그대로다.
+    // 배치는 placement에서 나오므로, 키가 placement를 빼면 3D가 옛 위치를 유지한다.
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    const dispose = vi.spyOn(THREE.BufferGeometry.prototype, 'dispose')
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-G1' && section.kind === '大梁'
+            ? { ...section, depth: 740 }
+            : section,
+        ),
+      })),
+    )
+
+    expect(dispose).toHaveBeenCalled()
+    dispose.mockRestore()
+  })
+
   it('keeps the camera while the 断面 of the selected member is edited', () => {
     render(<Viewer3D />)
     const framesAfterMount = mocks.controlsTargetSet.mock.calls.length

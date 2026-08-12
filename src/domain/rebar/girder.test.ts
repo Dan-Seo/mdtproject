@@ -134,6 +134,8 @@ describe('generateGirderRebar', () => {
       placement: {
         axis: 'x',
         clearMm: span.clear,
+        pitchMm: section.stirrup.pitch,
+        startOffsetMm: section.stirrup.startOffsetMm,
         lastGapMm: expectedStirrups.lastGapMm,
       },
     })

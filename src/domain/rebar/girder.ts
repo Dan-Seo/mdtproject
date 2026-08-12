@@ -296,6 +296,8 @@ export function generateGirderRebar(
     placement: {
       axis: 'x',
       clearMm: span.clear,
+      pitchMm: section.stirrup.pitch,
+      startOffsetMm: startOffsetMm,
       lastGapMm: layout.lastGapMm,
     },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],

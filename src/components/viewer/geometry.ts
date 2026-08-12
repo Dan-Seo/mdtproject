@@ -110,7 +110,7 @@ function columnRebarPlacements(
   section: ColumnSection,
 ): Point3[] {
   if (rebar.shape === 'hoop') {
-    return columnHoopPlacements(rebar, section)
+    return columnHoopPlacements(rebar)
   }
 
   // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
@@ -163,15 +163,15 @@ function girderMainPlacements(
  * 帯筋 전개는 도메인 `stirrupPositions`가 유일한 출처다. index×pitch로 되풀이하면
  * 内法이 피치로 나누어떨어지지 않을 때 마지막 本이 内法 밖에 그려진다.
  */
-function columnHoopPlacements(rebar: Rebar, section: ColumnSection): Point3[] {
+function columnHoopPlacements(rebar: Rebar): Point3[] {
   if (rebar.placement?.axis !== 'y') {
     throw new Error(`帯筋 y-axis placement is missing: ${rebar.id}`)
   }
 
   const positions = stirrupPositions(
     rebar.placement.clearMm,
-    section.hoop.pitch,
-    0,
+    rebar.placement.pitchMm,
+    rebar.placement.startOffsetMm,
   ).positionsMm
 
   if (positions.length !== rebar.count) {
@@ -183,18 +183,15 @@ function columnHoopPlacements(rebar: Rebar, section: ColumnSection): Point3[] {
   return positions.map((y): Point3 => [0, y, 0])
 }
 
-function girderStirrupPlacements(
-  rebar: Rebar,
-  section: GirderSection,
-): Point3[] {
+function girderStirrupPlacements(rebar: Rebar): Point3[] {
   if (rebar.placement?.axis !== 'x') {
     throw new Error(`あばら筋 x-axis placement is missing: ${rebar.id}`)
   }
 
   const positions = stirrupPositions(
     rebar.placement.clearMm,
-    section.stirrup.pitch,
-    section.stirrup.startOffsetMm,
+    rebar.placement.pitchMm,
+    rebar.placement.startOffsetMm,
   ).positionsMm
 
   if (positions.length !== rebar.count) {
@@ -211,7 +208,7 @@ export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
     return columnRebarPlacements(rebar, section)
   }
   if (rebar.role === 'あばら筋') {
-    return girderStirrupPlacements(rebar, section)
+    return girderStirrupPlacements(rebar)
   }
 
   return girderMainPlacements(rebar, section)
