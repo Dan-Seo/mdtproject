@@ -87,6 +87,17 @@
   source: { ref: spec, section: 表5.3.2, page: 28 }
   confidence: inferred
   note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1
+  label: 重ね継手長さ L1（フックなし）
+  expr: 35d
+  conditions: { fc: 33, grade: SD295, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
   expr: 35d
@@ -101,6 +112,16 @@
   label: 重ね継手長さ L1h（フックあり）
   expr: 25d
   conditions: { fc: 30, grade: SD295, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1h
+  label: 重ね継手長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 33, grade: SD295, hook: true }
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
@@ -210,6 +231,16 @@
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
   expr: 35d
+  conditions: { fc: 33, grade: SD345, hook: false }
+  value: 35
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1
+  label: 重ね継手長さ L1（フックなし）
+  expr: 35d
   conditions: { fc: 36, grade: SD345, hook: false }
   value: 35
   unit: d
@@ -221,6 +252,16 @@
   label: 重ね継手長さ L1h（フックあり）
   expr: 25d
   conditions: { fc: 30, grade: SD345, hook: true }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1h
+  label: 重ね継手長さ L1h（フックあり）
+  expr: 25d
+  conditions: { fc: 33, grade: SD345, hook: true }
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
@@ -310,6 +351,16 @@
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
   expr: 40d
+  conditions: { fc: 33, grade: SD390, hook: false }
+  value: 40
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1
+  label: 重ね継手長さ L1（フックなし）
+  expr: 40d
   conditions: { fc: 36, grade: SD390, hook: false }
   value: 40
   unit: d
@@ -321,6 +372,16 @@
   label: 重ね継手長さ L1h（フックあり）
   expr: 30d
   conditions: { fc: 30, grade: SD390, hook: true }
+  value: 30
+  unit: d
+  source: { ref: spec, section: 表5.3.2, page: 28 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+
+- key: lap.L1h
+  label: 重ね継手長さ L1h（フックあり）
+  expr: 30d
+  conditions: { fc: 33, grade: SD390, hook: true }
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }

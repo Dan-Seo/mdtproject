@@ -80,6 +80,10 @@ function ruleContext(
     memberClass: member.memberClass,
     fc: section.fc,
     grade: section.grade,
+    // 地上躯体のみを扱う前提 — column.ts の cover.minimum 照会と同じ (ADR-005)。
+    soilContact: false,
+    exposure: section.exposure,
+    finish: section.finish,
     hook: rebar.shape === 'hook90',
     barRole: rebar.role,
     size: rebar.size,

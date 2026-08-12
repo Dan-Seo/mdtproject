@@ -94,18 +94,6 @@
       "imageRead": true
     },
     {
-      "table": "5.3.4(1)",
-      "pdfPage": 33,
-      "printedPage": 27,
-      "kind": "lap.prohibited.minimum-bar-size",
-      "conditions": {
-        "barSizeBand": "D35以上"
-      },
-      "value": true,
-      "unit": "boolean",
-      "imageRead": false
-    },
-    {
       "table": "表5.3.2",
       "pdfPage": 34,
       "printedPage": 28,
@@ -1326,6 +1314,19 @@
       "conditions": {},
       "value": 10,
       "unit": "mm",
+      "imageRead": false
+    }
+  ],
+  "constraints": [
+    {
+      "table": "5.3.4(1)",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "lap.prohibited.minimum-bar-size",
+      "conditions": {
+        "barSizeBand": "D35以上"
+      },
+      "prohibited": true,
       "imageRead": false
     }
   ]

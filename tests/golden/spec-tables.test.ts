@@ -76,24 +76,48 @@ const supportedKinds = new Set([
   'anchorage.La',
 ])
 
-function expandFcBand(fcBand: string): number[] {
-  const boundaries = fcBand.split('-').map(Number)
+// 표의 Fc 帯·呼び径 대역은 끝점이 아니라 대역 내 전 표준값으로 전개해 대조한다 —
+// 끝점만 보면 대역 중간값(Fc33 등)의 룰팩 공백을 골든테스트가 놓친다.
+const STANDARD_FC = [18, 21, 24, 27, 30, 33, 36]
 
-  if (boundaries.some((boundary) => !Number.isFinite(boundary))) {
+function expandFcBand(fcBand: string): number[] {
+  const [low, high = low] = fcBand.split('-').map(Number)
+
+  if (!Number.isFinite(low) || !Number.isFinite(high)) {
     throw new Error(`Invalid fcBand in fixture: ${fcBand}`)
   }
 
-  return [...new Set(boundaries)]
+  const expanded = STANDARD_FC.filter((fc) => fc >= low && fc <= high)
+
+  if (expanded.length === 0) {
+    throw new Error(`fcBand matches no standard Fc: ${fcBand}`)
+  }
+
+  return expanded
 }
 
-function expandBarSizeBand(barSizeBand: string): string[] {
-  const diameters = barSizeBand.match(/\d+/g)
+// 도메인 BarSize 유니온과 같은 呼び径 목록 (D35·D38은 유니온 밖 — 전개 제외)
+const BAR_SIZES = [10, 13, 16, 19, 22, 25, 29, 32]
 
-  if (!diameters || diameters.length === 0) {
+function expandBarSizeBand(barSizeBand: string): string[] {
+  const bounds = barSizeBand.match(/\d+/g)?.map(Number)
+
+  if (!bounds || bounds.length === 0) {
     throw new Error(`Invalid barSizeBand in fixture: ${barSizeBand}`)
   }
 
-  return [...new Set(diameters)].map((diameter) => `D${diameter}`)
+  const [low, high = low] = bounds
+  const expanded = barSizeBand.includes('以下')
+    ? BAR_SIZES.filter((diameter) => diameter <= low)
+    : barSizeBand.includes('以上')
+      ? BAR_SIZES.filter((diameter) => diameter >= low)
+      : BAR_SIZES.filter((diameter) => diameter >= low && diameter <= high)
+
+  if (expanded.length === 0) {
+    throw new Error(`barSizeBand matches no BarSize: ${barSizeBand}`)
+  }
+
+  return expanded.map((diameter) => `D${diameter}`)
 }
 
 const tableEntries = (fixture.entries as unknown as TableEntry[]).filter(

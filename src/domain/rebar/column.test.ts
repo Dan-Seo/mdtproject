@@ -23,6 +23,8 @@ const section: ColumnSection = {
   d: 800,
   fc: 24,
   grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100 },
 }
@@ -51,6 +53,9 @@ const lap =
   lookupRule(jpMlitRulePack, 'lap.L1', conditions).value * mainDiameter
 const minimumCover = lookupRule(jpMlitRulePack, 'cover.minimum', {
   memberKind: section.kind,
+  soilContact: false,
+  exposure: section.exposure,
+  finish: section.finish,
 }).value
 const fabricationAddition = lookupRule(
   jpMlitRulePack,

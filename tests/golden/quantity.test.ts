@@ -21,6 +21,8 @@ const section: ColumnSection = {
   d: 800,
   fc: 24,
   grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
   main: { size: 'D25', count: 1 },
   hoop: { size: 'D13', pitch: 100 },
 }

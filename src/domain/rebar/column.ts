@@ -46,6 +46,11 @@ export function generateColumnRebar(
   }
   const coverRule = lookupRule(pack, 'cover.minimum', {
     memberKind: section.kind,
+    // 地上躯体のみを扱う — 基礎・地中部材は ADR-005 でスコープ外のため
+    // 「土に接する部分」のセルには到達しない。
+    soilContact: false,
+    exposure: section.exposure,
+    finish: section.finish,
   })
   const fabricationCoverAdditionRule = lookupRule(
     pack,

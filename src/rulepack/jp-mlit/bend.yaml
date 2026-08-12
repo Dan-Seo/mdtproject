@@ -1,7 +1,47 @@
 - key: bend.inside-diameter
   label: 折曲げ内法直径
   expr: 3d
+  conditions: { grade: SD295, size: D10 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 3d
+  conditions: { grade: SD295, size: D13 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 3d
   conditions: { grade: SD295, size: D16 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 3d
+  conditions: { grade: SD345, size: D10 }
+  value: 3
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 3d
+  conditions: { grade: SD345, size: D13 }
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
@@ -31,7 +71,37 @@
 - key: bend.inside-diameter
   label: 折曲げ内法直径
   expr: 4d
-  conditions: { grade: SD295, size: D38 }
+  conditions: { grade: SD295, size: D22 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD295, size: D25 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD295, size: D29 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD295, size: D32 }
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
@@ -51,7 +121,37 @@
 - key: bend.inside-diameter
   label: 折曲げ内法直径
   expr: 4d
-  conditions: { grade: SD345, size: D38 }
+  conditions: { grade: SD345, size: D22 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD345, size: D25 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD345, size: D29 }
+  value: 4
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 4d
+  conditions: { grade: SD345, size: D32 }
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
@@ -71,7 +171,37 @@
 - key: bend.inside-diameter
   label: 折曲げ内法直径
   expr: 5d
-  conditions: { grade: SD390, size: D38 }
+  conditions: { grade: SD390, size: D22 }
+  value: 5
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 5d
+  conditions: { grade: SD390, size: D25 }
+  value: 5
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 5d
+  conditions: { grade: SD390, size: D29 }
+  value: 5
+  unit: d
+  source: { ref: spec, section: 表5.3.1, page: 27 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+
+- key: bend.inside-diameter
+  label: 折曲げ内法直径
+  expr: 5d
+  conditions: { grade: SD390, size: D32 }
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
