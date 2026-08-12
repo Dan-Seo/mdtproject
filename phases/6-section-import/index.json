@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-12T23:25:26+0900",
       "summary": "가로형·세로형 TextItem 표를 符号·층·위치 좌표로 후보에 매핑하고, 표현 불가·위치별 상이 셀은 raw·issues와 빈칸으로 보존",
-      "completed_at": "2026-08-12T23:40:38+0900"
+      "completed_at": "2026-08-12T23:44:19+0900"
     },
     {
       "step": 2,
