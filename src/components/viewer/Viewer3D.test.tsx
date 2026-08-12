@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   }>,
   pickableCounts: [] as number[],
   pickableMeshes: [] as import('three').Object3D[][],
+  sceneObjects: [] as import('three').Object3D[],
 }))
 
 vi.mock('three', async (importOriginal) => {
@@ -69,7 +70,14 @@ vi.mock('three', async (importOriginal) => {
     intersectObjects(objects: import('three').Object3D[]) {
       mocks.pickableCounts.push(objects.length)
       mocks.pickableMeshes.push([...objects])
-      return objects.length === 0 ? [] : [{ object: objects[0] }]
+      return objects.map((object) => ({ object }))
+    }
+  }
+
+  class SceneMock extends actual.Scene {
+    add(...objects: import('three').Object3D[]) {
+      mocks.sceneObjects.push(...objects)
+      return super.add(...objects)
     }
   }
 
@@ -77,6 +85,7 @@ vi.mock('three', async (importOriginal) => {
     ...actual,
     PMREMGenerator: PMREMGeneratorMock,
     Raycaster: RaycasterMock,
+    Scene: SceneMock,
     WebGLRenderer: WebGLRendererMock,
   }
 })
@@ -142,6 +151,7 @@ describe('Viewer3D', () => {
     mocks.rendererInstances.length = 0
     mocks.pickableCounts.length = 0
     mocks.pickableMeshes.length = 0
+    mocks.sceneObjects.length = 0
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
@@ -153,6 +163,7 @@ describe('Viewer3D', () => {
       activeStoryId: '1F',
       locale: 'ja',
       viewerMode: 'member',
+      viewerLayers: { main: true, hoop: true, concrete: true },
     })
   })
 
@@ -245,6 +256,98 @@ describe('Viewer3D', () => {
     })
 
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
+  })
+
+  it('hides only the hoop layer by switching mesh visibility', async () => {
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    const hoopToggle = screen.getByRole('button', { name: '帯筋・あばら筋' })
+    expect(hoopToggle).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(hoopToggle)
+    expect(hoopToggle).toHaveAttribute('aria-pressed', 'false')
+
+    const content = mocks.sceneObjects
+      .filter((object) => object instanceof THREE.Group)
+      .at(-1)
+    const mainMeshes: import('three').Object3D[] = []
+    const hoopMeshes: import('three').Object3D[] = []
+    content?.traverse((object) => {
+      if (object.userData.layer === 'main') mainMeshes.push(object)
+      if (object.userData.layer === 'hoop') hoopMeshes.push(object)
+    })
+
+    expect(mainMeshes.length).toBeGreaterThan(0)
+    expect(hoopMeshes.length).toBeGreaterThan(0)
+    expect(mainMeshes.every(({ visible }) => visible)).toBe(true)
+    expect(hoopMeshes.every(({ visible }) => !visible)).toBe(true)
+  })
+
+  it('keeps concrete outlines visible when concrete solids are hidden', async () => {
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'コンクリート' }))
+
+    const content = mocks.sceneObjects
+      .filter((object) => object instanceof THREE.Group)
+      .at(-1)
+    const concreteSolids: import('three').Object3D[] = []
+    const concreteOutlines: import('three').Object3D[] = []
+    content?.traverse((object) => {
+      if (object.userData.layer !== 'concrete') return
+      if (object instanceof THREE.LineSegments) concreteOutlines.push(object)
+      if (object instanceof THREE.Mesh) concreteSolids.push(object)
+    })
+
+    expect(concreteSolids.length).toBeGreaterThan(0)
+    expect(concreteOutlines.length).toBeGreaterThan(0)
+    expect(concreteSolids.every(({ visible }) => !visible)).toBe(true)
+    expect(concreteOutlines.every(({ visible }) => visible)).toBe(true)
+  })
+
+  it('skips hidden layer hits when picking', () => {
+    const { result } = renderHook(() => useTakeoff())
+    const hoopLine = result.current.lines.find(
+      ({ groupId, role }) => groupId === '1階|C|C1' && role === '帯筋',
+    )
+    expect(hoopLine).toBeDefined()
+    render(<Viewer3D />)
+
+    fireEvent.click(screen.getByRole('button', { name: '主筋' }))
+    fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+
+    expect(useAppStore.getState().hoverRowId).toBe(hoopLine?.id)
+  })
+
+  it('does not rebuild or recreate meshes when a layer is toggled', async () => {
+    const THREE = await import('three')
+    render(<Viewer3D />)
+
+    const contentsBefore = mocks.sceneObjects.filter(
+      (object) => object instanceof THREE.Group,
+    )
+    const contentBefore = contentsBefore.at(-1)
+    const meshesBefore: import('three').Object3D[] = []
+    contentBefore?.traverse((object) => {
+      if (object.userData.layer !== undefined) meshesBefore.push(object)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '帯筋・あばら筋' }))
+
+    const contentsAfter = mocks.sceneObjects.filter(
+      (object) => object instanceof THREE.Group,
+    )
+    const meshesAfter: import('three').Object3D[] = []
+    contentsAfter.at(-1)?.traverse((object) => {
+      if (object.userData.layer !== undefined) meshesAfter.push(object)
+    })
+    expect(contentsAfter).toHaveLength(contentsBefore.length)
+    expect(contentsAfter.at(-1)).toBe(contentBefore)
+    expect(meshesAfter).toEqual(meshesBefore)
   })
 
   it('builds one pickable mesh per row and contiguous zone, not per segment', () => {

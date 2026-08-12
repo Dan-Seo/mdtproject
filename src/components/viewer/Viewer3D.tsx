@@ -27,7 +27,10 @@ import {
   type UnsupportedMember,
 } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
-import { useAppStore } from '@/lib/store'
+import {
+  useAppStore,
+  type ViewerLayer,
+} from '@/lib/store'
 
 import {
   buildingLayout,
@@ -48,6 +51,7 @@ import {
   type CameraFit,
   type Point3,
 } from './geometry'
+import { ViewerLayerControls } from './ViewerTabs'
 import styles from './Viewer3D.module.css'
 
 const MILLIMETRES_TO_SCENE = 0.001
@@ -280,6 +284,8 @@ function addMemberConcrete(
 
     outline.position.copy(center)
     solid.position.copy(center)
+    outline.userData.layer = 'concrete'
+    solid.userData.layer = 'concrete'
     solid.receiveShadow = true
     content.add(outline, solid)
   }
@@ -472,6 +478,35 @@ function applyHighlight(
         ? highlightMaterial
         : baseMaterial
   }
+}
+
+function isViewerLayer(value: unknown): value is ViewerLayer {
+  return value === 'main' || value === 'hoop' || value === 'concrete'
+}
+
+function applyViewerLayers(
+  runtime: ViewerRuntime,
+  viewerLayers: Record<ViewerLayer, boolean>,
+): void {
+  runtime.content?.traverse((object) => {
+    const layer: unknown = object.userData.layer
+    if (!isViewerLayer(layer)) return
+
+    // 제품 결정: 콘크리트를 꺼도 외곽선은 공간 참조로 남긴다. 철근만
+    // 허공에 뜨는 상태를 피하기 위해 部材 와이어프레임과 建物 아웃라인은 숨기지 않는다.
+    const persistentConcreteOutline =
+      layer === 'concrete' && object instanceof THREE.LineSegments
+    object.visible = persistentConcreteOutline || viewerLayers[layer]
+  })
+}
+
+function isEffectivelyVisible(object: THREE.Object3D): boolean {
+  let current: THREE.Object3D | null = object
+  while (current !== null) {
+    if (!current.visible) return false
+    current = current.parent
+  }
+  return true
 }
 
 /** 建物 뷰에서 선택 부재의 콘크리트만 강조 재질로 스왑한다. */
@@ -667,6 +702,7 @@ function rebuildBuildingScene(
     mesh.position.copy(vector(box.center))
     mesh.receiveShadow = true
     mesh.userData.memberId = box.memberId
+    mesh.userData.layer = 'concrete'
     content.add(mesh)
     pickableMeshes.push(mesh)
 
@@ -675,6 +711,7 @@ function rebuildBuildingScene(
       outlineMaterial,
     )
     outline.position.copy(mesh.position)
+    outline.userData.layer = 'concrete'
     content.add(outline)
   }
 
@@ -904,13 +941,16 @@ export function Viewer3D() {
   const selectedGroup = useAppStore(({ sel }) => sel.group)
   const hoverRowId = useAppStore(({ hoverRowId: rowId }) => rowId)
   const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
+  const viewerLayers = useAppStore(({ viewerLayers }) => viewerLayers)
   const { rebars, lines, unsupportedMembers } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
   const selectMemberRef = useRef(selectMember)
   const hoverRowIdRef = useRef(hoverRowId)
+  const viewerLayersRef = useRef(viewerLayers)
   setHoverRowRef.current = setHoverRow
   selectMemberRef.current = selectMember
   hoverRowIdRef.current = hoverRowId
+  viewerLayersRef.current = viewerLayers
 
   // 建物 레이아웃은 선택과 무관하다 — 선택 변경마다 씬을 재구성하지 않는다.
   const layout = useMemo(
@@ -1048,7 +1088,9 @@ export function Viewer3D() {
         -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
       )
       raycaster.setFromCamera(pointer, camera)
-      const hit = raycaster.intersectObjects(runtime.pickableMeshes, false)[0]
+      const hit = raycaster
+        .intersectObjects(runtime.pickableMeshes, false)
+        .find(({ object }) => isEffectivelyVisible(object))
       if (hit === undefined) return
 
       // 部材 뷰: 철근 → 내역서 행. 建物 뷰: 콘크리트/철근 → 부재 선택.
@@ -1103,7 +1145,14 @@ export function Viewer3D() {
     const runtime = runtimeRef.current
     if (runtime === null) return
     rebuildScene(runtime, viewRef.current, hoverRowIdRef.current)
+    applyViewerLayers(runtime, viewerLayersRef.current)
   }, [sceneKey])
+
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
+    applyViewerLayers(runtime, viewerLayers)
+  }, [viewerLayers])
 
   useEffect(() => {
     const runtime = runtimeRef.current
@@ -1138,9 +1187,14 @@ export function Viewer3D() {
         <span className={styles.memberId}>
           {selectedMemberId ?? t(locale, 'viewer.selectMember')}
         </span>
-        <span className={styles.scaleNotice}>
-          {t(locale, 'viewer.scaleNotice')}
-        </span>
+        <div className={styles.metaActions}>
+          <span className={styles.scaleNotice}>
+            {t(locale, 'viewer.scaleNotice')}
+          </span>
+          <div className={styles.layerControls}>
+            <ViewerLayerControls />
+          </div>
+        </div>
       </div>
       {view === null && (
         <div className={styles.empty}>

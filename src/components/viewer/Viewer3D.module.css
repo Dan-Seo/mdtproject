@@ -35,6 +35,17 @@
   font-size: var(--type-caption-size);
 }
 
+.metaActions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.layerControls {
+  height: 28px;
+  pointer-events: auto;
+}
+
 .memberId,
 .scaleNotice {
   padding: 3px 6px;
