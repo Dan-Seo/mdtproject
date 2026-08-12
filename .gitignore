@@ -30,3 +30,4 @@ phases/**/step*-output.json
 
 # Lighthouse 실측 리포트 — CI는 워크플로 아티팩트로 남긴다
 .lighthouseci/
+.playwright-mcp/

@@ -274,12 +274,10 @@ function generateStirrup(
       lastGapMm: layout.lastGapMm,
       positionCount: layout.positionsMm.length,
     },
-    ruleHits: [
-      hoopLengthAdditionRule,
-      distributionAdditionRule,
-      coverRule,
-      fabricationCoverAdditionRule,
-    ],
+    // 設計長さ・設計本数を決めたのはこの2条項だけだ。かぶりは 3D 形状
+    // (points) にしか効かないので、載せると算出式に現れない行を根拠として
+    // 示すことになる — その梁のかぶり出典は上端筋・下端筋の行が持つ。
+    ruleHits: [hoopLengthAdditionRule, distributionAdditionRule],
     // 内訳行は同じ符号の梁を束ねる。内法長さが違っても割付本数が同じなら
     // 一行になるので、内法長さは代表値だと断る。部材ごとに違う 3D 配置の項は
     // 束ねられた他の梁について事実でなくなるため、ここには載せない。
@@ -289,7 +287,9 @@ function generateStirrup(
       `（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
       `設計本数 ＝ ⌈内法長さ ${span.clear} ÷ ピッチ ` +
       `${section.stirrup.pitch}⌉ ＋ 1 ＝ ${stirrupCount}` +
-      `（同 （３）梁3)・1通則7) — 各梁ごと、内法長さは代表値）`,
+      `（同 （３）梁3)・1通則7) — 各梁ごと、内法長さは代表値） ／ ` +
+      `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
+      `表示される長さ・本数は設計値と一致しない・数量には用いない）`,
   }
 }
 

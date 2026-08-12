@@ -401,15 +401,14 @@ describe('generateGirderRebar', () => {
     expect(
       byRole(generated, '下端筋').ruleHits.map(({ key }) => key),
     ).toEqual(bentMainRules)
+    // あばら筋の設計長さ・設計本数を決めるのは積算基準のこの2条項だけだ。
+    // かぶりは 3D 形状 (points) にしか効かないので、内訳行の根拠に混ぜると
+    // 算出式に一度も現れない行を出典として示すことになる。
     expect(
       byRole(generated, 'あばら筋').ruleHits.map(({ key }) => key),
-    // あばら筋の数量を決めるのは積算基準の2条項だ — それが出典に載らないと、
-    // 数量に効かないかぶり2行だけがその行の根拠として残る。
     ).toEqual([
       'measure.hoop.length.addition',
       'measure.distribution.addition',
-      'cover.minimum',
-      'cover.fabrication.addition',
     ])
 
     for (const rebar of generated) {

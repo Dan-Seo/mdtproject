@@ -162,8 +162,9 @@ export function generateColumnRebar(
     hoopLengthAdditionRule,
   )
 
-  // 上部大梁せい가 階高 이상이면 배치 구간이 사라져 本数가 0 이하로 샌다 —
-  // 加工寸法 가드와 같은 이유로 실패한다.
+  // 上部大梁せい가 階高 이상이면 3D 배치 구간이 사라진다. 数量만이라면
+  // 階高로 계산되지만(1通則7)), 그런 부재는 梁이 층보다 높다는 뜻이라 형상이
+  // 성립하지 않는다 — 입력 오류로 보고 加工寸法 가드와 같이 실패시킨다.
   const hoopSpan = story.height - beamDepthAbove
   if (hoopSpan <= 0) {
     throw new MemberUnsupportedError(
@@ -254,12 +255,10 @@ export function generateColumnRebar(
       lastGapMm: hoopLayout.lastGapMm,
       positionCount: hoopLayout.positionsMm.length,
     },
-    ruleHits: [
-      hoopLengthAdditionRule,
-      distributionAdditionRule,
-      coverRule,
-      fabricationCoverAdditionRule,
-    ],
+    // 設計長さ・設計本数を決めたのはこの2条項だけだ。かぶりは 3D 形状
+    // (points) にしか効かないので、載せると算出式に現れない行を根拠として
+    // 示すことになる — その柱のかぶり出典は主筋の行が持つ。
+    ruleHits: [hoopLengthAdditionRule, distributionAdditionRule],
     // 内訳行は複数の柱を束ねる。部材ごとに違う 3D 配置の項をここに書くと、
     // 束ねられた他の柱について事実でない根拠を表示することになる —
     // 数量を決めた項だけを載せ、配置は placement が持つ。
@@ -267,7 +266,9 @@ export function generateColumnRebar(
       `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.d}) ` +
       `＝ ${hoopLength}（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
       `設計本数 ＝ ⌈階高 ${story.height} ÷ ピッチ ${section.hoop.pitch}⌉ ＋ 1 ` +
-      `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと）`,
+      `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと） ／ ` +
+      `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
+      `表示される長さ・本数は設計値と一致しない・数量には用いない）`,
   }
 
   return [main, hoop]

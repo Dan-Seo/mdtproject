@@ -13,6 +13,10 @@
 
 import type { RuleHit } from '../rules/types'
 
+function positiveFinite(value: number): boolean {
+  return Number.isFinite(value) && value > 0
+}
+
 function additionMm(rule: RuleHit): number {
   if (rule.unit !== 'mm') {
     throw new Error(`Rule ${rule.key} must use mm: ${rule.unit}`)
@@ -34,7 +38,7 @@ export function hoopDesignLengthMm(
   sectionDepthMm: number,
   additionRule: RuleHit,
 ): number {
-  if (!(sectionWidthMm > 0) || !(sectionDepthMm > 0)) {
+  if (!positiveFinite(sectionWidthMm) || !positiveFinite(sectionDepthMm)) {
     throw new Error(
       `断面の設計寸法 must be positive: ${sectionWidthMm}×${sectionDepthMm}`,
     )
@@ -58,10 +62,10 @@ export function distributionCount(
   pitchMm: number,
   additionRule: RuleHit,
 ): number {
-  if (!(partLengthMm > 0)) {
+  if (!positiveFinite(partLengthMm)) {
     throw new Error(`その部分の長さ must be positive: ${partLengthMm}`)
   }
-  if (!(pitchMm > 0)) {
+  if (!positiveFinite(pitchMm)) {
     throw new Error(`鉄筋の間隔 must be positive: ${pitchMm}`)
   }
   if (additionRule.unit !== '本') {

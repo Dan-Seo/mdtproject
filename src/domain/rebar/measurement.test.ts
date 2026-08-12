@@ -46,6 +46,8 @@ describe('hoopDesignLengthMm', () => {
     ['zero depth', 400, 0],
     ['negative width', -400, 750],
     ['NaN depth', 400, Number.NaN],
+    ['Infinity width', Number.POSITIVE_INFINITY, 750],
+    ['Infinity depth', 400, Number.POSITIVE_INFINITY],
   ])('throws for %s', (_label, widthMm, depthMm) => {
     expect(() => hoopDesignLengthMm(widthMm, depthMm, noAddition)).toThrow(
       /断面の設計寸法/,
@@ -74,6 +76,7 @@ describe('distributionCount', () => {
     ['zero length', 0, 100],
     ['negative length', -5200, 100],
     ['NaN length', Number.NaN, 100],
+    ['Infinity length', Number.POSITIVE_INFINITY, 100],
   ])('throws for %s', (_label, partLengthMm, pitchMm) => {
     expect(() =>
       distributionCount(partLengthMm, pitchMm, onePerRun),
@@ -84,6 +87,7 @@ describe('distributionCount', () => {
     ['zero pitch', 5200, 0],
     ['negative pitch', 5200, -100],
     ['NaN pitch', 5200, Number.NaN],
+    ['Infinity pitch', 5200, Number.POSITIVE_INFINITY],
   ])('throws for %s', (_label, partLengthMm, pitchMm) => {
     expect(() =>
       distributionCount(partLengthMm, pitchMm, onePerRun),
