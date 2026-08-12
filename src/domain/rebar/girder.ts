@@ -138,9 +138,15 @@ function generateMain(
   )
   const length = span.clear + start.lengthMm + end.lengthMm
   const zones: RebarZone[] = [
-    { kind: '定着', pathFromMm: 0, pathToMm: start.lengthMm },
     {
       kind: '定着',
+      ruleKey: start.lengthRule,
+      pathFromMm: 0,
+      pathToMm: start.lengthMm,
+    },
+    {
+      kind: '定着',
+      ruleKey: end.lengthRule,
       pathFromMm: length - end.lengthMm,
       pathToMm: length,
     },
@@ -287,6 +293,13 @@ export function generateGirderRebar(
     closed: true,
     length: stirrupLengthMm,
     count: layout.positionsMm.length,
+    placement: {
+      axis: 'x',
+      clearMm: span.clear,
+      pitchMm: section.stirrup.pitch,
+      startOffsetMm: startOffsetMm,
+      lastGapMm: layout.lastGapMm,
+    },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +

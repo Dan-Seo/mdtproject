@@ -46,30 +46,37 @@ function replaceSection(
   }
 }
 
-function positiveNumber(value: string): number | null {
+function boundedNumber(value: string, minimum: number): number | null {
+  // Number('')는 0이다 — 하한이 0인 필드에서 빈 값이 통과하면 지우는 순간
+  // 本数(=물량)가 0 오프셋으로 덮인다.
+  if (value.trim() === '') return null
+
   const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+  return Number.isFinite(parsed) && parsed >= minimum ? parsed : null
 }
 
 function NumberInput({
   label,
   value,
   onChange,
+  // 치수·ピッチ·本数는 0이 성립하지 않지만 初期オフセット은 0이 정상값이다.
+  minimum = 1,
 }: {
   label: string
   value: number
   onChange(value: number): void
+  minimum?: number
 }) {
   return (
     <input
       className={styles.numberInput}
       type="number"
-      min="1"
+      min={minimum}
       step="1"
       value={value}
       aria-label={label}
       onChange={(event) => {
-        const next = positiveNumber(event.currentTarget.value)
+        const next = boundedNumber(event.currentTarget.value, minimum)
         if (next !== null) onChange(next)
       }}
     />
@@ -323,22 +330,21 @@ function ShearField({
           )
         }
       />
-      {section.kind === '大梁' && (
-        <NumberInput
-          label={`${section.mark} あばら筋 初期オフセット`}
-          value={section.stirrup.startOffsetMm}
-          onChange={(startOffsetMm) =>
-            update((current) =>
-              current.kind !== '大梁'
-                ? current
-                : {
-                    ...current,
-                    stirrup: { ...current.stirrup, startOffsetMm },
-                  },
-            )
-          }
-        />
-      )}
+      <NumberInput
+        label={`${section.mark} ${label} 初期オフセット`}
+        minimum={0}
+        value={reinforcement.startOffsetMm}
+        onChange={(startOffsetMm) =>
+          update((current) =>
+            current.kind === '柱'
+              ? { ...current, hoop: { ...current.hoop, startOffsetMm } }
+              : {
+                  ...current,
+                  stirrup: { ...current.stirrup, startOffsetMm },
+                },
+          )
+        }
+      />
     </div>
   )
 }

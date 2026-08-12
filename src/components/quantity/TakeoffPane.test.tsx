@@ -168,6 +168,22 @@ describe('TakeoffPane', () => {
     expect(notice).toHaveTextContent('見直し')
   })
 
+  it('separates the per-reason follow-ups instead of running them together', () => {
+    // 사유가 둘이면 고지문도 둘이다 — 구분자 없이 이어 붙이면
+    // 「…見直しが必要連続スパン: …」처럼 한 문장으로 읽힌다.
+    useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) =>
+        section.kind === '柱' ? { ...section, b: 300, d: 300 } : section,
+      ),
+    }))
+
+    render(<TakeoffPane />)
+
+    const plan = screen.getByTestId('unsupported-plan')
+    expect(plan.textContent?.split(' / ')).toHaveLength(2)
+  })
+
   it('omits the unsupported-member notice when every member is supported', () => {
     // 柱만 남기면 beamDepthAbove가 실패하므로, 부재가 없는 신규 안건 상태로 본다.
     useAppStore.setState({
@@ -177,6 +193,46 @@ describe('TakeoffPane', () => {
     render(<TakeoffPane />)
 
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
+
+  it('keeps two chips citing one table when their tooltips differ', () => {
+    // 문헌 위치만으로 묶으면 Map이 뒤엣것을 남긴다 — 같은 표의 다른 행
+    // (지배 룰)이 툴팁에서 사라진다.
+    const line = lineFor('主筋')
+    const [governing] = line.rules
+    const sameTable = {
+      ...governing,
+      key: `${governing.key}.alt`,
+      label: `${governing.label}（別条件）`,
+    }
+
+    render(
+      <TakeoffTable lines={[{ ...line, rules: [governing, sameTable] }]} />,
+    )
+
+    const titles = within(screen.getByTestId(`quantity-line-${line.id}`))
+      .getAllByRole('link')
+      .map((chip) => chip.getAttribute('title'))
+
+    expect(titles).toHaveLength(2)
+    expect(titles.some((title) => title?.includes(sameTable.label))).toBe(true)
+  })
+
+  it('collapses chips that would render identically', () => {
+    const line = lineFor('主筋')
+    const [governing] = line.rules
+
+    render(
+      <TakeoffTable
+        lines={[{ ...line, rules: [governing, { ...governing }] }]}
+      />,
+    )
+
+    expect(
+      within(screen.getByTestId(`quantity-line-${line.id}`)).getAllByRole(
+        'link',
+      ),
+    ).toHaveLength(1)
   })
 
   it('shows a row warning only from QuantityLine.inferred', () => {
@@ -317,15 +373,25 @@ describe('TakeoffPane', () => {
     expect(chip.closest('a')).toBeNull()
   })
 
-  it('shows one chip per cited document location, not per rule row', () => {
+  it('keeps one chip per rule row when a table is cited twice', () => {
     // 大梁 上端筋은 大梁의 かぶり와 端部条件을 판정한 지점 柱의 かぶり를 둘 다
-    // 조회한다 — 서로 다른 행이지만 가리키는 표는 같은 表5.3.6 하나다.
+    // 조회한다 — 가리키는 표는 같은 表5.3.6이지만 근거 행은 서로 다르다.
+    // 하나로 접으면 남은 칩의 툴팁이 나머지 한 행을 대신 말하게 된다.
     const lineId = lineFor('上端筋').id
     render(<TakeoffPane />)
 
     const row = screen.getByTestId(`quantity-line-${lineId}`)
+    const titles = within(row)
+      .getAllByText('標準仕様書 表5.3.6')
+      .map((chip) => chip.getAttribute('title'))
 
-    expect(within(row).getAllByText('標準仕様書 表5.3.6')).toHaveLength(1)
+    expect(titles).toHaveLength(2)
+    expect(
+      titles.some((title) => title?.includes('柱の最小かぶり厚さ')),
+    ).toBe(true)
+    expect(
+      titles.some((title) => title?.includes('大梁の最小かぶり厚さ')),
+    ).toBe(true)
   })
 
   it('stores a typed 備考 in the Project instead of dropping it', () => {

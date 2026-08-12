@@ -47,7 +47,7 @@ const supportColumnSection: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 const supportCover = coverConditions(supportColumnSection)
@@ -60,6 +60,8 @@ const span: GirderSpan = {
   endFaceOffsetMm: 400,
   startSupportLengthAlongAxisMm: 800,
   endSupportLengthAlongAxisMm: 800,
+  startSupportWidthAcrossAxisMm: 800,
+  endSupportWidthAcrossAxisMm: 800,
   startSupportCover: supportCover,
   endSupportCover: supportCover,
 }
@@ -129,6 +131,13 @@ describe('generateGirderRebar', () => {
       shape: 'hoop',
       closed: true,
       count: expectedStirrups.positionsMm.length,
+      placement: {
+        axis: 'x',
+        clearMm: span.clear,
+        pitchMm: section.stirrup.pitch,
+        startOffsetMm: section.stirrup.startOffsetMm,
+        lastGapMm: expectedStirrups.lastGapMm,
+      },
     })
   })
 
@@ -232,9 +241,15 @@ describe('generateGirderRebar', () => {
       )
 
       expect(main.zones).toEqual([
-        { kind: '定着', pathFromMm: 0, pathToMm: start.lengthMm },
         {
           kind: '定着',
+          ruleKey: start.lengthRule,
+          pathFromMm: 0,
+          pathToMm: start.lengthMm,
+        },
+        {
+          kind: '定着',
+          ruleKey: end.lengthRule,
           pathFromMm: main.length - end.lengthMm,
           pathToMm: main.length,
         },

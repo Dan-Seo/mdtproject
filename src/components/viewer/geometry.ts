@@ -1,5 +1,11 @@
-import type { BarSize, ColumnSection } from '@/domain/model/member'
-import type { Rebar } from '@/domain/model/rebar'
+import type {
+  BarSize,
+  ColumnSection,
+  GirderSection,
+  Section,
+} from '@/domain/model/member'
+import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
+import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 
 export type Point3 = [number, number, number]
 
@@ -14,6 +20,34 @@ export interface Bounds {
   max: Point3
 }
 
+export type ClipAxis = 'x' | 'y' | 'z'
+
+/**
+ * mm 좌표계의 절단 위치를 THREE.Plane과 같은 normal/constant 형태로 만든다.
+ * +축 normal에 constant = −position이므로 남는 영역은 [position, max]다 —
+ * ratio가 커질수록 좁아지고 ratio=1이면 전부 잘린다.
+ * scene 단위 변환은 렌더러 경계에서만 수행한다.
+ */
+export function clipPlaneForMm(
+  bounds: { min: Point3; max: Point3 },
+  axis: ClipAxis,
+  ratio: number,
+): { normal: Point3; constantMm: number } {
+  assertBounds(bounds)
+  if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1) {
+    throw new Error(`Invalid clip ratio: ${ratio}`)
+  }
+
+  const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2
+  const positionMm =
+    bounds.min[axisIndex] +
+    (bounds.max[axisIndex] - bounds.min[axisIndex]) * ratio
+  const normal: Point3 = [0, 0, 0]
+  normal[axisIndex] = 1
+
+  return { normal, constantMm: -positionMm }
+}
+
 export interface CameraFit {
   position: Point3
   target: Point3
@@ -25,6 +59,24 @@ export const CAMERA_DIRECTION: Point3 = [0.72, 0.34, 0.86]
 
 const MINIMUM_DISPLAY_DIAMETER = 14
 const DISPLAY_DIAMETER_SCALE = 1.6
+
+export type RebarLayer = 'main' | 'hoop'
+
+export function roleToLayer(role: RebarRole): RebarLayer {
+  switch (role) {
+    case '主筋':
+    case '上端筋':
+    case '下端筋':
+      return 'main'
+    case '帯筋':
+    case 'あばら筋':
+      return 'hoop'
+    default: {
+      const unsupported: never = role
+      throw new Error(`Unsupported RebarRole: ${unsupported}`)
+    }
+  }
+}
 
 function barDiameter(size: BarSize): number {
   const diameter = Number(size.replace(/^D/, ''))
@@ -53,16 +105,12 @@ export function rebarRadius(size: BarSize): number {
  * 帯筋은 표시 반경만큼, 主筋은 帯筋 표시 지름 + 主筋 표시 반경만큼 안쪽으로
  * 넣어 帯筋 바깥면이 かぶり면에, 主筋 표면이 帯筋 안쪽면에 접하게 한다.
  */
-export function rebarPlacements(
+function columnRebarPlacements(
   rebar: Rebar,
   section: ColumnSection,
 ): Point3[] {
   if (rebar.shape === 'hoop') {
-    return Array.from({ length: rebar.count }, (_, index) => [
-      0,
-      index * section.hoop.pitch,
-      0,
-    ])
+    return columnHoopPlacements(rebar)
   }
 
   // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
@@ -87,82 +135,286 @@ export function rebarPlacements(
   })
 }
 
-// 帯筋 중심선을 かぶり면에서 표시 반경만큼 안쪽으로 넣는다. 퇴화 단면에서
-// 사각형이 반전되지 않도록 반폭으로 클램프한다.
-function hoopDisplayPoints(points: Point3[], radius: number): Point3[] {
-  const xs = points.map((point) => point[0])
-  const zs = points.map((point) => point[2])
-  const minX = Math.min(...xs)
-  const maxX = Math.max(...xs)
+function girderMainPlacements(
+  rebar: Rebar,
+  section: GirderSection,
+): Point3[] {
+  if (rebar.role !== '上端筋' && rebar.role !== '下端筋') {
+    throw new Error(`Unsupported 大梁 main role: ${rebar.role}`)
+  }
+
+  const [, , insetZ] = rebar.points[0]
+  const inward =
+    2 * rebarRadius(section.stirrup.size) + rebarRadius(rebar.size)
+  const width = Math.max(0, section.b - 2 * (insetZ + inward))
+  const y = rebar.role === '上端筋' ? -inward : inward
+
+  return Array.from({ length: rebar.count }, (_, index): Point3 => {
+    const z =
+      rebar.count === 1
+        ? inward + width / 2
+        : inward + (index * width) / (rebar.count - 1)
+
+    return [0, y, z]
+  })
+}
+
+/**
+ * 帯筋 전개는 도메인 `stirrupPositions`가 유일한 출처다. index×pitch로 되풀이하면
+ * 内法이 피치로 나누어떨어지지 않을 때 마지막 本이 内法 밖에 그려진다.
+ */
+function columnHoopPlacements(rebar: Rebar): Point3[] {
+  if (rebar.placement?.axis !== 'y') {
+    throw new Error(`帯筋 y-axis placement is missing: ${rebar.id}`)
+  }
+
+  const positions = stirrupPositions(
+    rebar.placement.clearMm,
+    rebar.placement.pitchMm,
+    rebar.placement.startOffsetMm,
+  ).positionsMm
+
+  if (positions.length !== rebar.count) {
+    throw new Error(
+      `帯筋 placement count mismatch: ${positions.length} !== ${rebar.count}`,
+    )
+  }
+
+  return positions.map((y): Point3 => [0, y, 0])
+}
+
+function girderStirrupPlacements(rebar: Rebar): Point3[] {
+  if (rebar.placement?.axis !== 'x') {
+    throw new Error(`あばら筋 x-axis placement is missing: ${rebar.id}`)
+  }
+
+  const positions = stirrupPositions(
+    rebar.placement.clearMm,
+    rebar.placement.pitchMm,
+    rebar.placement.startOffsetMm,
+  ).positionsMm
+
+  if (positions.length !== rebar.count) {
+    throw new Error(
+      `あばら筋 placement count mismatch: ${positions.length} !== ${rebar.count}`,
+    )
+  }
+
+  return positions.map((x): Point3 => [x, 0, 0])
+}
+
+export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
+  if (section.kind === '柱') {
+    return columnRebarPlacements(rebar, section)
+  }
+  if (rebar.role === 'あばら筋') {
+    return girderStirrupPlacements(rebar)
+  }
+
+  return girderMainPlacements(rebar, section)
+}
+
+function insetCoordinate(
+  value: number,
+  minimum: number,
+  maximum: number,
+  radius: number,
+): number {
+  const inset = Math.min(radius, (maximum - minimum) / 2)
+  return Math.min(Math.max(value, minimum + inset), maximum - inset)
+}
+
+// hoop 중심선을 かぶり면에서 표시 반경만큼 안쪽으로 넣는다. 평면은 부재 kind로
+// 명시적으로 고른다: 柱는 X–Z, 大梁은 Y–Z. 좌표 변화로 평면을 추론하지 않는다.
+function hoopDisplayPoint(
+  point: Point3,
+  framePoints: Point3[],
+  radius: number,
+  section: Section,
+): Point3 {
+  if (section.kind === '柱') {
+    const xs = framePoints.map((candidate) => candidate[0])
+    const zs = framePoints.map((candidate) => candidate[2])
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minZ = Math.min(...zs)
+    const maxZ = Math.max(...zs)
+
+    return [
+      insetCoordinate(point[0], minX, maxX, radius),
+      point[1],
+      insetCoordinate(point[2], minZ, maxZ, radius),
+    ]
+  }
+
+  const ys = framePoints.map((candidate) => candidate[1])
+  const zs = framePoints.map((candidate) => candidate[2])
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
   const minZ = Math.min(...zs)
   const maxZ = Math.max(...zs)
-  const insetX = Math.min(radius, (maxX - minX) / 2)
-  const insetZ = Math.min(radius, (maxZ - minZ) / 2)
 
-  return points.map(([x, y, z]) => [
-    Math.min(Math.max(x, minX + insetX), maxX - insetX),
-    y,
-    Math.min(Math.max(z, minZ + insetZ), maxZ - insetZ),
-  ])
+  return [
+    point[0],
+    insetCoordinate(point[1], minY, maxY, radius),
+    insetCoordinate(point[2], minZ, maxZ, radius),
+  ]
 }
 
 function translate(point: Point3, offset: Point3): Point3 {
   return [point[0] + offset[0], point[1] + offset[1], point[2] + offset[2]]
 }
 
-export function rebarSegments(
-  rebar: Rebar,
-  section: ColumnSection,
-): Segment[] {
-  const radius = rebarRadius(rebar.size)
-  const points =
-    rebar.shape === 'hoop'
-      ? hoopDisplayPoints(rebar.points, radius)
-      : rebar.points
+interface PathSegment {
+  from: Point3
+  to: Point3
+}
 
-  return rebarPlacements(rebar, section).flatMap((offset) => {
-    const placed = points.map((point) => translate(point, offset))
-    const segments = placed.slice(1).map((to, index) => ({
-      from: placed[index],
-      to,
-      radius,
-    }))
+interface PathRun {
+  zone: RebarZone['kind'] | null
+  segments: PathSegment[]
+}
 
-    if (rebar.closed && placed.length > 1) {
-      segments.push({
-        from: placed[placed.length - 1],
-        to: placed[0],
-        radius,
-      })
+interface SegmentRun {
+  zone: RebarZone['kind'] | null
+  segments: Segment[]
+}
+
+function pointDistance(from: Point3, to: Point3): number {
+  return Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2])
+}
+
+function interpolate(from: Point3, to: Point3, ratio: number): Point3 {
+  return [
+    from[0] + (to[0] - from[0]) * ratio,
+    from[1] + (to[1] - from[1]) * ratio,
+    from[2] + (to[2] - from[2]) * ratio,
+  ]
+}
+
+function zoneAt(
+  zones: RebarZone[],
+  pathDistanceMm: number,
+): RebarZone['kind'] | null {
+  return (
+    zones.find(
+      ({ pathFromMm, pathToMm }) =>
+        pathDistanceMm >= pathFromMm && pathDistanceMm <= pathToMm,
+    )?.kind ?? null
+  )
+}
+
+/** 누적 domain 경로거리에서 먼저 자른다. 표시 인셋·배치는 이 결과에만 적용한다. */
+function pathRuns(rebar: Rebar): PathRun[] {
+  const edges: PathSegment[] = rebar.points.slice(1).map((to, index) => ({
+    from: rebar.points[index],
+    to,
+  }))
+
+  if (rebar.closed && rebar.points.length > 1) {
+    edges.push({
+      from: rebar.points[rebar.points.length - 1],
+      to: rebar.points[0],
+    })
+  }
+
+  const zones = rebar.zones ?? []
+  const boundaries = zones.flatMap(({ pathFromMm, pathToMm }) => [
+    pathFromMm,
+    pathToMm,
+  ])
+  const runs: PathRun[] = []
+  let walked = 0
+
+  for (const edge of edges) {
+    const length = pointDistance(edge.from, edge.to)
+    if (length === 0) continue
+
+    const edgeEnd = walked + length
+    const cuts = [
+      walked,
+      ...boundaries.filter(
+        (boundary) => boundary > walked && boundary < edgeEnd,
+      ),
+      edgeEnd,
+    ].sort((left, right) => left - right)
+
+    for (let index = 1; index < cuts.length; index += 1) {
+      const pathFrom = cuts[index - 1]
+      const pathTo = cuts[index]
+      if (pathTo <= pathFrom) continue
+
+      const segment: PathSegment = {
+        from: interpolate(edge.from, edge.to, (pathFrom - walked) / length),
+        to: interpolate(edge.from, edge.to, (pathTo - walked) / length),
+      }
+      const zone = zoneAt(zones, (pathFrom + pathTo) / 2)
+      const current = runs[runs.length - 1]
+
+      if (current?.zone === zone) current.segments.push(segment)
+      else runs.push({ zone, segments: [segment] })
     }
 
-    return segments
-  })
+    walked = edgeEnd
+  }
+
+  return runs
+}
+
+function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
+  const radius = rebarRadius(rebar.size)
+  const displayPoint = (point: Point3): Point3 =>
+    rebar.shape === 'hoop'
+      ? hoopDisplayPoint(point, rebar.points, radius, section)
+      : point
+  const placements = rebarPlacements(rebar, section)
+
+  return pathRuns(rebar).map(({ zone, segments }) => ({
+    zone,
+    segments: placements.flatMap((offset) =>
+      segments.map(({ from, to }) => ({
+        from: translate(displayPoint(from), offset),
+        to: translate(displayPoint(to), offset),
+        radius,
+      })),
+    ),
+  }))
+}
+
+export function rebarSegments(rebar: Rebar, section: Section): Segment[] {
+  return rebarSegmentRuns(rebar, section).flatMap(({ segments }) => segments)
 }
 
 export interface RebarBatch {
   rowId: string
+  layer: RebarLayer
+  zone: RebarZone['kind'] | null
   segments: Segment[]
 }
 
 /**
- * 3D의 강조 단위는 내역서 **행**이다(DESIGN.md §3.2). 세그먼트마다 메시를 두면
- * 기둥 하나에 156개가 생기는데, 행 단위로 묶으면 2개로 끝나고 강조는 행 그대로
- * 재질 1회 교체가 된다. 묶는 단위를 도메인의 단위와 일치시킨 것이지 임의의
- * 배칭이 아니다.
+ * 3D의 강조 단위는 내역서 **행**이다(DESIGN.md §3.2). zone 색을 보존하기 위해
+ * 행 안에서는 연속 경로 run마다 나누지만, 세그먼트마다 메시를 만들지는 않는다.
+ * 같은 rowId를 유지하므로 여러 zone 배치도 하나의 행으로 함께 강조할 수 있다.
  */
 export function rebarBatches(
   entries: { rowId: string; rebar: Rebar }[],
-  section: ColumnSection,
+  section: Section,
 ): RebarBatch[] {
   const batches = new Map<string, RebarBatch>()
 
   for (const { rowId, rebar } of entries) {
-    const segments = rebarSegments(rebar, section)
-    const batch = batches.get(rowId)
+    const layer = roleToLayer(rebar.role)
 
-    if (batch) batch.segments.push(...segments)
-    else batches.set(rowId, { rowId, segments })
+    rebarSegmentRuns(rebar, section).forEach(({ zone, segments }, runIndex) => {
+      // 같은 row의 대표 철근이 여러 개면 동일 경로 run끼리 합치되, 양단에 같은
+      // kind의 zone이 있어도 서로 다른 연속 구간이므로 runIndex로 분리한다.
+      const key = JSON.stringify([rowId, layer, runIndex, zone])
+      const batch = batches.get(key)
+
+      if (batch) batch.segments.push(...segments)
+      else batches.set(key, { rowId, layer, zone, segments })
+    })
   }
 
   return [...batches.values()]

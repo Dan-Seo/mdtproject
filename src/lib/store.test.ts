@@ -26,6 +26,7 @@ describe('useAppStore', () => {
       locale: 'ja',
       activeStoryId: '1F',
       viewerMode: 'member',
+      viewerLayers: { main: true, hoop: true, concrete: true },
     })
   })
 
@@ -35,6 +36,22 @@ describe('useAppStore', () => {
     useAppStore.getState().setViewerMode('building')
 
     expect(useAppStore.getState().viewerMode).toBe('building')
+  })
+
+  it('starts with every viewer layer visible and toggles layers independently', () => {
+    expect(useAppStore.getInitialState().viewerLayers).toEqual({
+      main: true,
+      hoop: true,
+      concrete: true,
+    })
+
+    useAppStore.getState().toggleViewerLayer('hoop')
+
+    expect(useAppStore.getState().viewerLayers).toEqual({
+      main: true,
+      hoop: false,
+      concrete: true,
+    })
   })
 
   it('selectMember updates sel and switches to the member story', () => {

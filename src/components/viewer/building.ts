@@ -1,13 +1,21 @@
 import type { MemberKind } from '@/domain/model/member'
 import {
   findSection,
+  girderSpan,
+  girderSupport,
   gridPoint,
   storyElevation,
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 
-import { rebarSegments, type Bounds, type Point3 } from './geometry'
+import {
+  rebarSegments,
+  roleToLayer,
+  type Bounds,
+  type Point3,
+  type RebarLayer,
+} from './geometry'
 
 export interface ConcreteBox {
   memberId: string
@@ -23,6 +31,7 @@ export interface RebarInstance {
   from: Point3
   to: Point3
   radius: number
+  layer: RebarLayer
 }
 
 export interface BuildingLayout {
@@ -51,9 +60,9 @@ function translate(point: Point3, offset: Point3): Point3 {
 
 /**
  * 建物 뷰의 순수 레이아웃 (DESIGN.md §7). 전 부재의 콘크리트 외형과
- * 柱 배근 인스턴스를 mm 좌표로 전개한다 — 大梁 배근은 M3 이후.
- * 그리드 교점에 단면 중심을 정렬하므로, 부재 로컬 좌표(모서리 원점)의
- * 배근 세그먼트는 교점 − 단면/2 만큼 평행이동한다.
+ * 지원 부재의 배근 인스턴스를 mm 좌표로 전개한다. 柱는 그리드 교점에
+ * 단면 중심을 정렬하고, 大梁는 좌측 柱면·밑면·폭 모서리를 로컬 원점으로 쓴다.
+ * 미지원 大梁는 콘크리트 박스만 남기고 철근을 전개하지 않는다 (R7 ②).
  */
 export function buildingLayout(
   project: Project,
@@ -135,27 +144,73 @@ export function buildingLayout(
     if (!member) {
       throw new Error(`Member not found: ${rebar.memberId}`)
     }
-    if (member.kind !== '柱') continue
-
     const section = findSection(project, member.sectionId)
-    if (section.kind !== '柱' || 'axis' in member.position) {
-      throw new Error(`柱 member references a non-柱 section: ${member.id}`)
+    let worldPoint: (point: Point3) => Point3
+
+    if (member.kind === '柱') {
+      if (section.kind !== '柱' || 'axis' in member.position) {
+        throw new Error(`柱 member references a non-柱 section: ${member.id}`)
+      }
+      const { x, y } = gridPoint(
+        project.grid,
+        member.position.ix,
+        member.position.iy,
+      )
+      const offset: Point3 = [
+        x - section.b / 2,
+        storyElevation(project.stories, member.storyId),
+        y - section.d / 2,
+      ]
+      worldPoint = (point) => translate(point, offset)
+    } else {
+      if (section.kind !== '大梁' || !('axis' in member.position)) {
+        throw new Error(
+          `大梁 member references a non-大梁 section: ${member.id}`,
+        )
+      }
+      if (!girderSupport(project, member).supported) continue
+
+      const story = project.stories.find(({ id }) => id === member.storyId)
+      if (!story) {
+        throw new Error(`Story not found: ${member.storyId}`)
+      }
+      const start = gridPoint(
+        project.grid,
+        member.position.ix,
+        member.position.iy,
+      )
+      const span = girderSpan(project, member)
+      const base =
+        storyElevation(project.stories, member.storyId) +
+        story.height -
+        section.depth
+
+      worldPoint =
+        member.position.axis === 'X'
+          ? ([x, y, z]) => [
+              start.x + span.startFaceOffsetMm + x,
+              base + y,
+              start.y - section.b / 2 + z,
+            ]
+          : ([x, y, z]) => [
+              start.x - section.b / 2 + z,
+              base + y,
+              start.y + span.startFaceOffsetMm + x,
+            ]
     }
-    const { x, y } = gridPoint(
-      project.grid,
-      member.position.ix,
-      member.position.iy,
-    )
-    const offset: Point3 = [
-      x - section.b / 2,
-      storyElevation(project.stories, member.storyId),
-      y - section.d / 2,
-    ]
+
+    const layer = roleToLayer(rebar.role)
 
     for (const segment of rebarSegments(rebar, section)) {
-      const from = translate(segment.from, offset)
-      const to = translate(segment.to, offset)
-      instances.push({ memberId: member.id, from, to, radius: segment.radius })
+      const from = worldPoint(segment.from)
+      const to = worldPoint(segment.to)
+      instances.push({
+        memberId: member.id,
+        from,
+        to,
+        radius: segment.radius,
+        layer,
+      })
       expandBounds(bounds, from, segment.radius)
       expandBounds(bounds, to, segment.radius)
     }
@@ -168,15 +223,16 @@ export function buildingLayout(
   return { boxes, rebar: instances, bounds }
 }
 
-/** InstancedMesh는 지오메트리(=반경)당 하나 — 표시 반경별로 묶는다. */
+/** InstancedMesh는 표시 반경·레이어별 하나 — 다음 step의 레이어 토글 경계다. */
 export function groupInstancesByRadius(
   instances: RebarInstance[],
-): Map<number, RebarInstance[]> {
-  const groups = new Map<number, RebarInstance[]>()
+): Map<string, RebarInstance[]> {
+  const groups = new Map<string, RebarInstance[]>()
 
   for (const instance of instances) {
-    const group = groups.get(instance.radius)
-    if (group === undefined) groups.set(instance.radius, [instance])
+    const key = `${instance.radius}|${instance.layer}`
+    const group = groups.get(key)
+    if (group === undefined) groups.set(key, [instance])
     else group.push(instance)
   }
 

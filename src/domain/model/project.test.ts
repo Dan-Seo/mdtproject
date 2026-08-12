@@ -32,7 +32,7 @@ const columnSection: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 const shallowGirderSection: GirderSection = {
@@ -244,6 +244,8 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 400,
       startSupportLengthAlongAxisMm: 800,
       endSupportLengthAlongAxisMm: 800,
+      startSupportWidthAcrossAxisMm: 800,
+      endSupportWidthAcrossAxisMm: 800,
       startSupportCover: coverConditions(columnSection),
       endSupportCover: coverConditions(columnSection),
     })
@@ -265,6 +267,9 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 450,
       startSupportLengthAlongAxisMm: 900,
       endSupportLengthAlongAxisMm: 900,
+      // Y축 大梁이므로 축직각은 b — 축방향(d 900)과 다른 값이어야 한다
+      startSupportWidthAcrossAxisMm: 700,
+      endSupportWidthAcrossAxisMm: 700,
       startSupportCover: coverConditions(rectangularColumnSection),
       endSupportCover: coverConditions(rectangularColumnSection),
     })

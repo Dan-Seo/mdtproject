@@ -21,7 +21,7 @@ const supportColumnSection: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 const input: GirderEndInput = {
@@ -118,8 +118,14 @@ describe('resolveGirderEnd', () => {
     )
     expect(resolveGirderEnd(input, jpMlitRulePack)).toEqual({
       kind: '折曲げ定着',
-      lengthRule: 'anchorage.L1h',
-      projectionRule: 'anchorage.La',
+      lengthRule:
+        expected.l1hMm >= expected.tailMinimumMm
+          ? 'anchorage.L1h'
+          : 'anchorage.bent.tail.minimum',
+      projectionRule:
+        expected.laMm >= expected.projectionMinimumMm
+          ? 'anchorage.La'
+          : 'anchorage.bent.projection.minimum',
       lengthMm: expected.bentLengthMm,
       l1hMm: expected.l1hMm,
       tailMinimumMm: expected.tailMinimumMm,
@@ -129,6 +135,31 @@ describe('resolveGirderEnd', () => {
       direction: input.bendDirection,
       usedRules: expected.bentUsedRules,
     })
+  })
+
+  it('attributes the 折曲げ length to the term that actually governs', () => {
+    // 余長下限이 지배할 때 그 길이는 表5.3.4에 없는 값이다 — L1h로 제시하면
+    // 근거 표시가 거짓이 된다. 샘플 D25/柱800이 바로 그 경우다.
+    const expected = expectedRules(jpMlitRulePack)
+    const detail = resolveGirderEnd(input, jpMlitRulePack)
+
+    expect(expected.tailMinimumMm).toBeGreaterThan(expected.l1hMm)
+    expect(detail.kind).toBe('折曲げ定着')
+    expect(detail.lengthRule).toBe('anchorage.bent.tail.minimum')
+    expect(detail.lengthMm).toBe(expected.tailMinimumMm)
+  })
+
+  it('attributes the 投影長 to the term that actually governs', () => {
+    // 投影 역시 max(La, 柱せい×3/4)다 — 下限이 이기면 表5.3.5에 없는 값이므로
+    // La로 제시하면 거짓이 된다. 샘플 柱800이 그 경우다.
+    const expected = expectedRules(jpMlitRulePack)
+    const detail = resolveGirderEnd(input, jpMlitRulePack)
+
+    if (detail.kind !== '折曲げ定着') throw new Error('expected 折曲げ定着')
+
+    expect(expected.projectionMinimumMm).toBeGreaterThan(expected.laMm)
+    expect(detail.projectionRule).toBe('anchorage.bent.projection.minimum')
+    expect(detail.projectionMm).toBe(expected.projectionMinimumMm)
   })
 
   it('uses 直線定着 when the support is sufficiently large', () => {

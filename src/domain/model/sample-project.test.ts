@@ -43,7 +43,7 @@ describe('createSampleProject', () => {
           fc: 24,
           grade: 'SD345',
           main: { size: 'D25', count: 12 },
-          hoop: { size: 'D13', pitch: 100 },
+          hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
         }),
         expect.objectContaining({
           kind: '大梁',

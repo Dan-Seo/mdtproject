@@ -1,11 +1,16 @@
 'use client'
 
 import { t } from '@/lib/i18n'
-import { useAppStore, type ViewerMode } from '@/lib/store'
+import {
+  useAppStore,
+  type ViewerLayer,
+  type ViewerMode,
+} from '@/lib/store'
 
 import styles from './ViewerTabs.module.css'
 
 const MODES: ViewerMode[] = ['member', 'building']
+const LAYERS: ViewerLayer[] = ['main', 'hoop', 'concrete']
 
 export function ViewerTabs() {
   const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
@@ -32,6 +37,35 @@ export function ViewerTabs() {
             onClick={() => setViewerMode(mode)}
           >
             {t(locale, `viewer.tab.${mode}`)}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function ViewerLayerControls() {
+  const locale = useAppStore(({ locale }) => locale)
+  const viewerLayers = useAppStore(({ viewerLayers }) => viewerLayers)
+  const toggleViewerLayer = useAppStore(
+    ({ toggleViewerLayer }) => toggleViewerLayer,
+  )
+
+  return (
+    <div className={styles.viewerTabs} role="group">
+      {LAYERS.map((layer) => {
+        const visible = viewerLayers[layer]
+        return (
+          <button
+            key={layer}
+            type="button"
+            className={`${styles.viewerTab} ${
+              visible ? styles.viewerTabActive : ''
+            }`}
+            aria-pressed={visible}
+            onClick={() => toggleViewerLayer(layer)}
+          >
+            {t(locale, `viewer.layer.${layer}`)}
           </button>
         )
       })}

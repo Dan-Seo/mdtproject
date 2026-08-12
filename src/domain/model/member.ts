@@ -36,6 +36,11 @@ export interface ColumnSection {
   hoop: {
     size: BarSize
     pitch: number
+    /**
+     * 配置区間의 양 끝면에서 第1·最終帯筋을 얼마나 띄우는지. 規準에 값이 없고
+     * 本数를 좌우하므로 제품이 정하지 않는다 — 断面一覧의 입력이다 (ADR-012).
+     */
+    startOffsetMm: number
   }
 }
 
@@ -57,7 +62,7 @@ export interface GirderSection {
   stirrup: {
     size: BarSize
     pitch: number
-    /** 第1あばら筋を柱面からどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
+    /** 両端の柱面から第1・最終あばら筋をどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
     startOffsetMm: number
   }
 }

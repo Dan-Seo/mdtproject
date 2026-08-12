@@ -112,7 +112,7 @@ describe('coverConditions', () => {
     exposure: '屋外',
     finish: '仕上げなし',
     main: { size: 'D25', count: 12 },
-    hoop: { size: 'D13', pitch: 100 },
+    hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
   }
 
   it('pins the 表5.3.6 cover cell conditions to the section input', () => {

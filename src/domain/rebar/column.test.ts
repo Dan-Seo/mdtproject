@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest'
 import type { ColumnSection, Member } from '../model/member'
 import type { ColumnEnds, Story } from '../model/project'
 import type { RebarRole, RebarZone } from '../model/rebar'
+import { MemberUnsupportedError } from '../model/unsupported'
 import { lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import { generateColumnRebar, type ColumnRebarInput } from './column'
+import { stirrupPositions } from './stirrup-layout'
 
 const member: Member = {
   id: '1F-X2Y2',
@@ -27,7 +29,7 @@ const section: ColumnSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
-  hoop: { size: 'D13', pitch: 100 },
+  hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
 const story: Story = { id: '1F', name: '1階', height: 4200 }
@@ -87,6 +89,11 @@ describe('generateColumnRebar', () => {
     const generated = generateColumnRebar(input(), jpMlitRulePack)
     const main = byRole(generated, '主筋')
     const hoop = byRole(generated, '帯筋')
+    const expectedHoops = stirrupPositions(
+      story.height - input().beamDepthAbove,
+      section.hoop.pitch,
+      0,
+    )
 
     expect(generated).toHaveLength(2)
     expect(main).toMatchObject({
@@ -102,6 +109,13 @@ describe('generateColumnRebar', () => {
       shape: 'hoop',
       closed: true,
       count: 36,
+      placement: {
+        axis: 'y',
+        clearMm: story.height - input().beamDepthAbove,
+        pitchMm: section.hoop.pitch,
+        startOffsetMm: 0,
+        lastGapMm: expectedHoops.lastGapMm,
+      },
     })
   })
 
@@ -226,6 +240,10 @@ describe('generateColumnRebar', () => {
       const expected: RebarZone[] = [
         {
           kind: bottomKind,
+          ruleKey:
+            bottomKind === '重ね継手'
+              ? lookupRule(jpMlitRulePack, 'lap.L1', conditions).key
+              : lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
           pathFromMm: 0,
           pathToMm: bottomLength,
         },
@@ -234,6 +252,7 @@ describe('generateColumnRebar', () => {
       if (topAnchored) {
         expected.push({
           kind: '定着',
+          ruleKey: lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
           pathFromMm: main.length - anchorage,
           pathToMm: main.length,
         })
@@ -276,7 +295,12 @@ describe('generateColumnRebar', () => {
     )
 
     expect(main.zones).toEqual([
-      { kind: '定着', pathFromMm: 0, pathToMm: anchorage },
+      {
+        kind: '定着',
+        ruleKey: lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
+        pathFromMm: 0,
+        pathToMm: anchorage,
+      },
     ])
   })
 
@@ -413,7 +437,43 @@ describe('generateColumnRebar', () => {
       `135°フック余長 ${hook135.value}d(${hook135.value * hoopDiameter})`,
     )
     expect(hoop.formula).toContain(
-      '⌈(階高 4200 − 上部大梁せい 750) ÷ 帯筋ピッチ 100⌉ ＋ 1 ＝ 36',
+      // stirrupPositions 는 오프셋을 양단에 적용한다 — 表示される項だけで
+      // 本数を再現できなければ算出根拠の説明にならない。
+      '帯筋配置（配置区間 3450［階高 4200 − 上部大梁せい 750］、' +
+        'ピッチ 100、始端・終端オフセット 0）＝ 36',
     )
   })
+
+  it.each([
+    {
+      label: '初期オフセット',
+      section: {
+        ...section,
+        hoop: { ...section.hoop, startOffsetMm: 5000 },
+      },
+      beamDepthAbove: input().beamDepthAbove,
+    },
+    {
+      label: '上部大梁せい',
+      section,
+      beamDepthAbove: 4200,
+    },
+    {
+      label: '断面寸法',
+      section: { ...section, b: 50, d: 50 },
+      beamDepthAbove: input().beamDepthAbove,
+    },
+  ])(
+    'reports a non-viable 帯筋 配置区間 from $label as a member-level failure',
+    ({ section: columnSection, beamDepthAbove }) => {
+      // 둘 다 断面一覧 입력으로 도달 가능한 형상 불성립이다 — 부재 하나를
+      // 미지원으로 빼야 하고, 페인을 죽이는 결함으로 다루면 안 된다.
+      expect(() =>
+        generateColumnRebar(
+          { ...input(), section: columnSection, beamDepthAbove },
+          jpMlitRulePack,
+        ),
+      ).toThrow(MemberUnsupportedError)
+    },
+  )
 })

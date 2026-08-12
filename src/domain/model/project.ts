@@ -15,7 +15,9 @@ import { coverConditions } from '../rules/lookup'
 // deserializeProject의 버전 게이트에서 명시적으로 거부된다 (영속 v1 데이터 없음).
 // v3 (2026-08-12): GirderSection.stirrup에 필수 필드 startOffsetMm 추가. 規準에
 // 없는 배치값을 룰팩에 가짜 출처로 넣는 대신 입력으로 받는다 (ADR-012).
-export const PROJECT_SCHEMA_VERSION = 3
+// v4 (2026-08-12): ColumnSection.hoop에도 같은 이유로 startOffsetMm 추가.
+// 이 값이 帯筋 本数(=물량)를 좌우하므로 제품 상수로 두지 않는다.
+export const PROJECT_SCHEMA_VERSION = 4
 
 export interface Grid {
   xSpans: number[]
@@ -192,6 +194,10 @@ export interface GirderSpan {
   startSupportLengthAlongAxisMm: number
   /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
   endSupportLengthAlongAxisMm: number
+  /** 표시용 — 시작 柱의 축직각 치수 (mm). 지점 柱 탐색이 뷰어에 복제되지 않게 함께 싣는다 */
+  startSupportWidthAcrossAxisMm: number
+  /** 표시용 — 끝 柱의 축직각 치수 (mm) */
+  endSupportWidthAcrossAxisMm: number
   /** 지점 柱의 かぶり 조회 조건 — 端部条件은 大梁이 아니라 柱의 かぶり로 판정한다 */
   startSupportCover: Record<string, string | boolean>
   endSupportCover: Record<string, string | boolean>
@@ -268,6 +274,9 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
     endFaceOffsetMm,
     startSupportLengthAlongAxisMm,
     endSupportLengthAlongAxisMm,
+    startSupportWidthAcrossAxisMm:
+      axis === 'X' ? startSection.d : startSection.b,
+    endSupportWidthAcrossAxisMm: axis === 'X' ? endSection.d : endSection.b,
     startSupportCover: coverConditions(startSection),
     endSupportCover: coverConditions(endSection),
   }

@@ -34,6 +34,7 @@ done
 | `uc7-source-and-formula.js` | 出典 chip·`inferred` ▲·算出式 전개 (출처 표시는 법적 의무) |
 | `uc8-xlsx-export.js` | xlsx 다운로드 트리거 (Blob 가로채기) |
 | `uc9-building-view.js` | 3D 페인 「部材｜建物」 탭 전환 · 建物 뷰 캔버스 · 부재 클릭 → 4페인 연동 |
+| `uc10-viewer-features.js` | 部材 뷰 기능 4종 — 레이어 토글 · 断面カット · 호버 툴팁(실 레이캐스트) · 定着 범례 |
 
 ## 왜 유닛테스트로 안 되는가
 

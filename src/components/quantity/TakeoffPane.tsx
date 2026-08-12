@@ -21,6 +21,7 @@ import { lookupMarkup } from '@/domain/rules/lookup'
 import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
+import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -97,33 +98,6 @@ function ShapeIcon({ shape }: { shape: RebarShape }) {
   )
 }
 
-function sourceLabel(rule: RuleHit): string {
-  return [rule.source.short, rule.source.section].filter(Boolean).join(' ')
-}
-
-function sourceTooltip(rule: RuleHit): string {
-  const edition = rule.source.edition ? `（${rule.source.edition}）` : ''
-  const location = [
-    `${rule.source.doc}${edition}`,
-    rule.source.section,
-    rule.source.page === null ? null : `${rule.source.page}頁`,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  const note = rule.source.url
-    ? rule.note
-    : `原文URL未確保 — ${rule.note}`
-
-  return [
-    `${rule.label} ＝ ${rule.expr}`,
-    location,
-    rule.confidence === 'inferred' ? '⚠ 未確認 —' : null,
-    note,
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
 function stopRowInteraction(event: MouseEvent<HTMLElement>): void {
   event.stopPropagation()
 }
@@ -169,17 +143,10 @@ function SourceChip({ rule }: { rule: RuleHit }) {
 }
 
 function SourceChips({ rules }: { rules: RuleHit[] }) {
-  // 조건이 다른 행이라도 가리키는 문헌 위치가 같으면 칩은 하나다 — 같은 표를
-  // 두 번 띄워도 읽는 쪽이 얻는 것이 없다. 기여 룰 목록(▲ 경고·inferred 집계)은
-  // 행 단위 그대로 유지되므로 근거의 완전성은 줄지 않는다.
-  const cited = [
-    ...new Map(
-      rules.map((rule) => [
-        [rule.source.doc, rule.source.section, rule.source.page].join(' / '),
-        rule,
-      ]),
-    ),
-  ]
+  // 똑같이 그려질 칩만 하나로 묶는다 — 문헌 위치로 묶으면 같은 표의 다른 행
+  // (label·expr·confidence가 다른 지배 룰)이 뒤엣것에 덮여 툴팁에서 사라진다.
+  // 툴팁은 위치·label·expr·확신도·note를 모두 담으므로 표시 동일성의 키다.
+  const cited = [...new Map(rules.map((rule) => [sourceTooltip(rule), rule]))]
 
   return (
     <div
@@ -568,13 +535,13 @@ export function TakeoffPane() {
               </li>
             ))}
           </ul>
-          {[...new Set(unsupportedMembers.map(({ reason }) => reason))].map(
-            (reason) => (
-              <span key={reason}>
-                {t(locale, `takeoff.unsupported.plan.${reason}`)}
-              </span>
-            ),
-          )}
+          <p data-testid="unsupported-plan">
+            {[...new Set(unsupportedMembers.map(({ reason }) => reason))]
+              .map((reason) =>
+                t(locale, `takeoff.unsupported.plan.${reason}`),
+              )
+              .join(' / ')}
+          </p>
         </div>
       )}
       <TakeoffTable lines={lines} />

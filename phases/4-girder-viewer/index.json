@@ -2,12 +2,63 @@
   "project": "Kijun",
   "phase": "4-girder-viewer",
   "steps": [
-    { "step": 0, "name": "geometry-girder", "status": "pending" },
-    { "step": 1, "name": "member-view-girder", "status": "pending" },
-    { "step": 2, "name": "building-view-girder", "status": "pending" },
-    { "step": 3, "name": "layer-toggle", "status": "pending" },
-    { "step": 4, "name": "clip-plane", "status": "pending" },
-    { "step": 5, "name": "hover-tooltip", "status": "pending" },
-    { "step": 6, "name": "anchorage-legend", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "geometry-girder",
+      "status": "completed",
+      "started_at": "2026-08-12T15:57:18+0900",
+      "summary": "RebarBatch의 rowId·layer·zone·segments 스키마, roleToLayer 단일 매핑, 누적 경로거리 기반 연속 zone 절단으로 柱·大梁 전개를 통합",
+      "completed_at": "2026-08-12T16:13:37+0900"
+    },
+    {
+      "step": 1,
+      "name": "member-view-girder",
+      "status": "completed",
+      "started_at": "2026-08-12T16:13:37+0900",
+      "summary": "柱/大梁 部材 뷰 유니온에 clear span과 양단 지점 柱 스텁을 추가하고 core·定着·重ね継手 zone 머티리얼 원복 및 girderPending 제거를 완료",
+      "completed_at": "2026-08-12T16:28:40+0900"
+    },
+    {
+      "step": 2,
+      "name": "building-view-girder",
+      "status": "completed",
+      "started_at": "2026-08-12T16:28:40+0900",
+      "summary": "지원 大梁를 X=[start.x+face+x, base+y, start.y-b/2+z]·Y=[start.x-b/2+z, base+y, start.y+face+x]로 매핑하고 그룹 키를 radius|layer로 확장했으며 미지원 大梁는 콘크리트만 유지",
+      "completed_at": "2026-08-12T16:35:34+0900"
+    },
+    {
+      "step": 3,
+      "name": "layer-toggle",
+      "status": "completed",
+      "started_at": "2026-08-12T16:35:34+0900",
+      "summary": "viewerLayers UI 상태를 store에 추가하고 content.traverse의 visible 전환만으로 레이어를 적용했으며 자신+조상 체인의 effective visibility를 확인하는 피킹 가드를 구현",
+      "completed_at": "2026-08-12T16:43:20+0900"
+    },
+    {
+      "step": 4,
+      "name": "clip-plane",
+      "status": "completed",
+      "started_at": "2026-08-12T16:43:21+0900",
+      "summary": "clipPlaneForMm(bounds, axis, ratio)로 mm 절단 평면을 계산하고 콘크리트·철근 머티리얼 생성 시 공유 clippingPlanes를 고정했으며 off는 plane.constant=1e6으로 처리",
+      "completed_at": "2026-08-12T16:52:17+0900"
+    },
+    {
+      "step": 5,
+      "name": "hover-tooltip",
+      "status": "completed",
+      "started_at": "2026-08-12T16:52:18+0900",
+      "summary": "pointermove는 NDC·dirty와 DOM 위치만 기록하고 기존 render loop에서 프레임당 1회 공유 피킹하며, 部材는 lines의 役割·径·本数·加工長, 建物은 id·符号를 표시하고 숨김 레이어 제외·클립 피킹 수용 정책을 고정",
+      "completed_at": "2026-08-12T17:00:35+0900"
+    },
+    {
+      "step": 6,
+      "name": "anchorage-legend",
+      "status": "completed",
+      "started_at": "2026-08-12T17:00:36+0900",
+      "summary": "legendEntries가 Rebar.zones를 kind·lengthMm로 중복 제거하고 ruleHits의 ruleKey를 연결하며, 색은 src/components/viewer/palette.ts의 REBAR_ZONE_COLORS로 단일화하고 帯筋/あばら筋은 생성기가 전달한 placement.lastGapMm가 입력 pitch와 다를 때 末端 간격을 표시",
+      "completed_at": "2026-08-12T17:13:07+0900"
+    }
+  ],
+  "created_at": "2026-08-12T15:57:18+0900",
+  "completed_at": "2026-08-12T17:13:08+0900"
 }
