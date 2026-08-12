@@ -108,15 +108,19 @@ describe('generateColumnRebar', () => {
       size: 'D13',
       shape: 'hoop',
       closed: true,
-      count: 36,
+      // 設計本数は積算基準 1通則7)（階高 4200 ÷ ピッチ 100 ＋ 1）。
+      // 3D の配置本数 36 とは別物で、後者は placement が持つ。
+      count: 43,
       placement: {
         axis: 'y',
         clearMm: story.height - input().beamDepthAbove,
         pitchMm: section.hoop.pitch,
         startOffsetMm: 0,
         lastGapMm: expectedHoops.lastGapMm,
+        positionCount: expectedHoops.positionsMm.length,
       },
     })
+    expect(expectedHoops.positionsMm).toHaveLength(36)
   })
 
   it('records only rows that came from the rule pack on every generated Rebar', () => {
@@ -139,10 +143,11 @@ describe('generateColumnRebar', () => {
       'lap.L1',
       'anchorage.L1',
     ])
+    // 帯筋の数量は積算基準の断面周長で決まる — かぶりは 3D 形状にしか効かず、
+    // フックは 1通則2) が計上しないと定めるので bend.hook135 は引かない。
     expect(byRole(generated, '帯筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
-      'bend.hook135',
     ])
   })
 
@@ -384,8 +389,15 @@ describe('generateColumnRebar', () => {
       '帯筋',
     )
 
-    expect(changedHoop.count).not.toBe(baseHoop.count)
-    expect(changedHoop.count).toBe(baseHoop.count - 1)
+    // 上部大梁せいが効くのは 3D の配置区間だけだ。数量本数は積算基準 1通則7)
+    // により階高で決まるので動かない — 動いたら数量が形状に引きずられている。
+    expect(changedHoop.placement?.clearMm).toBe(
+      (baseHoop.placement?.clearMm ?? 0) - 50,
+    )
+    expect(changedHoop.placement?.positionCount).toBe(
+      (baseHoop.placement?.positionCount ?? 0) - 1,
+    )
+    expect(changedHoop.count).toBe(baseHoop.count)
   })
 
   it('keeps mm geometry and reproducible calculations on each row', () => {
@@ -402,14 +414,9 @@ describe('generateColumnRebar', () => {
       grade: section.grade,
       hook: false,
     })
-    const hook135 = lookupRule(jpMlitRulePack, 'bend.hook135', {})
     const mainDiameter = Number(section.main.size.replace(/^D/, ''))
-    const hoopDiameter = Number(section.hoop.size.replace(/^D/, ''))
-    const expectedHoopLength =
-      2 *
-        (section.b - 2 * fabricationCover +
-          (section.d - 2 * fabricationCover)) +
-      2 * hook135.value * hoopDiameter
+    // 積算基準 1通則2) — 断面の設計寸法による周長。かぶり控除もフックもない。
+    const expectedHoopLength = 2 * (section.b + section.d)
 
     expect(main.points).toHaveLength(2)
     expect(hoop.points).toHaveLength(4)
@@ -429,19 +436,19 @@ describe('generateColumnRebar', () => {
     expect(main.formula).toContain(fabricationCoverFormula)
     expect(hoop.formula).toContain(fabricationCoverFormula)
     expect(main.formula).not.toContain('切上げ')
-    expect(hoop.formula).not.toContain('切上げ')
+    // 表示される項だけで数量を再現できなければ算出根拠の説明にならない。
     expect(hoop.formula).toContain(
-      `2×{(${section.b}−2×${fabricationCover})＋`,
+      `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.d}) ` +
+        `＝ ${expectedHoopLength}`,
     )
     expect(hoop.formula).toContain(
-      `135°フック余長 ${hook135.value}d(${hook135.value * hoopDiameter})`,
+      '設計本数 ＝ ⌈階高 4200 ÷ ピッチ 100⌉ ＋ 1 ＝ 43',
     )
+    // 3D 側の値が数量の項に混ざっていないこと。
     expect(hoop.formula).toContain(
-      // stirrupPositions 는 오프셋을 양단에 적용한다 — 表示される項だけで
-      // 本数を再現できなければ算出根拠の説明にならない。
-      '帯筋配置（配置区間 3450［階高 4200 − 上部大梁せい 750］、' +
-        'ピッチ 100、始端・終端オフセット 0）＝ 36',
+      '配置区間 3450［階高 4200 − 上部大梁せい 750］',
     )
+    expect(hoop.formula).toContain('数量には用いない')
   })
 
   it.each([

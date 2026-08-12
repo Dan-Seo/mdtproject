@@ -227,7 +227,7 @@ describe('aggregateQuantity', () => {
     expect(topLines.map(({ places }) => places)).toEqual([1, 1])
   })
 
-  it('aggregates 柱 of one 符号 sitting under 大梁 of differing せい', () => {
+  it('merges 柱 of one 符号 even when the 大梁 above them differ in せい', () => {
     const sample = createSampleProject()
     const project: Project = {
       ...sample,
@@ -262,13 +262,19 @@ describe('aggregateQuantity', () => {
       ({ role, storyName }) => role === '帯筋' && storyName === '1階',
     )
 
-    expect(hoops.length).toBeGreaterThan(1)
-    expect(new Set(hoops.map(({ countPerMember }) => countPerMember)).size).toBe(
-      hoops.length,
-    )
+    // 上部大梁せいが違えば 3D の配置区間は違う — その前提が崩れると本テストは
+    // 何も判定しない。
+    const hoopRebars = rebars.filter(({ role }) => role === '帯筋')
+    expect(
+      new Set(hoopRebars.map(({ placement }) => placement?.clearMm)).size,
+    ).toBeGreaterThan(1)
+
+    // それでも数量は 1 行に集まる。積算基準（２）柱3) がフープを「各階ごとに」
+    // 数え、その部分の長さは階高だからだ。大梁せいは数量に効かない。
+    expect(hoops).toHaveLength(1)
     const { nx, ny } = gridPointCount(project.grid)
-    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(nx * ny)
-    expect(hoops.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
+    expect(hoops[0].places).toBe(nx * ny)
+    expect(hoops[0].groupId).toBe('1階|C|C1')
   })
 
   it('propagates an inferred contributing rule to the whole row', () => {

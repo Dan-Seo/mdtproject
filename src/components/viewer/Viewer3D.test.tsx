@@ -611,7 +611,7 @@ describe('Viewer3D', () => {
     expect(mocks.pickableCounts).toHaveLength(1)
   })
 
-  it('shows 役割・径・本数・加工長 from the hovered 部材 row', () => {
+  it('shows 役割・径・本数・設計長さ from the hovered 部材 row', () => {
     const { result } = renderHook(() => useTakeoff())
     const mainLine = result.current.lines.find(
       ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
@@ -632,9 +632,9 @@ describe('Viewer3D', () => {
     expect(within(tooltip).getByText(mainLine?.size ?? '')).toBeInTheDocument()
     expect(within(tooltip).getByText('本数')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(String(mainLine?.countPerMember))
-    expect(within(tooltip).getByText('加工長')).toBeInTheDocument()
+    expect(within(tooltip).getByText('設計長さ')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)
-    // 加工長은 룰 유래 수치다 — 内訳 행과 같은 미확인 표시가 붙어야 한다.
+    // 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 미확인 표시가 붙어야 한다.
     expect(mainLine?.inferred).toBe(true)
     expect(
       within(tooltip).getByLabelText('未確認の規準値'),

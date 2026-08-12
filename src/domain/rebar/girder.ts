@@ -1,4 +1,4 @@
-import type { BarSize, GirderSection, Member } from '../model/member'
+import type { GirderSection, Member } from '../model/member'
 import type { GirderRun, GirderSpan } from '../model/project'
 import type { Rebar, RebarZone } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
@@ -8,21 +8,12 @@ import {
   resolveGirderEnd,
   type GirderEndDetail,
 } from './girder-ends'
+import { distributionCount, hoopDesignLengthMm } from './measurement'
 import { stirrupPositions } from './stirrup-layout'
 
 export interface GirderRebarInput {
   run: GirderRun
   section: GirderSection
-}
-
-function barDiameter(size: BarSize): number {
-  const diameter = Number(size.replace(/^D/, ''))
-
-  if (!Number.isFinite(diameter) || diameter <= 0) {
-    throw new Error(`Invalid BarSize: ${size}`)
-  }
-
-  return diameter
 }
 
 function millimetres(rule: RuleHit, diameter?: number): number {
@@ -202,7 +193,7 @@ function generateMain(
       `＋ ${endFormula('終端', end)} ＝ ${length} ／ ` +
       `配置基準 ＝ ${fabricationCoverFormula} ／ ` +
       `本数 ＝ 断面一覧の${row.role}本数 ${row.count} ／ ` +
-      `継手 ＝ 未計上（定尺長さの根拠なし）`,
+      `継手 ＝ 未計上（数量積算基準 1通則4)・（３）梁2) が未実装）`,
   }
 }
 
@@ -213,8 +204,6 @@ function generateStirrup(
   coverRule: RuleHit,
   fabricationCoverAdditionRule: RuleHit,
   fabricationCoverMm: number,
-  hook135Rule: RuleHit,
-  hook135LengthMm: number,
 ): Rebar {
   // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
   const startOffsetMm = section.stirrup.startOffsetMm
@@ -242,8 +231,12 @@ function generateStirrup(
     section.stirrup.pitch,
     startOffsetMm,
   )
-  const stirrupLengthMm =
-    2 * (stirrupWidthMm + stirrupDepthMm) + 2 * hook135LengthMm
+  // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
+  // かぶりを控除した stirrupWidthMm·stirrupDepthMm は 3D 形状 (points) 専用。
+  const stirrupLengthMm = hoopDesignLengthMm(section.b, section.depth)
+  // 同 （３）梁3)＋1通則7) — 各梁ごとに、その部分の長さ÷間隔。「大梁」は躯体の
+  // 区分で柱に接する内法部分なので、割るのは内法長さ。初期オフセットは関与しない。
+  const stirrupCount = distributionCount(span.clear, section.stirrup.pitch)
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ ` +
     `加算 ${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}）`
@@ -266,23 +259,24 @@ function generateStirrup(
     ],
     closed: true,
     length: stirrupLengthMm,
-    count: layout.positionsMm.length,
+    count: stirrupCount,
     placement: {
       axis: 'x',
       clearMm: span.clear,
       pitchMm: section.stirrup.pitch,
       startOffsetMm,
       lastGapMm: layout.lastGapMm,
+      positionCount: layout.positionsMm.length,
     },
-    ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
+    ruleHits: [coverRule, fabricationCoverAdditionRule],
     formula:
-      `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +
-      `(${section.depth}−2×${fabricationCoverMm})} ＋ ` +
-      `2×135°フック余長 ${hook135Rule.value}d(${hook135LengthMm}) ` +
-      `＝ ${stirrupLengthMm} ／ ${fabricationCoverFormula} ／ ` +
-      `本数 ＝ あばら筋配置（内法長さ ${span.clear}、` +
-      `ピッチ ${section.stirrup.pitch}、始端・終端オフセット ${startOffsetMm}）` +
-      `＝ ${layout.positionsMm.length}`,
+      `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.depth}) ` +
+      `＝ ${stirrupLengthMm}（数量積算基準 1通則2) — フックは計上しない） ／ ` +
+      `設計本数 ＝ ⌈内法長さ ${span.clear} ÷ ピッチ ` +
+      `${section.stirrup.pitch}⌉ ＋ 1 ＝ ${stirrupCount}` +
+      `（同 （３）梁3)・1通則7) — 各梁ごと） ／ ` +
+      `3D 形状 ＝ ${fabricationCoverFormula} の内側、` +
+      `始端・終端オフセット ${startOffsetMm}（数量には用いない）`,
   }
 }
 
@@ -340,9 +334,8 @@ export function generateGirderRebar(
       bendDirection: '上',
     },
   )
-  const hook135Rule = lookupRule(pack, 'bend.hook135', {})
-  const stirrupDiameter = barDiameter(section.stirrup.size)
-  const hook135LengthMm = millimetres(hook135Rule, stirrupDiameter)
+  // 135°フック余長は引かない — 積算基準 1通則2) が「フックはないものとする」と
+  // 定めるため、あばら筋の数量にも 3D 形状にも効かない。
   const stirrups = run.members.map((member, index) =>
     generateStirrup(
       member,
@@ -351,8 +344,6 @@ export function generateGirderRebar(
       coverRule,
       fabricationCoverAdditionRule,
       fabricationCoverMm,
-      hook135Rule,
-      hook135LengthMm,
     ),
   )
 

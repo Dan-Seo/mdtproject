@@ -109,6 +109,7 @@ const hoop: Rebar = {
     pitchMm: 100,
     startOffsetMm: 0,
     lastGapMm: columnHoopLayout.lastGapMm,
+    positionCount: columnHoopPositions.length,
   },
   ruleHits: [],
   formula: 'test',
@@ -149,6 +150,7 @@ function hoopOf(count: number): Rebar {
       pitchMm: section.hoop.pitch,
       startOffsetMm: 0,
       lastGapMm: layout.lastGapMm,
+      positionCount: layout.positionsMm.length,
     },
   }
 }
@@ -223,6 +225,7 @@ const girderStirrup: Rebar = {
     pitchMm: girderSection.stirrup.pitch,
     startOffsetMm: girderSection.stirrup.startOffsetMm,
     lastGapMm: girderStirrupLayout.lastGapMm,
+    positionCount: girderStirrupPositions.length,
   },
   ruleHits: [],
   formula: 'test',
@@ -296,8 +299,21 @@ describe('rebarPlacements for 柱', () => {
     expect(lastY).toBeLessThan((hoop.count - 1) * section.hoop.pitch)
   })
 
-  it('refuses a 帯筋 whose 本数 disagrees with the domain layout', () => {
-    expect(() => rebarPlacements({ ...hoop, count: 3 }, section)).toThrow()
+  it('refuses a 帯筋 whose placement count disagrees with its own layout args', () => {
+    expect(() =>
+      rebarPlacements(
+        { ...hoop, placement: { ...hoop.placement!, positionCount: 3 } },
+        section,
+      ),
+    ).toThrow()
+  })
+
+  it('accepts a 数量本数 that differs from the drawn placement count', () => {
+    // 積算基準 1通則7) の設計本数は初期オフセットを見ないので配置本数と
+    // 一致しないのが普通だ。ここで弾くと数量が形状に引きずられる (ADR-019)。
+    expect(() =>
+      rebarPlacements({ ...hoop, count: hoop.count + 7 }, section),
+    ).not.toThrow()
   })
 })
 

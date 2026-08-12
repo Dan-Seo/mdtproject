@@ -135,7 +135,7 @@ for (const fy of [0.45, 0.5, 0.55, 0.4, 0.6]) {
 
 checks.tooltipShowsOnHover = hover !== null;
 checks.tooltipHasRebarFields =
-  hover !== null && ["役割", "径", "本数", "加工長"].every((f) => hover.text.includes(f));
+  hover !== null && ["役割", "径", "本数", "設計長さ"].every((f) => hover.text.includes(f));
 
 // pointerleave → 숨김
 await page.mouse.move(box.x - 20, box.y - 20);

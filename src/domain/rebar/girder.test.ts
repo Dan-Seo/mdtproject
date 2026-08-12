@@ -141,13 +141,16 @@ describe('generateGirderRebar', () => {
     expect(byRole(generated, 'あばら筋')).toMatchObject({
       shape: 'hoop',
       closed: true,
-      count: expectedStirrups.positionsMm.length,
+      // 設計本数は積算基準 1通則7)（内法 5200 ÷ ピッチ 100 ＋ 1）。
+      // 3D の配置本数 52 とは別物で、後者は placement が持つ。
+      count: 53,
       placement: {
         axis: 'x',
         clearMm: span.clear,
         pitchMm: section.stirrup.pitch,
         startOffsetMm: section.stirrup.startOffsetMm,
         lastGapMm: expectedStirrups.lastGapMm,
+        positionCount: expectedStirrups.positionsMm.length,
       },
     })
   })
@@ -336,14 +339,16 @@ describe('generateGirderRebar', () => {
     expect(top.formula).toContain(
       `内法長さ ${span.clear}＋${secondSpan.clear} ＋ 中間柱せい ${span.endSupportLengthAlongAxisMm}`,
     )
-    expect(top.formula).toContain('継手 ＝ 未計上（定尺長さの根拠なし）')
+    expect(top.formula).toContain(
+      '継手 ＝ 未計上（数量積算基準 1通則4)・（３）梁2) が未実装）',
+    )
     expect(stirrups.map(({ memberId }) => memberId)).toEqual([
       member.id,
       secondMember.id,
     ])
   })
 
-  it('derives あばら筋 count from the bounded placement array', () => {
+  it('bounds the あばら筋 placement array inside the span', () => {
     const positions = stirrupPositions(
       span.clear,
       section.stirrup.pitch,
@@ -354,7 +359,9 @@ describe('generateGirderRebar', () => {
       'あばら筋',
     )
 
-    expect(stirrup.count).toBe(positions.length)
+    // 3D の配置本数は placement が持つ。数量本数 count は積算基準 1通則7) で
+    // 別に決まるので、ここで両者を同一視してはならない。
+    expect(stirrup.placement?.positionCount).toBe(positions.length)
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect(positions.every((position) => position <= span.clear)).toBe(true)
   })
@@ -396,11 +403,9 @@ describe('generateGirderRebar', () => {
     ).toEqual(bentMainRules)
     expect(
       byRole(generated, 'あばら筋').ruleHits.map(({ key }) => key),
-    ).toEqual([
-      'cover.minimum',
-      'cover.fabrication.addition',
-      'bend.hook135',
-    ])
+    // あばら筋の数量は積算基準の断面周長で決まる — かぶりは 3D 形状にしか効かず、
+    // フックは 1通則2) が計上しないと定めるので bend.hook135 は引かない。
+    ).toEqual(['cover.minimum', 'cover.fabrication.addition'])
 
     for (const rebar of generated) {
       expect(new Set(rebar.ruleHits).size).toBe(rebar.ruleHits.length)

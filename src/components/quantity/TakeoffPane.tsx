@@ -521,8 +521,9 @@ export function TakeoffPane() {
   const { lines, unsupportedMembers } = useTakeoff()
   const locale = useAppStore(({ locale }) => locale)
 
-  // 通し筋은 定尺長さ 근거가 없어 継手를 계상하지 않는다 (R8). 접힌 산출식에만
-  // 두면 사용자가 모르고 발주에 쓴다 — 大梁 主筋 행이 있으면 항상 보이게 한다.
+  // 通し筋의 継手箇所数는 数量積算基準 1通則4)·（３）梁2)에 근거가 있으나 아직
+  // 구현하지 않았다 (R8). 접힌 산출식에만 두면 사용자가 모르고 발주에 쓴다 —
+  // 大梁 主筋 행이 있으면 항상 보이게 한다.
   const spliceOmitted = lines.some(
     ({ memberKind, role }) => memberKind === '大梁' && role !== 'あばら筋',
   )
