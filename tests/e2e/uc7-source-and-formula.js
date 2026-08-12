@@ -30,7 +30,9 @@ const after = await page.evaluate(() => ({
     id: r.getAttribute("data-testid"),
     formula: r.textContent.trim(),
   })),
-  expandedRows: [...document.querySelectorAll("[data-testid^='quantity-line-'][aria-expanded='true']")].map(
+  // 펼침 상태는 행이 아니라 첫 칸의 컨트롤이 들고 있다 — role=row의 aria-expanded는
+  // treegrid 안에서만 유효하다.
+  expandedRows: [...document.querySelectorAll("[data-testid^='quantity-line-']:has(button[aria-expanded='true'])")].map(
     (r) => r.getAttribute("data-testid")
   ),
 }));

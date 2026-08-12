@@ -90,12 +90,13 @@ export function AppShell({
       </header>
 
       <main className={styles.shellMain}>
-        <aside className={styles.warningBanner} role="status">
+        {/* aside가 아니라 div다 — ARIA에서 aside(complementary)에는 status 롤을 얹을 수 없다. */}
+        <div className={styles.warningBanner} role="status">
           <span className={styles.warningTitle}>
             {t(locale, 'warning.m1.title')}
           </span>
           <span>{t(locale, 'warning.m1.body')}</span>
-        </aside>
+        </div>
 
         <div className={styles.workspace}>
           <div className={styles.leftColumn}>

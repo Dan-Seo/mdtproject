@@ -8,10 +8,11 @@
 // error를 건다. 바이트 수는 러너와 무관하고 번들이 커지면 반드시 늘어난다 — 이게 래칫이다.
 //
 // 아래 숫자는 전부 **실측값 + 여유(약 5%)**다. 추정치가 아니다.
-// 측정: 2026-08-12, 커밋 da48de3(M3b 通し筋), lighthouse 12.8.2, preset=desktop,
-//       프로덕션 빌드(next build && next start)를 localhost에서.
-//   performance 91 / accessibility 96 / best-practices 96 / seo 90
-//   script 300,297 B (9 요청) · font 89,512 B (2) · stylesheet 7,577 B (2) · total 408,138 B (14)
+// 측정: 2026-08-12, lighthouse 12.8.2, preset=desktop, 프로덕션 빌드를 localhost에서.
+//   da48de3(M3b): performance 91 / a11y 96 / BP 96 / SEO 90 · script 300,297 B · total 408,138 B
+//   ↓ a11y 결함 4건 수정 후 (이 커밋)
+//   performance 92 / accessibility 100 / best-practices 100 / seo 100
+//   script 300,249 B (9 요청) · font 89,512 B (2) · total 409,043 B (15 — icon.svg 640 B 추가)
 //   LCP 692ms · TBT 242ms
 //
 // **타이밍 임계값은 러너 실측으로 잡는다 — 로컬 값으로 잡으면 매번 울려 경고가 벽지가 된다.**
@@ -44,12 +45,11 @@ module.exports = {
       // preset을 상속하지 않는다 — lighthouse:recommended는 이 앱과 무관한 감사까지 실패시킨다.
       assertions: {
         // ── 결정적(러너 무관) → error ─────────────────────────────────
-        // 실측 96. 남은 실패 2건(aside role=status, tr aria-expanded)을 고치면 1.0으로 조인다.
-        'categories:accessibility': ['error', { minScore: 0.96 }],
-        // 실측 96. 남은 실패 1건은 favicon.ico 404(콘솔 에러)다.
-        'categories:best-practices': ['error', { minScore: 0.96 }],
-        // 실측 90. 남은 실패 1건은 meta description 부재다.
-        'categories:seo': ['error', { minScore: 0.9 }],
+        // 셋 다 실측 1.00이다. 만점에서 조이면 어떤 회귀든 첫 칸에서 걸린다 —
+        // 내려갈 여지를 남겨두면 그만큼은 조용히 나빠진다.
+        'categories:accessibility': ['error', { minScore: 1 }],
+        'categories:best-practices': ['error', { minScore: 1 }],
+        'categories:seo': ['error', { minScore: 1 }],
 
         // 번들 래칫. 실측 + 약 5% 여유 — three.js를 무심코 초기 로드에 더 끌어오면 걸린다.
         'resource-summary:script:size': ['error', { maxNumericValue: 315000 }],

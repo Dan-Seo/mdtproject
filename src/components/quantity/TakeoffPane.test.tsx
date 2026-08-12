@@ -346,6 +346,28 @@ describe('TakeoffPane', () => {
     )
   })
 
+  // row(role=row)의 aria-expanded는 treegrid 안에서만 유효하다 — 평범한 table에서는
+  // 보조기술이 읽지 못한다. 펼침 상태는 실제 컨트롤이 들고 있어야 한다.
+  it('carries the disclosure state on a real control, not on the row', () => {
+    const lines = takeoffLines()
+    const line = lineFor('帯筋')
+    render(<TakeoffTable lines={lines} />)
+
+    const row = screen.getByTestId(`quantity-line-${line.id}`)
+    expect(row).not.toHaveAttribute('aria-expanded')
+
+    // 한 번의 클릭이 한 번만 토글되어야 한다 — 버튼 클릭이 행으로 버블링되면 두 번 뒤집혀
+    // 아무 일도 일어나지 않는다.
+    fireEvent.click(within(row).getByRole('button', { expanded: false }))
+
+    expect(screen.getByTestId(`formula-${line.id}`)).toHaveTextContent(
+      line.formula,
+    )
+    expect(
+      within(screen.getByTestId(`quantity-line-${line.id}`)).getByRole('button'),
+    ).toHaveAttribute('aria-expanded', 'true')
+  })
+
   it('renders story subtotals and the grand total from domain helpers', () => {
     const lines = takeoffLines()
     const subtotals = storySubtotals(lines)
