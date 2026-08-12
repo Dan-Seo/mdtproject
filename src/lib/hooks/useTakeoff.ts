@@ -8,6 +8,7 @@ import {
   columnEnds,
   findSection,
   girderRun,
+  type GirderRun,
   type Project,
 } from '@/domain/model/project'
 import {
@@ -67,8 +68,16 @@ export function useTakeoff(): TakeoffResult {
 function buildTakeoff(project: Project): TakeoffResult {
   const rebars: Rebar[] = []
   const unsupportedMembers: UnsupportedMember[] = []
+  const processedGirderMemberIds = new Set<string>()
 
   for (const member of project.members) {
+    if (
+      member.kind === '大梁' &&
+      processedGirderMemberIds.has(member.id)
+    ) {
+      continue
+    }
+
     const section = findSection(project, member.sectionId)
     const story = project.stories.find(({ id }) => id === member.storyId)
     if (!story) {
@@ -111,11 +120,15 @@ function buildTakeoff(project: Project): TakeoffResult {
       throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
     }
 
-    // 성립 불가 형상(定着·寸法)은 그 부재만 빼고 나머지 산정을 계속한다.
+    // 大梁은 런마다 한 번만 생성한다. 성립 불가 형상(定着·寸法)이면 런
+    // 전체를 빼고 나머지 런과 柱 산정을 계속한다.
     // MemberUnsupportedError만 잡는다 — 룰팩 공백 같은 결함은 그대로 터진다.
+    let run: GirderRun | undefined
     try {
-      const run = girderRun(project, member)
-      if (member.id !== run.ownerId) continue
+      run = girderRun(project, member)
+      for (const runMember of run.members) {
+        processedGirderMemberIds.add(runMember.id)
+      }
 
       rebars.push(
         ...generateGirderRebar(
@@ -126,12 +139,30 @@ function buildTakeoff(project: Project): TakeoffResult {
     } catch (error) {
       if (!(error instanceof MemberUnsupportedError)) throw error
 
-      unsupportedMembers.push({
-        memberId: member.id,
-        mark: section.mark,
-        storyName: story.name,
-        reason: error.reason,
-      })
+      const unsupportedRunMembers = run?.members ?? [member]
+      for (const runMember of unsupportedRunMembers) {
+        processedGirderMemberIds.add(runMember.id)
+
+        const runSection = findSection(project, runMember.sectionId)
+        const runStory = project.stories.find(
+          ({ id }) => id === runMember.storyId,
+        )
+        if (runSection.kind !== '大梁') {
+          throw new Error(
+            `大梁 member references a non-大梁 section: ${runMember.id}`,
+          )
+        }
+        if (!runStory) {
+          throw new Error(`Story not found: ${runMember.storyId}`)
+        }
+
+        unsupportedMembers.push({
+          memberId: runMember.id,
+          mark: runSection.mark,
+          storyName: runStory.name,
+          reason: error.reason,
+        })
+      }
     }
   }
 
