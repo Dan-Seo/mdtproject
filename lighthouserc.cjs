@@ -14,6 +14,14 @@
 //   script 300,297 B (9 요청) · font 89,512 B (2) · stylesheet 7,577 B (2) · total 408,138 B (14)
 //   LCP 692ms · TBT 242ms
 //
+// **타이밍 임계값은 러너 실측으로 잡는다 — 로컬 값으로 잡으면 매번 울려 경고가 벽지가 된다.**
+// 같은 커밋을 GitHub 2코어 러너에서 3회(run 31598974988):
+//   performance 0.67 / 0.69 / 0.69   TBT 17,743 / 15,840 / 15,715 ms
+// 로컬 대비 TBT가 65배다. 하드웨어 차이만으로는 설명되지 않는다 — 러너에는 GPU가 없어
+// WebGL이 SwiftShader 소프트웨어 래스터라이저로 돌기 때문이다. 즉 이 TBT는 사용자가
+// 겪는 지연이 아니라 **GPU 없는 최악 조건의 값**이다. 절대값을 사용자 체감으로 읽지 말 것.
+// 같은 러너 위에서의 상대 회귀 신호로만 쓴다 — 그래서 error가 아니라 warn이다.
+//
 // 값을 **올릴 때는 근거를 함께 적을 것** — 래칫은 한 방향으로만 조여야 의미가 있다.
 // 최적화로 값이 내려가면 그 자리에서 예산도 같이 조인다.
 module.exports = {
@@ -50,8 +58,11 @@ module.exports = {
         'resource-summary:total:size': ['error', { maxNumericValue: 430000 }],
 
         // ── 러너 노이즈에 흔들림 → warn (리포트에만 남는다) ──────────────
-        'categories:performance': ['warn', { minScore: 0.85 }],
-        'total-blocking-time': ['warn', { maxNumericValue: 400 }],
+        // 러너 실측 중앙값(0.69 / 15,840ms)에 여유를 준 값이다. 로컬 값(0.91 / 242ms)으로
+        // 잡으면 회귀가 없어도 매번 울린다.
+        'categories:performance': ['warn', { minScore: 0.65 }],
+        'total-blocking-time': ['warn', { maxNumericValue: 20000 }],
+        // LCP는 러너에서도 예산 안에 들어왔다 — GPU 없는 조건에서도 초기 표시는 빠르다.
         'largest-contentful-paint': ['warn', { maxNumericValue: 1500 }],
       },
     },
