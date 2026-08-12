@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   resizeDisconnect: vi.fn(),
   envTextureDispose: vi.fn(),
   rendererInstances: [] as Array<{
+    localClippingEnabled: boolean
     shadowMap: { enabled: boolean; type: number }
     toneMapping: number
     outputColorSpace: string
@@ -36,6 +37,7 @@ vi.mock('three', async (importOriginal) => {
     toneMapping = 0
     toneMappingExposure = 1
     outputColorSpace = ''
+    localClippingEnabled = false
 
     constructor() {
       mocks.rendererInstances.push(this)
@@ -105,7 +107,15 @@ vi.mock('three/examples/jsm/environments/RoomEnvironment.js', () => ({
   RoomEnvironment: class RoomEnvironmentMock {},
 }))
 
-import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three'
+import {
+  ACESFilmicToneMapping,
+  GridHelper,
+  Group,
+  Material,
+  Mesh,
+  PCFSoftShadowMap,
+  SRGBColorSpace,
+} from 'three'
 
 import { Viewer3D } from './Viewer3D'
 
@@ -139,6 +149,34 @@ class ResizeObserverMock {
   disconnect() {
     mocks.resizeDisconnect()
   }
+}
+
+function latestContent(): Group {
+  const content = mocks.sceneObjects
+    .filter((object): object is Group => object instanceof Group)
+    .at(-1)
+
+  if (content === undefined) throw new Error('Viewer content was not built')
+  return content
+}
+
+function clipTargetMaterials(content: Group): Material[] {
+  const materials = new Set<Material>()
+
+  content.traverse((object) => {
+    if (!(object instanceof Mesh)) return
+    if (!['main', 'hoop', 'concrete'].includes(object.userData.layer)) return
+
+    const objectMaterials = Array.isArray(object.material)
+      ? object.material
+      : [object.material]
+    for (const material of objectMaterials) materials.add(material)
+
+    const baseMaterial: unknown = object.userData.baseMaterial
+    if (baseMaterial instanceof Material) materials.add(baseMaterial)
+  })
+
+  return [...materials]
 }
 
 describe('Viewer3D', () => {
@@ -188,6 +226,64 @@ describe('Viewer3D', () => {
     expect(renderer.shadowMap.type).toBe(PCFSoftShadowMap)
     expect(renderer.toneMapping).toBe(ACESFilmicToneMapping)
     expect(renderer.outputColorSpace).toBe(SRGBColorSpace)
+    expect(renderer.localClippingEnabled).toBe(true)
+  })
+
+  it('creates every concrete and rebar material with one shared clip plane', () => {
+    render(<Viewer3D />)
+
+    const materials = clipTargetMaterials(latestContent())
+    expect(materials.length).toBeGreaterThan(0)
+    const planes = materials.flatMap((material) => material.clippingPlanes ?? [])
+
+    expect(planes).toHaveLength(materials.length)
+    expect(new Set(planes)).toHaveLength(1)
+    expect(materials.every(({ clipShadows }) => clipShadows)).toBe(true)
+  })
+
+  it('keeps the shared plane at a large no-cut constant while disabled', () => {
+    render(<Viewer3D />)
+
+    const [material] = clipTargetMaterials(latestContent())
+    expect(material.clippingPlanes).toHaveLength(1)
+    expect(material.clippingPlanes?.[0].constant).toBeGreaterThanOrEqual(1e6)
+  })
+
+  it('does not attach local clipping to the ground grid', () => {
+    render(<Viewer3D />)
+
+    const grid = latestContent().children.find(
+      (object): object is GridHelper => object instanceof GridHelper,
+    )
+    expect(grid).toBeDefined()
+    const materials = Array.isArray(grid?.material)
+      ? grid.material
+      : [grid?.material]
+
+    expect(
+      materials.every(
+        (material) =>
+          material !== undefined && material.clippingPlanes === null,
+      ),
+    ).toBe(true)
+  })
+
+  it('updates clip axis and ratio without replacing material instances', () => {
+    render(<Viewer3D />)
+
+    const contentBefore = latestContent()
+    const materialsBefore = clipTargetMaterials(contentBefore)
+
+    fireEvent.click(screen.getByRole('button', { name: '断面カット' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Y軸' }))
+    fireEvent.change(screen.getByRole('slider', { name: '切断位置' }), {
+      target: { value: '0.75' },
+    })
+
+    expect(latestContent()).toBe(contentBefore)
+    expect(clipTargetMaterials(latestContent())).toEqual(materialsBefore)
+    const plane = materialsBefore[0].clippingPlanes?.[0]
+    expect(plane?.normal.toArray()).toEqual([0, 1, 0])
   })
 
   it('translates its own chrome instead of hardcoding Japanese', () => {

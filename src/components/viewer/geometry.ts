@@ -20,6 +20,33 @@ export interface Bounds {
   max: Point3
 }
 
+export type ClipAxis = 'x' | 'y' | 'z'
+
+/**
+ * mm 좌표계의 절단 위치를 THREE.Plane과 같은 normal/constant 형태로 만든다.
+ * +축 normal이므로 ratio가 커질수록 남는 영역이 min 쪽에서 max 쪽으로 넓어진다.
+ * scene 단위 변환은 렌더러 경계에서만 수행한다.
+ */
+export function clipPlaneForMm(
+  bounds: { min: Point3; max: Point3 },
+  axis: ClipAxis,
+  ratio: number,
+): { normal: Point3; constantMm: number } {
+  assertBounds(bounds)
+  if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1) {
+    throw new Error(`Invalid clip ratio: ${ratio}`)
+  }
+
+  const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2
+  const positionMm =
+    bounds.min[axisIndex] +
+    (bounds.max[axisIndex] - bounds.min[axisIndex]) * ratio
+  const normal: Point3 = [0, 0, 0]
+  normal[axisIndex] = 1
+
+  return { normal, constantMm: -positionMm }
+}
+
 export interface CameraFit {
   position: Point3
   target: Point3

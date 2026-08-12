@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -39,6 +39,7 @@ import {
 } from './building'
 import {
   CAMERA_FOV_DEGREES,
+  clipPlaneForMm,
   easeOutCubic,
   fitCamera,
   flyInStartPose,
@@ -49,6 +50,7 @@ import {
   type RebarBatch,
   type Bounds,
   type CameraFit,
+  type ClipAxis,
   type Point3,
 } from './geometry'
 import { ViewerLayerControls } from './ViewerTabs'
@@ -73,6 +75,14 @@ const FLY_IN_YAW_RADIANS = -Math.PI / 9
 const FLY_IN_DISTANCE_SCALE = 1.35
 const AUTO_ROTATE_DELAY_MS = 8000
 const AUTO_ROTATE_SPEED = 0.5
+const CLIP_DISABLED_CONSTANT = 1e6
+const CLIP_AXES: ClipAxis[] = ['x', 'y', 'z']
+
+interface ClipState {
+  enabled: boolean
+  axis: ClipAxis
+  ratio: number
+}
 
 interface SelectedColumnView {
   kind: '柱'
@@ -118,6 +128,7 @@ interface ViewerRuntime {
   controls: OrbitControls
   directionalLight: THREE.DirectionalLight
   envTexture: THREE.Texture
+  clipPlane: THREE.Plane
   content: THREE.Group | null
   contentMaterials: THREE.Material[]
   highlightMaterial: THREE.MeshStandardMaterial | null
@@ -134,6 +145,27 @@ interface ViewerRuntime {
 
 function vector(point: Point3): THREE.Vector3 {
   return new THREE.Vector3(...point).multiplyScalar(MILLIMETRES_TO_SCENE)
+}
+
+function applyClipPlane(
+  plane: THREE.Plane,
+  bounds: Bounds | null,
+  clip: ClipState,
+): void {
+  if (!clip.enabled || bounds === null) {
+    // 배열을 제거하지 않고 평면만 콘텐츠 밖으로 민다. clippingPlanes 변경은
+    // 셰이더 재컴파일을 일으키므로 생성 이후에는 normal/constant만 바꾼다.
+    plane.constant = CLIP_DISABLED_CONSTANT
+    return
+  }
+
+  const { normal, constantMm } = clipPlaneForMm(
+    bounds,
+    clip.axis,
+    clip.ratio,
+  )
+  plane.normal.set(...normal)
+  plane.constant = constantMm * MILLIMETRES_TO_SCENE
 }
 
 function disposeContent(runtime: ViewerRuntime): void {
@@ -256,9 +288,12 @@ function addMemberConcrete(
   content: THREE.Group,
   view: SelectedSupportedMemberView,
   materials: THREE.Material[],
+  clipPlane: THREE.Plane,
 ): void {
   const outlineMaterial = new THREE.LineBasicMaterial({
     color: OUTLINE_COLOR,
+    clippingPlanes: [clipPlane],
+    clipShadows: true,
   })
   const concreteMaterial = new THREE.MeshStandardMaterial({
     color: CONCRETE_COLOR,
@@ -267,6 +302,8 @@ function addMemberConcrete(
     roughness: 0.9,
     metalness: 0,
     depthWrite: false,
+    clippingPlanes: [clipPlane],
+    clipShadows: true,
   })
 
   for (const box of concreteBoxes(view)) {
@@ -593,16 +630,22 @@ function rebuildMemberScene(
     color: REBAR_COLOR,
     metalness: 0.6,
     roughness: 0.35,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const anchorageMaterial = new THREE.MeshStandardMaterial({
     color: ANCHORAGE_COLOR,
     metalness: 0.6,
     roughness: 0.35,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const lapMaterial = new THREE.MeshStandardMaterial({
     color: LAP_COLOR,
     metalness: 0.6,
     roughness: 0.35,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const highlightMaterial = new THREE.MeshStandardMaterial({
     color: HIGHLIGHT_COLOR,
@@ -610,6 +653,8 @@ function rebuildMemberScene(
     roughness: 0.35,
     emissive: HIGHLIGHT_COLOR,
     emissiveIntensity: 0.35,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const materials: THREE.Material[] = [
     coreMaterial,
@@ -625,7 +670,7 @@ function rebuildMemberScene(
   const pickableMeshes: THREE.Mesh[] = []
   const bounds = memberBounds(view)
 
-  addMemberConcrete(content, view, materials)
+  addMemberConcrete(content, view, materials, runtime.clipPlane)
   addGround(content, bounds, materials)
 
   const entries = view.rebars.map((rebar) => {
@@ -664,6 +709,8 @@ function rebuildBuildingScene(
     color: REBAR_COLOR,
     metalness: 0.6,
     roughness: 0.35,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const concreteMaterial = new THREE.MeshStandardMaterial({
     color: CONCRETE_COLOR,
@@ -672,6 +719,8 @@ function rebuildBuildingScene(
     roughness: 0.9,
     metalness: 0,
     depthWrite: false,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
   const concreteSelectedMaterial = new THREE.MeshStandardMaterial({
     color: CONCRETE_COLOR,
@@ -682,8 +731,14 @@ function rebuildBuildingScene(
     depthWrite: false,
     emissive: HIGHLIGHT_COLOR,
     emissiveIntensity: 0.3,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
   })
-  const outlineMaterial = new THREE.LineBasicMaterial({ color: OUTLINE_COLOR })
+  const outlineMaterial = new THREE.LineBasicMaterial({
+    color: OUTLINE_COLOR,
+    clippingPlanes: [runtime.clipPlane],
+    clipShadows: true,
+  })
   const materials: THREE.Material[] = [
     steelMaterial,
     concreteMaterial,
@@ -933,6 +988,11 @@ function selectedMemberView(
 export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
+  const [clip, setClip] = useState<ClipState>({
+    enabled: false,
+    axis: 'x',
+    ratio: 0.5,
+  })
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
   const selectMember = useAppStore(({ selectMember }) => selectMember)
   const locale = useAppStore(({ locale }) => locale)
@@ -986,6 +1046,10 @@ export function Viewer3D() {
     }
     return null
   }, [layout, selectedMember])
+  const clipBounds = useMemo((): Bounds | null => {
+    if (view === null) return null
+    return view.mode === 'building' ? view.layout.bounds : memberBounds(view.member)
+  }, [view])
   const viewRef = useRef(view)
   viewRef.current = view
   const sceneKey = useMemo(() => {
@@ -1008,6 +1072,9 @@ export function Viewer3D() {
       1000,
     )
     const renderer = new THREE.WebGLRenderer({ antialias: true })
+    // 머티리얼별 clippingPlanes는 생성 때부터 고정한다. 이 플래그도 마운트
+    // 이후 토글하지 않아 클립 on/off가 전 머티리얼 재컴파일로 번지지 않게 한다.
+    renderer.localClippingEnabled = true
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -1045,6 +1112,10 @@ export function Viewer3D() {
       controls,
       directionalLight,
       envTexture,
+      clipPlane: new THREE.Plane(
+        new THREE.Vector3(1, 0, 0),
+        CLIP_DISABLED_CONSTANT,
+      ),
       content: null,
       contentMaterials: [],
       highlightMaterial: null,
@@ -1088,6 +1159,8 @@ export function Viewer3D() {
         -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
       )
       raycaster.setFromCamera(pointer, camera)
+      // 알려진 한계(MVP 수용): Raycaster는 CPU 측이라 GPU 클리핑을 모르므로
+      // 잘려나간 영역에도 클릭·호버가 걸릴 수 있다.
       const hit = raycaster
         .intersectObjects(runtime.pickableMeshes, false)
         .find(({ object }) => isEffectivelyVisible(object))
@@ -1151,6 +1224,12 @@ export function Viewer3D() {
   useEffect(() => {
     const runtime = runtimeRef.current
     if (runtime === null) return
+    applyClipPlane(runtime.clipPlane, clipBounds, clip)
+  }, [clip, clipBounds])
+
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
     applyViewerLayers(runtime, viewerLayers)
   }, [viewerLayers])
 
@@ -1195,6 +1274,56 @@ export function Viewer3D() {
             <ViewerLayerControls />
           </div>
         </div>
+      </div>
+      <div
+        className={styles.clipControls}
+        role="group"
+        aria-label={t(locale, 'viewer.clip.toggle')}
+      >
+        <button
+          type="button"
+          className={`${styles.clipButton} ${
+            clip.enabled ? styles.clipButtonActive : ''
+          }`}
+          aria-pressed={clip.enabled}
+          onClick={() =>
+            setClip((current) => ({
+              ...current,
+              enabled: !current.enabled,
+            }))
+          }
+        >
+          {t(locale, 'viewer.clip.toggle')}
+        </button>
+        {CLIP_AXES.map((axis) => (
+          <button
+            key={axis}
+            type="button"
+            className={`${styles.clipButton} ${
+              clip.axis === axis ? styles.clipButtonActive : ''
+            }`}
+            aria-pressed={clip.axis === axis}
+            onClick={() => setClip((current) => ({ ...current, axis }))}
+          >
+            {t(locale, `viewer.clip.axis${axis.toUpperCase()}`)}
+          </button>
+        ))}
+        <input
+          className={styles.clipRange}
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={clip.ratio}
+          aria-label={t(locale, 'viewer.clip.position')}
+          onChange={(event) => {
+            const ratio = event.currentTarget.valueAsNumber
+            setClip((current) => ({
+              ...current,
+              ratio,
+            }))
+          }}
+        />
       </div>
       {view === null && (
         <div className={styles.empty}>

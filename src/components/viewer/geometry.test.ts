@@ -7,6 +7,7 @@ import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import {
   CAMERA_FOV_DEGREES,
   CAMERA_FRAME_MARGIN,
+  clipPlaneForMm,
   easeOutCubic,
   fitCamera,
   flyInStartPose,
@@ -20,6 +21,45 @@ import {
   type CameraFit,
   type Point3,
 } from './geometry'
+
+describe('clipPlaneForMm', () => {
+  const bounds: Bounds = {
+    min: [-200, 100, 30],
+    max: [800, 500, 930],
+  }
+
+  it.each([
+    {
+      axis: 'x' as const,
+      normal: [1, 0, 0] as Point3,
+      constants: [200, -300, -800],
+    },
+    {
+      axis: 'y' as const,
+      normal: [0, 1, 0] as Point3,
+      constants: [-100, -300, -500],
+    },
+    {
+      axis: 'z' as const,
+      normal: [0, 0, 1] as Point3,
+      constants: [-30, -480, -930],
+    },
+  ])(
+    'returns the $axis normal and asymmetric-bound constants at 0, 0.5 and 1',
+    ({ axis, normal, constants }) => {
+      const results = [0, 0.5, 1].map((ratio) =>
+        clipPlaneForMm(bounds, axis, ratio),
+      )
+
+      expect(results.map(({ normal: value }) => value)).toEqual([
+        normal,
+        normal,
+        normal,
+      ])
+      expect(results.map(({ constantMm }) => constantMm)).toEqual(constants)
+    },
+  )
+})
 
 const main: Rebar = {
   id: '1F-X1Y1|main',
