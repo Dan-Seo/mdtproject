@@ -1,0 +1,10 @@
+{
+  "project": "Kijun",
+  "phase": "2-m2-rulepack",
+  "steps": [
+    { "step": 0, "name": "spec-transcribe", "status": "pending" },
+    { "step": 1, "name": "rulepack-anchorage-lap", "status": "pending" },
+    { "step": 2, "name": "rulepack-bend-cover", "status": "pending" },
+    { "step": 3, "name": "column-fabrication-cover", "status": "pending" }
+  ]
+}

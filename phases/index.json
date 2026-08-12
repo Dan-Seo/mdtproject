@@ -3,6 +3,18 @@
     {
       "dir": "1-skeleton",
       "status": "pending"
+    },
+    {
+      "dir": "2-m2-rulepack",
+      "status": "pending"
+    },
+    {
+      "dir": "3-girder-domain",
+      "status": "pending"
+    },
+    {
+      "dir": "4-girder-viewer",
+      "status": "pending"
     }
   ]
 }
