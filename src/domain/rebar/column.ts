@@ -1,5 +1,5 @@
 import type { BarSize, ColumnSection, Member } from '../model/member'
-import type { Rebar } from '../model/rebar'
+import type { Rebar, RebarZone } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
@@ -79,6 +79,21 @@ export function generateColumnRebar(
     ends.bottom === '継手' ? lapLength : anchorageLength
   const topExtension = ends.top === '定着' ? anchorageLength : 0
   const mainLength = story.height + bottomExtension + topExtension
+  const mainZones: RebarZone[] = [
+    {
+      kind: ends.bottom === '継手' ? '重ね継手' : '定着',
+      pathFromMm: 0,
+      pathToMm: bottomExtension,
+    },
+  ]
+
+  if (ends.top === '定着') {
+    mainZones.push({
+      kind: '定着',
+      pathFromMm: mainLength - anchorageLength,
+      pathToMm: mainLength,
+    })
+  }
 
   const endTerms: string[] = []
   const mainRuleKeys: string[] = [
@@ -158,6 +173,7 @@ export function generateColumnRebar(
     closed: false,
     length: mainLength,
     count: section.main.count,
+    zones: mainZones,
     rules: mainRuleKeys,
     formula:
       `加工長 ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
