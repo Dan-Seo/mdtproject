@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-08-12T13:04:10+0900",
       "summary": "stirrupPositions(clearMm, pitchMm, startOffsetMm)가 대칭 구간 [startOffsetMm, clearMm-startOffsetMm]에 pitch 간격으로 배치하고 잔여 시 끝점을 추가하며 inferred 룰 stirrup.start-offset을 신설",
-      "completed_at": "2026-08-12T13:08:12+0900"
+      "completed_at": "2026-08-12T13:09:38+0900"
     },
     {
       "step": 4,
