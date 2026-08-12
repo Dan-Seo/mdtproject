@@ -23,7 +23,6 @@ describe('jpMlitRulePack', () => {
         'bend.hook90',
         'bend.hook135',
         'bend.hook-tome',
-        'stirrup.start-offset',
         'cover.fabrication.addition',
         'markup.rate',
         'unit-mass.value',
@@ -40,14 +39,18 @@ describe('jpMlitRulePack', () => {
     }
   })
 
-  it('never attributes a placeless value to a real document', () => {
-    // 節·頁를 못 대는 값은 원문에 없는 값이다 — 그것을 실재 문서 출처로 표시하면
-    // UI·엑셀의 出典 표시가 거짓이 된다 (PDL1.0 출처 표시 의무). 관행 가정치는
-    // 관행 전용 ref로 귀속하고, 실재 문서 귀속에는 최소한 節을 요구한다.
-    const placeless = jpMlitRulePack.entries.filter(
-      ({ source }) => source.section === null && source.url !== null,
-    )
+  it('cites only externally published documents — never a self-authored one', () => {
+    // 룰팩은 근거 있는 規準値만 담는다. 조문에 없는 값을 자작 출처 문서로 세탁하면
+    // UI·엑셀의 出典 표시가 거짓이 된다 (CLAUDE.md CRITICAL, PDL1.0 출처 표시 의무).
+    // 근거 없는 배치값은 룰팩이 아니라 断面一覧의 입력으로 받는다 (ADR-012).
+    const cited = new Set(jpMlitRulePack.entries.map(({ source }) => source.doc))
 
-    expect(placeless.map(({ key }) => key)).toEqual([])
+    expect([...cited].sort()).toEqual(
+      [
+        '公共建築工事標準仕様書（建築工事編）',
+        '公共建築数量積算基準',
+        '鉄筋コンクリート用棒鋼',
+      ].sort(),
+    )
   })
 })

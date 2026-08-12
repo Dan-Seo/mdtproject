@@ -46,10 +46,14 @@ function endFormula(label: '始端' | '終端', detail: GirderEndDetail): string
     return `${label} 直線定着 L1 ${detail.lengthMm}`
   }
 
+  // lengthMm·projectionMm 은 최소치와의 max 결과다 — L1h·La 로 표기하면 表5.3.4·
+  // 表5.3.5 와 대조하는 검토자에게 근거가 틀린 것으로 보인다. 지배한 항을 밝힌다.
   const verticalTailMm = detail.lengthMm - detail.projectionMm
   return (
-    `${label} 折曲げ定着 L1h ${detail.lengthMm}` +
-    `（投影定着長さ La ${detail.projectionMm} ＋ 垂直余長 ${verticalTailMm}）`
+    `${label} 折曲げ定着 加工長 ${detail.lengthMm}` +
+    `（投影 ${detail.projectionMm}［La ${detail.laMm} と 柱せい×投影下限 ` +
+    `${detail.projectionMinimumMm} の大］ ＋ 垂直余長 ${verticalTailMm}` +
+    `［L1h ${detail.l1hMm} と 投影＋余長下限 ${detail.tailMinimumMm} の大］）`
   )
 }
 
@@ -120,6 +124,7 @@ function generateMain(
     {
       ...endInput,
       supportLengthMm: span.startSupportLengthAlongAxisMm,
+      supportCover: span.startSupportCover,
     },
     pack,
   )
@@ -127,6 +132,7 @@ function generateMain(
     {
       ...endInput,
       supportLengthMm: span.endSupportLengthAlongAxisMm,
+      supportCover: span.endSupportCover,
     },
     pack,
   )
@@ -229,10 +235,10 @@ export function generateGirderRebar(
   )
 
   const hook135Rule = lookupRule(pack, 'bend.hook135', {})
-  const startOffsetRule = lookupRule(pack, 'stirrup.start-offset', {})
   const stirrupDiameter = barDiameter(section.stirrup.size)
   const hook135LengthMm = millimetres(hook135Rule, stirrupDiameter)
-  const startOffsetMm = millimetres(startOffsetRule)
+  // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
+  const startOffsetMm = section.stirrup.startOffsetMm
   const stirrupWidthMm = section.b - 2 * fabricationCoverMm
   const stirrupDepthMm = section.depth - 2 * fabricationCoverMm
 
@@ -241,6 +247,14 @@ export function generateGirderRebar(
       '寸法不成立',
       `あばら筋 加工寸法 must be positive: ${member.id} ` +
         `(${section.b}×${section.depth} − 2×加工用かぶり ${fabricationCoverMm})`,
+    )
+  }
+
+  if (span.clear <= 2 * startOffsetMm) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `あばら筋 配置区間 must be positive: ${member.id} ` +
+        `(内法 ${span.clear} ≤ 2×初期オフセット ${startOffsetMm})`,
     )
   }
 
@@ -273,12 +287,7 @@ export function generateGirderRebar(
     closed: true,
     length: stirrupLengthMm,
     count: layout.positionsMm.length,
-    ruleHits: [
-      coverRule,
-      fabricationCoverAdditionRule,
-      hook135Rule,
-      startOffsetRule,
-    ],
+    ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +
       `(${section.depth}−2×${fabricationCoverMm})} ＋ ` +

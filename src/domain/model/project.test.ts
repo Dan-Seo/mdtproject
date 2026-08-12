@@ -19,6 +19,7 @@ import {
   type Story,
 } from './project'
 import { MemberUnsupportedError } from './unsupported'
+import { coverConditions } from '../rules/lookup'
 
 const columnSection: ColumnSection = {
   id: 'section-C1',
@@ -45,7 +46,7 @@ const shallowGirderSection: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D22', topCount: 4, bottomCount: 4 },
-  stirrup: { size: 'D13', pitch: 150 },
+  stirrup: { size: 'D13', pitch: 150, startOffsetMm: 50 },
 }
 
 const deepGirderSection: GirderSection = {
@@ -243,6 +244,8 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 400,
       startSupportLengthAlongAxisMm: 800,
       endSupportLengthAlongAxisMm: 800,
+      startSupportCover: coverConditions(columnSection),
+      endSupportCover: coverConditions(columnSection),
     })
   })
 
@@ -262,6 +265,8 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 450,
       startSupportLengthAlongAxisMm: 900,
       endSupportLengthAlongAxisMm: 900,
+      startSupportCover: coverConditions(rectangularColumnSection),
+      endSupportCover: coverConditions(rectangularColumnSection),
     })
   })
 

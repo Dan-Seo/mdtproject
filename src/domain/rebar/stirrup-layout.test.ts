@@ -1,28 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { jpMlitRulePack } from '../../rulepack'
-import { lookupRule } from '../rules/lookup'
 import { stirrupPositions } from './stirrup-layout'
 
-const startOffsetRule = lookupRule(
-  jpMlitRulePack,
-  'stirrup.start-offset',
-  {},
-)
+// 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 대표하는 표본값으로 검사한다
+const startOffsetMm = 50
 
 describe('stirrupPositions', () => {
-  it('uses the inferred rule-pack offset and never places a stirrup beyond the interval', () => {
-    expect(startOffsetRule).toMatchObject({
-      unit: 'mm',
-      confidence: 'inferred',
-      source: { section: null, page: null },
-    })
-    expect(startOffsetRule.note).toContain('条文なし')
-
+  it('never places a stirrup beyond the offset interval', () => {
     const layout = stirrupPositions(
       5200,
       150,
-      startOffsetRule.value,
+      startOffsetMm,
     )
 
     expect(layout.positionsMm.at(-1)).toBe(5150)
@@ -33,7 +21,7 @@ describe('stirrupPositions', () => {
     const layout = stirrupPositions(
       5200,
       150,
-      startOffsetRule.value,
+      startOffsetMm,
     )
 
     expect(layout.positionsMm.filter((position) => position === 5150)).toHaveLength(
@@ -46,7 +34,7 @@ describe('stirrupPositions', () => {
     const layout = stirrupPositions(
       5250,
       150,
-      startOffsetRule.value,
+      startOffsetMm,
     )
 
     expect(layout.positionsMm.slice(-2)).toEqual([5150, 5200])
@@ -56,7 +44,6 @@ describe('stirrupPositions', () => {
   it('preserves every placement invariant across clear lengths and pitches', () => {
     const clearLengths = [500, 1000, 5200, 5250, 6050]
     const pitches = [50, 100, 150, 200, 333]
-    const startOffsetMm = startOffsetRule.value
 
     for (const clearMm of clearLengths) {
       for (const pitchMm of pitches) {
@@ -92,7 +79,7 @@ describe('stirrupPositions', () => {
 
   it.each([0, -1])('throws for an invalid pitch %s', (pitchMm) => {
     expect(() =>
-      stirrupPositions(5200, pitchMm, startOffsetRule.value),
+      stirrupPositions(5200, pitchMm, startOffsetMm),
     ).toThrow(/pitchMm/)
   })
 
@@ -100,7 +87,7 @@ describe('stirrupPositions', () => {
     'throws when the symmetric placement interval cannot be formed for clearMm %s',
     (clearMm) => {
       expect(() =>
-        stirrupPositions(clearMm, 150, startOffsetRule.value),
+        stirrupPositions(clearMm, 150, startOffsetMm),
       ).toThrow(/clearMm/)
     },
   )

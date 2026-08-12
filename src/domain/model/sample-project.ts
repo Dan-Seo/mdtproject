@@ -46,7 +46,7 @@ const girderSections: GirderSection[] = [
     exposure: '屋外',
     finish: '仕上げなし',
     main: { size: 'D25', topCount: 4, bottomCount: 4 },
-    stirrup: { size: 'D13', pitch: 100 },
+    stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
   },
   {
     id: 'section-G2',
@@ -59,7 +59,7 @@ const girderSections: GirderSection[] = [
     exposure: '屋外',
     finish: '仕上げなし',
     main: { size: 'D22', topCount: 4, bottomCount: 4 },
-    stirrup: { size: 'D13', pitch: 150 },
+    stirrup: { size: 'D13', pitch: 150, startOffsetMm: 50 },
   },
 ]
 

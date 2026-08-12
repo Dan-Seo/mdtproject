@@ -49,7 +49,7 @@ describe('member model', () => {
       exposure: '屋外',
       finish: '仕上げなし',
       main: { size: 'D25', topCount: 4, bottomCount: 4 },
-      stirrup: { size: 'D13', pitch: 100 },
+      stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     }
     const sections: Section[] = [column, girder]
     const members: Member[] = [

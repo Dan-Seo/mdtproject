@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { GirderSection, Member } from '../model/member'
+import type { ColumnSection, GirderSection, Member } from '../model/member'
 import type { GirderSpan } from '../model/project'
 import type { Rebar } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
@@ -33,8 +33,24 @@ const section: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   main: { size: 'D25', topCount: 4, bottomCount: 4 },
-  stirrup: { size: 'D13', pitch: 100 },
+  stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
 }
+
+const supportColumnSection: ColumnSection = {
+  id: 'section-C1',
+  kind: '柱',
+  mark: 'C1',
+  b: 800,
+  d: 800,
+  fc: 24,
+  grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
+  main: { size: 'D25', count: 12 },
+  hoop: { size: 'D13', pitch: 100 },
+}
+
+const supportCover = coverConditions(supportColumnSection)
 
 const span: GirderSpan = {
   axis: 'X',
@@ -44,6 +60,8 @@ const span: GirderSpan = {
   endFaceOffsetMm: 400,
   startSupportLengthAlongAxisMm: 800,
   endSupportLengthAlongAxisMm: 800,
+  startSupportCover: supportCover,
+  endSupportCover: supportCover,
 }
 
 function input(
@@ -82,18 +100,13 @@ const fabricationAdditionRule = lookupRule(
   {},
 )
 const fabricationCover = coverRule.value + fabricationAdditionRule.value
-const startOffsetRule = lookupRule(
-  jpMlitRulePack,
-  'stirrup.start-offset',
-  {},
-)
 
 describe('generateGirderRebar', () => {
   it('generates [上端筋, 下端筋, あばら筋] as representative rows', () => {
     const expectedStirrups = stirrupPositions(
       span.clear,
       section.stirrup.pitch,
-      startOffsetRule.value,
+      section.stirrup.startOffsetMm,
     )
     const generated = generateGirderRebar(input(), jpMlitRulePack)
 
@@ -122,6 +135,7 @@ describe('generateGirderRebar', () => {
   it('adds both 折曲げ定着 lengths to the sample G1 上端筋 without rounding', () => {
     const endInput = {
       barSize: section.main.size,
+      supportCover,
       fc: section.fc,
       grade: section.grade,
       bendDirection: '下' as const,
@@ -160,6 +174,7 @@ describe('generateGirderRebar', () => {
     }
     const endInput = {
       supportLengthMm: 1400,
+      supportCover,
       barSize: section.main.size,
       fc: section.fc,
       grade: section.grade,
@@ -196,6 +211,7 @@ describe('generateGirderRebar', () => {
       const bendDirection: '上' | '下' = role === '上端筋' ? '下' : '上'
       const endInput = {
         barSize: section.main.size,
+        supportCover,
         fc: section.fc,
         grade: section.grade,
         bendDirection,
@@ -236,7 +252,7 @@ describe('generateGirderRebar', () => {
     const positions = stirrupPositions(
       span.clear,
       section.stirrup.pitch,
-      startOffsetRule.value,
+      section.stirrup.startOffsetMm,
     ).positionsMm
     const stirrup = byRole(
       generateGirderRebar(input(), jpMlitRulePack),
@@ -289,7 +305,6 @@ describe('generateGirderRebar', () => {
       'cover.minimum',
       'cover.fabrication.addition',
       'bend.hook135',
-      'stirrup.start-offset',
     ])
 
     for (const rebar of generated) {

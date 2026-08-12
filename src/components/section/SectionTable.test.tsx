@@ -53,6 +53,29 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('C1 仕上げ')).toHaveValue('仕上げあり')
   })
 
+  it('keeps a user change to あばら筋 初期オフセット in Project', () => {
+    // 規準에 값이 없는 배치값이므로 룰팩이 아니라 断面一覧이 정한다 (ADR-012).
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 あばら筋 初期オフセット'), {
+      target: { value: '75' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.stirrup.startOffsetMm).toBe(75)
+  })
+
+  it('offers no 初期オフセット field on a 柱 — 帯筋 has no such input', () => {
+    render(<SectionTable />)
+
+    expect(
+      screen.queryByLabelText('C1 帯筋 初期オフセット'),
+    ).not.toBeInTheDocument()
+  })
+
   it('selects a representative member when a section row is clicked', () => {
     render(<SectionTable />)
 

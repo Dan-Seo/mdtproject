@@ -57,6 +57,8 @@ export interface GirderSection {
   stirrup: {
     size: BarSize
     pitch: number
+    /** 第1あばら筋を柱面からどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
+    startOffsetMm: number
   }
 }
 

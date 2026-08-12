@@ -1,16 +1,32 @@
 import { describe, expect, it } from 'vitest'
 
+import type { ColumnSection } from '../model/member'
 import { MemberUnsupportedError } from '../model/unsupported'
 import type { RuleHit, RulePack } from '../rules/types'
-import { lookupRule } from '../rules/lookup'
+import { coverConditions, lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import {
   resolveGirderEnd,
   type GirderEndInput,
 } from './girder-ends'
 
+const supportColumnSection: ColumnSection = {
+  id: 'section-C1',
+  kind: '柱',
+  mark: 'C1',
+  b: 800,
+  d: 800,
+  fc: 24,
+  grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
+  main: { size: 'D25', count: 12 },
+  hoop: { size: 'D13', pitch: 100 },
+}
+
 const input: GirderEndInput = {
   supportLengthMm: 800,
+  supportCover: coverConditions(supportColumnSection),
   barSize: 'D25',
   fc: 24,
   grade: 'SD345',
@@ -24,25 +40,6 @@ function millimetres(rule: RuleHit, diameter?: number): number {
   }
 
   throw new Error(`Unexpected unit for ${rule.key}: ${rule.unit}`)
-}
-
-function columnMinimumCoverRule(pack: RulePack): RuleHit {
-  const candidates = pack.entries.filter(
-    ({ key, conditions }) =>
-      key === 'cover.minimum' &&
-      conditions.memberKind === '柱' &&
-      conditions.soilContact !== true,
-  )
-
-  if (candidates.length === 0) {
-    throw new Error('No non-soil 柱 cover.minimum rule')
-  }
-
-  const conservative = candidates.reduce((largest, candidate) =>
-    candidate.value > largest.value ? candidate : largest,
-  )
-
-  return lookupRule(pack, conservative.key, conservative.conditions)
 }
 
 function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) {
@@ -71,7 +68,7 @@ function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) 
     'anchorage.bent.projection.minimum',
     { detail: '梁主筋の柱内定着' },
   )
-  const minimumCover = columnMinimumCoverRule(pack)
+  const minimumCover = lookupRule(pack, 'cover.minimum', input.supportCover)
   const fabricationAddition = lookupRule(
     pack,
     'cover.fabrication.addition',
@@ -80,21 +77,23 @@ function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) 
   const fabricationCoverMm =
     millimetres(minimumCover) + millimetres(fabricationAddition)
   const straightLengthMm = millimetres(straight, diameter)
-  const projectionMm = Math.max(
-    millimetres(projection, diameter),
-    supportLengthMm * projectionMinimum.value,
-  )
-  const bentLengthMm = Math.max(
-    millimetres(bent, diameter),
-    projectionMm + millimetres(tailMinimum, diameter),
-  )
+  const laMm = millimetres(projection, diameter)
+  const projectionMinimumMm = supportLengthMm * projectionMinimum.value
+  const projectionMm = Math.max(laMm, projectionMinimumMm)
+  const l1hMm = millimetres(bent, diameter)
+  const tailMinimumMm = projectionMm + millimetres(tailMinimum, diameter)
+  const bentLengthMm = Math.max(l1hMm, tailMinimumMm)
 
   return {
     fabricationCoverMm,
     straightLengthMm,
     bentLengthMm,
     projectionMm,
-    rawProjectionMm: millimetres(projection, diameter),
+    rawProjectionMm: laMm,
+    laMm,
+    projectionMinimumMm,
+    l1hMm,
+    tailMinimumMm,
     // 판정에 실제로 쓴 행들 — 지점 柱의 かぶり는 大梁 조건으로 되짚을 수 없어
     // 판정 결과에 실려 나와야 근거 표시에서 살아남는다.
     straightUsedRules: [straight, minimumCover, fabricationAddition],
@@ -122,7 +121,11 @@ describe('resolveGirderEnd', () => {
       lengthRule: 'anchorage.L1h',
       projectionRule: 'anchorage.La',
       lengthMm: expected.bentLengthMm,
+      l1hMm: expected.l1hMm,
+      tailMinimumMm: expected.tailMinimumMm,
       projectionMm: expected.projectionMm,
+      laMm: expected.laMm,
+      projectionMinimumMm: expected.projectionMinimumMm,
       direction: input.bendDirection,
       usedRules: expected.bentUsedRules,
     })
@@ -174,6 +177,37 @@ describe('resolveGirderEnd', () => {
         jpMlitRulePack,
       ),
     ).toThrow(/折曲げ定着.*収まらない/)
+  })
+
+  it('uses the support 柱 own かぶり conditions, not the most conservative row', () => {
+    // 屋内·仕上げあり 柱는 最小かぶり가 작아 使用可能 투영이 넓어진다. 표에서 가장
+    // 큰 행을 골라 쓰면 屋内 柱에도 屋外 값이 적용돼 直線/折曲げ 분기와 加工長이
+    // 함께 뒤집힌다.
+    const indoor: ColumnSection = {
+      ...supportColumnSection,
+      exposure: '屋内',
+      finish: '仕上げあり',
+    }
+    const indoorCover = lookupRule(
+      jpMlitRulePack,
+      'cover.minimum',
+      coverConditions(indoor),
+    )
+    const outdoorCover = lookupRule(
+      jpMlitRulePack,
+      'cover.minimum',
+      coverConditions(supportColumnSection),
+    )
+
+    expect(indoorCover.value).toBeLessThan(outdoorCover.value)
+
+    const detail = resolveGirderEnd(
+      { ...input, supportCover: coverConditions(indoor) },
+      jpMlitRulePack,
+    )
+
+    expect(detail.usedRules).toContain(indoorCover)
+    expect(detail.usedRules).not.toContain(outdoorCover)
   })
 
   it('reports the unfitting 定着 as a member-level unsupported reason', () => {

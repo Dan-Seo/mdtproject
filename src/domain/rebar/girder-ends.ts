@@ -18,14 +18,22 @@ export type GirderEndDetail =
       kind: '折曲げ定着'
       lengthRule: 'anchorage.L1h'
       projectionRule: 'anchorage.La'
+      /** max(L1h, 投影＋余長下限) — 算出式이 어느 항이 지배했는지 밝힐 수 있게 원항도 싣는다 */
       lengthMm: number
+      l1hMm: number
+      tailMinimumMm: number
+      /** max(La, 柱せい×投影下限) */
       projectionMm: number
+      laMm: number
+      projectionMinimumMm: number
       direction: '上' | '下'
     } & UsedRules)
 
 export interface GirderEndInput {
   /** 지점 柱의 축방향 전체 치수 (GirderSpan의 *SupportLengthAlongAxisMm) */
   supportLengthMm: number
+  /** 지점 柱의 かぶり 조회 조건 (GirderSpan의 *SupportCover) — 大梁의 것이 아니다 */
+  supportCover: Record<string, string | boolean>
   barSize: BarSize
   fc: number
   grade: SteelGrade
@@ -62,30 +70,6 @@ function ratio(rule: RuleHit): number {
   return rule.value
 }
 
-/**
- * GirderEndInput에는 柱의 exposure/finish가 없으므로 表5.3.6의 비토접 柱
- * 후보 중 가장 큰 かぶり를 쓴다. 작은 값을 임의 기본값으로 택해 철근이 반대면
- * かぶり를 뚫는 것보다 보수적으로 실패시키기 위한 판정이다.
- */
-function columnMinimumCover(pack: RulePack): RuleHit {
-  const candidates = pack.entries.filter(
-    ({ key, conditions }) =>
-      key === 'cover.minimum' &&
-      conditions.memberKind === '柱' &&
-      conditions.soilContact !== true,
-  )
-
-  if (candidates.length === 0) {
-    throw new Error('Rule not found: cover.minimum for non-soil 柱')
-  }
-
-  const conservative = candidates.reduce((largest, candidate) =>
-    candidate.value > largest.value ? candidate : largest,
-  )
-
-  return lookupRule(pack, conservative.key, conservative.conditions)
-}
-
 export function resolveGirderEnd(
   input: GirderEndInput,
   pack: RulePack,
@@ -96,7 +80,11 @@ export function resolveGirderEnd(
     grade: input.grade,
     hook: false,
   })
-  const minimumCoverRule = columnMinimumCover(pack)
+  const minimumCoverRule = lookupRule(
+    pack,
+    'cover.minimum',
+    input.supportCover,
+  )
   const fabricationCoverAdditionRule = lookupRule(
     pack,
     'cover.fabrication.addition',
@@ -138,10 +126,10 @@ export function resolveGirderEnd(
     'anchorage.bent.projection.minimum',
     { detail: '梁主筋の柱内定着' },
   )
-  const projectionMm = Math.max(
-    millimetres(projectionRule, diameter),
-    input.supportLengthMm * ratio(projectionMinimumRule),
-  )
+  const laMm = millimetres(projectionRule, diameter)
+  const projectionMinimumMm =
+    input.supportLengthMm * ratio(projectionMinimumRule)
+  const projectionMm = Math.max(laMm, projectionMinimumMm)
 
   if (projectionMm > availableProjectionMm) {
     throw new MemberUnsupportedError(
@@ -151,17 +139,20 @@ export function resolveGirderEnd(
     )
   }
 
-  const lengthMm = Math.max(
-    millimetres(bentRule, diameter),
-    projectionMm + millimetres(tailMinimumRule, diameter),
-  )
+  const l1hMm = millimetres(bentRule, diameter)
+  const tailMinimumMm = projectionMm + millimetres(tailMinimumRule, diameter)
+  const lengthMm = Math.max(l1hMm, tailMinimumMm)
 
   return {
     kind: '折曲げ定着',
     lengthRule: 'anchorage.L1h',
     projectionRule: 'anchorage.La',
     lengthMm,
+    l1hMm,
+    tailMinimumMm,
     projectionMm,
+    laMm,
+    projectionMinimumMm,
     direction: input.bendDirection,
     // 直線 L1 은 折曲げ 채택 판정의 비교원이므로 기여 룰로 남긴다
     usedRules: [

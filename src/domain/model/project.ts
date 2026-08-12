@@ -9,10 +9,13 @@ import {
   MemberUnsupportedError,
   type UnsupportedReason,
 } from './unsupported'
+import { coverConditions } from '../rules/lookup'
 
 // v2 (2026-08-12): Section에 필수 필드 exposure·finish 추가 — v1 JSON은
 // deserializeProject의 버전 게이트에서 명시적으로 거부된다 (영속 v1 데이터 없음).
-export const PROJECT_SCHEMA_VERSION = 2
+// v3 (2026-08-12): GirderSection.stirrup에 필수 필드 startOffsetMm 추가. 規準에
+// 없는 배치값을 룰팩에 가짜 출처로 넣는 대신 입력으로 받는다 (ADR-012).
+export const PROJECT_SCHEMA_VERSION = 3
 
 export interface Grid {
   xSpans: number[]
@@ -189,6 +192,9 @@ export interface GirderSpan {
   startSupportLengthAlongAxisMm: number
   /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
   endSupportLengthAlongAxisMm: number
+  /** 지점 柱의 かぶり 조회 조건 — 端部条件은 大梁이 아니라 柱의 かぶり로 판정한다 */
+  startSupportCover: Record<string, string | boolean>
+  endSupportCover: Record<string, string | boolean>
 }
 
 function supportColumnSection(
@@ -262,6 +268,8 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
     endFaceOffsetMm,
     startSupportLengthAlongAxisMm,
     endSupportLengthAlongAxisMm,
+    startSupportCover: coverConditions(startSection),
+    endSupportCover: coverConditions(endSection),
   }
 }
 
