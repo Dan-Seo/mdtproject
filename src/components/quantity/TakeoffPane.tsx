@@ -533,18 +533,31 @@ function LineRows({
 }
 
 export function TakeoffPane() {
-  const { lines } = useTakeoff()
+  const { lines, unsupportedMembers } = useTakeoff()
   const locale = useAppStore(({ locale }) => locale)
-  const hasGirder = useAppStore(({ project }) =>
-    project.members.some(({ kind }) => kind === '大梁'),
-  )
 
   return (
     <>
-      {hasGirder && (
-        <p className={styles.pendingNotice} role="note">
-          {t(locale, 'takeoff.girderPending')}
-        </p>
+      {unsupportedMembers.length > 0 && (
+        <div className={styles.unsupportedNotice} role="note">
+          <strong>
+            {t(locale, 'takeoff.unsupported.title')}{' '}
+            {unsupportedMembers.length}
+            {t(locale, 'takeoff.unsupported.count')}
+          </strong>
+          <ul className={styles.unsupportedList}>
+            {unsupportedMembers.map((member) => (
+              <li key={member.memberId}>
+                {member.mark}（{member.storyName}）—{' '}
+                {t(
+                  locale,
+                  `takeoff.unsupported.reason.${member.reason}`,
+                )}
+              </li>
+            ))}
+          </ul>
+          <span>{t(locale, 'takeoff.unsupported.plan')}</span>
+        </div>
       )}
       <TakeoffTable lines={lines} />
     </>

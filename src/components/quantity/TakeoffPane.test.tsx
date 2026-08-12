@@ -30,6 +30,11 @@ function takeoffLines() {
   return result.current.lines
 }
 
+function takeoffResult() {
+  const { result } = renderHook(() => useTakeoff())
+  return result.current
+}
+
 // 行 id は加工長・本数まで含むので、書き下さずに集計結果から引く。
 function lineFor(role: '主筋' | '帯筋') {
   const line = takeoffLines().find(
@@ -104,14 +109,47 @@ describe('TakeoffPane', () => {
     expect(within(row).queryByLabelText('直線')).not.toBeInTheDocument()
   })
 
-  it('states that 大梁 is excluded from the quantities', () => {
+  it('renders supported X大梁 rows and reports unsupported Y大梁 separately', () => {
+    const { lines, unsupportedMembers } = takeoffResult()
+    const supportedGirderLines = lines.filter(
+      ({ groupId }) => groupId === '1階|G|G1',
+    )
+
     render(<TakeoffPane />)
 
-    expect(screen.getByRole('note')).toHaveTextContent('大梁')
-    expect(screen.getByRole('note')).toHaveTextContent('M3')
+    expect(supportedGirderLines.map(({ role }) => role)).toEqual([
+      '上端筋',
+      '下端筋',
+      'あばら筋',
+    ])
+    for (const line of supportedGirderLines) {
+      expect(screen.getByTestId(`quantity-line-${line.id}`)).toBeInTheDocument()
+    }
+
+    const notice = screen.getByRole('note')
+    expect(notice).toHaveTextContent(`${unsupportedMembers.length}件`)
+    expect(within(notice).getAllByRole('listitem')).toHaveLength(
+      unsupportedMembers.length,
+    )
+    expect(notice).toHaveTextContent('G1（1階）')
+    expect(notice).toHaveTextContent('G2（2階）')
+    expect(notice).toHaveTextContent('連続スパン')
+    expect(notice).toHaveTextContent('M3b')
+    expect(notice).toHaveTextContent('通し筋')
+
+    const table = screen.getByRole('table')
+    expect(within(table).getAllByTestId(/^quantity-line-/)).toHaveLength(
+      lines.length,
+    )
+    expect(within(table).queryByText('連続スパン')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        '大梁の配筋は M3 で対応予定 — 現在の数量には含まれません。',
+      ),
+    ).not.toBeInTheDocument()
   })
 
-  it('omits the 大梁 notice when the project has no 大梁', () => {
+  it('omits the unsupported-member notice when every member is supported', () => {
     // 柱만 남기면 beamDepthAbove가 실패하므로, 부재가 없는 신규 안건 상태로 본다.
     useAppStore.setState({
       project: { ...createSampleProject(), members: [] },

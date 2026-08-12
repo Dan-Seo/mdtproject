@@ -53,7 +53,10 @@
     {
       "step": 6,
       "name": "takeoff-ui-notice",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T13:26:43+0900",
+      "summary": "takeoff.unsupported.* i18n으로 미지원 건수·符号/층·連続スパン·M3b(通し筋) 고지를 제공하고 지원 X大梁 3행을 내역서·Excel kg 집계에 포함",
+      "completed_at": "2026-08-12T13:32:37+0900"
     }
   ],
   "created_at": "2026-08-12T12:44:12+0900"
