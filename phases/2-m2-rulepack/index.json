@@ -7,7 +7,8 @@
       "name": "spec-transcribe",
       "status": "completed",
       "started_at": "2026-08-12T09:40:26+0900",
-      "summary": "tests/golden/fixtures/spec-r7-ch5.json에 원문 픽스처 96개 항목을 전사했으며 이미지 판독 항목은 4개다."
+      "summary": "tests/golden/fixtures/spec-r7-ch5.json에 원문 픽스처 96개 항목을 전사했으며 이미지 판독 항목은 4개다.",
+      "completed_at": "2026-08-12T09:50:55+0900"
     },
     {
       "step": 1,
