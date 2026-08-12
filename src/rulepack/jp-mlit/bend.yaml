@@ -247,3 +247,13 @@
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
   confidence: inferred
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
+
+- key: stirrup.start-offset
+  label: あばら筋の初期配置オフセット
+  expr: 柱面から50mm
+  conditions: {}
+  value: 50
+  unit: mm
+  source: { ref: spec, section: null, page: null }
+  confidence: inferred
+  note: 条文なし — 実務慣行の仮定値。第1あばら筋を柱面から50mm に置く。独立検討待ち (R2)

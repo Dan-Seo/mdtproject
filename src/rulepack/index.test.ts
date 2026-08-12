@@ -23,6 +23,7 @@ describe('jpMlitRulePack', () => {
         'bend.hook90',
         'bend.hook135',
         'bend.hook-tome',
+        'stirrup.start-offset',
         'cover.fabrication.addition',
         'markup.rate',
         'unit-mass.value',
