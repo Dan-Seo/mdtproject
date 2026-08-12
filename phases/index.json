@@ -26,7 +26,8 @@
     },
     {
       "dir": "6-section-import",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-13T00:14:47+0900"
     }
   ]
 }
