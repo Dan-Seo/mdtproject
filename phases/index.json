@@ -16,7 +16,8 @@
     },
     {
       "dir": "4-girder-viewer",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-12T17:13:08+0900"
     }
   ]
 }
