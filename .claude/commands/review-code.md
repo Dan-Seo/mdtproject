@@ -39,6 +39,10 @@ argument-hint: [PR번호]
 아래 스크립트를 Workflow 툴로 실행한다. `args`로 넘길 것:
 `{ mode: "pr"|"local", repoRoot: "<절대경로>", diffPath: "<스크래치패드 diff 절대경로>", files: [필터 후 전체 대상(신규 포함)], untracked: [그중 신규 파일] }`
 
+**대기 규칙**: Workflow가 백그라운드 task로 시작되는 환경에서는 TaskOutput으로 완료를 동기 대기해 반환값을 받은 뒤 3단계로 진행하라. 대기 없이 턴을 끝내면 — 특히 헤드리스 1턴 러너(CI)에서 — 프로세스가 종료돼 리뷰가 통째로 유실된다 (PR #8에서 5회 재현).
+
+**diff 저장 폴백**: 셸 리다이렉션이 차단된 환경이면 diff 파일 저장을 생략하고, `diffPath` 대신 서브에이전트 프롬프트에 「`git diff <baseOid>...HEAD` 를 직접 읽어라」를 넘겨라 — gh 재호출 억제가 목적이므로 git 직접 읽기는 무방하다.
+
 ```js
 export const meta = {
   name: 'review-code',
