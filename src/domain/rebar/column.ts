@@ -228,8 +228,9 @@ export function generateColumnRebar(
       `(${section.d}−2×${fabricationCover})} ＋ 2×135°フック余長 ` +
       `${hook135Rule.value}d(${hook135Length}) ＝ ${hoopLength} ／ ` +
       `${fabricationCoverFormula} ／ ` +
-      `本数 ＝ ⌈(階高 ${story.height} − 上部大梁せい ${beamDepthAbove}) ` +
-      `÷ 帯筋ピッチ ${section.hoop.pitch}⌉ ＋ 1 ＝ ${hoopCount}`,
+      `本数 ＝ 帯筋配置（配置区間 ${hoopSpan}［階高 ${story.height} ` +
+      `− 上部大梁せい ${beamDepthAbove}］、ピッチ ${section.hoop.pitch}、` +
+      `始端オフセット ${HOOP_START_OFFSET_MM}）＝ ${hoopCount}`,
   }
 
   return [main, hoop]

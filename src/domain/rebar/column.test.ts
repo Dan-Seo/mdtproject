@@ -436,7 +436,8 @@ describe('generateColumnRebar', () => {
       `135°フック余長 ${hook135.value}d(${hook135.value * hoopDiameter})`,
     )
     expect(hoop.formula).toContain(
-      '⌈(階高 4200 − 上部大梁せい 750) ÷ 帯筋ピッチ 100⌉ ＋ 1 ＝ 36',
+      '帯筋配置（配置区間 3450［階高 4200 − 上部大梁せい 750］、' +
+        'ピッチ 100、始端オフセット 0）＝ 36',
     )
   })
 })

@@ -353,9 +353,11 @@ describe('Viewer3D', () => {
 
     const { container } = render(<Viewer3D />)
 
+    // 룰 키는 산정부가 실어 보낸 값을 그대로 쓴다 — 여기 적어 두면 지배 항이
+    // 바뀌었을 때 범례가 거짓말을 해도 테스트가 통과한다.
     const legend = screen.getByLabelText('定着・継手凡例')
     expect(legend).toHaveTextContent(
-      `定着 anchorage.L1h ${String(lengthMm)}`,
+      `定着 ${String(top?.zones?.[0].ruleKey)} ${String(lengthMm)}`,
     )
     const swatch = container.querySelector('[data-zone-kind="定着"]')
     expect(swatch).toHaveStyle({

@@ -118,7 +118,10 @@ describe('resolveGirderEnd', () => {
     )
     expect(resolveGirderEnd(input, jpMlitRulePack)).toEqual({
       kind: '折曲げ定着',
-      lengthRule: 'anchorage.L1h',
+      lengthRule:
+        expected.l1hMm >= expected.tailMinimumMm
+          ? 'anchorage.L1h'
+          : 'anchorage.bent.tail.minimum',
       projectionRule: 'anchorage.La',
       lengthMm: expected.bentLengthMm,
       l1hMm: expected.l1hMm,
@@ -129,6 +132,18 @@ describe('resolveGirderEnd', () => {
       direction: input.bendDirection,
       usedRules: expected.bentUsedRules,
     })
+  })
+
+  it('attributes the 折曲げ length to the term that actually governs', () => {
+    // 余長下限이 지배할 때 그 길이는 表5.3.4에 없는 값이다 — L1h로 제시하면
+    // 근거 표시가 거짓이 된다. 샘플 D25/柱800이 바로 그 경우다.
+    const expected = expectedRules(jpMlitRulePack)
+    const detail = resolveGirderEnd(input, jpMlitRulePack)
+
+    expect(expected.tailMinimumMm).toBeGreaterThan(expected.l1hMm)
+    expect(detail.kind).toBe('折曲げ定着')
+    expect(detail.lengthRule).toBe('anchorage.bent.tail.minimum')
+    expect(detail.lengthMm).toBe(expected.tailMinimumMm)
   })
 
   it('uses 直線定着 when the support is sufficiently large', () => {
