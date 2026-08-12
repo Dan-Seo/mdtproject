@@ -287,6 +287,7 @@ export function generateGirderRebar(
     closed: true,
     length: stirrupLengthMm,
     count: layout.positionsMm.length,
+    placement: { axis: 'x', clearMm: span.clear },
     ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
     formula:
       `加工長 ＝ 2×{(${section.b}−2×${fabricationCoverMm})＋` +

@@ -226,7 +226,7 @@ describe('Viewer3D', () => {
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
   })
 
-  it('builds one pickable mesh per takeoff row instead of one per segment', () => {
+  it('builds one pickable mesh per row and contiguous zone, not per segment', () => {
     render(<Viewer3D />)
 
     fireEvent.click(screen.getByLabelText('選択部材の配筋3D'), {
@@ -234,8 +234,8 @@ describe('Viewer3D', () => {
       clientY: 180,
     })
 
-    // 柱 C1 は 主筋 と 帯筋 の 2 行。セグメントは 156 本ある。
-    expect(mocks.pickableCounts.at(-1)).toBe(2)
+    // 柱 C1 は 主筋の定着・コアと帯筋の3バッチ。セグメント単位には分けない。
+    expect(mocks.pickableCounts.at(-1)).toBe(3)
   })
 
   it('does not re-frame the camera while an unrelated field is edited', () => {

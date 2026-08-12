@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ColumnSection } from '@/domain/model/member'
-import type { Rebar } from '@/domain/model/rebar'
+import type { ColumnSection, GirderSection } from '@/domain/model/member'
+import type { Rebar, RebarRole } from '@/domain/model/rebar'
+import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 
 import {
   CAMERA_FOV_DEGREES,
@@ -11,8 +12,10 @@ import {
   flyInStartPose,
   lerpCameraFit,
   rebarBatches,
+  rebarPlacements,
   rebarRadius,
   rebarSegments,
+  roleToLayer,
   type Bounds,
   type CameraFit,
   type Point3,
@@ -74,6 +77,74 @@ const MAIN_DISPLAY_RADIUS = rebarRadius(main.size)
 // 帯筋 표시 지름 + 主筋 표시 반경 → 主筋 표면이 帯筋 안쪽면에 접한다.
 const MAIN_INWARD = 2 * HOOP_DISPLAY_RADIUS + MAIN_DISPLAY_RADIUS
 
+const girderSection: GirderSection = {
+  id: 'section-G1',
+  kind: '大梁',
+  mark: 'G1',
+  b: 400,
+  depth: 750,
+  fc: 24,
+  grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
+  main: { size: 'D25', topCount: 4, bottomCount: 3 },
+  stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
+}
+
+const girderTop: Rebar = {
+  id: '1F-G1|top',
+  memberId: '1F-G1',
+  role: '上端筋',
+  size: 'D25',
+  shape: 'straight',
+  points: [
+    [-500, 700, 50],
+    [5700, 700, 50],
+  ],
+  closed: false,
+  length: 6200,
+  count: girderSection.main.topCount,
+  ruleHits: [],
+  formula: 'test',
+}
+
+const girderBottom: Rebar = {
+  ...girderTop,
+  id: '1F-G1|bottom',
+  role: '下端筋',
+  points: [
+    [-500, 50, 50],
+    [5700, 50, 50],
+  ],
+  count: girderSection.main.bottomCount,
+}
+
+const GIRDER_CLEAR_MM = 5250
+const girderStirrupPositions = stirrupPositions(
+  GIRDER_CLEAR_MM,
+  girderSection.stirrup.pitch,
+  girderSection.stirrup.startOffsetMm,
+).positionsMm
+const girderStirrup: Rebar = {
+  id: '1F-G1|stirrup',
+  memberId: '1F-G1',
+  role: 'あばら筋',
+  size: 'D13',
+  shape: 'hoop',
+  points: [
+    [0, 50, 50],
+    [0, 700, 50],
+    [0, 700, 350],
+    [0, 50, 350],
+  ],
+  closed: true,
+  length: 1980,
+  count: girderStirrupPositions.length,
+  placement: { axis: 'x', clearMm: GIRDER_CLEAR_MM },
+  ruleHits: [],
+  formula: 'test',
+}
+
 function subtract(left: Point3, right: Point3): Point3 {
   return [left[0] - right[0], left[1] - right[1], left[2] - right[2]]
 }
@@ -123,6 +194,60 @@ function distanceToSegmentXZ(point: Point3, from: Point3, to: Point3): number {
 
   return Math.hypot(px - (ax + t * abx), pz - (az + t * abz))
 }
+
+describe('rebarPlacements for 大梁', () => {
+  it.each([
+    { rebar: girderTop, yDirection: -1 },
+    { rebar: girderBottom, yDirection: 1 },
+  ])(
+    'places every $rebar.role in one equally spaced z row',
+    ({ rebar, yDirection }) => {
+      const originalPoints = structuredClone(rebar.points)
+      const segments = rebarSegments(rebar, girderSection)
+      const inward =
+        2 * rebarRadius(girderSection.stirrup.size) +
+        rebarRadius(rebar.size)
+      const zFrom = rebar.points[0][2] + inward
+      const zTo = girderSection.b - rebar.points[0][2] - inward
+      const expectedZs = Array.from({ length: rebar.count }, (_, index) =>
+        rebar.count === 1
+          ? (zFrom + zTo) / 2
+          : zFrom + (index * (zTo - zFrom)) / (rebar.count - 1),
+      )
+
+      expect(segments).toHaveLength(rebar.count)
+      expect(segments.map(({ from }) => from[2])).toEqual(expectedZs)
+      for (const { from, to } of segments) {
+        expect(from[1]).toBeCloseTo(rebar.points[0][1] + yDirection * inward)
+        expect(to[1]).toBeCloseTo(rebar.points[1][1] + yDirection * inward)
+      }
+      expect(rebar.points).toEqual(originalPoints)
+    },
+  )
+
+  it('uses the domain stirrup layout for every あばら筋 x placement', () => {
+    const placements = rebarPlacements(girderStirrup, girderSection)
+
+    expect(placements).toHaveLength(girderStirrupPositions.length)
+    expect(placements).toEqual(
+      girderStirrupPositions.map((x): Point3 => [x, 0, 0]),
+    )
+  })
+
+  it('insets 大梁 あばら筋 explicitly in the Y–Z plane', () => {
+    const segments = rebarSegments(girderStirrup, girderSection)
+    const radius = rebarRadius(girderStirrup.size)
+    const ys = segments.flatMap(({ from, to }) => [from[1], to[1]])
+    const zs = segments.flatMap(({ from, to }) => [from[2], to[2]])
+    const xs = segments.flatMap(({ from, to }) => [from[0], to[0]])
+
+    expect(Math.min(...ys)).toBeCloseTo(50 + radius)
+    expect(Math.max(...ys)).toBeCloseTo(700 - radius)
+    expect(Math.min(...zs)).toBeCloseTo(50 + radius)
+    expect(Math.max(...zs)).toBeCloseTo(350 - radius)
+    expect(new Set(xs)).toEqual(new Set(girderStirrupPositions))
+  })
+})
 
 describe('rebarSegments', () => {
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
@@ -317,6 +442,21 @@ describe('rebarRadius', () => {
   })
 })
 
+describe('roleToLayer', () => {
+  it.each([
+    ['主筋', 'main'],
+    ['上端筋', 'main'],
+    ['下端筋', 'main'],
+    ['帯筋', 'hoop'],
+    ['あばら筋', 'hoop'],
+  ] satisfies [RebarRole, 'main' | 'hoop'][])(
+    'maps %s to %s',
+    (role, expected) => {
+      expect(roleToLayer(role)).toBe(expected)
+    },
+  )
+})
+
 describe('easeOutCubic', () => {
   it('eases from 0 to 1 and clamps outside the range', () => {
     expect(easeOutCubic(0)).toBe(0)
@@ -395,8 +535,8 @@ describe('fitCamera', () => {
   })
 })
 
-describe("rebarBatches", () => {
-  it("emits one batch per takeoff row, not per segment", () => {
+describe('rebarBatches', () => {
+  it('emits one batch per takeoff row, not per segment', () => {
     const batches = rebarBatches(
       [
         { rowId: "1階|C|C1|主筋", rebar: main },
@@ -407,12 +547,16 @@ describe("rebarBatches", () => {
 
     expect(batches).toHaveLength(2)
     expect(batches.map(({ rowId }) => rowId)).toEqual([
-      "1階|C|C1|主筋",
-      "1階|C|C1|帯筋",
+      '1階|C|C1|主筋',
+      '1階|C|C1|帯筋',
+    ])
+    expect(batches.map(({ layer, zone }) => ({ layer, zone }))).toEqual([
+      { layer: 'main', zone: null },
+      { layer: 'hoop', zone: null },
     ])
   })
 
-  it("keeps every segment the per-rebar builder would have produced", () => {
+  it('keeps every segment the per-rebar builder would have produced', () => {
     const batches = rebarBatches(
       [
         { rowId: "1階|C|C1|主筋", rebar: main },
@@ -428,7 +572,7 @@ describe("rebarBatches", () => {
     expect(batches[0].segments).toEqual(rebarSegments(main, section))
   })
 
-  it("merges rebars that share a row into a single batch", () => {
+  it('merges rebars that share a row into a single batch', () => {
     const batches = rebarBatches(
       [
         { rowId: "1階|C|C1|主筋", rebar: main },
@@ -440,6 +584,108 @@ describe("rebarBatches", () => {
     expect(batches).toHaveLength(1)
     expect(batches[0].segments).toHaveLength(
       rebarSegments(main, section).length * 2,
+    )
+  })
+
+  it('splits two end zones from a straight bar into three path batches', () => {
+    const zoned: Rebar = {
+      ...main,
+      count: 1,
+      points: [
+        [40, 0, 40],
+        [40, 1000, 40],
+      ],
+      length: 1000,
+      zones: [
+        { kind: '定着', pathFromMm: 0, pathToMm: 100 },
+        { kind: '定着', pathFromMm: 900, pathToMm: 1000 },
+      ],
+    }
+
+    const batches = rebarBatches(
+      [{ rowId: '1階|C|C1|主筋', rebar: zoned }],
+      section,
+    )
+
+    expect(batches.map(({ zone }) => zone)).toEqual([
+      '定着',
+      null,
+      '定着',
+    ])
+    expect(
+      batches.map(({ segments }) =>
+        segments.reduce(
+          (sum, { from, to }) => sum + Math.hypot(...subtract(to, from)),
+          0,
+        ),
+      ),
+    ).toEqual([100, 800, 100])
+  })
+
+  it('keeps one zone batch continuous when it crosses a fold', () => {
+    const folded: Rebar = {
+      ...girderTop,
+      count: 1,
+      shape: 'hook90',
+      points: [
+        [0, 100, 50],
+        [100, 100, 50],
+        [100, 200, 50],
+      ],
+      length: 200,
+      zones: [{ kind: '定着', pathFromMm: 50, pathToMm: 150 }],
+    }
+
+    const batches = rebarBatches(
+      [{ rowId: '1階|G|G1|上端筋', rebar: folded }],
+      girderSection,
+    )
+
+    expect(batches.map(({ zone }) => zone)).toEqual([null, '定着', null])
+    expect(batches[1].segments).toHaveLength(2)
+    expect(batches[1].segments[0].to).toEqual(batches[1].segments[1].from)
+  })
+
+  it('does not create a zero-length segment at a fold on a zone boundary', () => {
+    const folded: Rebar = {
+      ...girderTop,
+      count: 1,
+      shape: 'hook90',
+      points: [
+        [0, 100, 50],
+        [100, 100, 50],
+        [100, 200, 50],
+      ],
+      length: 200,
+      zones: [{ kind: '定着', pathFromMm: 0, pathToMm: 100 }],
+    }
+
+    const batches = rebarBatches(
+      [{ rowId: '1階|G|G1|上端筋', rebar: folded }],
+      girderSection,
+    )
+
+    expect(batches.map(({ zone }) => zone)).toEqual(['定着', null])
+    expect(batches.flatMap(({ segments }) => segments)).toHaveLength(2)
+    for (const { from, to } of batches.flatMap(({ segments }) => segments)) {
+      expect(Math.hypot(...subtract(to, from))).toBeGreaterThan(0)
+    }
+  })
+
+  it('keeps a rebar without zones in one null-zone batch', () => {
+    const batches = rebarBatches(
+      [{ rowId: '1階|G|G1|下端筋', rebar: girderBottom }],
+      girderSection,
+    )
+
+    expect(batches).toHaveLength(1)
+    expect(batches[0]).toMatchObject({
+      rowId: '1階|G|G1|下端筋',
+      layer: 'main',
+      zone: null,
+    })
+    expect(batches[0].segments).toEqual(
+      rebarSegments(girderBottom, girderSection),
     )
   })
 })

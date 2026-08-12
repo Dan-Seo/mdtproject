@@ -17,6 +17,13 @@ export interface RebarZone {
   pathToMm: number
 }
 
+export interface RebarPlacement {
+  /** 반복 전개의 기준축. 현재 大梁 あばら筋은 스팬 로컬 x축을 쓴다. */
+  axis: 'x'
+  /** `stirrupPositions`에 전달한 부재 内法 길이 (mm). */
+  clearMm: number
+}
+
 export interface Rebar {
   id: string
   memberId: string
@@ -27,6 +34,8 @@ export interface Rebar {
   closed: boolean
   length: number
   count: number
+  /** 대표 1본을 실제 本数만큼 전개할 때 필요한 도메인 배치 입력. */
+  placement?: RebarPlacement
   zones?: RebarZone[]
   /** 이 철근을 산정하며 실제로 조회한 룰 행 그대로 — 키만 남기면 조회 조건을 잃는다 */
   ruleHits: RuleHit[]

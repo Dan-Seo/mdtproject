@@ -129,6 +129,7 @@ describe('generateGirderRebar', () => {
       shape: 'hoop',
       closed: true,
       count: expectedStirrups.positionsMm.length,
+      placement: { axis: 'x', clearMm: span.clear },
     })
   })
 

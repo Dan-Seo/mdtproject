@@ -2,12 +2,43 @@
   "project": "Kijun",
   "phase": "4-girder-viewer",
   "steps": [
-    { "step": 0, "name": "geometry-girder", "status": "pending" },
-    { "step": 1, "name": "member-view-girder", "status": "pending" },
-    { "step": 2, "name": "building-view-girder", "status": "pending" },
-    { "step": 3, "name": "layer-toggle", "status": "pending" },
-    { "step": 4, "name": "clip-plane", "status": "pending" },
-    { "step": 5, "name": "hover-tooltip", "status": "pending" },
-    { "step": 6, "name": "anchorage-legend", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "geometry-girder",
+      "status": "completed",
+      "started_at": "2026-08-12T15:57:18+0900",
+      "summary": "RebarBatch의 rowId·layer·zone·segments 스키마, roleToLayer 단일 매핑, 누적 경로거리 기반 연속 zone 절단으로 柱·大梁 전개를 통합"
+    },
+    {
+      "step": 1,
+      "name": "member-view-girder",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "building-view-girder",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "layer-toggle",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "clip-plane",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "hover-tooltip",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "anchorage-legend",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-12T15:57:18+0900"
 }
