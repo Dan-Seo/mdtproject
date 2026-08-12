@@ -1,0 +1,1646 @@
+{
+  "source": {
+    "doc": "公共建築工事標準仕様書（建築工事編）",
+    "edition": "令和7年版",
+    "sha256": "8fd3c83ca92b01a26e53071efdb3e871e4b5672583f8473ba062cbcc45759acc",
+    "url": "https://www.mlit.go.jp/gobuild/content/001888816.pdf"
+  },
+  "entries": [
+    {
+      "table": "表5.3.1",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.inside-diameter",
+      "conditions": {
+        "grades": [
+          "SD295",
+          "SD345"
+        ],
+        "barSizeBand": "D16以下",
+        "barSizes": [
+          "D10",
+          "D13",
+          "D16"
+        ]
+      },
+      "value": 3,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.1",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.inside-diameter",
+      "conditions": {
+        "grades": [
+          "SD295",
+          "SD345"
+        ],
+        "barSizeBand": "D19-D38",
+        "barSizes": [
+          "D19",
+          "D22",
+          "D25",
+          "D29",
+          "D32"
+        ]
+      },
+      "value": 4,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.1",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.inside-diameter",
+      "conditions": {
+        "grades": [
+          "SD390"
+        ],
+        "barSizeBand": "D19-D38",
+        "barSizes": [
+          "D19",
+          "D22",
+          "D25",
+          "D29",
+          "D32"
+        ]
+      },
+      "value": 5,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.1 折曲げ図",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.hook180",
+      "conditions": {},
+      "value": 4,
+      "unit": "d",
+      "imageRead": true
+    },
+    {
+      "table": "表5.3.1 折曲げ図",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.hook135",
+      "conditions": {},
+      "value": 6,
+      "unit": "d",
+      "imageRead": true
+    },
+    {
+      "table": "表5.3.1 折曲げ図",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.hook90",
+      "conditions": {},
+      "value": 8,
+      "unit": "d",
+      "imageRead": true
+    },
+    {
+      "table": "表5.3.1 折曲げ図",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.hook-tome",
+      "conditions": {},
+      "value": 4,
+      "unit": "d",
+      "imageRead": true
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 50,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 50,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.2(注)",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.lightweight.addition",
+      "conditions": {
+        "concreteType": "軽量コンクリート"
+      },
+      "value": 5,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 50,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 50,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 45,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 40,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": false
+      },
+      "value": 35,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L1h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 30,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.L2h",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ],
+        "hook": true
+      },
+      "value": 25,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.4(注)",
+      "pdfPage": 36,
+      "printedPage": 30,
+      "kind": "anchorage.lightweight.addition",
+      "conditions": {
+        "concreteType": "軽量コンクリート"
+      },
+      "value": 5,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "5.3.4(5)(ｲ)(b)",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.bent.tail.minimum",
+      "conditions": {},
+      "value": 8,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "5.3.4(5)(ｲ)(c)",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.bent.projection.minimum",
+      "conditions": {
+        "detail": "梁主筋の柱内定着"
+      },
+      "value": 0.75,
+      "unit": "ratio",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ]
+      },
+      "value": 15,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ]
+      },
+      "value": 15,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD295",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ]
+      },
+      "value": 15,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "18",
+        "fcValues": [
+          18
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD345",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ]
+      },
+      "value": 15,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "21",
+        "fcValues": [
+          21
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "24-27",
+        "fcValues": [
+          24,
+          27
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La",
+      "conditions": {
+        "grade": "SD390",
+        "fcBand": "30-36",
+        "fcValues": [
+          30,
+          33,
+          36
+        ]
+      },
+      "value": 20,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.5(注)",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.La.lightweight.addition",
+      "conditions": {
+        "concreteType": "軽量コンクリート"
+      },
+      "value": 5,
+      "unit": "d",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.6",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.minimum",
+      "conditions": {
+        "memberKinds": [
+          "柱",
+          "大梁"
+        ],
+        "soilContact": false,
+        "exposure": "屋内",
+        "finish": "仕上げあり"
+      },
+      "value": 30,
+      "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.6",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.minimum",
+      "conditions": {
+        "memberKinds": [
+          "柱",
+          "大梁"
+        ],
+        "soilContact": false,
+        "exposure": "屋内",
+        "finish": "仕上げなし"
+      },
+      "value": 30,
+      "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.6",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.minimum",
+      "conditions": {
+        "memberKinds": [
+          "柱",
+          "大梁"
+        ],
+        "soilContact": false,
+        "exposure": "屋外",
+        "finish": "仕上げあり"
+      },
+      "value": 30,
+      "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.6",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.minimum",
+      "conditions": {
+        "memberKinds": [
+          "柱",
+          "大梁"
+        ],
+        "soilContact": false,
+        "exposure": "屋外",
+        "finish": "仕上げなし"
+      },
+      "value": 40,
+      "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "表5.3.6",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.minimum",
+      "conditions": {
+        "memberKinds": [
+          "柱",
+          "大梁"
+        ],
+        "soilContact": true
+      },
+      "value": 40,
+      "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "5.3.5(2)",
+      "pdfPage": 39,
+      "printedPage": 33,
+      "kind": "cover.fabrication.addition",
+      "conditions": {},
+      "value": 10,
+      "unit": "mm",
+      "imageRead": false
+    }
+  ],
+  "constraints": [
+    {
+      "table": "5.3.4(1)",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "lap.prohibited.minimum-bar-size",
+      "conditions": {
+        "barSizeBand": "D35以上"
+      },
+      "prohibited": true,
+      "imageRead": false
+    }
+  ]
+}

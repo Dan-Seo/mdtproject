@@ -33,6 +33,8 @@ describe('member model', () => {
       d: 800,
       fc: 24,
       grade: 'SD345',
+      exposure: '屋外',
+      finish: '仕上げなし',
       main: { size: 'D25', count: 12 },
       hoop: { size: 'D13', pitch: 100 },
     }
@@ -44,6 +46,8 @@ describe('member model', () => {
       depth: 750,
       fc: 24,
       grade: 'SD345',
+      exposure: '屋外',
+      finish: '仕上げなし',
       main: { size: 'D25', topCount: 4, bottomCount: 4 },
       stirrup: { size: 'D13', pitch: 100 },
     }

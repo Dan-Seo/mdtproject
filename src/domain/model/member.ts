@@ -14,6 +14,11 @@ export type BarSize =
 
 export type SteelGrade = 'SD295' | 'SD345' | 'SD390'
 
+/** 表5.3.6 のかぶり厚さセルを特定する入力 (屋内・屋外 × 仕上げの有無)。 */
+export type Exposure = '屋内' | '屋外'
+
+export type Finish = '仕上げあり' | '仕上げなし'
+
 export interface ColumnSection {
   id: string
   kind: '柱'
@@ -22,6 +27,8 @@ export interface ColumnSection {
   d: number
   fc: number
   grade: SteelGrade
+  exposure: Exposure
+  finish: Finish
   main: {
     size: BarSize
     count: number
@@ -40,6 +47,8 @@ export interface GirderSection {
   depth: number
   fc: number
   grade: SteelGrade
+  exposure: Exposure
+  finish: Finish
   main: {
     size: BarSize
     topCount: number

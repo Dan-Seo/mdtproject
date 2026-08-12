@@ -5,7 +5,9 @@ import type {
   Section,
 } from './member'
 
-export const PROJECT_SCHEMA_VERSION = 1
+// v2 (2026-08-12): Section에 필수 필드 exposure·finish 추가 — v1 JSON은
+// deserializeProject의 버전 게이트에서 명시적으로 거부된다 (영속 v1 데이터 없음).
+export const PROJECT_SCHEMA_VERSION = 2
 
 export interface Grid {
   xSpans: number[]

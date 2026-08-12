@@ -1,0 +1,13 @@
+{
+  "project": "Kijun",
+  "phase": "3-girder-domain",
+  "steps": [
+    { "step": 0, "name": "girder-span", "status": "pending" },
+    { "step": 1, "name": "rebar-zones-roles", "status": "pending" },
+    { "step": 2, "name": "girder-end-conditions", "status": "pending" },
+    { "step": 3, "name": "stirrup-layout", "status": "pending" },
+    { "step": 4, "name": "girder-generator", "status": "pending" },
+    { "step": 5, "name": "girder-support-sample", "status": "pending" },
+    { "step": 6, "name": "takeoff-ui-notice", "status": "pending" }
+  ]
+}

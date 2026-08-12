@@ -18,6 +18,8 @@ const sampleStories: Story[] = [
 ]
 
 // M1 화면 확인용 사용자 입력 예시이며 규준 수치가 아니다.
+// 屋外・仕上げなし는 종전 플레이스홀더 最小かぶり(40mm)와 같은 셀이다. 다만 같은 M2에서
+// 加工用かぶり(＋10mm)가 帯筋 加工長에 적용되므로 샘플 산출값 자체는 보존되지 않는다.
 const columnSection: ColumnSection = {
   id: 'section-C1',
   kind: '柱',
@@ -26,6 +28,8 @@ const columnSection: ColumnSection = {
   d: 800,
   fc: 24,
   grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100 },
 }
@@ -39,6 +43,8 @@ const girderSections: GirderSection[] = [
     depth: 750,
     fc: 24,
     grade: 'SD345',
+    exposure: '屋外',
+    finish: '仕上げなし',
     main: { size: 'D25', topCount: 4, bottomCount: 4 },
     stirrup: { size: 'D13', pitch: 100 },
   },
@@ -50,6 +56,8 @@ const girderSections: GirderSection[] = [
     depth: 700,
     fc: 24,
     grade: 'SD345',
+    exposure: '屋外',
+    finish: '仕上げなし',
     main: { size: 'D22', topCount: 4, bottomCount: 4 },
     stirrup: { size: 'D13', pitch: 150 },
   },

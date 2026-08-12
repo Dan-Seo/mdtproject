@@ -1,19 +1,109 @@
 - key: cover.minimum
-  label: 柱のかぶり厚さ
-  expr: 40mm
-  conditions: { memberKind: 柱 }
-  value: 40
+  label: 柱の最小かぶり厚さ（屋内・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 柱, soilContact: false, exposure: 屋内, finish: 仕上げあり }
+  value: 30
   unit: mm
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.6, page: 33 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋内・仕上げあり）
 
 - key: cover.minimum
-  label: 大梁のかぶり厚さ
+  label: 大梁の最小かぶり厚さ（屋内・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 大梁, soilContact: false, exposure: 屋内, finish: 仕上げあり }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋内・仕上げあり）
+
+- key: cover.minimum
+  label: 柱の最小かぶり厚さ（屋内・仕上げなし）
+  expr: 30mm
+  conditions: { memberKind: 柱, soilContact: false, exposure: 屋内, finish: 仕上げなし }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋内・仕上げなし）
+
+- key: cover.minimum
+  label: 大梁の最小かぶり厚さ（屋内・仕上げなし）
+  expr: 30mm
+  conditions: { memberKind: 大梁, soilContact: false, exposure: 屋内, finish: 仕上げなし }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋内・仕上げなし）
+
+- key: cover.minimum
+  label: 柱の最小かぶり厚さ（屋外・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 柱, soilContact: false, exposure: 屋外, finish: 仕上げあり }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋外・仕上げあり）
+
+- key: cover.minimum
+  label: 大梁の最小かぶり厚さ（屋外・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 大梁, soilContact: false, exposure: 屋外, finish: 仕上げあり }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋外・仕上げあり）
+
+- key: cover.minimum
+  label: 柱の最小かぶり厚さ（屋外・仕上げなし）
   expr: 40mm
-  conditions: { memberKind: 大梁 }
+  conditions: { memberKind: 柱, soilContact: false, exposure: 屋外, finish: 仕上げなし }
   value: 40
   unit: mm
-  source: { ref: spec, section: null, page: null }
+  source: { ref: spec, section: 表5.3.6, page: 33 }
   confidence: inferred
-  note: M1 プレースホルダ — 原文抽出前の仮値であり、規準の転記ではない
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋外・仕上げなし）
+
+- key: cover.minimum
+  label: 大梁の最小かぶり厚さ（屋外・仕上げなし）
+  expr: 40mm
+  conditions: { memberKind: 大梁, soilContact: false, exposure: 屋外, finish: 仕上げなし }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 屋外・仕上げなし）
+
+- key: cover.minimum
+  label: 柱の最小かぶり厚さ（土に接する部分）
+  expr: 40mm
+  conditions: { memberKind: 柱, soilContact: true }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）。soilContact 入力が Section に入るまで消費者なし（ADR-005 — 地中部材はスコープ外）
+
+- key: cover.minimum
+  label: 大梁の最小かぶり厚さ（土に接する部分）
+  expr: 40mm
+  conditions: { memberKind: 大梁, soilContact: true }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）。soilContact 入力が Section に入るまで消費者なし（ADR-005 — 地中部材はスコープ外）
+
+- key: cover.fabrication.addition
+  label: 加工用かぶり厚さの加算
+  expr: 最小かぶり厚さ + 10mm
+  conditions: {}
+  value: 10
+  unit: mm
+  source: { ref: spec, section: 5.3.5(2), page: 33 }
+  confidence: inferred
+  note: LLM転写 — 独立検討待ち。「柱、梁等の鉄筋の加工に用いるかぶり厚さは、最小かぶり厚さに10mmを加えた数値を標準とする」

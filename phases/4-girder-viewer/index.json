@@ -1,0 +1,13 @@
+{
+  "project": "Kijun",
+  "phase": "4-girder-viewer",
+  "steps": [
+    { "step": 0, "name": "geometry-girder", "status": "pending" },
+    { "step": 1, "name": "member-view-girder", "status": "pending" },
+    { "step": 2, "name": "building-view-girder", "status": "pending" },
+    { "step": 3, "name": "layer-toggle", "status": "pending" },
+    { "step": 4, "name": "clip-plane", "status": "pending" },
+    { "step": 5, "name": "hover-tooltip", "status": "pending" },
+    { "step": 6, "name": "anchorage-legend", "status": "pending" }
+  ]
+}

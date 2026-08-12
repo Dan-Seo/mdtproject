@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, Member } from '../model/member'
 import {
+  PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
   columnEnds,
   findSection,
@@ -28,6 +29,8 @@ const section: ColumnSection = {
   d: 800,
   fc: 24,
   grade: 'SD345',
+  exposure: '屋外',
+  finish: '仕上げなし',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100 },
 }
@@ -45,7 +48,7 @@ function projectWithStories(stories: Story[]): Project {
   )
 
   return {
-    schemaVersion: 1,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     name: '数量テスト',
     grid: { xSpans: [6000, 6000], ySpans: [6000, 6000] },
     stories,
@@ -70,9 +73,9 @@ function mainRebar(memberId: string, overrides: Partial<Rebar> = {}): Rebar {
     count: 12,
     rules: [
       'cover.minimum',
+      'cover.fabrication.addition',
       'anchorage.L2',
       'lap.L1',
-      'rounding.length',
     ],
     formula: '主筋の算出式',
     ...overrides,
@@ -95,7 +98,11 @@ function hoopRebar(memberId: string): Rebar {
     closed: true,
     length: 4000,
     count: 36,
-    rules: ['cover.minimum', 'bend.hook135', 'rounding.length'],
+    rules: [
+      'cover.minimum',
+      'cover.fabrication.addition',
+      'bend.hook135',
+    ],
     formula: '帯筋の算出式',
   }
 }

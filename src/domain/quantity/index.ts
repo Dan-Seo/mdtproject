@@ -11,6 +11,7 @@ import {
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
 import {
+  coverConditions,
   lookupMarkup,
   lookupRule,
   lookupUnitMass,
@@ -76,7 +77,7 @@ function ruleContext(
   rebar: Rebar,
 ): Record<string, unknown> {
   return {
-    memberKind: member.kind,
+    ...coverConditions(section),
     memberClass: member.memberClass,
     fc: section.fc,
     grade: section.grade,

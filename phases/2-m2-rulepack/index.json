@@ -1,0 +1,40 @@
+{
+  "project": "Kijun",
+  "phase": "2-m2-rulepack",
+  "steps": [
+    {
+      "step": 0,
+      "name": "spec-transcribe",
+      "status": "completed",
+      "started_at": "2026-08-12T09:40:26+0900",
+      "summary": "tests/golden/fixtures/spec-r7-ch5.json에 원문 픽스처 96개 항목을 전사했으며 이미지 판독 항목은 4개다.",
+      "completed_at": "2026-08-12T09:50:55+0900"
+    },
+    {
+      "step": 1,
+      "name": "rulepack-anchorage-lap",
+      "status": "completed",
+      "started_at": "2026-08-12T09:50:56+0900",
+      "summary": "lap.L1·lap.L1h·anchorage.L1·anchorage.L2·anchorage.L1h·anchorage.L2h·anchorage.La 7개 키를 Fc 밴드 경계값별 119개 항목으로 이산 전개하고 골든테스트로 대조했다.",
+      "completed_at": "2026-08-12T09:59:06+0900"
+    },
+    {
+      "step": 2,
+      "name": "rulepack-bend-cover",
+      "status": "completed",
+      "started_at": "2026-08-12T09:59:06+0900",
+      "summary": "bend.inside-diameter를 강종·경 구간 경계별 8개로 전개하고 bend.hook180·bend.hook135·bend.hook90·bend.hook-tome 이미지 판독 4개, cover.minimum 표 조합과 cover.fabrication.addition을 골든 대조했으며 JIS 단위질량 미확보 note를 정리했다.",
+      "completed_at": "2026-08-12T10:07:20+0900"
+    },
+    {
+      "step": 3,
+      "name": "column-fabrication-cover",
+      "status": "completed",
+      "started_at": "2026-08-12T10:07:20+0900",
+      "summary": "柱 생성기가 cover.minimum + cover.fabrication.addition을 TS에서 합산해 加工用かぶり로 사용하고 rounding.length 조회·절상을 제거했으며 rules 순서를 主筋 cover.minimum → cover.fabrication.addition → 端部 룰, 帯筋 cover.minimum → cover.fabrication.addition → bend.hook135로 갱신했다.",
+      "completed_at": "2026-08-12T10:14:21+0900"
+    }
+  ],
+  "created_at": "2026-08-12T09:40:26+0900",
+  "completed_at": "2026-08-12T10:14:21+0900"
+}

@@ -5,6 +5,8 @@ import type { KeyboardEvent } from 'react'
 import type {
   BarSize,
   ColumnSection,
+  Exposure,
+  Finish,
   GirderSection,
   Section,
   SteelGrade,
@@ -26,6 +28,10 @@ const barSizes: BarSize[] = [
 ]
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
+
+const exposures: Exposure[] = ['屋内', '屋外']
+
+const finishes: Finish[] = ['仕上げあり', '仕上げなし']
 
 function replaceSection(
   project: Project,
@@ -117,6 +123,49 @@ function GradeSelect({
         </option>
       ))}
     </select>
+  )
+}
+
+function CoverConditionField({
+  section,
+  update,
+}: {
+  section: Section
+  update(updater: (section: Section) => Section): void
+}) {
+  return (
+    <div className={styles.compoundField}>
+      <select
+        className={styles.select}
+        value={section.exposure}
+        aria-label={`${section.mark} 屋内外`}
+        onChange={(event) => {
+          const exposure = event.currentTarget.value as Exposure
+          update((current) => ({ ...current, exposure }))
+        }}
+      >
+        {exposures.map((exposure) => (
+          <option key={exposure} value={exposure}>
+            {exposure}
+          </option>
+        ))}
+      </select>
+      <select
+        className={styles.select}
+        value={section.finish}
+        aria-label={`${section.mark} 仕上げ`}
+        onChange={(event) => {
+          const finish = event.currentTarget.value as Finish
+          update((current) => ({ ...current, finish }))
+        }}
+      >
+        {finishes.map((finish) => (
+          <option key={finish} value={finish}>
+            {finish}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -325,6 +374,7 @@ export function SectionTable() {
             <th scope="col">帯筋 / あばら筋</th>
             <th scope="col">Fc</th>
             <th scope="col">grade</th>
+            <th scope="col">かぶり条件</th>
           </tr>
         </thead>
         <tbody>
@@ -389,6 +439,12 @@ export function SectionTable() {
                     onChange={(grade) =>
                       updateCurrent((current) => ({ ...current, grade }))
                     }
+                  />
+                </td>
+                <td>
+                  <CoverConditionField
+                    section={section}
+                    update={updateCurrent}
                   />
                 </td>
               </tr>
