@@ -1,0 +1,86 @@
+name: evals
+
+# 스킬 판정 회귀를 자동으로 잡되 토큰을 최소로 쓴다.
+#
+# 판정이 의존하는 것은 둘뿐이다 — qa 트랙은 라이브 CLAUDE.md를 시스템 프롬프트에
+# 주입하고, review 트랙은 prompts.ts의 CRITICAL 요약을 쓴다. 케이스는 코드 스니펫을
+# 자기 안에 인라인하므로 **레포 소스가 바뀌어도 판정은 안 바뀐다.** 그래서 배근 코드
+# PR에서는 한 번도 돌지 않는다 — 아래 paths 필터가 그 사실을 그대로 옮긴 것이다.
+#
+# 필요 시크릿: ANTHROPIC_API_KEY. 없으면 첫 실행에서 실패한다 — 일부러 그렇게 뒀다.
+# 조용히 건너뛰게 만들면 eval이 한 번도 안 돌아도 전부 초록으로 보인다.
+#
+# GitHub Actions는 YAML 앵커를 지원하지 않는다 — paths 목록은 두 번 적는다.
+on:
+  pull_request:
+    paths:
+      - CLAUDE.md
+      - evals/**
+      - .github/workflows/evals.yml
+  push:
+    branches: [main]
+    paths:
+      - CLAUDE.md
+      - evals/**
+      - .github/workflows/evals.yml
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 실행할 트랙
+        type: choice
+        default: all
+        options: [all, qa, review]
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true # PR에 연속 push 해도 마지막 것만 과금된다
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 바뀐 경로 판정에 base가 필요하다
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # 바뀐 경로에 걸린 트랙만 돌린다. CLAUDE.md만 바뀌었으면 qa 4케이스로 끝난다
+      # (review 트랙의 시스템 프롬프트는 prompts.ts의 하드코딩 사본이라 CLAUDE.md
+      #  변경에 반응하지 않는다 — 돌려도 같은 답이 나온다).
+      # 판정이 애매하면 all로 넘어간다 — 덜 도는 쪽이 아니라 더 도는 쪽으로 틀린다.
+      - id: track
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TRACK: ${{ inputs.track }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "value=$INPUT_TRACK" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! changed=$(git diff --name-only "$BASE" HEAD 2>/dev/null); then
+            echo "base($BASE)를 못 읽었다 — 전체를 돌린다"
+            echo "value=all" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          core=$(echo "$changed" | grep -E '^evals/harness/(prompts|run)\.ts$|^evals/harness/lib/' || true)
+          qa=$(echo "$changed" | grep -E '^CLAUDE\.md$|^evals/harness/cases/qa/' || true)
+          review=$(echo "$changed" | grep -E '^evals/harness/cases/review/' || true)
+          if [ -n "$core" ] || { [ -n "$qa" ] && [ -n "$review" ]; }; then v=all
+          elif [ -n "$qa" ]; then v=qa
+          elif [ -n "$review" ]; then v=review
+          else v=all; fi
+          echo "선택된 트랙: $v"
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - run: npm run eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_TRACK: ${{ steps.track.outputs.value }}

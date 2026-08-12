@@ -27,3 +27,6 @@ phases/**/step*-output.json
 
 # 근거 PDF 등 내려받은 대용량 캐시 — 커밋 금지 (URL·SHA-256은 docs/SOURCES.md가 정본)
 .cache/
+
+# Lighthouse 실측 리포트 — CI는 워크플로 아티팩트로 남긴다
+.lighthouseci/

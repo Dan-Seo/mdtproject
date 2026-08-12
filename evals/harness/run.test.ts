@@ -1,6 +1,7 @@
 // run.ts의 순수 부분(요청 빌더·텍스트 추출)만 검증한다 — 네트워크 호출 없음.
 import { describe, expect, test } from 'vitest'
 
+import type { EvalCase } from './lib/cases'
 import { REVIEWER_SYSTEM } from './prompts'
 import {
   JUDGE_MODEL,
@@ -10,6 +11,7 @@ import {
   judgeRequest,
   qaRequest,
   reviewerRequest,
+  selectTrack,
 } from './run'
 
 describe('reviewerRequest', () => {
@@ -50,6 +52,28 @@ describe('judgeRequest', () => {
   test('refusal 폴백이 켜져 있다', () => {
     expect(req.fallbacks).toBe('default')
     expect(req.betas).toContain('server-side-fallback-2026-07-01')
+  })
+})
+
+describe('selectTrack', () => {
+  const cases = [
+    { id: 'q', track: 'qa' },
+    { id: 'r', track: 'review' },
+  ] as unknown as EvalCase[]
+
+  test('미지정이면 전부 돌린다 — 로컬 npm run eval의 기존 동작', () => {
+    expect(selectTrack(cases, undefined).map((c) => c.id)).toEqual(['q', 'r'])
+    expect(selectTrack(cases, 'all').map((c) => c.id)).toEqual(['q', 'r'])
+  })
+
+  test('트랙을 지정하면 그 트랙만 남는다 — 과금 대상이 절반이 된다', () => {
+    expect(selectTrack(cases, 'qa').map((c) => c.id)).toEqual(['q'])
+    expect(selectTrack(cases, 'review').map((c) => c.id)).toEqual(['r'])
+  })
+
+  // 오타난 트랙을 조용히 전부로 되돌리면, 4케이스를 돌린 줄 알고 9케이스를 과금한다.
+  test('알 수 없는 트랙은 전부로 되돌리지 않고 실패한다', () => {
+    expect(() => selectTrack(cases, 'golden')).toThrow(/golden/)
   })
 })
 

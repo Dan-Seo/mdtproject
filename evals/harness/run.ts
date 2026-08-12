@@ -71,6 +71,22 @@ export function judgeRequest(prompt: string) {
   }
 }
 
+/**
+ * EVAL_TRACK으로 실행 대상을 좁힌다. 미지정·'all'이면 전부.
+ * CI는 바뀐 경로에 걸린 트랙만 지정해 과금을 줄인다 — 무결성 검증은 항상 전체 집합으로 한다.
+ */
+export function selectTrack(
+  cases: EvalCase[],
+  track: string | undefined,
+): EvalCase[] {
+  if (track === undefined || track === '' || track === 'all') return cases
+  if (track !== 'qa' && track !== 'review')
+    throw new Error(
+      `알 수 없는 EVAL_TRACK: ${track} (all | qa | review 중 하나여야 한다)`,
+    )
+  return cases.filter((c) => c.track === track)
+}
+
 export function extractText(
   blocks: ReadonlyArray<{ type: string; text?: string }>,
 ): string {
@@ -111,16 +127,19 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
+  // 무결성은 위에서 전체 집합으로 검사했다 — 실행만 좁힌다.
+  const selected = selectTrack(cases, process.env.EVAL_TRACK)
+
   const claudeMd = readFileSync(join(here, '..', '..', 'CLAUDE.md'), 'utf8')
   // 500/529 같은 일시 장애로 게이트가 흔들리지 않게 재시도를 올린다 (SDK 기본 2회로 부족했음)
   const client = new Anthropic({ maxRetries: 5 })
   const results: CaseResult[] = []
 
   console.log(
-    `eval 시작: ${cases.length} cases (subject=${SUBJECT_MODEL}, judge=${JUDGE_MODEL})\n`,
+    `eval 시작: ${selected.length}/${cases.length} cases (track=${process.env.EVAL_TRACK ?? 'all'}, subject=${SUBJECT_MODEL}, judge=${JUDGE_MODEL})\n`,
   )
 
-  for (const [i, c] of cases.entries()) {
+  for (const [i, c] of selected.entries()) {
     let result: CaseResult
     try {
       const verdict = await runCase(client, c, claudeMd)
@@ -142,7 +161,7 @@ async function main(): Promise<void> {
     }
     results.push(result)
     console.log(
-      `[${i + 1}/${cases.length}] ${result.pass ? 'PASS' : 'FAIL'}  ${c.track}/${c.id}${
+      `[${i + 1}/${selected.length}] ${result.pass ? 'PASS' : 'FAIL'}  ${c.track}/${c.id}${
         result.pass ? '' : ` — ${result.reason}`
       }`,
     )
