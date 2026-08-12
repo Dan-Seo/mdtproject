@@ -48,7 +48,7 @@ await page.waitForSelector("[data-testid^='quantity-group-'][aria-selected='true
 
 const afterColumn = await probe();
 
-// 大梁(G1) 클릭 — 3D는 柱만 지원하므로 빈 상태로 돌아가야 한다
+// 大梁(G1) 클릭 — 単一スパンは配筋が出る。連続スパンなら未対応表示に戻る
 const girderLabel = await page.evaluate(() => {
   const g = [...document.querySelectorAll("svg g[role='button']")].find((el) =>
     el.getAttribute("aria-label").startsWith("G1")
