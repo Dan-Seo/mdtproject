@@ -1,0 +1,26 @@
+{
+  "project": "Kijun",
+  "phase": "5-girder-continuous",
+  "steps": [
+    {
+      "step": 0,
+      "name": "girder-run",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "takeoff-run",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "viewer-run",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "docs-e2e",
+      "status": "pending"
+    }
+  ]
+}
