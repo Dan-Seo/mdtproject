@@ -113,6 +113,16 @@ export function generateColumnRebar(
   const hook135Length = millimetres(hook135Rule, hoopDiameter)
   const hoopWidth = section.b - 2 * fabricationCover
   const hoopDepth = section.d - 2 * fabricationCover
+
+  // 加工用かぶり×2 보다 작은 단면은 음수 加工長을 만들고, 그 값은 집계에서
+  // 마이너스 kg로 조용히 흘러간다 — 조용히 틀린 값 대신 실패한다 (ADR-014).
+  if (hoopWidth <= 0 || hoopDepth <= 0) {
+    throw new Error(
+      `帯筋 加工寸法 must be positive: ${member.id} ` +
+        `(${section.b}×${section.d} − 2×加工用かぶり ${fabricationCover})`,
+    )
+  }
+
   const hoopLength =
     2 * (hoopWidth + hoopDepth) + 2 * hook135Length
   const hoopCount =

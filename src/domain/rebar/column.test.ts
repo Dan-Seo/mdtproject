@@ -224,6 +224,16 @@ describe('generateColumnRebar', () => {
     expect(main.count).toBe(changedSection.main.count)
   })
 
+  it('fails fast when the section cannot contain the 帯筋 fabrication cover', () => {
+    // 加工用かぶり×2 이하의 단면은 음수 加工長을 만들고 마이너스 kg로
+    // 조용히 집계된다 — throw로 막는다 (ADR-014).
+    const tiny: ColumnSection = { ...section, b: 100, d: 100 }
+
+    expect(() =>
+      generateColumnRebar(input({ section: tiny }), jpMlitRulePack),
+    ).toThrow(/positive/)
+  })
+
   it('uses the supplied beamDepthAbove instead of a global constant', () => {
     const baseHoop = byRole(
       generateColumnRebar(input(), jpMlitRulePack),

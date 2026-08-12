@@ -277,4 +277,38 @@ describe('픽스처 대조 완전성', () => {
 
     expect(uncovered).toEqual([])
   })
+
+  it('leaves no rulepack row uncompared for covered kinds', () => {
+    // 순방향(픽스처→룰팩)만으로는 픽스처 전개에 닿지 않는 룰팩 여분 행이
+    // 무검증으로 남는다 — 대조가 실제로 맞힌 행(lookupRule 반환 객체)의
+    // 집합으로 역방향을 확인한다.
+    const hit = new Set<unknown>()
+    for (const { entry, conditions } of expandedCases) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, conditions))
+    }
+    for (const { entry, conditions } of bendInsideDiameterCases) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, conditions))
+    }
+    for (const entry of hookEntries) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, entry.conditions))
+    }
+    for (const { entry, conditions } of coverCases) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, conditions))
+    }
+    hit.add(
+      lookupRule(
+        jpMlitRulePack,
+        fabricationAdditionEntry.kind,
+        fabricationAdditionEntry.conditions,
+      ),
+    )
+
+    const uncompared = jpMlitRulePack.entries.filter(
+      (rule) => coveredKinds.has(rule.key) && !hit.has(rule),
+    )
+
+    expect(
+      uncompared.map(({ key, conditions }) => ({ key, conditions })),
+    ).toEqual([])
+  })
 })

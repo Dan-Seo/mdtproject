@@ -86,7 +86,7 @@
   unit: mm
   source: { ref: spec, section: 表5.3.6, page: 33 }
   confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）
+  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）。soilContact 入力が Section に入るまで消費者なし（ADR-005 — 地中部材はスコープ外）
 
 - key: cover.minimum
   label: 大梁の最小かぶり厚さ（土に接する部分）
@@ -96,7 +96,7 @@
   unit: mm
   source: { ref: spec, section: 表5.3.6, page: 33 }
   confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）
+  note: LLM転写 — 独立検討待ち（表5.3.6 土に接する部分）。soilContact 入力が Section に入るまで消費者なし（ADR-005 — 地中部材はスコープ外）
 
 - key: cover.fabrication.addition
   label: 加工用かぶり厚さの加算
