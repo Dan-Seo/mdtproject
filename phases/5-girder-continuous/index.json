@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-12T20:13:00+0900",
       "summary": "useTakeoff를 大梁 런당 1회 순회하도록 바꾸고 MemberUnsupportedError 시 런 전 부재를 미지원 처리했으며, 샘플 층당 通し筋 5런×2행·あばら筋 7부재 검산을 통과했다.",
-      "completed_at": "2026-08-12T20:21:24+0900"
+      "completed_at": "2026-08-12T20:23:13+0900"
     },
     {
       "step": 2,
