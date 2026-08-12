@@ -32,11 +32,22 @@ const legend = await page.evaluate(() => {
       kind: s.getAttribute("data-zone-kind"),
       color: s.style.backgroundColor,
     })),
+    // 出典 표시는 법적 의무다 — 링크가 실제로 눌리는지까지 브라우저에서 본다
+    // (범례 전체가 pointer-events: none 이라 CSS 회귀가 여기서만 드러난다).
+    sources: [...el.querySelectorAll("a[href], [role='link']")].map((a) => ({
+      label: a.textContent.trim(),
+      href: a.getAttribute("href"),
+      clickable: getComputedStyle(a).pointerEvents !== "none",
+    })),
+    inferredMarks: el.querySelectorAll("[aria-label='未確認の規準値']").length,
   };
 });
 checks.legendShown = legend !== null && legend.chips.length > 0;
 checks.legendHasAnchorage = !!legend && legend.chips.some((c) => c.includes("定着"));
 checks.legendHasNumbers = !!legend && legend.chips.some((c) => /\d/.test(c));
+checks.legendCitesSource = !!legend && legend.sources.length > 0;
+checks.legendSourceClickable = !!legend && legend.sources.every((s) => s.clickable);
+checks.legendFlagsInferred = !!legend && legend.inferredMarks > 0;
 
 // ── ① 레이어 토글 ──────────────────────────────────────────────
 const layerState = () =>

@@ -63,6 +63,7 @@ describe('legendEntries', () => {
         kind: '定着',
         lengthMm: expectedLengthMm,
         ruleKey: straightRule.key,
+        rule: straightRule,
       },
     ])
   })
@@ -95,19 +96,38 @@ describe('legendEntries', () => {
       jpMlitRulePack,
     )
 
+    const bentLengthRule =
+      bentEnd.kind === '折曲げ定着' ? bentEnd.lengthRule : undefined
+
     expect(bentEnd.kind).toBe('折曲げ定着')
     expect(legendEntries(rebars)).toEqual([
       {
         kind: '定着',
         lengthMm: straightLengthMm,
         ruleKey: straightRule.key,
+        rule: straightRule,
       },
       {
         kind: '定着',
         lengthMm: bentEnd.lengthMm,
-        ruleKey: bentEnd.kind === '折曲げ定着' ? bentEnd.lengthRule : undefined,
+        ruleKey: bentLengthRule,
+        rule: bentEnd.usedRules.find(({ key }) => key === bentLengthRule),
       },
     ])
+  })
+
+  it('fails instead of showing a 定着長 whose rule it cannot cite', () => {
+    // 出典 표시는 법적 의무다 — 근거를 못 찾으면 조용히 수치만 띄우는 대신 실패한다.
+    const { member, section, span } = sampleGirder()
+    const [withZones] = generateGirderRebar(
+      { member, section, span },
+      jpMlitRulePack,
+    )
+    const orphaned: Rebar = { ...withZones, ruleHits: [] }
+
+    expect(() => legendEntries([orphaned])).toThrow(
+      /Legend rule missing from ruleHits/,
+    )
   })
 
   it('returns an empty array when no Rebar carries zones', () => {

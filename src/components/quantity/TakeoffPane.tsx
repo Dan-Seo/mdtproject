@@ -21,6 +21,7 @@ import { lookupMarkup } from '@/domain/rules/lookup'
 import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
+import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -95,33 +96,6 @@ function ShapeIcon({ shape }: { shape: RebarShape }) {
       {shape === 'hoop' && <rect x="4" y="3" width="24" height="12" />}
     </svg>
   )
-}
-
-function sourceLabel(rule: RuleHit): string {
-  return [rule.source.short, rule.source.section].filter(Boolean).join(' ')
-}
-
-function sourceTooltip(rule: RuleHit): string {
-  const edition = rule.source.edition ? `（${rule.source.edition}）` : ''
-  const location = [
-    `${rule.source.doc}${edition}`,
-    rule.source.section,
-    rule.source.page === null ? null : `${rule.source.page}頁`,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  const note = rule.source.url
-    ? rule.note
-    : `原文URL未確保 — ${rule.note}`
-
-  return [
-    `${rule.label} ＝ ${rule.expr}`,
-    location,
-    rule.confidence === 'inferred' ? '⚠ 未確認 —' : null,
-    note,
-  ]
-    .filter(Boolean)
-    .join('\n')
 }
 
 function stopRowInteraction(event: MouseEvent<HTMLElement>): void {

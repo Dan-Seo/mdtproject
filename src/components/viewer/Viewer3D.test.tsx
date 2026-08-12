@@ -13,6 +13,7 @@ import { girderSpan } from '@/domain/model/project'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import { lookupRule } from '@/domain/rules/lookup'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import { sourceLabel } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -379,6 +380,28 @@ describe('Viewer3D', () => {
     )
   })
 
+  it('cites the source and flags an unconfirmed value on each legend chip', () => {
+    // 出典 표시는 법적 의무다. 범례는 내역서와 달리 出典 열이 없으므로 칩이
+    // 스스로 근거를 달아야 하고, 未確認(inferred) 값은 그렇다고 밝혀야 한다.
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-X'))
+    const { result } = renderHook(() => useTakeoff())
+    const top = result.current.rebars.find(
+      ({ memberId, role }) =>
+        memberId === '1F-G1-X1Y1-X' && role === '上端筋',
+    )
+    const ruleKey = top?.zones?.[0].ruleKey
+    const rule = top?.ruleHits.find(({ key }) => key === ruleKey)
+    expect(rule?.confidence).toBe('inferred')
+
+    render(<Viewer3D />)
+
+    const legend = screen.getByLabelText('定着・継手凡例')
+    expect(
+      within(legend).getAllByLabelText('未確認の規準値').length,
+    ).toBeGreaterThan(0)
+    expect(legend).toHaveTextContent(sourceLabel(rule!))
+  })
+
   it('does not show a legend for an unsupported 大梁', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
 
@@ -516,6 +539,11 @@ describe('Viewer3D', () => {
     expect(tooltip).toHaveTextContent(String(mainLine?.countPerMember))
     expect(within(tooltip).getByText('加工長')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)
+    // 加工長은 룰 유래 수치다 — 内訳 행과 같은 미확인 표시가 붙어야 한다.
+    expect(mainLine?.inferred).toBe(true)
+    expect(
+      within(tooltip).getByLabelText('未確認の規準値'),
+    ).toBeInTheDocument()
   })
 
   it('hides the 部材 tooltip when its rowId is stale', () => {

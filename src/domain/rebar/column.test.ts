@@ -437,8 +437,10 @@ describe('generateColumnRebar', () => {
       `135°フック余長 ${hook135.value}d(${hook135.value * hoopDiameter})`,
     )
     expect(hoop.formula).toContain(
+      // stirrupPositions 는 오프셋을 양단에 적용한다 — 表示される項だけで
+      // 本数を再現できなければ算出根拠の説明にならない。
       '帯筋配置（配置区間 3450［階高 4200 − 上部大梁せい 750］、' +
-        'ピッチ 100、始端オフセット 0）＝ 36',
+        'ピッチ 100、始端・終端オフセット 0）＝ 36',
     )
   })
 

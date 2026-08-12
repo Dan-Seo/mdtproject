@@ -22,11 +22,13 @@ import {
 import type { Rebar } from '@/domain/model/rebar'
 import type { UnsupportedReason } from '@/domain/model/unsupported'
 import { quantityLineId, type QuantityLine } from '@/domain/quantity'
+import type { RuleHit } from '@/domain/rules/types'
 import {
   useTakeoff,
   type UnsupportedMember,
 } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
+import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import {
   useAppStore,
   type ViewerLayer,
@@ -90,7 +92,13 @@ type HoverTooltip =
       kind: 'member'
       line: Pick<
         QuantityLine,
-        'id' | 'role' | 'size' | 'countPerMember' | 'lengthMm'
+        | 'id'
+        | 'role'
+        | 'size'
+        | 'countPerMember'
+        | 'lengthMm'
+        | 'inferred'
+        | 'rules'
       >
     }
   | {
@@ -189,6 +197,9 @@ function disposeContent(runtime: ViewerRuntime): void {
 
   const geometries = new Set<THREE.BufferGeometry>()
   content.traverse((object) => {
+    // InstancedMesh 도 Mesh 로 잡히지만 인스턴스 행렬 버퍼는 geometry 가 아니라
+    // 자신이 쥐고 있다 — 여기서 풀지 않으면 씬을 다시 지을 때마다 GPU 에 쌓인다.
+    if (object instanceof THREE.InstancedMesh) object.dispose()
     if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
       geometries.add(object.geometry)
     }
@@ -1024,6 +1035,41 @@ function selectedMemberView(
   }
 }
 
+/**
+ * 出典 표시는 법적 의무라 범례도 内訳와 같은 근거를 달고 나온다.
+ * 라벨·툴팁 형식은 `@/lib/rule-source`가 유일한 출처다 — 화면마다 다시 적으면
+ * 같은 근거가 화면마다 다르게 보인다.
+ */
+function SourceLink({ rule }: { rule: RuleHit }) {
+  const label = sourceLabel(rule)
+  const title = sourceTooltip(rule)
+
+  if (rule.source.url === null) {
+    return (
+      <span
+        className={`${styles.legendSource} ${styles.legendSourceDisabled}`}
+        role="link"
+        aria-disabled="true"
+        title={title}
+      >
+        {label}
+      </span>
+    )
+  }
+
+  return (
+    <a
+      className={styles.legendSource}
+      href={rule.source.url}
+      target="_blank"
+      rel="noreferrer noopener"
+      title={title}
+    >
+      {label}
+    </a>
+  )
+}
+
 export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -1452,9 +1498,18 @@ export function Viewer3D() {
                   style={{ backgroundColor: REBAR_ZONE_COLORS[entry.kind] }}
                   aria-hidden="true"
                 />
-                {[entry.kind, entry.ruleKey, entry.lengthMm]
-                  .filter((value) => value !== undefined)
-                  .join(' ')}
+                {`${entry.kind} ${entry.ruleKey} ${entry.lengthMm}`}
+                {entry.rule.confidence === 'inferred' && (
+                  <span
+                    className={styles.inferredMark}
+                    role="img"
+                    aria-label="未確認の規準値"
+                    title={entry.rule.label}
+                  >
+                    ▲
+                  </span>
+                )}
+                <SourceLink rule={entry.rule} />
               </li>
             ))}
             {spacing !== null && (
@@ -1482,7 +1537,23 @@ export function Viewer3D() {
             <dt>{t(locale, 'viewer.tooltip.count')}</dt>
             <dd>{tooltip.line.countPerMember}</dd>
             <dt>{t(locale, 'viewer.tooltip.length')}</dt>
-            <dd>{tooltip.line.lengthMm} mm</dd>
+            <dd>
+              {tooltip.line.lengthMm} mm
+              {/* 加工長은 룰 유래 수치다 — 内訳 행과 같은 미확인 표시를 단다. */}
+              {tooltip.line.inferred && (
+                <span
+                  className={styles.inferredMark}
+                  role="img"
+                  aria-label="未確認の規準値"
+                  title={tooltip.line.rules
+                    .filter(({ confidence }) => confidence === 'inferred')
+                    .map(({ label }) => label)
+                    .join('、')}
+                >
+                  ▲
+                </span>
+              )}
+            </dd>
           </dl>
         ) : tooltip?.kind === 'building' ? (
           <dl className={styles.tooltipList}>

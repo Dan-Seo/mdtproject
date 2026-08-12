@@ -160,6 +160,31 @@
   color: var(--text-muted);
 }
 
+/* 범례 칩과 툴팁이 함께 쓴다 — 未確認(inferred) 규준값 표시는 화면마다 달라지면 안 된다. */
+.inferredMark {
+  color: var(--color-error);
+  font-size: var(--type-caption-uppercase-size);
+}
+
+/* .legend 전체가 pointer-events: none 이라 出典 링크만 되살린다 — 범례가
+   3D 조작을 막지 않으면서도 근거는 눌러서 열 수 있어야 한다. */
+.legendSource {
+  border-bottom: var(--border-hairline);
+  color: var(--text-muted);
+  font-size: 10px;
+  pointer-events: auto;
+}
+
+a.legendSource:hover {
+  border-bottom-color: var(--hairline-strong);
+  color: var(--text-ink);
+}
+
+.legendSourceDisabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
 .tooltip {
   position: absolute;
   top: 0;

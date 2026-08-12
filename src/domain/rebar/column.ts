@@ -238,7 +238,7 @@ export function generateColumnRebar(
       `${fabricationCoverFormula} ／ ` +
       `本数 ＝ 帯筋配置（配置区間 ${hoopSpan}［階高 ${story.height} ` +
       `− 上部大梁せい ${beamDepthAbove}］、ピッチ ${section.hoop.pitch}、` +
-      `始端オフセット ${hoopStartOffsetMm}）＝ ${hoopCount}`,
+      `始端・終端オフセット ${hoopStartOffsetMm}）＝ ${hoopCount}`,
   }
 
   return [main, hoop]

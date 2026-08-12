@@ -1,9 +1,12 @@
-import type { Rebar } from '@/domain/model/rebar'
+import type { Rebar, RebarZone } from '@/domain/model/rebar'
+import type { RuleHit } from '@/domain/rules/types'
 
 export interface LegendEntry {
-  kind: '定着' | '重ね継手'
+  kind: RebarZone['kind']
   lengthMm: number
   ruleKey: string
+  /** 이 길이를 정한 룰. 出典 표시가 법적 의무이므로 수치와 함께 나른다. */
+  rule: RuleHit
 }
 
 /**
@@ -18,9 +21,19 @@ export function legendEntries(rebars: Rebar[]): LegendEntry[] {
       const lengthMm = zone.pathToMm - zone.pathFromMm
       const key = JSON.stringify([zone.kind, zone.ruleKey, lengthMm])
 
-      if (!entries.has(key)) {
-        entries.set(key, { kind: zone.kind, lengthMm, ruleKey: zone.ruleKey })
+      if (entries.has(key)) continue
+
+      const rule = rebar.ruleHits.find(({ key }) => key === zone.ruleKey)
+
+      if (rule === undefined) {
+        // 생성기는 zone을 만든 룰을 반드시 ruleHits에도 싣는다. 없다면 결함이며,
+        // 出典 없는 수치를 조용히 띄우는 대신 실패시킨다.
+        throw new Error(
+          `Legend rule missing from ruleHits: ${rebar.id} ${zone.ruleKey}`,
+        )
       }
+
+      entries.set(key, { kind: zone.kind, lengthMm, ruleKey: zone.ruleKey, rule })
     }
   }
 
