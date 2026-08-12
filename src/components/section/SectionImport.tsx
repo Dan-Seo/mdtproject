@@ -42,14 +42,24 @@ function parsedCandidates(pages: TextPage[]): CandidateRow[] {
   )
 }
 
+/**
+ * 후보의 제품 내 식별자. 階별 후보가 같은 Section을 덮어쓰면 먼저 반영한 층의
+ * 배근이 사라지므로, 階가 있으면 별도 Section이 되도록 mark에 붙인다.
+ */
+function candidateMark(candidate: SectionCandidate): string {
+  return candidate.storyLabel
+    ? `${candidate.mark}(${candidate.storyLabel})`
+    : candidate.mark
+}
+
 function matchingSection(
   project: Project,
   candidate: SectionCandidate,
 ): Section | undefined {
   if (candidate.kind === '対象外') return undefined
+  const mark = candidateMark(candidate)
   return project.sections.find(
-    (section) =>
-      section.mark === candidate.mark && section.kind === candidate.kind,
+    (section) => section.mark === mark && section.kind === candidate.kind,
   )
 }
 
@@ -59,6 +69,31 @@ function cloneSource(
 ): Section | undefined {
   if (candidate.kind === '対象外') return undefined
   return project.sections.find((section) => section.kind === candidate.kind)
+}
+
+/**
+ * 신규 符号는 모든 배근·단면 칸이 파싱됐을 때만 반영을 허용한다 — 빈칸을 무관한
+ * 부재의 복제값으로 채워 물량에 넣으면 파서가 지킨 「지어내지 않는다」(ADR-012)가
+ * UI에서 무너진다. 기존 Section에는 빈칸이 기존값 유지라 해당하지 않는다.
+ */
+function missingParsedFields(candidate: SectionCandidate): boolean {
+  if (candidate.kind === '柱') {
+    return (
+      candidate.b === undefined ||
+      candidate.d === undefined ||
+      candidate.main === undefined ||
+      candidate.hoop === undefined
+    )
+  }
+  if (candidate.kind === '大梁') {
+    return (
+      candidate.b === undefined ||
+      candidate.depth === undefined ||
+      candidate.girderMain === undefined ||
+      candidate.stirrup === undefined
+    )
+  }
+  return true
 }
 
 function uniqueSectionId(project: Project, mark: string): string {
@@ -79,7 +114,7 @@ function applyParsedFields(
   if (section.kind === '柱' && candidate.kind === '柱') {
     return {
       ...section,
-      mark: candidate.mark,
+      mark: candidateMark(candidate),
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.d === undefined ? {} : { d: candidate.d }),
       ...(candidate.main === undefined
@@ -100,7 +135,7 @@ function applyParsedFields(
   if (section.kind === '大梁' && candidate.kind === '大梁') {
     return {
       ...section,
-      mark: candidate.mark,
+      mark: candidateMark(candidate),
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
       ...(candidate.girderMain === undefined
@@ -137,18 +172,18 @@ function applyCandidate(project: Project, candidate: SectionCandidate): Project 
   }
 
   const source = cloneSource(project, candidate)
-  if (!source) return project
+  if (!source || missingParsedFields(candidate)) return project
   const clonedSource: Section =
     source.kind === '柱'
       ? {
           ...source,
-          id: uniqueSectionId(project, candidate.mark),
+          id: uniqueSectionId(project, candidateMark(candidate)),
           main: { ...source.main },
           hoop: { ...source.hoop },
         }
       : {
           ...source,
-          id: uniqueSectionId(project, candidate.mark),
+          id: uniqueSectionId(project, candidateMark(candidate)),
           main: { ...source.main },
           stirrup: { ...source.stirrup },
         }
@@ -206,6 +241,7 @@ function Candidate({
   const locale = useAppStore(({ locale }) => locale)
   const existing = matchingSection(project, candidate)
   const source = existing ? undefined : cloneSource(project, candidate)
+  const incomplete = !existing && missingParsedFields(candidate)
   const story = candidate.storyLabel ?? t(locale, 'sectionImport.noStory')
   const issueText = candidate.issues.join('\n')
 
@@ -249,7 +285,12 @@ function Candidate({
           ))}
         </ul>
       ) : null}
-      {!existing && source ? (
+      {!existing && source && incomplete ? (
+        <p className={styles.cloneNotice}>
+          {t(locale, 'sectionImport.incomplete')}
+        </p>
+      ) : null}
+      {!existing && source && !incomplete ? (
         <p className={styles.cloneNotice}>
           {t(locale, 'sectionImport.clonePrefix')}
           {source.mark}
@@ -260,7 +301,7 @@ function Candidate({
         <button
           type="button"
           className={styles.applyButton}
-          disabled={!existing && !source}
+          disabled={!existing && (!source || incomplete)}
           onClick={onApply}
         >
           {t(locale, 'sectionImport.apply')}
@@ -285,6 +326,8 @@ export function SectionImport({
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
   const [ignored, setIgnored] = useState<Set<string>>(() => new Set())
+  // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
+  const requestRef = useRef(0)
   const rows = useMemo(() => parsedCandidates(pages ?? []), [pages])
   const supported = rows.filter(({ candidate }) => candidate.kind !== '対象外')
   const outOfScope = rows.filter(({ candidate }) => candidate.kind === '対象外')
@@ -294,17 +337,21 @@ export function SectionImport({
     const file = input.files?.[0]
     if (!file) return
 
+    const requestId = ++requestRef.current
     setOpen(true)
     setLoading(true)
     setFailed(false)
     setIgnored(new Set())
     try {
-      setPages(await extractPages(file))
+      const next = await extractPages(file)
+      if (requestRef.current !== requestId) return
+      setPages(next)
     } catch {
+      if (requestRef.current !== requestId) return
       setPages(null)
       setFailed(true)
     } finally {
-      setLoading(false)
+      if (requestRef.current === requestId) setLoading(false)
       input.value = ''
     }
   }

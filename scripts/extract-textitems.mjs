@@ -6,6 +6,9 @@
  *   items: Array<{ str: string, x: number, y: number, w: number, h: number, rot?: number }>
  * }
  * Coordinates use a top-left origin, positive y points down, and all values are pt.
+ *
+ * 실행: npx tsx scripts/extract-textitems.mjs
+ * (좌표 변환을 프로덕션 추출기와 공유하려고 TS 모듈을 import한다 — plain node로는 안 돈다)
  */
 
 import { createHash } from 'node:crypto'
@@ -13,7 +16,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDocument, Util } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
+
+import { toTextItems } from '../src/lib/import/textitems.ts'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = resolve(scriptDirectory, '..')
@@ -52,47 +57,13 @@ function sha256(data) {
   return createHash('sha256').update(data).digest('hex')
 }
 
-function rotationDegrees(transform) {
-  const [, b, c] = transform
-  const epsilon = Number.EPSILON * 10
-
-  if (Math.abs(b) <= epsilon && Math.abs(c) <= epsilon) {
-    return undefined
-  }
-
-  return (Math.atan2(b, transform[0]) * 180) / Math.PI
-}
-
+// 좌표 변환은 프로덕션 추출기(src/lib/import/pdf-text.ts)와 공유한다 —
+// 규약이 갈라지면 CI 픽스처가 제품 입력을 검증하지 못한다.
 function textItemsFor(textContent, viewport) {
-  return textContent.items.flatMap((item) => {
-    if (typeof item.str !== 'string' || item.str.trim() === '') {
-      return []
-    }
-
-    const transform = Util.transform(viewport.transform, item.transform)
-    const characters = Array.from(item.str)
-    const characterWidth = item.width / characters.length
-    const baselineScale = Math.hypot(transform[0], transform[1])
-    const directionX = baselineScale === 0 ? 0 : transform[0] / baselineScale
-    const directionY = baselineScale === 0 ? 0 : transform[1] / baselineScale
-    const rot = rotationDegrees(transform)
-
-    return characters.flatMap((str, index) => {
-      if (str.trim() === '') {
-        return []
-      }
-
-      const extracted = {
-        str,
-        x: transform[4] + directionX * characterWidth * index,
-        y: transform[5] + directionY * characterWidth * index,
-        w: characterWidth,
-        h: item.height,
-      }
-
-      return rot === undefined ? [extracted] : [{ ...extracted, rot }]
-    })
-  })
+  return toTextItems(
+    textContent.items.filter((item) => typeof item.str === 'string'),
+    viewport.transform,
+  )
 }
 
 async function verifiedSources() {

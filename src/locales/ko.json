@@ -21,6 +21,7 @@
   "sectionImport.ignore": "無視",
   "sectionImport.clonePrefix": "해석되지 않은 칸은 ",
   "sectionImport.cloneSuffix": "에서 복제",
+  "sectionImport.incomplete": "미해석 칸이 있는 신규 符号는 반영할 수 없습니다 (원문 참고)",
   "sectionImport.outOfScope": "対象外(柱·大梁 이외)",
   "plan.storyTabs": "층 선택",
   "plan.addSpan": " 스팬 추가",

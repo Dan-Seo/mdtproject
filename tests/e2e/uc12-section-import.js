@@ -1,4 +1,6 @@
 // UC-12: 断面リスト PDF를 브라우저 로컬에서 추출하고, 행 단위 승인으로만 반영한다.
+// 반영 단위는 (符号, 階)다 — C51 2階는 완전 후보라 반영되고, C51 1階는 帯筋이
+// S13(고강도)라 빈칸이므로 신규 符号로는 반영이 막혀야 한다.
 const pdfPath = ".cache/dwg-yokohama.pdf";
 const sandboxFixture = "uc12-dwg-yokohama.pdf.b64";
 let pdfBase64;
@@ -20,24 +22,31 @@ await page.setInputFiles("[data-testid='section-import-file']", {
   mimeType: "application/pdf",
   buffer: Buffer.from(pdfBase64, "base64"),
 });
-await page.waitForSelector("[data-testid='section-import-candidate-C51-1階']", {
+await page.waitForSelector("[data-testid='section-import-candidate-C51-2階']", {
   timeout: 120000,
 });
 
 const before = await page.evaluate(() => {
   const outOfScope = document.querySelector("[data-testid='section-import-out-of-scope']");
   const b51 = outOfScope?.querySelector("[data-testid='section-import-candidate-B51-none']");
+  const c51First = document.querySelector("[data-testid='section-import-candidate-C51-1階']");
+  const c51FirstApply = c51First
+    ? [...c51First.querySelectorAll("button")].find((button) => button.textContent.trim() === "反映")
+    : null;
   return {
-    c51ExistsInTable: document.querySelector("[data-testid='section-row-section-C51']") !== null,
+    c51ExistsInTable: document.querySelector("[data-testid='section-row-section-C51(2階)']") !== null,
     b51VisibleInOutOfScope: b51 !== null,
     b51HasApply: b51
       ? [...b51.querySelectorAll("button")].some((button) => button.textContent.trim() === "反映")
       : null,
+    // 불완전 후보(帯筋 S13→빈칸)는 신규 符号로 반영 불가여야 한다
+    c51FirstApplyDisabled: c51FirstApply ? c51FirstApply.disabled : null,
+    c51FirstRawShown: c51First?.textContent.includes("S13-@100") ?? false,
   };
 });
 
 const c51Apply = page.locator(
-  "[data-testid='section-import-candidate-C51-1階'] button:nth-of-type(1)",
+  "[data-testid='section-import-candidate-C51-2階'] button:nth-of-type(1)",
 );
 await c51Apply.focus();
 await page.keyboard.press("Tab");
@@ -47,17 +56,17 @@ const shiftTabTarget = await page.evaluate(
   () => document.activeElement?.textContent.trim() ?? null,
 );
 await page.keyboard.press("Enter");
-await page.waitForSelector("[data-testid='section-row-section-C51']");
+await page.waitForSelector("[data-testid='section-row-section-C51(2階)']");
 
 const after = await page.evaluate(() => {
   const value = (label) => document.querySelector(`[aria-label='${label}']`)?.value ?? null;
   return {
-    b: value("C51 断面 b"),
-    d: value("C51 断面 d"),
-    mainCount: value("C51 主筋 本数"),
-    mainSize: value("C51 主筋 径"),
-    hoopSize: value("C51 帯筋 径"),
-    hoopPitch: value("C51 帯筋 ピッチ"),
+    b: value("C51(2階) 断面 b"),
+    d: value("C51(2階) 断面 d"),
+    mainCount: value("C51(2階) 主筋 本数"),
+    mainSize: value("C51(2階) 主筋 径"),
+    hoopSize: value("C51(2階) 帯筋 径"),
+    hoopPitch: value("C51(2階) 帯筋 ピッチ"),
     grandTotal: document.querySelector("[data-testid='grand-total']")?.textContent.trim() ?? null,
     canvasLabel: document.querySelector("canvas")?.getAttribute("aria-label") ?? null,
     paneFailures: [...document.querySelectorAll("[role='alert']")].map((node) =>
@@ -70,11 +79,13 @@ const checks = {
   approvalWasRequired: before.c51ExistsInTable === false,
   outOfScopeListed: before.b51VisibleInOutOfScope === true,
   outOfScopeHasNoApply: before.b51HasApply === false,
+  incompleteNewMarkBlocked: before.c51FirstApplyDisabled === true,
+  incompleteRawShown: before.c51FirstRawShown === true,
   tabReachesIgnore: tabTarget === "無視",
   shiftTabReturnsToApply: shiftTabTarget === "反映",
   dimensionApplied: after.b === "800" && after.d === "800",
-  mainApplied: after.mainCount === "22" && after.mainSize === "D25",
-  blankHoopPreserved: after.hoopSize === "D13" && after.hoopPitch === "100",
+  mainApplied: after.mainCount === "18" && after.mainSize === "D25",
+  hoopApplied: after.hoopSize === "D13" && after.hoopPitch === "100",
   takeoffStillRenders: after.grandTotal !== null,
   viewerStillRenders: after.canvasLabel === "選択部材の配筋3D",
   noPaneFailure: after.paneFailures.length === 0,

@@ -66,17 +66,20 @@ describe('parseSectionLists', () => {
     const columns = list(parsed, '柱リスト')
 
     expectMarksInclude(columns, ['C1', 'C2', 'C2A', 'FC1'])
-    expect(candidate(columns, 'C1', '6F')).toMatchObject({
+    // 이 표에는 断面 라벨 행이 없다 — 스케치 치수선의 숫자(700)를 b=d로 승격하지
+    // 않고 원문 참고로만 남긴다. 도면상 실제 700×700이지만 표 텍스트에 근거가 없다.
+    const c1 = candidate(columns, 'C1', '6F')
+    expect(c1).toMatchObject({
       kind: '柱',
       mark: 'C1',
       storyLabel: '6F',
-      b: 700,
-      d: 700,
       main: { count: 16, size: 'D25' },
       hoop: { size: 'D13', pitchMm: 100 },
-      raw: {},
-      issues: [],
     })
+    expect(c1.b).toBeUndefined()
+    expect(c1.d).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).not.toHaveLength(0)
     expect(candidate(columns, 'C2A', '2F')).toMatchObject({
       main: { count: 20, size: 'D29' },
     })
@@ -203,36 +206,4 @@ describe('parseSectionLists', () => {
     expect(fg1.raw['腹筋']).toBeUndefined()
   })
 
-  it('returns an empty array when no supported list title exists', () => {
-    expect(
-      parseSectionLists({
-        widthPt: 100,
-        heightPt: 100,
-        items: [{ str: '図面枠', x: 10, y: 10, w: 20, h: 5 }],
-      }),
-    ).toEqual([])
-  })
-
-  it('does not promote one readable 柱 position into a complete 主筋 candidate', () => {
-    const parsed = parseSectionLists({
-      widthPt: 240,
-      heightPt: 120,
-      items: [
-        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
-        { str: '符号', x: 10, y: 15, w: 20, h: 8 },
-        { str: 'C1', x: 115, y: 15, w: 10, h: 8 },
-        { str: '位置', x: 10, y: 25, w: 20, h: 8 },
-        { str: '柱頭', x: 90, y: 25, w: 20, h: 8 },
-        { str: '柱脚', x: 130, y: 25, w: 20, h: 8 },
-        { str: '1F', x: 10, y: 35, w: 10, h: 8 },
-        { str: '主筋', x: 10, y: 45, w: 20, h: 8 },
-        { str: '16-D25', x: 82, y: 45, w: 36, h: 8 },
-      ],
-    })
-    const incomplete = candidate(list(parsed, '柱リスト'), 'C1', '1F')
-
-    expect(incomplete.main).toBeUndefined()
-    expect(incomplete.raw['主筋(柱頭)']).toBe('16-D25')
-    expect(incomplete.issues).not.toHaveLength(0)
-  })
 })

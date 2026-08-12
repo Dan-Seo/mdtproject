@@ -35,5 +35,5 @@ Invoke-WebRequest <url> -OutFile .cache\<파일명>
 Get-FileHash .cache\<파일명> -Algorithm SHA256
 
 # TextItem JSON 재생성 (phase 6 step 0의 스크립트)
-node scripts/extract-textitems.mjs
+npx tsx scripts/extract-textitems.mjs
 ```

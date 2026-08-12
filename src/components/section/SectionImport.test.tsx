@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
@@ -47,26 +47,146 @@ describe('SectionImport', () => {
     await waitFor(() => expect(input).toHaveValue(''))
   })
 
-  it('applies only parsed C51 fields and preserves the blank hoop field', () => {
+  it('creates a story-scoped section from a fully parsed candidate', () => {
     render(<SectionImport initialPages={[yokohamaPage]} />)
 
-    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    const row = screen.getByTestId('section-import-candidate-C51-2階')
     expect(row).toHaveTextContent('未解析の欄はC1から複製')
-    expect(row).toHaveTextContent('S13-@100')
 
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
 
     const section = useAppStore
       .getState()
-      .project.sections.find(({ mark }) => mark === 'C51')
+      .project.sections.find(({ mark }) => mark === 'C51(2階)')
     expect(section?.kind).toBe('柱')
     if (section?.kind !== '柱') throw new Error('Expected imported 柱 section')
     expect(section).toMatchObject({
       b: 800,
       d: 800,
-      main: { count: 22, size: 'D25' },
-      hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
+      main: { count: 18, size: 'D25' },
+      hoop: { size: 'D13', pitch: 100 },
     })
+  })
+
+  it('keeps each story as its own section instead of overwriting', () => {
+    render(<SectionImport initialPages={[yokohamaPage]} />)
+
+    // C53은 두 층 모두 완전 후보다 — 두 번째 반영이 첫 번째를 덮어쓰면 안 된다
+    fireEvent.click(
+      within(
+        screen.getByTestId('section-import-candidate-C53-2階'),
+      ).getByRole('button', { name: '反映' }),
+    )
+    fireEvent.click(
+      within(
+        screen.getByTestId('section-import-candidate-C53-1階'),
+      ).getByRole('button', { name: '反映' }),
+    )
+
+    const marks = useAppStore
+      .getState()
+      .project.sections.map(({ mark }) => mark)
+    expect(marks).toContain('C53(2階)')
+    expect(marks).toContain('C53(1階)')
+  })
+
+  it('blocks approval for a new mark with unparsed fields', () => {
+    const before = useAppStore.getState().project
+    render(<SectionImport initialPages={[yokohamaPage]} />)
+
+    // C51 1階의 帯筋은 S13(고강도)라 빈칸이다 — 신규 符号로는 반영 불가
+    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    expect(row).toHaveTextContent('S13-@100')
+    const apply = within(row).getByRole('button', { name: '反映' })
+    expect(apply).toBeDisabled()
+    expect(row).toHaveTextContent(
+      '未解析の欄がある新規符号は反映できません（原文を参照）',
+    )
+
+    fireEvent.click(apply)
+    expect(useAppStore.getState().project).toBe(before)
+  })
+
+  it('preserves blank fields when applying onto an existing story-scoped section', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        sections: [
+          ...base.sections,
+          {
+            id: 'section-C51-1F',
+            kind: '柱',
+            mark: 'C51(1階)',
+            b: 750,
+            d: 750,
+            fc: 24,
+            grade: 'SD345',
+            exposure: '屋内',
+            finish: '仕上げあり',
+            main: { size: 'D22', count: 12 },
+            hoop: { size: 'D10', pitch: 150, startOffsetMm: 50 },
+          },
+        ],
+      },
+    })
+    render(<SectionImport initialPages={[yokohamaPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ mark }) => mark === 'C51(1階)')
+    expect(section?.kind).toBe('柱')
+    if (section?.kind !== '柱') throw new Error('Expected existing 柱 section')
+    expect(section).toMatchObject({
+      b: 800,
+      d: 800,
+      main: { count: 22, size: 'D25' },
+      // 帯筋 후보는 빈칸(S13) — 기존 값을 덮지 않는다
+      hoop: { size: 'D10', pitch: 150, startOffsetMm: 50 },
+    })
+  })
+
+  it('ignores a stale extraction that resolves after a newer file', async () => {
+    let resolveSlow!: (pages: TextPage[]) => void
+    const slow = new Promise<TextPage[]>((resolve) => {
+      resolveSlow = resolve
+    })
+    const extractPages = vi
+      .fn<(file: File) => Promise<TextPage[]>>()
+      .mockReturnValueOnce(slow)
+      .mockResolvedValueOnce([{ widthPt: 100, heightPt: 100, items: [] }])
+    render(<SectionImport extractPages={extractPages} />)
+    const input = screen.getByTestId('section-import-file')
+
+    fireEvent.change(input, {
+      target: {
+        files: [new File(['a'], 'slow.pdf', { type: 'application/pdf' })],
+      },
+    })
+    fireEvent.change(input, {
+      target: {
+        files: [new File(['b'], 'fast.pdf', { type: 'application/pdf' })],
+      },
+    })
+
+    expect(
+      await screen.findByText('認識できる断面リストが見つかりません'),
+    ).toBeVisible()
+
+    // 먼저 고른 파일이 늦게 끝나도 나중 파일의 결과를 덮지 않는다
+    await act(async () => {
+      resolveSlow([yokohamaPage])
+      await slow
+    })
+    expect(
+      screen.queryByTestId('section-import-candidate-C51-2階'),
+    ).toBeNull()
+    expect(
+      screen.getByText('認識できる断面リストが見つかりません'),
+    ).toBeVisible()
   })
 
   it('does not offer approval for 対象外 candidates', () => {

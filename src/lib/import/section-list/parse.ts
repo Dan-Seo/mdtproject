@@ -141,16 +141,18 @@ function recoverRows(items: TextItem[]): TextRow[] {
 function titleAnchors(rows: TextRow[]): TitleAnchor[] {
   const anchors: TitleAnchor[] = []
 
+  // 한 행에 타이틀이 여러 개면(좌우 병치) 전부 앵커로 잡는다
   for (const row of rows) {
     for (const segment of row.segments) {
       const match = segment.compact.match(TITLE_PATTERN)
       if (!match) continue
       anchors.push({ listKind: match[1], row, x: segment.x })
-      break
     }
   }
 
-  return anchors
+  return anchors.sort(
+    (left, right) => left.row.y - right.row.y || left.x - right.x,
+  )
 }
 
 function exactLabel(row: TextRow, aliases: readonly string[]): TextSegment | undefined {
@@ -185,7 +187,9 @@ function storyFromRow(row: TextRow): string | undefined {
     .find((value) => STORY_PATTERN.test(value))
 }
 
-function kindFromMark(mark: string): SectionCandidate['kind'] {
+function kindFromMark(mark: string, listKind: string): SectionCandidate['kind'] {
+  // 小梁·地中梁·基礎 리스트의 부호가 C·G로 시작해도 반영 대상이 아니다 (ADR-005)
+  if (/小梁|地中梁|基礎/.test(listKind)) return '対象外'
   if (/^C\d/i.test(mark)) return '柱'
   if (/^G\d/i.test(mark)) return '大梁'
   return '対象外'
@@ -333,21 +337,23 @@ function valuesByPosition(
 }
 
 function parseBar(value: string): ParsedBar | undefined {
-  const match = compact(value).match(/(\d+)-?(D\d+)/i)
-  if (!match) return undefined
-  const size = match[2].toUpperCase() as BarSize
+  // 2段筋 등 복수 표기(「4-D25+2-D22」)를 첫 매치로 잘라 확정하지 않는다 —
+  // 단일 표기일 때만 채택하고, 아니면 빈칸+원문 경로로 보낸다
+  const matches = [...compact(value).matchAll(/(\d+)-?(D\d+)/gi)]
+  if (matches.length !== 1) return undefined
+  const size = matches[0][2].toUpperCase() as BarSize
   if (!BAR_SIZES.has(size)) return undefined
-  return { count: Number(match[1]), size }
+  return { count: Number(matches[0][1]), size }
 }
 
 function parsePitch(
   value: string,
 ): { size: BarSize; pitchMm: number } | undefined {
-  const match = compact(value).match(/(D\d+)-?@(\d+)/i)
-  if (!match) return undefined
-  const size = match[1].toUpperCase() as BarSize
+  const matches = [...compact(value).matchAll(/(D\d+)-?@(\d+)/gi)]
+  if (matches.length !== 1) return undefined
+  const size = matches[0][1].toUpperCase() as BarSize
   if (!BAR_SIZES.has(size)) return undefined
-  return { size, pitchMm: Number(match[2]) }
+  return { size, pitchMm: Number(matches[0][2]) }
 }
 
 function parseDimension(value: string): { b: number; depth: number } | undefined {
@@ -361,10 +367,11 @@ function parseDimension(value: string): { b: number; depth: number } | undefined
 
 function cleanedRebarRaw(value: string): string {
   const valueCompact = compact(value)
-  return (
-    valueCompact.match(/(?:\d+-[A-Z]\d+|[A-Z]\d+-?@\d+)/i)?.[0] ??
-    valueCompact.replace(/^[-□▤▦]+/, '')
-  )
+  const tokens = [...valueCompact.matchAll(/(?:\d+-[A-Z]\d+|[A-Z]\d+-?@\d+)/gi)]
+  // 복수 표기 셀은 잘라내지 않고 원문 전체를 참고로 남긴다
+  return tokens.length === 1
+    ? tokens[0][0]
+    : valueCompact.replace(/^[-□▤▦]+/, '')
 }
 
 function addIssue(candidate: SectionCandidate, message: string): void {
@@ -385,13 +392,8 @@ function setDimension(
     return
   }
 
-  if (column && /^\d+$/.test(compact(value))) {
-    const side = Number(compact(value))
-    candidate.b = side
-    candidate.d = side
-    return
-  }
-
+  // 단독 숫자는 b×d로 확정할 수 없다 — 스케치 치수선 숫자를 정사각형으로
+  // 승격하면 값을 지어내는 것이 된다 (ADR-012 계열). 빈칸+원문으로 남긴다.
   candidate.raw['断面'] = compact(value)
   addIssue(
     candidate,
@@ -538,17 +540,34 @@ function scalarDimensions(
   endY: number,
   marks: MarkColumn[],
 ): Map<string, string> {
+  if (marks.length === 0) return new Map()
   const numericSegments = rows
     .filter((row) => row.y > startY && row.y < endY)
     .flatMap((row) => row.segments)
     .filter((segment) => /^\d[\d\s,]*$/.test(normalized(segment.text)))
-  const assigned = valuesAtTargets(
-    numericSegments,
-    marks.map(({ mark, centerX }) => ({ id: mark, centerX })),
-  )
+
+  // 열당 숫자 세그먼트가 정확히 1개일 때만 넘긴다 — 2개 이상을 이어붙이면
+  // 「700」+「900」이 700900mm가 된다. 넘긴 값도 b×d로 확정되지는 않고
+  // setDimension에서 빈칸+원문 참고로 남는다.
+  const perMark = new Map<string, string[]>()
+  for (const segment of numericSegments) {
+    const target = marks.reduce((closest, candidate) =>
+      Math.abs(candidate.centerX - segment.centerX) <
+      Math.abs(closest.centerX - segment.centerX)
+        ? candidate
+        : closest,
+    )
+    const existing = perMark.get(target.mark) ?? []
+    existing.push(segment.compact)
+    perMark.set(target.mark, existing)
+  }
 
   return new Map(
-    [...assigned.entries()].filter(([, value]) => /^\d+$/.test(compact(value))),
+    [...perMark.entries()].flatMap(([mark, values]) =>
+      values.length === 1 && /^\d+$/.test(values[0])
+        ? [[mark, values[0]] as const]
+        : [],
+    ),
   )
 }
 
@@ -556,6 +575,7 @@ function parseColumnBlock(
   rows: TextRow[],
   headerIndex: number,
   endY: number,
+  listKind: string,
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -622,7 +642,7 @@ function parseColumnBlock(
       if (!dimension && mainCells.length === 0 && !hoop) return
 
       const result: SectionCandidate = {
-        kind: kindFromMark(mark),
+        kind: kindFromMark(mark, listKind),
         mark,
         storyLabel: story.label,
         raw: {},
@@ -658,6 +678,7 @@ function parseGirderBlock(
   rows: TextRow[],
   headerIndex: number,
   endY: number,
+  listKind: string,
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -757,7 +778,7 @@ function parseGirderBlock(
       }
 
       const result: SectionCandidate = {
-        kind: kindFromMark(mark),
+        kind: kindFromMark(mark, listKind),
         mark,
         storyLabel: slice.storyLabel,
         raw: {},
@@ -788,13 +809,22 @@ function parseTableRegion(
   rows: TextRow[],
   anchor: TitleAnchor,
   endY: number,
+  xStart: number,
+  xEnd: number,
 ): ParsedSectionList | undefined {
-  const tableRows = rows.filter(
-    (row) =>
-      row.y >= anchor.row.y &&
-      row.y < endY &&
-      row.items.some((item) => item.x + item.w >= anchor.x - 40),
-  )
+  // 영역을 y뿐 아니라 x대역으로도 잘라낸다 — 좌우로 나란한 리스트에서 옆 표의
+  // 세그먼트가 섞이면 符号·라벨 매칭이 옆 표를 오염시킨다
+  const tableRows = rows
+    .filter((row) => row.y >= anchor.row.y && row.y < endY)
+    .map((row) => {
+      const items = row.items.filter(
+        (item) => item.x + item.w >= xStart && item.x < xEnd,
+      )
+      return items.length > 0
+        ? { ...row, items, segments: makeSegments(items) }
+        : undefined
+    })
+    .filter((row): row is TextRow => row !== undefined)
   const headerIndexes = tableRows
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
@@ -805,8 +835,8 @@ function parseTableRegion(
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
     const parsed = anchor.listKind.includes('柱')
-      ? parseColumnBlock(tableRows, headerIndex, blockEnd)
-      : parseGirderBlock(tableRows, headerIndex, blockEnd)
+      ? parseColumnBlock(tableRows, headerIndex, blockEnd, anchor.listKind)
+      : parseGirderBlock(tableRows, headerIndex, blockEnd, anchor.listKind)
     candidates.push(...parsed)
   })
 
@@ -818,9 +848,30 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
   const anchors = titleAnchors(rows)
   const parsed: ParsedSectionList[] = []
 
-  anchors.forEach((anchor, index) => {
-    const nextY = anchors[index + 1]?.row.y ?? page.heightPt
-    const result = parseTableRegion(rows, anchor, nextY)
+  anchors.forEach((anchor) => {
+    // 같은 y대역의 오른쪽 타이틀은 아래 표가 아니라 옆 표다 — x 경계가 된다
+    const sameBand = Math.max(anchor.row.height, 1) * 2
+    const xStart = anchor.x - 40
+    const rightNeighbor = anchors
+      .filter(
+        (other) =>
+          other !== anchor &&
+          Math.abs(other.row.y - anchor.row.y) <= sameBand &&
+          other.x > anchor.x,
+      )
+      .sort((left, right) => left.x - right.x)[0]
+    const xEnd = rightNeighbor ? rightNeighbor.x - 40 : Number.POSITIVE_INFINITY
+    // 블록 끝은 이 x대역 안에서 아래에 오는 다음 타이틀
+    const below = anchors
+      .filter(
+        (other) =>
+          other.row.y - anchor.row.y > sameBand &&
+          other.x >= xStart &&
+          other.x < xEnd,
+      )
+      .sort((left, right) => left.row.y - right.row.y)[0]
+    const endY = below?.row.y ?? page.heightPt
+    const result = parseTableRegion(rows, anchor, endY, xStart, xEnd)
     if (result) parsed.push(result)
   })
 
