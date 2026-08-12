@@ -59,6 +59,26 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     expect(entriesFor('anchorage.La')).toHaveLength(11)
   })
 
+  it('carries explicit expansion values for every band', () => {
+    // 帯 표기(fcBand·barSizeBand)만 있고 전개값이 없으면 골든테스트가 전개
+    // 근거를 .ts 상수로 되가져가게 된다 — 전개값은 픽스처의 전사 데이터다.
+    for (const entry of fixture.entries) {
+      const conditions = entry.conditions as Record<string, unknown>
+      if ('fcBand' in conditions) {
+        expect(
+          Array.isArray(conditions.fcValues) && conditions.fcValues.length > 0,
+          `${entry.table} ${String(conditions.fcBand)} needs fcValues`,
+        ).toBe(true)
+      }
+      if (entry.kind === 'bend.inside-diameter') {
+        expect(
+          Array.isArray(conditions.barSizes) && conditions.barSizes.length > 0,
+          `${entry.table} needs barSizes`,
+        ).toBe(true)
+      }
+    }
+  })
+
   it('keeps non-numeric 조문 as constraints, separate from rule-shaped entries', () => {
     // 수치가 아닌 제약(D35以上 重ね継手 금지)은 룰팩 스키마로 표현할 수 없다 —
     // entries에 섞으면 value must be a finite number 검사와 충돌하는 죽은 데이터가 된다.
