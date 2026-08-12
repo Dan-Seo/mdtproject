@@ -1,7 +1,7 @@
 import type { BarSize, ColumnSection, Member } from '../model/member'
 import type { Rebar } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
-import { lookupRule } from '../rules/lookup'
+import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
 export interface ColumnRebarInput {
@@ -44,14 +44,11 @@ export function generateColumnRebar(
     grade: section.grade,
     hook: false,
   }
-  const coverRule = lookupRule(pack, 'cover.minimum', {
-    memberKind: section.kind,
-    // 地上躯体のみを扱う — 基礎・地中部材は ADR-005 でスコープ外のため
-    // 「土に接する部分」のセルには到達しない。
-    soilContact: false,
-    exposure: section.exposure,
-    finish: section.finish,
-  })
+  const coverRule = lookupRule(
+    pack,
+    'cover.minimum',
+    coverConditions(section),
+  )
   const fabricationCoverAdditionRule = lookupRule(
     pack,
     'cover.fabrication.addition',

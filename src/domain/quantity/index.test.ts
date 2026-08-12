@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, Member } from '../model/member'
 import {
+  PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
   columnEnds,
   findSection,
@@ -47,7 +48,7 @@ function projectWithStories(stories: Story[]): Project {
   )
 
   return {
-    schemaVersion: 1,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     name: '数量テスト',
     grid: { xSpans: [6000, 6000], ySpans: [6000, 6000] },
     stories,

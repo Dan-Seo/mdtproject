@@ -6,7 +6,10 @@ import type {
   Member,
   MemberClass,
 } from '../../src/domain/model/member'
-import type { Project } from '../../src/domain/model/project'
+import {
+  PROJECT_SCHEMA_VERSION,
+  type Project,
+} from '../../src/domain/model/project'
 import type { Rebar } from '../../src/domain/model/rebar'
 import { aggregateQuantity } from '../../src/domain/quantity'
 import { lookupUnitMass } from '../../src/domain/rules/lookup'
@@ -29,7 +32,7 @@ const section: ColumnSection = {
 
 function projectFor(memberClasses: string[]): Project {
   return {
-    schemaVersion: 1,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     name: '割増ゴールデンテスト',
     grid: { xSpans: [6000], ySpans: [6000] },
     stories: [{ id: '1F', name: '1階', height: 4200 }],

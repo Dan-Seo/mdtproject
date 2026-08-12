@@ -1,5 +1,21 @@
-import type { BarSize, MemberClass } from '../model/member'
+import type { BarSize, MemberClass, Section } from '../model/member'
 import type { RuleHit, RulePack } from './types'
+
+/**
+ * 表5.3.6 のかぶり厚さセルを特定する共通条件 — 생성기(column.ts)와
+ * 집계기(quantity/index.ts)가 반드시 같은 셀을 봐야 하므로 단일 출처로 둔다.
+ * 地上躯体のみを扱う (基礎・地中部材は ADR-005 でスコープ外) — 土に接しない。
+ */
+export function coverConditions(
+  section: Section,
+): Record<string, string | boolean> {
+  return {
+    memberKind: section.kind,
+    soilContact: false,
+    exposure: section.exposure,
+    finish: section.finish,
+  }
+}
 
 function matches(
   ruleConditions: Record<string, string | number | boolean>,

@@ -193,7 +193,7 @@ describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 
   it('fails fast for an Fc value absent from the fixture bands', () => {
     expect(() =>
       lookupRule(jpMlitRulePack, 'anchorage.L2', {
-        fc: Number('25'),
+        fc: 25, // 表の Fc 帯に無い値 — 룰팩 공백은 조용히 넘어가지 않고 실패해야 한다
         grade: 'SD345',
         hook: false,
       }),
@@ -255,5 +255,37 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     expect(hit.source.page).toBe(entry.printedPage)
     expect(hit.confidence).toBe('inferred')
     expect(hit.key).toBe(entry.kind)
+  })
+})
+
+describe('픽스처 대조 완전성', () => {
+  // 대조 중(covered)도 유예(deferred)도 아닌 셀은 무검증으로 남는다 —
+  // 픽스처에 새 kind를 넣으면 어느 한쪽에 명시하지 않는 한 실패시킨다.
+  const coveredKinds = new Set([
+    ...supportedKinds,
+    'bend.inside-diameter',
+    'bend.hook180',
+    'bend.hook135',
+    'bend.hook90',
+    'bend.hook-tome',
+    'cover.minimum',
+    'cover.fabrication.addition',
+  ])
+  // 룰팩 미수록 — 경량 콘크리트 가산과 折曲げ定着 상세는 아직 소비자가 없다.
+  // 룰팩에 수록하는 시점에 covered로 옮겨 대조를 시작할 것.
+  const deferredKinds = new Set([
+    'lap.lightweight.addition',
+    'anchorage.lightweight.addition',
+    'anchorage.La.lightweight.addition',
+    'anchorage.bent.tail.minimum',
+    'anchorage.bent.projection.minimum',
+  ])
+
+  it('leaves no fixture entry uncompared', () => {
+    const uncovered = fixture.entries
+      .map(({ kind }) => kind)
+      .filter((kind) => !coveredKinds.has(kind) && !deferredKinds.has(kind))
+
+    expect(uncovered).toEqual([])
   })
 })

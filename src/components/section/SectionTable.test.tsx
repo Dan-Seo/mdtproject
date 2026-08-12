@@ -32,6 +32,27 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('C1 主筋 本数')).toHaveValue(10)
   })
 
+  it('keeps a user change to かぶり条件 in Project', () => {
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('C1 屋内外'), {
+      target: { value: '屋内' },
+    })
+    fireEvent.change(screen.getByLabelText('C1 仕上げ'), {
+      target: { value: '仕上げあり' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-C1')
+    expect(section).toMatchObject({
+      exposure: '屋内',
+      finish: '仕上げあり',
+    })
+    expect(screen.getByLabelText('C1 屋内外')).toHaveValue('屋内')
+    expect(screen.getByLabelText('C1 仕上げ')).toHaveValue('仕上げあり')
+  })
+
   it('selects a representative member when a section row is clicked', () => {
     render(<SectionTable />)
 
