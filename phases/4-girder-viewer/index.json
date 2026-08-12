@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "hover-tooltip",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T16:52:18+0900",
+      "summary": "pointermove는 NDC·dirty와 DOM 위치만 기록하고 기존 render loop에서 프레임당 1회 공유 피킹하며, 部材는 lines의 役割·径·本数·加工長, 建物은 id·符号를 표시하고 숨김 레이어 제외·클립 피킹 수용 정책을 고정",
+      "completed_at": "2026-08-12T16:58:04+0900"
     },
     {
       "step": 6,

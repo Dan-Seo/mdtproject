@@ -84,6 +84,22 @@ interface ClipState {
   ratio: number
 }
 
+type HoverTooltip =
+  | {
+      key: string
+      kind: 'member'
+      line: Pick<
+        QuantityLine,
+        'id' | 'role' | 'size' | 'countPerMember' | 'lengthMm'
+      >
+    }
+  | {
+      key: string
+      kind: 'building'
+      memberId: string
+      mark: string
+    }
+
 interface SelectedColumnView {
   kind: '柱'
   member: Member
@@ -546,6 +562,60 @@ function isEffectivelyVisible(object: THREE.Object3D): boolean {
   return true
 }
 
+function pickVisible(
+  runtime: ViewerRuntime,
+  raycaster: THREE.Raycaster,
+  pointer: THREE.Vector2,
+): THREE.Intersection<THREE.Object3D> | undefined {
+  raycaster.setFromCamera(pointer, runtime.camera)
+  // 알려진 한계(MVP 수용): Raycaster는 CPU 측이라 GPU 클리핑을 모르므로
+  // 잘려나간 영역에도 클릭·호버가 걸린다. 레이어 visibility는 양쪽 모두 거른다.
+  return raycaster
+    .intersectObjects(runtime.pickableMeshes, false)
+    .find(({ object }) => isEffectivelyVisible(object))
+}
+
+function memberIdFromHit(
+  hit: THREE.Intersection<THREE.Object3D>,
+): string | null {
+  const { memberId, memberIds } = hit.object.userData
+  const pickedMemberId =
+    Array.isArray(memberIds) && typeof hit.instanceId === 'number'
+      ? (memberIds[hit.instanceId] as unknown)
+      : memberId
+  return typeof pickedMemberId === 'string' ? pickedMemberId : null
+}
+
+function tooltipFromHit(
+  hit: THREE.Intersection<THREE.Object3D> | undefined,
+  view: ViewerView | null,
+  lines: QuantityLine[],
+  project: Project,
+): HoverTooltip | null {
+  if (hit === undefined || view === null) return null
+
+  if (view.mode === 'member') {
+    const rowId: unknown = hit.object.userData.rowId
+    if (typeof rowId !== 'string') return null
+    const line = lines.find(({ id }) => id === rowId)
+    if (line === undefined) return null
+    return { key: `row:${line.id}`, kind: 'member', line }
+  }
+
+  const memberId = memberIdFromHit(hit)
+  if (memberId === null) return null
+  const member = project.members.find(({ id }) => id === memberId)
+  if (member === undefined) return null
+  const section = project.sections.find(({ id }) => id === member.sectionId)
+  if (section === undefined) return null
+  return {
+    key: `member:${memberId}`,
+    kind: 'building',
+    memberId,
+    mark: section.mark,
+  }
+}
+
 /** 建物 뷰에서 선택 부재의 콘크리트만 강조 재질로 스왑한다. */
 function applyBuildingSelection(
   runtime: ViewerRuntime,
@@ -987,7 +1057,10 @@ function selectedMemberView(
 
 export function Viewer3D() {
   const mountRef = useRef<HTMLDivElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
+  const tooltipKeyRef = useRef<string | null>(null)
+  const [tooltip, setTooltip] = useState<HoverTooltip | null>(null)
   const [clip, setClip] = useState<ClipState>({
     enabled: false,
     axis: 'x',
@@ -1007,10 +1080,14 @@ export function Viewer3D() {
   const selectMemberRef = useRef(selectMember)
   const hoverRowIdRef = useRef(hoverRowId)
   const viewerLayersRef = useRef(viewerLayers)
+  const linesRef = useRef(lines)
+  const projectRef = useRef(project)
   setHoverRowRef.current = setHoverRow
   selectMemberRef.current = selectMember
   hoverRowIdRef.current = hoverRowId
   viewerLayersRef.current = viewerLayers
+  linesRef.current = lines
+  projectRef.current = project
 
   // 建物 레이아웃은 선택과 무관하다 — 선택 변경마다 씬을 재구성하지 않는다.
   const layout = useMemo(
@@ -1150,40 +1227,76 @@ export function Viewer3D() {
 
     const raycaster = new THREE.Raycaster()
     const pointer = new THREE.Vector2()
-    const handleClick = (event: MouseEvent) => {
+    let hoverDirty = false
+    const recordPointer = (
+      clientX: number,
+      clientY: number,
+    ): DOMRect | null => {
       const bounds = renderer.domElement.getBoundingClientRect()
-      if (bounds.width <= 0 || bounds.height <= 0) return
+      if (bounds.width <= 0 || bounds.height <= 0) return null
 
       pointer.set(
-        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
-        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+        ((clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((clientY - bounds.top) / bounds.height) * 2 + 1,
       )
-      raycaster.setFromCamera(pointer, camera)
-      // 알려진 한계(MVP 수용): Raycaster는 CPU 측이라 GPU 클리핑을 모르므로
-      // 잘려나간 영역에도 클릭·호버가 걸릴 수 있다.
-      const hit = raycaster
-        .intersectObjects(runtime.pickableMeshes, false)
-        .find(({ object }) => isEffectivelyVisible(object))
+      return bounds
+    }
+    const updateTooltip = (next: HoverTooltip | null) => {
+      const nextKey = next?.key ?? null
+      if (tooltipKeyRef.current === nextKey) return
+      tooltipKeyRef.current = nextKey
+      setTooltip(next)
+    }
+    const handlePointerMove = (event: PointerEvent) => {
+      const bounds = recordPointer(event.clientX, event.clientY)
+      if (bounds === null) {
+        hoverDirty = false
+        return
+      }
+
+      hoverDirty = true
+      if (tooltipRef.current !== null) {
+        tooltipRef.current.style.transform = `translate3d(${event.clientX - bounds.left}px, ${event.clientY - bounds.top}px, 0)`
+      }
+    }
+    const handlePointerLeave = () => {
+      hoverDirty = false
+      updateTooltip(null)
+    }
+    const handleClick = (event: MouseEvent) => {
+      if (recordPointer(event.clientX, event.clientY) === null) return
+      const hit = pickVisible(runtime, raycaster, pointer)
       if (hit === undefined) return
 
       // 部材 뷰: 철근 → 내역서 행. 建物 뷰: 콘크리트/철근 → 부재 선택.
-      const { rowId, memberId, memberIds } = hit.object.userData
+      const { rowId } = hit.object.userData
       if (typeof rowId === 'string') {
         setHoverRowRef.current(rowId)
         return
       }
-      const pickedMemberId =
-        Array.isArray(memberIds) && typeof hit.instanceId === 'number'
-          ? (memberIds[hit.instanceId] as unknown)
-          : memberId
-      if (typeof pickedMemberId === 'string') {
+      const pickedMemberId = memberIdFromHit(hit)
+      if (pickedMemberId !== null) {
         selectMemberRef.current(pickedMemberId)
       }
     }
+    renderer.domElement.addEventListener('pointermove', handlePointerMove)
+    renderer.domElement.addEventListener('pointerleave', handlePointerLeave)
     renderer.domElement.addEventListener('click', handleClick)
 
     let animationFrame = 0
     const renderFrame = () => {
+      if (hoverDirty) {
+        hoverDirty = false
+        const hit = pickVisible(runtime, raycaster, pointer)
+        updateTooltip(
+          tooltipFromHit(
+            hit,
+            viewRef.current,
+            linesRef.current,
+            projectRef.current,
+          ),
+        )
+      }
       const tween = runtime.cameraTween
       if (tween !== null) {
         const progress = (performance.now() - tween.startedAt) / tween.duration
@@ -1203,6 +1316,8 @@ export function Viewer3D() {
 
     return () => {
       window.cancelAnimationFrame(animationFrame)
+      renderer.domElement.removeEventListener('pointermove', handlePointerMove)
+      renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
       renderer.domElement.removeEventListener('click', handleClick)
       observer.disconnect()
       disposeContent(runtime)
@@ -1217,6 +1332,8 @@ export function Viewer3D() {
   useEffect(() => {
     const runtime = runtimeRef.current
     if (runtime === null) return
+    tooltipKeyRef.current = null
+    setTooltip(null)
     rebuildScene(runtime, viewRef.current, hoverRowIdRef.current)
     applyViewerLayers(runtime, viewerLayersRef.current)
   }, [sceneKey])
@@ -1324,6 +1441,32 @@ export function Viewer3D() {
             }))
           }}
         />
+      </div>
+      <div
+        ref={tooltipRef}
+        className={styles.tooltip}
+        role="tooltip"
+        hidden={tooltip === null}
+      >
+        {tooltip?.kind === 'member' ? (
+          <dl className={styles.tooltipList}>
+            <dt>{t(locale, 'viewer.tooltip.role')}</dt>
+            <dd>{tooltip.line.role}</dd>
+            <dt>{t(locale, 'viewer.tooltip.diameter')}</dt>
+            <dd>{tooltip.line.size}</dd>
+            <dt>{t(locale, 'viewer.tooltip.count')}</dt>
+            <dd>{tooltip.line.countPerMember}</dd>
+            <dt>{t(locale, 'viewer.tooltip.length')}</dt>
+            <dd>{tooltip.line.lengthMm} mm</dd>
+          </dl>
+        ) : tooltip?.kind === 'building' ? (
+          <dl className={styles.tooltipList}>
+            <dt>{t(locale, 'viewer.tooltip.memberId')}</dt>
+            <dd>{tooltip.memberId}</dd>
+            <dt>{t(locale, 'viewer.tooltip.mark')}</dt>
+            <dd>{tooltip.mark}</dd>
+          </dl>
+        ) : null}
       </div>
       {view === null && (
         <div className={styles.empty}>

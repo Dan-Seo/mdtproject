@@ -4,6 +4,7 @@ import {
   render,
   renderHook,
   screen,
+  within,
 } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -25,6 +26,10 @@ const mocks = vi.hoisted(() => ({
   }>,
   pickableCounts: [] as number[],
   pickableMeshes: [] as import('three').Object3D[][],
+  raycastIntersections: null as null | ((
+    objects: import('three').Object3D[],
+  ) => Array<{ object: import('three').Object3D; instanceId?: number }>),
+  animationFrames: [] as FrameRequestCallback[],
   sceneObjects: [] as import('three').Object3D[],
 }))
 
@@ -72,6 +77,9 @@ vi.mock('three', async (importOriginal) => {
     intersectObjects(objects: import('three').Object3D[]) {
       mocks.pickableCounts.push(objects.length)
       mocks.pickableMeshes.push([...objects])
+      if (mocks.raycastIntersections !== null) {
+        return mocks.raycastIntersections(objects)
+      }
       return objects.map((object) => ({ object }))
     }
   }
@@ -111,6 +119,7 @@ import {
   ACESFilmicToneMapping,
   GridHelper,
   Group,
+  InstancedMesh,
   Material,
   Mesh,
   PCFSoftShadowMap,
@@ -179,6 +188,12 @@ function clipTargetMaterials(content: Group): Material[] {
   return [...materials]
 }
 
+function runNextAnimationFrame(): void {
+  const callback = mocks.animationFrames.shift()
+  if (callback === undefined) throw new Error('Animation frame not scheduled')
+  act(() => callback(performance.now()))
+}
+
 describe('Viewer3D', () => {
   beforeEach(() => {
     mocks.controlsDispose.mockClear()
@@ -189,9 +204,14 @@ describe('Viewer3D', () => {
     mocks.rendererInstances.length = 0
     mocks.pickableCounts.length = 0
     mocks.pickableMeshes.length = 0
+    mocks.raycastIntersections = null
+    mocks.animationFrames.length = 0
     mocks.sceneObjects.length = 0
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
-    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      mocks.animationFrames.push(callback)
+      return mocks.animationFrames.length
+    })
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
 
     useAppStore.setState({
@@ -352,6 +372,145 @@ describe('Viewer3D', () => {
     })
 
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
+  })
+
+  it('records pointermove without raycasting until the next frame', () => {
+    render(<Viewer3D />)
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+
+    fireEvent.pointerMove(canvas, { clientX: 160, clientY: 90 })
+    fireEvent.pointerMove(canvas, { clientX: 320, clientY: 180 })
+    expect(mocks.pickableCounts).toHaveLength(0)
+
+    runNextAnimationFrame()
+    expect(mocks.pickableCounts).toHaveLength(1)
+  })
+
+  it('shows 役割・径・本数・加工長 from the hovered 部材 row', () => {
+    const { result } = renderHook(() => useTakeoff())
+    const mainLine = result.current.lines.find(
+      ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
+    )
+    expect(mainLine).toBeDefined()
+    render(<Viewer3D />)
+
+    fireEvent.pointerMove(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    runNextAnimationFrame()
+
+    const tooltip = screen.getByRole('tooltip')
+    expect(within(tooltip).getByText('役割')).toBeInTheDocument()
+    expect(within(tooltip).getByText(mainLine?.role ?? '')).toBeInTheDocument()
+    expect(within(tooltip).getByText('径')).toBeInTheDocument()
+    expect(within(tooltip).getByText(mainLine?.size ?? '')).toBeInTheDocument()
+    expect(within(tooltip).getByText('本数')).toBeInTheDocument()
+    expect(tooltip).toHaveTextContent(String(mainLine?.countPerMember))
+    expect(within(tooltip).getByText('加工長')).toBeInTheDocument()
+    expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)
+  })
+
+  it('hides the 部材 tooltip when its rowId is stale', () => {
+    render(<Viewer3D />)
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+
+    fireEvent.pointerMove(canvas, { clientX: 320, clientY: 180 })
+    runNextAnimationFrame()
+    expect(screen.getByRole('tooltip')).toBeVisible()
+
+    const picked = mocks.pickableMeshes.at(-1)?.[0]
+    expect(picked).toBeDefined()
+    if (picked !== undefined) picked.userData.rowId = 'stale-row-id'
+    fireEvent.pointerMove(canvas, { clientX: 321, clientY: 181 })
+    runNextAnimationFrame()
+
+    expect(screen.getByRole('tooltip', { hidden: true })).not.toBeVisible()
+  })
+
+  it('shows member id and 符号 for a hovered 建物 instance', () => {
+    useAppStore.setState({
+      viewerMode: 'building',
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y2' },
+    })
+    render(<Viewer3D />)
+    const instance = latestContent().children.find(
+      (object): object is InstancedMesh => object instanceof InstancedMesh,
+    )
+    expect(instance).toBeDefined()
+    const memberId = instance?.userData.memberIds[0] as unknown
+    expect(typeof memberId).toBe('string')
+    mocks.raycastIntersections = () =>
+      instance === undefined ? [] : [{ object: instance, instanceId: 0 }]
+
+    fireEvent.pointerMove(screen.getByLabelText('建物全体の3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    runNextAnimationFrame()
+
+    const member = useAppStore
+      .getState()
+      .project.members.find(({ id }) => id === memberId)
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === member?.sectionId)
+    const tooltip = screen.getByRole('tooltip')
+    expect(tooltip).toHaveTextContent(String(memberId))
+    expect(tooltip).toHaveTextContent(section?.mark ?? '')
+  })
+
+  it('hides the tooltip on pointerleave', () => {
+    render(<Viewer3D />)
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+
+    fireEvent.pointerMove(canvas, { clientX: 320, clientY: 180 })
+    runNextAnimationFrame()
+    expect(screen.getByRole('tooltip')).toBeVisible()
+
+    fireEvent.pointerLeave(canvas)
+    expect(screen.getByRole('tooltip', { hidden: true })).not.toBeVisible()
+  })
+
+  it('skips hidden layer hits when hovering', () => {
+    render(<Viewer3D />)
+    fireEvent.click(screen.getByRole('button', { name: '主筋' }))
+
+    fireEvent.pointerMove(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    runNextAnimationFrame()
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent('帯筋')
+  })
+
+  it('keeps clipped geometry hoverable as the documented MVP policy', () => {
+    render(<Viewer3D />)
+    fireEvent.click(screen.getByRole('button', { name: '断面カット' }))
+
+    fireEvent.pointerMove(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    runNextAnimationFrame()
+
+    expect(screen.getByRole('tooltip')).toBeVisible()
+  })
+
+  it('does not change store selection state while hovering', () => {
+    render(<Viewer3D />)
+    const selectionBefore = useAppStore.getState().sel
+    const rowSelectionBefore = useAppStore.getState().hoverRowId
+
+    fireEvent.pointerMove(screen.getByLabelText('選択部材の配筋3D'), {
+      clientX: 320,
+      clientY: 180,
+    })
+    runNextAnimationFrame()
+
+    expect(useAppStore.getState().sel).toEqual(selectionBefore)
+    expect(useAppStore.getState().hoverRowId).toBe(rowSelectionBefore)
   })
 
   it('hides only the hoop layer by switching mesh visibility', async () => {
