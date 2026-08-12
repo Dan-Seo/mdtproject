@@ -21,7 +21,8 @@
     },
     {
       "dir": "5-girder-continuous",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-12T21:25:00+0900"
     }
   ]
 }
