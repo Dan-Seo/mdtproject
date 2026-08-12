@@ -122,6 +122,7 @@ vi.mock('three/examples/jsm/environments/RoomEnvironment.js', () => ({
 
 import {
   ACESFilmicToneMapping,
+  BoxGeometry,
   GridHelper,
   Group,
   InstancedMesh,
@@ -402,12 +403,12 @@ describe('Viewer3D', () => {
     expect(legend).toHaveTextContent(sourceLabel(rule!))
   })
 
-  it('does not show a legend for an unsupported 大梁', () => {
+  it('shows the outer-end legend for a continuous-run owner', () => {
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
 
     render(<Viewer3D />)
 
-    expect(screen.queryByLabelText('定着・継手凡例')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('定着・継手凡例')).toBeInTheDocument()
   })
 
   it('shows the selected 柱 legend from 主筋 zones', () => {
@@ -464,14 +465,108 @@ describe('Viewer3D', () => {
     )
   })
 
-  it('shows the unsupported reason and no rebar mesh for a 連続スパン 大梁', () => {
+  it('renders the whole continuous run with two spans and the intermediate 柱', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y2-Y'))
+    render(<Viewer3D />)
+
+    expect(screen.queryByText(/連続スパン/)).not.toBeInTheDocument()
+    const concreteSolids = latestContent().children.filter(
+      (object): object is Mesh<BoxGeometry> =>
+        object instanceof Mesh &&
+        object.geometry instanceof BoxGeometry &&
+        object.userData.layer === 'concrete',
+    )
+    const stubSolids = concreteSolids.filter(
+      ({ geometry }) => geometry.parameters.height > 0.75,
+    )
+
+    // 2スパンの大梁 + 始端・中間・終端の柱スタブ。
+    expect(concreteSolids).toHaveLength(5)
+    expect(stubSolids).toHaveLength(3)
+    for (const stub of stubSolids) {
+      const height = stub.geometry.parameters.height as number
+      expect(stub.position.y + height / 2).toBeCloseTo(0.75)
+    }
+
+    const canvas = screen.getByLabelText('選択部材の配筋3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
+  })
+
+  it('spreads あばら筋 across every span of a continuous run', () => {
+    // あばら筋은 각 부재 자기 스팬 로컬(0 기준)이고 通し筋만 런 전체를 덮는다.
+    // 부재별 오프셋 배선이 빠지면 2번째 스팬 스터럽이 1번째 위에 겹쳐 x 범위가
+    // 반토막 나고 2번째 스팬에는 한 본도 남지 않는다 — 물량은 멀쩡해서 눈에만 보인다.
     act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
     render(<Viewer3D />)
 
-    expect(screen.getByText(/連続スパン/)).toBeInTheDocument()
-    const canvas = screen.getByLabelText('選択部材の配筋3D')
-    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
-    expect(mocks.pickableCounts.at(-1)).toBe(0)
+    // 레이어의 **모든** 메시를 합친다. 主筋은 코어와 양단 定着이 zone별로 쪼개져
+    // 있어 첫 메시만 보면 짧은 定着 조각이 잡히고 비교가 무의미해진다.
+    const spanX = (layer: string): number => {
+      const meshes = latestContent().children.filter(
+        (object): object is Mesh =>
+          object instanceof Mesh &&
+          !(object.geometry instanceof BoxGeometry) &&
+          object.userData.layer === layer,
+      )
+      if (meshes.length === 0) throw new Error(`${layer} mesh not built`)
+
+      const xs = meshes.flatMap((mesh) => {
+        mesh.geometry.computeBoundingBox()
+        const box = mesh.geometry.boundingBox
+        if (box === null) throw new Error(`${layer} geometry has no bounds`)
+        return [box.min.x, box.max.x]
+      })
+      return Math.max(...xs) - Math.min(...xs)
+    }
+
+    // 런 코어 11,200에 대해 스터럽은 ~11,100, 通し筋은 ~12,400을 덮는다(비 ≈0.9).
+    // 겹쳐 그리면 스터럽이 한 스팬 ~5,100으로 줄어 비가 ≈0.41로 떨어진다.
+    expect(spanX('hoop')).toBeGreaterThan(spanX('main') * 0.7)
+  })
+
+  it('keeps the same geometry key when selection moves within one run', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+    render(<Viewer3D />)
+    const contentBefore = latestContent()
+
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y2-Y'))
+
+    expect(latestContent()).toBe(contentBefore)
+  })
+
+  it('shows the unsupported reason for an unbuildable 大梁 run', () => {
+    act(() => {
+      useAppStore.getState().updateProject((project) => {
+        const section = project.sections.find(
+          ({ id }) => id === 'section-G1',
+        )
+        if (section?.kind !== '大梁') throw new Error('expected section-G1')
+
+        return {
+          ...project,
+          sections: [
+            ...project.sections,
+            {
+              ...section,
+              id: 'section-G1-unsupported',
+              stirrup: { ...section.stirrup, startOffsetMm: 3000 },
+            },
+          ],
+          members: project.members.map((member) =>
+            ['1F-G1-X1Y1-Y', '1F-G1-X1Y2-Y'].includes(member.id)
+              ? { ...member, sectionId: 'section-G1-unsupported' }
+              : member,
+          ),
+        }
+      })
+      useAppStore.getState().selectMember('1F-G1-X1Y2-Y')
+    })
+
+    render(<Viewer3D />)
+
+    expect(screen.getByText(/断面・内法寸法が成立しない/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('定着・継手凡例')).not.toBeInTheDocument()
   })
 
   it('renders the building view and picks a member back into the selection', () => {

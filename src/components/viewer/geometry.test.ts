@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, GirderSection } from '@/domain/model/member'
+import { girderRun } from '@/domain/model/project'
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
+import { createSampleProject } from '@/domain/model/sample-project'
+import { generateGirderRebar } from '@/domain/rebar/girder'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
+import { jpMlitRulePack } from '@/rulepack'
 
 import {
   CAMERA_FOV_DEGREES,
@@ -349,6 +353,39 @@ describe('rebarPlacements for 大梁', () => {
     expect(Math.max(...zs)).toBeCloseTo(350 - radius)
     expect(new Set(xs)).toEqual(new Set(girderStirrupPositions))
   })
+
+  it('expands continuous-run main bars across the run with section input count and spacing', () => {
+    const project = createSampleProject()
+    const member = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-Y',
+    )
+    if (member?.kind !== '大梁') throw new Error('Sample 大梁 not found')
+    const section = project.sections.find(
+      ({ id }) => id === member.sectionId,
+    )
+    if (section?.kind !== '大梁') {
+      throw new Error('Sample 大梁 section not found')
+    }
+    const run = girderRun(project, member)
+    const top = generateGirderRebar(
+      { run, section },
+      jpMlitRulePack,
+    ).find(({ role }) => role === '上端筋')
+    if (top === undefined) throw new Error('上端筋 not found')
+
+    const placements = rebarPlacements(top, section)
+    const horizontalSegments = rebarSegments(top, section).filter(
+      ({ from, to }) =>
+        from[1] === to[1] && from[0] <= 0 && to[0] >= run.coreLengthMm,
+    )
+    const zValues = placements.map(([, , z]) => z)
+    const gaps = zValues.slice(1).map((z, index) => z - zValues[index])
+
+    expect(run.members).toHaveLength(2)
+    expect(horizontalSegments).toHaveLength(section.main.topCount)
+    expect(placements).toHaveLength(section.main.topCount)
+    expect(new Set(gaps.map((gap) => gap.toFixed(6)))).toHaveLength(1)
+  })
 })
 
 describe('rebarSegments', () => {
@@ -633,6 +670,46 @@ describe('fitCamera', () => {
     expect(projected.every((value) => value <= projectedLimit + 1e-12)).toBe(
       true,
     )
+  })
+})
+
+describe('rebarBatches 런 오프셋', () => {
+  // 連続スパン에서 두 스팬의 あばら筋은 断面이 같으면 加工長·本数가 같아 **같은
+  // 내역 행**으로 묶인다. 그래서 오프셋을 배치 단위로 걸면 한쪽이 사라진다 —
+  // 병합 전에 철근 단위로 걸어야 2번째 스팬에 스터럽이 남는다.
+  const secondSpanStirrup: Rebar = {
+    ...girderStirrup,
+    id: '1F-G1-2|stirrup',
+    memberId: '1F-G1-2',
+  }
+  const rowId = '1階|G|G1|あばら筋'
+  const offsetMm = GIRDER_CLEAR_MM + 800
+
+  it('shifts a rebar into the run frame before merging same-row batches', () => {
+    const merged = rebarBatches(
+      [
+        { rowId, rebar: girderStirrup, originOffsetMm: 0 },
+        { rowId, rebar: secondSpanStirrup, originOffsetMm: offsetMm },
+      ],
+      girderSection,
+    )
+
+    expect(merged).toHaveLength(1)
+
+    const xs = merged[0].segments.flatMap(({ from, to }) => [from[0], to[0]])
+    expect(Math.min(...xs)).toBeLessThan(GIRDER_CLEAR_MM)
+    // 2번째 스팬이 첫 스팬 위에 겹치면 최대 x가 첫 스팬 内法을 못 넘는다.
+    expect(Math.max(...xs)).toBeGreaterThan(offsetMm)
+  })
+
+  it('leaves an unshifted rebar where the generator put it', () => {
+    const [batch] = rebarBatches(
+      [{ rowId, rebar: girderStirrup }],
+      girderSection,
+    )
+    const xs = batch.segments.flatMap(({ from, to }) => [from[0], to[0]])
+
+    expect(Math.max(...xs)).toBeLessThanOrEqual(GIRDER_CLEAR_MM)
   })
 })
 

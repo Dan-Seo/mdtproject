@@ -4,6 +4,7 @@ import type { GirderSection, Member } from '@/domain/model/member'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   findSection,
+  girderRun,
   girderSpan,
   gridPoint,
   gridPointCount,
@@ -16,12 +17,13 @@ import { jpMlitRulePack } from '@/rulepack'
 
 import {
   buildingLayout,
-  groupInstancesByRadius,
+  groupInstancesByLayerAndRadius,
   type RebarInstance,
 } from './building'
 import { rebarRadius, rebarSegments } from './geometry'
 
 const project = createSampleProject()
+const noUnsupportedMembers = new Set<string>()
 
 // geometry.test.ts와 같은 대표 배근 픽스처 — memberId만 X2Y2(그리드 중앙)로 잡는다.
 const main: Rebar = {
@@ -90,7 +92,7 @@ function girderFixture(
     member,
     section,
     rebars: generateGirderRebar(
-      { member, section, span: girderSpan(source, member) },
+      { run: girderRun(source, member), section },
       jpMlitRulePack,
     ),
   }
@@ -104,7 +106,7 @@ function roleRebar(rebars: Rebar[], role: Rebar['role']): Rebar {
 
 describe('buildingLayout', () => {
   it('creates one concrete box per member of the sample project', () => {
-    const layout = buildingLayout(project, [])
+    const layout = buildingLayout(project, [], noUnsupportedMembers)
     const { nx, ny } = gridPointCount(project.grid)
     const columnCount = nx * ny * project.stories.length
     const girderCount =
@@ -120,7 +122,7 @@ describe('buildingLayout', () => {
   })
 
   it('places a 2F column on the accumulated story elevation', () => {
-    const layout = buildingLayout(project, [])
+    const layout = buildingLayout(project, [], noUnsupportedMembers)
     const box = layout.boxes.find(({ memberId }) => memberId === '2F-X1Y1')
 
     // 1F 높이 4200 위에 2F(높이 3600)가 앉는다. 그리드 교점에 단면 중심 정렬.
@@ -129,7 +131,7 @@ describe('buildingLayout', () => {
   })
 
   it('aligns girder tops to the story ceiling and respects section depth', () => {
-    const layout = buildingLayout(project, [])
+    const layout = buildingLayout(project, [], noUnsupportedMembers)
     const box = layout.boxes.find(
       ({ memberId }) => memberId === '1F-G2-X1Y2-X',
     )
@@ -140,7 +142,11 @@ describe('buildingLayout', () => {
   })
 
   it('translates 柱 rebar segments to the member grid position', () => {
-    const layout = buildingLayout(project, [main, hoop])
+    const layout = buildingLayout(
+      project,
+      [main, hoop],
+      noUnsupportedMembers,
+    )
     const { x, y } = gridPoint(project.grid, 1, 1)
     // 단면 중심을 교점에 맞추므로 로컬 원점은 교점 − 단면/2 로 이동한다.
     const offsetX = x - 800 / 2
@@ -170,13 +176,14 @@ describe('buildingLayout', () => {
     expect(hoops[0].from[2]).toBeCloseTo(offsetZ + 40 + rebarRadius('D13'))
   })
 
-  it('includes supported X 大梁 rebar and omits unsupported Y 大梁 rebar', () => {
+  it('includes both single-span and continuous-run 大梁 rebar', () => {
     const supportedX = girderFixture(project, '1F-G1-X1Y1-X')
-    const unsupportedY = girderFixture(project, '1F-G1-X1Y1-Y')
-    const layout = buildingLayout(project, [
-      ...supportedX.rebars,
-      ...unsupportedY.rebars,
-    ])
+    const continuousY = girderFixture(project, '1F-G1-X1Y1-Y')
+    const layout = buildingLayout(
+      project,
+      [...supportedX.rebars, ...continuousY.rebars],
+      noUnsupportedMembers,
+    )
 
     expect(
       layout.rebar.some(
@@ -185,9 +192,9 @@ describe('buildingLayout', () => {
     ).toBe(true)
     expect(
       layout.rebar.some(
-        ({ memberId }) => memberId === unsupportedY.member.id,
+        ({ memberId }) => memberId === continuousY.member.id,
       ),
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('maps an X-axis 大梁 上端筋 from the start 柱 face into world coordinates', () => {
@@ -218,7 +225,9 @@ describe('buildingLayout', () => {
       start.y - fixture.section.b / 2 + local.to[2],
     ]
 
-    expect(buildingLayout(project, fixture.rebars).rebar).toContainEqual({
+    expect(
+      buildingLayout(project, fixture.rebars, noUnsupportedMembers).rebar,
+    ).toContainEqual({
       memberId: fixture.member.id,
       from: expectedFrom,
       to: expectedTo,
@@ -265,7 +274,11 @@ describe('buildingLayout', () => {
     ]
 
     expect(
-      buildingLayout(supportedYProject, fixture.rebars).rebar,
+      buildingLayout(
+        supportedYProject,
+        fixture.rebars,
+        noUnsupportedMembers,
+      ).rebar,
     ).toContainEqual({
       memberId: fixture.member.id,
       from: expectedFrom,
@@ -281,7 +294,7 @@ describe('buildingLayout', () => {
         ? girderFixture(project, member.id).rebars
         : [],
     )
-    const layout = buildingLayout(project, generated)
+    const layout = buildingLayout(project, generated, noUnsupportedMembers)
 
     for (const instance of layout.rebar) {
       const member = project.members.find(
@@ -289,22 +302,41 @@ describe('buildingLayout', () => {
       )!
       if (member.kind !== '大梁' || !('axis' in member.position)) continue
 
-      const span = girderSpan(project, member)
+      const run = girderRun(project, member)
+      const startMember = run.members[0]
+      const endMember = run.members.at(-1)!
+      if (
+        !('axis' in startMember.position) ||
+        !('axis' in endMember.position)
+      ) {
+        throw new Error('GirderRun contains a non-girder position')
+      }
+      const startSpan = run.spans[0]
+      const endSpan = run.spans.at(-1)!
       const start = gridPoint(
         project.grid,
-        member.position.ix,
-        member.position.iy,
+        startMember.position.ix,
+        startMember.position.iy,
       )
       const end =
         member.position.axis === 'X'
-          ? gridPoint(project.grid, member.position.ix + 1, member.position.iy)
-          : gridPoint(project.grid, member.position.ix, member.position.iy + 1)
+          ? gridPoint(
+              project.grid,
+              endMember.position.ix + 1,
+              endMember.position.iy,
+            )
+          : gridPoint(
+              project.grid,
+              endMember.position.ix,
+              endMember.position.iy + 1,
+            )
       const coordinate = member.position.axis === 'X' ? 0 : 2
       const startCenter = member.position.axis === 'X' ? start.x : start.y
       const endCenter = member.position.axis === 'X' ? end.x : end.y
       const exteriorStart =
-        startCenter - span.startSupportLengthAlongAxisMm / 2
-      const exteriorEnd = endCenter + span.endSupportLengthAlongAxisMm / 2
+        startCenter - startSpan.startSupportLengthAlongAxisMm / 2
+      const exteriorEnd =
+        endCenter + endSpan.endSupportLengthAlongAxisMm / 2
 
       for (const point of [instance.from, instance.to]) {
         expect(point[coordinate]).toBeGreaterThanOrEqual(exteriorStart)
@@ -314,7 +346,11 @@ describe('buildingLayout', () => {
   })
 
   it('extends the bounds to cover rebar protruding beyond the boxes', () => {
-    const layout = buildingLayout(project, [main, hoop])
+    const layout = buildingLayout(
+      project,
+      [main, hoop],
+      noUnsupportedMembers,
+    )
 
     // 최저점: 主筋 하단 −875 − 표시 반경. 최고점: 2F 천장 7800.
     expect(layout.bounds.min[1]).toBeLessThanOrEqual(-875)
@@ -328,16 +364,73 @@ describe('buildingLayout', () => {
   it('throws when a rebar references an unknown member', () => {
     const orphan: Rebar = { ...main, memberId: 'no-such-member' }
 
-    expect(() => buildingLayout(project, [orphan])).toThrow(
+    expect(() =>
+      buildingLayout(project, [orphan], noUnsupportedMembers),
+    ).toThrow(
       'Member not found: no-such-member',
     )
   })
+
+  it('maps continuous-run main bars through the intermediate 柱 to the run end', () => {
+    const fixture = girderFixture(project, '1F-G1-X1Y1-Y')
+    const run = girderRun(project, fixture.member)
+    const startMember = run.members[0]
+    if (!('axis' in startMember.position)) {
+      throw new Error('GirderRun contains a non-girder position')
+    }
+
+    const start = gridPoint(
+      project.grid,
+      startMember.position.ix,
+      startMember.position.iy,
+    )
+    const endInteriorFace =
+      start.y + run.spans[0].startFaceOffsetMm + run.coreLengthMm
+    const layout = buildingLayout(
+      project,
+      fixture.rebars,
+      noUnsupportedMembers,
+    )
+    const mainInstances = layout.rebar.filter(
+      ({ memberId, layer }) =>
+        memberId === run.ownerId && layer === 'main',
+    )
+    const worldZ = mainInstances.flatMap(({ from, to }) => [from[2], to[2]])
+
+    expect(mainInstances.length).toBeGreaterThan(0)
+    expect(Math.min(...worldZ)).toBeLessThan(start.y)
+    expect(Math.max(...worldZ)).toBeGreaterThan(endInteriorFace)
+  })
+
+  it('keeps unsupported member concrete but filters all of its rebar instances', () => {
+    const fixture = girderFixture(project, '1F-G1-X1Y1-Y')
+    const run = girderRun(project, fixture.member)
+    const unsupportedMemberIds = new Set(
+      run.members.map(({ id }) => id),
+    )
+    const layout = buildingLayout(
+      project,
+      fixture.rebars,
+      unsupportedMemberIds,
+    )
+
+    expect(
+      layout.boxes.filter(({ memberId }) => unsupportedMemberIds.has(memberId)),
+    ).toHaveLength(run.members.length)
+    expect(
+      layout.rebar.some(({ memberId }) => unsupportedMemberIds.has(memberId)),
+    ).toBe(false)
+  })
 })
 
-describe('groupInstancesByRadius', () => {
+describe('groupInstancesByLayerAndRadius', () => {
   it('groups instances by display radius for instanced rendering', () => {
-    const layout = buildingLayout(project, [main, hoop])
-    const groups = groupInstancesByRadius(layout.rebar)
+    const layout = buildingLayout(
+      project,
+      [main, hoop],
+      noUnsupportedMembers,
+    )
+    const groups = groupInstancesByLayerAndRadius(layout.rebar)
 
     expect(groups.size).toBe(2)
     expect(groups.get(`${rebarRadius('D25')}|main`)).toHaveLength(12)
@@ -363,7 +456,7 @@ describe('groupInstancesByRadius', () => {
       },
     ]
 
-    const groups = groupInstancesByRadius(instances)
+    const groups = groupInstancesByLayerAndRadius(instances)
 
     expect([...groups.keys()]).toEqual([
       `${radius}|main`,

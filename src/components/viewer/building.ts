@@ -2,7 +2,6 @@ import type { MemberKind } from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
-  girderSupport,
   gridPoint,
   storyElevation,
   type Project,
@@ -67,6 +66,7 @@ function translate(point: Point3, offset: Point3): Point3 {
 export function buildingLayout(
   project: Project,
   rebars: Rebar[],
+  unsupportedMemberIds: ReadonlySet<string>,
 ): BuildingLayout {
   const boxes: ConcreteBox[] = []
   const instances: RebarInstance[] = []
@@ -144,6 +144,8 @@ export function buildingLayout(
     if (!member) {
       throw new Error(`Member not found: ${rebar.memberId}`)
     }
+    if (unsupportedMemberIds.has(member.id)) continue
+
     const section = findSection(project, member.sectionId)
     let worldPoint: (point: Point3) => Point3
 
@@ -168,8 +170,6 @@ export function buildingLayout(
           `大梁 member references a non-大梁 section: ${member.id}`,
         )
       }
-      if (!girderSupport(project, member).supported) continue
-
       const story = project.stories.find(({ id }) => id === member.storyId)
       if (!story) {
         throw new Error(`Story not found: ${member.storyId}`)
@@ -223,8 +223,8 @@ export function buildingLayout(
   return { boxes, rebar: instances, bounds }
 }
 
-/** InstancedMesh는 표시 반경·레이어별 하나 — 다음 step의 레이어 토글 경계다. */
-export function groupInstancesByRadius(
+/** InstancedMesh는 현재 레이어 토글 경계에 맞춰 표시 레이어·반경별 하나다. */
+export function groupInstancesByLayerAndRadius(
   instances: RebarInstance[],
 ): Map<string, RebarInstance[]> {
   const groups = new Map<string, RebarInstance[]>()

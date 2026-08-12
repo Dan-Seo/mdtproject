@@ -18,6 +18,11 @@
       "dir": "4-girder-viewer",
       "status": "completed",
       "completed_at": "2026-08-12T17:13:08+0900"
+    },
+    {
+      "dir": "5-girder-continuous",
+      "status": "completed",
+      "completed_at": "2026-08-12T21:25:00+0900"
     }
   ]
 }

@@ -5,10 +5,7 @@ import type {
   Member,
   Section,
 } from './member'
-import {
-  MemberUnsupportedError,
-  type UnsupportedReason,
-} from './unsupported'
+import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
 
 // v2 (2026-08-12): Section에 필수 필드 exposure·finish 추가 — v1 JSON은
@@ -122,47 +119,6 @@ function isGirderPosition(
   return 'axis' in position
 }
 
-export type GirderSupport =
-  | { supported: true }
-  | { supported: false; reason: UnsupportedReason }
-
-export function girderSupport(
-  project: Project,
-  member: Member,
-): GirderSupport {
-  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
-    throw new Error(`girderSupport requires a 大梁: ${member.id}`)
-  }
-
-  const position = member.position
-  const hasAdjacentGirder = project.members.some((candidate) => {
-    if (
-      candidate.kind !== '大梁' ||
-      candidate.storyId !== member.storyId ||
-      !isGirderPosition(candidate.position) ||
-      candidate.position.axis !== position.axis
-    ) {
-      return false
-    }
-
-    if (position.axis === 'X') {
-      return (
-        candidate.position.iy === position.iy &&
-        Math.abs(candidate.position.ix - position.ix) === 1
-      )
-    }
-
-    return (
-      candidate.position.ix === position.ix &&
-      Math.abs(candidate.position.iy - position.iy) === 1
-    )
-  })
-
-  return hasAdjacentGirder
-    ? { supported: false, reason: '連続スパン' }
-    : { supported: true }
-}
-
 function touchesColumn(
   girder: GirderPosition,
   column: ColumnPosition,
@@ -194,13 +150,27 @@ export interface GirderSpan {
   startSupportLengthAlongAxisMm: number
   /** 정착 수용성 검사용 — 끝 柱의 축방향 전체 치수 (mm) */
   endSupportLengthAlongAxisMm: number
-  /** 표시용 — 시작 柱의 축직각 치수 (mm). 지점 柱 탐색이 뷰어에 복제되지 않게 함께 싣는다 */
-  startSupportWidthAcrossAxisMm: number
-  /** 표시용 — 끝 柱의 축직각 치수 (mm) */
-  endSupportWidthAcrossAxisMm: number
   /** 지점 柱의 かぶり 조회 조건 — 端部条件은 大梁이 아니라 柱의 かぶり로 판정한다 */
   startSupportCover: Record<string, string | boolean>
   endSupportCover: Record<string, string | boolean>
+}
+
+export function girderSupportSections(
+  project: Project,
+  member: Member,
+): { start: ColumnSection; end: ColumnSection } {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderSupportSections requires a 大梁: ${member.id}`)
+  }
+
+  const { axis, ix, iy } = member.position
+  const endIx = axis === 'X' ? ix + 1 : ix
+  const endIy = axis === 'Y' ? iy + 1 : iy
+
+  return {
+    start: supportColumnSection(project, member, ix, iy, 'start'),
+    end: supportColumnSection(project, member, endIx, endIy, 'end'),
+  }
 }
 
 function supportColumnSection(
@@ -241,13 +211,9 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
   const endIy = axis === 'Y' ? iy + 1 : iy
   const startPoint = gridPoint(project.grid, ix, iy)
   const endPoint = gridPoint(project.grid, endIx, endIy)
-  const startSection = supportColumnSection(project, member, ix, iy, 'start')
-  const endSection = supportColumnSection(
+  const { start: startSection, end: endSection } = girderSupportSections(
     project,
     member,
-    endIx,
-    endIy,
-    'end',
   )
   const centerSpan =
     axis === 'X' ? endPoint.x - startPoint.x : endPoint.y - startPoint.y
@@ -274,11 +240,114 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
     endFaceOffsetMm,
     startSupportLengthAlongAxisMm,
     endSupportLengthAlongAxisMm,
-    startSupportWidthAcrossAxisMm:
-      axis === 'X' ? startSection.d : startSection.b,
-    endSupportWidthAcrossAxisMm: axis === 'X' ? endSection.d : endSection.b,
     startSupportCover: coverConditions(startSection),
     endSupportCover: coverConditions(endSection),
+  }
+}
+
+export interface GirderRun {
+  axis: 'X' | 'Y'
+  /** 축방향 오름차순. 단일 스팬이면 길이 1 */
+  members: Member[]
+  /** 通し筋을 귀속시킬 부재 = members[0].id */
+  ownerId: string
+  /** members와 같은 순서 */
+  spans: GirderSpan[]
+  /**
+   * 런 원점(시작 柱の内側面)에서 각 스팬 시작면까지의 거리 (mm). members와 같은
+   * 순서이고 [0]은 0이다.
+   *
+   * 通し筋은 런 전체를 한 프레임에 덮지만 あばら筋은 각 부재 자기 스팬 로컬(0 기준)
+   * 이다. 런을 한 프레임에 그리는 쪽이 이 오프셋을 모르면 2번째 이후 스팬의
+   * あばら筋이 1번째 스팬 위에 겹친다.
+   */
+  memberOffsetsMm: number[]
+  /** 通し筋 코어 길이 (mm) = Σ内法 ＋ Σ中間柱の軸方向せい */
+  coreLengthMm: number
+}
+
+function girderAxisIndex(position: GirderPosition): number {
+  return position.axis === 'X' ? position.ix : position.iy
+}
+
+export function girderRun(project: Project, member: Member): GirderRun {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderRun requires a 大梁: ${member.id}`)
+  }
+
+  const position = member.position
+  const candidates = project.members
+    .filter((candidate) => {
+      if (
+        candidate.kind !== '大梁' ||
+        candidate.storyId !== member.storyId ||
+        !isGirderPosition(candidate.position) ||
+        candidate.position.axis !== position.axis
+      ) {
+        return false
+      }
+
+      return position.axis === 'X'
+        ? candidate.position.iy === position.iy
+        : candidate.position.ix === position.ix
+    })
+    .sort((left, right) => {
+      if (!isGirderPosition(left.position) || !isGirderPosition(right.position)) {
+        throw new Error('大梁 run contains a non-girder position')
+      }
+      return girderAxisIndex(left.position) - girderAxisIndex(right.position)
+    })
+  const memberIndex = candidates.findIndex(({ id }) => id === member.id)
+
+  if (memberIndex < 0) {
+    throw new Error(`大梁 member not found in project: ${member.id}`)
+  }
+
+  let first = memberIndex
+  let last = memberIndex
+  while (
+    first > 0 &&
+    girderAxisIndex(candidates[first - 1].position as GirderPosition) ===
+      girderAxisIndex(candidates[first].position as GirderPosition) - 1
+  ) {
+    first -= 1
+  }
+  while (
+    last + 1 < candidates.length &&
+    girderAxisIndex(candidates[last + 1].position as GirderPosition) ===
+      girderAxisIndex(candidates[last].position as GirderPosition) + 1
+  ) {
+    last += 1
+  }
+
+  const members = candidates.slice(first, last + 1)
+  const sectionId = members[0].sectionId
+  if (members.some((candidate) => candidate.sectionId !== sectionId)) {
+    throw new Error(
+      `大梁 run contains mixed sections: ${members.map(({ id, sectionId: idOfSection }) => `${id}:${idOfSection}`).join(', ')}`,
+    )
+  }
+
+  const spans = members.map((candidate) => girderSpan(project, candidate))
+  // 스팬 시작면들의 누적 위치. 마지막 스팬 시작면 ＋ 그 内法이 코어 길이다 —
+  // 두 값을 따로 세면 곧 어긋나므로 한 번만 누적한다.
+  const memberOffsetsMm: number[] = []
+  let offsetMm = 0
+  for (const span of spans) {
+    memberOffsetsMm.push(offsetMm)
+    offsetMm += span.clear + span.endSupportLengthAlongAxisMm
+  }
+  const lastSpan = spans[spans.length - 1]
+  const coreLengthMm =
+    memberOffsetsMm[memberOffsetsMm.length - 1] + lastSpan.clear
+
+  return {
+    axis: position.axis,
+    members,
+    ownerId: members[0].id,
+    spans,
+    memberOffsetsMm,
+    coreLengthMm,
   }
 }
 

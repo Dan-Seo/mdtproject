@@ -13,9 +13,9 @@ import type {
 } from '@/domain/model/member'
 import {
   findSection,
-  girderSpan,
-  girderSupport,
-  type GirderSpan,
+  girderRun,
+  girderSupportSections,
+  type GirderRun,
   type Project,
   type Story,
 } from '@/domain/model/project'
@@ -36,7 +36,7 @@ import {
 
 import {
   buildingLayout,
-  groupInstancesByRadius,
+  groupInstancesByLayerAndRadius,
   type BuildingLayout,
 } from './building'
 import {
@@ -119,10 +119,13 @@ interface SelectedColumnView {
 
 interface SelectedGirderView {
   kind: '大梁'
+  /** 런 대표 부재. 런 안의 어느 스팬을 골라도 같은 부재 뷰를 만든다. */
   member: Member
   section: GirderSection
   story: Story
-  span: GirderSpan
+  run: GirderRun
+  /** 런 축방향 순서의 지점 柱 단면. 길이는 run.members.length + 1. */
+  supportSections: ColumnSection[]
   rebars: Rebar[]
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
@@ -233,41 +236,53 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
     ]
   }
 
-  const { section, span, story } = view
+  const { section, run, story, supportSections } = view
   const stubHeight = Math.min(story.height, section.depth * 2)
-  const centerY = section.depth / 2
+  const beamCenterY = section.depth / 2
+  const stubCenterY = section.depth - stubHeight / 2
   const centerZ = section.b / 2
+  const boxes: ConcreteBox[] = []
 
-  return [
-    {
+  run.spans.forEach((span, index) => {
+    // 런 좌표계 오프셋은 도메인이 준다 — 여기서 다시 누적하면 철근 배치와 갈린다.
+    const coreOffsetMm = run.memberOffsetsMm[index]
+    boxes.push({
       size: [span.clear, section.depth, section.b],
-      center: [span.clear / 2, centerY, centerZ],
-    },
-    {
-      size: [
-        span.startSupportLengthAlongAxisMm,
-        stubHeight,
-        span.startSupportWidthAcrossAxisMm,
-      ],
-      center: [
-        -span.startSupportLengthAlongAxisMm / 2,
-        centerY,
-        centerZ,
-      ],
-    },
-    {
+      center: [coreOffsetMm + span.clear / 2, beamCenterY, centerZ],
+    })
+
+    if (index === 0) {
+      boxes.push({
+        size: [
+          span.startSupportLengthAlongAxisMm,
+          stubHeight,
+          span.axis === 'X' ? supportSections[0].d : supportSections[0].b,
+        ],
+        center: [
+          -span.startSupportLengthAlongAxisMm / 2,
+          stubCenterY,
+          centerZ,
+        ],
+      })
+    }
+
+    boxes.push({
       size: [
         span.endSupportLengthAlongAxisMm,
         stubHeight,
-        span.endSupportWidthAcrossAxisMm,
+        span.axis === 'X'
+          ? supportSections[index + 1].d
+          : supportSections[index + 1].b,
       ],
       center: [
-        span.clear + span.endSupportLengthAlongAxisMm / 2,
-        centerY,
+        coreOffsetMm + span.clear + span.endSupportLengthAlongAxisMm / 2,
+        stubCenterY,
         centerZ,
       ],
-    },
-  ]
+    })
+  })
+
+  return boxes
 }
 
 function memberBounds(view: SelectedSupportedMemberView): Bounds {
@@ -753,12 +768,28 @@ function rebuildMemberScene(
   addMemberConcrete(content, view, materials, runtime.clipPlane)
   addGround(content, bounds, materials)
 
+  // 通し筋은 런 원점 기준, あばら筋은 자기 스팬 원점 기준으로 만들어진다. 런을 한
+  // 프레임에 그리므로 부재별 오프셋을 걸어 맞춘다 — 通し筋의 memberId는 런 대표
+  // 부재라 오프셋 0이 되어 같은 조회로 함께 처리된다.
+  const originOffsetOf = (memberId: string): number => {
+    if (view.kind !== '大梁') return 0
+    const index = view.run.members.findIndex(({ id }) => id === memberId)
+    if (index === -1) {
+      throw new Error(`Rebar member is outside its run: ${memberId}`)
+    }
+    return view.run.memberOffsetsMm[index]
+  }
+
   const entries = view.rebars.map((rebar) => {
     const rowId = view.rowIds.get(rebar.id)
     if (rowId === undefined) {
       throw new Error(`QuantityLine not found for ${rebar.id}`)
     }
-    return { rowId, rebar }
+    return {
+      rowId,
+      rebar,
+      originOffsetMm: originOffsetOf(rebar.memberId),
+    }
   })
 
   for (const batch of rebarBatches(entries, view.section)) {
@@ -857,7 +888,9 @@ function rebuildBuildingScene(
   const scale = new THREE.Vector3()
   const direction = new THREE.Vector3()
 
-  for (const instances of groupInstancesByRadius(layout.rebar).values()) {
+  for (const instances of groupInstancesByLayerAndRadius(
+    layout.rebar,
+  ).values()) {
     const { radius, layer } = instances[0]
     const geometry = new THREE.CylinderGeometry(
       radius * MILLIMETRES_TO_SCENE,
@@ -917,11 +950,15 @@ function geometryKey(view: SelectedSupportedMemberView): string {
           view.section.b,
           view.section.depth,
           view.section.stirrup,
-          view.span.clear,
-          view.span.startSupportLengthAlongAxisMm,
-          view.span.endSupportLengthAlongAxisMm,
-          view.span.startSupportWidthAcrossAxisMm,
-          view.span.endSupportWidthAcrossAxisMm,
+          view.run.members.length,
+          view.run.coreLengthMm,
+          view.run.members.map(({ id }) => id),
+          view.run.spans.map((span) => [
+            span.clear,
+            span.startSupportLengthAlongAxisMm,
+            span.endSupportLengthAlongAxisMm,
+          ]),
+          view.supportSections.map(({ b, d }) => [b, d]),
         ]
 
   return JSON.stringify([
@@ -956,12 +993,14 @@ function buildingGeometryKey(project: Project): string {
 }
 
 function selectedRows(
-  memberId: string,
+  memberIds: ReadonlySet<string>,
   selectedGroup: string,
   rebars: Rebar[],
   lines: QuantityLine[],
 ): Pick<SelectedSupportedMemberView, 'rebars' | 'rowIds'> {
-  const selectedRebars = rebars.filter((rebar) => rebar.memberId === memberId)
+  const selectedRebars = rebars.filter((rebar) =>
+    memberIds.has(rebar.memberId),
+  )
   const selectedLineIds = new Set(
     lines.filter(({ groupId }) => groupId === selectedGroup).map(({ id }) => id),
   )
@@ -972,6 +1011,23 @@ function selectedRows(
   )
 
   return { rebars: selectedRebars, rowIds }
+}
+
+function runSupportSections(
+  project: Project,
+  run: GirderRun,
+): ColumnSection[] {
+  const firstMember = run.members[0]
+  if (firstMember === undefined) {
+    throw new Error('GirderRun must contain at least one member')
+  }
+
+  return [
+    girderSupportSections(project, firstMember).start,
+    ...run.members.map(
+      (runMember) => girderSupportSections(project, runMember).end,
+    ),
+  ]
 }
 
 function selectedMemberView(
@@ -992,8 +1048,6 @@ function selectedMemberView(
   if (story === undefined) {
     throw new Error(`Story not found: ${member.storyId}`)
   }
-  const rows = selectedRows(memberId, selectedGroup, rebars, lines)
-
   // 부재 종류를 가리지 않는다 — 柱도 断面一覧 입력에 따라 형상이 성립하지
   // 않을 수 있고, 그때 内訳는 未対応인데 3D만 지원으로 보이면 안 된다.
   const unsupported = unsupportedMembers.find(
@@ -1009,7 +1063,13 @@ function selectedMemberView(
     }
     return {
       status: 'supported',
-      view: { kind: '柱', member, section, story, ...rows },
+      view: {
+        kind: '柱',
+        member,
+        section,
+        story,
+        ...selectedRows(new Set([member.id]), selectedGroup, rebars, lines),
+      },
     }
   }
 
@@ -1017,20 +1077,27 @@ function selectedMemberView(
     throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
   }
 
-  const support = girderSupport(project, member)
-  if (!support.supported) {
-    return { status: 'unsupported', member, reason: support.reason }
+  const run = girderRun(project, member)
+  const owner = run.members.find(({ id }) => id === run.ownerId)
+  if (owner === undefined) {
+    throw new Error(`GirderRun owner not found: ${run.ownerId}`)
   }
 
   return {
     status: 'supported',
     view: {
       kind: '大梁',
-      member,
+      member: owner,
       section,
       story,
-      span: girderSpan(project, member),
-      ...rows,
+      run,
+      supportSections: runSupportSections(project, run),
+      ...selectedRows(
+        new Set(run.members.map(({ id }) => id)),
+        selectedGroup,
+        rebars,
+        lines,
+      ),
     },
   }
 }
@@ -1105,9 +1172,16 @@ export function Viewer3D() {
   projectRef.current = project
 
   // 建物 레이아웃은 선택과 무관하다 — 선택 변경마다 씬을 재구성하지 않는다.
+  const unsupportedMemberIds = useMemo(
+    () => new Set(unsupportedMembers.map(({ memberId }) => memberId)),
+    [unsupportedMembers],
+  )
   const layout = useMemo(
-    () => (viewerMode === 'building' ? buildingLayout(project, rebars) : null),
-    [project, rebars, viewerMode],
+    () =>
+      viewerMode === 'building'
+        ? buildingLayout(project, rebars, unsupportedMemberIds)
+        : null,
+    [project, rebars, unsupportedMemberIds, viewerMode],
   )
   const selectedMember = useMemo(
     () =>

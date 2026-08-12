@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { GirderSection, Member } from '@/domain/model/member'
 import {
   findSection,
+  girderRun,
   girderSpan,
+  type GirderRun,
   type GirderSpan,
 } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
@@ -19,6 +21,7 @@ function sampleGirder(): {
   member: Member
   section: GirderSection
   span: GirderSpan
+  run: GirderRun
 } {
   const project = createSampleProject()
   const member = project.members.find(
@@ -32,7 +35,16 @@ function sampleGirder(): {
     throw new Error('Sample 大梁 section not found')
   }
 
-  return { member, section, span: girderSpan(project, member) }
+  return {
+    member,
+    section,
+    span: girderSpan(project, member),
+    run: girderRun(project, member),
+  }
+}
+
+function runWithSpan(run: GirderRun, span: GirderSpan): GirderRun {
+  return { ...run, spans: [span], coreLengthMm: span.clear }
 }
 
 function diameter(size: GirderSection['main']['size']): number {
@@ -41,7 +53,7 @@ function diameter(size: GirderSection['main']['size']): number {
 
 describe('legendEntries', () => {
   it('deduplicates 大梁 定着 zones using the lookup-derived rule length', () => {
-    const { member, section, span } = sampleGirder()
+    const { section, span, run } = sampleGirder()
     const straightRule = lookupRule(jpMlitRulePack, 'anchorage.L1', {
       fc: section.fc,
       grade: section.grade,
@@ -54,7 +66,7 @@ describe('legendEntries', () => {
       endSupportLengthAlongAxisMm: expectedLengthMm * 2,
     }
     const rebars = generateGirderRebar(
-      { member, section, span: straightSpan },
+      { run: runWithSpan(run, straightSpan), section },
       jpMlitRulePack,
     )
 
@@ -69,7 +81,7 @@ describe('legendEntries', () => {
   })
 
   it('keeps different start and end 定着 lengths as separate entries', () => {
-    const { member, section, span } = sampleGirder()
+    const { section, span, run } = sampleGirder()
     const straightRule = lookupRule(jpMlitRulePack, 'anchorage.L1', {
       fc: section.fc,
       grade: section.grade,
@@ -92,7 +104,7 @@ describe('legendEntries', () => {
       jpMlitRulePack,
     )
     const rebars = generateGirderRebar(
-      { member, section, span: asymmetricSpan },
+      { run: runWithSpan(run, asymmetricSpan), section },
       jpMlitRulePack,
     )
 
@@ -118,9 +130,9 @@ describe('legendEntries', () => {
 
   it('fails instead of showing a 定着長 whose rule it cannot cite', () => {
     // 出典 표시는 법적 의무다 — 근거를 못 찾으면 조용히 수치만 띄우는 대신 실패한다.
-    const { member, section, span } = sampleGirder()
+    const { section, run } = sampleGirder()
     const [withZones] = generateGirderRebar(
-      { member, section, span },
+      { run, section },
       jpMlitRulePack,
     )
     const orphaned: Rebar = { ...withZones, ruleHits: [] }
@@ -131,9 +143,9 @@ describe('legendEntries', () => {
   })
 
   it('returns an empty array when no Rebar carries zones', () => {
-    const { member, section, span } = sampleGirder()
+    const { section, run } = sampleGirder()
     const withoutZones = generateGirderRebar(
-      { member, section, span },
+      { run, section },
       jpMlitRulePack,
     ).map((rebar): Rebar => ({ ...rebar, zones: undefined }))
 

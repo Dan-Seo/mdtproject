@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, GirderSection, Member } from './member'
+import { createSampleProject } from './sample-project'
 import {
   PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
   columnEnds,
   deserializeProject,
   findSection,
-  girderSupport,
+  girderRun,
   girderSpan,
+  girderSupportSections,
   gridPoint,
   gridPointCount,
   memberGroupKey,
@@ -244,8 +246,6 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 400,
       startSupportLengthAlongAxisMm: 800,
       endSupportLengthAlongAxisMm: 800,
-      startSupportWidthAcrossAxisMm: 800,
-      endSupportWidthAcrossAxisMm: 800,
       startSupportCover: coverConditions(columnSection),
       endSupportCover: coverConditions(columnSection),
     })
@@ -267,9 +267,6 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 450,
       startSupportLengthAlongAxisMm: 900,
       endSupportLengthAlongAxisMm: 900,
-      // Y축 大梁이므로 축직각은 b — 축방향(d 900)과 다른 값이어야 한다
-      startSupportWidthAcrossAxisMm: 700,
-      endSupportWidthAcrossAxisMm: 700,
       startSupportCover: coverConditions(rectangularColumnSection),
       endSupportCover: coverConditions(rectangularColumnSection),
     })
@@ -289,6 +286,20 @@ describe('girderSpan', () => {
       endFaceOffsetMm: 500,
       startSupportLengthAlongAxisMm: 600,
       endSupportLengthAlongAxisMm: 1000,
+    })
+  })
+
+  it('exposes both support 柱 sections without carrying viewer dimensions in GirderSpan', () => {
+    const member = girder('Y')
+    const project = spanProject([
+      supportColumn('start', rectangularColumnSection.id, 0, 0),
+      supportColumn('end', columnSection.id, 0, 1),
+      member,
+    ])
+
+    expect(girderSupportSections(project, member)).toEqual({
+      start: rectangularColumnSection,
+      end: columnSection,
     })
   })
 
@@ -330,52 +341,84 @@ describe('girderSpan', () => {
   })
 })
 
-describe('girderSupport', () => {
-  function girder(
-    id: string,
-    axis: 'X' | 'Y',
-    ix: number,
-    iy: number,
-  ): Member {
-    return {
-      id,
-      kind: '大梁',
-      memberClass: '躯体',
-      sectionId: deepGirderSection.id,
-      storyId: '1F',
-      position: { axis, ix, iy },
-    }
+describe('girderRun', () => {
+  const sample = createSampleProject()
+
+  function sampleGirder(id: string): Member {
+    const member = sample.members.find((candidate) => candidate.id === id)
+    if (member?.kind !== '大梁') throw new Error(`大梁 not found: ${id}`)
+    return member
   }
 
-  it('supports an isolated X-axis single span', () => {
-    const member = girder('1F-G1-X1Y1-X', 'X', 0, 0)
+  it('builds the maximum Y-axis chain in ascending axis order', () => {
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-Y'))
 
-    expect(girderSupport(createProject([member]), member)).toEqual({
-      supported: true,
-    })
+    expect(run.axis).toBe('Y')
+    expect(run.members.map(({ id }) => id)).toEqual([
+      '1F-G1-X1Y1-Y',
+      '1F-G1-X1Y2-Y',
+    ])
+    expect(run.ownerId).toBe('1F-G1-X1Y1-Y')
+    expect(run.spans).toHaveLength(2)
   })
 
-  it('reports adjacent Y-axis spans on the same 通り as 連続スパン', () => {
-    const first = girder('1F-G1-X1Y1-Y', 'Y', 0, 0)
-    const second = girder('1F-G1-X1Y2-Y', 'Y', 0, 1)
-    const project = createProject([first, second])
+  it('represents an X-axis single span as a length-one run', () => {
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-X'))
 
-    expect(girderSupport(project, first)).toEqual({
-      supported: false,
-      reason: '連続スパン',
-    })
-    expect(girderSupport(project, second)).toEqual({
-      supported: false,
-      reason: '連続スパン',
-    })
+    expect(run.axis).toBe('X')
+    expect(run.members.map(({ id }) => id)).toEqual(['1F-G1-X1Y1-X'])
+    expect(run.spans).toHaveLength(1)
   })
 
-  it('keeps a span supported when only a different axis touches its endpoint', () => {
-    const xGirder = girder('1F-G1-X1Y1-X', 'X', 0, 0)
-    const crossingYGirder = girder('1F-G1-X2Y1-Y', 'Y', 1, 0)
-    const project = createProject([xGirder, crossingYGirder])
+  it('finds the same maximum chain when started from its other member', () => {
+    const first = girderRun(sample, sampleGirder('1F-G1-X1Y1-Y'))
+    const second = girderRun(sample, sampleGirder('1F-G1-X1Y2-Y'))
 
-    expect(girderSupport(project, xGirder)).toEqual({ supported: true })
+    expect(second).toEqual(first)
+  })
+
+  it('accumulates clear spans and the intermediate 柱 axis dimension', () => {
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-Y'))
+
+    expect(run.spans.map(({ clear }) => clear)).toEqual([5200, 5200])
+    expect(run.coreLengthMm).toBe(5200 * 2 + 800)
+    expect(run.coreLengthMm).toBe(11200)
+  })
+
+  it('places each span start in the run frame', () => {
+    // あばら筋은 각 부재 자기 스팬 로컬(0 기준)이라, 런을 한 프레임에 그리는 쪽이
+    // 이 오프셋 없이는 2번째 스팬 스터럽을 1번째 스팬 위에 겹쳐 그린다.
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-Y'))
+
+    expect(run.memberOffsetsMm).toEqual([0, 5200 + 800])
+    expect(run.memberOffsetsMm).toHaveLength(run.members.length)
+    // 오프셋과 코어 길이는 같은 누적에서 나와야 한다 — 따로 세면 곧 어긋난다.
+    expect(
+      run.memberOffsetsMm[run.memberOffsetsMm.length - 1] +
+        run.spans[run.spans.length - 1].clear,
+    ).toBe(run.coreLengthMm)
+  })
+
+  it('starts a single-span run at the origin', () => {
+    const run = girderRun(sample, sampleGirder('1F-G1-X1Y1-X'))
+
+    expect(run.memberOffsetsMm).toEqual([0])
+  })
+
+  it('throws a plain Error when adjacent run members use mixed sections', () => {
+    const first = sampleGirder('1F-G1-X1Y1-Y')
+    const second = sampleGirder('1F-G1-X1Y2-Y')
+    const mixed: Project = {
+      ...sample,
+      members: sample.members.map((candidate) =>
+        candidate.id === second.id
+          ? { ...candidate, sectionId: 'section-G2' }
+          : candidate,
+      ),
+    }
+
+    expect(() => girderRun(mixed, first)).toThrow(Error)
+    expect(() => girderRun(mixed, first)).not.toThrow(MemberUnsupportedError)
   })
 })
 

@@ -6,6 +6,7 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  girderRun,
   gridPointCount,
   type Project,
   type Story,
@@ -13,6 +14,7 @@ import {
 import { createSampleProject } from '../model/sample-project'
 import type { Rebar } from '../model/rebar'
 import { generateColumnRebar } from '../rebar/column'
+import { generateGirderRebar } from '../rebar/girder'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import {
@@ -189,6 +191,40 @@ describe('aggregateQuantity', () => {
     expect(new Set(lines.map(({ id }) => id)).size).toBe(2)
     expect(lines.map(({ countPerMember }) => countPerMember)).toEqual([12, 16])
     expect(lines.map(({ places }) => places)).toEqual([1, 1])
+  })
+
+  it('keeps single-span and multi-span 通し筋 in different rows', () => {
+    const project = createSampleProject()
+    const singleSpanMember = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-X',
+    )!
+    const multiSpanMember = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-Y',
+    )!
+    const girderSection = findSection(project, singleSpanMember.sectionId)
+    if (girderSection.kind !== '大梁') {
+      throw new Error('expected a 大梁 section')
+    }
+    const rebars = [singleSpanMember, multiSpanMember].flatMap((member) =>
+      generateGirderRebar(
+        { run: girderRun(project, member), section: girderSection },
+        jpMlitRulePack,
+      ),
+    )
+
+    const topLines = aggregateQuantity(project, rebars, jpMlitRulePack).filter(
+      ({ storyName, mark, role }) =>
+        storyName === '1階' && mark === 'G1' && role === '上端筋',
+    )
+
+    expect(topLines).toHaveLength(2)
+    expect(topLines.map(({ groupId }) => groupId)).toEqual([
+      '1階|G|G1',
+      '1階|G|G1',
+    ])
+    expect(new Set(topLines.map(({ lengthMm }) => lengthMm)).size).toBe(2)
+    expect(topLines[1].lengthMm).toBeGreaterThan(topLines[0].lengthMm)
+    expect(topLines.map(({ places }) => places)).toEqual([1, 1])
   })
 
   it('aggregates 柱 of one 符号 sitting under 大梁 of differing せい', () => {

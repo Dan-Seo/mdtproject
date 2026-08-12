@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, GirderSection, Member } from '../model/member'
-import type { GirderSpan } from '../model/project'
+import type { GirderRun, GirderSpan } from '../model/project'
 import type { Rebar } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
@@ -60,16 +60,27 @@ const span: GirderSpan = {
   endFaceOffsetMm: 400,
   startSupportLengthAlongAxisMm: 800,
   endSupportLengthAlongAxisMm: 800,
-  startSupportWidthAcrossAxisMm: 800,
-  endSupportWidthAcrossAxisMm: 800,
   startSupportCover: supportCover,
   endSupportCover: supportCover,
+}
+
+const run: GirderRun = {
+  axis: 'X',
+  members: [member],
+  ownerId: member.id,
+  spans: [span],
+  memberOffsetsMm: [0],
+  coreLengthMm: span.clear,
 }
 
 function input(
   overrides: Partial<GirderRebarInput> = {},
 ): GirderRebarInput {
-  return { member, section, span, ...overrides }
+  return { run, section, ...overrides }
+}
+
+function runWithSpan(nextSpan: GirderSpan): GirderRun {
+  return { ...run, spans: [nextSpan], coreLengthMm: nextSpan.clear }
 }
 
 function byRole(
@@ -192,7 +203,7 @@ describe('generateGirderRebar', () => {
     const detail = resolveGirderEnd(endInput, jpMlitRulePack)
     const top = byRole(
       generateGirderRebar(
-        input({ span: largeSupportSpan }),
+        input({ run: runWithSpan(largeSupportSpan) }),
         jpMlitRulePack,
       ),
       '上端筋',
@@ -261,6 +272,75 @@ describe('generateGirderRebar', () => {
         expect(zone.pathToMm).toBeLessThanOrEqual(main.length)
       }
     }
+  })
+
+  it('generates one continuous pair of 主筋 and one あばら筋 row per span', () => {
+    const secondMember: Member = {
+      ...member,
+      id: '1F-G1-X2Y1-X',
+      position: { axis: 'X', ix: 1, iy: 0 },
+    }
+    const secondSpan: GirderSpan = { ...span }
+    const continuousRun: GirderRun = {
+      axis: 'X',
+      members: [member, secondMember],
+      ownerId: member.id,
+      spans: [span, secondSpan],
+      memberOffsetsMm: [0, span.clear + span.endSupportLengthAlongAxisMm],
+      coreLengthMm: span.clear + span.endSupportLengthAlongAxisMm + secondSpan.clear,
+    }
+    const generated = generateGirderRebar(
+      input({ run: continuousRun }),
+      jpMlitRulePack,
+    )
+    const top = byRole(generated, '上端筋')
+    const endInput = {
+      barSize: section.main.size,
+      supportCover,
+      fc: section.fc,
+      grade: section.grade,
+      bendDirection: '下' as const,
+    }
+    const start = resolveGirderEnd(
+      {
+        ...endInput,
+        supportLengthMm: span.startSupportLengthAlongAxisMm,
+      },
+      jpMlitRulePack,
+    )
+    const end = resolveGirderEnd(
+      {
+        ...endInput,
+        supportLengthMm: secondSpan.endSupportLengthAlongAxisMm,
+      },
+      jpMlitRulePack,
+    )
+    const stirrups = generated.filter(({ role }) => role === 'あばら筋')
+
+    expect(top.memberId).toBe(continuousRun.ownerId)
+    expect(top.length).toBe(continuousRun.coreLengthMm + start.lengthMm + end.lengthMm)
+    expect(top.zones).toEqual([
+      {
+        kind: '定着',
+        ruleKey: start.lengthRule,
+        pathFromMm: 0,
+        pathToMm: start.lengthMm,
+      },
+      {
+        kind: '定着',
+        ruleKey: end.lengthRule,
+        pathFromMm: top.length - end.lengthMm,
+        pathToMm: top.length,
+      },
+    ])
+    expect(top.formula).toContain(
+      `内法長さ ${span.clear}＋${secondSpan.clear} ＋ 中間柱せい ${span.endSupportLengthAlongAxisMm}`,
+    )
+    expect(top.formula).toContain('継手 ＝ 未計上（定尺長さの根拠なし）')
+    expect(stirrups.map(({ memberId }) => memberId)).toEqual([
+      member.id,
+      secondMember.id,
+    ])
   })
 
   it('derives あばら筋 count from the bounded placement array', () => {
