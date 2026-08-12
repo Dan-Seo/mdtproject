@@ -35,12 +35,31 @@ jobs:
             gate가 영원히 보류된다. 인라인 게시가 실패하면 스킬 6단계(body-only 재게시)를 따르라.
           # 모델을 opus-5로 둔다 — sonnet은 보조 명령 거부를 만나면 게시 단계를 완주하지
           # 못하는 것이 PR #5에서 4회 재현됐다 (판정자 모델을 상향하는 evals 컨벤션과 동일).
-          # 셸 유틸 allowlist는 그 거부 자체를 줄인다.
+          # 셸 유틸 allowlist는 그 거부 자체를 줄인다 — PR #8 재리뷰에서 opus도 권한 거부
+          # 6~8회 뒤 무게시 종료가 3회 재현돼 읽기 전용 유틸을 추가했다.
           claude_args: |
             --model claude-opus-5
-            --allowedTools "Bash(gh:*),Bash(git:*),Bash(jq:*),Bash(cat:*),Bash(ls:*),Bash(mkdir:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Read,Grep,Glob,Write,Skill,Workflow,Agent,TaskOutput"
+            --allowedTools "Bash(gh:*),Bash(git:*),Bash(jq:*),Bash(cat:*),Bash(ls:*),Bash(mkdir:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Bash(sed:*),Bash(awk:*),Bash(find:*),Bash(diff:*),Bash(sort:*),Bash(uniq:*),Bash(cut:*),Bash(tr:*),Bash(echo:*),Bash(printf:*),Read,Grep,Glob,Write,Edit,Skill,Workflow,Agent,TaskOutput"
         env:
           GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
+
+      # 리뷰 잡의 "무음 실패"를 빨간불로 바꾼다 — 에이전트가 리뷰를 게시하지 못하고
+      # 종료해도 잡은 success로 끝나서, gate의 "게이트 마커 없음" 보류가 재시도 없이
+      # 방치된다 (PR #8에서 3회 재현). 마커 리뷰가 이 커밋에 없으면 잡을 실패시켜
+      # gh run rerun --failed 로 리뷰만 재시도할 수 있게 한다.
+      - name: 게시 검증 — 이 커밋의 게이트 마커 리뷰 존재 확인
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          count=$(gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
+            | jq -s --arg sha "$HEAD_SHA" \
+              '[add // [] | .[] | select(.commit_id == $sha and (.body | contains("review-code-gate")))] | length')
+          if [ "$count" -eq 0 ]; then
+            echo "::error::리뷰 에이전트가 게이트 마커 리뷰를 게시하지 않았다 (HEAD $HEAD_SHA) — gh run rerun --failed 로 재시도하라"
+            exit 1
+          fi
 
   # 결정적 검증 — LLM 판정과 무관하게 통과해야 하는 기준선.
   # main에 브랜치 보호가 없으므로 gate의 needs 연결이 자동 머지를 막는 유일한 수단이다.
