@@ -20,7 +20,13 @@ const jetBrainsMono = JetBrains_Mono({
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="ja" className={`${inter.variable} ${jetBrainsMono.variable}`}>
+      {/* 이 레이아웃은 클라이언트 컴포넌트라 metadata export를 쓸 수 없다 —
+          React 19가 head로 끌어올리는 태그를 그대로 쓴다. */}
       <title>Kijun 基準</title>
+      <meta
+        name="description"
+        content="公共建築工事標準仕様書に基づき、柱・大梁の配筋詳細と鉄筋数量をブラウザ上で算定するツール。図面データは端末外に送信しない。"
+      />
       <body>{children}</body>
     </html>
   )

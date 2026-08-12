@@ -92,8 +92,18 @@
   padding-left: 30px !important;
 }
 
-.rebarCell > span:first-child {
+/* 펼치기 컨트롤. 겉보기는 기존 역할명 텍스트 그대로다 — 행 전체가 여전히 클릭 가능하고,
+   이 버튼은 펼침 상태(aria-expanded)를 유효한 롤 위에 얹기 위해 있다.
+   포커스 링은 base.css의 전역 *:focus-visible이 준다. */
+.disclosure {
+  padding: 0;
+  border: 0;
   margin-right: var(--space-xxs);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .inferredWarning {

@@ -461,21 +461,27 @@ function LineRows({
       <tr
         className={styles.lineRow}
         data-testid={`quantity-line-${line.id}`}
-        tabIndex={0}
-        aria-expanded={expanded}
         onClick={toggle}
-        onKeyDown={(event) => {
-          if (!isActivationKey(event)) return
-          event.preventDefault()
-          toggle()
-        }}
         onMouseEnter={() => setHoverRow(line.id)}
         onMouseLeave={() => setHoverRow(null)}
         onFocus={() => setHoverRow(line.id)}
         onBlur={() => setHoverRow(null)}
       >
         <td className={styles.rebarCell}>
-          <span>{line.role}</span>
+          {/* 행 어디를 눌러도 펼쳐지지만, 펼침 상태는 여기에 둔다 — role=row의
+              aria-expanded는 treegrid 안에서만 유효해 평범한 table에서는 읽히지 않는다.
+              onFocus/onBlur는 focusin/focusout이라 이 버튼에 포커스가 와도 tr에서 잡힌다. */}
+          <button
+            type="button"
+            className={styles.disclosure}
+            aria-expanded={expanded}
+            onClick={(event) => {
+              event.stopPropagation() // tr의 onClick으로 번지면 두 번 토글돼 아무 일도 안 일어난다
+              toggle()
+            }}
+          >
+            {line.role}
+          </button>
           <InferredWarning line={line} />
         </td>
         <td className={styles.numericCell}>{line.size}</td>

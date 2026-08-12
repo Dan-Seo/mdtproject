@@ -20,7 +20,11 @@ argument-hint: [PR번호]
 
 ## 1단계 — 모드·범위 확정 (메인 에이전트)
 
-**리뷰 대상 필터** (두 모드 공통): `src/**`, `tests/**`, `package.json`, `*.yaml`만 대상. `.claude/**`, `docs/**`, `package-lock.json`, 이미지·자산은 제외. 필터 후 대상이 0개면 "리뷰할 변경 없음(대상 파일 0개)"을 보고하고 종료한다 — Workflow를 호출하지 않는다.
+**리뷰 대상 필터** (두 모드 공통): `src/**`, `tests/**`, `evals/**`, `scripts/**`, `.github/workflows/**`, `package.json`, 루트 설정 파일(`*.config.{js,cjs,mjs,ts}`, `lighthouserc.*`, `tsconfig*.json`), `*.yaml`·`*.yml`이 대상. `.claude/**`, `docs/**`, `phases/**`, `CLAUDE.md`, `package-lock.json`, 이미지·자산은 제외. 필터 후 대상이 0개면 "리뷰할 변경 없음(대상 파일 0개)"을 보고하고 종료한다 — Workflow를 호출하지 않는다.
+
+CI 워크플로·스크립트·설정 파일이 대상인 이유: 파이프라인을 깨거나 시크릿을 흘리거나 차단 게이트를 무력화하는 변경이 여기서 나오는데, 정작 이 파일들이 PR의 무게중심인 경우가 많다 (PR #12에서 워크플로 3개와 게이트 설정이 통째로 무리뷰로 지나갔다).
+
+**제외된 변경 파일은 침묵하지 말고 밝힌다**: 변경 파일 중 필터 밖이 있으면 리뷰 body에 `리뷰 제외: <경로 목록>` 한 줄로 남긴다. "안 봤다"와 "봤는데 깨끗하다"를 읽는 사람이 구분할 수 있어야 한다.
 
 **PR 모드** (인자가 숫자 n):
 1. `gh pr view <n> --json title,baseRefName,headRefOid,url,files` 로 메타를 얻는다 (gh 기본 해석 리포 사용).
@@ -114,7 +118,9 @@ const DIMENSIONS = [
 2. exceljs formula injection 경로 확장: 사용자 자유 텍스트가 셀 값으로 들어가는 새 경로(= + - @ 시작 값 무이스케이프)는 major. 기존 2개 경로(src/lib/export/index.ts 의 mark·notes)는 보고 금지
 3. XSS: dangerouslySetInnerHTML, innerHTML 직접 대입, href 에 사용자 입력
 4. eval·new Function 등 동적 코드 실행 도입 — 특히 룰팩 expr 필드 처리에 들어오면 critical
-5. package.json 신규 dependency: 존재를 minor 로 보고 (필요성 판단은 취합 단계 몫)`,
+5. package.json 신규 dependency: 존재를 minor 로 보고 (필요성 판단은 취합 단계 몫)
+6. CI 워크플로·스크립트(.github/workflows/**, scripts/**): 시크릿이 로그·PR 본문·아티팩트·이슈로 새는 경로(scripts/ci/scrub-secrets.sh 를 우회하는 신규 출력 경로 포함), pull_request_target 도입, 필요 이상의 permissions(특히 LLM 실행 잡에 contents: write), 락파일 밖 원격 코드로 차단 게이트를 좌우하는 구성(npx --yes <pkg>, curl | bash) — 마지막 항목은 버전을 고정했더라도 무결성 해시가 없으므로 보고한다
+7. 리포트·아티팩트의 외부 공개 설정: Lighthouse 의 upload.target=temporary-public-storage 처럼 산출물을 외부 호스트로 올리는 구성`,
   },
   {
     key: 'architecture',
@@ -125,7 +131,8 @@ const DIMENSIONS = [
 1. CLAUDE.md 의 CRITICAL·아키텍처 규칙 전부를 변경분에 대조하라. 단 서버 전송 금지 규칙은 security 차원 소관이므로 보고하지 마라
 2. 오탐 예외: 단위 변환 상수(1000 등)·기하 계산 숫자·출처가 명기된 tests/golden 픽스처의 숫자는 규준 수치 리터럴 위반이 아니다
 3. 레이어 방향: src/domain 이 src/lib·컴포넌트를 참조하는 변경, 신규 최상위 디렉토리 추가
-4. TDD·골든테스트 — 존재 여부만 검사: 신규 domain 함수·규준 기능에 대응하는 co-located 테스트 또는 tests/golden 픽스처가 변경분에 없으면 보고. 골든 픽스처의 source(doc·page·quote) 누락도 보고. 테스트 품질 평가는 금지`,
+4. TDD·골든테스트 — 존재 여부만 검사: 신규 domain 함수·규준 기능에 대응하는 co-located 테스트 또는 tests/golden 픽스처가 변경분에 없으면 보고. 골든 픽스처의 source(doc·page·quote) 누락도 보고. 테스트 품질 평가는 금지
+5. CI 워크플로 변경: oncall.yml 의 무한루프 방지 구조(oncall 은 main 에 푸시하지 않고 oncall/* 브랜치만 쓴다, ci 는 main push 에만 반응한다, head_branch·포크 가드)나 review.yml 의 권한 분리(머지 권한을 LLM 잡이 아니라 gate 잡에 둔다)를 깨는 변경. 자동 게이트를 조용히 통과시키는 변경(실패해야 할 조건에 스킵 가드·continue-on-error 추가)도 보고 — 게이트가 한 번도 돌지 않아도 초록으로 보이게 된다`,
   },
 ]
 

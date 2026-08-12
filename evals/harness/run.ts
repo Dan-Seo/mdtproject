@@ -75,10 +75,10 @@ export function judgeRequest(prompt: string) {
  * EVAL_TRACK으로 실행 대상을 좁힌다. 미지정·'all'이면 전부.
  * CI는 바뀐 경로에 걸린 트랙만 지정해 과금을 줄인다 — 무결성 검증은 항상 전체 집합으로 한다.
  */
-export function selectTrack(
-  cases: EvalCase[],
+export function selectTrack<T extends { track: EvalCase['track'] }>(
+  cases: T[],
   track: string | undefined,
-): EvalCase[] {
+): T[] {
   if (track === undefined || track === '' || track === 'all') return cases
   if (track !== 'qa' && track !== 'review')
     throw new Error(
@@ -128,7 +128,8 @@ async function main(): Promise<void> {
   }
 
   // 무결성은 위에서 전체 집합으로 검사했다 — 실행만 좁힌다.
-  const selected = selectTrack(cases, process.env.EVAL_TRACK)
+  const track = process.env.EVAL_TRACK
+  const selected = selectTrack(cases, track)
 
   const claudeMd = readFileSync(join(here, '..', '..', 'CLAUDE.md'), 'utf8')
   // 500/529 같은 일시 장애로 게이트가 흔들리지 않게 재시도를 올린다 (SDK 기본 2회로 부족했음)
@@ -136,7 +137,7 @@ async function main(): Promise<void> {
   const results: CaseResult[] = []
 
   console.log(
-    `eval 시작: ${selected.length}/${cases.length} cases (track=${process.env.EVAL_TRACK ?? 'all'}, subject=${SUBJECT_MODEL}, judge=${JUDGE_MODEL})\n`,
+    `eval 시작: ${selected.length}/${cases.length} cases (track=${track || 'all'}, subject=${SUBJECT_MODEL}, judge=${JUDGE_MODEL})\n`,
   )
 
   for (const [i, c] of selected.entries()) {

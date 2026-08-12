@@ -56,10 +56,11 @@ describe('judgeRequest', () => {
 })
 
 describe('selectTrack', () => {
+  // 캐스팅하지 않는다 — track 리터럴이 바뀌면 여기서 컴파일 에러가 나야 한다.
   const cases = [
     { id: 'q', track: 'qa' },
     { id: 'r', track: 'review' },
-  ] as unknown as EvalCase[]
+  ] satisfies { id: string; track: EvalCase['track'] }[]
 
   test('미지정이면 전부 돌린다 — 로컬 npm run eval의 기존 동작', () => {
     expect(selectTrack(cases, undefined).map((c) => c.id)).toEqual(['q', 'r'])
