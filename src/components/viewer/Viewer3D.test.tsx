@@ -122,6 +122,7 @@ vi.mock('three/examples/jsm/environments/RoomEnvironment.js', () => ({
 
 import {
   ACESFilmicToneMapping,
+  BoxGeometry,
   GridHelper,
   Group,
   InstancedMesh,
@@ -464,14 +465,76 @@ describe('Viewer3D', () => {
     )
   })
 
-  it('renders rebar instead of an unsupported reason for a continuous-run owner', () => {
-    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+  it('renders the whole continuous run with two spans and the intermediate 柱', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y2-Y'))
     render(<Viewer3D />)
 
     expect(screen.queryByText(/連続スパン/)).not.toBeInTheDocument()
+    const concreteSolids = latestContent().children.filter(
+      (object): object is Mesh<BoxGeometry> =>
+        object instanceof Mesh &&
+        object.geometry instanceof BoxGeometry &&
+        object.userData.layer === 'concrete',
+    )
+    const stubSolids = concreteSolids.filter(
+      ({ geometry }) => geometry.parameters.height > 0.75,
+    )
+
+    // 2スパンの大梁 + 始端・中間・終端の柱スタブ。
+    expect(concreteSolids).toHaveLength(5)
+    expect(stubSolids).toHaveLength(3)
+    for (const stub of stubSolids) {
+      const height = stub.geometry.parameters.height as number
+      expect(stub.position.y + height / 2).toBeCloseTo(0.75)
+    }
+
     const canvas = screen.getByLabelText('選択部材の配筋3D')
     fireEvent.click(canvas, { clientX: 320, clientY: 180 })
     expect(mocks.pickableCounts.at(-1)).toBeGreaterThan(0)
+  })
+
+  it('keeps the same geometry key when selection moves within one run', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-Y'))
+    render(<Viewer3D />)
+    const contentBefore = latestContent()
+
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y2-Y'))
+
+    expect(latestContent()).toBe(contentBefore)
+  })
+
+  it('shows the unsupported reason for an unbuildable 大梁 run', () => {
+    act(() => {
+      useAppStore.getState().updateProject((project) => {
+        const section = project.sections.find(
+          ({ id }) => id === 'section-G1',
+        )
+        if (section?.kind !== '大梁') throw new Error('expected section-G1')
+
+        return {
+          ...project,
+          sections: [
+            ...project.sections,
+            {
+              ...section,
+              id: 'section-G1-unsupported',
+              stirrup: { ...section.stirrup, startOffsetMm: 3000 },
+            },
+          ],
+          members: project.members.map((member) =>
+            ['1F-G1-X1Y1-Y', '1F-G1-X1Y2-Y'].includes(member.id)
+              ? { ...member, sectionId: 'section-G1-unsupported' }
+              : member,
+          ),
+        }
+      })
+      useAppStore.getState().selectMember('1F-G1-X1Y2-Y')
+    })
+
+    render(<Viewer3D />)
+
+    expect(screen.getByText(/断面・内法寸法が成立しない/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('定着・継手凡例')).not.toBeInTheDocument()
   })
 
   it('renders the building view and picks a member back into the selection', () => {

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ColumnSection, GirderSection } from '@/domain/model/member'
+import { girderRun } from '@/domain/model/project'
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
+import { createSampleProject } from '@/domain/model/sample-project'
+import { generateGirderRebar } from '@/domain/rebar/girder'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
+import { jpMlitRulePack } from '@/rulepack'
 
 import {
   CAMERA_FOV_DEGREES,
@@ -348,6 +352,39 @@ describe('rebarPlacements for 大梁', () => {
     expect(Math.min(...zs)).toBeCloseTo(50 + radius)
     expect(Math.max(...zs)).toBeCloseTo(350 - radius)
     expect(new Set(xs)).toEqual(new Set(girderStirrupPositions))
+  })
+
+  it('expands continuous-run main bars across the run with section input count and spacing', () => {
+    const project = createSampleProject()
+    const member = project.members.find(
+      ({ id }) => id === '1F-G1-X1Y1-Y',
+    )
+    if (member?.kind !== '大梁') throw new Error('Sample 大梁 not found')
+    const section = project.sections.find(
+      ({ id }) => id === member.sectionId,
+    )
+    if (section?.kind !== '大梁') {
+      throw new Error('Sample 大梁 section not found')
+    }
+    const run = girderRun(project, member)
+    const top = generateGirderRebar(
+      { run, section },
+      jpMlitRulePack,
+    ).find(({ role }) => role === '上端筋')
+    if (top === undefined) throw new Error('上端筋 not found')
+
+    const placements = rebarPlacements(top, section)
+    const horizontalSegments = rebarSegments(top, section).filter(
+      ({ from, to }) =>
+        from[1] === to[1] && from[0] <= 0 && to[0] >= run.coreLengthMm,
+    )
+    const zValues = placements.map(([, , z]) => z)
+    const gaps = zValues.slice(1).map((z, index) => z - zValues[index])
+
+    expect(run.members).toHaveLength(2)
+    expect(horizontalSegments).toHaveLength(section.main.topCount)
+    expect(placements).toHaveLength(section.main.topCount)
+    expect(new Set(gaps.map((gap) => gap.toFixed(6)))).toHaveLength(1)
   })
 })
 

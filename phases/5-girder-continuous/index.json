@@ -21,7 +21,11 @@
     {
       "step": 2,
       "name": "viewer-run",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T20:23:14+0900",
+      "summary": "部材 뷰를 런 단위(SelectedGirderView.run + supportSections N+1)로 바꿔 스팬별 콘크리트와 중간 柱 스텁을 그리고, 스텁 상단을 大梁 상단에 맞춰 建物 뷰와 형상을 일치시켰다. geometryKey에 런 구성·스팬 치수·지점 단면을 넣고, 미지원 판정은 useTakeoff의 unsupportedMemberIds를 buildingLayout에 주입해 단일 출처로 만들었으며 groupInstancesByLayerAndRadius로 개명했다.",
+      "completed_at": "2026-08-12T21:12:00+0900",
+      "note": "codex 세션에 브라우저가 없어 UI 검증만 blocked로 남았던 것을 세션 주체가 dev-browser로 대행했다. tests/e2e/uc11-continuous-girder.js 12체크 통과 — 연속 스팬이 미지원으로 빠지지 않고, 単一 6800과 연속 12800이 공존하며(런 탐색이 과·소 결합하지 않았다는 증거), 산출식이 中間柱せい와 継手 未計上을 밝히고, 범례에 定着이 하나뿐이다(중간 접합부 미계상 = R7② 해소)."
     },
     {
       "step": 3,
