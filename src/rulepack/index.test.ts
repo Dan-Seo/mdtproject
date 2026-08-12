@@ -14,6 +14,8 @@ describe('jpMlitRulePack', () => {
         'anchorage.L1h',
         'anchorage.L2h',
         'anchorage.La',
+        'anchorage.bent.tail.minimum',
+        'anchorage.bent.projection.minimum',
         'lap.L1',
         'lap.L1h',
         'bend.inside-diameter',
