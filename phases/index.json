@@ -6,7 +6,8 @@
     },
     {
       "dir": "2-m2-rulepack",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-12T10:14:21+0900"
     },
     {
       "dir": "3-girder-domain",
