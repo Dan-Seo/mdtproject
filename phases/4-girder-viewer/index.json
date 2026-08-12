@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-08-12T16:35:34+0900",
       "summary": "viewerLayers UI 상태를 store에 추가하고 content.traverse의 visible 전환만으로 레이어를 적용했으며 자신+조상 체인의 effective visibility를 확인하는 피킹 가드를 구현",
-      "completed_at": "2026-08-12T16:41:26+0900"
+      "completed_at": "2026-08-12T16:43:20+0900"
     },
     {
       "step": 4,
