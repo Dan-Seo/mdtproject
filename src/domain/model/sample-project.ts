@@ -8,7 +8,7 @@ import {
 } from './project'
 
 const sampleGrid: Grid = {
-  xSpans: [6000, 6000],
+  xSpans: [6000],
   ySpans: [6000, 6000],
 }
 

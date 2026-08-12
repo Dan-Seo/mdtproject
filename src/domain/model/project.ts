@@ -113,6 +113,47 @@ function isGirderPosition(
   return 'axis' in position
 }
 
+export type GirderSupport =
+  | { supported: true }
+  | { supported: false; reason: '連続スパン' }
+
+export function girderSupport(
+  project: Project,
+  member: Member,
+): GirderSupport {
+  if (member.kind !== '大梁' || !isGirderPosition(member.position)) {
+    throw new Error(`girderSupport requires a 大梁: ${member.id}`)
+  }
+
+  const position = member.position
+  const hasAdjacentGirder = project.members.some((candidate) => {
+    if (
+      candidate.kind !== '大梁' ||
+      candidate.storyId !== member.storyId ||
+      !isGirderPosition(candidate.position) ||
+      candidate.position.axis !== position.axis
+    ) {
+      return false
+    }
+
+    if (position.axis === 'X') {
+      return (
+        candidate.position.iy === position.iy &&
+        Math.abs(candidate.position.ix - position.ix) === 1
+      )
+    }
+
+    return (
+      candidate.position.ix === position.ix &&
+      Math.abs(candidate.position.iy - position.iy) === 1
+    )
+  })
+
+  return hasAdjacentGirder
+    ? { supported: false, reason: '連続スパン' }
+    : { supported: true }
+}
+
 function touchesColumn(
   girder: GirderPosition,
   column: ColumnPosition,

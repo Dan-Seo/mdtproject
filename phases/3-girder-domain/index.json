@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "girder-support-sample",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T13:18:03+0900",
+      "summary": "girderSupport가 동일 story·axis·通り線의 인접 大梁을 連続スパン typed 미지원으로 판정하고 TakeoffResult.unsupportedMembers로 제외하며 샘플을 X 1스팬·Y 2스팬의 2×3 그리드로 변경",
+      "completed_at": "2026-08-12T13:24:20+0900"
     },
     {
       "step": 6,

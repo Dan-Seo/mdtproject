@@ -84,7 +84,18 @@ function ruleContext(
     hook: rebar.shape === 'hook90',
     barRole: rebar.role,
     size: rebar.size,
+    detail:
+      section.kind === '大梁' ? '梁主筋の柱内定着' : undefined,
   }
+}
+
+function contributionContext(
+  key: string,
+  context: Record<string, unknown>,
+): Record<string, unknown> {
+  // 折曲げ定着の採否判定には先に直線 L1 も寄与する。最終形状が hook90
+  // でも、この比較元だけは L1 の条件どおり hook:false で再取得する。
+  return key === 'anchorage.L1' ? { ...context, hook: false } : context
 }
 
 function ruleIdentity(rule: RuleHit): string {
@@ -112,7 +123,7 @@ function contributingRules(
 ): { rules: RuleHit[]; unitMass: RuleHit; markup: RuleHit } {
   const context = ruleContext(member, section, rebar)
   const rebarRules = rebar.rules.map((key) =>
-    lookupRule(pack, key, context),
+    lookupRule(pack, key, contributionContext(key, context)),
   )
   const unitMass = lookupUnitMass(pack, rebar.size)
   const markup = lookupMarkup(pack, member.memberClass)

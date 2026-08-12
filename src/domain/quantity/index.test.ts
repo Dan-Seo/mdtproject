@@ -6,6 +6,7 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  gridPointCount,
   type Project,
   type Story,
 } from '../model/project'
@@ -216,7 +217,8 @@ describe('aggregateQuantity', () => {
     expect(new Set(hoops.map(({ countPerMember }) => countPerMember)).size).toBe(
       hoops.length,
     )
-    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(9)
+    const { nx, ny } = gridPointCount(project.grid)
+    expect(hoops.reduce((sum, { places }) => sum + places, 0)).toBe(nx * ny)
     expect(hoops.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
   })
 

@@ -7,6 +7,7 @@ import {
   columnEnds,
   deserializeProject,
   findSection,
+  girderSupport,
   girderSpan,
   gridPoint,
   gridPointCount,
@@ -308,6 +309,55 @@ describe('girderSpan', () => {
     }
 
     expect(() => girderSpan(project, member)).toThrow()
+  })
+})
+
+describe('girderSupport', () => {
+  function girder(
+    id: string,
+    axis: 'X' | 'Y',
+    ix: number,
+    iy: number,
+  ): Member {
+    return {
+      id,
+      kind: '大梁',
+      memberClass: '躯体',
+      sectionId: deepGirderSection.id,
+      storyId: '1F',
+      position: { axis, ix, iy },
+    }
+  }
+
+  it('supports an isolated X-axis single span', () => {
+    const member = girder('1F-G1-X1Y1-X', 'X', 0, 0)
+
+    expect(girderSupport(createProject([member]), member)).toEqual({
+      supported: true,
+    })
+  })
+
+  it('reports adjacent Y-axis spans on the same 通り as 連続スパン', () => {
+    const first = girder('1F-G1-X1Y1-Y', 'Y', 0, 0)
+    const second = girder('1F-G1-X1Y2-Y', 'Y', 0, 1)
+    const project = createProject([first, second])
+
+    expect(girderSupport(project, first)).toEqual({
+      supported: false,
+      reason: '連続スパン',
+    })
+    expect(girderSupport(project, second)).toEqual({
+      supported: false,
+      reason: '連続スパン',
+    })
+  })
+
+  it('keeps a span supported when only a different axis touches its endpoint', () => {
+    const xGirder = girder('1F-G1-X1Y1-X', 'X', 0, 0)
+    const crossingYGirder = girder('1F-G1-X2Y1-Y', 'Y', 1, 0)
+    const project = createProject([xGirder, crossingYGirder])
+
+    expect(girderSupport(project, xGirder)).toEqual({ supported: true })
   })
 })
 
