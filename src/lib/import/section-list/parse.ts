@@ -186,10 +186,18 @@ function storyFromRow(row: TextRow): string | undefined {
     .find((value) => STORY_PATTERN.test(value))
 }
 
+/**
+ * 小梁·地中梁·基礎 리스트는 반영 대상이 아니다 (ADR-005). 캡처(listKind)는
+ * 「基礎梁リスト」에서 「梁リスト」로 잘리므로 타이틀 원문을 본다.
+ * 후보 분류와 인식 실패 안내가 같은 판정을 봐야 한다 — 한쪽만 고치면
+ * 「후보는 対象外인데 실패 안내는 뜬다」로 조용히 갈라진다
+ */
+function isOutOfScopeList(titleText: string): boolean {
+  return /小梁|地中梁|基礎/.test(titleText)
+}
+
 function kindFromMark(mark: string, titleText: string): SectionCandidate['kind'] {
-  // 小梁·地中梁·基礎 리스트의 부호가 C·G로 시작해도 반영 대상이 아니다 (ADR-005).
-  // 캡처(listKind)는 「基礎梁リスト」에서 「梁リスト」로 잘리므로 타이틀 원문을 본다
-  if (/小梁|地中梁|基礎/.test(titleText)) return '対象外'
+  if (isOutOfScopeList(titleText)) return '対象外'
   if (/^C\d/i.test(mark)) return '柱'
   if (/^G\d/i.test(mark)) return '大梁'
   return '対象外'
@@ -1129,9 +1137,8 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
-  // 小梁·地中梁·基礎는 애초에 제품 대상이 아니다 (ADR-005) — 못 읽었다고
-  // 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다. kindFromMark와 같은 판정
-  const outOfScope = /小梁|地中梁|基礎/.test(anchor.titleText)
+  // 대상이 아닌 리스트를 못 읽었다고 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다
+  const outOfScope = isOutOfScopeList(anchor.titleText)
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
   // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
   // 사유를 코드로 실어 보내고 문구는 표시부가 고른다 (CandidateIssue와 같은 규약)

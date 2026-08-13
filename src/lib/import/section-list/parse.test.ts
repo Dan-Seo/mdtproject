@@ -876,6 +876,23 @@ describe('parseSectionLists (synthetic)', () => {
     expect(parsed).toEqual([])
   })
 
+  it('does not report a 対象外 list whose item rows are unreadable', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        // 符号 행은 읽히고 항목 행만 못 읽는 경로 — 억제 분기가 둘이다
+        { str: '小梁断面リスト', x: 10, y: 5, w: 80, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'B1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'RC規格', x: 10, y: 34, w: 30, h: 8 },
+        { str: 'A種', x: 115, y: 34, w: 20, h: 8 },
+      ],
+    })
+
+    expect(list(parsed, '小梁断面リスト').issue).toBeUndefined()
+  })
+
   it('separates a read 符号 header with no readable item rows', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

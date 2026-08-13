@@ -120,14 +120,22 @@ function joinedRows(items: TextItemFixture['items']): string[] {
  */
 function joinedColumns(items: TextItemFixture['items']): string[] {
   // 방향을 x 버킷 단위로 정하면 같은 x에 +90 글자가 하나만 섞여도 그 버킷의
-  // -90 문자열이 통째로 뒤집힌다 — 부호로 먼저 가른 뒤 각각 잇는다
+  // -90 문자열이 통째로 뒤집힌다 — 부호로 먼저 가른 뒤 각각 잇는다.
+  // 회전 없는 글자도 따로 가른다: 같은 대역에 섞으면 가로 글자 하나가 세로 런
+  // 가운데로 끼어들어 마커가 빠져나간다
+  const rotated = items.filter(({ rot }) => rot !== undefined && rot !== 0)
   const upward = ({ rot }: TextItemFixture['items'][number]) =>
     rot !== undefined && rot > 0
 
   return [
-    ...columnRuns(items.filter(upward), true),
+    ...columnRuns(rotated.filter(upward), true),
     ...columnRuns(
-      items.filter((item) => !upward(item)),
+      rotated.filter((item) => !upward(item)),
+      false,
+    ),
+    // 회전 정보 없이 세로로 쓰인 문자열도 있다 — 가로는 joinedRows가 이미 본다
+    ...columnRuns(
+      items.filter(({ rot }) => rot === undefined || rot === 0),
       false,
     ),
   ]
@@ -276,5 +284,23 @@ describe('section-import TextItem fixtures', () => {
     const joined = joinedColumns(items)
     expect(joined).toContain('TEL')
     expect(joined).toContain('FAX')
+  })
+
+  it('does not let an unrotated glyph break a 縦書き run in the same column', () => {
+    // 회전 없는 글자를 같은 대역에 섞으면 세로 런 가운데로 끼어들어
+    // 「TEL」이 「TXEL」이 되고 마커가 그대로 빠져나간다
+    const items = [
+      ...[...'TEL'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 200 - index * 10,
+        w: 8,
+        h: 8,
+        rot: -90,
+      })),
+      { str: 'X', x: 100, y: 195, w: 8, h: 8 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
   })
 })
