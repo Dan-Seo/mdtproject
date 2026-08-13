@@ -67,9 +67,30 @@ const fixtures = [
 // 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 사람·조직을 식별하는 표기로
 // 좁힌다: 「事務所」(○○事務所棟·室名)·「登録」(認定登録番号)·「設計者と協議」 같은
 // 도면 상용어까지 걸면 PII가 없는 도면도 실패해 픽스처 확장이 막힌다 (R10)
+/**
+ * 스캔 대상을 半角으로 접는다. 마커마다 全角 이형을 나열하는 방식은 반드시 하나를
+ * 빠뜨린다 — CP932의 0x815C·0x817C만 해도 U+2014·U+2015·U+2212로 갈리고, 하나라도
+ * 빠지면 그 표기의 연락처가 조용히 통과한다. NFKC가 ０-９·＠·．·ＴＥＬ·全角ハイフン
+ * (U+FF0D)·半角長音(U+FF70→U+30FC)까지 접으므로, 남는 것은 하이픈류 통일뿐이다.
+ *
+ * 접는 방식 자체는 프로덕션 파서(`normalized`, src/lib/import/section-list/parse.ts)와
+ * 같지만 문자 집합은 **같지 않다** — 프로덕션은 U+2015(―)와 U+30FC(ー)가 빠져 있다.
+ * 여기서는 둘 다 넣는다. 스캐너는 놓치면 PII가 커밋되고, 파서는 놓쳐도 빈칸+원문
+ * 표시로 정직하게 실패하므로 요구 수준이 다르다.
+ */
+function normalizedForScan(text: string): string {
+  return text.normalize('NFKC').replace(/[‐‑‒–—―−ー]/g, '-')
+}
+
+// 마커는 半角으로 적는다 — 스캔 대상이 이미 접혀 있다. 세로 재구성 테스트도 이
+// 상수를 함께 쓴다: 검증 정규식이 갈라지면 「이어붙였다」와 「걸린다」가 다른
+// 것을 말하게 된다
+const PHONE_PATTERN = /\d{2,4}-\d{3,4}-\d{4}/
+
 const PII_MARKERS: Array<[string, RegExp]> = [
-  ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
-  ['電話番号', /\d{2,4}-\d{3,4}-\d{4}/],
+  // 全角 분기는 두지 않는다 — 스캔 대상이 이미 NFKC로 접혀 ＴＥＬ은 TEL로 온다
+  ['連絡先', /TEL|FAX|〒/i],
+  ['電話番号', PHONE_PATTERN],
   ['メール', /[\w.-]+@[\w.-]+\.[a-z]{2,}/i],
   ['資格・登録', /一級建築士|二級建築士|建築士事務所登録|登録番号/],
   ['事務所・氏名', /建築士事務所|設計事務所|氏名|設計者名|監理者名/],
@@ -85,7 +106,9 @@ function readFixture(file: string): TextItemFixture {
   return JSON.parse(readFileSync(fixturePath, 'utf8')) as TextItemFixture
 }
 
-function joinedRows(items: TextItemFixture['items']): string[] {
+function rowGroups(
+  items: TextItemFixture['items'],
+): Array<TextItemFixture['items']> {
   const rowTolerancePt = 1
   const rows: Array<{ y: number; items: TextItemFixture['items'] }> = []
 
@@ -102,7 +125,11 @@ function joinedRows(items: TextItemFixture['items']): string[] {
     }
   }
 
-  return rows.map(({ items: rowItems }) =>
+  return rows.map(({ items: rowItems }) => rowItems)
+}
+
+function joinedRows(items: TextItemFixture['items']): string[] {
+  return rowGroups(items).map((rowItems) =>
     rowItems
       .sort((left, right) => left.x - right.x)
       .map(({ str }) => str)
@@ -127,6 +154,7 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
   const unrotated = items.filter(({ rot }) => rot === undefined || rot === 0)
   const upward = ({ rot }: TextItemFixture['items'][number]) =>
     rot !== undefined && rot > 0
+  const clusters = horizontalClusters(items)
 
   return [
     ...columnRuns(rotated.filter(upward), true),
@@ -139,26 +167,100 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
     // 위로 쌓인 표기도 있다) — 양방향을 본다
     ...columnRuns(unrotated, true),
     ...columnRuns(unrotated, false),
-    // 위 분할은 서로소라 한 런에 회전·무회전이 섞이면(縦中横 — 세로쓰기 안의
-    // 숫자만 무회전인 표기, 표제란 전화번호가 정확히 이 형태다) 어느 패스에서도
-    // 이어지지 않는다. 원본 전체를 잇는 패스를 덧붙여 진짜 superset으로 만든다 —
+    // 위 분할은 서로소라 한 런에 회전·무회전이 섞이면 어느 패스에서도 이어지지
+    // 않는다. 원본 전체를 잇는 패스를 덧붙여 진짜 superset으로 만든다 —
     // 오탐은 사람이 한 번 보면 끝나지만 누락은 PII가 그대로 커밋된다
     ...columnRuns(items, true),
     ...columnRuns(items, false),
+    // 그래도 縦中横은 남는다 — 글자마다 x가 갈려 열 키가 x인 패스로는 한 칸도
+    // 이어지지 않는다. 가로 덩이로 묶은 뒤 그 중심 x로 다시 잇는다
+    ...columnRuns(clusters, true),
+    ...columnRuns(clusters, false),
   ]
+}
+
+/**
+ * 같은 y에 가로로 붙은 글자를 한 덩이로 묶어 「중심 x를 가진 한 아이템」으로 만든다.
+ * 縦中横(세로쓰기 안에서 숫자만 가로로 눕는 표기 — 표제란 전화번호가 이 형태다)은
+ * 세로줄 중심에 맞춰 놓이므로, 덩이의 중심 x가 같은 줄 회전 글자의 x와 겹친다
+ * (kani-p38 실측: 「F2H」 중심 942.91 대 회전 열 943, 「75」 365.02 대 365).
+ */
+function horizontalClusters(
+  items: TextItemFixture['items'],
+): TextItemFixture['items'] {
+  const clusters: TextItemFixture['items'] = []
+
+  for (const rowItems of rowGroups(items)) {
+    const sorted = [...rowItems].sort((left, right) => left.x - right.x)
+    let current: TextItemFixture['items'] = []
+
+    const flush = () => {
+      if (current.length === 0) return
+      const start = Math.min(...current.map(({ x }) => x))
+      const end = Math.max(...current.map((item) => item.x + horizontalWidth(item)))
+      clusters.push({
+        str: current.map(({ str }) => str).join(''),
+        x: (start + end) / 2,
+        y: current[0].y,
+        w: end - start,
+        h: Math.max(...current.map(({ h }) => h)),
+      })
+      current = []
+    }
+
+    for (const item of sorted) {
+      const previous = current[current.length - 1]
+      // 한 글자 폭보다 벌어지면 다른 덩이다 — 같은 행의 무관한 글자까지 이으면
+      // 중심이 뭉개져 어느 세로줄에도 붙지 않는다(그건 이미 joinedRows가 본다)
+      const separated =
+        previous !== undefined &&
+        item.x - (previous.x + horizontalWidth(previous)) >
+          Math.max(horizontalWidth(previous), horizontalWidth(item))
+      if (separated) flush()
+      current.push(item)
+    }
+    flush()
+  }
+
+  return clusters
+}
+
+/**
+ * 회전 글자의 w는 세로 방향 이동량이라 가로 폭이 아니다 — 그대로 더하면 중심이
+ * 밀려 같은 세로줄의 덩이와 열이 갈린다.
+ */
+function horizontalWidth(item: TextItemFixture['items'][number]): number {
+  return item.rot !== undefined && item.rot !== 0 ? 0 : item.w
 }
 
 function columnRuns(
   items: TextItemFixture['items'],
   upward: boolean,
 ): string[] {
-  const columns = new Map<number, TextItemFixture['items']>()
-  for (const item of items) {
+  // 정수 반올림 버킷은 값이 경계에 걸리면 같은 세로줄을 갈라놓는다 — 회전 글자
+  // x와 덩이 중심의 실측 어긋남은 0.1pt 미만이지만 그 사이에 정수 경계가 있는지는
+  // 운이다. x 오름차순 앵커 체인은 그 경계를 없앤다: 입력 순서(PDF 원본 순서)에
+  // 좌우되지 않고 열 폭도 앵커+허용오차로 갇힌다.
+  // 다만 앵커 체인은 반올림 묶음의 초집합이 **아니다** — 왼쪽 1pt 안에 무관한
+  // 글자가 하나 있으면 앵커가 그리로 끌려가 뒤쪽이 갈린다(99.0·99.6·100.4에서
+  // 반올림은 뒤 둘을 함께 100에 넣지만 앵커는 99.6까지만 묶는다). 어느 쪽도
+  // 서로를 포함하지 않으므로 둘 다 낸다 — 누락은 PII가 그대로 커밋된다
+  const columnTolerancePt = 1
+  const anchored = new Map<number, TextItemFixture['items']>()
+  const rounded = new Map<number, TextItemFixture['items']>()
+  let anchor: number | undefined
+
+  for (const item of [...items].sort((left, right) => left.x - right.x)) {
+    if (anchor === undefined || item.x - anchor > columnTolerancePt) {
+      anchor = item.x
+    }
+    anchored.set(anchor, [...(anchored.get(anchor) ?? []), item])
+
     const key = Math.round(item.x)
-    columns.set(key, [...(columns.get(key) ?? []), item])
+    rounded.set(key, [...(rounded.get(key) ?? []), item])
   }
 
-  return [...columns.values()].flatMap((columnItems) => {
+  return [...anchored.values(), ...rounded.values()].flatMap((columnItems) => {
     const sorted = [...columnItems].sort((left, right) =>
       upward ? left.y - right.y : right.y - left.y,
     )
@@ -222,7 +324,9 @@ describe('section-import TextItem fixtures', () => {
     const rows = joinedRows(fixture.items)
     // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
     // 문자는 아이템 단위로 쪼개져 있으므로 가로·세로 양쪽으로 이어붙인 뒤 본다
-    const scanned = [...rows, ...joinedColumns(fixture.items)]
+    const scanned = [...rows, ...joinedColumns(fixture.items)].map(
+      normalizedForScan,
+    )
     for (const [label, pattern] of PII_MARKERS) {
       // 매치된 원문은 찍지 않는다 — 커밋을 막아도 CI 로그·아티팩트에 평문으로
       // 남으면 유출은 그대로다. 위치만 알려주고 실물은 로컬에서 보게 한다
@@ -329,22 +433,133 @@ describe('section-import TextItem fixtures', () => {
     expect(joinedColumns(stacked(-10))).toContain('TEL')
   })
 
-  it('reads a 縦中横 run whose digits are unrotated', () => {
-    // 세로쓰기 안의 숫자만 무회전인 표기(표제란 전화번호가 이 형태다) —
-    // 회전 유무로 대역을 가르면 이 런은 어느 패스에서도 이어지지 않는다
-    const items = [...'03-1234-5678'].map((str, index) => ({
-      str,
-      x: 100,
-      y: 100 + index * 10,
-      w: 8,
-      h: 8,
-      ...(/\d/.test(str) ? {} : { rot: -90 }),
-    }))
+  it('keeps the rounded grouping that the anchor chain would split', () => {
+    // 앵커 체인은 왼쪽 1pt 안의 무관한 글자에 끌려간다 — 99.0이 앵커가 되면
+    // 99.6까지만 묶여 100.4가 떨어져 나간다. 반올림은 99.6과 100.4를 함께
+    // 100에 넣는다. 어느 쪽도 서로를 포함하지 않으므로 둘 다 내야 한다
+    const items = [
+      { str: 'X', x: 99.0, y: 210, w: 8, h: 8, rot: -90 },
+      { str: 'T', x: 99.6, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.4, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 100.4, y: 180, w: 8, h: 8, rot: -90 },
+    ]
 
+    expect(joinedColumns(items)).toContain('TEL')
+  })
+
+  it('joins a drifting column that stays inside the tolerance', () => {
+    // 앵커 체인이 하는 일 자체를 못박는다 — 0.4pt씩 밀리는 세로줄은 정수
+    // 경계(100.8과 101.2 사이)를 넘어가므로 반올림 버킷만으로는 갈린다.
+    // 입력 순서를 뒤집어도 같은 문자열이 나와야 한다
+    const items = [
+      { str: 'T', x: 100.4, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.8, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 101.2, y: 180, w: 8, h: 8, rot: -90 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
+    expect(joinedColumns([...items].reverse())).toContain('TEL')
+  })
+
+  it('groups columns identically however the items are ordered', () => {
+    // 픽스처의 아이템 순서는 PDF 원본 순서라 x 정렬이 아니다. 「먼저 만들어진
+    // 열」에 붙이면 같은 세로줄이 삽입 순서에 따라 다르게 갈려, 어떤 도면에서는
+    // 이어지고 어떤 도면에서는 끊긴다 — 끊긴 쪽은 PII가 그대로 통과한다.
+    // 여기서 보는 것은 「같은 분할이 나오는가」다. 결합 자체는 위 케이스가
+    // 못박는다 — 순서 의존은 드리프트가 허용오차를 넘을 때만 드러나는데 그
+    // 구간에서는 어느 묶기로도 런이 이어지지 않아 한 케이스로 둘 다 볼 수 없다
+    const items = [
+      { str: 'T', x: 100, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.9, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 101.7, y: 180, w: 8, h: 8, rot: -90 },
+    ]
+
+    expect([...joinedColumns([...items].reverse())].sort()).toEqual(
+      [...joinedColumns(items)].sort(),
+    )
+  })
+
+  it('catches 全角 contact strings that half-width markers would miss', () => {
+    // 마커마다 全角 이형을 나열하는 방식은 반드시 하나를 빠뜨린다 — CP932의
+    // 0x815C·0x817C만 해도 U+2014·U+2015·U+2212로 갈린다. 마커는 半角으로 두고
+    // 스캔 대상을 정규화한다(프로덕션 파서의 `normalized`와 같은 방식)
+    const samples = [
+      '０３－１２３４－５６７８', // 全角ハイフンマイナス U+FF0D
+      '０３—１２３４—５６７８', // em dash U+2014
+      '０３−１２３４−５６７８', // minus sign U+2212
+      '０３–１２３４–５６７８', // en dash U+2013
+      '０３ｰ１２３４ｰ５６７８', // 半角長音 U+FF70
+      'ａｂｃ＠ｘｘ．ｃｏ．ｊｐ', // 全角 메일 주소
+      'ＴＥＬ ０３（１２３４）５６７８', // 全角 라벨 — 마커에 全角 분기가 없어도 걸린다
+    ]
+
+    samples.forEach((sample, index) => {
+      const scanned = normalizedForScan(sample)
+      expect(
+        PII_MARKERS.some(([, pattern]) => pattern.test(scanned)),
+        `全角 sample #${index} slipped through`,
+      ).toBe(true)
+    })
+  })
+
+  it('joins a rotated column that holds a single unrotated glyph', () => {
+    // 회전·무회전을 섞은 전수 패스를 고정한다. 무회전 글자 하나는 덩이 중심이
+    // x+w/2로 밀려 덩이 패스로는 회전 열에 붙지 않고, 회전/무회전 전용 패스는
+    // 서로소라 어느 쪽도 잇지 못한다 — 전수 패스를 지우면 이 케이스가 깨진다
+    const items = [
+      ...[...'TE'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 200 - index * 10,
+        w: 8,
+        h: 8,
+        rot: -90,
+      })),
+      { str: 'L', x: 100, y: 180, w: 8, h: 8 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
+  })
+
+  it('reads a 縦中横 run whose digits sit horizontally', () => {
+    // 세로쓰기 안의 숫자만 가로로 눕는 표기(표제란 전화번호가 이 형태다).
+    // 숫자는 글자마다 x가 갈린 채 세로줄 중심에 맞춰 놓인다 — 열 키가 글자 x인
+    // 패스로는 한 칸도 이어지지 않는다. 숫자를 같은 x에 세로로 쌓아 두면 이
+    // 배치를 재현하지 못해 테스트가 통과해도 방어선이 없다
+    const lineX = 100.4
+    const digits = (text: string, y: number) =>
+      [...text].map((str, index) => ({
+        str,
+        x: lineX - (text.length * 5) / 2 + index * 5,
+        y,
+        w: 5,
+        h: 10,
+      }))
+    // 회전 글자의 w는 세로 방향 이동량이라 x가 곧 세로줄 중심이다. 덩이 중심과는
+    // 0.2pt 어긋나 있고 그 사이에 정수 경계가 있다 — 실측에서도 어긋남은 0.1pt
+    // 미만이었으므로, 열 키를 정수로 반올림하면 이 런은 운에 따라 끊긴다
+    const separator = (y: number) => ({
+      str: '-',
+      x: lineX + 0.2,
+      y,
+      w: 10,
+      h: 10,
+      rot: -90,
+    })
+    const items = [
+      ...digits('03', 100),
+      separator(110),
+      ...digits('1234', 120),
+      separator(130),
+      ...digits('5678', 140),
+    ]
+
+    // 스캔과 같은 규칙으로 본다 — 접기를 건너뛰면 「이어붙였다」와 「걸린다」가
+    // 다른 것을 말하게 된다
     expect(
-      joinedColumns(items).some((text) =>
-        /\d{2,4}-\d{3,4}-\d{4}/.test(text),
-      ),
+      joinedColumns(items)
+        .map(normalizedForScan)
+        .some((text) => PHONE_PATTERN.test(text)),
     ).toBe(true)
   })
 })
