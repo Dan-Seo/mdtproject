@@ -70,9 +70,13 @@ const fixtures = [
 /**
  * 스캔 대상을 半角으로 접는다. 마커마다 全角 이형을 나열하는 방식은 반드시 하나를
  * 빠뜨린다 — CP932의 0x815C·0x817C만 해도 U+2014·U+2015·U+2212로 갈리고, 하나라도
- * 빠지면 그 표기의 연락처가 조용히 통과한다. 프로덕션 파서도 같은 방식이다
- * (`normalized`, src/lib/import/section-list/parse.ts). NFKC가 ０-９·＠·．·ＴＥＬ와
- * 半角長音(U+FF70→U+30FC)까지 접으므로, 남는 것은 하이픈류 통일뿐이다.
+ * 빠지면 그 표기의 연락처가 조용히 통과한다. NFKC가 ０-９·＠·．·ＴＥＬ·全角ハイフン
+ * (U+FF0D)·半角長音(U+FF70→U+30FC)까지 접으므로, 남는 것은 하이픈류 통일뿐이다.
+ *
+ * 접는 방식 자체는 프로덕션 파서(`normalized`, src/lib/import/section-list/parse.ts)와
+ * 같지만 문자 집합은 **같지 않다** — 프로덕션은 U+2015(―)와 U+30FC(ー)가 빠져 있다.
+ * 여기서는 둘 다 넣는다. 스캐너는 놓치면 PII가 커밋되고, 파서는 놓쳐도 빈칸+원문
+ * 표시로 정직하게 실패하므로 요구 수준이 다르다.
  */
 function normalizedForScan(text: string): string {
   return text.normalize('NFKC').replace(/[‐‑‒–—―−ー]/g, '-')
@@ -234,20 +238,28 @@ function columnRuns(
 ): string[] {
   // 정수 반올림 버킷은 값이 경계에 걸리면 같은 세로줄을 갈라놓는다 — 회전 글자
   // x와 덩이 중심의 실측 어긋남은 0.1pt 미만이지만 그 사이에 정수 경계가 있는지는
-  // 운이다. x 오름차순으로 훑어 직전 열에만 붙인다: 입력 순서(PDF 원본 순서)에
-  // 좌우되지 않고, 열 폭도 앵커+허용오차로 갇혀 정수 버킷보다 넓어지지 않는다
+  // 운이다. x 오름차순 앵커 체인은 그 경계를 없앤다: 입력 순서(PDF 원본 순서)에
+  // 좌우되지 않고 열 폭도 앵커+허용오차로 갇힌다.
+  // 다만 앵커 체인은 반올림 묶음의 초집합이 **아니다** — 왼쪽 1pt 안에 무관한
+  // 글자가 하나 있으면 앵커가 그리로 끌려가 뒤쪽이 갈린다(99.0·99.6·100.4에서
+  // 반올림은 뒤 둘을 함께 100에 넣지만 앵커는 99.6까지만 묶는다). 어느 쪽도
+  // 서로를 포함하지 않으므로 둘 다 낸다 — 누락은 PII가 그대로 커밋된다
   const columnTolerancePt = 1
-  const columns = new Map<number, TextItemFixture['items']>()
+  const anchored = new Map<number, TextItemFixture['items']>()
+  const rounded = new Map<number, TextItemFixture['items']>()
   let anchor: number | undefined
 
   for (const item of [...items].sort((left, right) => left.x - right.x)) {
     if (anchor === undefined || item.x - anchor > columnTolerancePt) {
       anchor = item.x
     }
-    columns.set(anchor, [...(columns.get(anchor) ?? []), item])
+    anchored.set(anchor, [...(anchored.get(anchor) ?? []), item])
+
+    const key = Math.round(item.x)
+    rounded.set(key, [...(rounded.get(key) ?? []), item])
   }
 
-  return [...columns.values()].flatMap((columnItems) => {
+  return [...anchored.values(), ...rounded.values()].flatMap((columnItems) => {
     const sorted = [...columnItems].sort((left, right) =>
       upward ? left.y - right.y : right.y - left.y,
     )
@@ -418,6 +430,20 @@ describe('section-import TextItem fixtures', () => {
 
     expect(joinedColumns(stacked(10))).toContain('TEL')
     expect(joinedColumns(stacked(-10))).toContain('TEL')
+  })
+
+  it('keeps the rounded grouping that the anchor chain would split', () => {
+    // 앵커 체인은 왼쪽 1pt 안의 무관한 글자에 끌려간다 — 99.0이 앵커가 되면
+    // 99.6까지만 묶여 100.4가 떨어져 나간다. 반올림은 99.6과 100.4를 함께
+    // 100에 넣는다. 어느 쪽도 서로를 포함하지 않으므로 둘 다 내야 한다
+    const items = [
+      { str: 'X', x: 99.0, y: 210, w: 8, h: 8, rot: -90 },
+      { str: 'T', x: 99.6, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.4, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 100.4, y: 180, w: 8, h: 8, rot: -90 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
   })
 
   it('groups columns identically however the items are ordered', () => {
