@@ -4,6 +4,6 @@
   conditions: { memberClass: 躯体 }
   value: 0.04
   unit: ratio
-  source: { ref: quantity, section: 鉄筋, page: 20 }
+  source: { ref: quantity, section: 第4編第3章第2節 1通則9), page: 15 }
   confidence: stated
   note: 鉄筋の所要数量は設計数量の4％の割増を標準とする

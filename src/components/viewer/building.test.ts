@@ -66,6 +66,7 @@ const hoop: Rebar = {
     pitchMm: 100,
     startOffsetMm: 0,
     lastGapMm: 100,
+    positionCount: 3,
   },
   ruleHits: [],
   formula: 'test',

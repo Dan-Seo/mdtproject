@@ -5,7 +5,7 @@ import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/markup.json'
 
 describe('公共建築数量積算基準 鉄筋割増', () => {
-  it('matches the stated 躯体 value and source on page 20', () => {
+  it('matches the stated 躯体 value and source on printed page 15', () => {
     const hit = lookupMarkup(jpMlitRulePack, fixture.supported.memberClass)
 
     expect(hit.value).toBe(fixture.supported.value)

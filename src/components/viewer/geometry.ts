@@ -174,9 +174,12 @@ function columnHoopPlacements(rebar: Rebar): Point3[] {
     rebar.placement.startOffsetMm,
   ).positionsMm
 
-  if (positions.length !== rebar.count) {
+  // 대조 상대는 `count`(数量積算基準의 設計本数)가 아니라 `positionCount`다 —
+  // 둘은 정당하게 다르다 (ADR-019). 도메인이 배치 인자와 다른 개수를 실었을 때만 잡힌다.
+  if (positions.length !== rebar.placement.positionCount) {
     throw new Error(
-      `帯筋 placement count mismatch: ${positions.length} !== ${rebar.count}`,
+      `帯筋 placement count mismatch: ${positions.length} !== ` +
+        `${rebar.placement.positionCount}`,
     )
   }
 
@@ -194,9 +197,10 @@ function girderStirrupPlacements(rebar: Rebar): Point3[] {
     rebar.placement.startOffsetMm,
   ).positionsMm
 
-  if (positions.length !== rebar.count) {
+  if (positions.length !== rebar.placement.positionCount) {
     throw new Error(
-      `あばら筋 placement count mismatch: ${positions.length} !== ${rebar.count}`,
+      `あばら筋 placement count mismatch: ${positions.length} !== ` +
+        `${rebar.placement.positionCount}`,
     )
   }
 

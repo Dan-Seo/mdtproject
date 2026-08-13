@@ -199,11 +199,13 @@ describe('TakeoffPane', () => {
   it('always shows that 通し筋 quantities omit 継手', () => {
     // 継手 미계상은 물량을 실제보다 적게 만든다 (R8). 접어야 보이는 산출식에만
     // 두면 사용자가 모르고 발주에 쓴다 — 大梁 主筋 행이 있으면 항상 보여야 한다.
+    // 고지는 「근거가 없다」가 아니라 「어느 조항이 미구현이다」를 말해야 한다.
     render(<TakeoffPane />)
 
     const notice = screen.getByTestId('splice-omitted-notice')
     expect(notice).toHaveTextContent('継手')
-    expect(notice).toHaveTextContent('定尺長さ')
+    expect(notice).toHaveTextContent('1通則4)')
+    expect(notice).not.toHaveTextContent('定尺長さ')
   })
 
   it('does not claim omitted 継手 when there is no 大梁 to omit it for', () => {

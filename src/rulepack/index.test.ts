@@ -24,6 +24,8 @@ describe('jpMlitRulePack', () => {
         'bend.hook135',
         'bend.hook-tome',
         'cover.fabrication.addition',
+        'measure.hoop.length.addition',
+        'measure.distribution.addition',
         'markup.rate',
         'unit-mass.value',
       ]),

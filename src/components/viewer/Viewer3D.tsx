@@ -1613,7 +1613,7 @@ export function Viewer3D() {
             <dt>{t(locale, 'viewer.tooltip.length')}</dt>
             <dd>
               {tooltip.line.lengthMm} mm
-              {/* 加工長은 룰 유래 수치다 — 内訳 행과 같은 미확인 표시를 단다. */}
+              {/* 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 미확인 표시를 단다. */}
               {tooltip.line.inferred && (
                 <span
                   className={styles.inferredMark}

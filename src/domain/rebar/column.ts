@@ -4,6 +4,7 @@ import type { ColumnEnds, Story } from '../model/project'
 import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
+import { distributionCount, hoopDesignLengthMm } from './measurement'
 import { stirrupPositions } from './stirrup-layout'
 
 export interface ColumnRebarInput {
@@ -64,7 +65,19 @@ export function generateColumnRebar(
     commonConditions,
   )
   const lapRule = lookupRule(pack, 'lap.L1', commonConditions)
-  const hook135Rule = lookupRule(pack, 'bend.hook135', {})
+  // 帯筋の数量を決めるのは積算基準の2条項だ。bend.hook135 を引かないのは
+  // 1通則2) が「フックはないものとする」と定めるからで、その事実自体を
+  // measure.hoop.length.addition が出典付きで持つ。
+  const hoopLengthAdditionRule = lookupRule(
+    pack,
+    'measure.hoop.length.addition',
+    {},
+  )
+  const distributionAdditionRule = lookupRule(
+    pack,
+    'measure.distribution.addition',
+    {},
+  )
 
   const minimumCover = millimetres(coverRule)
   const fabricationCoverAddition = millimetres(
@@ -128,13 +141,11 @@ export function generateColumnRebar(
     endTerms.push('上端 上階柱が継手を負担 0')
   }
 
-  const hoopDiameter = barDiameter(section.hoop.size)
-  const hook135Length = millimetres(hook135Rule, hoopDiameter)
   const hoopWidth = section.b - 2 * fabricationCover
   const hoopDepth = section.d - 2 * fabricationCover
 
-  // 加工用かぶり×2 보다 작은 단면은 음수 加工長을 만들고, 그 값은 집계에서
-  // 마이너스 kg로 조용히 흘러간다 — 조용히 틀린 값 대신 실패한다 (ADR-014).
+  // 加工用かぶり×2 보다 작은 단면은 음수 加工寸法을 만들고, 그 값은 3D 형상에서
+  // 뒤집힌 사각형이 된다 — 조용히 틀린 값 대신 실패한다 (ADR-014).
   if (hoopWidth <= 0 || hoopDepth <= 0) {
     throw new MemberUnsupportedError(
       '寸法不成立',
@@ -143,11 +154,17 @@ export function generateColumnRebar(
     )
   }
 
-  const hoopLength =
-    2 * (hoopWidth + hoopDepth) + 2 * hook135Length
+  // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
+  // かぶりを控除した上の hoopWidth·hoopDepth は 3D 形状 (points) 専用である。
+  const hoopLength = hoopDesignLengthMm(
+    section.b,
+    section.d,
+    hoopLengthAdditionRule,
+  )
 
-  // 上部大梁せい가 階高 이상이면 배치 구간이 사라져 本数가 0 이하로 샌다 —
-  // 加工寸法 가드와 같은 이유로 실패한다.
+  // 上部大梁せい가 階高 이상이면 3D 배치 구간이 사라진다. 数量만이라면
+  // 階高로 계산되지만(1通則7)), 그런 부재는 梁이 층보다 높다는 뜻이라 형상이
+  // 성립하지 않는다 — 입력 오류로 보고 加工寸法 가드와 같이 실패시킨다.
   const hoopSpan = story.height - beamDepthAbove
   if (hoopSpan <= 0) {
     throw new MemberUnsupportedError(
@@ -173,7 +190,14 @@ export function generateColumnRebar(
     section.hoop.pitch,
     hoopStartOffsetMm,
   )
-  const hoopCount = hoopLayout.positionsMm.length
+  // 数量は積算基準 （２）柱3)＋1通則7) — 各階ごとに、その部分の長さ÷間隔。
+  // 「各階柱」は躯体の区分で各階床板上面間なので、割るのは内法ではなく階高である。
+  // 配置区間 hoopSpan と初期オフセットは 3D 形状 (placement) 専用。
+  const hoopCount = distributionCount(
+    story.height,
+    section.hoop.pitch,
+    distributionAdditionRule,
+  )
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${minimumCover} ＋ ` +
     `加算 ${fabricationCoverAddition} ＝ ${fabricationCover}）`
@@ -229,16 +253,22 @@ export function generateColumnRebar(
       pitchMm: section.hoop.pitch,
       startOffsetMm: hoopStartOffsetMm,
       lastGapMm: hoopLayout.lastGapMm,
+      positionCount: hoopLayout.positionsMm.length,
     },
-    ruleHits: [coverRule, fabricationCoverAdditionRule, hook135Rule],
+    // 設計長さ・設計本数を決めたのはこの2条項だけだ。かぶりは 3D 形状
+    // (points) にしか効かないので、載せると算出式に現れない行を根拠として
+    // 示すことになる — その柱のかぶり出典は主筋の行が持つ。
+    ruleHits: [hoopLengthAdditionRule, distributionAdditionRule],
+    // 内訳行は複数の柱を束ねる。部材ごとに違う 3D 配置の項をここに書くと、
+    // 束ねられた他の柱について事実でない根拠を表示することになる —
+    // 数量を決めた項だけを載せ、配置は placement が持つ。
     formula:
-      `加工長 ＝ 2×{(${section.b}−2×${fabricationCover})＋` +
-      `(${section.d}−2×${fabricationCover})} ＋ 2×135°フック余長 ` +
-      `${hook135Rule.value}d(${hook135Length}) ＝ ${hoopLength} ／ ` +
-      `${fabricationCoverFormula} ／ ` +
-      `本数 ＝ 帯筋配置（配置区間 ${hoopSpan}［階高 ${story.height} ` +
-      `− 上部大梁せい ${beamDepthAbove}］、ピッチ ${section.hoop.pitch}、` +
-      `始端・終端オフセット ${hoopStartOffsetMm}）＝ ${hoopCount}`,
+      `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.d}) ` +
+      `＝ ${hoopLength}（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
+      `設計本数 ＝ ⌈階高 ${story.height} ÷ ピッチ ${section.hoop.pitch}⌉ ＋ 1 ` +
+      `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと） ／ ` +
+      `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
+      `表示される長さ・本数は設計値と一致しない・数量には用いない）`,
   }
 
   return [main, hoop]

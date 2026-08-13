@@ -141,13 +141,16 @@ describe('generateGirderRebar', () => {
     expect(byRole(generated, 'あばら筋')).toMatchObject({
       shape: 'hoop',
       closed: true,
-      count: expectedStirrups.positionsMm.length,
+      // 設計本数は積算基準 1通則7)（内法 5200 ÷ ピッチ 100 ＋ 1）。
+      // 3D の配置本数 52 とは別物で、後者は placement が持つ。
+      count: 53,
       placement: {
         axis: 'x',
         clearMm: span.clear,
         pitchMm: section.stirrup.pitch,
         startOffsetMm: section.stirrup.startOffsetMm,
         lastGapMm: expectedStirrups.lastGapMm,
+        positionCount: expectedStirrups.positionsMm.length,
       },
     })
   })
@@ -336,14 +339,16 @@ describe('generateGirderRebar', () => {
     expect(top.formula).toContain(
       `内法長さ ${span.clear}＋${secondSpan.clear} ＋ 中間柱せい ${span.endSupportLengthAlongAxisMm}`,
     )
-    expect(top.formula).toContain('継手 ＝ 未計上（定尺長さの根拠なし）')
+    expect(top.formula).toContain(
+      '継手 ＝ 未計上（数量積算基準 1通則4)・（３）梁2) が未実装）',
+    )
     expect(stirrups.map(({ memberId }) => memberId)).toEqual([
       member.id,
       secondMember.id,
     ])
   })
 
-  it('derives あばら筋 count from the bounded placement array', () => {
+  it('bounds the あばら筋 placement array inside the span', () => {
     const positions = stirrupPositions(
       span.clear,
       section.stirrup.pitch,
@@ -354,7 +359,9 @@ describe('generateGirderRebar', () => {
       'あばら筋',
     )
 
-    expect(stirrup.count).toBe(positions.length)
+    // 3D の配置本数は placement が持つ。数量本数 count は積算基準 1通則7) で
+    // 別に決まるので、ここで両者を同一視してはならない。
+    expect(stirrup.placement?.positionCount).toBe(positions.length)
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect(positions.every((position) => position <= span.clear)).toBe(true)
   })
@@ -394,12 +401,14 @@ describe('generateGirderRebar', () => {
     expect(
       byRole(generated, '下端筋').ruleHits.map(({ key }) => key),
     ).toEqual(bentMainRules)
+    // あばら筋の設計長さ・設計本数を決めるのは積算基準のこの2条項だけだ。
+    // かぶりは 3D 形状 (points) にしか効かないので、内訳行の根拠に混ぜると
+    // 算出式に一度も現れない行を出典として示すことになる。
     expect(
       byRole(generated, 'あばら筋').ruleHits.map(({ key }) => key),
     ).toEqual([
-      'cover.minimum',
-      'cover.fabrication.addition',
-      'bend.hook135',
+      'measure.hoop.length.addition',
+      'measure.distribution.addition',
     ])
 
     for (const rebar of generated) {
@@ -426,7 +435,17 @@ describe('generateGirderRebar', () => {
       expect(main.formula).toContain(coverFormula)
     }
 
-    expect(byRole(generated, 'あばら筋').formula).toContain(coverFormula)
+    // あばら筋の数量にかぶりは効かない（1通則2)）。内訳行は内法長さの違う梁を
+    // 束ねうるので、部材ごとに違う 3D 配置の項も数量の算出式には載せない。
+    const stirrupFormula = byRole(generated, 'あばら筋').formula
+    expect(stirrupFormula).not.toContain(coverFormula)
+    expect(stirrupFormula).toContain(
+      '設計長さ ＝ 断面の設計寸法による周長 2×(400＋750) ＝ 2300',
+    )
+    expect(stirrupFormula).toContain(
+      '設計本数 ＝ ⌈内法長さ 5200 ÷ ピッチ 100⌉ ＋ 1 ＝ 53',
+    )
+    expect(stirrupFormula).toContain('内法長さは代表値')
   })
 
   it('carries the 柱 かぶり row that decided the end condition, not just the 大梁 one', () => {
