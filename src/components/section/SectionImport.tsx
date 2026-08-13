@@ -243,7 +243,11 @@ function Candidate({
   const source = existing ? undefined : cloneSource(project, candidate)
   const incomplete = !existing && missingParsedFields(candidate)
   const story = candidate.storyLabel ?? t(locale, 'sectionImport.noStory')
-  const issueText = candidate.issues.join('\n')
+  // 파서는 이슈 코드만 싣는다 — 문장은 여기서 locale로 푼다
+  const issueMessages = candidate.issues.map((issue) =>
+    t(locale, `sectionImport.issue.${issue}`),
+  )
+  const issueText = issueMessages.join('\n')
 
   return (
     <li
@@ -278,9 +282,9 @@ function Candidate({
           ))}
         </div>
       ) : null}
-      {candidate.issues.length > 0 ? (
+      {issueMessages.length > 0 ? (
         <ul className={styles.issues}>
-          {candidate.issues.map((issue) => (
+          {issueMessages.map((issue) => (
             <li key={issue}>{issue}</li>
           ))}
         </ul>

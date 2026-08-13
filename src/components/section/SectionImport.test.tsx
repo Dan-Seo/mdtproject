@@ -198,6 +198,17 @@ describe('SectionImport', () => {
     ).toBeVisible()
   })
 
+  it('renders parser issues through the locale layer', () => {
+    // 파서는 이슈 코드만 싣는다 — ko 사용자에게 일본어 완성 문장이 노출되면 안 된다
+    useAppStore.setState({ locale: 'ko' })
+    render(<SectionImport initialPages={[yokohamaPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    expect(row).toHaveTextContent(
+      '帯筋/あばら筋을 대응하는 철근 径으로 해석할 수 없습니다.',
+    )
+  })
+
   it('does not offer approval for 対象外 candidates', () => {
     render(<SectionImport initialPages={[yokohamaPage]} />)
 

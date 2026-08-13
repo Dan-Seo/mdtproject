@@ -1,6 +1,7 @@
 import { BAR_SIZES, type BarSize } from '@/domain/model/member'
 
 import type {
+  CandidateIssue,
   ParsedSectionList,
   SectionCandidate,
   TextItem,
@@ -361,7 +362,9 @@ function parsePitch(
   if (!match) return undefined
   const size = match[1].toUpperCase() as BarSize
   if (!barSizes.has(size)) return undefined
-  return { size, pitchMm: Number(match[2]) }
+  const pitchMm = Number(match[2])
+  // 4자리 피치는 인접 세그먼트가 붙은 잔재다(「D13@100」+「2」) — 확정하지 않는다
+  return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
 }
 
 function parseDimension(value: string): { b: number; depth: number } | undefined {
@@ -373,8 +376,11 @@ function parseDimension(value: string): { b: number; depth: number } | undefined
   if (matches.length !== 1) return undefined
   const b = Number(matches[0][1].replace(/,/g, ''))
   const depth = Number(matches[0][2].replace(/,/g, ''))
-  // 부재 단면이 4자리 mm를 넘는 값은 셀 병합 잔재다 — 확정하지 않는다
-  return b > 9999 || depth > 9999 ? undefined : { b, depth }
+  // 4자리 초과는 셀 병합 잔재, 한 자리는 소수 표기(「0.8×0.8」→8×0)의 잔재다 —
+  // 어느 쪽도 확정하지 않는다
+  return b > 9999 || depth > 9999 || b < 10 || depth < 10
+    ? undefined
+    : { b, depth }
 }
 
 function cleanedRebarRaw(value: string): string {
@@ -387,8 +393,8 @@ function cleanedRebarRaw(value: string): string {
     : stripped
 }
 
-function addIssue(candidate: SectionCandidate, message: string): void {
-  if (!candidate.issues.includes(message)) candidate.issues.push(message)
+function addIssue(candidate: SectionCandidate, issue: CandidateIssue): void {
+  if (!candidate.issues.includes(issue)) candidate.issues.push(issue)
 }
 
 function setDimension(
@@ -408,10 +414,7 @@ function setDimension(
   // 단독 숫자는 b×d로 확정할 수 없다 — 스케치 치수선 숫자를 정사각형으로
   // 승격하면 값을 지어내는 것이 된다 (ADR-012 계열). 빈칸+원문으로 남긴다.
   candidate.raw['断面'] = compact(value)
-  addIssue(
-    candidate,
-    `断面「${compact(value)}」は矩形 b×d として解釈できません。`,
-  )
+  addIssue(candidate, '断面矩形不成立')
 }
 
 function setColumnMain(
@@ -441,11 +444,7 @@ function setColumnMain(
   }
   addIssue(
     candidate,
-    !allParsed
-      ? '主筋を対応する鉄筋径・本数として解釈できません。'
-      : !complete
-        ? '柱頭・柱脚の主筋を両方とも読み取れないため、主筋候補を空欄にしました。'
-        : '柱頭と柱脚で主筋が異なるため、主筋候補を空欄にしました。',
+    !allParsed ? '主筋解釈不能' : !complete ? '主筋位置欠落' : '主筋位置相違',
   )
 }
 
@@ -505,8 +504,10 @@ function setGirderMain(
   addIssue(
     candidate,
     allParsed && complete
-      ? '位置ごとに主筋が異なるため、主筋候補を空欄にしました。'
-      : '主筋の位置別セルを確実に解釈できないため、主筋候補を空欄にしました。',
+      ? '主筋位置相違'
+      : !allParsed
+        ? '主筋解釈不能'
+        : '主筋位置欠落',
   )
 }
 
@@ -524,17 +525,31 @@ function setPitch(
   }
 
   candidate.raw[label] = cleanedRebarRaw(raw)
-  addIssue(
-    candidate,
-    `${label}「${cleanedRebarRaw(raw)}」は対応する鉄筋径として解釈できません。`,
-  )
+  addIssue(candidate, '帯筋解釈不能')
 }
 
 function rowsBetween(rows: TextRow[], startY: number, endY: number): TextRow[] {
   return rows.filter((row) => row.y > startY && row.y < endY)
 }
 
-const COLUMN_ROW_LABELS = ['主筋', '帯筋', 'HOOP', '断面', '位置'] as const
+// 柱·大梁 블록의 알려진 라벨 행 전부 — 접힘 감지의 「다음 라벨 행」 판정에 쓴다.
+// 腹筋은 파싱 대상이 아니지만 라벨 행이 맞으므로 접힘으로 오인하지 않게 넣는다
+const ROW_LABELS = [
+  '主筋',
+  '帯筋',
+  'HOOP',
+  '断面',
+  '位置',
+  '上筋',
+  '上端筋',
+  '下筋',
+  '下端筋',
+  'ST',
+  'STP',
+  'あばら筋',
+  'b×D',
+  '腹筋',
+] as const
 
 /**
  * 라벨 행과 다음 라벨 행 사이의 무라벨 행에서 鉄筋 토큰을 마크별로 모은다.
@@ -548,13 +563,13 @@ function barContinuationByMark(
   marks: MarkColumn[],
 ): Map<string, string> {
   const nextLabelY = dataRows
-    .filter((row) => row.y > labelRow.y && exactLabel(row, COLUMN_ROW_LABELS))
+    .filter((row) => row.y > labelRow.y && exactLabel(row, ROW_LABELS))
     .reduce((min, row) => Math.min(min, row.y), endY)
   const merged = new Map<string, string>()
 
   for (const row of dataRows) {
     if (row.y <= labelRow.y || row.y >= nextLabelY) continue
-    if (exactLabel(row, COLUMN_ROW_LABELS)) continue
+    if (exactLabel(row, ROW_LABELS)) continue
     const barSegments = row.segments.filter((segment) =>
       /\d+-?D\d+/i.test(segment.compact),
     )
@@ -728,10 +743,7 @@ function parseColumnBlock(
           result.raw[key] = cleanedRebarRaw(cell.raw)
         }
         result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
-        addIssue(
-          result,
-          '主筋セルが複数行に折り返されているため、主筋候補を空欄にしました。',
-        )
+        addIssue(result, '主筋折返し')
       } else {
         setColumnMain(result, mainCells, markPositions.length)
       }
@@ -834,6 +846,13 @@ function parseGirderBlock(
       stirrupRow && stirrupLabel
         ? valuesByMark(stirrupRow, [stirrupLabel], marks)
         : new Map<string, string>()
+    // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋에도 건다
+    const topContinuations = topRow
+      ? barContinuationByMark(dataRows, topRow, slice.endY, marks)
+      : new Map<string, string>()
+    const bottomContinuations = bottomRow
+      ? barContinuationByMark(dataRows, bottomRow, slice.endY, marks)
+      : new Map<string, string>()
 
     for (const { mark } of marks) {
       const markPositions = indexedPositions.filter(
@@ -870,7 +889,27 @@ function parseGirderBlock(
         issues: [],
       }
       setDimension(result, dimension, false)
-      if (topLabel && bottomLabel) {
+      const continuation =
+        topContinuations.get(mark) ?? bottomContinuations.get(mark)
+      if (continuation !== undefined) {
+        // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 줄들을 원문 참고로 남긴다
+        if (topLabel) {
+          for (const cell of topCells) {
+            result.raw[`${topLabel}(${cell.position})`] = cleanedRebarRaw(
+              cell.raw,
+            )
+          }
+        }
+        if (bottomLabel) {
+          for (const cell of bottomCells) {
+            result.raw[`${bottomLabel}(${cell.position})`] = cleanedRebarRaw(
+              cell.raw,
+            )
+          }
+        }
+        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
+        addIssue(result, '主筋折返し')
+      } else if (topLabel && bottomLabel) {
         setGirderMain(
           result,
           topLabel,
@@ -936,7 +975,19 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
   anchors.forEach((anchor) => {
     // 같은 y대역의 오른쪽 타이틀은 아래 표가 아니라 옆 표다 — x 경계가 된다
     const sameBand = Math.max(anchor.row.height, 1) * 2
-    const xStart = anchor.x - 40
+    // 좌측 경계를 타이틀 x−40으로 고정하면 중앙 정렬 타이틀 표의 왼쪽 라벨열이
+    // 잘린다 — 좌측 이웃 타이틀과의 중점을 쓰고, 이웃이 없으면 왼쪽을 열어 둔다
+    const leftNeighbor = anchors
+      .filter(
+        (other) =>
+          other !== anchor &&
+          Math.abs(other.row.y - anchor.row.y) <= sameBand &&
+          other.x < anchor.x,
+      )
+      .sort((left, right) => right.x - left.x)[0]
+    const xStart = leftNeighbor
+      ? (leftNeighbor.x + anchor.x) / 2
+      : Number.NEGATIVE_INFINITY
     const rightNeighbor = anchors
       .filter(
         (other) =>
