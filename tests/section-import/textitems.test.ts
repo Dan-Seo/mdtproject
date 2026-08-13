@@ -67,11 +67,21 @@ const fixtures = [
 // 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 사람·조직을 식별하는 표기로
 // 좁힌다: 「事務所」(○○事務所棟·室名)·「登録」(認定登録番号)·「設計者と協議」 같은
 // 도면 상용어까지 걸면 PII가 없는 도면도 실패해 픽스처 확장이 막힌다 (R10)
-// 全角도 본다 — 마커 `連絡先`이 이미 ＴＥＬ·ＦＡＸ를 보는데 번호만 半角 전용이면
-// 「０３－１２３４－５６７８」가 그대로 통과한다. 구분자는 도면에 섞여 나오는
-// 全角ハイフン·長音까지 받는다. 세로 재구성 테스트도 이 상수를 함께 쓴다 —
-// 검증 정규식이 갈라지면 「이어붙였다」와 「걸린다」가 다른 것을 말하게 된다
-const PHONE_PATTERN = /[\d０-９]{2,4}[-－‐―ー][\d０-９]{3,4}[-－‐―ー][\d０-９]{4}/
+/**
+ * 스캔 대상을 半角으로 접는다. 마커마다 全角 이형을 나열하는 방식은 반드시 하나를
+ * 빠뜨린다 — CP932의 0x815C·0x817C만 해도 U+2014·U+2015·U+2212로 갈리고, 하나라도
+ * 빠지면 그 표기의 연락처가 조용히 통과한다. 프로덕션 파서도 같은 방식이다
+ * (`normalized`, src/lib/import/section-list/parse.ts). NFKC가 ０-９·＠·．·ＴＥＬ와
+ * 半角長音(U+FF70→U+30FC)까지 접으므로, 남는 것은 하이픈류 통일뿐이다.
+ */
+function normalizedForScan(text: string): string {
+  return text.normalize('NFKC').replace(/[‐‑‒–—―−ー]/g, '-')
+}
+
+// 마커는 半角으로 적는다 — 스캔 대상이 이미 접혀 있다. 세로 재구성 테스트도 이
+// 상수를 함께 쓴다: 검증 정규식이 갈라지면 「이어붙였다」와 「걸린다」가 다른
+// 것을 말하게 된다
+const PHONE_PATTERN = /\d{2,4}-\d{3,4}-\d{4}/
 
 const PII_MARKERS: Array<[string, RegExp]> = [
   ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
@@ -224,15 +234,17 @@ function columnRuns(
 ): string[] {
   // 정수 반올림 버킷은 값이 경계에 걸리면 같은 세로줄을 갈라놓는다 — 회전 글자
   // x와 덩이 중심의 실측 어긋남은 0.1pt 미만이지만 그 사이에 정수 경계가 있는지는
-  // 운이다. 먼저 만들어진 열에 허용오차로 붙인다
+  // 운이다. x 오름차순으로 훑어 직전 열에만 붙인다: 입력 순서(PDF 원본 순서)에
+  // 좌우되지 않고, 열 폭도 앵커+허용오차로 갇혀 정수 버킷보다 넓어지지 않는다
   const columnTolerancePt = 1
   const columns = new Map<number, TextItemFixture['items']>()
-  for (const item of items) {
-    const key =
-      [...columns.keys()].find(
-        (x) => Math.abs(x - item.x) <= columnTolerancePt,
-      ) ?? item.x
-    columns.set(key, [...(columns.get(key) ?? []), item])
+  let anchor: number | undefined
+
+  for (const item of [...items].sort((left, right) => left.x - right.x)) {
+    if (anchor === undefined || item.x - anchor > columnTolerancePt) {
+      anchor = item.x
+    }
+    columns.set(anchor, [...(columns.get(anchor) ?? []), item])
   }
 
   return [...columns.values()].flatMap((columnItems) => {
@@ -299,7 +311,9 @@ describe('section-import TextItem fixtures', () => {
     const rows = joinedRows(fixture.items)
     // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
     // 문자는 아이템 단위로 쪼개져 있으므로 가로·세로 양쪽으로 이어붙인 뒤 본다
-    const scanned = [...rows, ...joinedColumns(fixture.items)]
+    const scanned = [...rows, ...joinedColumns(fixture.items)].map(
+      normalizedForScan,
+    )
     for (const [label, pattern] of PII_MARKERS) {
       // 매치된 원문은 찍지 않는다 — 커밋을 막아도 CI 로그·아티팩트에 평문으로
       // 남으면 유출은 그대로다. 위치만 알려주고 실물은 로컬에서 보게 한다
@@ -406,6 +420,43 @@ describe('section-import TextItem fixtures', () => {
     expect(joinedColumns(stacked(-10))).toContain('TEL')
   })
 
+  it('groups columns identically however the items are ordered', () => {
+    // 픽스처의 아이템 순서는 PDF 원본 순서라 x 정렬이 아니다. 「먼저 만들어진
+    // 열」에 붙이면 같은 세로줄이 삽입 순서에 따라 다르게 갈려, 어떤 도면에서는
+    // 이어지고 어떤 도면에서는 끊긴다 — 끊긴 쪽은 PII가 그대로 통과한다
+    const items = [
+      { str: 'T', x: 100, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.9, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 101.7, y: 180, w: 8, h: 8, rot: -90 },
+    ]
+
+    expect([...joinedColumns([...items].reverse())].sort()).toEqual(
+      [...joinedColumns(items)].sort(),
+    )
+  })
+
+  it('catches 全角 contact strings that half-width markers would miss', () => {
+    // 마커마다 全角 이형을 나열하는 방식은 반드시 하나를 빠뜨린다 — CP932의
+    // 0x815C·0x817C만 해도 U+2014·U+2015·U+2212로 갈린다. 마커는 半角으로 두고
+    // 스캔 대상을 정규화한다(프로덕션 파서의 `normalized`와 같은 방식)
+    const samples = [
+      '０３－１２３４－５６７８', // 全角ハイフンマイナス U+FF0D
+      '０３—１２３４—５６７８', // em dash U+2014
+      '０３−１２３４−５６７８', // minus sign U+2212
+      '０３–１２３４–５６７８', // en dash U+2013
+      '０３ｰ１２３４ｰ５６７８', // 半角長音 U+FF70
+      'ａｂｃ＠ｘｘ．ｃｏ．ｊｐ', // 全角 메일 주소
+    ]
+
+    samples.forEach((sample, index) => {
+      const scanned = normalizedForScan(sample)
+      expect(
+        PII_MARKERS.some(([, pattern]) => pattern.test(scanned)),
+        `全角 sample #${index} slipped through`,
+      ).toBe(true)
+    })
+  })
+
   it('joins a rotated column that holds a single unrotated glyph', () => {
     // 회전·무회전을 섞은 전수 패스를 고정한다. 무회전 글자 하나는 덩이 중심이
     // x+w/2로 밀려 덩이 패스로는 회전 열에 붙지 않고, 회전/무회전 전용 패스는
@@ -458,8 +509,12 @@ describe('section-import TextItem fixtures', () => {
       ...digits('5678', 140),
     ]
 
-    expect(joinedColumns(items).some((text) => PHONE_PATTERN.test(text))).toBe(
-      true,
-    )
+    // 스캔과 같은 규칙으로 본다 — 접기를 건너뛰면 「이어붙였다」와 「걸린다」가
+    // 다른 것을 말하게 된다
+    expect(
+      joinedColumns(items)
+        .map(normalizedForScan)
+        .some((text) => PHONE_PATTERN.test(text)),
+    ).toBe(true)
   })
 })
