@@ -67,9 +67,15 @@ const fixtures = [
 // 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 사람·조직을 식별하는 표기로
 // 좁힌다: 「事務所」(○○事務所棟·室名)·「登録」(認定登録番号)·「設計者と協議」 같은
 // 도면 상용어까지 걸면 PII가 없는 도면도 실패해 픽스처 확장이 막힌다 (R10)
+// 全角도 본다 — 마커 `連絡先`이 이미 ＴＥＬ·ＦＡＸ를 보는데 번호만 半角 전용이면
+// 「０３－１２３４－５６７８」가 그대로 통과한다. 구분자는 도면에 섞여 나오는
+// 全角ハイフン·長音까지 받는다. 세로 재구성 테스트도 이 상수를 함께 쓴다 —
+// 검증 정규식이 갈라지면 「이어붙였다」와 「걸린다」가 다른 것을 말하게 된다
+const PHONE_PATTERN = /[\d０-９]{2,4}[-－‐―ー][\d０-９]{3,4}[-－‐―ー][\d０-９]{4}/
+
 const PII_MARKERS: Array<[string, RegExp]> = [
   ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
-  ['電話番号', /\d{2,4}-\d{3,4}-\d{4}/],
+  ['電話番号', PHONE_PATTERN],
   ['メール', /[\w.-]+@[\w.-]+\.[a-z]{2,}/i],
   ['資格・登録', /一級建築士|二級建築士|建築士事務所登録|登録番号/],
   ['事務所・氏名', /建築士事務所|設計事務所|氏名|設計者名|監理者名/],
@@ -216,9 +222,16 @@ function columnRuns(
   items: TextItemFixture['items'],
   upward: boolean,
 ): string[] {
+  // 정수 반올림 버킷은 값이 경계에 걸리면 같은 세로줄을 갈라놓는다 — 회전 글자
+  // x와 덩이 중심의 실측 어긋남은 0.1pt 미만이지만 그 사이에 정수 경계가 있는지는
+  // 운이다. 먼저 만들어진 열에 허용오차로 붙인다
+  const columnTolerancePt = 1
   const columns = new Map<number, TextItemFixture['items']>()
   for (const item of items) {
-    const key = Math.round(item.x)
+    const key =
+      [...columns.keys()].find(
+        (x) => Math.abs(x - item.x) <= columnTolerancePt,
+      ) ?? item.x
     columns.set(key, [...(columns.get(key) ?? []), item])
   }
 
@@ -393,12 +406,31 @@ describe('section-import TextItem fixtures', () => {
     expect(joinedColumns(stacked(-10))).toContain('TEL')
   })
 
+  it('joins a rotated column that holds a single unrotated glyph', () => {
+    // 회전·무회전을 섞은 전수 패스를 고정한다. 무회전 글자 하나는 덩이 중심이
+    // x+w/2로 밀려 덩이 패스로는 회전 열에 붙지 않고, 회전/무회전 전용 패스는
+    // 서로소라 어느 쪽도 잇지 못한다 — 전수 패스를 지우면 이 케이스가 깨진다
+    const items = [
+      ...[...'TE'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 200 - index * 10,
+        w: 8,
+        h: 8,
+        rot: -90,
+      })),
+      { str: 'L', x: 100, y: 180, w: 8, h: 8 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
+  })
+
   it('reads a 縦中横 run whose digits sit horizontally', () => {
     // 세로쓰기 안의 숫자만 가로로 눕는 표기(표제란 전화번호가 이 형태다).
     // 숫자는 글자마다 x가 갈린 채 세로줄 중심에 맞춰 놓인다 — 열 키가 글자 x인
     // 패스로는 한 칸도 이어지지 않는다. 숫자를 같은 x에 세로로 쌓아 두면 이
     // 배치를 재현하지 못해 테스트가 통과해도 방어선이 없다
-    const lineX = 100
+    const lineX = 100.4
     const digits = (text: string, y: number) =>
       [...text].map((str, index) => ({
         str,
@@ -407,10 +439,12 @@ describe('section-import TextItem fixtures', () => {
         w: 5,
         h: 10,
       }))
-    // 회전 글자의 w는 세로 방향 이동량이라 x가 곧 세로줄 중심이다
+    // 회전 글자의 w는 세로 방향 이동량이라 x가 곧 세로줄 중심이다. 덩이 중심과는
+    // 0.2pt 어긋나 있고 그 사이에 정수 경계가 있다 — 실측에서도 어긋남은 0.1pt
+    // 미만이었으므로, 열 키를 정수로 반올림하면 이 런은 운에 따라 끊긴다
     const separator = (y: number) => ({
       str: '-',
-      x: lineX,
+      x: lineX + 0.2,
       y,
       w: 10,
       h: 10,
@@ -424,10 +458,8 @@ describe('section-import TextItem fixtures', () => {
       ...digits('5678', 140),
     ]
 
-    expect(
-      joinedColumns(items).some((text) =>
-        /\d{2,4}-\d{3,4}-\d{4}/.test(text),
-      ),
-    ).toBe(true)
+    expect(joinedColumns(items).some((text) => PHONE_PATTERN.test(text))).toBe(
+      true,
+    )
   })
 })
