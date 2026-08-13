@@ -89,6 +89,95 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).not.toHaveLength(0)
   })
 
+  it('rejects 組数-prefixed 帯筋 cells instead of dropping the multiplier', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '帯筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '2-D13@100', x: 100, y: 44, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    // 「2-D13@100」의 2는 組数(외주+中子)다 — D13@100 1組로 확정하면 절반 계상
+    expect(c1.hoop).toBeUndefined()
+    expect(c1.raw['帯筋']).toBe('2-D13@100')
+    expect(c1.issues).not.toHaveLength(0)
+  })
+
+  it('rejects a dimension cell holding two sections instead of merging digits', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '断面', x: 10, y: 44, w: 20, h: 8 },
+        // 이웃 셀이 한 세그먼트로 붙은 경우 — 첫 매치의 두 번째 그룹이 공백 너머
+        // 숫자까지 삼키면 b=800·d=800900이 된다
+        { str: '800×800 900×900', x: 90, y: 44, w: 90, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.d).toBeUndefined()
+    expect(c1.issues).not.toHaveLength(0)
+  })
+
+  it('classifies G marks inside a 基礎梁リスト as 対象外 despite the truncated title capture', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        // TITLE_PATTERN 캡처는 「梁リスト」로 잘리지만 対象外 판정은 타이틀 원문을 봐야 한다
+        { str: '基礎梁リスト', x: 10, y: 5, w: 72, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'G9', x: 140, y: 25, w: 12, h: 8 },
+        { str: '断面', x: 10, y: 40, w: 24, h: 8 },
+        { str: '300x500', x: 120, y: 40, w: 44, h: 8 },
+      ],
+    })
+
+    expect(candidate(list(parsed, '梁リスト'), 'G9', undefined).kind).toBe(
+      '対象外',
+    )
+  })
+
+  it('parses a 柱リスト without story labels as a single unlabeled slice', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        // 平屋 등 階 라벨 행이 없는 표 — 大梁 블록과 같은 폴백으로 처리해야 한다
+        { str: '断面', x: 10, y: 35, w: 20, h: 8 },
+        { str: '700x700', x: 110, y: 35, w: 44, h: 8 },
+        { str: '主筋', x: 10, y: 50, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 50, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 65, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 65, w: 48, h: 8 },
+      ],
+    })
+
+    expect(candidate(list(parsed, '柱リスト'), 'C1', undefined)).toMatchObject({
+      kind: '柱',
+      b: 700,
+      d: 700,
+      main: { count: 16, size: 'D25' },
+      hoop: { size: 'D13', pitchMm: 100 },
+    })
+  })
+
   it('parses side-by-side lists without dropping or cross-contaminating them', () => {
     const parsed = parseSectionLists({
       widthPt: 1200,

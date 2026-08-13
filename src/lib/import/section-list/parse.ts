@@ -1,4 +1,4 @@
-import type { BarSize } from '@/domain/model/member'
+import { BAR_SIZES, type BarSize } from '@/domain/model/member'
 
 import type {
   ParsedSectionList,
@@ -40,6 +40,8 @@ interface StoryRow {
 
 interface TitleAnchor {
   listKind: string
+  /** 캡처가 아닌 타이틀 세그먼트 원문 — 対象外 판정은 여기를 본다 */
+  titleText: string
   row: TextRow
   x: number
 }
@@ -49,16 +51,7 @@ interface ParsedBar {
   count: number
 }
 
-const BAR_SIZES = new Set<BarSize>([
-  'D10',
-  'D13',
-  'D16',
-  'D19',
-  'D22',
-  'D25',
-  'D29',
-  'D32',
-])
+const barSizes = new Set<BarSize>(BAR_SIZES)
 
 const TITLE_PATTERN =
   /(柱断面リスト|大梁断面リスト|小梁断面リスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
@@ -146,7 +139,12 @@ function titleAnchors(rows: TextRow[]): TitleAnchor[] {
     for (const segment of row.segments) {
       const match = segment.compact.match(TITLE_PATTERN)
       if (!match) continue
-      anchors.push({ listKind: match[1], row, x: segment.x })
+      anchors.push({
+        listKind: match[1],
+        titleText: segment.compact,
+        row,
+        x: segment.x,
+      })
     }
   }
 
@@ -187,9 +185,10 @@ function storyFromRow(row: TextRow): string | undefined {
     .find((value) => STORY_PATTERN.test(value))
 }
 
-function kindFromMark(mark: string, listKind: string): SectionCandidate['kind'] {
-  // 小梁·地中梁·基礎 리스트의 부호가 C·G로 시작해도 반영 대상이 아니다 (ADR-005)
-  if (/小梁|地中梁|基礎/.test(listKind)) return '対象外'
+function kindFromMark(mark: string, titleText: string): SectionCandidate['kind'] {
+  // 小梁·地中梁·基礎 리스트의 부호가 C·G로 시작해도 반영 대상이 아니다 (ADR-005).
+  // 캡처(listKind)는 「基礎梁リスト」에서 「梁リスト」로 잘리므로 타이틀 원문을 본다
+  if (/小梁|地中梁|基礎/.test(titleText)) return '対象外'
   if (/^C\d/i.test(mark)) return '柱'
   if (/^G\d/i.test(mark)) return '大梁'
   return '対象外'
@@ -336,42 +335,54 @@ function valuesByPosition(
   )
 }
 
+/** 후프 형상 기호(□·▤·▦)와 이음 하이픈 등 셀 머리의 장식만 벗긴다. */
+function stripDecoration(value: string): string {
+  return compact(value).replace(/^[-□▤▦]+/, '')
+}
+
 function parseBar(value: string): ParsedBar | undefined {
   // 2段筋 등 복수 표기(「4-D25+2-D22」)를 첫 매치로 잘라 확정하지 않는다 —
   // 단일 표기일 때만 채택하고, 아니면 빈칸+원문 경로로 보낸다
   const matches = [...compact(value).matchAll(/(\d+)-?(D\d+)/gi)]
   if (matches.length !== 1) return undefined
   const size = matches[0][2].toUpperCase() as BarSize
-  if (!BAR_SIZES.has(size)) return undefined
+  if (!barSizes.has(size)) return undefined
   return { count: Number(matches[0][1]), size }
 }
 
 function parsePitch(
   value: string,
 ): { size: BarSize; pitchMm: number } | undefined {
-  const matches = [...compact(value).matchAll(/(D\d+)-?@(\d+)/gi)]
-  if (matches.length !== 1) return undefined
-  const size = matches[0][1].toUpperCase() as BarSize
-  if (!BAR_SIZES.has(size)) return undefined
-  return { size, pitchMm: Number(matches[0][2]) }
+  // 셀 전체가 단일 「径@ピッチ」일 때만 채택한다 — 부분 매치를 허용하면
+  // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다
+  const match = stripDecoration(value).match(/^(D\d+)-?@(\d+)$/i)
+  if (!match) return undefined
+  const size = match[1].toUpperCase() as BarSize
+  if (!barSizes.has(size)) return undefined
+  return { size, pitchMm: Number(match[2]) }
 }
 
 function parseDimension(value: string): { b: number; depth: number } | undefined {
-  const match = normalized(value).match(/(\d[\d\s,]*)\s*[x×]\s*(\d[\d\s,]*)/i)
-  if (!match) return undefined
-  return {
-    b: Number(match[1].replace(/[\s,]/g, '')),
-    depth: Number(match[2].replace(/[\s,]/g, '')),
-  }
+  // 이웃 셀이 붙은 「800×800 900×900」에서 첫 매치를 취하면 두 번째 그룹이
+  // 공백 너머 숫자까지 삼켜 b=800·depth=800900이 된다 — 다중 매치는 거부한다
+  const matches = [
+    ...normalized(value).matchAll(/(\d[\d,]*)\s*[x×]\s*(\d[\d,]*)/gi),
+  ]
+  if (matches.length !== 1) return undefined
+  const b = Number(matches[0][1].replace(/,/g, ''))
+  const depth = Number(matches[0][2].replace(/,/g, ''))
+  // 부재 단면이 4자리 mm를 넘는 값은 셀 병합 잔재다 — 확정하지 않는다
+  return b > 9999 || depth > 9999 ? undefined : { b, depth }
 }
 
 function cleanedRebarRaw(value: string): string {
-  const valueCompact = compact(value)
-  const tokens = [...valueCompact.matchAll(/(?:\d+-[A-Z]\d+|[A-Z]\d+-?@\d+)/gi)]
-  // 복수 표기 셀은 잘라내지 않고 원문 전체를 참고로 남긴다
-  return tokens.length === 1
+  const stripped = stripDecoration(value)
+  const tokens = [...stripped.matchAll(/(?:\d+-[A-Z]\d+|[A-Z]\d+-?@\d+)/gi)]
+  // 장식을 벗긴 셀 전체가 단일 토큰일 때만 토큰 형태로 남긴다 — 부분 토큰으로
+  // 줄이면 「2-D13@100」의 @100처럼 원문 정보가 참고 표시에서 사라진다
+  return tokens.length === 1 && tokens[0][0] === stripped
     ? tokens[0][0]
-    : valueCompact.replace(/^[-□▤▦]+/, '')
+    : stripped
 }
 
 function addIssue(candidate: SectionCandidate, message: string): void {
@@ -575,7 +586,7 @@ function parseColumnBlock(
   rows: TextRow[],
   headerIndex: number,
   endY: number,
-  listKind: string,
+  titleText: string,
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -584,25 +595,37 @@ function parseColumnBlock(
   const stories: StoryRow[] = blockRows
     .map((row) => ({ label: storyFromRow(row), row }))
     .filter((entry): entry is StoryRow => entry.label !== undefined)
-  if (stories.length === 0) return []
+  // 平屋 등 階 라벨이 없는 표는 大梁 블록과 같은 폴백으로 한 슬라이스 처리한다 —
+  // 조기 반환하면 표가 통째로 「인식 불가」로 사라진다
+  const slices: Array<{
+    storyLabel: string | undefined
+    startY: number
+    endY: number
+  }> =
+    stories.length > 0
+      ? stories.map((story, index) => ({
+          storyLabel: story.label,
+          startY: story.row.y,
+          endY: stories[index + 1]?.row.y ?? endY,
+        }))
+      : [{ storyLabel: undefined, startY: header.y, endY }]
 
   const candidates: SectionCandidate[] = []
-  stories.forEach((story, storyIndex) => {
-    const storyEnd = stories[storyIndex + 1]?.row.y ?? endY
-    const dataRows = rowsBetween(rows, story.row.y, storyEnd)
+  for (const slice of slices) {
+    const dataRows = rowsBetween(rows, slice.startY, slice.endY)
     const mainRow = dataRows.find((row) => exactLabel(row, ['主筋']))
     const hoopRow = dataRows.find((row) => exactLabel(row, ['帯筋', 'HOOP']))
     const dimensionRow = dataRows.find((row) => exactLabel(row, ['断面']))
-    const positions = positionColumns(
-      lastPositionRow(rows, header.y, story.row.y) ?? header,
-      marks,
-    )
+    const positionRow =
+      lastPositionRow(rows, header.y, slice.startY) ??
+      dataRows.find((row) => exactLabel(row, ['位置']))
+    const positions = positionRow ? positionColumns(positionRow, marks) : []
     const dimensionValues = dimensionRow
       ? valuesByMark(dimensionRow, ['断面'], marks)
       : scalarDimensions(
           rows,
-          story.row.y,
-          mainRow?.y ?? storyEnd,
+          slice.startY,
+          mainRow?.y ?? slice.endY,
           marks,
         )
     const mainByPosition =
@@ -642,9 +665,9 @@ function parseColumnBlock(
       if (!dimension && mainCells.length === 0 && !hoop) return
 
       const result: SectionCandidate = {
-        kind: kindFromMark(mark, listKind),
+        kind: kindFromMark(mark, titleText),
         mark,
-        storyLabel: story.label,
+        storyLabel: slice.storyLabel,
         raw: {},
         issues: [],
       }
@@ -653,7 +676,7 @@ function parseColumnBlock(
       if (hoopLabel) setPitch(result, 'hoop', hoopLabel, hoop)
       candidates.push(result)
     })
-  })
+  }
 
   return candidates
 }
@@ -678,7 +701,7 @@ function parseGirderBlock(
   rows: TextRow[],
   headerIndex: number,
   endY: number,
-  listKind: string,
+  titleText: string,
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -778,7 +801,7 @@ function parseGirderBlock(
       }
 
       const result: SectionCandidate = {
-        kind: kindFromMark(mark, listKind),
+        kind: kindFromMark(mark, titleText),
         mark,
         storyLabel: slice.storyLabel,
         raw: {},
@@ -835,8 +858,8 @@ function parseTableRegion(
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
     const parsed = anchor.listKind.includes('柱')
-      ? parseColumnBlock(tableRows, headerIndex, blockEnd, anchor.listKind)
-      : parseGirderBlock(tableRows, headerIndex, blockEnd, anchor.listKind)
+      ? parseColumnBlock(tableRows, headerIndex, blockEnd, anchor.titleText)
+      : parseGirderBlock(tableRows, headerIndex, blockEnd, anchor.titleText)
     candidates.push(...parsed)
   })
 

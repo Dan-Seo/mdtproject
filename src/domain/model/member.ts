@@ -2,15 +2,19 @@ export type MemberKind = '柱' | '大梁'
 
 export type MemberClass = '躯体'
 
-export type BarSize =
-  | 'D10'
-  | 'D13'
-  | 'D16'
-  | 'D19'
-  | 'D22'
-  | 'D25'
-  | 'D29'
-  | 'D32'
+/** 허용 철근 경의 단일 출처 — UI 셀렉트·断面リスト 파서가 여기서 파생한다. */
+export const BAR_SIZES = [
+  'D10',
+  'D13',
+  'D16',
+  'D19',
+  'D22',
+  'D25',
+  'D29',
+  'D32',
+] as const
+
+export type BarSize = (typeof BAR_SIZES)[number]
 
 export type SteelGrade = 'SD295' | 'SD345' | 'SD390'
 

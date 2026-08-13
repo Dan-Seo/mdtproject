@@ -294,6 +294,7 @@ function Candidate({
         <p className={styles.cloneNotice}>
           {t(locale, 'sectionImport.clonePrefix')}
           {source.mark}
+          {`（fc${source.fc}・${source.grade}・${source.exposure}/${source.finish}）`}
           {t(locale, 'sectionImport.cloneSuffix')}
         </p>
       ) : null}

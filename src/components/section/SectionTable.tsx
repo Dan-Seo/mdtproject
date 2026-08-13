@@ -2,30 +2,22 @@
 
 import type { KeyboardEvent } from 'react'
 
-import type {
-  BarSize,
-  ColumnSection,
-  Exposure,
-  Finish,
-  GirderSection,
-  Section,
-  SteelGrade,
+import {
+  BAR_SIZES,
+  type BarSize,
+  type ColumnSection,
+  type Exposure,
+  type Finish,
+  type GirderSection,
+  type Section,
+  type SteelGrade,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
 
 import styles from './SectionTable.module.css'
 
-const barSizes: BarSize[] = [
-  'D10',
-  'D13',
-  'D16',
-  'D19',
-  'D22',
-  'D25',
-  'D29',
-  'D32',
-]
+const barSizes: readonly BarSize[] = BAR_SIZES
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
 

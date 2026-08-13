@@ -51,7 +51,11 @@ describe('SectionImport', () => {
     render(<SectionImport initialPages={[yokohamaPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-C51-2階')
-    expect(row).toHaveTextContent('未解析の欄はC1から複製')
+    // 복제 고지는 어떤 값이 흘러드는지 필드 단위로 보여야 한다 — 符号만으로는
+    // 사용자가 fc·강종·노출을 확인하지 않은 채 물량에 들어가는 것을 모른다
+    expect(row).toHaveTextContent(
+      '未解析の欄はC1（fc24・SD345・屋外/仕上げなし）から複製',
+    )
 
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
 

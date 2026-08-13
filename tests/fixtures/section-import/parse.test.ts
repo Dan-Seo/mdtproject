@@ -28,6 +28,15 @@ function readPage(file: string): TextPage {
   return { ...fixture.page, items: fixture.items }
 }
 
+function readExpected<T>(file: string): T {
+  const fixturePath = resolve(
+    process.cwd(),
+    'tests/fixtures/section-import/expected',
+    file,
+  )
+  return JSON.parse(readFileSync(fixturePath, 'utf8')) as T
+}
+
 function list(
   parsed: ParsedSectionList[],
   listKind: string,
@@ -206,4 +215,213 @@ describe('parseSectionLists', () => {
     expect(fg1.raw['腹筋']).toBeUndefined()
   })
 
+})
+
+// ── 전사 픽스처 전 셀 대조 ────────────────────────────────────────────────
+// expected/*.json은 도면을 눈으로 읽어 적은 원문 독립 전사다 (ADR-010).
+// 규칙: 파서가 확정한 값은 전사와 일치해야 하고(지어내기 검출), 확정하지 않은
+// 칸은 raw 원문이 전사와 모순되면 안 된다. 어느 칸을 확정할지는 파서 정책이므로
+// 값이 아니라 확정 칸 수를 핀으로 박아 대량 미확정 회귀를 막는다.
+
+interface ExpectedColumnCell {
+  b?: number
+  d?: number
+  断面raw?: string
+  主筋: string | Record<string, string>
+  帯筋?: string
+  HOOP?: string
+}
+
+interface ExpectedColumnsDoc {
+  entries: Array<{ mark: string; stories: Record<string, ExpectedColumnCell> }>
+}
+
+interface ExpectedGirderCell {
+  b: number
+  depth: number
+  上筋: Record<string, string>
+  下筋: Record<string, string>
+  ST: string
+}
+
+interface ExpectedGirdersDoc {
+  entries: Array<{ mark: string; stories: Record<string, ExpectedGirderCell> }>
+}
+
+interface ExpectedKaniEntry {
+  mark: string
+  b: number
+  depth: number
+  上端筋: string
+  下端筋: string
+  STP: string
+}
+
+/** 「D13-@100」·「D10@200」 표기 차를 흡수한다 — 하이픈은 장식이다 */
+function normPitch(text: string): string {
+  return text.replace('-@', '@')
+}
+
+function sweepColumns(
+  pageFile: string,
+  expectedFile: string,
+  listKind: string,
+): { main: number; hoop: number; dimension: number } {
+  const doc = readExpected<ExpectedColumnsDoc>(expectedFile)
+  const columns = list(parseSectionLists(readPage(pageFile)), listKind)
+  const counts = { main: 0, hoop: 0, dimension: 0 }
+
+  for (const entry of doc.entries) {
+    for (const [story, cell] of Object.entries(entry.stories)) {
+      const c = candidate(columns, entry.mark, story)
+      const label = `${entry.mark}/${story}`
+
+      if (c.b !== undefined) {
+        expect(c.b, label).toBe(cell.b)
+        expect(c.d, label).toBe(cell.d)
+        counts.dimension += 1
+      }
+      if (cell.断面raw !== undefined && c.raw['断面'] !== undefined) {
+        expect(c.raw['断面'], label).toBe(cell.断面raw)
+      }
+
+      const mainCells =
+        typeof cell.主筋 === 'string' ? { 全断面: cell.主筋 } : cell.主筋
+      if (c.main) {
+        for (const text of Object.values(mainCells)) {
+          expect(`${c.main.count}-${c.main.size}`, label).toBe(text)
+        }
+        counts.main += 1
+      } else {
+        for (const [position, text] of Object.entries(mainCells)) {
+          const raw = c.raw[`主筋(${position})`] ?? c.raw['主筋']
+          if (raw !== undefined) expect(raw, label).toBe(text)
+        }
+      }
+
+      const hoopText = cell.帯筋 ?? cell.HOOP
+      if (hoopText !== undefined) {
+        if (c.hoop) {
+          expect(`${c.hoop.size}@${c.hoop.pitchMm}`, label).toBe(
+            normPitch(hoopText),
+          )
+          counts.hoop += 1
+        } else {
+          const raw = c.raw['帯筋'] ?? c.raw['HOOP']
+          if (raw !== undefined) {
+            expect(normPitch(raw), label).toBe(normPitch(hoopText))
+          }
+        }
+      }
+    }
+  }
+
+  return counts
+}
+
+describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
+  it('ojkk 柱リスト — 19칸 (位置 2행·帯筋에 고강도 K13 포함)', () => {
+    expect(
+      sweepColumns('ojkk-p2.json', 'ojkk-akamichi-p2-columns.json', '柱リスト'),
+      // K13 3칸(C2 1F·C2A 2F·C2A 1F)만 미확정, 断面은 라벨 행이 없어 전 칸 미확정
+    ).toEqual({ main: 19, hoop: 16, dimension: 0 })
+  })
+
+  it('yokohama 柱断面リスト — 15칸 (断面 라벨 행·位置 없음·S13·600φ 포함)', () => {
+    expect(
+      sweepColumns(
+        'yokohama-p13.json',
+        'yokohama-kanazawa-p13-columns.json',
+        '柱断面リスト',
+      ),
+      // S13 4칸만 帯筋 미확정, 断面은 600φ(C56) 1칸만 미확정
+    ).toEqual({ main: 15, hoop: 11, dimension: 14 })
+  })
+
+  it('yokohama 大梁断面リスト — 전사분 5칸 (位置별 상이 主筋 포함)', () => {
+    const doc = readExpected<ExpectedGirdersDoc>(
+      'yokohama-kanazawa-p14-girders.json',
+    )
+    const girders = list(
+      parseSectionLists(readPage('yokohama-p14.json')),
+      '大梁断面リスト',
+    )
+    const counts = { main: 0, stirrup: 0, dimension: 0 }
+
+    for (const entry of doc.entries) {
+      for (const [story, cell] of Object.entries(entry.stories)) {
+        const c = candidate(girders, entry.mark, story)
+        const label = `${entry.mark}/${story}`
+
+        if (c.b !== undefined) {
+          expect(c.b, label).toBe(cell.b)
+          expect(c.depth, label).toBe(cell.depth)
+          counts.dimension += 1
+        }
+        if (c.girderMain) {
+          for (const text of Object.values(cell.上筋)) {
+            expect(
+              `${c.girderMain.topCount}-${c.girderMain.size}`,
+              label,
+            ).toBe(text)
+          }
+          for (const text of Object.values(cell.下筋)) {
+            expect(
+              `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+              label,
+            ).toBe(text)
+          }
+          counts.main += 1
+        } else {
+          for (const [position, text] of Object.entries(cell.上筋)) {
+            const raw = c.raw[`上筋(${position})`]
+            if (raw !== undefined) expect(raw, label).toBe(text)
+          }
+          for (const [position, text] of Object.entries(cell.下筋)) {
+            const raw = c.raw[`下筋(${position})`]
+            if (raw !== undefined) expect(raw, label).toBe(text)
+          }
+        }
+        if (c.stirrup) {
+          expect(`${c.stirrup.size}@${c.stirrup.pitchMm}`, label).toBe(
+            normPitch(cell.ST),
+          )
+          counts.stirrup += 1
+        } else if (c.raw['ST'] !== undefined) {
+          expect(normPitch(c.raw['ST']), label).toBe(normPitch(cell.ST))
+        }
+      }
+    }
+
+    // 位置별 상이 3칸(G51 R階·2階, G55 R階)은 主筋 미확정이 정답
+    expect(counts).toEqual({ main: 2, stirrup: 5, dimension: 5 })
+  })
+
+  it('kani 地中梁リスト — 전사 1칸 전부 확정', () => {
+    const doc = readExpected<{ entries: ExpectedKaniEntry[] }>(
+      'kani-sakuragaoka-p38-foundation-girder.json',
+    )
+    const girders = list(
+      parseSectionLists(readPage('kani-p38.json')),
+      '地中梁リスト',
+    )
+
+    for (const entry of doc.entries) {
+      const c = candidate(girders, entry.mark)
+      expect(c.b, entry.mark).toBe(entry.b)
+      expect(c.depth, entry.mark).toBe(entry.depth)
+      expect(
+        c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`,
+        entry.mark,
+      ).toBe(entry.上端筋)
+      expect(
+        c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+        entry.mark,
+      ).toBe(entry.下端筋)
+      expect(
+        c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`,
+        entry.mark,
+      ).toBe(normPitch(entry.STP))
+    }
+  })
 })
