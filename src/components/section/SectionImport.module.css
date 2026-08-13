@@ -93,6 +93,12 @@
   list-style: none;
 }
 
+.listIssue {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--type-caption-size);
+  color: var(--text-muted);
+}
+
 .candidate {
   display: grid;
   gap: var(--space-xs);

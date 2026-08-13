@@ -25,9 +25,11 @@ export const CANDIDATE_ISSUES = [
   '主筋位置相違',
   '主筋上下径相違',
   '主筋折返し',
+  '主筋ラベル行外',
   '断面矩形不成立',
   '帯筋解釈不能',
   '帯筋折返し',
+  '帯筋ラベル行外',
   '階不明',
   '項目行重複',
 ] as const
@@ -55,7 +57,17 @@ export interface SectionCandidate {
   issues: CandidateIssue[]
 }
 
+/**
+ * 표 하나가 통째로 후보를 못 낸 사유. 후보 배열이 비었다는 사실만으로는
+ * 「符号을 못 읽었다」와 「符号은 읽었는데 항목 행을 못 읽었다」가 구분되지 않고,
+ * 둘은 사용자가 원도에서 볼 곳이 다르다.
+ */
+export const LIST_ISSUES = ['符号行未認識', '項目行未認識'] as const
+
+export type ListIssue = (typeof LIST_ISSUES)[number]
+
 export interface ParsedSectionList {
   listKind: string
   candidates: SectionCandidate[]
+  issue?: ListIssue
 }

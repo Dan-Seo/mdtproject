@@ -570,11 +570,15 @@ function setPitch(
   raw: string | undefined,
   folded: string | undefined,
 ): void {
-  // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 帯筋 ピッチ가 줄마다 다르면 本数가 틀린다
+  // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 帯筋 ピッチ가 줄마다 다르면 本数가 틀린다.
+  // 主筋과 같은 규약으로 첫 줄이 없는 경우를 나눈다 — 접힘 없이도 살아남는 符号이
+  // 생긴 뒤로는 「없는 둘째 줄을 찾아보라」는 안내가 실제로 도달한다
   if (folded !== undefined) {
-    if (raw) candidate.raw[label] = cleanedRebarRaw(raw)
-    candidate.raw[`${label}(折返し)`] = cleanedRebarRaw(folded)
-    addIssue(candidate, '帯筋折返し')
+    const wrapped = raw !== undefined && raw.length > 0
+    if (wrapped) candidate.raw[label] = cleanedRebarRaw(raw as string)
+    candidate.raw[`${label}(${wrapped ? '折返し' : '無ラベル行'})`] =
+      cleanedRebarRaw(folded)
+    addIssue(candidate, wrapped ? '帯筋折返し' : '帯筋ラベル行外')
     return
   }
   if (!raw) return
@@ -817,7 +821,17 @@ function parseColumnBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const hoop = hoopValues.get(mark)
-      if (!dimension && mainCells.length === 0 && !hoop) return
+      // 접힘 검사보다 먼저 떨어뜨리면, 값이 접힌 둘째 줄에만 있는 符号이
+      // 사유도 원문도 없이 사라진다 — 접힘도 「읽은 것이 있다」에 넣는다
+      if (
+        !dimension &&
+        mainCells.length === 0 &&
+        !hoop &&
+        !mainContinuations.has(mark) &&
+        !hoopContinuations.has(mark)
+      ) {
+        return
+      }
 
       const result: SectionCandidate = {
         kind: kindFromMark(mark, titleText),
@@ -835,8 +849,12 @@ function parseColumnBlock(
             'position' in cell ? `主筋(${cell.position})` : '主筋'
           result.raw[key] = cleanedRebarRaw(cell.raw)
         }
-        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
-        addIssue(result, '主筋折返し')
+        // 첫 줄이 아예 없으면 「접혀 있다」가 아니다 — 없는 접힘을 알리면
+        // 사용자는 원도에서 존재하지 않는 둘째 줄을 찾는다
+        const folded = mainCells.length > 0
+        result.raw[folded ? '主筋(折返し)' : '主筋(無ラベル行)'] =
+          cleanedRebarRaw(continuation)
+        addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
       } else {
         setColumnMain(result, mainCells, markPositions.length)
       }
@@ -1003,11 +1021,15 @@ function parseGirderBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const stirrup = stirrupValues.get(mark)
+      // 柱 블록과 같은 이유 — 접힘도 「읽은 것이 있다」에 넣는다
       if (
         !dimension &&
         topCells.length === 0 &&
         bottomCells.length === 0 &&
-        !stirrup
+        !stirrup &&
+        !topContinuations.has(mark) &&
+        !bottomContinuations.has(mark) &&
+        !stirrupContinuations.has(mark)
       ) {
         continue
       }
@@ -1020,9 +1042,9 @@ function parseGirderBlock(
         issues: [],
       }
       setDimension(result, dimension, false)
-      const continuation =
-        topContinuations.get(mark) ?? bottomContinuations.get(mark)
-      if (continuation !== undefined) {
+      const topFold = topContinuations.get(mark)
+      const bottomFold = bottomContinuations.get(mark)
+      if (topFold !== undefined || bottomFold !== undefined) {
         // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 줄들을 원문 참고로 남긴다
         if (topLabel) {
           for (const cell of topCells) {
@@ -1038,8 +1060,23 @@ function parseGirderBlock(
             )
           }
         }
-        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
-        addIssue(result, '主筋折返し')
+        // 上下를 한 키에 몰면 양쪽이 접힌 표에서 下筋 줄이 上筋 줄을 덮는다.
+        // 帯筋·ST와 같은 라벨 규약을 써 어느 행이 접혔는지도 남긴다.
+        // 柱 블록과 같은 이유로 첫 줄이 없는 쪽은 접힘이라 부르지 않는다
+        if (topFold !== undefined) {
+          const folded = topCells.length > 0
+          result.raw[
+            `${topLabel ?? '上筋'}(${folded ? '折返し' : '無ラベル行'})`
+          ] = cleanedRebarRaw(topFold)
+          addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
+        }
+        if (bottomFold !== undefined) {
+          const folded = bottomCells.length > 0
+          result.raw[
+            `${bottomLabel ?? '下筋'}(${folded ? '折返し' : '無ラベル行'})`
+          ] = cleanedRebarRaw(bottomFold)
+          addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
+        }
       } else if (topLabel || bottomLabel) {
         // 한쪽 라벨만 인식돼도 읽어낸 셀은 남긴다 — setGirderMain이 上下 양쪽을
         // 요구하므로 「主筋位置欠落」이 붙고, 확정 없이 원문이 보존된다
@@ -1092,7 +1129,12 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
-  if (headerIndexes.length === 0) return undefined
+  // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
+  // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
+  // 사유를 코드로 실어 보내고 문구는 표시부가 고른다 (CandidateIssue와 같은 규약)
+  if (headerIndexes.length === 0) {
+    return { listKind: anchor.listKind, candidates: [], issue: '符号行未認識' }
+  }
 
   const candidates: SectionCandidate[] = []
   headerIndexes.forEach((headerIndex, index) => {
@@ -1103,7 +1145,13 @@ function parseTableRegion(
     candidates.push(...parsed)
   })
 
-  return { listKind: anchor.listKind, candidates }
+  // 符号은 읽었으나 항목 행(断面·主筋·帯筋)을 하나도 못 읽은 표 — 「符号을 못
+  // 읽었다」로 안내하면 사용자가 원도의 엉뚱한 곳을 본다
+  return {
+    listKind: anchor.listKind,
+    candidates,
+    ...(candidates.length === 0 ? { issue: '項目行未認識' as const } : {}),
+  }
 }
 
 export function parseSectionLists(page: TextPage): ParsedSectionList[] {

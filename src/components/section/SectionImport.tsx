@@ -12,6 +12,8 @@ import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type {
+  ListIssue,
+  ParsedSectionList,
   SectionCandidate,
   TextPage,
 } from '@/lib/import/section-list/types'
@@ -31,14 +33,12 @@ interface CandidateRow {
   candidate: SectionCandidate
 }
 
-function parsedCandidates(pages: TextPage[]): CandidateRow[] {
-  return pages.flatMap((page, pageIndex) =>
-    parseSectionLists(page).flatMap((list, listIndex) =>
-      list.candidates.map((candidate, candidateIndex) => ({
-        id: `${pageIndex}-${listIndex}-${candidateIndex}`,
-        candidate,
-      })),
-    ),
+function parsedCandidates(lists: ParsedSectionList[]): CandidateRow[] {
+  return lists.flatMap((list, listIndex) =>
+    list.candidates.map((candidate, candidateIndex) => ({
+      id: `${listIndex}-${candidateIndex}`,
+      candidate,
+    })),
   )
 }
 
@@ -65,7 +65,14 @@ function cloneSource(
   candidate: SectionCandidate,
 ): Section | undefined {
   if (candidate.kind === '対象外') return undefined
-  return project.sections.find((section) => section.kind === candidate.kind)
+  const sameKind = project.sections.filter(
+    (section) => section.kind === candidate.kind,
+  )
+  // 같은 符号의 다른 階가 이미 있으면 그쪽이 복제원이다 — 파싱하지 않는
+  // fc·강종·노출·仕上げ·初期オフセット은 무관한 부재보다 같은 符号 쪽이 맞다
+  return (
+    sameKind.find((section) => section.mark === candidate.mark) ?? sameKind[0]
+  )
 }
 
 /**
@@ -355,7 +362,23 @@ export function SectionImport({
   const [ignored, setIgnored] = useState<Set<string>>(() => new Set())
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
-  const rows = useMemo(() => parsedCandidates(pages ?? []), [pages])
+  const lists = useMemo(
+    () => (pages ?? []).flatMap((page) => parseSectionLists(page)),
+    [pages],
+  )
+  const rows = useMemo(() => parsedCandidates(lists), [lists])
+  // 사유별로 어느 리스트가 걸렸는지 묶는다 — 후보가 하나라도 있으면 실패한 표가
+  // 화면에서 사라지던 문제를 막으려면 이 안내가 후보 목록과 함께 늘 보여야 한다
+  const listIssues = useMemo(() => {
+    const grouped = new Map<ListIssue, string[]>()
+    for (const { issue, listKind } of lists) {
+      if (issue === undefined) continue
+      const kinds = grouped.get(issue) ?? []
+      if (!kinds.includes(listKind)) kinds.push(listKind)
+      grouped.set(issue, kinds)
+    }
+    return [...grouped]
+  }, [lists])
   const supported = rows.filter(({ candidate }) => candidate.kind !== '対象外')
   const outOfScope = rows.filter(({ candidate }) => candidate.kind === '対象外')
 
@@ -437,10 +460,15 @@ export function SectionImport({
               <p role="status">{t(locale, 'sectionImport.loading')}</p>
             ) : failed ? (
               <p role="alert">{t(locale, 'sectionImport.error')}</p>
-            ) : pages && rows.length === 0 ? (
+            ) : pages && rows.length === 0 && listIssues.length === 0 ? (
               <p>{t(locale, 'sectionImport.empty')}</p>
             ) : (
               <>
+                {listIssues.map(([issue, kinds]) => (
+                  <p key={issue} className={styles.listIssue}>
+                    {`${t(locale, `sectionImport.listIssue.${issue}`)}（${kinds.join('・')}）`}
+                  </p>
+                ))}
                 <ul className={styles.candidateList}>
                   {supported.map((row) => (
                     <Candidate

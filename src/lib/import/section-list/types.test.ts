@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest'
 import ja from '@/locales/ja.json'
 import ko from '@/locales/ko.json'
 
-import { CANDIDATE_ISSUES, type CandidateIssue, type SectionCandidate } from './types'
+import {
+  CANDIDATE_ISSUES,
+  LIST_ISSUES,
+  type CandidateIssue,
+  type SectionCandidate,
+} from './types'
 
 describe('SectionCandidate', () => {
   it('carries issue codes instead of free-form sentences', () => {
@@ -23,6 +28,18 @@ describe('SectionCandidate', () => {
     // 코드만 있고 키가 없으면 사용자에게 「主筋折返し」 같은 코드가 그대로 보인다
     const missing = CANDIDATE_ISSUES.flatMap((issue) => {
       const key = `sectionImport.issue.${issue}`
+      return [
+        ...(key in ja ? [] : [`ja:${key}`]),
+        ...(key in ko ? [] : [`ko:${key}`]),
+      ]
+    })
+
+    expect(missing).toEqual([])
+  })
+
+  it('has a ja·ko message for every list-level issue code', () => {
+    const missing = LIST_ISSUES.flatMap((issue) => {
+      const key = `sectionImport.listIssue.${issue}`
       return [
         ...(key in ja ? [] : [`ja:${key}`]),
         ...(key in ko ? [] : [`ko:${key}`]),
