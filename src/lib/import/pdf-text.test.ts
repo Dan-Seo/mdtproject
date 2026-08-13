@@ -9,6 +9,9 @@ vi.mock('pdfjs-dist', () => ({
 
 import { extractTextPages } from './pdf-text'
 
+const pageCleanup = vi.fn()
+const taskDestroy = vi.fn().mockResolvedValue(undefined)
+
 function fakeDocument() {
   return {
     numPages: 1,
@@ -21,6 +24,7 @@ function fakeDocument() {
           { type: 'beginMarkedContent' }, // TextMarkedContent — str 없음, 걸러져야 한다
         ],
       }),
+      cleanup: pageCleanup,
     }),
   }
 }
@@ -28,7 +32,12 @@ function fakeDocument() {
 describe('extractTextPages', () => {
   beforeEach(() => {
     getDocument.mockReset()
-    getDocument.mockReturnValue({ promise: Promise.resolve(fakeDocument()) })
+    pageCleanup.mockClear()
+    taskDestroy.mockClear()
+    getDocument.mockReturnValue({
+      promise: Promise.resolve(fakeDocument()),
+      destroy: taskDestroy,
+    })
   })
 
   it('opens untrusted PDFs without worker-side fetch', async () => {
@@ -42,6 +51,17 @@ describe('extractTextPages', () => {
     expect(getDocument).toHaveBeenCalledWith(
       expect.objectContaining({ useWorkerFetch: false }),
     )
+  })
+
+  it('releases pdf.js resources even though extraction succeeded', async () => {
+    // 「別のPDFを選択」을 반복해도 파싱 버퍼·워커 자원이 탭에 누적되면 안 된다
+    const file = new File([new Uint8Array([1])], 'a.pdf', {
+      type: 'application/pdf',
+    })
+    await extractTextPages(file)
+
+    expect(pageCleanup).toHaveBeenCalledTimes(1)
+    expect(taskDestroy).toHaveBeenCalledTimes(1)
   })
 
   it('emits per-character baseline items — the fixture extractor convention', async () => {

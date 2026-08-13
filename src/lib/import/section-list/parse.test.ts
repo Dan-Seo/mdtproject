@@ -89,6 +89,79 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).not.toHaveLength(0)
   })
 
+  it('rejects a 主筋 cell with stray characters around the token', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        // 인접 치수선 숫자가 셀에 붙은 경우 — 매치 1개라도 셀 전체가 아니면 거부
+        { str: '70016-D25', x: 96, y: 44, w: 54, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.main).toBeUndefined()
+    expect(c1.raw['主筋']).toBe('70016-D25')
+    expect(c1.issues).not.toHaveLength(0)
+  })
+
+  it('does not confirm a 主筋 cell folded onto a second unlabeled line', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '4-D25', x: 105, y: 44, w: 30, h: 8 },
+        // 셀 내용이 줄바꿈으로 접힌 둘째 줄 — 라벨이 없는 행이다
+        { str: '2-D22', x: 105, y: 56, w: 30, h: 8 },
+        { str: '帯筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 70, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    // 첫 줄만 보고 4-D25로 확정하면 2段筋 거부 방침이 줄바꿈 변형에서 샌다
+    expect(c1.main).toBeUndefined()
+    expect(c1.raw['主筋']).toBe('4-D25')
+    expect(c1.raw['主筋(折返し)']).toBe('2-D22')
+    expect(c1.issues).not.toHaveLength(0)
+    // 접힘과 무관한 帯筋은 정상 확정
+    expect(c1.hoop).toEqual({ size: 'D13', pitchMm: 100 })
+  })
+
+  it('falls back to raw dimension capture when the 断面 label row has no values', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        // 断面 라벨 행에 값 세그먼트가 없다 — 라벨 존재만 보면 폴백이 통째로 막힌다
+        { str: '断面', x: 10, y: 44, w: 20, h: 8 },
+        { str: '700', x: 115, y: 56, w: 20, h: 8 },
+        { str: '主筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '16-D25', x: 100, y: 70, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.d).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).not.toHaveLength(0)
+  })
+
   it('rejects 組数-prefixed 帯筋 cells instead of dropping the multiplier', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

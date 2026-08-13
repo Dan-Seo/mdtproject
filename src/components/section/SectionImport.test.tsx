@@ -52,9 +52,14 @@ describe('SectionImport', () => {
 
     const row = screen.getByTestId('section-import-candidate-C51-2階')
     // 복제 고지는 어떤 값이 흘러드는지 필드 단위로 보여야 한다 — 符号만으로는
-    // 사용자가 fc·강종·노출을 확인하지 않은 채 물량에 들어가는 것을 모른다
+    // 사용자가 fc·강종·노출·初期オフセット을 확인하지 않은 채 물량에 들어가는 것을
+    // 모른다 (初期オフセット은 ADR-012가 제품이 정하지 않는다고 못박은 입력이다)
     expect(row).toHaveTextContent(
-      '未解析の欄はC1（fc24・SD345・屋外/仕上げなし）から複製',
+      '未解析の欄はC1（fc24・SD345・屋外/仕上げなし・初期オフセット0mm）から複製',
+    )
+    // 신규 符号는 반영해도 어떤 Member에도 배정되지 않는다 — 산정 미반영을 명시
+    expect(row).toHaveTextContent(
+      '追加された符号はまだどの部材にも割り当てられていません（数量・3Dに未反映）',
     )
 
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))

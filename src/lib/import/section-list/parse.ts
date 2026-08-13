@@ -341,13 +341,15 @@ function stripDecoration(value: string): string {
 }
 
 function parseBar(value: string): ParsedBar | undefined {
-  // 2段筋 등 복수 표기(「4-D25+2-D22」)를 첫 매치로 잘라 확정하지 않는다 —
-  // 단일 표기일 때만 채택하고, 아니면 빈칸+원문 경로로 보낸다
-  const matches = [...compact(value).matchAll(/(\d+)-?(D\d+)/gi)]
-  if (matches.length !== 1) return undefined
-  const size = matches[0][2].toUpperCase() as BarSize
+  // parsePitch와 같은 규약: 장식을 벗긴 셀 전체가 단일 「本数-径」일 때만 확정한다 —
+  // 복수 표기(「4-D25+2-D22」)도, 잡문자가 붙은 「70016-D25」도 빈칸+원문 경로로 보낸다
+  const match = stripDecoration(value).match(/^(\d+)-?(D\d+)$/i)
+  if (!match) return undefined
+  const size = match[2].toUpperCase() as BarSize
   if (!barSizes.has(size)) return undefined
-  return { count: Number(matches[0][1]), size }
+  const count = Number(match[1])
+  // 本数 3자리는 인접 치수선 숫자가 붙은 셀 병합 잔재다(「70016-D25」) — 확정하지 않는다
+  return count > 99 ? undefined : { count, size }
 }
 
 function parsePitch(
@@ -532,6 +534,44 @@ function rowsBetween(rows: TextRow[], startY: number, endY: number): TextRow[] {
   return rows.filter((row) => row.y > startY && row.y < endY)
 }
 
+const COLUMN_ROW_LABELS = ['主筋', '帯筋', 'HOOP', '断面', '位置'] as const
+
+/**
+ * 라벨 행과 다음 라벨 행 사이의 무라벨 행에서 鉄筋 토큰을 마크별로 모은다.
+ * 셀 내용이 줄바꿈으로 접히면 둘째 줄은 별도 행이 되어 라벨 행만 읽는 경로에서
+ * 조용히 사라진다 — 첫 줄만으로 확정하면 2段筋 거부 방침이 줄바꿈 변형에서 샌다.
+ */
+function barContinuationByMark(
+  dataRows: TextRow[],
+  labelRow: TextRow,
+  endY: number,
+  marks: MarkColumn[],
+): Map<string, string> {
+  const nextLabelY = dataRows
+    .filter((row) => row.y > labelRow.y && exactLabel(row, COLUMN_ROW_LABELS))
+    .reduce((min, row) => Math.min(min, row.y), endY)
+  const merged = new Map<string, string>()
+
+  for (const row of dataRows) {
+    if (row.y <= labelRow.y || row.y >= nextLabelY) continue
+    if (exactLabel(row, COLUMN_ROW_LABELS)) continue
+    const barSegments = row.segments.filter((segment) =>
+      /\d+-?D\d+/i.test(segment.compact),
+    )
+    if (barSegments.length === 0) continue
+    const values = valuesAtTargets(
+      barSegments,
+      marks.map(({ mark, centerX }) => ({ id: mark, centerX })),
+    )
+    for (const [mark, value] of values) {
+      const existing = merged.get(mark)
+      merged.set(mark, existing ? `${existing}/${value}` : value)
+    }
+  }
+
+  return merged
+}
+
 function lastPositionRow(
   rows: TextRow[],
   headerY: number,
@@ -615,11 +655,18 @@ function parseColumnBlock(
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
     const mainRow = dataRows.find((row) => exactLabel(row, ['主筋']))
     const hoopRow = dataRows.find((row) => exactLabel(row, ['帯筋', 'HOOP']))
-    const dimensionRow = dataRows.find((row) => exactLabel(row, ['断面']))
+    // 라벨 존재만 보면 값 세그먼트가 없는 라벨 행이 scalarDimensions 폴백까지
+    // 막아 원문 참고 표시가 통째로 사라진다 — 大梁 블록과 같은 조건을 쓴다
+    const dimensionRow = dataRows.find(
+      (row) => exactLabel(row, ['断面']) && dataSegments(row, ['断面']).length > 0,
+    )
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
     const positions = positionRow ? positionColumns(positionRow, marks) : []
+    const mainContinuations = mainRow
+      ? barContinuationByMark(dataRows, mainRow, slice.endY, marks)
+      : new Map<string, string>()
     const dimensionValues = dimensionRow
       ? valuesByMark(dimensionRow, ['断面'], marks)
       : scalarDimensions(
@@ -672,7 +719,22 @@ function parseColumnBlock(
         issues: [],
       }
       setDimension(result, dimension, true)
-      setColumnMain(result, mainCells, markPositions.length)
+      const continuation = mainContinuations.get(mark)
+      if (continuation !== undefined) {
+        // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 두 줄을 원문 참고로 남긴다
+        for (const cell of mainCells) {
+          const key =
+            'position' in cell ? `主筋(${cell.position})` : '主筋'
+          result.raw[key] = cleanedRebarRaw(cell.raw)
+        }
+        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
+        addIssue(
+          result,
+          '主筋セルが複数行に折り返されているため、主筋候補を空欄にしました。',
+        )
+      } else {
+        setColumnMain(result, mainCells, markPositions.length)
+      }
       if (hoopLabel) setPitch(result, 'hoop', hoopLabel, hoop)
       candidates.push(result)
     })

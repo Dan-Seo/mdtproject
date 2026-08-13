@@ -22,6 +22,7 @@
   "sectionImport.clonePrefix": "未解析の欄は",
   "sectionImport.cloneSuffix": "から複製",
   "sectionImport.incomplete": "未解析の欄がある新規符号は反映できません（原文を参照）",
+  "sectionImport.newSectionUnassigned": "追加された符号はまだどの部材にも割り当てられていません（数量・3Dに未反映）",
   "sectionImport.outOfScope": "対象外（柱・大梁以外）",
   "plan.storyTabs": "階選択",
   "plan.addSpan": "スパンを追加",

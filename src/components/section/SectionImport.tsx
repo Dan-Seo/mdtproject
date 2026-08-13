@@ -291,12 +291,21 @@ function Candidate({
         </p>
       ) : null}
       {!existing && source && !incomplete ? (
-        <p className={styles.cloneNotice}>
-          {t(locale, 'sectionImport.clonePrefix')}
-          {source.mark}
-          {`（fc${source.fc}・${source.grade}・${source.exposure}/${source.finish}）`}
-          {t(locale, 'sectionImport.cloneSuffix')}
-        </p>
+        <>
+          <p className={styles.cloneNotice}>
+            {t(locale, 'sectionImport.clonePrefix')}
+            {source.mark}
+            {`（fc${source.fc}・${source.grade}・${source.exposure}/${source.finish}・初期オフセット${
+              source.kind === '柱'
+                ? source.hoop.startOffsetMm
+                : source.stirrup.startOffsetMm
+            }mm）`}
+            {t(locale, 'sectionImport.cloneSuffix')}
+          </p>
+          <p className={styles.cloneNotice}>
+            {t(locale, 'sectionImport.newSectionUnassigned')}
+          </p>
+        </>
       ) : null}
       <div className={styles.rowActions}>
         <button
