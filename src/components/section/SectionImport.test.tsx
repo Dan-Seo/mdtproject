@@ -66,7 +66,9 @@ describe('SectionImport', () => {
 
     const section = useAppStore
       .getState()
-      .project.sections.find(({ mark }) => mark === 'C51(2階)')
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'C51' && storyLabel === '2階',
+      )
     expect(section?.kind).toBe('柱')
     if (section?.kind !== '柱') throw new Error('Expected imported 柱 section')
     expect(section).toMatchObject({
@@ -75,6 +77,15 @@ describe('SectionImport', () => {
       main: { count: 18, size: 'D25' },
       hoop: { size: 'D13', pitch: 100 },
     })
+    // 階는 별도 필드다 — 符号에 붙이면 도면에 없는 符号(「C51(2階)」)이 内訳書로
+    // 나가고, 内訳書는 이미 階별로 묶여 있어 階가 두 번 표시된다
+    expect(section.mark).toBe('C51')
+    expect(
+      useAppStore
+        .getState()
+        .project.sections.map(({ mark }) => mark)
+        .filter((mark) => mark.includes('(')),
+    ).toEqual([])
   })
 
   it('keeps each story as its own section instead of overwriting', () => {
@@ -92,11 +103,11 @@ describe('SectionImport', () => {
       ).getByRole('button', { name: '反映' }),
     )
 
-    const marks = useAppStore
+    const imported = useAppStore
       .getState()
-      .project.sections.map(({ mark }) => mark)
-    expect(marks).toContain('C53(2階)')
-    expect(marks).toContain('C53(1階)')
+      .project.sections.filter(({ mark }) => mark === 'C53')
+      .map(({ storyLabel }) => storyLabel)
+    expect(imported).toEqual(['2階', '1階'])
   })
 
   it('blocks approval for a new mark with unparsed fields', () => {
@@ -126,7 +137,8 @@ describe('SectionImport', () => {
           {
             id: 'section-C51-1F',
             kind: '柱',
-            mark: 'C51(1階)',
+            mark: 'C51',
+            storyLabel: '1階',
             b: 750,
             d: 750,
             fc: 24,
@@ -146,7 +158,9 @@ describe('SectionImport', () => {
 
     const section = useAppStore
       .getState()
-      .project.sections.find(({ mark }) => mark === 'C51(1階)')
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'C51' && storyLabel === '1階',
+      )
     expect(section?.kind).toBe('柱')
     if (section?.kind !== '柱') throw new Error('Expected existing 柱 section')
     expect(section).toMatchObject({

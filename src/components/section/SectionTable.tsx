@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
+  sectionMarkLabel,
   type BarSize,
   type ColumnSection,
   type Exposure,
@@ -137,7 +138,7 @@ function CoverConditionField({
       <select
         className={styles.select}
         value={section.exposure}
-        aria-label={`${section.mark} 屋内外`}
+        aria-label={`${sectionMarkLabel(section)} 屋内外`}
         onChange={(event) => {
           const exposure = event.currentTarget.value as Exposure
           update((current) => ({ ...current, exposure }))
@@ -152,7 +153,7 @@ function CoverConditionField({
       <select
         className={styles.select}
         value={section.finish}
-        aria-label={`${section.mark} 仕上げ`}
+        aria-label={`${sectionMarkLabel(section)} 仕上げ`}
         onChange={(event) => {
           const finish = event.currentTarget.value as Finish
           update((current) => ({ ...current, finish }))
@@ -181,13 +182,13 @@ function SectionDimension({
   return (
     <div className={styles.compoundField}>
       <NumberInput
-        label={`${section.mark} 断面 b`}
+        label={`${sectionMarkLabel(section)} 断面 b`}
         value={section.b}
         onChange={(b) => update((current) => ({ ...current, b }))}
       />
       <span aria-hidden="true">×</span>
       <NumberInput
-        label={`${section.mark} 断面 ${secondLabel}`}
+        label={`${sectionMarkLabel(section)} 断面 ${secondLabel}`}
         value={secondValue}
         onChange={(value) =>
           update((current) =>
@@ -211,7 +212,7 @@ function ColumnMainField({
   return (
     <div className={styles.compoundField}>
       <NumberInput
-        label={`${section.mark} 主筋 本数`}
+        label={`${sectionMarkLabel(section)} 主筋 本数`}
         value={section.main.count}
         onChange={(count) =>
           update((current) => {
@@ -222,7 +223,7 @@ function ColumnMainField({
       />
       <span aria-hidden="true">−</span>
       <BarSizeSelect
-        label={`${section.mark} 主筋 径`}
+        label={`${sectionMarkLabel(section)} 主筋 径`}
         value={section.main.size}
         onChange={(size) =>
           update((current) => {
@@ -246,7 +247,7 @@ function GirderMainField({
     <div className={styles.girderMainField}>
       <span>上</span>
       <NumberInput
-        label={`${section.mark} 主筋 上 本数`}
+        label={`${sectionMarkLabel(section)} 主筋 上 本数`}
         value={section.main.topCount}
         onChange={(topCount) =>
           update((current) => {
@@ -257,7 +258,7 @@ function GirderMainField({
       />
       <span>−</span>
       <BarSizeSelect
-        label={`${section.mark} 主筋 径`}
+        label={`${sectionMarkLabel(section)} 主筋 径`}
         value={section.main.size}
         onChange={(size) =>
           update((current) => {
@@ -268,7 +269,7 @@ function GirderMainField({
       />
       <span>下</span>
       <NumberInput
-        label={`${section.mark} 主筋 下 本数`}
+        label={`${sectionMarkLabel(section)} 主筋 下 本数`}
         value={section.main.bottomCount}
         onChange={(bottomCount) =>
           update((current) => {
@@ -297,7 +298,7 @@ function ShearField({
   return (
     <div className={styles.compoundField}>
       <BarSizeSelect
-        label={`${section.mark} ${label} 径`}
+        label={`${sectionMarkLabel(section)} ${label} 径`}
         value={reinforcement.size}
         onChange={(size) =>
           update((current) =>
@@ -309,7 +310,7 @@ function ShearField({
       />
       <span aria-hidden="true">@</span>
       <NumberInput
-        label={`${section.mark} ${label} ピッチ`}
+        label={`${sectionMarkLabel(section)} ${label} ピッチ`}
         value={reinforcement.pitch}
         onChange={(pitch) =>
           update((current) =>
@@ -323,7 +324,7 @@ function ShearField({
         }
       />
       <NumberInput
-        label={`${section.mark} ${label} 初期オフセット`}
+        label={`${sectionMarkLabel(section)} ${label} 初期オフセット`}
         minimum={0}
         value={reinforcement.startOffsetMm}
         onChange={(startOffsetMm) =>
@@ -411,12 +412,17 @@ export function SectionTable() {
                   <input
                     className={styles.markInput}
                     value={section.mark}
-                    aria-label={`${section.mark} 符号`}
+                    aria-label={`${sectionMarkLabel(section)} 符号`}
                     onChange={(event) => {
                       const mark = event.currentTarget.value
                       updateCurrent((current) => ({ ...current, mark }))
                     }}
                   />
+                  {section.storyLabel ? (
+                    <span className={styles.storyLabel}>
+                      {section.storyLabel}
+                    </span>
+                  ) : null}
                 </td>
                 <td>
                   <SectionDimension section={section} update={updateCurrent} />
@@ -439,7 +445,7 @@ export function SectionTable() {
                 </td>
                 <td>
                   <NumberInput
-                    label={`${section.mark} Fc`}
+                    label={`${sectionMarkLabel(section)} Fc`}
                     value={section.fc}
                     onChange={(fc) =>
                       updateCurrent((current) => ({ ...current, fc }))
@@ -448,7 +454,7 @@ export function SectionTable() {
                 </td>
                 <td>
                   <GradeSelect
-                    label={`${section.mark} grade`}
+                    label={`${sectionMarkLabel(section)} grade`}
                     value={section.grade}
                     onChange={(grade) =>
                       updateCurrent((current) => ({ ...current, grade }))

@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import type { Section } from '@/domain/model/member'
+import { sectionMarkLabel, type Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
@@ -43,23 +43,20 @@ function parsedCandidates(pages: TextPage[]): CandidateRow[] {
 }
 
 /**
- * 후보의 제품 내 식별자. 階별 후보가 같은 Section을 덮어쓰면 먼저 반영한 층의
- * 배근이 사라지므로, 階가 있으면 별도 Section이 되도록 mark에 붙인다.
+ * 階별 후보가 같은 Section을 덮어쓰면 먼저 반영한 층의 배근이 사라진다 — 매칭 키는
+ * (符号, 部材, 階)다. 階를 符号에 붙이지는 않는다: 도면에 없는 符号이 内訳書에 그대로
+ * 나가고, 内訳書는 이미 階별로 묶여 있어 階가 두 번 표시된다.
  */
-function candidateMark(candidate: SectionCandidate): string {
-  return candidate.storyLabel
-    ? `${candidate.mark}(${candidate.storyLabel})`
-    : candidate.mark
-}
-
 function matchingSection(
   project: Project,
   candidate: SectionCandidate,
 ): Section | undefined {
   if (candidate.kind === '対象外') return undefined
-  const mark = candidateMark(candidate)
   return project.sections.find(
-    (section) => section.mark === mark && section.kind === candidate.kind,
+    (section) =>
+      section.mark === candidate.mark &&
+      section.kind === candidate.kind &&
+      section.storyLabel === candidate.storyLabel,
   )
 }
 
@@ -114,7 +111,7 @@ function applyParsedFields(
   if (section.kind === '柱' && candidate.kind === '柱') {
     return {
       ...section,
-      mark: candidateMark(candidate),
+      mark: candidate.mark,
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.d === undefined ? {} : { d: candidate.d }),
       ...(candidate.main === undefined
@@ -135,7 +132,7 @@ function applyParsedFields(
   if (section.kind === '大梁' && candidate.kind === '大梁') {
     return {
       ...section,
-      mark: candidateMark(candidate),
+      mark: candidate.mark,
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
       ...(candidate.girderMain === undefined
@@ -156,6 +153,17 @@ function applyParsedFields(
   return section
 }
 
+/** 複製元의 階 표기가 후보에 딸려오지 않게 한다 — 階의 근거는 후보 쪽뿐이다. */
+function withCandidateStory(
+  section: Section,
+  candidate: SectionCandidate,
+): Section {
+  const next = { ...section }
+  if (candidate.storyLabel === undefined) delete next.storyLabel
+  else next.storyLabel = candidate.storyLabel
+  return next
+}
+
 function applyCandidate(project: Project, candidate: SectionCandidate): Project {
   if (candidate.kind === '対象外') return project
 
@@ -173,30 +181,35 @@ function applyCandidate(project: Project, candidate: SectionCandidate): Project 
 
   const source = cloneSource(project, candidate)
   if (!source || missingParsedFields(candidate)) return project
+  // id는 사람이 읽는 값이 아니라 충돌만 피하면 된다 — 階를 섞어 먼저 좁힌다
+  const id = uniqueSectionId(
+    project,
+    candidate.storyLabel
+      ? `${candidate.mark}-${candidate.storyLabel}`
+      : candidate.mark,
+  )
   const clonedSource: Section =
     source.kind === '柱'
-      ? {
-          ...source,
-          id: uniqueSectionId(project, candidateMark(candidate)),
-          main: { ...source.main },
-          hoop: { ...source.hoop },
-        }
+      ? { ...source, id, main: { ...source.main }, hoop: { ...source.hoop } }
       : {
           ...source,
-          id: uniqueSectionId(project, candidateMark(candidate)),
+          id,
           main: { ...source.main },
           stirrup: { ...source.stirrup },
         }
-  const cloned = applyParsedFields(clonedSource, candidate)
+  const cloned = withCandidateStory(
+    applyParsedFields(clonedSource, candidate),
+    candidate,
+  )
 
   return { ...project, sections: [...project.sections, cloned] }
 }
 
 function sectionSummary(section: Section): string {
   if (section.kind === '柱') {
-    return `${section.mark} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
+    return `${sectionMarkLabel(section)} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
   }
-  return `${section.mark} / ${section.b}×${section.depth} / 上${section.main.topCount}・下${section.main.bottomCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
+  return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${section.main.topCount}・下${section.main.bottomCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
 }
 
 function candidateFields(candidate: SectionCandidate): string[] {
@@ -298,7 +311,7 @@ function Candidate({
         <>
           <p className={styles.cloneNotice}>
             {t(locale, 'sectionImport.clonePrefix')}
-            {source.mark}
+            {sectionMarkLabel(source)}
             {`（fc${source.fc}・${source.grade}・${source.exposure}/${source.finish}・初期オフセット${
               source.kind === '柱'
                 ? source.hoop.startOffsetMm

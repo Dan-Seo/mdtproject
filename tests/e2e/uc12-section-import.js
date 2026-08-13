@@ -38,7 +38,7 @@ const before = await page.evaluate(() => {
     ? [...c51First.querySelectorAll("button")].find((button) => button.textContent.trim() === "反映")
     : null;
   return {
-    c51ExistsInTable: document.querySelector("[data-testid='section-row-section-C51(2階)']") !== null,
+    c51ExistsInTable: document.querySelector("[data-testid='section-row-section-C51-2階']") !== null,
     b51VisibleInOutOfScope: b51 !== null,
     b51HasApply: b51
       ? [...b51.querySelectorAll("button")].some((button) => button.textContent.trim() === "反映")
@@ -60,11 +60,14 @@ const shiftTabTarget = await page.evaluate(
   () => document.activeElement?.textContent.trim() ?? null,
 );
 await page.keyboard.press("Enter");
-await page.waitForSelector("[data-testid='section-row-section-C51(2階)']");
+await page.waitForSelector("[data-testid='section-row-section-C51-2階']");
 
 const after = await page.evaluate(() => {
   const value = (label) => document.querySelector(`[aria-label='${label}']`)?.value ?? null;
+  // 符号에는 階를 넣지 않는다 — 표시 라벨만 「符号(階)」로 합성된다
+  const markInput = document.querySelector("[aria-label='C51(2階) 符号']");
   return {
+    markValue: markInput ? markInput.value : null,
     b: value("C51(2階) 断面 b"),
     d: value("C51(2階) 断面 d"),
     mainCount: value("C51(2階) 主筋 本数"),
@@ -87,6 +90,7 @@ const checks = {
   incompleteRawShown: before.c51FirstRawShown === true,
   tabReachesIgnore: tabTarget === "無視",
   shiftTabReturnsToApply: shiftTabTarget === "反映",
+  markKeepsStoryOut: after.markValue === "C51",
   dimensionApplied: after.b === "800" && after.d === "800",
   mainApplied: after.mainCount === "18" && after.mainSize === "D25",
   hoopApplied: after.hoopSize === "D13" && after.hoopPitch === "100",

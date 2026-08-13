@@ -322,13 +322,57 @@ function valuesByMark(
   )
 }
 
+function segmentsByMark(
+  segments: TextSegment[],
+  marks: MarkColumn[],
+): Map<string, TextSegment[]> {
+  const grouped = new Map<string, TextSegment[]>()
+  if (marks.length === 0) return grouped
+
+  for (const segment of segments) {
+    const target = marks.reduce((closest, candidate) =>
+      Math.abs(candidate.centerX - segment.centerX) <
+      Math.abs(closest.centerX - segment.centerX)
+        ? candidate
+        : closest,
+    )
+    const existing = grouped.get(target.mark) ?? []
+    existing.push(segment)
+    grouped.set(target.mark, existing)
+  }
+  return grouped
+}
+
+/**
+ * 位置별 셀 값을 位置 인덱스로 되돌린다. 位置 열을 하나도 배정받지 못한 符号의 셀은
+ * 배정 대상에서 뺀다 — 그대로 두면 그 셀이 최근접 位置(옆 符号의 열)에 붙어 남의 값을
+ * 오염시킨다. 빠진 符号은 valuesByMark로 따로 읽는다.
+ *
+ * 符号 대역으로 먼저 가르지는 않는다. 실물 도면(yokohama G54)에서 符号 헤더 중심이
+ * 열 경계와 어긋나 이웃 열 값이 대역 안으로 들어오는 경우가 있어, 대역 우선 배정은
+ * 位置를 가진 符号의 셀까지 뭉갠다.
+ */
 function valuesByPosition(
   row: TextRow,
   aliases: readonly string[],
   positions: PositionColumn[],
+  marks: MarkColumn[],
 ): Map<string, string> {
+  const positionless = new Set(
+    marks
+      .filter(({ mark }) => !positions.some((position) => position.mark === mark))
+      .map(({ mark }) => mark),
+  )
+  const segments = dataSegments(row, aliases)
+  const assignable =
+    positionless.size === 0
+      ? segments
+      : [...segmentsByMark(segments, marks)]
+          .filter(([mark]) => !positionless.has(mark))
+          .flatMap(([, group]) => group)
+
   return valuesAtTargets(
-    dataSegments(row, aliases),
+    assignable,
     positions.map((position, index) => ({
       id: String(index),
       centerX: position.centerX,
@@ -524,7 +568,15 @@ function setPitch(
   key: 'hoop' | 'stirrup',
   label: string,
   raw: string | undefined,
+  folded: string | undefined,
 ): void {
+  // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 帯筋 ピッチ가 줄마다 다르면 本数가 틀린다
+  if (folded !== undefined) {
+    if (raw) candidate.raw[label] = cleanedRebarRaw(raw)
+    candidate.raw[`${label}(折返し)`] = cleanedRebarRaw(folded)
+    addIssue(candidate, '帯筋折返し')
+    return
+  }
   if (!raw) return
   const parsed = parsePitch(raw)
   if (parsed) {
@@ -559,6 +611,11 @@ const ROW_LABELS = [
   '腹筋',
 ] as const
 
+/** 本数-径 토큰(主筋 셀)과 径@ピッチ 토큰(帯筋·あばら筋 셀)을 구분해 접힘을 찾는다. */
+const BAR_TOKEN = /\d+-?D\d+/i
+
+const PITCH_TOKEN = /D\d+-?@\d+/i
+
 /**
  * 라벨 행과 다음 라벨 행 사이의 무라벨 행에서 鉄筋 토큰을 마크별로 모은다.
  * 셀 내용이 줄바꿈으로 접히면 둘째 줄은 별도 행이 되어 라벨 행만 읽는 경로에서
@@ -569,6 +626,7 @@ function barContinuationByMark(
   labelRow: TextRow,
   endY: number,
   marks: MarkColumn[],
+  token: RegExp,
 ): Map<string, string> {
   const nextLabelY = dataRows
     .filter((row) => row.y > labelRow.y && exactLabel(row, ROW_LABELS))
@@ -579,7 +637,7 @@ function barContinuationByMark(
     if (row.y <= labelRow.y || row.y >= nextLabelY) continue
     if (exactLabel(row, ROW_LABELS)) continue
     const barSegments = row.segments.filter((segment) =>
-      /\d+-?D\d+/i.test(segment.compact),
+      token.test(segment.compact),
     )
     if (barSegments.length === 0) continue
     const values = valuesAtTargets(
@@ -683,12 +741,11 @@ function parseColumnBlock(
     const dimensionRows = dataRows.filter(
       (row) => exactLabel(row, ['断面']) && dataSegments(row, ['断面']).length > 0,
     )
-    // 階 라벨이 하나도 인식되지 않았는데(「一般階」「B1F」 등 STORY_PATTERN 밖 표기)
-    // 라벨 행이 겹으로 있으면 여러 층 블록이 한 슬라이스로 합쳐진 것이다 —
-    // 첫 행 값을 「階指定なし」로 확정하면 전 층 값으로 오인된다
+    // 한 슬라이스에 같은 라벨 행이 겹으로 있으면 여러 층 블록이 합쳐진 것이다 —
+    // 階 라벨이 하나도 인식되지 않은 표(「一般階」)든 일부만 인식된 표(「1F」+「B1F」)든
+    // 첫 행 값을 확정하면 나머지 층 값이 사유도 원문도 없이 사라진다
     const storyAmbiguous =
-      slice.storyLabel === undefined &&
-      (mainRows.length > 1 || hoopRows.length > 1 || dimensionRows.length > 1)
+      mainRows.length > 1 || hoopRows.length > 1 || dimensionRows.length > 1
     const mainRow = storyAmbiguous ? undefined : mainRows[0]
     const hoopRow = storyAmbiguous ? undefined : hoopRows[0]
     const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
@@ -697,7 +754,10 @@ function parseColumnBlock(
       dataRows.find((row) => exactLabel(row, ['位置']))
     const positions = positionRow ? positionColumns(positionRow, marks) : []
     const mainContinuations = mainRow
-      ? barContinuationByMark(dataRows, mainRow, slice.endY, marks)
+      ? barContinuationByMark(dataRows, mainRow, slice.endY, marks, BAR_TOKEN)
+      : new Map<string, string>()
+    const hoopContinuations = hoopRow
+      ? barContinuationByMark(dataRows, hoopRow, slice.endY, marks, PITCH_TOKEN)
       : new Map<string, string>()
     const dimensionValues = storyAmbiguous
       ? new Map<string, string>()
@@ -711,12 +771,13 @@ function parseColumnBlock(
           )
     const mainByPosition =
       mainRow && positions.length > 0
-        ? valuesByPosition(mainRow, ['主筋'], positions)
+        ? valuesByPosition(mainRow, ['主筋'], positions, marks)
         : new Map<string, string>()
-    const mainByMark =
-      mainRow && positions.length === 0
-        ? valuesByMark(mainRow, ['主筋'], marks)
-        : new Map<string, string>()
+    // 位置 열을 하나도 배정받지 못한 符号(DP가 옆 符号에 몰아준 경우)에도 셀은 있다 —
+    // 폴백 없이 두면 그 符号의 主筋이 확정도 원문도 이슈도 없이 사라진다
+    const mainByMark = mainRow
+      ? valuesByMark(mainRow, ['主筋'], marks)
+      : new Map<string, string>()
     const hoopLabel = hoopRow
       ? exactLabel(hoopRow, ['帯筋', 'HOOP'])?.compact
       : undefined
@@ -726,13 +787,14 @@ function parseColumnBlock(
     marks.forEach(({ mark }) => {
       if (storyAmbiguous) {
         // 값 없이 사유만 실은 후보를 남긴다 — 표가 조용히 사라지면 사용자는
-        // 인식 실패와 구분할 수 없다
+        // 인식 실패와 구분할 수 없다. 階를 못 읽은 것과 階는 읽었으나 행이 겹인 것은
+        // 사용자가 원도에서 확인할 곳이 다르므로 사유를 나눈다
         candidates.push({
           kind: kindFromMark(mark, titleText),
           mark,
-          storyLabel: undefined,
+          storyLabel: slice.storyLabel,
           raw: {},
-          issues: ['階不明'],
+          issues: [slice.storyLabel === undefined ? '階不明' : '項目行重複'],
         })
         return
       }
@@ -778,7 +840,9 @@ function parseColumnBlock(
       } else {
         setColumnMain(result, mainCells, markPositions.length)
       }
-      if (hoopLabel) setPitch(result, 'hoop', hoopLabel, hoop)
+      if (hoopLabel) {
+        setPitch(result, 'hoop', hoopLabel, hoop, hoopContinuations.get(mark))
+      }
       candidates.push(result)
     })
   }
@@ -839,13 +903,12 @@ function parseGirderBlock(
     const stirrupRows = dataRows.filter((row) =>
       exactLabel(row, ['ST', 'STP', 'あばら筋']),
     )
-    // 柱 블록과 같은 방어 — 階 라벨 미인식으로 여러 층 블록이 합쳐졌으면 확정하지 않는다
+    // 柱 블록과 같은 방어 — 라벨 행이 겹이면 여러 층 블록이 합쳐진 것이다
     const storyAmbiguous =
-      slice.storyLabel === undefined &&
-      (topRows.length > 1 ||
-        bottomRows.length > 1 ||
-        stirrupRows.length > 1 ||
-        dimensionRows.length > 1)
+      topRows.length > 1 ||
+      bottomRows.length > 1 ||
+      stirrupRows.length > 1 ||
+      dimensionRows.length > 1
     const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
     const topRow = storyAmbiguous ? undefined : topRows[0]
     const bottomRow = storyAmbiguous ? undefined : bottomRows[0]
@@ -871,17 +934,22 @@ function parseGirderBlock(
     const bottomLabel = bottomRow
       ? exactLabel(bottomRow, ['下筋', '下端筋'])?.compact
       : undefined
-    const topValues =
-      topRow && topLabel
-        ? positions.length > 0
-          ? valuesByPosition(topRow, [topLabel], positions)
-          : valuesByMark(topRow, [topLabel], marks)
+    // 柱 블록과 같은 폴백 — 位置 열을 배정받지 못한 符号의 셀도 남긴다
+    const topByPosition =
+      topRow && topLabel && positions.length > 0
+        ? valuesByPosition(topRow, [topLabel], positions, marks)
         : new Map<string, string>()
-    const bottomValues =
+    const topByMark =
+      topRow && topLabel
+        ? valuesByMark(topRow, [topLabel], marks)
+        : new Map<string, string>()
+    const bottomByPosition =
+      bottomRow && bottomLabel && positions.length > 0
+        ? valuesByPosition(bottomRow, [bottomLabel], positions, marks)
+        : new Map<string, string>()
+    const bottomByMark =
       bottomRow && bottomLabel
-        ? positions.length > 0
-          ? valuesByPosition(bottomRow, [bottomLabel], positions)
-          : valuesByMark(bottomRow, [bottomLabel], marks)
+        ? valuesByMark(bottomRow, [bottomLabel], marks)
         : new Map<string, string>()
     const stirrupLabel = stirrupRow
       ? exactLabel(stirrupRow, ['ST', 'STP', 'あばら筋'])?.compact
@@ -890,12 +958,21 @@ function parseGirderBlock(
       stirrupRow && stirrupLabel
         ? valuesByMark(stirrupRow, [stirrupLabel], marks)
         : new Map<string, string>()
-    // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋에도 건다
+    // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋/あばら筋에도 건다
     const topContinuations = topRow
-      ? barContinuationByMark(dataRows, topRow, slice.endY, marks)
+      ? barContinuationByMark(dataRows, topRow, slice.endY, marks, BAR_TOKEN)
       : new Map<string, string>()
     const bottomContinuations = bottomRow
-      ? barContinuationByMark(dataRows, bottomRow, slice.endY, marks)
+      ? barContinuationByMark(dataRows, bottomRow, slice.endY, marks, BAR_TOKEN)
+      : new Map<string, string>()
+    const stirrupContinuations = stirrupRow
+      ? barContinuationByMark(
+          dataRows,
+          stirrupRow,
+          slice.endY,
+          marks,
+          PITCH_TOKEN,
+        )
       : new Map<string, string>()
 
     for (const { mark } of marks) {
@@ -903,9 +980,9 @@ function parseGirderBlock(
         candidates.push({
           kind: kindFromMark(mark, titleText),
           mark,
-          storyLabel: undefined,
+          storyLabel: slice.storyLabel,
           raw: {},
-          issues: ['階不明'],
+          issues: [slice.storyLabel === undefined ? '階不明' : '項目行重複'],
         })
         continue
       }
@@ -913,16 +990,16 @@ function parseGirderBlock(
         (position) => position.mark === mark,
       )
       const topCells =
-        positions.length > 0
-          ? cellsForMark(topValues, indexedPositions, mark)
-          : topValues.has(mark)
-            ? [{ position: '全断面', raw: topValues.get(mark) as string }]
+        markPositions.length > 0
+          ? cellsForMark(topByPosition, indexedPositions, mark)
+          : topByMark.has(mark)
+            ? [{ position: '全断面', raw: topByMark.get(mark) as string }]
             : []
       const bottomCells =
-        positions.length > 0
-          ? cellsForMark(bottomValues, indexedPositions, mark)
-          : bottomValues.has(mark)
-            ? [{ position: '全断面', raw: bottomValues.get(mark) as string }]
+        markPositions.length > 0
+          ? cellsForMark(bottomByPosition, indexedPositions, mark)
+          : bottomByMark.has(mark)
+            ? [{ position: '全断面', raw: bottomByMark.get(mark) as string }]
             : []
       const dimension = dimensionValues.get(mark)
       const stirrup = stirrupValues.get(mark)
@@ -963,18 +1040,26 @@ function parseGirderBlock(
         }
         result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
         addIssue(result, '主筋折返し')
-      } else if (topLabel && bottomLabel) {
+      } else if (topLabel || bottomLabel) {
+        // 한쪽 라벨만 인식돼도 읽어낸 셀은 남긴다 — setGirderMain이 上下 양쪽을
+        // 요구하므로 「主筋位置欠落」이 붙고, 확정 없이 원문이 보존된다
         setGirderMain(
           result,
-          topLabel,
-          bottomLabel,
+          topLabel ?? '上筋',
+          bottomLabel ?? '下筋',
           topCells,
           bottomCells,
           markPositions.length,
         )
       }
       if (stirrupLabel) {
-        setPitch(result, 'stirrup', stirrupLabel, stirrup)
+        setPitch(
+          result,
+          'stirrup',
+          stirrupLabel,
+          stirrup,
+          stirrupContinuations.get(mark),
+        )
       }
       candidates.push(result)
     }

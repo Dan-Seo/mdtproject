@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseSectionLists } from './parse'
 import type { ParsedSectionList, SectionCandidate } from './types'
 
-// 실물 도면 픽스처 대조는 tests/fixtures/section-import/parse.test.ts에 있다.
+// 실물 도면 픽스처 대조는 tests/section-import/parse.test.ts에 있다.
 // 여기는 합성 TextPage로 파서의 경계 규칙만 고정한다.
 
 function list(
@@ -506,6 +506,178 @@ describe('parseSectionLists (synthetic)', () => {
       girderMain: { size: 'D22', topCount: 3, bottomCount: 3 },
       stirrup: { size: 'D10', pitchMm: 200 },
     })
+  })
+
+  it('does not confirm the first row when a recognized story slice holds duplicate label rows', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 320,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        // 1F는 인식되고 B1F는 STORY_PATTERN 밖이라 미인식 — 두 층이 1F 슬라이스로 합쳐진다
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '16-D25', x: 100, y: 44, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 56, w: 48, h: 8 },
+        { str: 'B1F', x: 10, y: 70, w: 16, h: 8 },
+        { str: '主筋', x: 10, y: 82, w: 20, h: 8 },
+        { str: '20-D25', x: 100, y: 82, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 94, w: 20, h: 8 },
+        { str: 'D13-@150', x: 100, y: 94, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    // 階가 인식됐어도 라벨 행이 겹이면 뒤 층 값이 흡수된 것이다 — 첫 행만 확정하면
+    // B1F의 主筋·帯筋이 사유도 원문도 없이 사라진다
+    expect(c1.main).toBeUndefined()
+    expect(c1.hoop).toBeUndefined()
+    expect(c1.issues).toContain('項目行重複')
+  })
+
+  it('does not confirm the first 大梁 row when a story slice holds duplicate label rows', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 320,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '2F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '上筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 44, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 56, w: 32, h: 8 },
+        { str: 'PH階', x: 10, y: 70, w: 24, h: 8 },
+        { str: '上筋', x: 10, y: 82, w: 20, h: 8 },
+        { str: '4-D25', x: 105, y: 82, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 94, w: 20, h: 8 },
+        { str: '4-D25', x: 105, y: 94, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', '2F')
+
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.issues).toContain('項目行重複')
+  })
+
+  it('keeps the 主筋 cell of a 符号 that owns no 位置 column', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 110, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 260, y: 20, w: 12, h: 8 },
+        // 位置 열은 C1에만 붙어 있다 — C2는 位置 배정이 0개다
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 90, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 130, y: 32, w: 20, h: 8 },
+        { str: '1F', x: 10, y: 44, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '16-D25', x: 88, y: 56, w: 36, h: 8 },
+        { str: '16-D25', x: 128, y: 56, w: 36, h: 8 },
+        { str: '12-D22', x: 250, y: 56, w: 36, h: 8 },
+      ],
+    })
+    const c2 = candidate(list(parsed, '柱リスト'), 'C2', '1F')
+
+    // 位置가 0개면 셀이 통째로 사라져 확정도 원문도 이슈도 남지 않았다
+    expect(c2.main ?? c2.raw['主筋']).toBeDefined()
+  })
+
+  it('keeps the 上筋 cell of a 大梁 符号 that owns no 位置 column', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 110, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 260, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '端部', x: 90, y: 32, w: 20, h: 8 },
+        { str: '中央', x: 130, y: 32, w: 20, h: 8 },
+        { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '3-D22', x: 90, y: 56, w: 32, h: 8 },
+        { str: '3-D22', x: 130, y: 56, w: 32, h: 8 },
+        { str: '4-D22', x: 252, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '3-D22', x: 90, y: 70, w: 32, h: 8 },
+        { str: '3-D22', x: 130, y: 70, w: 32, h: 8 },
+        { str: '4-D22', x: 252, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const g2 = candidate(list(parsed, '大梁リスト'), 'G2', undefined)
+
+    expect(g2.girderMain ?? g2.raw['上筋(全断面)'] ?? g2.raw['上筋']).toBeDefined()
+  })
+
+  it('does not confirm a 帯筋 cell folded onto a second unlabeled line', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '帯筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 44, w: 48, h: 8 },
+        // 셀이 줄바꿈으로 접혔다 — 첫 줄만 확정하면 帯筋 本数가 틀린다
+        { str: 'D13-@200', x: 100, y: 56, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.hoop).toBeUndefined()
+    expect(c1.raw['帯筋(折返し)']).toBe('D13-@200')
+    expect(c1.issues).toContain('帯筋折返し')
+  })
+
+  it('does not confirm an あばら筋 cell folded onto a second unlabeled line', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'ST', x: 10, y: 44, w: 16, h: 8 },
+        { str: 'D10-@200', x: 100, y: 44, w: 48, h: 8 },
+        { str: 'D10-@100', x: 100, y: 56, w: 48, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    expect(g1.stirrup).toBeUndefined()
+    expect(g1.raw['ST(折返し)']).toBe('D10-@100')
+    expect(g1.issues).toContain('帯筋折返し')
+  })
+
+  it('keeps the 上筋 cell when only one of the 上筋・下筋 labels is recognized', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        // 下筋 행이 아예 잡히지 않은 표 — 읽어낸 上筋까지 사유 없이 버리면
+        // 사용자는 인식 실패와 구분할 수 없다
+        { str: '上筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 44, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.raw['上筋(全断面)']).toBe('3-D22')
+    expect(g1.issues).toContain('主筋位置欠落')
   })
 
   it('classifies G marks inside 小梁・地中梁 lists as 対象外', () => {

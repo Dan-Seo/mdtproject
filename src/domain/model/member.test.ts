@@ -1,14 +1,15 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
-import type {
-  BarSize,
-  ColumnSection,
-  GirderSection,
-  Member,
-  MemberClass,
-  MemberKind,
-  Section,
-  SteelGrade,
+import {
+  sectionMarkLabel,
+  type BarSize,
+  type ColumnSection,
+  type GirderSection,
+  type Member,
+  type MemberClass,
+  type MemberKind,
+  type Section,
+  type SteelGrade,
 } from './member'
 
 describe('member model', () => {
@@ -73,5 +74,26 @@ describe('member model', () => {
 
     expect(sections.map(({ kind }) => kind)).toEqual(['柱', '大梁'])
     expect(members.map(({ kind }) => kind)).toEqual(['柱', '大梁'])
+  })
+
+  it('composes the story label for display without storing it in mark', () => {
+    const base: ColumnSection = {
+      id: 'section-C51',
+      kind: '柱',
+      mark: 'C51',
+      b: 800,
+      d: 800,
+      fc: 24,
+      grade: 'SD345',
+      exposure: '屋外',
+      finish: '仕上げなし',
+      main: { size: 'D25', count: 18 },
+      hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
+    }
+
+    expect(sectionMarkLabel(base)).toBe('C51')
+    expect(sectionMarkLabel({ ...base, storyLabel: '2階' })).toBe('C51(2階)')
+    // 内訳書는 이미 階별로 묶인다 — 저장되는 符号에는 階가 들어가지 않는다
+    expect({ ...base, storyLabel: '2階' }.mark).toBe('C51')
   })
 })

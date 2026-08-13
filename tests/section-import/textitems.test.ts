@@ -3,6 +3,8 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import exclusions from '../fixtures/section-import/title-block-exclusions.json'
+
 type TextItemFixture = {
   source: {
     cacheFile: string
@@ -117,6 +119,15 @@ describe('section-import TextItem fixtures', () => {
       expect(item.y).toBeGreaterThanOrEqual(0)
       expect(item.y).toBeLessThan(fixture.page.heightPt)
     }
+
+    // 밀도 하한만으로는 「표제란 첫 글자가 경계 밖에 남아 커밋됐다」를 못 잡는다 —
+    // 제외 사각형 안에 아이템이 하나도 없어야 한다 (경계는 생성기와 같은 파일)
+    const excludeFrom = exclusions.pages[spec.file]
+    const leaked = fixture.items.filter(
+      ({ x, y }) => x >= excludeFrom.x && y >= excludeFrom.y,
+    )
+    expect(leaked, `title-block leak: ${JSON.stringify(leaked.slice(0, 3))}`)
+      .toHaveLength(0)
 
     const rows = joinedRows(fixture.items)
     for (const alternatives of spec.needles) {
