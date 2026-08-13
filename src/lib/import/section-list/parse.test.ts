@@ -860,6 +860,22 @@ describe('parseSectionLists (synthetic)', () => {
     expect(columns.issue).toBe('符号行未認識')
   })
 
+  it('does not report an unreadable 対象外 list as a failure', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        // 제품 대상이 아닌 리스트다 (ADR-005) — 못 읽었다고 알리면 정상
+        // 파싱된 도면에서도 실패 안내가 뜬다
+        { str: '小梁断面リスト', x: 10, y: 5, w: 80, h: 8 },
+        { str: '記号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'B1', x: 120, y: 20, w: 12, h: 8 },
+      ],
+    })
+
+    expect(parsed).toEqual([])
+  })
+
   it('separates a read 符号 header with no readable item rows', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

@@ -119,6 +119,24 @@ function joinedRows(items: TextItemFixture['items']): string[] {
  * 한쪽으로만 이으면 반대 회전 문자열이 역순이 되어 마커가 매칭되지 않는다
  */
 function joinedColumns(items: TextItemFixture['items']): string[] {
+  // 방향을 x 버킷 단위로 정하면 같은 x에 +90 글자가 하나만 섞여도 그 버킷의
+  // -90 문자열이 통째로 뒤집힌다 — 부호로 먼저 가른 뒤 각각 잇는다
+  const upward = ({ rot }: TextItemFixture['items'][number]) =>
+    rot !== undefined && rot > 0
+
+  return [
+    ...columnRuns(items.filter(upward), true),
+    ...columnRuns(
+      items.filter((item) => !upward(item)),
+      false,
+    ),
+  ]
+}
+
+function columnRuns(
+  items: TextItemFixture['items'],
+  upward: boolean,
+): string[] {
   const columns = new Map<number, TextItemFixture['items']>()
   for (const item of items) {
     const key = Math.round(item.x)
@@ -126,7 +144,6 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
   }
 
   return [...columns.values()].flatMap((columnItems) => {
-    const upward = columnItems.some(({ rot }) => rot !== undefined && rot > 0)
     const sorted = [...columnItems].sort((left, right) =>
       upward ? left.y - right.y : right.y - left.y,
     )
@@ -179,8 +196,11 @@ describe('section-import TextItem fixtures', () => {
     const leaked = fixture.items.filter(
       ({ x, y }) => x >= excludeFrom.x && y >= excludeFrom.y,
     )
-    expect(leaked, `title-block leak: ${JSON.stringify(leaked.slice(0, 3))}`)
-      .toHaveLength(0)
+    // 아래 PII 스캔과 같은 규약 — 실패 메시지에 원문을 싣지 않는다
+    expect(
+      leaked,
+      `title-block leak: ${leaked.length}件 (先頭 x=${leaked[0]?.x}, y=${leaked[0]?.y})`,
+    ).toHaveLength(0)
 
     const rows = joinedRows(fixture.items)
     // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
@@ -229,5 +249,32 @@ describe('section-import TextItem fixtures', () => {
 
     expect(joinedColumns(vertical(-90))).toContain('TEL')
     expect(joinedColumns(vertical(90))).toContain('TEL')
+  })
+
+  it('keeps both directions readable when one x column holds both rotations', () => {
+    // 방향을 x 버킷 단위로 추측하면 +90 글자 하나가 같은 버킷의 -90 문자열을
+    // 통째로 뒤집어 마커가 빠져나간다
+    const items = [
+      ...[...'TEL'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 200 - index * 10,
+        w: 8,
+        h: 8,
+        rot: -90,
+      })),
+      ...[...'FAX'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 100 + index * 10,
+        w: 8,
+        h: 8,
+        rot: 90,
+      })),
+    ]
+
+    const joined = joinedColumns(items)
+    expect(joined).toContain('TEL')
+    expect(joined).toContain('FAX')
   })
 })

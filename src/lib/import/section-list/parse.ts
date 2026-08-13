@@ -1129,11 +1129,16 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
+  // 小梁·地中梁·基礎는 애초에 제품 대상이 아니다 (ADR-005) — 못 읽었다고
+  // 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다. kindFromMark와 같은 판정
+  const outOfScope = /小梁|地中梁|基礎/.test(anchor.titleText)
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
   // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
   // 사유를 코드로 실어 보내고 문구는 표시부가 고른다 (CandidateIssue와 같은 규약)
   if (headerIndexes.length === 0) {
-    return { listKind: anchor.listKind, candidates: [], issue: '符号行未認識' }
+    return outOfScope
+      ? undefined
+      : { listKind: anchor.listKind, candidates: [], issue: '符号行未認識' }
   }
 
   const candidates: SectionCandidate[] = []
@@ -1150,7 +1155,9 @@ function parseTableRegion(
   return {
     listKind: anchor.listKind,
     candidates,
-    ...(candidates.length === 0 ? { issue: '項目行未認識' as const } : {}),
+    ...(candidates.length === 0 && !outOfScope
+      ? { issue: '項目行未認識' as const }
+      : {}),
   }
 }
 
