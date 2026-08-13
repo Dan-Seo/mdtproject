@@ -349,8 +349,9 @@ function parseBar(value: string): ParsedBar | undefined {
   const size = match[2].toUpperCase() as BarSize
   if (!barSizes.has(size)) return undefined
   const count = Number(match[1])
-  // 本数 3자리는 인접 치수선 숫자가 붙은 셀 병합 잔재다(「70016-D25」) — 확정하지 않는다
-  return count > 99 ? undefined : { count, size }
+  // 本数 3자리는 인접 치수선 숫자가 붙은 셀 병합 잔재(「70016-D25」)이고,
+  // 0본은 물량 0인 부재를 만든다 — 어느 쪽도 확정하지 않는다
+  return count > 99 || count <= 0 ? undefined : { count, size }
 }
 
 function parsePitch(
@@ -467,6 +468,9 @@ function setGirderMain(
     bottom.length > 0 &&
     (expectedCellCount === 0 ||
       (top.length === expectedCellCount && bottom.length === expectedCellCount))
+  // 位置는 균일한데 上下 径만 다른(실무에서 흔한) 셀을 「位置相違」로 몰면
+  // 사용자가 원인을 오인한다 — 전용 사유 코드로 구분한다
+  let sizeMismatch = false
   if (complete && allParsed) {
     const parsedTop = top as ParsedBar[]
     const parsedBottom = bottom as ParsedBar[]
@@ -493,6 +497,8 @@ function setGirderMain(
       }
       return
     }
+    sizeMismatch =
+      topUniform && bottomUniform && firstTop.size !== firstBottom.size
   }
 
   for (const cell of topCells) {
@@ -503,11 +509,13 @@ function setGirderMain(
   }
   addIssue(
     candidate,
-    allParsed && complete
-      ? '主筋位置相違'
-      : !allParsed
-        ? '主筋解釈不能'
-        : '主筋位置欠落',
+    sizeMismatch
+      ? '主筋上下径相違'
+      : allParsed && complete
+        ? '主筋位置相違'
+        : !allParsed
+          ? '主筋解釈不能'
+          : '主筋位置欠落',
   )
 }
 
@@ -668,13 +676,22 @@ function parseColumnBlock(
   const candidates: SectionCandidate[] = []
   for (const slice of slices) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
-    const mainRow = dataRows.find((row) => exactLabel(row, ['主筋']))
-    const hoopRow = dataRows.find((row) => exactLabel(row, ['帯筋', 'HOOP']))
+    const mainRows = dataRows.filter((row) => exactLabel(row, ['主筋']))
+    const hoopRows = dataRows.filter((row) => exactLabel(row, ['帯筋', 'HOOP']))
     // 라벨 존재만 보면 값 세그먼트가 없는 라벨 행이 scalarDimensions 폴백까지
     // 막아 원문 참고 표시가 통째로 사라진다 — 大梁 블록과 같은 조건을 쓴다
-    const dimensionRow = dataRows.find(
+    const dimensionRows = dataRows.filter(
       (row) => exactLabel(row, ['断面']) && dataSegments(row, ['断面']).length > 0,
     )
+    // 階 라벨이 하나도 인식되지 않았는데(「一般階」「B1F」 등 STORY_PATTERN 밖 표기)
+    // 라벨 행이 겹으로 있으면 여러 층 블록이 한 슬라이스로 합쳐진 것이다 —
+    // 첫 행 값을 「階指定なし」로 확정하면 전 층 값으로 오인된다
+    const storyAmbiguous =
+      slice.storyLabel === undefined &&
+      (mainRows.length > 1 || hoopRows.length > 1 || dimensionRows.length > 1)
+    const mainRow = storyAmbiguous ? undefined : mainRows[0]
+    const hoopRow = storyAmbiguous ? undefined : hoopRows[0]
+    const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
@@ -682,14 +699,16 @@ function parseColumnBlock(
     const mainContinuations = mainRow
       ? barContinuationByMark(dataRows, mainRow, slice.endY, marks)
       : new Map<string, string>()
-    const dimensionValues = dimensionRow
-      ? valuesByMark(dimensionRow, ['断面'], marks)
-      : scalarDimensions(
-          rows,
-          slice.startY,
-          mainRow?.y ?? slice.endY,
-          marks,
-        )
+    const dimensionValues = storyAmbiguous
+      ? new Map<string, string>()
+      : dimensionRow
+        ? valuesByMark(dimensionRow, ['断面'], marks)
+        : scalarDimensions(
+            rows,
+            slice.startY,
+            mainRow?.y ?? slice.endY,
+            marks,
+          )
     const mainByPosition =
       mainRow && positions.length > 0
         ? valuesByPosition(mainRow, ['主筋'], positions)
@@ -705,6 +724,18 @@ function parseColumnBlock(
       hoopRow && hoopLabel ? valuesByMark(hoopRow, [hoopLabel], marks) : new Map()
 
     marks.forEach(({ mark }) => {
+      if (storyAmbiguous) {
+        // 값 없이 사유만 실은 후보를 남긴다 — 표가 조용히 사라지면 사용자는
+        // 인식 실패와 구분할 수 없다
+        candidates.push({
+          kind: kindFromMark(mark, titleText),
+          mark,
+          storyLabel: undefined,
+          raw: {},
+          issues: ['階不明'],
+        })
+        return
+      }
       const markPositions = positions
         .map((position, index) => ({ ...position, index }))
         .filter((position) => position.mark === mark)
@@ -796,16 +827,29 @@ function parseGirderBlock(
 
   for (const slice of slices) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
-    const dimensionRow = dataRows.find(
+    const dimensionRows = dataRows.filter(
       (row) =>
         exactLabel(row, ['断面', 'b×D']) &&
         dataSegments(row, ['断面', 'b×D']).length > 0,
     )
-    const topRow = dataRows.find((row) => exactLabel(row, ['上筋', '上端筋']))
-    const bottomRow = dataRows.find((row) => exactLabel(row, ['下筋', '下端筋']))
-    const stirrupRow = dataRows.find((row) =>
+    const topRows = dataRows.filter((row) => exactLabel(row, ['上筋', '上端筋']))
+    const bottomRows = dataRows.filter((row) =>
+      exactLabel(row, ['下筋', '下端筋']),
+    )
+    const stirrupRows = dataRows.filter((row) =>
       exactLabel(row, ['ST', 'STP', 'あばら筋']),
     )
+    // 柱 블록과 같은 방어 — 階 라벨 미인식으로 여러 층 블록이 합쳐졌으면 확정하지 않는다
+    const storyAmbiguous =
+      slice.storyLabel === undefined &&
+      (topRows.length > 1 ||
+        bottomRows.length > 1 ||
+        stirrupRows.length > 1 ||
+        dimensionRows.length > 1)
+    const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
+    const topRow = storyAmbiguous ? undefined : topRows[0]
+    const bottomRow = storyAmbiguous ? undefined : bottomRows[0]
+    const stirrupRow = storyAmbiguous ? undefined : stirrupRows[0]
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
@@ -855,6 +899,16 @@ function parseGirderBlock(
       : new Map<string, string>()
 
     for (const { mark } of marks) {
+      if (storyAmbiguous) {
+        candidates.push({
+          kind: kindFromMark(mark, titleText),
+          mark,
+          storyLabel: undefined,
+          raw: {},
+          issues: ['階不明'],
+        })
+        continue
+      }
       const markPositions = indexedPositions.filter(
         (position) => position.mark === mark,
       )
@@ -996,7 +1050,11 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
           other.x > anchor.x,
       )
       .sort((left, right) => left.x - right.x)[0]
-    const xEnd = rightNeighbor ? rightNeighbor.x - 40 : Number.POSITIVE_INFINITY
+    // 우측 경계도 중점 — 「이웃 x−40」 고정이면 중앙 정렬 타이틀을 가진 오른쪽 표의
+    // 라벨열이 왼쪽 대역에 새어 들어와 셀 값에 이어붙는다
+    const xEnd = rightNeighbor
+      ? (anchor.x + rightNeighbor.x) / 2
+      : Number.POSITIVE_INFINITY
     // 블록 끝은 이 x대역 안에서 아래에 오는 다음 타이틀
     const below = anchors
       .filter(

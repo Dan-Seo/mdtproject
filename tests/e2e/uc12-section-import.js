@@ -9,7 +9,11 @@ try {
   // .cache PDF를 격리 temp에 base64로 미러링하며, 없으면 첫머리에서 명시적으로 실패한다.
   pdfBase64 = await readFile(sandboxFixture);
 } catch (error) {
-  throw new Error(`LOCAL FIXTURE MISSING: ${pdfPath} (${String(error)})`);
+  throw new Error(
+    `LOCAL FIXTURE MISSING: ${pdfPath} — 먼저 실행: ` +
+      `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture} ` +
+      `(재현 절차: tests/fixtures/section-import/SOURCES.md) (${String(error)})`,
+  );
 }
 
 const page = await browser.getPage("kijun");

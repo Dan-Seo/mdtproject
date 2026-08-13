@@ -107,7 +107,9 @@ describe('section-import TextItem fixtures', () => {
     })
     expect(fixture.page.widthPt).toBeGreaterThan(0)
     expect(fixture.page.heightPt).toBeGreaterThan(0)
-    expect(fixture.items.length).toBeGreaterThanOrEqual(1_000)
+    // 표제란(개인 실명·연락처)은 추출 시점에 제외한다 — 밀도 하한은 그 제외 후의
+    // 최소 실측(ojkk-p2 707)보다 낮게 잡아, 빈 픽스처·절단 회귀만 걸러낸다
+    expect(fixture.items.length).toBeGreaterThanOrEqual(600)
 
     for (const item of fixture.items) {
       expect(item.x).toBeGreaterThanOrEqual(0)

@@ -326,6 +326,115 @@ describe('parseSectionLists (synthetic)', () => {
     })
   })
 
+  it('rejects zero-count 主筋 cells', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        // 0본을 확정하면 물량 0인 부재가 만들어진다
+        { str: '0-D25', x: 105, y: 44, w: 30, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.main).toBeUndefined()
+    expect(c1.raw['主筋']).toBe('0-D25')
+  })
+
+  it('does not spread the first story values when story labels are unrecognized', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        // STORY_PATTERN 밖의 층 표기 — 인식되지 않으면 두 층 블록이 한 슬라이스가 된다
+        { str: '一般階', x: 10, y: 32, w: 30, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '16-D25', x: 100, y: 44, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 56, w: 48, h: 8 },
+        { str: '最上階', x: 10, y: 70, w: 30, h: 8 },
+        { str: '主筋', x: 10, y: 82, w: 20, h: 8 },
+        { str: '20-D25', x: 100, y: 82, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 94, w: 20, h: 8 },
+        { str: 'D13-@150', x: 100, y: 94, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', undefined)
+
+    // 첫 층 값(16-D25·@100)을 「階指定なし」로 확정하면 전 층 값으로 오인된다
+    expect(c1.main).toBeUndefined()
+    expect(c1.hoop).toBeUndefined()
+    expect(c1.issues).toContain('階不明')
+  })
+
+  it('labels a top/bottom bar-size mismatch with its own issue code', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '上筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '5-D25', x: 105, y: 44, w: 30, h: 8 },
+        { str: '下筋', x: 10, y: 58, w: 20, h: 8 },
+        { str: '5-D22', x: 105, y: 58, w: 30, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    // 位置는 균일하고 上下 径만 다르다 — 「位置相違」로 몰면 사용자가 원인을 오인한다
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.issues).toContain('主筋上下径相違')
+  })
+
+  it('keeps a centered-title right table out of the left table band', () => {
+    const parsed = parseSectionLists({
+      widthPt: 1200,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 48, h: 8 },
+        // 오른쪽 표의 타이틀이 표 중앙 위에 있다 — 표 라벨열(x=450)은 타이틀보다 왼쪽
+        { str: '大梁リスト', x: 600, y: 5, w: 60, h: 8 },
+        // 왼쪽: 柱 표
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'C1', x: 150, y: 25, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 12, h: 8 },
+        { str: '主筋', x: 10, y: 55, w: 24, h: 8 },
+        { str: '16-D25', x: 130, y: 55, w: 40, h: 8 },
+        // 오른쪽: 大梁 표 (라벨열이 타이틀 왼쪽에 있다)
+        { str: '符号', x: 450, y: 25, w: 24, h: 8 },
+        { str: 'G1', x: 560, y: 25, w: 12, h: 8 },
+        { str: '上筋', x: 450, y: 55, w: 24, h: 8 },
+        { str: '3-D22', x: 550, y: 55, w: 32, h: 8 },
+        { str: '下筋', x: 450, y: 70, w: 24, h: 8 },
+        { str: '3-D22', x: 550, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const girders = list(parsed, '大梁リスト')
+
+    // 우측 경계가 「이웃 타이틀 x−40」 고정이면 오른쪽 표의 라벨열이 왼쪽 대역에
+    // 새어 들어와 「16-D25上筋」처럼 이어붙어 확정이 무너진다
+    expect(candidate(columns, 'C1', '1F').main).toEqual({
+      count: 16,
+      size: 'D25',
+    })
+    expect(candidate(girders, 'G1', undefined).girderMain).toEqual({
+      size: 'D22',
+      topCount: 3,
+      bottomCount: 3,
+    })
+  })
+
   it('parses a table whose title is centered above it', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

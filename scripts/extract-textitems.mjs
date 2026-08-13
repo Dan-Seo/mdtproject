@@ -32,12 +32,42 @@ const outputDirectory = resolve(
   'tests/fixtures/section-import/textitems',
 )
 
+// excludeFrom: 표제란(도면 우하단 블록)의 좌상단 모서리 — 이 사각형(x≥, y≥ 동시
+// 충족)의 아이템은 픽스처에서 떨어낸다. 표제란에는 건축사 실명·사무소 주소·연락처가
+// 들어 있어 그대로 커밋하면 SOURCES.md가 금지한 원본 재배포와 다를 게 없다.
+// 경계는 각 페이지의 표 내용 최대 x/y와 표제란 최소 x/y 사이에서 실측으로 잡았다
+// (근거는 tests/fixtures/section-import/SOURCES.md의 표제란 제외 절).
 const targets = [
-  { cacheFile: 'dwg-ojkk-zumen6.pdf', page: 2, output: 'ojkk-p2.json' },
-  { cacheFile: 'dwg-ojkk-zumen6.pdf', page: 3, output: 'ojkk-p3.json' },
-  { cacheFile: 'dwg-yokohama.pdf', page: 13, output: 'yokohama-p13.json' },
-  { cacheFile: 'dwg-yokohama.pdf', page: 14, output: 'yokohama-p14.json' },
-  { cacheFile: 'dwg-kani-kids.pdf', page: 38, output: 'kani-p38.json' },
+  {
+    cacheFile: 'dwg-ojkk-zumen6.pdf',
+    page: 2,
+    output: 'ojkk-p2.json',
+    excludeFrom: { x: 660, y: 715 },
+  },
+  {
+    cacheFile: 'dwg-ojkk-zumen6.pdf',
+    page: 3,
+    output: 'ojkk-p3.json',
+    excludeFrom: { x: 660, y: 715 },
+  },
+  {
+    cacheFile: 'dwg-yokohama.pdf',
+    page: 13,
+    output: 'yokohama-p13.json',
+    excludeFrom: { x: 1850, y: 1540 },
+  },
+  {
+    cacheFile: 'dwg-yokohama.pdf',
+    page: 14,
+    output: 'yokohama-p14.json',
+    excludeFrom: { x: 1850, y: 1540 },
+  },
+  {
+    cacheFile: 'dwg-kani-kids.pdf',
+    page: 38,
+    output: 'kani-p38.json',
+    excludeFrom: { x: 480, y: 1095 },
+  },
 ]
 
 function expectedSha256(sourceDocument, cacheFile) {
@@ -124,7 +154,10 @@ async function extractFixtures(sources) {
               widthPt: viewport.width,
               heightPt: viewport.height,
             },
-            items: textItemsFor(textContent, viewport),
+            items: textItemsFor(textContent, viewport).filter(
+              ({ x, y }) =>
+                !(x >= target.excludeFrom.x && y >= target.excludeFrom.y),
+            ),
           }
 
           fixtures.push({ output: target.output, fixture })
