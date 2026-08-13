@@ -2,15 +2,19 @@ export type MemberKind = '柱' | '大梁'
 
 export type MemberClass = '躯体'
 
-export type BarSize =
-  | 'D10'
-  | 'D13'
-  | 'D16'
-  | 'D19'
-  | 'D22'
-  | 'D25'
-  | 'D29'
-  | 'D32'
+/** 허용 철근 경의 단일 출처 — UI 셀렉트·断面リスト 파서가 여기서 파생한다. */
+export const BAR_SIZES = [
+  'D10',
+  'D13',
+  'D16',
+  'D19',
+  'D22',
+  'D25',
+  'D29',
+  'D32',
+] as const
+
+export type BarSize = (typeof BAR_SIZES)[number]
 
 export type SteelGrade = 'SD295' | 'SD345' | 'SD390'
 
@@ -23,6 +27,12 @@ export interface ColumnSection {
   id: string
   kind: '柱'
   mark: string
+  /**
+   * 断面リスト에서 취입할 때 어느 階 행에서 왔는지. 符号(mark)에 붙이면 도면에 없는
+   * 符号이 内訳書에 그대로 나가고 内訳書는 이미 階별로 묶여 있어 階가 두 번 표시된다.
+   * 제품의 Story와는 아직 연결되지 않는다 — 표시·취입 매칭용이다.
+   */
+  storyLabel?: string
   b: number
   d: number
   fc: number
@@ -48,6 +58,8 @@ export interface GirderSection {
   id: string
   kind: '大梁'
   mark: string
+  /** ColumnSection.storyLabel과 같다. */
+  storyLabel?: string
   b: number
   depth: number
   fc: number
@@ -68,6 +80,16 @@ export interface GirderSection {
 }
 
 export type Section = ColumnSection | GirderSection
+
+/**
+ * 화면 표시·aria-label용 이름. 같은 符号이 階별로 여러 断面이 될 수 있으므로
+ * 階를 여기서 붙인다 — 저장되는 `mark`는 도면의 符号 그대로 둔다.
+ */
+export function sectionMarkLabel(section: Section): string {
+  return section.storyLabel
+    ? `${section.mark}(${section.storyLabel})`
+    : section.mark
+}
 
 export interface ColumnPosition {
   ix: number

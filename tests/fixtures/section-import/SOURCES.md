@@ -7,6 +7,30 @@
 - `textitems/*.json` — pdf.js로 추출한 위치 있는 텍스트 조각(TextItem). 좌표계는 좌상 원점, y 아래 방향, 단위 pt
 - `expected/*.json` — 도면을 **눈으로 읽어 독립 전사한** 기대값 (ADR-010 준용 — 파서 출력에서 유도 금지)
 
+## 표제란 제외 (개인정보)
+
+도면 우하단 표제란에는 관리건축사 실명·사무소 주소·전화·메일이 들어 있다. 원본
+재배포를 피하려고 PDF를 커밋하지 않으면서 텍스트 전문을 커밋하면 같은 내용을
+재배포하는 셈이 되므로, 페이지별 표제란 좌상단 모서리(실측) 이후의 사각형을
+픽스처에서 떨어낸다. 경계는 `title-block-exclusions.json` **한 곳**에만 두고
+생성기(`scripts/extract-textitems.mjs`)와 검증(`tests/section-import/textitems.test.ts`)이
+같은 값을 본다 — 생성기에만 두면 경계가 바뀌어도 픽스처 검증이 눈치채지 못한다.
+
+| 픽스처 | 제외 시작 (x, y) | 실측 표제란 시작 | 같은 대역 표 내용 최대 | 여유 |
+|---|---|---|---|---|
+| ojkk-p2/p3 | (660, 700) | (731.1, 725.7) | x≈605 (y≥700 대역) | x 55·71 / y 25.7 |
+| yokohama-p13/p14 | (1800, 1500) | (1847.5, 1562.8) | x≈1650 미만 (y≥1340 대역) | x 47 / y 62.8 |
+| kani-p38 | (440, 1040) | (484.4, 1101.0) | y≈1000 (x≥440 대역) | x 44 / y 61 |
+
+여유를 좌우 양쪽으로 둔 이유: 경계를 표제란 시작에 딱 붙이면 텍스트 행의 **첫 글자**가
+경계 바깥에 남는다(2026-08-13 이전 경계 x=1850에서 yokohama 표제란의 「登」이
+x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용은 없다 — 재생성 후
+아이템 수는 ojkk-p2 707·ojkk-p3 1447·kani-p38 863으로 동일하고 yokohama만 1개씩
+줄었다(살아남았던 표제란 글자).
+
+`tests/section-import/textitems.test.ts`는 (1) 제외 사각형 안에 아이템이 하나도
+없을 것과 (2) 밀도 하한(≥600, 제외 후 실측 최솟값 ojkk-p2 707 아래)을 함께 본다.
+
 | .cache 파일명 | 발주처 | 공사명 | 사용 페이지 | SHA-256 |
 |---|---|---|---|---|
 | `dwg-ojkk-zumen6.pdf` | 沖縄県住宅供給公社 | (仮称)公社赤道都市再生住宅整備工事（建築） 令和1年度 | p2 柱リスト (S-13), p3–4 梁リスト (S-15) | `dcb9504a50d8661a76bbd96c412a20f468cfff7495167cd055ca0bb2289e1343` |
@@ -35,5 +59,15 @@ Invoke-WebRequest <url> -OutFile .cache\<파일명>
 Get-FileHash .cache\<파일명> -Algorithm SHA256
 
 # TextItem JSON 재생성 (phase 6 step 0의 스크립트)
-node scripts/extract-textitems.mjs
+npx tsx scripts/extract-textitems.mjs
+```
+
+### uc12 e2e (실물 PDF 브라우저 검증)
+
+dev-browser 샌드박스는 호스트 경로를 직접 열지 못하므로 PDF를 base64로 미러링한
+뒤 실행한다 (bash):
+
+```
+base64 -w0 .cache/dwg-yokohama.pdf > ~/.dev-browser/tmp/uc12-dwg-yokohama.pdf.b64
+npx dev-browser --browser kijun --timeout 150 run tests/e2e/uc12-section-import.js
 ```

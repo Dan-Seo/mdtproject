@@ -5,23 +5,36 @@
     {
       "step": 0,
       "name": "textitem-fixtures",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T23:12:47+0900",
+      "summary": "TextItem 픽스처 5부(1032/1772/1362/1157/1030개)를 좌상 원점·+y 아래·pt 좌표로 생성",
+      "completed_at": "2026-08-12T23:25:24+0900"
     },
     {
       "step": 1,
       "name": "parse-core",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T23:25:26+0900",
+      "summary": "가로형·세로형 TextItem 표를 符号·층·위치 좌표로 후보에 매핑하고, 표현 불가·위치별 상이 셀은 raw·issues와 빈칸으로 보존",
+      "completed_at": "2026-08-12T23:44:19+0900"
     },
     {
       "step": 2,
       "name": "import-ui",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T23:44:20+0900",
+      "summary": "PDF 후보를 행 단위로만 반영하고 빈칸은 기존값 유지·신규 符号는 동종 섹션 복제하며, 실물 PDF e2e에서 対象外 비반영과 내역·3D 생존까지 통과",
+      "completed_at": "2026-08-13T00:09:09+0900"
     },
     {
       "step": 3,
       "name": "docs-e2e",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-13T00:09:10+0900",
+      "summary": "도면 인식 트랙의 완료·잔여 범위와 R9를 문서화하고 uc11·uc12를 포함한 전체 AC를 재통과",
+      "completed_at": "2026-08-13T00:14:46+0900"
     }
   ],
-  "created_at": "2026-08-12T22:00:00+0900"
+  "created_at": "2026-08-12T22:00:00+0900",
+  "completed_at": "2026-08-13T00:14:47+0900"
 }

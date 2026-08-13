@@ -1,0 +1,195 @@
+.control {
+  display: inline-flex;
+}
+
+.fileInput {
+  display: none;
+}
+
+.openButton,
+.chooseButton,
+.closeButton,
+.applyButton,
+.ignoreButton {
+  min-height: 28px;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-body);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.openButton:focus-visible,
+.chooseButton:focus-visible,
+.closeButton:focus-visible,
+.applyButton:focus-visible,
+.ignoreButton:focus-visible,
+.outOfScope summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.applyButton:disabled {
+  color: var(--text-muted-soft);
+  cursor: default;
+}
+
+.panel {
+  position: fixed;
+  z-index: 10;
+  top: 52px;
+  right: 0;
+  bottom: 0;
+  left: 34%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-left: var(--border-hairline-strong);
+  background: var(--surface-card);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-height: 38px;
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--border-hairline);
+}
+
+.panelHeader h3 {
+  margin: 0;
+  color: var(--text-ink);
+  font-size: var(--type-title-sm-size);
+}
+
+.panelActions,
+.rowActions {
+  display: flex;
+  gap: var(--space-xxs);
+  align-items: center;
+}
+
+.panelBody {
+  min-height: 0;
+  padding: var(--space-sm);
+  overflow: auto;
+}
+
+.panelBody > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.candidateList {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.candidate {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-size: var(--type-caption-size);
+}
+
+.candidate[hidden] {
+  display: none;
+}
+
+.candidateHeading {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: baseline;
+  color: var(--text-ink);
+}
+
+.candidateHeading span {
+  color: var(--text-muted);
+}
+
+.diff {
+  display: grid;
+  gap: var(--space-xxs);
+  margin: 0;
+}
+
+.diff > div {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-xs);
+}
+
+.diff dt {
+  color: var(--text-muted);
+}
+
+.diff dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.raw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  color: var(--text-muted-soft);
+  font-family: var(--font-mono);
+}
+
+.issues {
+  margin: 0;
+  padding-left: var(--space-base);
+  color: var(--text-muted);
+}
+
+.cloneNotice {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.rowActions {
+  justify-content: flex-end;
+}
+
+.applyButton {
+  color: var(--text-ink);
+}
+
+.outOfScope {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: var(--border-hairline);
+}
+
+.outOfScope summary {
+  margin-bottom: var(--space-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--type-caption-size);
+}
+
+.outOfScope .candidate {
+  color: var(--text-muted);
+}
+
+.outOfScope p {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 760px) {
+  .panel {
+    left: 0;
+  }
+}

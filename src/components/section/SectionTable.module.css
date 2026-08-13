@@ -71,6 +71,12 @@
   width: 48px;
 }
 
+/* 같은 符号이 階별로 여러 断面이 될 수 있다 — 符号만 보이면 두 행을 구별할 수 없다 */
+.storyLabel {
+  margin-left: var(--space-xxs);
+  color: var(--text-muted);
+}
+
 .numberInput {
   width: 58px;
   text-align: right;
