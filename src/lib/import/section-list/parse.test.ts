@@ -860,6 +860,39 @@ describe('parseSectionLists (synthetic)', () => {
     expect(columns.issue).toBe('符号行未認識')
   })
 
+  it('does not report an unreadable 対象外 list as a failure', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        // 제품 대상이 아닌 리스트다 (ADR-005) — 못 읽었다고 알리면 정상
+        // 파싱된 도면에서도 실패 안내가 뜬다
+        { str: '小梁断面リスト', x: 10, y: 5, w: 80, h: 8 },
+        { str: '記号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'B1', x: 120, y: 20, w: 12, h: 8 },
+      ],
+    })
+
+    expect(parsed).toEqual([])
+  })
+
+  it('does not report a 対象外 list whose item rows are unreadable', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        // 符号 행은 읽히고 항목 행만 못 읽는 경로 — 억제 분기가 둘이다
+        { str: '小梁断面リスト', x: 10, y: 5, w: 80, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'B1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'RC規格', x: 10, y: 34, w: 30, h: 8 },
+        { str: 'A種', x: 115, y: 34, w: 20, h: 8 },
+      ],
+    })
+
+    expect(list(parsed, '小梁断面リスト').issue).toBeUndefined()
+  })
+
   it('separates a read 符号 header with no readable item rows', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
