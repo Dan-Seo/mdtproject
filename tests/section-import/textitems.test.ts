@@ -85,7 +85,9 @@ function readFixture(file: string): TextItemFixture {
   return JSON.parse(readFileSync(fixturePath, 'utf8')) as TextItemFixture
 }
 
-function joinedRows(items: TextItemFixture['items']): string[] {
+function rowGroups(
+  items: TextItemFixture['items'],
+): Array<TextItemFixture['items']> {
   const rowTolerancePt = 1
   const rows: Array<{ y: number; items: TextItemFixture['items'] }> = []
 
@@ -102,7 +104,11 @@ function joinedRows(items: TextItemFixture['items']): string[] {
     }
   }
 
-  return rows.map(({ items: rowItems }) =>
+  return rows.map(({ items: rowItems }) => rowItems)
+}
+
+function joinedRows(items: TextItemFixture['items']): string[] {
+  return rowGroups(items).map((rowItems) =>
     rowItems
       .sort((left, right) => left.x - right.x)
       .map(({ str }) => str)
@@ -127,6 +133,7 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
   const unrotated = items.filter(({ rot }) => rot === undefined || rot === 0)
   const upward = ({ rot }: TextItemFixture['items'][number]) =>
     rot !== undefined && rot > 0
+  const clusters = horizontalClusters(items)
 
   return [
     ...columnRuns(rotated.filter(upward), true),
@@ -139,13 +146,70 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
     // 위로 쌓인 표기도 있다) — 양방향을 본다
     ...columnRuns(unrotated, true),
     ...columnRuns(unrotated, false),
-    // 위 분할은 서로소라 한 런에 회전·무회전이 섞이면(縦中横 — 세로쓰기 안의
-    // 숫자만 무회전인 표기, 표제란 전화번호가 정확히 이 형태다) 어느 패스에서도
-    // 이어지지 않는다. 원본 전체를 잇는 패스를 덧붙여 진짜 superset으로 만든다 —
+    // 위 분할은 서로소라 한 런에 회전·무회전이 섞이면 어느 패스에서도 이어지지
+    // 않는다. 원본 전체를 잇는 패스를 덧붙여 진짜 superset으로 만든다 —
     // 오탐은 사람이 한 번 보면 끝나지만 누락은 PII가 그대로 커밋된다
     ...columnRuns(items, true),
     ...columnRuns(items, false),
+    // 그래도 縦中横은 남는다 — 글자마다 x가 갈려 열 키가 x인 패스로는 한 칸도
+    // 이어지지 않는다. 가로 덩이로 묶은 뒤 그 중심 x로 다시 잇는다
+    ...columnRuns(clusters, true),
+    ...columnRuns(clusters, false),
   ]
+}
+
+/**
+ * 같은 y에 가로로 붙은 글자를 한 덩이로 묶어 「중심 x를 가진 한 아이템」으로 만든다.
+ * 縦中横(세로쓰기 안에서 숫자만 가로로 눕는 표기 — 표제란 전화번호가 이 형태다)은
+ * 세로줄 중심에 맞춰 놓이므로, 덩이의 중심 x가 같은 줄 회전 글자의 x와 겹친다
+ * (kani-p38 실측: 「F2H」 중심 942.91 대 회전 열 943, 「75」 365.02 대 365).
+ */
+function horizontalClusters(
+  items: TextItemFixture['items'],
+): TextItemFixture['items'] {
+  const clusters: TextItemFixture['items'] = []
+
+  for (const rowItems of rowGroups(items)) {
+    const sorted = [...rowItems].sort((left, right) => left.x - right.x)
+    let current: TextItemFixture['items'] = []
+
+    const flush = () => {
+      if (current.length === 0) return
+      const start = Math.min(...current.map(({ x }) => x))
+      const end = Math.max(...current.map((item) => item.x + horizontalWidth(item)))
+      clusters.push({
+        str: current.map(({ str }) => str).join(''),
+        x: (start + end) / 2,
+        y: current[0].y,
+        w: end - start,
+        h: Math.max(...current.map(({ h }) => h)),
+      })
+      current = []
+    }
+
+    for (const item of sorted) {
+      const previous = current[current.length - 1]
+      // 한 글자 폭보다 벌어지면 다른 덩이다 — 같은 행의 무관한 글자까지 이으면
+      // 중심이 뭉개져 어느 세로줄에도 붙지 않는다(그건 이미 joinedRows가 본다)
+      const separated =
+        previous !== undefined &&
+        item.x - (previous.x + horizontalWidth(previous)) >
+          Math.max(horizontalWidth(previous), horizontalWidth(item))
+      if (separated) flush()
+      current.push(item)
+    }
+    flush()
+  }
+
+  return clusters
+}
+
+/**
+ * 회전 글자의 w는 세로 방향 이동량이라 가로 폭이 아니다 — 그대로 더하면 중심이
+ * 밀려 같은 세로줄의 덩이와 열이 갈린다.
+ */
+function horizontalWidth(item: TextItemFixture['items'][number]): number {
+  return item.rot !== undefined && item.rot !== 0 ? 0 : item.w
 }
 
 function columnRuns(
@@ -329,17 +393,36 @@ describe('section-import TextItem fixtures', () => {
     expect(joinedColumns(stacked(-10))).toContain('TEL')
   })
 
-  it('reads a 縦中横 run whose digits are unrotated', () => {
-    // 세로쓰기 안의 숫자만 무회전인 표기(표제란 전화번호가 이 형태다) —
-    // 회전 유무로 대역을 가르면 이 런은 어느 패스에서도 이어지지 않는다
-    const items = [...'03-1234-5678'].map((str, index) => ({
-      str,
-      x: 100,
-      y: 100 + index * 10,
-      w: 8,
-      h: 8,
-      ...(/\d/.test(str) ? {} : { rot: -90 }),
-    }))
+  it('reads a 縦中横 run whose digits sit horizontally', () => {
+    // 세로쓰기 안의 숫자만 가로로 눕는 표기(표제란 전화번호가 이 형태다).
+    // 숫자는 글자마다 x가 갈린 채 세로줄 중심에 맞춰 놓인다 — 열 키가 글자 x인
+    // 패스로는 한 칸도 이어지지 않는다. 숫자를 같은 x에 세로로 쌓아 두면 이
+    // 배치를 재현하지 못해 테스트가 통과해도 방어선이 없다
+    const lineX = 100
+    const digits = (text: string, y: number) =>
+      [...text].map((str, index) => ({
+        str,
+        x: lineX - (text.length * 5) / 2 + index * 5,
+        y,
+        w: 5,
+        h: 10,
+      }))
+    // 회전 글자의 w는 세로 방향 이동량이라 x가 곧 세로줄 중심이다
+    const separator = (y: number) => ({
+      str: '-',
+      x: lineX,
+      y,
+      w: 10,
+      h: 10,
+      rot: -90,
+    })
+    const items = [
+      ...digits('03', 100),
+      separator(110),
+      ...digits('1234', 120),
+      separator(130),
+      ...digits('5678', 140),
+    ]
 
     expect(
       joinedColumns(items).some((text) =>
