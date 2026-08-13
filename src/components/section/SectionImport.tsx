@@ -12,6 +12,7 @@ import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type {
+  ParsedSectionList,
   SectionCandidate,
   TextPage,
 } from '@/lib/import/section-list/types'
@@ -31,14 +32,12 @@ interface CandidateRow {
   candidate: SectionCandidate
 }
 
-function parsedCandidates(pages: TextPage[]): CandidateRow[] {
-  return pages.flatMap((page, pageIndex) =>
-    parseSectionLists(page).flatMap((list, listIndex) =>
-      list.candidates.map((candidate, candidateIndex) => ({
-        id: `${pageIndex}-${listIndex}-${candidateIndex}`,
-        candidate,
-      })),
-    ),
+function parsedCandidates(lists: ParsedSectionList[]): CandidateRow[] {
+  return lists.flatMap((list, listIndex) =>
+    list.candidates.map((candidate, candidateIndex) => ({
+      id: `${listIndex}-${candidateIndex}`,
+      candidate,
+    })),
   )
 }
 
@@ -65,7 +64,14 @@ function cloneSource(
   candidate: SectionCandidate,
 ): Section | undefined {
   if (candidate.kind === '対象外') return undefined
-  return project.sections.find((section) => section.kind === candidate.kind)
+  const sameKind = project.sections.filter(
+    (section) => section.kind === candidate.kind,
+  )
+  // 같은 符号의 다른 階가 이미 있으면 그쪽이 복제원이다 — 파싱하지 않는
+  // fc·강종·노출·仕上げ·初期オフセット은 무관한 부재보다 같은 符号 쪽이 맞다
+  return (
+    sameKind.find((section) => section.mark === candidate.mark) ?? sameKind[0]
+  )
 }
 
 /**
@@ -355,7 +361,11 @@ export function SectionImport({
   const [ignored, setIgnored] = useState<Set<string>>(() => new Set())
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
-  const rows = useMemo(() => parsedCandidates(pages ?? []), [pages])
+  const lists = useMemo(
+    () => (pages ?? []).flatMap((page) => parseSectionLists(page)),
+    [pages],
+  )
+  const rows = useMemo(() => parsedCandidates(lists), [lists])
   const supported = rows.filter(({ candidate }) => candidate.kind !== '対象外')
   const outOfScope = rows.filter(({ candidate }) => candidate.kind === '対象外')
 
@@ -438,7 +448,15 @@ export function SectionImport({
             ) : failed ? (
               <p role="alert">{t(locale, 'sectionImport.error')}</p>
             ) : pages && rows.length === 0 ? (
-              <p>{t(locale, 'sectionImport.empty')}</p>
+              // 리스트 자체를 못 찾은 것과, 찾았지만 符号 행을 못 읽은 것은
+              // 사용자가 원도에서 볼 곳이 다르다
+              <p>
+                {lists.length > 0
+                  ? `${t(locale, 'sectionImport.noMarks')}（${[
+                      ...new Set(lists.map(({ listKind }) => listKind)),
+                    ].join('・')}）`
+                  : t(locale, 'sectionImport.empty')}
+              </p>
             ) : (
               <>
                 <ul className={styles.candidateList}>

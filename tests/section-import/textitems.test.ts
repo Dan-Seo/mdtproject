@@ -63,6 +63,17 @@ const fixtures = [
   },
 ] as const
 
+// 제외 사각형 밖에 남은 개인정보는 좌표로는 잡히지 않는다 — 표제란·印影·확인란이
+// 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 断面リスト의 셀 값(符号·径·
+// 本数·ピッチ·寸法)에는 나타날 수 없는 표기만 고른다
+const PII_MARKERS: Array<[string, RegExp]> = [
+  ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
+  ['電話番号', /\d{2,4}-\d{3,4}-\d{4}/],
+  ['メール', /[\w.-]+@[\w.-]+\.[a-z]{2,}/i],
+  ['資格・登録', /建築士|登録/],
+  ['事務所・氏名', /事務所|氏名|設計者|監理者/],
+]
+
 function readFixture(file: string): TextItemFixture {
   const fixturePath = resolve(
     process.cwd(),
@@ -130,6 +141,13 @@ describe('section-import TextItem fixtures', () => {
       .toHaveLength(0)
 
     const rows = joinedRows(fixture.items)
+    // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
+    // 문자는 아이템 단위로 쪼개져 있으므로 행으로 이어붙인 뒤 본다
+    for (const [label, pattern] of PII_MARKERS) {
+      const hit = rows.find((row) => pattern.test(row))
+      expect(hit, `PII marker (${label}): ${hit}`).toBeUndefined()
+    }
+
     for (const alternatives of spec.needles) {
       expect(
         alternatives.some((needle) =>

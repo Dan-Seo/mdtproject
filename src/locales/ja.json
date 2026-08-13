@@ -13,6 +13,7 @@
   "sectionImport.loading": "PDFをブラウザ内で解析しています",
   "sectionImport.error": "PDFを読み込めませんでした — 別のPDFを選択してください",
   "sectionImport.empty": "認識できる断面リストが見つかりません",
+  "sectionImport.noMarks": "断面リストの見出しは見つかりましたが、符号の行を認識できませんでした（原図を参照）",
   "sectionImport.current": "現行値",
   "sectionImport.parsed": "解析値",
   "sectionImport.new": "新規",

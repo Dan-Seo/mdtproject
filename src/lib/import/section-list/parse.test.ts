@@ -162,7 +162,8 @@ describe('parseSectionLists (synthetic)', () => {
     const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
 
     expect(g1.girderMain).toBeUndefined()
-    expect(g1.raw['主筋(折返し)']).toBe('2-D22')
+    // 上下 어느 행이 접혔는지까지 남긴다 — 원도에서 찾아볼 곳이 다르다
+    expect(g1.raw['上筋(折返し)']).toBe('2-D22')
     expect(g1.issues).toContain('主筋折返し')
     // 접힘과 무관한 断面·あばら筋은 정상 확정
     expect(g1.b).toBe(400)
@@ -728,5 +729,102 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c2.b).toBeUndefined()
     expect(c2.d).toBeUndefined()
     expect(c2.raw['断面']).toBeUndefined()
+  })
+
+  it('keeps a 柱 符号 whose only 主筋 line is the folded one', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        // C2 열은 라벨 행이 비어 있고 값이 접힌 둘째 줄에만 있다
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '16-D25', x: 100, y: 44, w: 36, h: 8 },
+        { str: '4-D25', x: 222, y: 56, w: 32, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    // 접힘 검사 전에 떨어뜨리면 C2는 사유도 원문도 없이 사라진다
+    const c2 = candidate(columns, 'C2', '1F')
+    expect(c2.main).toBeUndefined()
+    expect(c2.raw['主筋(折返し)']).toBe('4-D25')
+    expect(c2.issues).toContain('主筋折返し')
+    // 접힘과 무관한 옆 符号은 그대로 확정된다
+    expect(candidate(columns, 'C1', '1F').main).toEqual({
+      size: 'D25',
+      count: 16,
+    })
+  })
+
+  it('keeps a 大梁 符号 whose only 上筋 line is the folded one', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '上筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 44, w: 32, h: 8 },
+        { str: '2-D22', x: 225, y: 56, w: 32, h: 8 },
+      ],
+    })
+    const girders = list(parsed, '大梁リスト')
+
+    const g2 = candidate(girders, 'G2', undefined)
+    expect(g2.girderMain).toBeUndefined()
+    expect(g2.raw['上筋(折返し)']).toBe('2-D22')
+    expect(g2.issues).toContain('主筋折返し')
+    expect(candidate(girders, 'G1', undefined).raw['上筋(全断面)']).toBe('3-D22')
+  })
+
+  it('keeps both folded lines when 上筋 and 下筋 are folded together', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '上筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 44, w: 32, h: 8 },
+        { str: '2-D22', x: 105, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '3-D22', x: 105, y: 70, w: 32, h: 8 },
+        { str: '2-D19', x: 105, y: 82, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    expect(g1.girderMain).toBeUndefined()
+    // 한 키에 몰면 나중 줄이 앞 줄을 덮는다 — 접힌 행이 어느 쪽인지도 보여야 한다
+    expect(g1.raw['上筋(折返し)']).toBe('2-D22')
+    expect(g1.raw['下筋(折返し)']).toBe('2-D19')
+    expect(g1.issues).toContain('主筋折返し')
+  })
+
+  it('reports a recognized list whose 符号 header row is missing', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱断面リスト', x: 10, y: 5, w: 70, h: 8 },
+        // 符号 행을 인식하지 못한 표 — 리스트를 통째로 버리면 화면에는
+        // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다
+        { str: '記号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '主筋', x: 10, y: 34, w: 20, h: 8 },
+        { str: '16-D25', x: 100, y: 34, w: 36, h: 8 },
+      ],
+    })
+
+    expect(parsed).toHaveLength(1)
+    expect(list(parsed, '柱断面リスト').candidates).toEqual([])
   })
 })

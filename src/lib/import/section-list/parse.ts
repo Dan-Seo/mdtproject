@@ -817,7 +817,17 @@ function parseColumnBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const hoop = hoopValues.get(mark)
-      if (!dimension && mainCells.length === 0 && !hoop) return
+      // 접힘 검사보다 먼저 떨어뜨리면, 값이 접힌 둘째 줄에만 있는 符号이
+      // 사유도 원문도 없이 사라진다 — 접힘도 「읽은 것이 있다」에 넣는다
+      if (
+        !dimension &&
+        mainCells.length === 0 &&
+        !hoop &&
+        !mainContinuations.has(mark) &&
+        !hoopContinuations.has(mark)
+      ) {
+        return
+      }
 
       const result: SectionCandidate = {
         kind: kindFromMark(mark, titleText),
@@ -1003,11 +1013,15 @@ function parseGirderBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const stirrup = stirrupValues.get(mark)
+      // 柱 블록과 같은 이유 — 접힘도 「읽은 것이 있다」에 넣는다
       if (
         !dimension &&
         topCells.length === 0 &&
         bottomCells.length === 0 &&
-        !stirrup
+        !stirrup &&
+        !topContinuations.has(mark) &&
+        !bottomContinuations.has(mark) &&
+        !stirrupContinuations.has(mark)
       ) {
         continue
       }
@@ -1020,9 +1034,9 @@ function parseGirderBlock(
         issues: [],
       }
       setDimension(result, dimension, false)
-      const continuation =
-        topContinuations.get(mark) ?? bottomContinuations.get(mark)
-      if (continuation !== undefined) {
+      const topFold = topContinuations.get(mark)
+      const bottomFold = bottomContinuations.get(mark)
+      if (topFold !== undefined || bottomFold !== undefined) {
         // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 줄들을 원문 참고로 남긴다
         if (topLabel) {
           for (const cell of topCells) {
@@ -1038,7 +1052,15 @@ function parseGirderBlock(
             )
           }
         }
-        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
+        // 上下를 한 키에 몰면 양쪽이 접힌 표에서 下筋 줄이 上筋 줄을 덮는다.
+        // 帯筋·ST와 같은 라벨 규약을 써 어느 행이 접혔는지도 남긴다
+        if (topFold !== undefined) {
+          result.raw[`${topLabel ?? '上筋'}(折返し)`] = cleanedRebarRaw(topFold)
+        }
+        if (bottomFold !== undefined) {
+          result.raw[`${bottomLabel ?? '下筋'}(折返し)`] =
+            cleanedRebarRaw(bottomFold)
+        }
         addIssue(result, '主筋折返し')
       } else if (topLabel || bottomLabel) {
         // 한쪽 라벨만 인식돼도 읽어낸 셀은 남긴다 — setGirderMain이 上下 양쪽을
@@ -1092,7 +1114,12 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
-  if (headerIndexes.length === 0) return undefined
+  // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
+  // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
+  // 후보 없는 리스트로 남겨 표시부가 사유를 말하게 한다
+  if (headerIndexes.length === 0) {
+    return { listKind: anchor.listKind, candidates: [] }
+  }
 
   const candidates: SectionCandidate[] = []
   headerIndexes.forEach((headerIndex, index) => {

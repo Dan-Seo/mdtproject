@@ -13,6 +13,7 @@
   "sectionImport.loading": "PDF를 브라우저 안에서 분석하고 있습니다",
   "sectionImport.error": "PDF를 읽을 수 없습니다 — 다른 PDF를 선택해 주세요",
   "sectionImport.empty": "인식할 수 있는 断面リスト를 찾지 못했습니다",
+  "sectionImport.noMarks": "断面リスト 제목은 찾았지만 符号 행을 인식하지 못했습니다 (원도 참고)",
   "sectionImport.current": "현재값",
   "sectionImport.parsed": "파싱값",
   "sectionImport.new": "신규",

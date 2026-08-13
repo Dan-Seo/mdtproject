@@ -110,6 +110,52 @@ describe('SectionImport', () => {
     expect(imported).toEqual(['2階', '1階'])
   })
 
+  it('clones the same 符号 of another 階 rather than the first 柱', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        sections: [
+          ...base.sections,
+          {
+            id: 'section-C51-1F',
+            kind: '柱',
+            mark: 'C51',
+            storyLabel: '1階',
+            b: 800,
+            d: 800,
+            fc: 30,
+            grade: 'SD390',
+            exposure: '屋内',
+            finish: '仕上げあり',
+            main: { size: 'D25', count: 22 },
+            hoop: { size: 'D13', pitch: 100, startOffsetMm: 50 },
+          },
+        ],
+      },
+    })
+    render(<SectionImport initialPages={[yokohamaPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-C51-2階')
+    // 복제원은 무관한 C1이 아니라 같은 符号의 다른 階다 — 파싱되지 않는
+    // fc·강종·노출·初期オフセット은 같은 기둥 쪽이 맞을 확률이 높다
+    expect(row).toHaveTextContent(
+      '未解析の欄はC51(1階)（fc30・SD390・屋内/仕上げあり・初期オフセット50mm）から複製',
+    )
+
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'C51' && storyLabel === '2階',
+      )
+    if (section?.kind !== '柱') throw new Error('Expected imported 柱 section')
+    expect(section.fc).toBe(30)
+    expect(section.grade).toBe('SD390')
+    expect(section.hoop.startOffsetMm).toBe(50)
+  })
+
   it('blocks approval for a new mark with unparsed fields', () => {
     const before = useAppStore.getState().project
     render(<SectionImport initialPages={[yokohamaPage]} />)
@@ -253,5 +299,32 @@ describe('SectionImport', () => {
     expect(
       screen.getByText('認識できる断面リストが見つかりません'),
     ).toBeVisible()
+  })
+
+  it('distinguishes a recognized list with no 符号 row from no list at all', () => {
+    render(
+      <SectionImport
+        initialPages={[
+          {
+            widthPt: 400,
+            heightPt: 200,
+            items: [
+              { str: '柱断面リスト', x: 10, y: 5, w: 70, h: 8 },
+              { str: '記号', x: 10, y: 20, w: 20, h: 8 },
+              { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+            ],
+          },
+        ]}
+      />,
+    )
+
+    // 「리스트 자체가 없다」와 「리스트는 찾았지만 符号 행을 못 읽었다」는
+    // 사용자가 할 일이 다르다 — 후자는 원도의 그 표를 확인하면 된다
+    expect(
+      screen.getByText(/符号の行を認識できませんでした/),
+    ).toHaveTextContent('柱断面リスト')
+    expect(
+      screen.queryByText('認識できる断面リストが見つかりません'),
+    ).toBeNull()
   })
 })
