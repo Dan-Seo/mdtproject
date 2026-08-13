@@ -88,7 +88,8 @@ function normalizedForScan(text: string): string {
 const PHONE_PATTERN = /\d{2,4}-\d{3,4}-\d{4}/
 
 const PII_MARKERS: Array<[string, RegExp]> = [
-  ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
+  // 全角 분기는 두지 않는다 — 스캔 대상이 이미 NFKC로 접혀 ＴＥＬ은 TEL로 온다
+  ['連絡先', /TEL|FAX|〒/i],
   ['電話番号', PHONE_PATTERN],
   ['メール', /[\w.-]+@[\w.-]+\.[a-z]{2,}/i],
   ['資格・登録', /一級建築士|二級建築士|建築士事務所登録|登録番号/],
@@ -446,10 +447,27 @@ describe('section-import TextItem fixtures', () => {
     expect(joinedColumns(items)).toContain('TEL')
   })
 
+  it('joins a drifting column that stays inside the tolerance', () => {
+    // 앵커 체인이 하는 일 자체를 못박는다 — 0.4pt씩 밀리는 세로줄은 정수
+    // 경계(100.8과 101.2 사이)를 넘어가므로 반올림 버킷만으로는 갈린다.
+    // 입력 순서를 뒤집어도 같은 문자열이 나와야 한다
+    const items = [
+      { str: 'T', x: 100.4, y: 200, w: 8, h: 8, rot: -90 },
+      { str: 'E', x: 100.8, y: 190, w: 8, h: 8, rot: -90 },
+      { str: 'L', x: 101.2, y: 180, w: 8, h: 8, rot: -90 },
+    ]
+
+    expect(joinedColumns(items)).toContain('TEL')
+    expect(joinedColumns([...items].reverse())).toContain('TEL')
+  })
+
   it('groups columns identically however the items are ordered', () => {
     // 픽스처의 아이템 순서는 PDF 원본 순서라 x 정렬이 아니다. 「먼저 만들어진
     // 열」에 붙이면 같은 세로줄이 삽입 순서에 따라 다르게 갈려, 어떤 도면에서는
-    // 이어지고 어떤 도면에서는 끊긴다 — 끊긴 쪽은 PII가 그대로 통과한다
+    // 이어지고 어떤 도면에서는 끊긴다 — 끊긴 쪽은 PII가 그대로 통과한다.
+    // 여기서 보는 것은 「같은 분할이 나오는가」다. 결합 자체는 위 케이스가
+    // 못박는다 — 순서 의존은 드리프트가 허용오차를 넘을 때만 드러나는데 그
+    // 구간에서는 어느 묶기로도 런이 이어지지 않아 한 케이스로 둘 다 볼 수 없다
     const items = [
       { str: 'T', x: 100, y: 200, w: 8, h: 8, rot: -90 },
       { str: 'E', x: 100.9, y: 190, w: 8, h: 8, rot: -90 },
@@ -472,6 +490,7 @@ describe('section-import TextItem fixtures', () => {
       '０３–１２３４–５６７８', // en dash U+2013
       '０３ｰ１２３４ｰ５６７８', // 半角長音 U+FF70
       'ａｂｃ＠ｘｘ．ｃｏ．ｊｐ', // 全角 메일 주소
+      'ＴＥＬ ０３（１２３４）５６７８', // 全角 라벨 — 마커에 全角 분기가 없어도 걸린다
     ]
 
     samples.forEach((sample, index) => {
