@@ -36,6 +36,7 @@
   "sectionImport.issue.項目行重複": "이 階 구간에 같은 항목 행이 겹으로 있어 값을 확정하지 않았습니다 (원도 참고).",
   "sectionImport.issue.帯筋解釈不能": "帯筋/あばら筋을 대응하는 철근 径으로 해석할 수 없습니다.",
   "sectionImport.issue.帯筋折返し": "帯筋/あばら筋 셀이 여러 줄로 접혀 있어 값을 확정하지 않았습니다.",
+  "sectionImport.issue.帯筋ラベル行外": "帯筋/あばら筋 값이 그 행이 아니라 바로 아래 무라벨 행에 있어 값을 확정하지 않았습니다.",
   "sectionImport.outOfScope": "対象外(柱·大梁 이외)",
   "plan.storyTabs": "층 선택",
   "plan.addSpan": " 스팬 추가",

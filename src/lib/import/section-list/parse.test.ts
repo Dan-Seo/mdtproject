@@ -762,6 +762,34 @@ describe('parseSectionLists (synthetic)', () => {
     })
   })
 
+  it('keeps a 柱 符号 whose only 帯筋 line is below the label row', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 240,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '帯筋', x: 10, y: 44, w: 20, h: 8 },
+        { str: 'D13-@100', x: 100, y: 44, w: 48, h: 8 },
+        { str: 'D13-@200', x: 220, y: 56, w: 48, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    const c2 = candidate(columns, 'C2', '1F')
+    expect(c2.hoop).toBeUndefined()
+    // 첫 줄이 없으므로 「접혀 있다」가 아니다 — 主筋과 같은 규약
+    expect(c2.raw['帯筋(無ラベル行)']).toBe('D13-@200')
+    expect(c2.issues).toEqual(['帯筋ラベル行外'])
+    expect(candidate(columns, 'C1', '1F').hoop).toEqual({
+      size: 'D13',
+      pitchMm: 100,
+    })
+  })
+
   it('keeps a 大梁 符号 whose only 上筋 line is the folded one', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

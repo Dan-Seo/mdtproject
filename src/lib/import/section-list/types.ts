@@ -29,6 +29,7 @@ export const CANDIDATE_ISSUES = [
   '断面矩形不成立',
   '帯筋解釈不能',
   '帯筋折返し',
+  '帯筋ラベル行外',
   '階不明',
   '項目行重複',
 ] as const

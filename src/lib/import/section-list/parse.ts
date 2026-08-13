@@ -570,11 +570,15 @@ function setPitch(
   raw: string | undefined,
   folded: string | undefined,
 ): void {
-  // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 帯筋 ピッチ가 줄마다 다르면 本数가 틀린다
+  // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 帯筋 ピッチ가 줄마다 다르면 本数가 틀린다.
+  // 主筋과 같은 규약으로 첫 줄이 없는 경우를 나눈다 — 접힘 없이도 살아남는 符号이
+  // 생긴 뒤로는 「없는 둘째 줄을 찾아보라」는 안내가 실제로 도달한다
   if (folded !== undefined) {
-    if (raw) candidate.raw[label] = cleanedRebarRaw(raw)
-    candidate.raw[`${label}(折返し)`] = cleanedRebarRaw(folded)
-    addIssue(candidate, '帯筋折返し')
+    const wrapped = raw !== undefined && raw.length > 0
+    if (wrapped) candidate.raw[label] = cleanedRebarRaw(raw as string)
+    candidate.raw[`${label}(${wrapped ? '折返し' : '無ラベル行'})`] =
+      cleanedRebarRaw(folded)
+    addIssue(candidate, wrapped ? '帯筋折返し' : '帯筋ラベル行外')
     return
   }
   if (!raw) return

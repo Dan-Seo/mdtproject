@@ -111,10 +111,12 @@ function joinedRows(items: TextItemFixture['items']): string[] {
 }
 
 /**
- * 縦書き(rot=-90) 문자열은 1글자 단위로 y만 다르게 저장돼 있어 가로 행에는 절대
- * 이어지지 않는다(현행 픽스처 442건). 세로로도 이어 봐야 표제란 문구가 검사망에
- * 걸린다. 세로로 인접한 글자만 잇는다 — 무관한 행의 글자가 같은 x에서 우연히
- * 이어지면 없는 문자열을 만들어 오탐이 된다
+ * 縦書き(rot≠0) 문자열은 1글자 단위로 y만 다르게 저장돼 있어 가로 행에는 절대
+ * 이어지지 않는다(현행 픽스처 442건, 전부 -90). 세로로도 이어 봐야 표제란 문구가
+ * 검사망에 걸린다. 세로로 인접한 글자만 잇는다 — 무관한 행의 글자가 같은 x에서
+ * 우연히 이어지면 없는 문자열을 만들어 오탐이 된다.
+ * 읽는 방향은 회전 부호가 정한다(`toTextItems`의 rot은 atan2라 +90도 나온다) —
+ * 한쪽으로만 이으면 반대 회전 문자열이 역순이 되어 마커가 매칭되지 않는다
  */
 function joinedColumns(items: TextItemFixture['items']): string[] {
   const columns = new Map<number, TextItemFixture['items']>()
@@ -124,7 +126,10 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
   }
 
   return [...columns.values()].flatMap((columnItems) => {
-    const sorted = [...columnItems].sort((left, right) => right.y - left.y)
+    const upward = columnItems.some(({ rot }) => rot !== undefined && rot > 0)
+    const sorted = [...columnItems].sort((left, right) =>
+      upward ? left.y - right.y : right.y - left.y,
+    )
     const runs: string[] = []
     let current: string[] = []
     let previous: TextItemFixture['items'][number] | undefined
@@ -132,7 +137,7 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
     for (const item of sorted) {
       const adjacent =
         previous !== undefined &&
-        previous.y - item.y <= Math.max(previous.h, item.h) * 2
+        Math.abs(previous.y - item.y) <= Math.max(previous.h, item.h) * 2
       if (!adjacent && current.length > 0) {
         runs.push(current.join(''))
         current = []
@@ -182,8 +187,10 @@ describe('section-import TextItem fixtures', () => {
     // 문자는 아이템 단위로 쪼개져 있으므로 가로·세로 양쪽으로 이어붙인 뒤 본다
     const scanned = [...rows, ...joinedColumns(fixture.items)]
     for (const [label, pattern] of PII_MARKERS) {
-      const hit = scanned.find((text) => pattern.test(text))
-      expect(hit, `PII marker (${label}): ${hit}`).toBeUndefined()
+      // 매치된 원문은 찍지 않는다 — 커밋을 막아도 CI 로그·아티팩트에 평문으로
+      // 남으면 유출은 그대로다. 위치만 알려주고 실물은 로컬에서 보게 한다
+      const hitIndex = scanned.findIndex((text) => pattern.test(text))
+      expect(hitIndex, `PII marker (${label}) at index ${hitIndex}`).toBe(-1)
     }
 
     for (const alternatives of spec.needles) {
@@ -205,5 +212,22 @@ describe('section-import TextItem fixtures', () => {
       false,
     )
     expect(joinedColumns(fixture.items)).toContain('10-D13')
+  })
+
+  it('reads 縦書き in either rotation direction', () => {
+    // 현행 픽스처는 전부 rot=-90이라 +90은 합성으로 고정한다 — 한 방향만 이으면
+    // 반대 회전 문자열이 역순이 되어 마커가 통째로 빠져나간다
+    const vertical = (rot: number) =>
+      [...'TEL'].map((str, index) => ({
+        str,
+        x: 100,
+        y: rot > 0 ? 100 + index * 10 : 100 - index * 10,
+        w: 8,
+        h: 8,
+        rot,
+      }))
+
+    expect(joinedColumns(vertical(-90))).toContain('TEL')
+    expect(joinedColumns(vertical(90))).toContain('TEL')
   })
 })

@@ -36,6 +36,7 @@
   "sectionImport.issue.項目行重複": "この階区間に同じ項目行が重複しているため、値を確定しませんでした（原図を参照）。",
   "sectionImport.issue.帯筋解釈不能": "帯筋・あばら筋を対応する鉄筋径として解釈できません。",
   "sectionImport.issue.帯筋折返し": "帯筋・あばら筋セルが複数行に折り返されているため、値を確定しませんでした。",
+  "sectionImport.issue.帯筋ラベル行外": "帯筋・あばら筋の値がその行ではなく直下の無ラベル行にあるため、値を確定しませんでした。",
   "sectionImport.outOfScope": "対象外（柱・大梁以外）",
   "plan.storyTabs": "階選択",
   "plan.addSpan": "スパンを追加",
