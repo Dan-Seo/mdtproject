@@ -136,9 +136,15 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
     ),
     // 회전 정보 없이 세로로 쓰인 문자열은 rot으로 방향이 정해지지 않는다
     // (좌표계는 「좌상 원점, +y 아래」라 위→아래가 y 오름차순이지만, 아래에서
-    // 위로 쌓인 표기도 있다) — 검사망은 superset이어도 안전하므로 양방향을 본다
+    // 위로 쌓인 표기도 있다) — 양방향을 본다
     ...columnRuns(unrotated, true),
     ...columnRuns(unrotated, false),
+    // 위 분할은 서로소라 한 런에 회전·무회전이 섞이면(縦中横 — 세로쓰기 안의
+    // 숫자만 무회전인 표기, 표제란 전화번호가 정확히 이 형태다) 어느 패스에서도
+    // 이어지지 않는다. 원본 전체를 잇는 패스를 덧붙여 진짜 superset으로 만든다 —
+    // 오탐은 사람이 한 번 보면 끝나지만 누락은 PII가 그대로 커밋된다
+    ...columnRuns(items, true),
+    ...columnRuns(items, false),
   ]
 }
 
@@ -205,11 +211,13 @@ describe('section-import TextItem fixtures', () => {
     const leaked = fixture.items.filter(
       ({ x, y }) => x >= excludeFrom.x && y >= excludeFrom.y,
     )
-    // 아래 PII 스캔과 같은 규약 — 실패 메시지에 원문을 싣지 않는다
+    // 아래 PII 스캔과 같은 규약 — 실패 메시지에 원문을 싣지 않는다.
+    // 어서션 대상도 배열이 아니라 개수다: 배열을 넘기면 vitest가 received로
+    // 아이템 전체(str 포함)를 찍어 메시지만 고쳐도 원문이 로그에 남는다
     expect(
-      leaked,
+      leaked.length,
       `title-block leak: ${leaked.length}件 (先頭 x=${leaked[0]?.x}, y=${leaked[0]?.y})`,
-    ).toHaveLength(0)
+    ).toBe(0)
 
     const rows = joinedRows(fixture.items)
     // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
@@ -319,5 +327,24 @@ describe('section-import TextItem fixtures', () => {
 
     expect(joinedColumns(stacked(10))).toContain('TEL')
     expect(joinedColumns(stacked(-10))).toContain('TEL')
+  })
+
+  it('reads a 縦中横 run whose digits are unrotated', () => {
+    // 세로쓰기 안의 숫자만 무회전인 표기(표제란 전화번호가 이 형태다) —
+    // 회전 유무로 대역을 가르면 이 런은 어느 패스에서도 이어지지 않는다
+    const items = [...'03-1234-5678'].map((str, index) => ({
+      str,
+      x: 100,
+      y: 100 + index * 10,
+      w: 8,
+      h: 8,
+      ...(/\d/.test(str) ? {} : { rot: -90 }),
+    }))
+
+    expect(
+      joinedColumns(items).some((text) =>
+        /\d{2,4}-\d{3,4}-\d{4}/.test(text),
+      ),
+    ).toBe(true)
   })
 })
