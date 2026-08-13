@@ -845,8 +845,12 @@ function parseColumnBlock(
             'position' in cell ? `主筋(${cell.position})` : '主筋'
           result.raw[key] = cleanedRebarRaw(cell.raw)
         }
-        result.raw['主筋(折返し)'] = cleanedRebarRaw(continuation)
-        addIssue(result, '主筋折返し')
+        // 첫 줄이 아예 없으면 「접혀 있다」가 아니다 — 없는 접힘을 알리면
+        // 사용자는 원도에서 존재하지 않는 둘째 줄을 찾는다
+        const folded = mainCells.length > 0
+        result.raw[folded ? '主筋(折返し)' : '主筋(無ラベル行)'] =
+          cleanedRebarRaw(continuation)
+        addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
       } else {
         setColumnMain(result, mainCells, markPositions.length)
       }
@@ -1053,15 +1057,22 @@ function parseGirderBlock(
           }
         }
         // 上下를 한 키에 몰면 양쪽이 접힌 표에서 下筋 줄이 上筋 줄을 덮는다.
-        // 帯筋·ST와 같은 라벨 규약을 써 어느 행이 접혔는지도 남긴다
+        // 帯筋·ST와 같은 라벨 규약을 써 어느 행이 접혔는지도 남긴다.
+        // 柱 블록과 같은 이유로 첫 줄이 없는 쪽은 접힘이라 부르지 않는다
         if (topFold !== undefined) {
-          result.raw[`${topLabel ?? '上筋'}(折返し)`] = cleanedRebarRaw(topFold)
+          const folded = topCells.length > 0
+          result.raw[
+            `${topLabel ?? '上筋'}(${folded ? '折返し' : '無ラベル行'})`
+          ] = cleanedRebarRaw(topFold)
+          addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
         }
         if (bottomFold !== undefined) {
-          result.raw[`${bottomLabel ?? '下筋'}(折返し)`] =
-            cleanedRebarRaw(bottomFold)
+          const folded = bottomCells.length > 0
+          result.raw[
+            `${bottomLabel ?? '下筋'}(${folded ? '折返し' : '無ラベル行'})`
+          ] = cleanedRebarRaw(bottomFold)
+          addIssue(result, folded ? '主筋折返し' : '主筋ラベル行外')
         }
-        addIssue(result, '主筋折返し')
       } else if (topLabel || bottomLabel) {
         // 한쪽 라벨만 인식돼도 읽어낸 셀은 남긴다 — setGirderMain이 上下 양쪽을
         // 요구하므로 「主筋位置欠落」이 붙고, 확정 없이 원문이 보존된다
@@ -1116,9 +1127,9 @@ function parseTableRegion(
     .map(({ index }) => index)
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
   // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
-  // 후보 없는 리스트로 남겨 표시부가 사유를 말하게 한다
+  // 사유를 코드로 실어 보내고 문구는 표시부가 고른다 (CandidateIssue와 같은 규약)
   if (headerIndexes.length === 0) {
-    return { listKind: anchor.listKind, candidates: [] }
+    return { listKind: anchor.listKind, candidates: [], issue: '符号行未認識' }
   }
 
   const candidates: SectionCandidate[] = []
@@ -1130,7 +1141,13 @@ function parseTableRegion(
     candidates.push(...parsed)
   })
 
-  return { listKind: anchor.listKind, candidates }
+  // 符号은 읽었으나 항목 행(断面·主筋·帯筋)을 하나도 못 읽은 표 — 「符号을 못
+  // 읽었다」로 안내하면 사용자가 원도의 엉뚱한 곳을 본다
+  return {
+    listKind: anchor.listKind,
+    candidates,
+    ...(candidates.length === 0 ? { issue: '項目行未認識' as const } : {}),
+  }
 }
 
 export function parseSectionLists(page: TextPage): ParsedSectionList[] {

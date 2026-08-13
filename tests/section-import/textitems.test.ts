@@ -64,14 +64,15 @@ const fixtures = [
 ] as const
 
 // 제외 사각형 밖에 남은 개인정보는 좌표로는 잡히지 않는다 — 표제란·印影·확인란이
-// 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 断面リスト의 셀 값(符号·径·
-// 本数·ピッチ·寸法)에는 나타날 수 없는 표기만 고른다
+// 도면 어디에 놓이든 걸리도록 내용으로 한 겹 더 본다. 사람·조직을 식별하는 표기로
+// 좁힌다: 「事務所」(○○事務所棟·室名)·「登録」(認定登録番号)·「設計者と協議」 같은
+// 도면 상용어까지 걸면 PII가 없는 도면도 실패해 픽스처 확장이 막힌다 (R10)
 const PII_MARKERS: Array<[string, RegExp]> = [
   ['連絡先', /TEL|ＴＥＬ|FAX|ＦＡＸ|〒/i],
   ['電話番号', /\d{2,4}-\d{3,4}-\d{4}/],
   ['メール', /[\w.-]+@[\w.-]+\.[a-z]{2,}/i],
-  ['資格・登録', /建築士|登録/],
-  ['事務所・氏名', /事務所|氏名|設計者|監理者/],
+  ['資格・登録', /一級建築士|二級建築士|建築士事務所登録|登録番号/],
+  ['事務所・氏名', /建築士事務所|設計事務所|氏名|設計者名|監理者名/],
 ]
 
 function readFixture(file: string): TextItemFixture {
@@ -109,6 +110,42 @@ function joinedRows(items: TextItemFixture['items']): string[] {
   )
 }
 
+/**
+ * 縦書き(rot=-90) 문자열은 1글자 단위로 y만 다르게 저장돼 있어 가로 행에는 절대
+ * 이어지지 않는다(현행 픽스처 442건). 세로로도 이어 봐야 표제란 문구가 검사망에
+ * 걸린다. 세로로 인접한 글자만 잇는다 — 무관한 행의 글자가 같은 x에서 우연히
+ * 이어지면 없는 문자열을 만들어 오탐이 된다
+ */
+function joinedColumns(items: TextItemFixture['items']): string[] {
+  const columns = new Map<number, TextItemFixture['items']>()
+  for (const item of items) {
+    const key = Math.round(item.x)
+    columns.set(key, [...(columns.get(key) ?? []), item])
+  }
+
+  return [...columns.values()].flatMap((columnItems) => {
+    const sorted = [...columnItems].sort((left, right) => right.y - left.y)
+    const runs: string[] = []
+    let current: string[] = []
+    let previous: TextItemFixture['items'][number] | undefined
+
+    for (const item of sorted) {
+      const adjacent =
+        previous !== undefined &&
+        previous.y - item.y <= Math.max(previous.h, item.h) * 2
+      if (!adjacent && current.length > 0) {
+        runs.push(current.join(''))
+        current = []
+      }
+      current.push(item.str)
+      previous = item
+    }
+    if (current.length > 0) runs.push(current.join(''))
+
+    return runs
+  })
+}
+
 describe('section-import TextItem fixtures', () => {
   it.each(fixtures)('$file preserves dense, positioned drawing text', (spec) => {
     const fixture = readFixture(spec.file)
@@ -142,9 +179,10 @@ describe('section-import TextItem fixtures', () => {
 
     const rows = joinedRows(fixture.items)
     // 좌표 검사는 생성기와 같은 술어라 「경계 밖에 남은 개인정보」를 원리상 못 잡는다.
-    // 문자는 아이템 단위로 쪼개져 있으므로 행으로 이어붙인 뒤 본다
+    // 문자는 아이템 단위로 쪼개져 있으므로 가로·세로 양쪽으로 이어붙인 뒤 본다
+    const scanned = [...rows, ...joinedColumns(fixture.items)]
     for (const [label, pattern] of PII_MARKERS) {
-      const hit = rows.find((row) => pattern.test(row))
+      const hit = scanned.find((text) => pattern.test(text))
       expect(hit, `PII marker (${label}): ${hit}`).toBeUndefined()
     }
 
@@ -156,5 +194,16 @@ describe('section-import TextItem fixtures', () => {
         `missing same-row text: ${alternatives.join(' or ')}`,
       ).toBe(true)
     }
+  })
+
+  it('reconstructs 縦書き text so the PII scan is not bypassed by rotation', () => {
+    // 마커 0건은 「세로도 봤다」의 증거가 못 된다 — 세로 채널이 실제로 글자를
+    // 이어붙이는지 고정한다. 「10-D13」은 이 픽스처에서 세로로만 나타난다
+    const fixture = readFixture('kani-p38.json')
+
+    expect(joinedRows(fixture.items).some((row) => row.includes('10-D13'))).toBe(
+      false,
+    )
+    expect(joinedColumns(fixture.items)).toContain('10-D13')
   })
 })

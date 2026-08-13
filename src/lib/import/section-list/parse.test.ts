@@ -752,8 +752,9 @@ describe('parseSectionLists (synthetic)', () => {
     // 접힘 검사 전에 떨어뜨리면 C2는 사유도 원문도 없이 사라진다
     const c2 = candidate(columns, 'C2', '1F')
     expect(c2.main).toBeUndefined()
-    expect(c2.raw['主筋(折返し)']).toBe('4-D25')
-    expect(c2.issues).toContain('主筋折返し')
+    // 첫 줄이 애초에 없으므로 「접혀 있다」가 아니다 — 원도에서 찾을 것이 다르다
+    expect(c2.raw['主筋(無ラベル行)']).toBe('4-D25')
+    expect(c2.issues).toEqual(['主筋ラベル行外'])
     // 접힘과 무관한 옆 符号은 그대로 확정된다
     expect(candidate(columns, 'C1', '1F').main).toEqual({
       size: 'D25',
@@ -779,8 +780,8 @@ describe('parseSectionLists (synthetic)', () => {
 
     const g2 = candidate(girders, 'G2', undefined)
     expect(g2.girderMain).toBeUndefined()
-    expect(g2.raw['上筋(折返し)']).toBe('2-D22')
-    expect(g2.issues).toContain('主筋折返し')
+    expect(g2.raw['上筋(無ラベル行)']).toBe('2-D22')
+    expect(g2.issues).toEqual(['主筋ラベル行外'])
     expect(candidate(girders, 'G1', undefined).raw['上筋(全断面)']).toBe('3-D22')
   })
 
@@ -825,6 +826,29 @@ describe('parseSectionLists (synthetic)', () => {
     })
 
     expect(parsed).toHaveLength(1)
-    expect(list(parsed, '柱断面リスト').candidates).toEqual([])
+    const columns = list(parsed, '柱断面リスト')
+    expect(columns.candidates).toEqual([])
+    // 사유는 표시부가 「후보가 비었다」로 추론하지 않는다 — 코드로 싣는다
+    expect(columns.issue).toBe('符号行未認識')
+  })
+
+  it('separates a read 符号 header with no readable item rows', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱断面リスト', x: 10, y: 5, w: 70, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        // 断面·主筋·帯筋 어느 라벨도 아닌 미지 형식 (R10)
+        { str: 'RC規格', x: 10, y: 34, w: 30, h: 8 },
+        { str: 'A種', x: 115, y: 34, w: 20, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱断面リスト')
+
+    // 符号은 읽었으니 사용자가 볼 곳은 符号 행이 아니라 항목 행이다
+    expect(columns.candidates).toEqual([])
+    expect(columns.issue).toBe('項目行未認識')
   })
 })

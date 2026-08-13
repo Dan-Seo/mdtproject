@@ -13,6 +13,17 @@ const yokohamaPage: TextPage = {
   items: yokohamaFixture.items,
 }
 
+/** 타이틀은 읽히고 符号 행만 인식되지 않는 표. */
+const headerlessPage: TextPage = {
+  widthPt: 400,
+  heightPt: 200,
+  items: [
+    { str: '柱断面リスト', x: 10, y: 5, w: 70, h: 8 },
+    { str: '記号', x: 10, y: 20, w: 20, h: 8 },
+    { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+  ],
+}
+
 describe('SectionImport', () => {
   beforeEach(() => {
     useAppStore.setState({
@@ -302,21 +313,7 @@ describe('SectionImport', () => {
   })
 
   it('distinguishes a recognized list with no 符号 row from no list at all', () => {
-    render(
-      <SectionImport
-        initialPages={[
-          {
-            widthPt: 400,
-            heightPt: 200,
-            items: [
-              { str: '柱断面リスト', x: 10, y: 5, w: 70, h: 8 },
-              { str: '記号', x: 10, y: 20, w: 20, h: 8 },
-              { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
-            ],
-          },
-        ]}
-      />,
-    )
+    render(<SectionImport initialPages={[headerlessPage]} />)
 
     // 「리스트 자체가 없다」와 「리스트는 찾았지만 符号 행을 못 읽었다」는
     // 사용자가 할 일이 다르다 — 후자는 원도의 그 표를 확인하면 된다
@@ -326,5 +323,42 @@ describe('SectionImport', () => {
     expect(
       screen.queryByText('認識できる断面リストが見つかりません'),
     ).toBeNull()
+  })
+
+  it('names the unreadable list even when another list produced candidates', () => {
+    render(<SectionImport initialPages={[yokohamaPage, headerlessPage]} />)
+
+    // 부분 실패가 가장 위험하다 — 다른 표가 읽히면 실패한 표는 화면에서
+    // 사라지고 사용자는 그 표를 반영했다고 믿는다
+    expect(screen.getByTestId('section-import-candidate-C51-2階')).toBeVisible()
+    expect(
+      screen.getByText(/符号の行を認識できませんでした/),
+    ).toHaveTextContent('柱断面リスト')
+  })
+
+  it('points at the item rows when the 符号 header was read but nothing else', () => {
+    render(
+      <SectionImport
+        initialPages={[
+          {
+            widthPt: 400,
+            heightPt: 200,
+            items: [
+              { str: '大梁断面リスト', x: 10, y: 5, w: 80, h: 8 },
+              { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+              { str: 'G1', x: 120, y: 20, w: 12, h: 8 },
+              { str: 'RC規格', x: 10, y: 34, w: 30, h: 8 },
+              { str: 'A種', x: 115, y: 34, w: 20, h: 8 },
+            ],
+          },
+        ]}
+      />,
+    )
+
+    // 符号은 읽었다 — 「符号 행을 못 읽었다」로 안내하면 엉뚱한 곳을 보게 된다
+    expect(
+      screen.getByText(/項目の行を認識できませんでした/),
+    ).toHaveTextContent('大梁断面リスト')
+    expect(screen.queryByText(/符号の行を認識できませんでした/)).toBeNull()
   })
 })

@@ -12,6 +12,7 @@ import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type {
+  ListIssue,
   ParsedSectionList,
   SectionCandidate,
   TextPage,
@@ -366,6 +367,18 @@ export function SectionImport({
     [pages],
   )
   const rows = useMemo(() => parsedCandidates(lists), [lists])
+  // 사유별로 어느 리스트가 걸렸는지 묶는다 — 후보가 하나라도 있으면 실패한 표가
+  // 화면에서 사라지던 문제를 막으려면 이 안내가 후보 목록과 함께 늘 보여야 한다
+  const listIssues = useMemo(() => {
+    const grouped = new Map<ListIssue, string[]>()
+    for (const { issue, listKind } of lists) {
+      if (issue === undefined) continue
+      const kinds = grouped.get(issue) ?? []
+      if (!kinds.includes(listKind)) kinds.push(listKind)
+      grouped.set(issue, kinds)
+    }
+    return [...grouped]
+  }, [lists])
   const supported = rows.filter(({ candidate }) => candidate.kind !== '対象外')
   const outOfScope = rows.filter(({ candidate }) => candidate.kind === '対象外')
 
@@ -447,18 +460,15 @@ export function SectionImport({
               <p role="status">{t(locale, 'sectionImport.loading')}</p>
             ) : failed ? (
               <p role="alert">{t(locale, 'sectionImport.error')}</p>
-            ) : pages && rows.length === 0 ? (
-              // 리스트 자체를 못 찾은 것과, 찾았지만 符号 행을 못 읽은 것은
-              // 사용자가 원도에서 볼 곳이 다르다
-              <p>
-                {lists.length > 0
-                  ? `${t(locale, 'sectionImport.noMarks')}（${[
-                      ...new Set(lists.map(({ listKind }) => listKind)),
-                    ].join('・')}）`
-                  : t(locale, 'sectionImport.empty')}
-              </p>
+            ) : pages && rows.length === 0 && listIssues.length === 0 ? (
+              <p>{t(locale, 'sectionImport.empty')}</p>
             ) : (
               <>
+                {listIssues.map(([issue, kinds]) => (
+                  <p key={issue} className={styles.listIssue}>
+                    {`${t(locale, `sectionImport.listIssue.${issue}`)}（${kinds.join('・')}）`}
+                  </p>
+                ))}
                 <ul className={styles.candidateList}>
                   {supported.map((row) => (
                     <Candidate
