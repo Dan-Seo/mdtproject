@@ -124,6 +124,7 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
   // 회전 없는 글자도 따로 가른다: 같은 대역에 섞으면 가로 글자 하나가 세로 런
   // 가운데로 끼어들어 마커가 빠져나간다
   const rotated = items.filter(({ rot }) => rot !== undefined && rot !== 0)
+  const unrotated = items.filter(({ rot }) => rot === undefined || rot === 0)
   const upward = ({ rot }: TextItemFixture['items'][number]) =>
     rot !== undefined && rot > 0
 
@@ -133,11 +134,11 @@ function joinedColumns(items: TextItemFixture['items']): string[] {
       rotated.filter((item) => !upward(item)),
       false,
     ),
-    // 회전 정보 없이 세로로 쓰인 문자열도 있다 — 가로는 joinedRows가 이미 본다
-    ...columnRuns(
-      items.filter(({ rot }) => rot === undefined || rot === 0),
-      false,
-    ),
+    // 회전 정보 없이 세로로 쓰인 문자열은 rot으로 방향이 정해지지 않는다
+    // (좌표계는 「좌상 원점, +y 아래」라 위→아래가 y 오름차순이지만, 아래에서
+    // 위로 쌓인 표기도 있다) — 검사망은 superset이어도 안전하므로 양방향을 본다
+    ...columnRuns(unrotated, true),
+    ...columnRuns(unrotated, false),
   ]
 }
 
@@ -302,5 +303,21 @@ describe('section-import TextItem fixtures', () => {
     ]
 
     expect(joinedColumns(items)).toContain('TEL')
+  })
+
+  it('reads unrotated 縦書き stacked either way', () => {
+    // 좌표계가 「좌상 원점, +y 아래」라 위→아래가 y 오름차순이다 — 무회전
+    // 세로쓰기를 한 방향으로만 이으면 통째로 뒤집혀 마커가 빠져나간다
+    const stacked = (step: number) =>
+      [...'TEL'].map((str, index) => ({
+        str,
+        x: 100,
+        y: 100 + index * step,
+        w: 8,
+        h: 8,
+      }))
+
+    expect(joinedColumns(stacked(10))).toContain('TEL')
+    expect(joinedColumns(stacked(-10))).toContain('TEL')
   })
 })
