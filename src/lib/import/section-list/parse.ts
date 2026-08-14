@@ -833,15 +833,19 @@ function verticalsByMark(
   // 남의 열 숫자가 이 열의 d로 확정된다. 앵커가 하나면 간격을 잴 수 없다 —
   // 상한을 세울 근거가 없으니 짝짓지 않는다
   if (anchors.length < 2) return new Map()
-  const centers = anchors
-    .map(({ centerX }) => centerX)
-    .sort((left, right) => left - right)
-  // 상한은 앵커 간격의 절반이 아니라 한 칸 폭이다. 세로 치수는 칸 중앙이 아니라
-  // 스케치 오른쪽 끝에 붙어서, 절반으로 자르면 마지막 열의 실물 값이 잘린다
-  // (ojkk 柱 FC1: 앵커에서 51.7pt로 간격 56.7의 91%)
-  const limit = median(
-    centers.slice(1).map((center, index) => center - centers[index]),
-  )
+  const sorted = [...anchors].sort((left, right) => left.centerX - right.centerX)
+  // 상한은 그 앵커에서 이웃 앵커까지의 간격이다. 칸 경계는 두 앵커 사이에 있으므로
+  // 앵커에서 경계까지의 거리는 이웃 간격보다 짧다 — 이웃별로 재는 이유는 칸 폭이
+  // 열마다 달라서다. 간격의 중앙값을 쓰면 자기 칸이 남들보다 넓은 열(位置 열이
+  // 촘촘한 표의 全断面 한 열)에서 실물 값이 잘리고, 절반으로 자르면 마지막 열에서
+  // 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt로 이웃 간격 85.1의 61%, 옛 상한의 91%)
+  const bounded = sorted.map((anchor, index) => ({
+    ...anchor,
+    limit: Math.max(
+      index > 0 ? anchor.centerX - sorted[index - 1].centerX : 0,
+      index + 1 < sorted.length ? sorted[index + 1].centerX - anchor.centerX : 0,
+    ),
+  }))
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
@@ -849,12 +853,12 @@ function verticalsByMark(
     // 숫자가 아니라고 버리면 카운트에서도 빠져 「열당 정확히 1개」 방어가 뚫린다
     const text = run.text.replace(/,/g, '')
     if (!/^\d+$/.test(text)) continue
-    const target = anchors.reduce((closest, candidate) =>
+    const target = bounded.reduce((closest, candidate) =>
       Math.abs(candidate.centerX - run.x) < Math.abs(closest.centerX - run.x)
         ? candidate
         : closest,
     )
-    if (Math.abs(target.centerX - run.x) > limit) continue
+    if (Math.abs(target.centerX - run.x) > target.limit) continue
     const bucket = perMark.get(target.mark)
     if (bucket) bucket.push(text)
     else perMark.set(target.mark, [text])
@@ -1367,26 +1371,26 @@ function parseTableRegion(
   }
 
   const candidates: SectionCandidate[] = []
+  // 표의 x대역 밖 세로 문자열은 옆 표의 것이다 — 행과 같은 경계로 자른다
+  const tableVerticals = verticals.filter(
+    (run) => run.x >= xStart && run.x < xEnd,
+  )
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
-    // 표의 x대역 밖 세로 문자열은 옆 표의 것이다 — 행과 같은 경계로 자른다
-    const blockVerticals = verticals.filter(
-      (run) => run.x >= xStart && run.x < xEnd,
-    )
     const parsed = anchor.listKind.includes('柱')
       ? parseColumnBlock(
           tableRows,
           headerIndex,
           blockEnd,
           anchor.titleText,
-          blockVerticals,
+          tableVerticals,
         )
       : parseGirderBlock(
           tableRows,
           headerIndex,
           blockEnd,
           anchor.titleText,
-          blockVerticals,
+          tableVerticals,
         )
     candidates.push(...parsed)
   })

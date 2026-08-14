@@ -516,9 +516,59 @@ describe('parseSectionLists (synthetic)', () => {
     ]).toEqual([500, 900])
   })
 
+  // 상한을 「앵커 간격의 중앙값」으로 재면 자기 칸이 남들보다 넓은 열에서 실물 값이
+  // 잘린다. 位置 열이 촘촘한 표에 全断面 한 열만 넓게 있으면 그 열의 세로 치수는
+  // 중앙값 밖으로 나간다 — ojkk 柱 FC1이 실제로 그 형태다(位置 격자의 2배 폭,
+  // 옛 상한의 91% 지점). 상한은 그 앵커의 이웃 간격이어야 한다
+  it('keeps a wide 全断面 column pairing when the 位置 grid is much finer', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 194, y: 20, w: 12, h: 8 },
+        { str: 'C3', x: 334, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 90, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 130, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 170, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 210, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 325, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 앵커 간격은 40·40·40(位置)과 120(全断面)이라 중앙값이 40이다. 이 런은
+        // 자기 앵커(340)에서 92pt — 중앙값 밖이지만 자기 칸(폭 200) 안이다
+        { str: '9', x: 432, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 432, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 432, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 108, y: 62, w: 24, h: 8 },
+        { str: '800', x: 188, y: 62, w: 24, h: 8 },
+        { str: '500', x: 328, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 102, y: 74, w: 36, h: 8 },
+        { str: '18-D25', x: 182, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 322, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect([
+      candidate(columns, 'C3', '1F').b,
+      candidate(columns, 'C3', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
   // 세로 치수는 칸 중앙이 아니라 스케치 오른쪽 끝에 붙는다 — 상한을 앵커 간격의
   // 절반으로 두면 마지막 열에서 실물 값이 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt,
-  // 간격의 91%). 상한은 한 칸 폭(앵커 간격)이다
+  // 간격의 91%). 상한은 한 칸 폭(이웃 앵커까지의 간격)이다
   it('confirms a vertical dimension that hugs the far edge of the last column', () => {
     const parsed = parseSectionLists({
       widthPt: 500,
