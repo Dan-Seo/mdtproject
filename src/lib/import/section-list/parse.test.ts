@@ -279,6 +279,251 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('主筋解釈不能')
   })
 
+  // 断面 라벨 행이 없고 치수가 스케치에만 붙은 표(ojkk 柱リスト 형식). 가로 치수는
+  // 보통 문자열이고 세로 치수는 회전 문자열이라, 회전 아이템을 버리는 recoverRows만
+  // 보면 숫자가 하나뿐이라 확정할 수 없다. 두 방향을 짝지어야 b×d가 나온다
+  it('pairs the horizontal and vertical sketch dimensions per mark', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 세로 치수는 rot=-90이고 읽기 순서가 y 내림차순이다. 스케치 옆에 붙어
+        // 층 라벨보다 위에 오므로, 층 슬라이스의 y대역 안에는 들어오지 않는다
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 280, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '800', x: 230, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '12-D22', x: 225, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c1 = candidate(columns, 'C1', '1F')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    // 가로가 b·세로가 d다. 값을 다르게 준 것은 방향 대응과 열 배정을 함께 못박기 위함
+    expect([c1.b, c1.d]).toEqual([700, 600])
+    expect([c2.b, c2.d]).toEqual([800, 900])
+    expect(c1.issues).toHaveLength(0)
+  })
+
+  it('does not confirm a section when only the vertical sketch dimension exists', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        // 가로 치수가 없다 — 한쪽만으로 정사각형을 만들면 값을 지어내는 것이다
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.d).toBeUndefined()
+  })
+
+  it('does not confirm a section when a cell holds two vertical dimensions', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 한 셀에 세로 숫자가 둘이면 어느 쪽이 断面인지 판정할 근거가 없다 —
+        // 가로 숫자에 거는 「열당 정확히 1개」와 같은 규약을 세로에도 건다
+        { str: '6', x: 150, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 150, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 150, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '2', x: 170, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 170, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 170, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 회전 아이템 정렬은 x가 우선이라, x가 1pt 이내로 다른 두 런의 경계에서는 y가
+  // 거꾸로 온다. 간격 검사에 하한이 없으면 그 음수가 무조건 통과해 다른 층의
+  // 세로 치수가 앞 런에 이어붙는다 — 「600」+「500」이 600500이 되어 둘 다 사라진다
+  it('keeps two vertical dimensions apart when their columns differ by a sub-point', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        // 세로 상한(符号 간격의 절반)을 세우려면 符号가 둘 이상이어야 한다
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        // 같은 열이지만 x가 0.5pt 다르다 — 실물에서 흔한 서브픽셀 차이다
+        { str: '5', x: 160.5, y: 134, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160.5, y: 131, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160.5, y: 128, w: 3, h: 6, rot: -90 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([candidate(columns, 'C1', '1F').b, candidate(columns, 'C1', '1F').d]).toEqual([700, 600])
+    expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
+  })
+
+  it('drops a vertical run that sits far from the story label it is nearest to', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 1F 셀 한복판에 떠 있는 회전 숫자 — 2F 라벨에 더 가깝다. 마지막 슬라이스의
+        // endY가 표 끝이 아니라 페이지 바닥이면 상한이 층 간격의 몇 배로 벌어져
+        // 이 숫자가 2F의 확정 d가 된다
+        { str: '5', x: 160, y: 100, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 97, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 94, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const second = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+
+    expect(second.b).toBeUndefined()
+    expect(second.raw['断面']).toBe('800')
+    expect(second.issues).toContain('断面矩形不成立')
+  })
+
+  it('counts a comma-grouped vertical number when guarding against two per cell', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 「1,200」을 숫자가 아니라고 버리면 카운트에서도 빠져, 옆의 600이 유일한
+        // 세로 치수가 되어 d로 확정된다 — 「열당 정확히 1개」 방어가 뚫린다
+        { str: '1', x: 160, y: 40, w: 3, h: 6, rot: -90 },
+        { str: ',', x: 160, y: 37, w: 3, h: 6, rot: -90 },
+        { str: '2', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '6', x: 175, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 175, y: 37, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 175, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  it('does not pair vertical dimensions when the table has a single 符号', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        // 符号가 하나뿐이면 열 간격을 잴 수 없다 — 세로 런의 x 상한을 세울 근거가
+        // 없으므로 짝짓지 않는다. 원문 참고로 남는 것은 이 변경 전과 같다
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  it('ignores a rotated number that sits outside the table rows', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 표 마지막 행보다 아래에 있는 회전 숫자 — 표 밖 스케치나 도면 주기다.
+        // 근접성만으로 붙이면 이 숫자가 이슈 없는 확정 d가 된다
+        { str: '5', x: 160, y: 150, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 147, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 144, w: 3, h: 6, rot: -90 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('falls back to raw dimension capture when the 断面 label row has no values', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

@@ -52,6 +52,13 @@ interface ParsedBar {
   count: number
 }
 
+/** 세로쓰기(rot=-90) 문자열 하나. y는 세로 범위의 중앙이다. */
+interface VerticalRun {
+  text: string
+  x: number
+  y: number
+}
+
 const barSizes = new Set<BarSize>(BAR_SIZES)
 
 const TITLE_PATTERN =
@@ -138,6 +145,65 @@ function recoverRows(items: TextItem[]): TextRow[] {
   return rows
     .sort((left, right) => left.y - right.y)
     .map((row) => ({ ...row, segments: makeSegments(row.items) }))
+}
+
+/**
+ * 세로쓰기 문자열을 복원한다. `recoverRows`는 회전 아이템을 버린다 — 가로 행 복원에
+ * 섞이면 행이 오염되기 때문이다. 그 결과 스케치 옆에 세로로 적힌 치수가 통째로 보이지
+ * 않는데, 断面 라벨 행이 없는 표에서는 그것이 d의 유일한 근거다 (ojkk 柱リスト).
+ *
+ * rot=-90만 받는다. 읽기 순서가 y 내림차순인 것은 실물에서 확인한 값이고, 다른
+ * 회전각은 순서가 뒤집힐 수 있다 — 「700」이 「007」이 되면 조용히 틀린 값이 된다.
+ * 회전 텍스트에서 w는 가로 폭이 아니라 글자 진행량이므로 세로 간격으로 쓴다.
+ */
+function verticalRuns(items: TextItem[]): VerticalRun[] {
+  const rotated = items
+    .filter(
+      (item) =>
+        item.str.trim().length > 0 &&
+        item.rot !== undefined &&
+        Math.abs(item.rot + 90) < 0.01,
+    )
+    .sort((left, right) => left.x - right.x || right.y - left.y)
+
+  const runs: VerticalRun[] = []
+  let current: TextItem[] = []
+
+  const flush = () => {
+    if (current.length === 0) return
+    // spread(Math.min(...))는 인자 수가 사용자 PDF의 글리프 수를 그대로 따라가
+    // 스택 한도에서 RangeError가 된다 — 렌더 경로라 임포트가 통째로 죽는다
+    let minY = Number.POSITIVE_INFINITY
+    let maxY = Number.NEGATIVE_INFINITY
+    for (const item of current) {
+      if (item.y < minY) minY = item.y
+      if (item.y > maxY) maxY = item.y
+    }
+    runs.push({
+      text: compact(current.map((item) => item.str).join('')),
+      x: current[0].x,
+      y: (minY + maxY) / 2,
+    })
+    current = []
+  }
+
+  for (const item of rotated) {
+    const previous = current.at(-1)
+    // 정렬이 x 우선이라, x가 1pt 이내로 다른 두 런의 경계에서는 y가 거꾸로 온다.
+    // 하한이 없으면 그 음수 간격이 검사를 무조건 통과해 서로 다른 층의 치수가
+    // 이어붙는다 — 「600」+「500」이 600500이 되어 두 층이 다 사라진다
+    const gap = previous === undefined ? -1 : previous.y - item.y
+    const adjacent =
+      previous !== undefined &&
+      Math.abs(previous.x - item.x) <= 1 &&
+      gap >= 0 &&
+      gap <= Math.max(previous.w, item.w) * 2
+    if (!adjacent) flush()
+    current.push(item)
+  }
+  flush()
+
+  return runs
 }
 
 function titleAnchors(rows: TextRow[]): TitleAnchor[] {
@@ -428,6 +494,12 @@ function parsePitch(
   return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
 }
 
+// 4자리 초과는 셀 병합 잔재, 한 자리는 소수 표기(「0.8×0.8」→8×0)의 잔재다 —
+// 어느 쪽도 확정하지 않는다
+function inDimensionRange(b: number, depth: number): boolean {
+  return b >= 10 && b <= 9999 && depth >= 10 && depth <= 9999
+}
+
 function parseDimension(value: string): { b: number; depth: number } | undefined {
   // 이웃 셀이 붙은 「800×800 900×900」에서 첫 매치를 취하면 두 번째 그룹이
   // 공백 너머 숫자까지 삼켜 b=800·depth=800900이 된다 — 다중 매치는 거부한다
@@ -437,11 +509,22 @@ function parseDimension(value: string): { b: number; depth: number } | undefined
   if (matches.length !== 1) return undefined
   const b = Number(matches[0][1].replace(/,/g, ''))
   const depth = Number(matches[0][2].replace(/,/g, ''))
-  // 4자리 초과는 셀 병합 잔재, 한 자리는 소수 표기(「0.8×0.8」→8×0)의 잔재다 —
-  // 어느 쪽도 확정하지 않는다
-  return b > 9999 || depth > 9999 || b < 10 || depth < 10
-    ? undefined
-    : { b, depth }
+  return inDimensionRange(b, depth) ? { b, depth } : undefined
+}
+
+/**
+ * 스케치에 붙은 가로·세로 치수를 짝지어 b×d를 읽는다. 断面 라벨 행이 없는 표에서는
+ * 이 둘이 유일한 근거다. 한쪽만으로는 확정하지 않는다 — 단독 숫자를 정사각형으로
+ * 승격하는 것은 도면에 없는 값을 만드는 것이다.
+ */
+function pairedDimension(
+  horizontal: string,
+  vertical: string,
+): { b: number; depth: number } | undefined {
+  if (!/^\d+$/.test(horizontal) || !/^\d+$/.test(vertical)) return undefined
+  const b = Number(horizontal)
+  const depth = Number(vertical)
+  return inDimensionRange(b, depth) ? { b, depth } : undefined
 }
 
 /**
@@ -464,9 +547,12 @@ function setDimension(
   candidate: SectionCandidate,
   value: string | undefined,
   column: boolean,
+  vertical?: string,
 ): void {
   if (!value) return
-  const parsed = parseDimension(value)
+  const parsed =
+    parseDimension(value) ??
+    (vertical !== undefined ? pairedDimension(value, vertical) : undefined)
   if (parsed) {
     candidate.b = parsed.b
     if (column) candidate.d = parsed.depth
@@ -725,11 +811,82 @@ function scalarDimensions(
   )
 }
 
+/**
+ * 세로 치수를 열별로 모은다. scalarDimensions와 같은 규약 — 열당 정확히 1개일 때만
+ * 넘긴다. 한 셀에 세로 숫자가 둘이면 어느 쪽이 断面인지 판정할 근거가 없다.
+ */
+function verticalsByMark(
+  runs: VerticalRun[],
+  marks: MarkColumn[],
+): Map<string, string> {
+  // 열 경계는 符号 간격의 절반이다. 라벨 행에 매인 가로 값과 달리 세로 런은 표
+  // 어디에나 있을 수 있어, 상한이 없으면 남의 열 숫자가 이 열의 d로 확정된다.
+  // 符号가 하나면 간격을 잴 수 없다 — 상한을 세울 근거가 없으니 짝짓지 않는다
+  if (marks.length < 2) return new Map()
+  const centers = marks
+    .map(({ centerX }) => centerX)
+    .sort((left, right) => left - right)
+  const limit =
+    median(centers.slice(1).map((center, index) => center - centers[index])) / 2
+  const perMark = new Map<string, string[]>()
+
+  for (const run of runs) {
+    // 콤마는 자릿수 구분이다(parseDimension도 벗겨 받는다). 여기서 「1,200」을
+    // 숫자가 아니라고 버리면 카운트에서도 빠져 「열당 정확히 1개」 방어가 뚫린다
+    const text = run.text.replace(/,/g, '')
+    if (!/^\d+$/.test(text)) continue
+    const target = marks.reduce((closest, candidate) =>
+      Math.abs(candidate.centerX - run.x) < Math.abs(closest.centerX - run.x)
+        ? candidate
+        : closest,
+    )
+    if (Math.abs(target.centerX - run.x) > limit) continue
+    const bucket = perMark.get(target.mark)
+    if (bucket) bucket.push(text)
+    else perMark.set(target.mark, [text])
+  }
+
+  return new Map(
+    [...perMark.entries()].flatMap(([mark, values]) =>
+      values.length === 1 ? [[mark, values[0]] as const] : [],
+    ),
+  )
+}
+
+/**
+ * 세로 치수를 층 슬라이스에 배정한다. 스케치의 세로 치수는 층 라벨 행보다 위에
+ * 놓이기도 해서 슬라이스의 y대역(라벨 행 ~ 다음 라벨 행)으로 자르면 통째로 빠진다.
+ * 가장 가까운 층 라벨에 붙인다 — 실물에서 층 간격의 1/10 이하로 붙어 있어 갈릴 여지가 없다.
+ */
+function verticalsBySlice(
+  runs: VerticalRun[],
+  slices: Array<{ startY: number; endY: number }>,
+): VerticalRun[][] {
+  const buckets: VerticalRun[][] = slices.map(() => [])
+  if (slices.length === 0) return buckets
+
+  for (const run of runs) {
+    let best = 0
+    slices.forEach((slice, index) => {
+      if (Math.abs(slice.startY - run.y) < Math.abs(slices[best].startY - run.y))
+        best = index
+    })
+    // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 최근접에 넣으면 어떤
+    // 숫자든 어느 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지
+    // 않고 원문으로 남는 쪽이 옳다 (R10)
+    const span = slices[best].endY - slices[best].startY
+    if (Math.abs(slices[best].startY - run.y) <= span / 2) buckets[best].push(run)
+  }
+
+  return buckets
+}
+
 function parseColumnBlock(
   rows: TextRow[],
   headerIndex: number,
   endY: number,
   titleText: string,
+  verticals: VerticalRun[],
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -752,9 +909,22 @@ function parseColumnBlock(
           endY: stories[index + 1]?.row.y ?? endY,
         }))
       : [{ storyLabel: undefined, startY: header.y, endY }]
+  // 수집 창을 표의 실제 행 범위로 닫는다. 마지막 블록의 endY는 페이지 바닥까지
+  // 열려 있어(다음 타이틀이 없으면 heightPt), 표 아래 스케치의 회전 숫자가 그대로
+  // 딸려 들어온다 — 가로 치수는 라벨 행 사이로 좁게 잘리므로 같은 노출이 없다
+  const tableBottom = blockRows.at(-1)?.y ?? endY
+  const blockVerticals = verticalsBySlice(
+    verticals.filter((run) => run.y > header.y && run.y < tableBottom),
+    // 마지막 슬라이스의 endY는 표의 끝이 아니라 다음 타이틀·페이지 바닥이다.
+    // 그대로 두면 그 층에서만 거리 상한이 층 간격의 몇 배로 벌어진다
+    slices.map((slice) => ({
+      startY: slice.startY,
+      endY: Math.min(slice.endY, tableBottom),
+    })),
+  )
 
   const candidates: SectionCandidate[] = []
-  for (const slice of slices) {
+  for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
     const mainRows = dataRows.filter((row) => exactLabel(row, ['主筋']))
     const hoopRows = dataRows.filter((row) => exactLabel(row, ['帯筋', 'HOOP']))
@@ -791,6 +961,11 @@ function parseColumnBlock(
             mainRow?.y ?? slice.endY,
             marks,
           )
+    // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
+    const verticalValues =
+      storyAmbiguous || dimensionRow
+        ? new Map<string, string>()
+        : verticalsByMark(blockVerticals[sliceIndex], marks)
     const mainByPosition =
       mainRow && positions.length > 0
         ? valuesByPosition(mainRow, ['主筋'], positions, marks)
@@ -858,7 +1033,7 @@ function parseColumnBlock(
         raw: {},
         issues: [],
       }
-      setDimension(result, dimension, true)
+      setDimension(result, dimension, true, verticalValues.get(mark))
       const continuation = mainContinuations.get(mark)
       if (continuation !== undefined) {
         // 접힌 셀은 첫 줄만으로 확정하지 않는다 — 두 줄을 원문 참고로 남긴다
@@ -1129,6 +1304,7 @@ function parseTableRegion(
   endY: number,
   xStart: number,
   xEnd: number,
+  verticals: VerticalRun[],
 ): ParsedSectionList | undefined {
   // 영역을 y뿐 아니라 x대역으로도 잘라낸다 — 좌우로 나란한 리스트에서 옆 표의
   // 세그먼트가 섞이면 符号·라벨 매칭이 옆 표를 오염시킨다
@@ -1162,7 +1338,14 @@ function parseTableRegion(
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
     const parsed = anchor.listKind.includes('柱')
-      ? parseColumnBlock(tableRows, headerIndex, blockEnd, anchor.titleText)
+      ? parseColumnBlock(
+          tableRows,
+          headerIndex,
+          blockEnd,
+          anchor.titleText,
+          // 표의 x대역 밖 세로 문자열은 옆 표의 것이다 — 행과 같은 경계로 자른다
+          verticals.filter((run) => run.x >= xStart && run.x < xEnd),
+        )
       : parseGirderBlock(tableRows, headerIndex, blockEnd, anchor.titleText)
     candidates.push(...parsed)
   })
@@ -1180,6 +1363,7 @@ function parseTableRegion(
 
 export function parseSectionLists(page: TextPage): ParsedSectionList[] {
   const rows = recoverRows(page.items)
+  const verticals = verticalRuns(page.items)
   const anchors = titleAnchors(rows)
   const parsed: ParsedSectionList[] = []
 
@@ -1222,7 +1406,14 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
       )
       .sort((left, right) => left.row.y - right.row.y)[0]
     const endY = below?.row.y ?? page.heightPt
-    const result = parseTableRegion(rows, anchor, endY, xStart, xEnd)
+    const result = parseTableRegion(
+      rows,
+      anchor,
+      endY,
+      xStart,
+      xEnd,
+      verticals,
+    )
     if (result) parsed.push(result)
   })
 
