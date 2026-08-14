@@ -59,8 +59,16 @@ const TITLE_PATTERN =
 const STORY_PATTERN = /^(?:RF|R階|\d+F|\d+階)$/
 const MARK_PATTERN = /^(?:(?:C|G|FC|FG|B|CB)\d+[A-Z]?|W\d+|fg)$/i
 
+/**
+ * 하이픈류를 半角 '-'로 접는다. CP932 0x815C(全角ダッシュ)의 표준 매핑이 U+2014와
+ * U+2015로 갈리므로 둘 다 넣는다 — 실물 도면(yokohama p13)은 U+2015를 쓴다.
+ *
+ * 長音符(ー U+30FC)는 넣지 않는다. 하이픈이 아니라 가나 글자라서, 접으면
+ * 「コンクリート」가 「コンクリ-ト」가 되어 확정하지 못한 셀에 붙이는 원문 참고
+ * 표시가 망가진다 — kani p38에 실제로 들어 있다.
+ */
 function normalized(value: string): string {
-  return value.normalize('NFKC').replace(/[‐‑‒–—−]/g, '-')
+  return value.normalize('NFKC').replace(/[‐‑‒–—―−]/g, '-')
 }
 
 function compact(value: string): string {
