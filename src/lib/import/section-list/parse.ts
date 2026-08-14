@@ -831,7 +831,10 @@ function verticalsByMark(
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
-    if (!/^\d+$/.test(run.text)) continue
+    // 콤마는 자릿수 구분이다(parseDimension도 벗겨 받는다). 여기서 「1,200」을
+    // 숫자가 아니라고 버리면 카운트에서도 빠져 「열당 정확히 1개」 방어가 뚫린다
+    const text = run.text.replace(/,/g, '')
+    if (!/^\d+$/.test(text)) continue
     const target = marks.reduce((closest, candidate) =>
       Math.abs(candidate.centerX - run.x) < Math.abs(closest.centerX - run.x)
         ? candidate
@@ -839,8 +842,8 @@ function verticalsByMark(
     )
     if (Math.abs(target.centerX - run.x) > limit) continue
     const bucket = perMark.get(target.mark)
-    if (bucket) bucket.push(run.text)
-    else perMark.set(target.mark, [run.text])
+    if (bucket) bucket.push(text)
+    else perMark.set(target.mark, [text])
   }
 
   return new Map(

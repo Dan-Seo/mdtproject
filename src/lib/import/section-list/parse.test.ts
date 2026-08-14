@@ -439,6 +439,38 @@ describe('parseSectionLists (synthetic)', () => {
     expect(second.issues).toContain('断面矩形不成立')
   })
 
+  it('counts a comma-grouped vertical number when guarding against two per cell', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 「1,200」을 숫자가 아니라고 버리면 카운트에서도 빠져, 옆의 600이 유일한
+        // 세로 치수가 되어 d로 확정된다 — 「열당 정확히 1개」 방어가 뚫린다
+        { str: '1', x: 160, y: 40, w: 3, h: 6, rot: -90 },
+        { str: ',', x: 160, y: 37, w: 3, h: 6, rot: -90 },
+        { str: '2', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '6', x: 175, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 175, y: 37, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 175, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('does not pair vertical dimensions when the table has a single 符号', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
