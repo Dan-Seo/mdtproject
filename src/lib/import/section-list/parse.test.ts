@@ -256,6 +256,29 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  it('keeps a dash-only cell visible in the raw fallback', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        // 「―」는 「해당 없음」을 뜻하는 값이다(yokohama p13 腹筋 행). 장식으로만
+        // 이루어진 셀이라 stripDecoration이 통째로 지우는데, 그대로 내보내면
+        // 원문 참고 표시가 빈칸이 되어 「읽지 못한 셀」과 구별되지 않는다
+        { str: '―', x: 114, y: 44, w: 10, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.main).toBeUndefined()
+    expect(c1.raw['主筋']).toBe('-')
+    expect(c1.issues).toContain('主筋解釈不能')
+  })
+
   // 断面 라벨 행이 없고 치수가 스케치에만 붙은 표(ojkk 柱リスト 형식). 가로 치수는
   // 보통 문자열이고 세로 치수는 회전 문자열이라, 회전 아이템을 버리는 recoverRows만
   // 보면 숫자가 하나뿐이라 확정할 수 없다. 두 방향을 짝지어야 b×d가 나온다

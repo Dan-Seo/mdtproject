@@ -515,14 +515,16 @@ function pairedDimension(
   return inDimensionRange(b, depth) ? { b, depth } : undefined
 }
 
+/**
+ * 확정하지 못한 셀에 남기는 원문 참고 표시. 머리의 장식만 벗기고 나머지는 그대로
+ * 둔다 — 토큰만 뽑아 줄이면 「2-D13@100」의 @100처럼 원문 정보가 사라진다.
+ *
+ * 장식만으로 이루어진 셀은 벗기면 빈 문자열이 되므로 되살린다. 「―」는 「해당 없음」을
+ * 뜻하는 값인데(yokohama p13 腹筋 행), 빈칸으로 내보내면 화면에서 「읽지 못한 셀」과
+ * 구별되지 않는다.
+ */
 function cleanedRebarRaw(value: string): string {
-  const stripped = stripDecoration(value)
-  const tokens = [...stripped.matchAll(/(?:\d+-[A-Z]\d+|[A-Z]\d+-?@\d+)/gi)]
-  // 장식을 벗긴 셀 전체가 단일 토큰일 때만 토큰 형태로 남긴다 — 부분 토큰으로
-  // 줄이면 「2-D13@100」의 @100처럼 원문 정보가 참고 표시에서 사라진다
-  return tokens.length === 1 && tokens[0][0] === stripped
-    ? tokens[0][0]
-    : stripped
+  return stripDecoration(value) || compact(value)
 }
 
 function addIssue(candidate: SectionCandidate, issue: CandidateIssue): void {
