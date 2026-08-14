@@ -783,6 +783,24 @@ function lastPositionRow(
 }
 
 /**
+ * 断面 라벨 행이 없는 표의 스케치 가로 치수. 창의 하한은 인식한 데이터 라벨 행 중
+ * 가장 위다 — 라벨 하나에만 매어 두면 그 라벨을 못 읽은 표에서 창이 슬라이스 전체로
+ * 열려 아래 행(備考 등)의 단독 숫자가 치수로 확정된다. 라벨 행을 하나도 인식하지
+ * 못했으면 그 표에서 읽은 것이 없다는 뜻이므로 폴백을 돌리지 않는다.
+ */
+function sketchDimensions(
+  rows: TextRow[],
+  startY: number,
+  endY: number,
+  labelRows: Array<TextRow | undefined>,
+  anchors: MarkColumn[],
+): Map<string, string> {
+  const labelYs = labelRows.flatMap((row) => (row ? [row.y] : []))
+  if (labelYs.length === 0) return new Map()
+  return scalarDimensions(rows, startY, Math.min(...labelYs, endY), anchors)
+}
+
+/**
  * 스케치 치수를 배정할 열 앵커. 位置 열이 있으면 그것이다 — 符号 라벨은 칸 중앙에
  * 놓이지만 칸 폭은 부재마다 달라서, 중심 사이 중점을 경계로 쓰면 좁은 칸이 넓은 칸의
  * 끝을 먹는다. 실물 ojkk 大梁에서 G3(폭 85) 옆 G4(폭 42.5)가 G3의 세로 치수를
@@ -856,13 +874,18 @@ function verticalsByMark(
   // 열마다 달라서다. 간격의 중앙값을 쓰면 자기 칸이 남들보다 넓은 열(位置 열이
   // 촘촘한 표의 全断面 한 열)에서 실물 값이 잘리고, 절반으로 자르면 마지막 열에서
   // 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt로 이웃 간격 85.1의 61%, 옛 상한의 91%)
-  const bounded = sorted.map((anchor, index) => ({
-    ...anchor,
-    limit: Math.max(
-      index > 0 ? anchor.centerX - sorted[index - 1].centerX : 0,
-      index + 1 < sorted.length ? sorted[index + 1].centerX - anchor.centerX : 0,
-    ),
-  }))
+  const bounded = sorted.map((anchor, index) => {
+    // 좌우 간격 중 큰 쪽을 쓰면 촘촘한 열이 반대편 먼 열에서 큰 상한을 물려받아
+    // 두 열 사이 빈 대역까지 자기 것으로 삼는다 — 작은 쪽을 쓴다. 한쪽뿐인 양 끝
+    // 열은 그 값이 상한이다 (ojkk 柱 FC1은 이웃 간격 85.1에 실측 51.7이다)
+    const gaps = [
+      index > 0 ? anchor.centerX - sorted[index - 1].centerX : undefined,
+      index + 1 < sorted.length
+        ? sorted[index + 1].centerX - anchor.centerX
+        : undefined,
+    ].filter((gap): gap is number => gap !== undefined)
+    return { ...anchor, limit: Math.min(...gaps) }
+  })
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
@@ -993,14 +1016,11 @@ function parseColumnBlock(
       ? new Map<string, string>()
       : dimensionRow
         ? valuesByMark(dimensionRow, ['断面'], marks)
-        : scalarDimensions(
+        : sketchDimensions(
             rows,
             slice.startY,
-            // 大梁 블록과 같은 이유 — 主筋 라벨 하나에만 매어 두지 않는다
-            Math.min(
-              ...[mainRow, hoopRow].flatMap((row) => (row ? [row.y] : [])),
-              slice.endY,
-            ),
+            slice.endY,
+            [mainRow, hoopRow],
             anchors,
           )
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
@@ -1194,18 +1214,11 @@ function parseGirderBlock(
       ? new Map<string, string>()
       : dimensionRow && dimensionLabel
         ? valuesByMark(dimensionRow, [dimensionLabel], marks)
-        : scalarDimensions(
+        : sketchDimensions(
             rows,
             slice.startY,
-            // 창의 하한은 인식한 데이터 라벨 행 중 가장 위다. 上端筋 하나에만 매어
-            // 두면 그 라벨을 못 읽은 표에서 창이 슬라이스 전체로 열려, 下端筋·
-            // あばら筋·備考 행의 단독 숫자가 b로 확정된다
-            Math.min(
-              ...[topRow, bottomRow, stirrupRow].flatMap((row) =>
-                row ? [row.y] : [],
-              ),
-              slice.endY,
-            ),
+            slice.endY,
+            [topRow, bottomRow, stirrupRow],
             anchors,
           )
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다

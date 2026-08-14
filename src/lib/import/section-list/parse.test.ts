@@ -344,6 +344,79 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // 창의 하한을 「인식한 라벨 행의 최소 y」로 잡아도, 라벨을 하나도 인식하지 못하면
+  // 인자가 slice.endY 하나뿐이라 창이 슬라이스 전체로 열린다. 후보 배출 가드는
+  // 断面 하나만 있어도 통과하므로 배근 라벨이 전무한 표에서 断面이 지어진다
+  it('runs no horizontal fallback when no 大梁 data row is recognised', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 234, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '7', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 라벨이 전부 별칭 밖이다 — 읽어낸 항목이 없으니 断面도 만들지 않는다
+        { str: '上主筋', x: 10, y: 62, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 62, w: 32, h: 8 },
+        { str: 'スタラップ', x: 10, y: 74, w: 50, h: 8 },
+        { str: '450', x: 108, y: 74, w: 24, h: 8 },
+      ],
+    })
+    const girders = list(parsed, '大梁リスト')
+    const g1 = girders.candidates.find(
+      (entry) => entry.mark === 'G1' && entry.storyLabel === '1F',
+    )
+
+    expect(g1?.b).toBeUndefined()
+    // 표가 조용히 사라지지도 않아야 한다 — 사유를 실어 보낸다
+    expect(girders.issue).toBe('項目行未認識')
+  })
+
+  // 상한이 좌우 간격 중 큰 쪽이면, 촘촘한 열이 반대편 먼 열에서 큰 상한을 물려받아
+  // 두 열 사이 빈 대역의 회전 숫자까지 자기 d로 확정한다 — 작은 쪽을 쓴다
+  it('does not let a narrow column inherit its far neighbour gap as the limit', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 154, y: 20, w: 12, h: 8 },
+        { str: 'C3', x: 394, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 125, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 125, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 125, y: 40, w: 3, h: 6, rot: -90 },
+        // C2와 C3 사이 빈 대역. C2 앵커에서 90pt — 왼쪽 간격 60보다 멀지만
+        // 오른쪽 간격 240보다는 가깝다
+        { str: '9', x: 250, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 250, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 250, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 88, y: 62, w: 24, h: 8 },
+        { str: '500', x: 148, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 82, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 142, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('500')
+    expect(c2.issues).toContain('断面矩形不成立')
+  })
+
   // 位置 열은 한 符号을 여러 앵커로 늘린다 — 앵커 수로 재면 단일 符号 표에서도
   // 가드를 통과해 상한 근거 없이 확정한다. 원래 조건은 「符号이 둘 이상」이다
   it('does not pair vertical dimensions for a single 符号 with 位置 columns', () => {
