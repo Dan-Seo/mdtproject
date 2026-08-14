@@ -818,6 +818,33 @@ function markAnchors(
   })
 }
 
+/**
+ * 앵커별 거리 상한. 칸 경계는 두 앵커 사이에 있으므로 앵커에서 경계까지의 거리는 그
+ * 이웃까지의 간격보다 짧다 — 상한을 이웃 간격으로 잡는다. 이웃별로 재는 이유는 칸 폭이
+ * 열마다 달라서다: 간격의 중앙값을 쓰면 자기 칸이 남들보다 넓은 열에서 실물 값이
+ * 잘리고(ojkk 柱 FC1은 이웃 간격 85.1에 실측 51.7), 좌우 중 큰 쪽을 쓰면 촘촘한 열이
+ * 반대편 먼 열의 상한을 물려받아 두 열 사이 빈 대역까지 먹는다.
+ *
+ * 앵커가 하나뿐이면 간격이 없어 상한이 Infinity가 된다 — 세로 짝짓기는 符号 2개
+ * 이상을 따로 요구하고, 가로는 라벨 행 대역으로 이미 좁혀져 있다.
+ */
+function boundedAnchors(
+  anchors: MarkColumn[],
+): Array<MarkColumn & { limit: number }> {
+  const sorted = [...anchors].sort(
+    (left, right) => left.centerX - right.centerX,
+  )
+  return sorted.map((anchor, index) => {
+    const gaps = [
+      index > 0 ? anchor.centerX - sorted[index - 1].centerX : undefined,
+      index + 1 < sorted.length
+        ? sorted[index + 1].centerX - anchor.centerX
+        : undefined,
+    ].filter((gap): gap is number => gap !== undefined)
+    return { ...anchor, limit: Math.min(...gaps) }
+  })
+}
+
 function scalarDimensions(
   rows: TextRow[],
   startY: number,
@@ -834,13 +861,17 @@ function scalarDimensions(
   // 「700」+「900」이 700900mm가 된다. 넘긴 값도 b×d로 확정되지는 않고
   // setDimension에서 빈칸+원문 참고로 남는다.
   const perMark = new Map<string, string[]>()
+  const bounded = boundedAnchors(marks)
   for (const segment of numericSegments) {
-    const target = marks.reduce((closest, candidate) =>
+    const target = bounded.reduce((closest, candidate) =>
       Math.abs(candidate.centerX - segment.centerX) <
       Math.abs(closest.centerX - segment.centerX)
         ? candidate
         : closest,
     )
+    // 세로 런과 같은 상한을 건다 — 한쪽만 상한이 없으면 스케치 대역의 아무 숫자나
+    // 최근접 열에 붙어 이슈 없는 확정 b가 된다
+    if (Math.abs(target.centerX - segment.centerX) > target.limit) continue
     const existing = perMark.get(target.mark) ?? []
     existing.push(segment.compact)
     perMark.set(target.mark, existing)
@@ -868,24 +899,7 @@ function verticalsByMark(
   // 상한을 세울 근거가 없으니 짝짓지 않는다. 앵커 수로 재면 안 된다: 位置 열이
   // 한 符号을 여러 앵커로 늘리므로 단일 符号 표에서도 통과한다
   if (new Set(anchors.map(({ mark }) => mark)).size < 2) return new Map()
-  const sorted = [...anchors].sort((left, right) => left.centerX - right.centerX)
-  // 상한은 그 앵커에서 이웃 앵커까지의 간격이다. 칸 경계는 두 앵커 사이에 있으므로
-  // 앵커에서 경계까지의 거리는 이웃 간격보다 짧다 — 이웃별로 재는 이유는 칸 폭이
-  // 열마다 달라서다. 간격의 중앙값을 쓰면 자기 칸이 남들보다 넓은 열(位置 열이
-  // 촘촘한 표의 全断面 한 열)에서 실물 값이 잘리고, 절반으로 자르면 마지막 열에서
-  // 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt로 이웃 간격 85.1의 61%, 옛 상한의 91%)
-  const bounded = sorted.map((anchor, index) => {
-    // 좌우 간격 중 큰 쪽을 쓰면 촘촘한 열이 반대편 먼 열에서 큰 상한을 물려받아
-    // 두 열 사이 빈 대역까지 자기 것으로 삼는다 — 작은 쪽을 쓴다. 한쪽뿐인 양 끝
-    // 열은 그 값이 상한이다 (ojkk 柱 FC1은 이웃 간격 85.1에 실측 51.7이다)
-    const gaps = [
-      index > 0 ? anchor.centerX - sorted[index - 1].centerX : undefined,
-      index + 1 < sorted.length
-        ? sorted[index + 1].centerX - anchor.centerX
-        : undefined,
-    ].filter((gap): gap is number => gap !== undefined)
-    return { ...anchor, limit: Math.min(...gaps) }
-  })
+  const bounded = boundedAnchors(anchors)
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {

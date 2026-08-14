@@ -377,6 +377,44 @@ describe('parseSectionLists (synthetic)', () => {
     expect(girders.issue).toBe('項目行未認識')
   })
 
+  // 세로 런에는 앵커별 상한이 있는데 같은 앵커를 쓰는 가로 폴백에는 없었다 —
+  // 스케치 대역의 아무 단독 숫자나 최근접 符号에 붙어 이슈 없는 확정 b가 된다
+  it('bounds the horizontal sketch fallback by the same column limit', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 194, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 130, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 130, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 130, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '8', x: 230, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 230, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 230, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 88, y: 62, w: 24, h: 8 },
+        // 어느 열에서도 200pt 떨어진 숫자 — 열 간격 100의 두 배다
+        { str: '450', x: 388, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 82, y: 74, w: 36, h: 8 },
+        { str: '18-D25', x: 182, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('800')
+    expect(c2.issues).toContain('断面矩形不成立')
+  })
+
   // 상한이 좌우 간격 중 큰 쪽이면, 촘촘한 열이 반대편 먼 열에서 큰 상한을 물려받아
   // 두 열 사이 빈 대역의 회전 숫자까지 자기 d로 확정한다 — 작은 쪽을 쓴다
   it('does not let a narrow column inherit its far neighbour gap as the limit', () => {
