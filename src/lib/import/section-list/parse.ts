@@ -182,10 +182,15 @@ function verticalRuns(items: TextItem[]): VerticalRun[] {
 
   for (const item of rotated) {
     const previous = current.at(-1)
+    // 정렬이 x 우선이라, x가 1pt 이내로 다른 두 런의 경계에서는 y가 거꾸로 온다.
+    // 하한이 없으면 그 음수 간격이 검사를 무조건 통과해 서로 다른 층의 치수가
+    // 이어붙는다 — 「600」+「500」이 600500이 되어 두 층이 다 사라진다
+    const gap = previous === undefined ? -1 : previous.y - item.y
     const adjacent =
       previous !== undefined &&
       Math.abs(previous.x - item.x) <= 1 &&
-      previous.y - item.y <= Math.max(previous.w, item.w) * 2
+      gap >= 0 &&
+      gap <= Math.max(previous.w, item.w) * 2
     if (!adjacent) flush()
     current.push(item)
   }
@@ -808,6 +813,15 @@ function verticalsByMark(
   marks: MarkColumn[],
 ): Map<string, string> {
   if (marks.length === 0) return new Map()
+  // 열 경계는 符号 간격의 절반이다. 라벨 행에 매인 가로 값과 달리 세로 런은 표
+  // 어디에나 있을 수 있어, 상한이 없으면 남의 열 숫자가 이 열의 d로 확정된다
+  const centers = marks
+    .map(({ centerX }) => centerX)
+    .sort((left, right) => left - right)
+  const limit =
+    marks.length > 1
+      ? median(centers.slice(1).map((center, index) => center - centers[index])) / 2
+      : Number.POSITIVE_INFINITY
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
@@ -817,6 +831,7 @@ function verticalsByMark(
         ? candidate
         : closest,
     )
+    if (Math.abs(target.centerX - run.x) > limit) continue
     perMark.set(target.mark, [...(perMark.get(target.mark) ?? []), run.text])
   }
 
@@ -834,17 +849,22 @@ function verticalsByMark(
  */
 function verticalsBySlice(
   runs: VerticalRun[],
-  startYs: number[],
+  slices: Array<{ startY: number; endY: number }>,
 ): VerticalRun[][] {
-  const buckets: VerticalRun[][] = startYs.map(() => [])
-  if (startYs.length === 0) return buckets
+  const buckets: VerticalRun[][] = slices.map(() => [])
+  if (slices.length === 0) return buckets
 
   for (const run of runs) {
     let best = 0
-    startYs.forEach((startY, index) => {
-      if (Math.abs(startY - run.y) < Math.abs(startYs[best] - run.y)) best = index
+    slices.forEach((slice, index) => {
+      if (Math.abs(slice.startY - run.y) < Math.abs(slices[best].startY - run.y))
+        best = index
     })
-    buckets[best].push(run)
+    // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 최근접에 넣으면 어떤
+    // 숫자든 어느 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지
+    // 않고 원문으로 남는 쪽이 옳다 (R10)
+    const span = slices[best].endY - slices[best].startY
+    if (Math.abs(slices[best].startY - run.y) <= span / 2) buckets[best].push(run)
   }
 
   return buckets
@@ -878,9 +898,13 @@ function parseColumnBlock(
           endY: stories[index + 1]?.row.y ?? endY,
         }))
       : [{ storyLabel: undefined, startY: header.y, endY }]
+  // 수집 창을 표의 실제 행 범위로 닫는다. 마지막 블록의 endY는 페이지 바닥까지
+  // 열려 있어(다음 타이틀이 없으면 heightPt), 표 아래 스케치의 회전 숫자가 그대로
+  // 딸려 들어온다 — 가로 치수는 라벨 행 사이로 좁게 잘리므로 같은 노출이 없다
+  const tableBottom = blockRows.at(-1)?.y ?? endY
   const blockVerticals = verticalsBySlice(
-    verticals.filter((run) => run.y > header.y && run.y < endY),
-    slices.map((slice) => slice.startY),
+    verticals.filter((run) => run.y > header.y && run.y < tableBottom),
+    slices,
   )
 
   const candidates: SectionCandidate[] = []

@@ -369,6 +369,66 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // 회전 아이템 정렬은 x가 우선이라, x가 1pt 이내로 다른 두 런의 경계에서는 y가
+  // 거꾸로 온다. 간격 검사에 하한이 없으면 그 음수가 무조건 통과해 다른 층의
+  // 세로 치수가 앞 런에 이어붙는다 — 「600」+「500」이 600500이 되어 둘 다 사라진다
+  it('keeps two vertical dimensions apart when their columns differ by a sub-point', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        // 같은 열이지만 x가 0.5pt 다르다 — 실물에서 흔한 서브픽셀 차이다
+        { str: '5', x: 160.5, y: 134, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160.5, y: 131, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160.5, y: 128, w: 3, h: 6, rot: -90 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([candidate(columns, 'C1', '1F').b, candidate(columns, 'C1', '1F').d]).toEqual([700, 600])
+    expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
+  })
+
+  it('ignores a rotated number that sits outside the table rows', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 표 마지막 행보다 아래에 있는 회전 숫자 — 표 밖 스케치나 도면 주기다.
+        // 근접성만으로 붙이면 이 숫자가 이슈 없는 확정 d가 된다
+        { str: '5', x: 160, y: 150, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 147, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 144, w: 3, h: 6, rot: -90 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('falls back to raw dimension capture when the 断面 label row has no values', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
