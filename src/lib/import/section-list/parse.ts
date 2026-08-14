@@ -774,6 +774,24 @@ function lastPositionRow(
     .at(-1)
 }
 
+/**
+ * 스케치 치수를 배정할 열 앵커. 位置 열이 있으면 그것이다 — 符号 라벨은 칸 중앙에
+ * 놓이지만 칸 폭은 부재마다 달라서, 중심 사이 중점을 경계로 쓰면 좁은 칸이 넓은 칸의
+ * 끝을 먹는다. 실물 ojkk 大梁에서 G3(폭 85) 옆 G4(폭 42.5)가 G3의 세로 치수를
+ * 가져갔다. 位置 열은 칸을 실제로 타일링하므로 폭이 다른 이웃과 붙어도 어긋나지 않는다.
+ */
+function markAnchors(
+  marks: MarkColumn[],
+  positions: PositionColumn[],
+): MarkColumn[] {
+  return marks.flatMap(({ mark, centerX }) => {
+    const own = positions.filter((position) => position.mark === mark)
+    return own.length > 0
+      ? own.map((position) => ({ mark, centerX: position.centerX }))
+      : [{ mark, centerX }]
+  })
+}
+
 function scalarDimensions(
   rows: TextRow[],
   startY: number,
@@ -817,18 +835,8 @@ function scalarDimensions(
  */
 function verticalsByMark(
   runs: VerticalRun[],
-  marks: MarkColumn[],
-  positions: PositionColumn[],
+  anchors: MarkColumn[],
 ): Map<string, string> {
-  // 앵커는 位置 열이 있으면 그것이다. 符号 라벨은 칸 중앙에 놓이지만 칸 폭은 부재마다
-  // 달라, 중심 사이 중점을 경계로 쓰면 좁은 칸이 넓은 칸의 오른쪽 끝을 먹는다 —
-  // 실물 ojkk 大梁에서 G3(폭 85) 옆 G4(폭 42.5)가 G3의 세로 치수를 가져갔다
-  const anchors = marks.flatMap(({ mark, centerX }) => {
-    const own = positions.filter((position) => position.mark === mark)
-    return own.length > 0
-      ? own.map((position) => ({ mark, centerX: position.centerX }))
-      : [{ mark, centerX }]
-  })
   // 라벨 행에 매인 가로 값과 달리 세로 런은 표 어디에나 있을 수 있어, 상한이 없으면
   // 남의 열 숫자가 이 열의 d로 확정된다. 앵커가 하나면 간격을 잴 수 없다 —
   // 상한을 세울 근거가 없으니 짝짓지 않는다
@@ -969,6 +977,9 @@ function parseColumnBlock(
     const hoopContinuations = hoopRow
       ? barContinuationByMark(dataRows, hoopRow, slice.endY, marks, PITCH_TOKEN)
       : new Map<string, string>()
+    // 스케치 치수는 가로·세로 모두 같은 열 앵커로 배정한다 — 한쪽만 符号 중심이면
+    // 그쪽에서만 좁은 이웃 칸이 값을 가져간다
+    const anchors = markAnchors(marks, positions)
     const dimensionValues = storyAmbiguous
       ? new Map<string, string>()
       : dimensionRow
@@ -977,13 +988,13 @@ function parseColumnBlock(
             rows,
             slice.startY,
             mainRow?.y ?? slice.endY,
-            marks,
+            anchors,
           )
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
     const verticalValues =
       storyAmbiguous || dimensionRow
         ? new Map<string, string>()
-        : verticalsByMark(blockVerticals[sliceIndex], marks, positions)
+        : verticalsByMark(blockVerticals[sliceIndex], anchors)
     const mainByPosition =
       mainRow && positions.length > 0
         ? valuesByPosition(mainRow, ['主筋'], positions, marks)
@@ -1165,16 +1176,17 @@ function parseGirderBlock(
       : undefined
     // 断面 라벨 행이 없는 표(ojkk 大梁リスト)의 근거는 스케치 치수뿐이다 — 柱 블록과
     // 같은 폴백으로 가로 치수를 줍고, 세로(회전 문자열)와 짝지어야 b×D가 나온다
+    const anchors = markAnchors(marks, positions)
     const dimensionValues = storyAmbiguous
       ? new Map<string, string>()
       : dimensionRow && dimensionLabel
         ? valuesByMark(dimensionRow, [dimensionLabel], marks)
-        : scalarDimensions(rows, slice.startY, topRow?.y ?? slice.endY, marks)
+        : scalarDimensions(rows, slice.startY, topRow?.y ?? slice.endY, anchors)
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
     const verticalValues =
       storyAmbiguous || dimensionRow
         ? new Map<string, string>()
-        : verticalsByMark(blockVerticals[sliceIndex], marks, positions)
+        : verticalsByMark(blockVerticals[sliceIndex], anchors)
     const topLabel = topRow
       ? exactLabel(topRow, ['上筋', '上端筋'])?.compact
       : undefined

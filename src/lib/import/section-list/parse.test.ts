@@ -566,6 +566,50 @@ describe('parseSectionLists (synthetic)', () => {
     ]).toEqual([500, 900])
   })
 
+  // 가로 치수 폴백도 같은 앵커를 봐야 한다. 符号 중심으로 배정하면 넓은 칸의 가로
+  // 치수가 좁은 이웃 칸에 끌려가고, 그러면 두 칸 모두 「열당 정확히 1개」에 걸려
+  // 조용히 미확정이 된다 — 세로에서 고친 오배정과 같은 원인이다
+  it('assigns the horizontal sketch dimension by 位置 column as well', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 85, y: 32, w: 30, h: 8 },
+        { str: '端部', x: 160, y: 32, w: 20, h: 8 },
+        { str: '中央', x: 260, y: 32, w: 20, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 115, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 115, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 115, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 310, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 310, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 310, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '300', x: 88, y: 62, w: 24, h: 8 },
+        // C2 스케치는 端部 열 아래(중심 150)에 있다 — 符号 중심으로는 C1(100)이
+        // C2(220)보다 가까워 넓은 칸의 값을 좁은 칸이 가져간다
+        { str: '500', x: 138, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 76, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 140, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([300, 600])
+    expect([
+      candidate(columns, 'C2', '1F').b,
+      candidate(columns, 'C2', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
   // 세로 치수는 칸 중앙이 아니라 스케치 오른쪽 끝에 붙는다 — 상한을 앵커 간격의
   // 절반으로 두면 마지막 열에서 실물 값이 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt,
   // 간격의 91%). 상한은 한 칸 폭(이웃 앵커까지의 간격)이다
