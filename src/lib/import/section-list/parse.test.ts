@@ -1597,4 +1597,172 @@ describe('parseSectionLists (synthetic)', () => {
     expect(columns.candidates).toEqual([])
     expect(columns.issue).toBe('項目行未認識')
   })
+
+  it('does not let a title-block 図面名称 cut the last block off the table', () => {
+    const parsed = parseSectionLists({
+      widthPt: 1000,
+      heightPt: 300,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'G1', x: 150, y: 25, w: 12, h: 8 },
+        { str: '断面', x: 10, y: 40, w: 24, h: 8 },
+        { str: '400x600', x: 130, y: 40, w: 44, h: 8 },
+        { str: '上筋', x: 10, y: 55, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 55, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 70, w: 32, h: 8 },
+        { str: 'ST', x: 10, y: 85, w: 16, h: 8 },
+        { str: 'D10-@200', x: 126, y: 85, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 105, w: 24, h: 8 },
+        { str: 'G2', x: 150, y: 105, w: 12, h: 8 },
+        // 표제란(도면 우하단)의 図面名称 칸에 도면 이름이 들어간다 — 글자가 리스트
+        // 타이틀과 같다. 이것을 아래 표의 타이틀로 보면 여기서 표가 끊겨 마지막
+        // 블록의 데이터 행이 통째로 사라진다 (실물 ojkk p3의 2F 7칸)
+        { str: '図面名称', x: 830, y: 112, w: 40, h: 8 },
+        { str: '梁リスト', x: 900, y: 112, w: 48, h: 8 },
+        { str: '断面', x: 10, y: 120, w: 24, h: 8 },
+        { str: '500x700', x: 130, y: 120, w: 44, h: 8 },
+        { str: '上筋', x: 10, y: 135, w: 24, h: 8 },
+        { str: '4-D25', x: 132, y: 135, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 150, w: 24, h: 8 },
+        { str: '4-D25', x: 132, y: 150, w: 32, h: 8 },
+        { str: 'ST', x: 10, y: 165, w: 16, h: 8 },
+        { str: 'D13-@150', x: 126, y: 165, w: 48, h: 8 },
+      ],
+    })
+    const girders = list(parsed, '大梁リスト')
+
+    expect(girders.candidates.map(({ mark }) => mark)).toEqual(['G1', 'G2'])
+    expect(candidate(girders, 'G2', undefined)).toMatchObject({
+      b: 500,
+      depth: 700,
+      girderMain: { size: 'D25', topCount: 4, bottomCount: 4 },
+      stirrup: { size: 'D13', pitchMm: 150 },
+    })
+  })
+
+  it('does not let the last column swallow text from outside the table', () => {
+    // 표 밖(표제란·인접 도형)의 글자가 표와 같은 행에 걸리면 최근접 열은 언제나
+    // 오른쪽 끝 열이다 — 상한이 없으면 확정이던 칸이 解釈不能으로 뒤집힌다
+    // (실물 ojkk p3 G5/2F가 「3-D22一級建築士事務所…」가 됐다)
+    const parsed = parseSectionLists({
+      widthPt: 1000,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'C1', x: 100, y: 25, w: 12, h: 8 },
+        { str: 'C2', x: 200, y: 25, w: 12, h: 8 },
+        { str: '主筋', x: 10, y: 40, w: 24, h: 8 },
+        { str: '16-D25', x: 86, y: 40, w: 40, h: 8 },
+        { str: '12-D22', x: 186, y: 40, w: 40, h: 8 },
+        { str: '一級建築士事務所', x: 800, y: 40, w: 90, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect(candidate(columns, 'C2', undefined).main).toEqual({
+      count: 12,
+      size: 'D22',
+    })
+    expect(candidate(columns, 'C2', undefined).issues).toEqual([])
+  })
+
+  it('does not report a 図面名称 field as its own list', () => {
+    const parsed = parseSectionLists({
+      widthPt: 1000,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'C1', x: 150, y: 25, w: 12, h: 8 },
+        { str: '断面', x: 10, y: 40, w: 24, h: 8 },
+        { str: '700x700', x: 130, y: 40, w: 44, h: 8 },
+        { str: '主筋', x: 10, y: 55, w: 24, h: 8 },
+        { str: '16-D25', x: 130, y: 55, w: 40, h: 8 },
+        { str: '帯筋', x: 10, y: 70, w: 24, h: 8 },
+        { str: 'D13-@100', x: 126, y: 70, w: 48, h: 8 },
+        // 라벨과 값이 한 덩이로 붙어 나오는 표제란 (yokohama p14 실측 형태).
+        // 리스트로 올리면 화면에 「인식 못 한 표가 있다」는 잘못된 안내가 뜬다
+        { str: '図面名称柱リスト', x: 900, y: 200, w: 90, h: 8 },
+      ],
+    })
+
+    expect(parsed.map(({ listKind }) => listKind)).toEqual(['柱リスト'])
+    expect(candidate(list(parsed, '柱リスト'), 'C1', undefined).main).toEqual({
+      count: 16,
+      size: 'D25',
+    })
+  })
+
+  it('keeps a real title that shares a row with the title-block strip', () => {
+    // 표제란 띠는 도면 폭을 가로지른다(ojkk 실측 x=893~1150) — 「図面名称이 있는
+    // 행의 타이틀을 전부 버린다」로 만들면 같은 y에 놓인 진짜 타이틀까지 사라진다
+    const parsed = parseSectionLists({
+      widthPt: 1000,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'C1', x: 150, y: 25, w: 12, h: 8 },
+        { str: '主筋', x: 10, y: 40, w: 24, h: 8 },
+        { str: '16-D25', x: 130, y: 40, w: 40, h: 8 },
+        { str: '大梁リスト', x: 30, y: 200, w: 60, h: 8 },
+        { str: '図面名称', x: 830, y: 200, w: 40, h: 8 },
+        { str: '柱リスト', x: 900, y: 200, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 220, w: 24, h: 8 },
+        { str: 'G1', x: 150, y: 220, w: 12, h: 8 },
+        { str: '上筋', x: 10, y: 235, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 235, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 250, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 250, w: 32, h: 8 },
+      ],
+    })
+
+    expect(parsed.map(({ listKind }) => listKind)).toEqual([
+      '柱リスト',
+      '大梁リスト',
+    ])
+    expect(candidate(list(parsed, '大梁リスト'), 'G1', undefined).girderMain)
+      .toEqual({ size: 'D22', topCount: 3, bottomCount: 3 })
+  })
+
+  it('splits two lists stacked vertically at the lower title', () => {
+    // 위 케이스의 반대 방향 — 표 내용 x대역 안에 있는 아래 타이틀은 진짜 리스트다.
+    // 여기서 끊지 않으면 위 표가 아래 표를 삼켜 후보가 두 리스트에 겹쳐 나온다
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 48, h: 8 },
+        { str: '符号', x: 10, y: 25, w: 24, h: 8 },
+        { str: 'C1', x: 150, y: 25, w: 12, h: 8 },
+        { str: '断面', x: 10, y: 40, w: 24, h: 8 },
+        { str: '700x700', x: 130, y: 40, w: 44, h: 8 },
+        { str: '主筋', x: 10, y: 55, w: 24, h: 8 },
+        { str: '16-D25', x: 130, y: 55, w: 40, h: 8 },
+        { str: '帯筋', x: 10, y: 70, w: 24, h: 8 },
+        { str: 'D13-@100', x: 126, y: 70, w: 48, h: 8 },
+        { str: '大梁リスト', x: 30, y: 110, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 130, w: 24, h: 8 },
+        { str: 'G1', x: 150, y: 130, w: 12, h: 8 },
+        { str: '断面', x: 10, y: 145, w: 24, h: 8 },
+        { str: '400x600', x: 130, y: 145, w: 44, h: 8 },
+        { str: '上筋', x: 10, y: 160, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 160, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 175, w: 24, h: 8 },
+        { str: '3-D22', x: 132, y: 175, w: 32, h: 8 },
+        { str: 'ST', x: 10, y: 190, w: 16, h: 8 },
+        { str: 'D10-@200', x: 126, y: 190, w: 48, h: 8 },
+      ],
+    })
+
+    expect(list(parsed, '柱リスト').candidates.map(({ mark }) => mark)).toEqual([
+      'C1',
+    ])
+    expect(
+      list(parsed, '大梁リスト').candidates.map(({ mark }) => mark),
+    ).toEqual(['G1'])
+  })
 })
