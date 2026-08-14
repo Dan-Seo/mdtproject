@@ -256,6 +256,96 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // 断面 라벨 행이 없고 치수가 스케치에만 붙은 표(ojkk 柱リスト 형식). 가로 치수는
+  // 보통 문자열이고 세로 치수는 회전 문자열이라, 회전 아이템을 버리는 recoverRows만
+  // 보면 숫자가 하나뿐이라 확정할 수 없다. 두 방향을 짝지어야 b×d가 나온다
+  it('pairs the horizontal and vertical sketch dimensions per mark', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 세로 치수는 rot=-90이고 읽기 순서가 y 내림차순이다. 스케치 옆에 붙어
+        // 층 라벨보다 위에 오므로, 층 슬라이스의 y대역 안에는 들어오지 않는다
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 280, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '800', x: 230, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '12-D22', x: 225, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c1 = candidate(columns, 'C1', '1F')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    // 가로가 b·세로가 d다. 값을 다르게 준 것은 방향 대응과 열 배정을 함께 못박기 위함
+    expect([c1.b, c1.d]).toEqual([700, 600])
+    expect([c2.b, c2.d]).toEqual([800, 900])
+    expect(c1.issues).toHaveLength(0)
+  })
+
+  it('does not confirm a section when only the vertical sketch dimension exists', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        // 가로 치수가 없다 — 한쪽만으로 정사각형을 만들면 값을 지어내는 것이다
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.d).toBeUndefined()
+  })
+
+  it('does not confirm a section when a cell holds two vertical dimensions', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        // 한 셀에 세로 숫자가 둘이면 어느 쪽이 断面인지 판정할 근거가 없다 —
+        // 가로 숫자에 거는 「열당 정확히 1개」와 같은 규약을 세로에도 건다
+        { str: '6', x: 150, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 150, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 150, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '2', x: 170, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 170, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 170, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('falls back to raw dimension capture when the 断面 label row has no values', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

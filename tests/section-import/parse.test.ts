@@ -75,8 +75,8 @@ describe('parseSectionLists', () => {
     const columns = list(parsed, '柱リスト')
 
     expectMarksInclude(columns, ['C1', 'C2', 'C2A', 'FC1'])
-    // 이 표에는 断面 라벨 행이 없다 — 스케치 치수선의 숫자(700)를 b=d로 승격하지
-    // 않고 원문 참고로만 남긴다. 도면상 실제 700×700이지만 표 텍스트에 근거가 없다.
+    // 이 표에는 断面 라벨 행이 없다 — 근거는 스케치에 붙은 가로·세로 치수 두 개뿐이고,
+    // 세로는 회전 문자열이라 행 복원에서 빠진다. 둘을 짝지어야 700×700이 나온다.
     const c1 = candidate(columns, 'C1', '6F')
     expect(c1).toMatchObject({
       kind: '柱',
@@ -85,10 +85,9 @@ describe('parseSectionLists', () => {
       main: { count: 16, size: 'D25' },
       hoop: { size: 'D13', pitchMm: 100 },
     })
-    expect(c1.b).toBeUndefined()
-    expect(c1.d).toBeUndefined()
-    expect(c1.raw['断面']).toBe('700')
-    expect(c1.issues).not.toHaveLength(0)
+    expect([c1.b, c1.d]).toEqual([700, 700])
+    expect(c1.raw['断面']).toBeUndefined()
+    expect(c1.issues).toHaveLength(0)
     expect(candidate(columns, 'C2A', '2F')).toMatchObject({
       main: { count: 20, size: 'D29' },
     })
@@ -323,8 +322,9 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
   it('ojkk 柱リスト — 19칸 (位置 2행·帯筋에 고강도 K13 포함)', () => {
     expect(
       sweepColumns('ojkk-p2.json', 'ojkk-akamichi-p2-columns.json', '柱リスト'),
-      // K13 3칸(C2 1F·C2A 2F·C2A 1F)만 미확정, 断面은 라벨 행이 없어 전 칸 미확정
-    ).toEqual({ main: 19, hoop: 16, dimension: 0 })
+      // K13 3칸(C2 1F·C2A 2F·C2A 1F)만 미확정. 断面은 라벨 행이 없지만 스케치의
+      // 가로·세로 치수를 짝지어 전 칸 확정 — 값은 전사(700×700·FC1 600×600)와 대조된다
+    ).toEqual({ main: 19, hoop: 16, dimension: 19 })
   })
 
   it('yokohama 柱断面リスト — 15칸 (断面 라벨 행·位置 없음·S13·600φ 포함)', () => {
