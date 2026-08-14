@@ -339,6 +339,78 @@ describe('parseSectionLists (synthetic)', () => {
 
     expect(c1.b).toBeUndefined()
     expect(c1.d).toBeUndefined()
+    // 읽어낸 세로 값은 원문으로 남는다 — 그냥 버리면 사용자는 왜 断面이 비었는지 모른다
+    expect(c1.raw['断面']).toBe('600')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 位置 열은 한 符号을 여러 앵커로 늘린다 — 앵커 수로 재면 단일 符号 표에서도
+  // 가드를 통과해 상한 근거 없이 확정한다. 원래 조건은 「符号이 둘 이상」이다
+  it('does not pair vertical dimensions for a single 符号 with 位置 columns', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 114, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 90, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 130, y: 32, w: 20, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 108, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 70, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 134, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 가로 치수 폴백의 창은 스케치 대역이다. 라벨 행 하나(上端筋)에만 매어 두면 그
+  // 라벨을 인식하지 못한 표에서 창이 슬라이스 전체로 열려, 아래 행들의 단독 숫자가
+  // b로 확정된다 — 인식한 데이터 라벨 행 중 가장 위를 하한으로 쓴다
+  it('closes the 大梁 horizontal window at the first recognised data row', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 234, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 105, y: 32, w: 30, h: 8 },
+        { str: '全断面', x: 225, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '7', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 上端筋이 아니라 「上主筋」이라 라벨을 인식하지 못한다 — 스케치에 가로
+        // 치수가 없는데도 창이 열려 있으면 아래 備考 행의 숫자가 b가 된다
+        { str: '上主筋', x: 10, y: 62, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 62, w: 32, h: 8 },
+        { str: '下端筋', x: 10, y: 74, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 74, w: 32, h: 8 },
+        { str: 'あばら筋', x: 10, y: 86, w: 40, h: 8 },
+        { str: 'D13-@200', x: 100, y: 86, w: 44, h: 8 },
+        { str: '備考', x: 10, y: 98, w: 20, h: 8 },
+        { str: '450', x: 108, y: 98, w: 24, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', '1F')
+
+    expect(g1.b).toBeUndefined()
+    expect(g1.depth).toBeUndefined()
+    expect(g1.raw['断面']).toBe('700')
+    expect(g1.issues).toContain('断面矩形不成立')
   })
 
   it('does not confirm a section when a cell holds two vertical dimensions', () => {

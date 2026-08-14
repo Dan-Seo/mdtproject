@@ -549,7 +549,15 @@ function setDimension(
   column: boolean,
   vertical?: string,
 ): void {
-  if (!value) return
+  if (!value) {
+    // 세로만 읽힌 칸도 원문을 남긴다 — 조용히 버리면 사용자는 왜 断面이 비었는지
+    // 알 수 없다. 확정하지 못한 칸은 빈칸+원문 참고가 이 파서의 규약이다
+    if (vertical !== undefined) {
+      candidate.raw['断面'] = compact(vertical)
+      addIssue(candidate, '断面矩形不成立')
+    }
+    return
+  }
   const parsed =
     parseDimension(value) ??
     (vertical !== undefined ? pairedDimension(value, vertical) : undefined)
@@ -838,9 +846,10 @@ function verticalsByMark(
   anchors: MarkColumn[],
 ): Map<string, string> {
   // 라벨 행에 매인 가로 값과 달리 세로 런은 표 어디에나 있을 수 있어, 상한이 없으면
-  // 남의 열 숫자가 이 열의 d로 확정된다. 앵커가 하나면 간격을 잴 수 없다 —
-  // 상한을 세울 근거가 없으니 짝짓지 않는다
-  if (anchors.length < 2) return new Map()
+  // 남의 열 숫자가 이 열의 d로 확정된다. 符号이 하나면 열 간격을 잴 수 없다 —
+  // 상한을 세울 근거가 없으니 짝짓지 않는다. 앵커 수로 재면 안 된다: 位置 열이
+  // 한 符号을 여러 앵커로 늘리므로 단일 符号 표에서도 통과한다
+  if (new Set(anchors.map(({ mark }) => mark)).size < 2) return new Map()
   const sorted = [...anchors].sort((left, right) => left.centerX - right.centerX)
   // 상한은 그 앵커에서 이웃 앵커까지의 간격이다. 칸 경계는 두 앵커 사이에 있으므로
   // 앵커에서 경계까지의 거리는 이웃 간격보다 짧다 — 이웃별로 재는 이유는 칸 폭이
@@ -987,7 +996,11 @@ function parseColumnBlock(
         : scalarDimensions(
             rows,
             slice.startY,
-            mainRow?.y ?? slice.endY,
+            // 大梁 블록과 같은 이유 — 主筋 라벨 하나에만 매어 두지 않는다
+            Math.min(
+              ...[mainRow, hoopRow].flatMap((row) => (row ? [row.y] : [])),
+              slice.endY,
+            ),
             anchors,
           )
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
@@ -1181,7 +1194,20 @@ function parseGirderBlock(
       ? new Map<string, string>()
       : dimensionRow && dimensionLabel
         ? valuesByMark(dimensionRow, [dimensionLabel], marks)
-        : scalarDimensions(rows, slice.startY, topRow?.y ?? slice.endY, anchors)
+        : scalarDimensions(
+            rows,
+            slice.startY,
+            // 창의 하한은 인식한 데이터 라벨 행 중 가장 위다. 上端筋 하나에만 매어
+            // 두면 그 라벨을 못 읽은 표에서 창이 슬라이스 전체로 열려, 下端筋·
+            // あばら筋·備考 행의 단독 숫자가 b로 확정된다
+            Math.min(
+              ...[topRow, bottomRow, stirrupRow].flatMap((row) =>
+                row ? [row.y] : [],
+              ),
+              slice.endY,
+            ),
+            anchors,
+          )
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
     const verticalValues =
       storyAmbiguous || dimensionRow
