@@ -818,16 +818,30 @@ function scalarDimensions(
 function verticalsByMark(
   runs: VerticalRun[],
   marks: MarkColumn[],
+  positions: PositionColumn[],
 ): Map<string, string> {
-  // 열 경계는 符号 간격의 절반이다. 라벨 행에 매인 가로 값과 달리 세로 런은 표
-  // 어디에나 있을 수 있어, 상한이 없으면 남의 열 숫자가 이 열의 d로 확정된다.
-  // 符号가 하나면 간격을 잴 수 없다 — 상한을 세울 근거가 없으니 짝짓지 않는다
-  if (marks.length < 2) return new Map()
-  const centers = marks
+  // 앵커는 位置 열이 있으면 그것이다. 符号 라벨은 칸 중앙에 놓이지만 칸 폭은 부재마다
+  // 달라, 중심 사이 중점을 경계로 쓰면 좁은 칸이 넓은 칸의 오른쪽 끝을 먹는다 —
+  // 실물 ojkk 大梁에서 G3(폭 85) 옆 G4(폭 42.5)가 G3의 세로 치수를 가져갔다
+  const anchors = marks.flatMap(({ mark, centerX }) => {
+    const own = positions.filter((position) => position.mark === mark)
+    return own.length > 0
+      ? own.map((position) => ({ mark, centerX: position.centerX }))
+      : [{ mark, centerX }]
+  })
+  // 라벨 행에 매인 가로 값과 달리 세로 런은 표 어디에나 있을 수 있어, 상한이 없으면
+  // 남의 열 숫자가 이 열의 d로 확정된다. 앵커가 하나면 간격을 잴 수 없다 —
+  // 상한을 세울 근거가 없으니 짝짓지 않는다
+  if (anchors.length < 2) return new Map()
+  const centers = anchors
     .map(({ centerX }) => centerX)
     .sort((left, right) => left - right)
-  const limit =
-    median(centers.slice(1).map((center, index) => center - centers[index])) / 2
+  // 상한은 앵커 간격의 절반이 아니라 한 칸 폭이다. 세로 치수는 칸 중앙이 아니라
+  // 스케치 오른쪽 끝에 붙어서, 절반으로 자르면 마지막 열의 실물 값이 잘린다
+  // (ojkk 柱 FC1: 앵커에서 51.7pt로 간격 56.7의 91%)
+  const limit = median(
+    centers.slice(1).map((center, index) => center - centers[index]),
+  )
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
@@ -835,7 +849,7 @@ function verticalsByMark(
     // 숫자가 아니라고 버리면 카운트에서도 빠져 「열당 정확히 1개」 방어가 뚫린다
     const text = run.text.replace(/,/g, '')
     if (!/^\d+$/.test(text)) continue
-    const target = marks.reduce((closest, candidate) =>
+    const target = anchors.reduce((closest, candidate) =>
       Math.abs(candidate.centerX - run.x) < Math.abs(closest.centerX - run.x)
         ? candidate
         : closest,
@@ -965,7 +979,7 @@ function parseColumnBlock(
     const verticalValues =
       storyAmbiguous || dimensionRow
         ? new Map<string, string>()
-        : verticalsByMark(blockVerticals[sliceIndex], marks)
+        : verticalsByMark(blockVerticals[sliceIndex], marks, positions)
     const mainByPosition =
       mainRow && positions.length > 0
         ? valuesByPosition(mainRow, ['主筋'], positions, marks)
@@ -1082,6 +1096,7 @@ function parseGirderBlock(
   headerIndex: number,
   endY: number,
   titleText: string,
+  verticals: VerticalRun[],
 ): SectionCandidate[] {
   const header = rows[headerIndex]
   const marks = markColumns(header)
@@ -1098,9 +1113,18 @@ function parseGirderBlock(
           endY: stories[index + 1]?.row.y ?? endY,
         }))
       : [{ storyLabel: undefined, startY: header.y, endY }]
+  // 柱 블록과 같은 이유로 수집 창과 슬라이스 상한을 표의 실제 행 범위로 닫는다
+  const tableBottom = blockRows.at(-1)?.y ?? endY
+  const blockVerticals = verticalsBySlice(
+    verticals.filter((run) => run.y > header.y && run.y < tableBottom),
+    slices.map((slice) => ({
+      startY: slice.startY,
+      endY: Math.min(slice.endY, tableBottom),
+    })),
+  )
   const candidates: SectionCandidate[] = []
 
-  for (const slice of slices) {
+  for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
     const dimensionRows = dataRows.filter(
       (row) =>
@@ -1135,10 +1159,18 @@ function parseGirderBlock(
     const dimensionLabel = dimensionRow
       ? exactLabel(dimensionRow, ['断面', 'b×D'])?.compact
       : undefined
-    const dimensionValues =
-      dimensionRow && dimensionLabel
+    // 断面 라벨 행이 없는 표(ojkk 大梁リスト)의 근거는 스케치 치수뿐이다 — 柱 블록과
+    // 같은 폴백으로 가로 치수를 줍고, 세로(회전 문자열)와 짝지어야 b×D가 나온다
+    const dimensionValues = storyAmbiguous
+      ? new Map<string, string>()
+      : dimensionRow && dimensionLabel
         ? valuesByMark(dimensionRow, [dimensionLabel], marks)
-        : new Map<string, string>()
+        : scalarDimensions(rows, slice.startY, topRow?.y ?? slice.endY, marks)
+    // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
+    const verticalValues =
+      storyAmbiguous || dimensionRow
+        ? new Map<string, string>()
+        : verticalsByMark(blockVerticals[sliceIndex], marks, positions)
     const topLabel = topRow
       ? exactLabel(topRow, ['上筋', '上端筋'])?.compact
       : undefined
@@ -1234,7 +1266,7 @@ function parseGirderBlock(
         raw: {},
         issues: [],
       }
-      setDimension(result, dimension, false)
+      setDimension(result, dimension, false, verticalValues.get(mark))
       const topFold = topContinuations.get(mark)
       const bottomFold = bottomContinuations.get(mark)
       if (topFold !== undefined || bottomFold !== undefined) {
@@ -1337,16 +1369,25 @@ function parseTableRegion(
   const candidates: SectionCandidate[] = []
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
+    // 표의 x대역 밖 세로 문자열은 옆 표의 것이다 — 행과 같은 경계로 자른다
+    const blockVerticals = verticals.filter(
+      (run) => run.x >= xStart && run.x < xEnd,
+    )
     const parsed = anchor.listKind.includes('柱')
       ? parseColumnBlock(
           tableRows,
           headerIndex,
           blockEnd,
           anchor.titleText,
-          // 표의 x대역 밖 세로 문자열은 옆 표의 것이다 — 행과 같은 경계로 자른다
-          verticals.filter((run) => run.x >= xStart && run.x < xEnd),
+          blockVerticals,
         )
-      : parseGirderBlock(tableRows, headerIndex, blockEnd, anchor.titleText)
+      : parseGirderBlock(
+          tableRows,
+          headerIndex,
+          blockEnd,
+          anchor.titleText,
+          blockVerticals,
+        )
     candidates.push(...parsed)
   })
 

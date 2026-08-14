@@ -471,6 +471,104 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // 符号 라벨은 칸 중앙에 놓이지만 칸 폭은 부재마다 다르다. 중심 사이 중점을 경계로
+  // 쓰면 좁은 칸이 넓은 칸의 오른쪽 끝을 먹는다 — 실물 ojkk 大梁 G3(폭 85) 옆의
+  // G4(폭 42.5)에서 G3의 세로 치수가 G4 것으로 배정됐다. 位置 열이 더 촘촘한 앵커다
+  it('assigns a vertical dimension by 位置 column when the neighbour column is narrower', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 194, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 314, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 150, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 230, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 305, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // x=264는 符号 중심 사이 중점(260)의 오른쪽이라 C2 것으로 배정되지만,
+        // 실제로는 C1 柱脚(중심 240) 칸 안이다
+        { str: '6', x: 264, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 264, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 264, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 344, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 344, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 344, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 168, y: 62, w: 24, h: 8 },
+        { str: '500', x: 308, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 142, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 222, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 302, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect([
+      candidate(columns, 'C2', '1F').b,
+      candidate(columns, 'C2', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
+  // 세로 치수는 칸 중앙이 아니라 스케치 오른쪽 끝에 붙는다 — 상한을 앵커 간격의
+  // 절반으로 두면 마지막 열에서 실물 값이 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt,
+  // 간격의 91%). 상한은 한 칸 폭(앵커 간격)이다
+  it('confirms a vertical dimension that hugs the far edge of the last column', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // 앵커 간격 120의 2/3 지점 — 절반(60)을 넘지만 한 칸 폭 안이다
+        { str: '9', x: 300, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 300, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 300, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '500', x: 208, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '12-D22', x: 202, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c2 = candidate(list(parsed, '柱リスト'), 'C2', '1F')
+
+    expect([c2.b, c2.d]).toEqual([500, 900])
+  })
+
+  it('drops a vertical run more than one column pitch from every anchor', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // 앵커 간격 120을 넘는 130pt 밖 — 어느 칸 안이라고 말할 근거가 없다
+        { str: '9', x: 350, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 350, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 350, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '500', x: 208, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '12-D22', x: 202, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c2 = candidate(list(parsed, '柱リスト'), 'C2', '1F')
+
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('500')
+    expect(c2.issues).toContain('断面矩形不成立')
+  })
+
   it('does not pair vertical dimensions when the table has a single 符号', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
