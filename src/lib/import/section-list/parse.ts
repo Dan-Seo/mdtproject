@@ -171,11 +171,18 @@ function verticalRuns(items: TextItem[]): VerticalRun[] {
 
   const flush = () => {
     if (current.length === 0) return
-    const ys = current.map((item) => item.y)
+    // spread(Math.min(...))는 인자 수가 사용자 PDF의 글리프 수를 그대로 따라가
+    // 스택 한도에서 RangeError가 된다 — 렌더 경로라 임포트가 통째로 죽는다
+    let minY = Number.POSITIVE_INFINITY
+    let maxY = Number.NEGATIVE_INFINITY
+    for (const item of current) {
+      if (item.y < minY) minY = item.y
+      if (item.y > maxY) maxY = item.y
+    }
     runs.push({
       text: compact(current.map((item) => item.str).join('')),
       x: current[0].x,
-      y: (Math.min(...ys) + Math.max(...ys)) / 2,
+      y: (minY + maxY) / 2,
     })
     current = []
   }
@@ -812,16 +819,15 @@ function verticalsByMark(
   runs: VerticalRun[],
   marks: MarkColumn[],
 ): Map<string, string> {
-  if (marks.length === 0) return new Map()
   // 열 경계는 符号 간격의 절반이다. 라벨 행에 매인 가로 값과 달리 세로 런은 표
-  // 어디에나 있을 수 있어, 상한이 없으면 남의 열 숫자가 이 열의 d로 확정된다
+  // 어디에나 있을 수 있어, 상한이 없으면 남의 열 숫자가 이 열의 d로 확정된다.
+  // 符号가 하나면 간격을 잴 수 없다 — 상한을 세울 근거가 없으니 짝짓지 않는다
+  if (marks.length < 2) return new Map()
   const centers = marks
     .map(({ centerX }) => centerX)
     .sort((left, right) => left - right)
   const limit =
-    marks.length > 1
-      ? median(centers.slice(1).map((center, index) => center - centers[index])) / 2
-      : Number.POSITIVE_INFINITY
+    median(centers.slice(1).map((center, index) => center - centers[index])) / 2
   const perMark = new Map<string, string[]>()
 
   for (const run of runs) {
@@ -832,7 +838,9 @@ function verticalsByMark(
         : closest,
     )
     if (Math.abs(target.centerX - run.x) > limit) continue
-    perMark.set(target.mark, [...(perMark.get(target.mark) ?? []), run.text])
+    const bucket = perMark.get(target.mark)
+    if (bucket) bucket.push(run.text)
+    else perMark.set(target.mark, [run.text])
   }
 
   return new Map(
@@ -904,7 +912,12 @@ function parseColumnBlock(
   const tableBottom = blockRows.at(-1)?.y ?? endY
   const blockVerticals = verticalsBySlice(
     verticals.filter((run) => run.y > header.y && run.y < tableBottom),
-    slices,
+    // 마지막 슬라이스의 endY는 표의 끝이 아니라 다음 타이틀·페이지 바닥이다.
+    // 그대로 두면 그 층에서만 거리 상한이 층 간격의 몇 배로 벌어진다
+    slices.map((slice) => ({
+      startY: slice.startY,
+      endY: Math.min(slice.endY, tableBottom),
+    })),
   )
 
   const candidates: SectionCandidate[] = []
