@@ -214,6 +214,48 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  it('reads a 主筋 cell written with the U+2015 dash', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '主筋', x: 10, y: 44, w: 20, h: 8 },
+        // CP932 0x815C(全角ダッシュ)는 U+2014와 U+2015로 갈려 들어온다. 앞의 것만
+        // 접으면 이 셀이 「해석 불능」으로 떨어져 값이 있는데도 빈칸이 된다
+        { str: '16―D25', x: 100, y: 44, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.main).toEqual({ count: 16, size: 'D25' })
+    expect(c1.issues).toHaveLength(0)
+  })
+
+  it('keeps 長音符 intact in the raw fallback instead of folding it to a hyphen', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: '断面', x: 10, y: 44, w: 20, h: 8 },
+        // ー(U+30FC)는 하이픈이 아니라 가나 글자다 — 하이픈류에 넣어 접으면
+        // 「コンクリ-ト」가 되어, 확정하지 못한 셀에 붙이는 원문 참고 표시가 망가진다
+        { str: 'コンクリート打放し', x: 110, y: 44, w: 72, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.raw['断面']).toBe('コンクリート打放し')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('falls back to raw dimension capture when the 断面 label row has no values', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
