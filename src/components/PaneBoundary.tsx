@@ -25,6 +25,9 @@ export class PaneBoundary extends Component<
 > {
   state: PaneBoundaryState = { reason: null }
 
+  /** 마지막으로 보고한 메시지. resetKey가 편집마다 바뀌어도 원인이 그대로면 다시 보내지 않는다. */
+  private reportedReason: string | null = null
+
   static getDerivedStateFromError(error: unknown): PaneBoundaryState {
     return {
       reason: error instanceof Error ? error.message : String(error),
@@ -35,8 +38,16 @@ export class PaneBoundary extends Component<
    * 경계가 예외를 화면에서 삼키므로 여기서 보고하지 않으면 프로덕션에 흔적이 남지 않는다.
    * 여기 걸리는 것은 대부분 룰팩 조회 실패(`Rule not found`)다 — 사용자가 넣은 조합이
    * 룰팩에 없다는 뜻이고, 무엇을 다음에 채워야 하는지 알려주는 유일한 신호다.
+   *
+   * resetKey는 프로젝트 어디를 편집해도 바뀐다(AppShell이 project 전체를 넘긴다).
+   * 근본 원인이 그대로면 되살아난 자식이 같은 메시지로 다시 던지므로, 메시지가
+   * 바뀌지 않는 한 다시 보내지 않는다 — 안 그러면 무관한 편집마다 oncall이 다시 운다.
    */
   componentDidCatch(error: unknown): void {
+    const reason = error instanceof Error ? error.message : String(error)
+    if (reason === this.reportedReason) return
+
+    this.reportedReason = reason
     posthog.captureException(error, { pane: this.props.pane })
   }
 

@@ -405,6 +405,23 @@ describe('TakeoffPane', () => {
     })
   })
 
+  // toggleLine은 이미 선택된 그룹의 행을 펼치고 접는 것도 selectQuantityGroup을
+  // 거친다. 선택이 실제로 바뀌지 않았는데도 매번 발화하면 source별 선택 수
+  // 비교가 takeoff 쪽으로 부풀어, 계측을 붙이는 이 PR에서 계측값 자체가 깨진다.
+  it('reports member_selected only when the selected group actually changes', () => {
+    const lines = takeoffLines()
+    const line = lineFor('帯筋')
+    render(<TakeoffTable lines={lines} />)
+
+    const cell = screen.getByTestId(`quantity-line-${line.id}`)
+    fireEvent.click(cell)
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    // 같은 행을 다시 눌러 펼침/접힘만 토글한다 — 선택 그룹은 그대로다.
+    fireEvent.click(cell)
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
   // row(role=row)의 aria-expanded는 treegrid 안에서만 유효하다 — 평범한 table에서는
   // 보조기술이 읽지 못한다. 펼침 상태는 실제 컨트롤이 들고 있어야 한다.
   it('carries the disclosure state on a real control, not on the row', () => {

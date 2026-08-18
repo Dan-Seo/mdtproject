@@ -250,8 +250,11 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
   }, [selectedGroup])
 
   const selectQuantityGroup = (groupId: string, memberId: string) => {
+    // toggleLine도 이 함수를 거친다 — 같은 그룹의 산식 행을 펼치고 접는 것은
+    // 선택이 아니다. 매번 발화하면 source별 선택 수 비교가 takeoff 쪽으로 부푼다.
+    const changed = groupId !== selectedGroup
     selectGroup(groupId, memberId)
-    posthog.capture('member_selected', { source: 'takeoff' })
+    if (changed) posthog.capture('member_selected', { source: 'takeoff' })
   }
 
   const toggleLine = (line: QuantityLine, memberId: string) => {

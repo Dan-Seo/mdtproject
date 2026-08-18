@@ -103,6 +103,62 @@ describe('PaneBoundary', () => {
     ).not.toBeInTheDocument()
   })
 
+  // AppShell은 모든 페인의 resetKey에 project 하나를 넘긴다 — 어디를 편집해도
+  // project 참조가 바뀌어 이 경계가 되살아난다. 근본 원인(예: 룰팩 공백)이
+  // 아직 안 고쳐졌으면 되살아난 자식이 같은 메시지로 다시 던지고, 그때마다
+  // captureException이 또 발화하면 사용자가 무관한 필드를 편집할 때마다
+  // oncall 알림이 다시 쏘아진다.
+  it('reports a persisting failure only once across repeated resets', () => {
+    const { rerender } = render(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={0}
+      >
+        <Boom message="Rule not found: development.length" />
+      </PaneBoundary>,
+    )
+
+    expect(captureException).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={1}
+      >
+        <Boom message="Rule not found: development.length" />
+      </PaneBoundary>,
+    )
+
+    expect(captureException).toHaveBeenCalledTimes(1)
+  })
+
+  // 근본 원인이 바뀌어 다른 메시지를 던지면 그건 새 신호이므로 다시 보고한다.
+  it('reports again when the reason actually changes', () => {
+    const { rerender } = render(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={0}
+      >
+        <Boom message="Rule not found: development.length" />
+      </PaneBoundary>,
+    )
+
+    rerender(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={1}
+      >
+        <Boom message="Story not found: 3F" />
+      </PaneBoundary>,
+    )
+
+    expect(captureException).toHaveBeenCalledTimes(2)
+  })
+
   it('stays failed while resetKey is unchanged', () => {
     const { rerender } = render(
       <PaneBoundary

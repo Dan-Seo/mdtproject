@@ -30,6 +30,13 @@ describe('instrumentation-client', () => {
     expect(init.mock.calls[0][1]).toMatchObject({
       autocapture: false,
       disable_session_recording: true,
+      // heatmap·dead click도 DOM을 훑는 수집기다 — autocapture만 끄면
+      // defaults 프리셋이나 원격 설정이 코드 변경 없이 다시 켤 수 있다.
+      capture_heatmaps: false,
+      capture_dead_clicks: false,
+      // posthog-js는 초기화 후 세션 리플레이·서베이 번들을 CDN에서 지연
+      // 로드할 수 있다 — 잠금파일 밖의 코드가 페이지에서 실행되지 않게 막는다.
+      disable_external_dependency_loading: true,
     })
   })
 
@@ -43,7 +50,8 @@ describe('instrumentation-client', () => {
 
   // src/domain/rebar/의 조회 실패 메시지는 도면 유래 mm 치수를 문자열 보간으로
   // 담는다(예: `clearMm must be finite: ${clearMm}`). capture_exceptions가 이걸
-  // 스크러빙 없이 잡아 보내면 ADR-017을 어긴다. before_send가 그 유일한 관문이다.
+  // 스크러빙 없이 잡아 보내면 CLAUDE.md CRITICAL을 어긴다. before_send가 그
+  // 유일한 관문이다(ADR-020).
   it('redacts drawing-derived digits from exception messages before they leave the browser', async () => {
     await loadInstrumentation()
 
@@ -73,6 +81,78 @@ describe('instrumentation-client', () => {
     })
     // pane 같은 정적 라벨은 도면 데이터가 아니므로 그대로 둔다.
     expect(captured.properties.pane).toBe('quantity-body')
+  })
+
+  // src/domain/rules/lookup.ts:40의 `Rule not found: ${key} for ${JSON.stringify(conditions)}`는
+  // conditions에 exposure·finish 같은 문자값을 담는다. 숫자만 지우면 이 값들은
+  // 그대로 살아 나간다 — 문자값을 담는 모양(JSON 블록)도 지워야 한다.
+  it('redacts the JSON conditions blob in rule-lookup failures, not just digits', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u3',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          {
+            type: 'Error',
+            value:
+              'Rule not found: measure.splice.interval for {"exposure":"屋外","finish":"打放し"}',
+          },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Rule not found: measure.splice.interval for {REDACTED}',
+    )
+  })
+
+  // memberGroupKey(project.ts)가 만드는 그룹 id는 `${story.name}|C|${section.mark}`
+  // 형태다. 층 이름·符号은 문자라 숫자 스크러빙을 통과해 그대로 나간다.
+  it('redacts pipe-joined group ids in quantity aggregation failures', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u4',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          {
+            type: 'Error',
+            value:
+              'Inconsistent size or shape in quantity group 1階|C|C1|主筋|1000|12',
+          },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Inconsistent size or shape in quantity group [REDACTED]',
+    )
+  })
+
+  // 룰 key(anchorage.L1)처럼 문자에 붙은 숫자는 룰팩 상수지 도면 값이 아니다 —
+  // 「어느 룰이 없는지」를 알려주는 이 계측의 목적을 함께 깎으면 안 된다.
+  it('keeps digits attached to letters, like rule keys and bar sizes', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u5',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          { type: 'Error', value: 'Rule not found: anchorage.L1' },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Rule not found: anchorage.L1',
+    )
   })
 
   it('leaves non-exception events untouched', async () => {

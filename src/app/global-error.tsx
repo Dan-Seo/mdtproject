@@ -14,13 +14,15 @@ export default function GlobalError({
     posthog.captureException(error)
   }, [error])
 
+  // 루트 레이아웃(layout.tsx)까지 죽었을 수 있어 스토어에 기댈 수 없다 —
+  // t() 대신 ADR-008 기본 로케일(ja)의 정적 문구를 직접 쓴다.
   return (
-    <html lang="en">
+    <html lang="ja">
       <body>
         <main>
-          <h1>Something went wrong</h1>
-          <p>We couldn&apos;t load this page. Please try again.</p>
-          <button onClick={reset}>Try again</button>
+          <h1>表示できませんでした</h1>
+          <p>入力を見直して、もう一度お試しください。</p>
+          <button onClick={reset}>再試行</button>
         </main>
       </body>
     </html>

@@ -2,11 +2,29 @@ import posthog from 'posthog-js'
 import type { BeforeSendFn } from 'posthog-js'
 
 /**
- * src/domain/rebar/의 조회 실패 메시지는 도면 유래 mm 치수를 문자열 보간으로
- * 담는다(예: `clearMm must be finite: ${clearMm}`). capture_exceptions가 이걸
- * 스크러빙 없이 잡아 보내면 사용자 도면 데이터가 서버로 나간다 (ADR-017 위반).
- * 숫자만 지운다 — 앞의 라벨(어느 검사가 실패했는지)은 룰팩 공백을 찾는 유일한
- * 신호라 PaneBoundary가 남긴다.
+ * 도면 유래 값은 예외 message에 두 모양으로 실린다.
+ * ① 独立 숫자 — `clearMm must be finite: ${clearMm}` (stirrup-layout.ts).
+ * ② 문자값 — lookupRule의 `Rule not found: ${key} for ${JSON.stringify(conditions)}`가
+ *   담는 exposure·finish(lookup.ts)와, memberGroupKey가 만드는
+ *   `${story.name}|C|${section.mark}` 형태의 그룹 id(project.ts)의 층 이름·符号.
+ *   숫자만 지우면 문자값은 그대로 나간다.
+ *
+ * ①②의 모양을 통째로 지운 뒤 남은 독립 숫자를 지운다. 룰 key(anchorage.L1)
+ * 처럼 문자에 붙은 숫자는 룰팩 상수지 도면 값이 아니므로 남긴다 — 어느 룰이
+ * 없는지가 이 계측의 목적이라 PaneBoundary가 그 라벨에 기댄다.
+ */
+function scrubDrawingText(text: string): string {
+  return text
+    .replace(/\{.*\}/g, '{REDACTED}') // JSON.stringify(conditions) 블록 (한 줄 출력이라 개행은 없다)
+    .replace(/\S*\|\S*/g, '[REDACTED]') // story.name|code|mark 형태의 그룹 id
+    .replace(/(?<![\p{L}\d._])\d+(?:\.\d+)?(?![\p{L}\d._])/gu, '[REDACTED]') // 나머지 독립 숫자
+}
+
+/**
+ * capture_exceptions가 未捕捉 예외를 스크러빙 없이 잡아 보내면 사용자 도면
+ * 데이터가 서버로 나간다 (CLAUDE.md CRITICAL — 이 관문의 근거는 ADR-020).
+ * posthog-js의 모든 capture·captureException이 여길 거치므로, 호출부마다
+ * 흩어놓지 않고 여기 하나로 모은다.
  */
 const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
   if (captureResult === null) return captureResult
@@ -23,7 +41,7 @@ const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
         ...exception,
         value:
           typeof exception.value === 'string'
-            ? exception.value.replace(/\d+(\.\d+)?/g, '[REDACTED]')
+            ? scrubDrawingText(exception.value)
             : exception.value,
       })),
     },
@@ -53,6 +71,13 @@ if (!projectToken || !host) {
     // 도면 데이터를 서버로 보내지 않기 위해 끈다 — 계측은 명시적 capture만.
     autocapture: false,
     disable_session_recording: true,
+    // heatmap·dead click도 DOM을 훑는 수집기다 — autocapture만 끄면 defaults
+    // 프리셋이나 PostHog 원격 설정이 코드 변경 없이 다시 켤 수 있다.
+    capture_heatmaps: false,
+    capture_dead_clicks: false,
+    // 초기화 후 세션 리플레이·서베이 번들을 CDN에서 지연 로드할 수 있다 —
+    // 잠금파일 밖의 코드가 페이지에서 실행되지 않게 막는다.
+    disable_external_dependency_loading: true,
     // 모든 capture·captureException 호출이 여길 거친다 — 스크러빙 지점을
     // 호출부마다 흩어놓지 않고 여기 하나로 모은다.
     before_send: scrubDrawingDigits,
