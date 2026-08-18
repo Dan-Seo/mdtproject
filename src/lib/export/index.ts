@@ -58,7 +58,8 @@ export interface TakeoffWorkbookInput {
 const COLUMN_COUNT = 17
 const THREE_DECIMALS = '0.000'
 // 継手の 0.5か所（（３）梁2)）が 1 に丸まると条文と違う数が内訳書に出る。
-const ONE_DECIMAL = '0.#'
+// '0.#' は書式に小数点そのものを含むので、整数の 108 が `108.` と描かれる。
+const SPLICE_COUNT_FORMAT = 'General'
 
 const COLUMN_WIDTHS = [
   10, 12, 10, 12, 9, 13, 12, 10, 10, 15, 10, 16, 16, 8, 36, 18, 64,
@@ -229,11 +230,11 @@ function dataRow(
     : [
         cell(null),
         cell(null),
-        cell(line.countPerMember, { numberFormat: ONE_DECIMAL }),
+        cell(line.countPerMember, { numberFormat: SPLICE_COUNT_FORMAT }),
         cell(line.places, { numberFormat: '0' }),
         cell(null),
         cell(null),
-        cell(line.totalCount, { numberFormat: ONE_DECIMAL }),
+        cell(line.totalCount, { numberFormat: SPLICE_COUNT_FORMAT }),
         cell(null),
       ]
 
@@ -304,7 +305,7 @@ export function buildTakeoffWorkbook(
       row('total', [
         cell(`${t(locale, 'takeoff.total')}　${t(locale, 'takeoff.splice')}（${method}）`),
         ...Array.from({ length: 10 }, () => cell(null)),
-        cell(totalCount, { numberFormat: ONE_DECIMAL }),
+        cell(totalCount, { numberFormat: SPLICE_COUNT_FORMAT }),
         cell(null),
         cell('箇所'),
       ]),

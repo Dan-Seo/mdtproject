@@ -12,6 +12,7 @@ import {
   aggregateQuantity,
   grandTotal,
   inferredRules,
+  spliceTotals,
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
@@ -140,6 +141,24 @@ describe('buildTakeoffWorkbook', () => {
     expect(firstDataRow?.cells[10].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[11].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[12].numberFormat).toBe('0.000')
+  })
+
+  it('adds a 箇所 total row per 継手 method beside the kg total', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const totals = spec.rows.filter(({ kind }) => kind === 'total')
+    const [kgTotal, spliceTotal] = totals
+
+    // 継手は質量に足せないので行を分ける。分けた行が kg 合計と同じ列に
+    // 落ちていないと、単位だけ違う二つの合計が別々の欄に見える。
+    expect(kgTotal?.cells[13].value).toBe('kg')
+    expect(spliceTotal?.cells[13].value).toBe('箇所')
+    expect(spliceTotal?.cells[0].value).toContain('重ね継手')
+    expect(spliceTotal?.cells[11].value).toBe(
+      spliceTotals(input.lines)[0].totalCount,
+    )
+    // 0.5か所（（３）梁2)）を丸めず、整数に余分な小数点も残さない。
+    expect(spliceTotal?.cells[11].numberFormat).toBe('General')
   })
 
   it('writes the stored 備考 into the note column', () => {
