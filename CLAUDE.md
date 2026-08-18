@@ -61,4 +61,5 @@ npm run build        # 프로덕션 빌드
 npm run lint         # ESLint
 npm run test         # 전체 테스트
 npm run test:golden  # 규준 표 대조 골든테스트만
+npm run test:ci-scripts # CI 셸 스크립트 회귀 (리뷰 범위 필터·승계 판정·로그 축약·시크릿 마스킹)
 npm run lighthouse   # 브라우저 실측·회귀 예산 (npm run build 후. 예산 근거는 lighthouserc.cjs)

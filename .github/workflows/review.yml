@@ -9,8 +9,61 @@ concurrency:
   cancel-in-progress: true # 연속 push 시 이전 리뷰를 취소한다
 
 jobs:
-  review:
+  # LLM 을 띄우기 전에, 결정적으로 답할 수 있는 것을 먼저 답한다.
+  # 리뷰 1회가 $4~8 이고 브랜치당 4~10회 도는데(79회 실측), "이번 push 는 리뷰할 게
+  # 없다"를 에이전트에게 물어보는 것 자체가 비싸다 — 여기서 끊으면 그 회차는 $0 이다.
+  scope:
     if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 마커 승계·대상 0개 리뷰 게시 (LLM 이 없는 잡이다)
+    outputs:
+      skip: ${{ steps.decide.outputs.skip }}
+      target: ${{ steps.scope.outputs.target }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 직전 리뷰 커밋과의 대조에 git diff 가 필요하다
+
+      - name: 리뷰 범위 산출
+        id: scope
+        # pipefail 필수 — 없으면 gh 가 죽어도 파이프가 성공으로 끝나 target=0 이 되고,
+        # 아래 판정이 "리뷰할 게 없다"로 오인해 빈 승인 마커를 게시한다.
+        run: |
+          set -euo pipefail
+          gh pr diff "$PR" | bash scripts/ci/review-scope.sh .review | tee -a "$GITHUB_OUTPUT"
+
+      - name: 리뷰 생략 여부 판정
+        id: decide
+        # 판정 로직과 그 회귀 테스트는 scripts/ci/review-carryforward.{sh,spec.sh} 에 있다.
+        # YAML 에 인라인하면 테스트할 수가 없는데, 여기는 잘못 생략하면 무리뷰 머지가
+        # 나가는 자리라 review-verdict.sh 와 같은 수준으로 검증돼야 한다.
+        env:
+          TARGET: ${{ steps.scope.outputs.target }}
+          REPO: ${{ github.repository }}
+        run: bash scripts/ci/review-carryforward.sh | tee -a "$GITHUB_OUTPUT"
+
+      - name: 생략 시 게이트 마커 게시
+        if: steps.decide.outputs.skip == 'true'
+        env:
+          REPO: ${{ github.repository }}
+        # 게시는 여기서만 한다 (판정 스크립트는 판단만 한다). 마커 없이 생략하면
+        # gate 가 "리뷰 안 돎" 보류로 굳어 PR 이 영원히 멈춘다.
+        run: |
+          set -euo pipefail
+          jq -n --arg sha "$HEAD_SHA" --rawfile body .review/skip-body.md '{commit_id: $sha, event: "COMMENT", body: $body, comments: []}' > payload.json
+          gh api "repos/$REPO/pulls/$PR/reviews" --input payload.json --silent
+          echo "리뷰 에이전트 생략 — ${{ steps.decide.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+
+  review:
+    needs: scope
+    # scope 가 실패하면 skip 이 빈 값이라 리뷰가 돈다 — 생략 판정이 불확실하면 리뷰하는 쪽이다
+    if: ${{ !cancelled() && needs.scope.outputs.skip != 'true' && !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,6 +72,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # 에이전트가 아니라 여기서 diff 를 만든다. 이유는 토큰이다 —
+      # 에이전트가 `gh pr diff > 파일` 을 시도하면 복합 명령이라 권한 거부에 걸리고
+      # (PR #38 실측 7건), 폴백으로 서브에이전트 3개가 각자 git diff 를 다시 돌린다.
+      # 스킬이 막으려던 diff 3중 취득이 바로 그 폴백에서 되살아난다.
+      - name: 리뷰 범위 준비 (.review/)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh pr diff "$PR" | bash scripts/ci/review-scope.sh .review
 
       - uses: anthropics/claude-code-action@v1
         with:
@@ -30,6 +95,10 @@ jobs:
           prompt: |
             /review-code ${{ github.event.pull_request.number }}
 
+            리뷰 범위는 이미 준비돼 있다 — `.review/scope.diff`·`.review/files.txt`·
+            `.review/excluded.txt`. 스킬 1단계를 건너뛰고 2단계(Workflow)부터 시작하라.
+            gh pr diff 를 다시 실행하지 마라. PR 메타(headRefOid)는 gh pr view 로 얻는다.
+
             리마인더: PR 모드다 — 3단계의 게시(gh api …/pulls/N/reviews --input payload.json)까지
             실행해야 임무가 끝난다. 요약 마크다운만 출력하고 멈추면 게이트 마커가 게시되지 않아
             gate가 영원히 보류된다. 인라인 게시가 실패하면 스킬 6단계(body-only 재게시)를 따르라.
@@ -39,8 +108,7 @@ jobs:
             돌고 있으니 완료되면 게시하겠다」로 끝내 무게시가 5회 재현됐다). Workflow를 시작했으면
             TaskOutput으로 완료까지 동기 대기해 결과를 받은 뒤, 게시까지 마치고 나서 턴을 끝내라.
 
-            리마인더 3: 이 러너는 셸 출력 리다이렉션(>)이 차단된다. diff 파일 저장이 막히면
-            저장을 생략하고 서브에이전트가 git diff로 직접 읽게 하라 (스킬 2단계 폴백).
+            리마인더 3: 이 러너는 셸 출력 리다이렉션(>)이 차단된다. 파일은 Write 툴로 만들어라.
           # 모델을 opus-5로 둔다 — sonnet은 보조 명령 거부를 만나면 게시 단계를 완주하지
           # 못하는 것이 PR #5에서 4회 재현됐다 (판정자 모델을 상향하는 evals 컨벤션과 동일).
           # 셸 유틸 allowlist는 그 거부 자체를 줄인다 — PR #8 재리뷰에서 opus도 권한 거부
@@ -49,10 +117,12 @@ jobs:
             --model claude-opus-5
             --allowedTools "Bash(gh:*),Bash(git:*),Bash(jq:*),Bash(cat:*),Bash(ls:*),Bash(mkdir:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Bash(sed:*),Bash(awk:*),Bash(find:*),Bash(diff:*),Bash(sort:*),Bash(uniq:*),Bash(cut:*),Bash(tr:*),Bash(echo:*),Bash(printf:*),Read,Grep,Glob,Write,Edit,Skill,Workflow,Agent,TaskOutput"
         env:
-          GH_TOKEN: ${{ github.token }} # 스킬의 gh pr diff·리뷰 게시용
+          GH_TOKEN: ${{ github.token }} # 스킬의 gh pr view·리뷰 게시용
 
       # 무게시 실패의 원인 진단용 — 스트림 로그는 잡 로그에 남지 않으므로
       # 실행 전문(JSON)을 아티팩트로 올려 사후 분석을 가능하게 한다.
+      # 토큰 회귀 추적의 1차 근거이기도 하다: result.usage 의 cache_read·output 과
+      # system/task_progress 의 워크플로 total_tokens 를 여기서 읽는다.
       - name: 실행 로그 아티팩트
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,9 +141,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          count=$(gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
-            | jq -s --arg sha "$HEAD_SHA" \
-              '[add // [] | .[] | select(.commit_id == $sha and (.body | contains("review-code-gate")))] | length')
+          count=$(gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate | jq -s --arg sha "$HEAD_SHA" '[add // [] | .[] | select(.commit_id == $sha and (.body | contains("review-code-gate")))] | length')
           if [ "$count" -eq 0 ]; then
             echo "::error::리뷰 에이전트가 게이트 마커 리뷰를 게시하지 않았다 (HEAD $HEAD_SHA) — gh run rerun --failed 로 재시도하라"
             exit 1
@@ -103,8 +171,9 @@ jobs:
   # 리뷰가 남긴 게이트 마커로 승인·머지를 결정한다.
   # 리뷰 잡과 분리한 이유는 권한이다 — 머지 권한(contents: write)을 LLM 잡에 주지 않는다.
   gate:
-    needs: [review, verify]
-    # 앞 잡이 실패해도 돈다 — 스테일 자동 승인을 철회해야 하기 때문이다
+    needs: [scope, review, verify]
+    # 앞 잡이 실패하거나 생략돼도 돈다 — 스테일 자동 승인을 철회해야 하고,
+    # scope 가 마커를 승계 게시한 경우에는 review 가 skipped 인 채로 판정해야 한다.
     if: ${{ !cancelled() && !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
@@ -125,14 +194,10 @@ jobs:
         run: |
           # 결정적 검증이 깨졌으면 리뷰 판정을 볼 것도 없이 보류다
           if [ "$VERIFY" != "success" ]; then
-            printf 'decision=hold\nreason=lint·typecheck·test·build 검증 %s — 승인·머지를 금지한다\n' "$VERIFY" \
-              | tee -a "$GITHUB_OUTPUT"
+            printf 'decision=hold\nreason=lint·typecheck·test·build 검증 %s — 승인·머지를 금지한다\n' "$VERIFY" | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
-          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
-            | jq -s 'add // []' \
-            | bash scripts/ci/review-verdict.sh \
-            | tee -a "$GITHUB_OUTPUT"
+          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate | jq -s 'add // []' | bash scripts/ci/review-verdict.sh | tee -a "$GITHUB_OUTPUT"
 
       - name: 자동 승인
         if: steps.verdict.outputs.decision == 'approve' || steps.verdict.outputs.decision == 'merge'
@@ -159,10 +224,7 @@ jobs:
           REASON: ${{ steps.verdict.outputs.reason }}
         # 이전 커밋에서 받은 자동 승인이 남아 있으면 "critical·major면 승인 금지"가 깨진다
         run: |
-          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate \
-            | jq -s 'add // [] | map(select(.user.login == "github-actions[bot]" and .state == "APPROVED")) | .[].id' \
-            | while read -r id; do
-                echo "자동 승인 $id 철회"
-                gh api -X PUT "repos/${{ github.repository }}/pulls/$PR/reviews/$id/dismissals" \
-                  -f message="자동 승인 철회 — $REASON" -f event=DISMISS
-              done
+          gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate | jq -s 'add // [] | map(select(.user.login == "github-actions[bot]" and .state == "APPROVED")) | .[].id' | while read -r id; do
+            echo "자동 승인 $id 철회"
+            gh api -X PUT "repos/${{ github.repository }}/pulls/$PR/reviews/$id/dismissals" -f message="자동 승인 철회 — $REASON" -f event=DISMISS
+          done
