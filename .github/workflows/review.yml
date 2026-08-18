@@ -166,6 +166,11 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+      # 게이트·리뷰 파이프라인의 결정적 검증. npm test 는 vitest 라 node:test 로 쓴
+      # .claude/workflows/review-code.test.js 도, scripts/ci/*.spec.sh 도 잡지 않는다 —
+      # 자동 승인·머지를 좌우하는 코드가 CI 에서 한 번도 안 돌고 있었다 (PR #41 리뷰의 major).
+      - run: npm run test:ci-scripts
       - run: npm run build
 
   # 리뷰가 남긴 게이트 마커로 승인·머지를 결정한다.

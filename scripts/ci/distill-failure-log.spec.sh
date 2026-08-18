@@ -67,11 +67,13 @@ else
 fi
 
 echo "distill-failure-log.spec: 빈 입력"
+# oncall.yml 은 산출물이 비었는지로 "실패 로그를 못 가져왔다"를 판정한다. 머리말만이라도
+# 찍으면 그 폴백이 영원히 죽고, 에이전트는 "전문 0줄"을 사실로 읽는다 — PR #41 리뷰의 major.
 OUT=$(printf '' | bash "$D")
-if printf '%s' "$OUT" | grep -q '실패 로그 전문'; then
-  printf '  ok   빈 입력도 죽지 않는다\n'
+if [ -z "$OUT" ]; then
+  printf '  ok   빈 입력이면 아무것도 내지 않는다 (oncall 폴백이 산다)\n'
 else
-  printf '  FAIL 빈 입력 처리: %s\n' "$OUT"; FAILED=1
+  printf '  FAIL 빈 입력인데 출력이 있다 — oncall 폴백이 죽는다: %s\n' "$OUT"; FAILED=1
 fi
 
 if [ "$FAILED" -ne 0 ]; then

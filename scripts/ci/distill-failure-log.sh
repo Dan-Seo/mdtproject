@@ -43,6 +43,12 @@ set -o pipefail
 
 TOTAL=$(wc -l < "$TMP/clean.log" | tr -d ' ')
 
+# 정리 후 남는 줄이 없으면 아무것도 내지 않는다. oncall.yml 은 산출물이 비었는지로
+# "실패 로그를 못 가져왔다"를 판정하므로, 머리말만 찍어도 그 폴백이 죽는다 (PR #41 리뷰의 major).
+if [ "$TOTAL" -eq 0 ]; then
+  exit 0
+fi
+
 if [ "$TOTAL" -le "$((KEEP_TAIL + KEEP_SIGNAL))" ]; then
   printf '(실패 로그 전문 — %s줄, 타임스탬프·설치 잡음 제거)\n\n' "$TOTAL"
   cat "$TMP/clean.log"

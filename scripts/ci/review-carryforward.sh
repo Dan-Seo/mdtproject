@@ -28,7 +28,10 @@ set -euo pipefail
 BOT_LOGIN="${BOT_LOGIN:-github-actions[bot]}"
 EXCLUDED="${EXCLUDED:-.review/excluded.txt}"
 BODY_OUT="${BODY_OUT:-.review/skip-body.md}"
-NIL_MARKER='<!-- review-code-gate: {"critical":0,"major":0,"minor":0,"nit":0,"failed_dimensions":0} -->'
+# 지적 0건 마커에 "리뷰를 돌리지 않았다"를 함께 담는다. 이게 없으면 리뷰 결과 깨끗함과
+# 구별되지 않아, 리뷰 대상 밖 파일(.claude/*·CLAUDE.md 등)만 고친 PR 이 아무 리뷰 없이
+# 자동 머지된다 (PR #41 리뷰의 critical). review-verdict.sh 가 이 값을 보고 승인까지만 간다.
+NIL_MARKER='<!-- review-code-gate: {"critical":0,"major":0,"minor":0,"nit":0,"failed_dimensions":0,"reviewed":false} -->'
 
 emit() {
   printf 'skip=%s\nreason=%s\n' "$1" "$2"

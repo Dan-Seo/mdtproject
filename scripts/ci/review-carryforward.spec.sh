@@ -18,6 +18,9 @@ trap 'rm -rf "$TMP"' EXIT
 
 NL=$'\n'
 MARKER_CLEAN='<!-- review-code-gate: {"critical":0,"major":0,"minor":0,"nit":0,"failed_dimensions":0} -->'
+# 리뷰를 아예 하지 않은 경우의 마커. 지적 0건이지만 "reviewed":false 라서 verdict 가
+# 머지까지 가지 않는다 — 이게 없으면 대상 0개 PR 이 무리뷰 자동 머지된다.
+MARKER_NOREVIEW='<!-- review-code-gate: {"critical":0,"major":0,"minor":0,"nit":0,"failed_dimensions":0,"reviewed":false} -->'
 MARKER_MINOR='<!-- review-code-gate: {"critical":0,"major":0,"minor":2,"nit":1,"failed_dimensions":0} -->'
 BOT='github-actions[bot]'
 
@@ -92,10 +95,10 @@ fi
 make_repo docs/D.md
 reviews
 TARGET=0 run_case "리뷰 대상 0개 → 에이전트 생략" true
-if grep -qF "$MARKER_CLEAN" "$TMP/repo/.review/skip-body.md"; then
-  printf '  ok   대상 0개 본문에 0건 마커가 실린다\n'
+if grep -qF "$MARKER_NOREVIEW" "$TMP/repo/.review/skip-body.md"; then
+  printf '  ok   대상 0개 본문에 리뷰 안 함 마커(reviewed:false)가 실린다\n'
 else
-  printf '  FAIL 대상 0개인데 마커가 없다 — gate 가 영원히 보류된다\n'
+  printf '  FAIL 대상 0개 마커가 reviewed:false 가 아니다 — 무리뷰 자동 머지가 열린다\n'
   FAILED=1
 fi
 

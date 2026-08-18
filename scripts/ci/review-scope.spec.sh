@@ -54,6 +54,7 @@ kept package.json
 kept tsconfig.json
 kept lighthouserc.cjs
 kept vitest.config.ts
+kept vitest.ui.setup.test.ts    # 루트 소스 파일 — 하위 디렉터리 규칙 어디에도 안 걸린다
 kept src/rulepack/jp-mlit/splice.yaml
 
 echo "review-scope.spec: 제외"
@@ -64,6 +65,7 @@ dropped .claude/commands/review-code.md
 dropped phases/6-section-import/step1.md
 dropped public/logo.png
 dropped src/assets/icon.svg          # src/ 안이어도 자산은 제외다
+dropped design/kijun-design-system/_ds_bundle.js  # 반입 번들 — 루트 규칙이 넓어져도 새지 않는다
 
 echo "review-scope.spec: 혼합 diff"
 # $(...) 는 끝 개행을 먹으므로 구획 사이에 개행을 직접 넣는다

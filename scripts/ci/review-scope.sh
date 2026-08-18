@@ -36,6 +36,14 @@ is_target() {
     *.config.js|*.config.cjs|*.config.mjs|*.config.ts) return 0 ;;
     *.yaml|*.yml) return 0 ;;
   esac
+
+  # 루트 파일은 위 디렉터리 규칙 어디에도 안 걸린다. vitest.ui.setup.test.ts 처럼
+  # 하위 디렉터리에 없는 소스가 조용히 대상에서 빠졌다 (PR #41 리뷰의 major).
+  # 루트로 한정하는 이유는 design/ 의 반입 번들 같은 것을 끌어오지 않기 위해서다.
+  case "$1" in
+    */*) ;;
+    *.ts|*.tsx|*.js|*.mjs|*.cjs) return 0 ;;
+  esac
   return 1
 }
 
