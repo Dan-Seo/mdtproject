@@ -452,12 +452,12 @@ export async function exportTakeoffXlsx(
         String(rowSpec.cells[FORMULA_COLUMN - 1].value).split('\n').length,
       )
       worksheetRow.height = Math.max(32, (wrappedLineCount + 1) * 16)
-      worksheetRow.getCell(SOURCE_COLUMN).fill = {
+      worksheetRow.getCell(REQUIRED_COLUMN).fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: workbookColors.canvasSoft },
       }
-      worksheetRow.getCell(SOURCE_COLUMN).border = {
+      worksheetRow.getCell(REQUIRED_COLUMN).border = {
         left: { style: 'medium', color: { argb: workbookColors.ink } },
       }
       if (String(rowSpec.cells[3].value).startsWith('⚠ ')) {

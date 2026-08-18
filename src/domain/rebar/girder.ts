@@ -258,10 +258,15 @@ function generateMain(
       pathToMm: drawnLength,
     },
   ]
+  // 0か所で長さが増えないのは箇所数のせいで、方式のせいではない。
+  // 一つの分岐にまとめると 0か所の単独梁まで「その方式は長さが変わらない」と
+  // 説明し、同じ行が出典に挙げる measure.splice.length.factor と食い違う。
   const spliceLengthTerm =
-    splice.lengthMm > 0
-      ? `${splice.countPerBar}か所 × 重ね継手長さ L1 ${lapRule.value}d(${lapLengthMm}) ＝ ${splice.lengthMm}`
-      : `${splice.countPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
+    splice.countPerBar === 0
+      ? `0か所 ＝ 0`
+      : splice.lengthMm > 0
+        ? `${splice.countPerBar}か所 × 重ね継手長さ L1 ${lapRule.value}d(${lapLengthMm}) ＝ ${splice.lengthMm}`
+        : `${splice.countPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ ` +
     `加算 ${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}）`

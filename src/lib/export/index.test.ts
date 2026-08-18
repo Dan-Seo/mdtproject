@@ -254,6 +254,20 @@ describe('buildTakeoffWorkbook', () => {
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
     expect(worksheet?.getCell('Q3').value).toBe('算出式')
+    // 網掛けは発注に使う 所要数量(M) に立てる。データ行と合計行で強調列が
+    // 食い違うと同じシートの中で発注列が二つに見える。
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const dataRowNumber = spec.rows.findIndex(({ kind }) => kind === 'data') + 1
+    const totalRowNumber = spec.rows.findIndex(({ kind }) => kind === 'total') + 1
+    expect(worksheet?.getRow(dataRowNumber).getCell(13).fill).toMatchObject({
+      pattern: 'solid',
+    })
+    expect(worksheet?.getRow(dataRowNumber).getCell(15).fill).toMatchObject({
+      pattern: 'none',
+    })
+    expect(worksheet?.getRow(totalRowNumber).getCell(13).fill).toMatchObject({
+      pattern: 'solid',
+    })
     // exceljs の動的 import は npm ci 直後の初回だけ既定の5秒を超えることがある。
   }, 20000)
 })

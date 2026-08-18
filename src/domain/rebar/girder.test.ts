@@ -432,6 +432,17 @@ describe('generateGirderRebar', () => {
     expect(byRole(generated, '下端筋').count).toBe(9)
   })
 
+  it('explains a 0か所 splice by the count, not by the method', () => {
+    // この単独梁は 6.0m 足らずで 0か所だ。長さが増えないのは方式のせいでは
+    // ないのに「重ね継手は長さの変化なし」と書くと、同じ行が出典に挙げる
+    // measure.splice.length.factor{重ね継手}=1（算入する）と食い違う。
+    const generated = generateGirderRebar(input(), jpMlitRulePack)
+    const { formula } = byRole(generated, '上端筋')
+
+    expect(formula).toContain('継手 0か所 ＝ 0')
+    expect(formula).not.toContain('長さの変化なし')
+  })
+
   it('tracks only existing rules in a stable contribution order', () => {
     const generated = generateGirderRebar(input(), jpMlitRulePack)
     // 마지막 cover.minimum 은 端部条件을 판정한 지점 柱의 행이다 — 大梁 행과

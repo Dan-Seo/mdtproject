@@ -267,7 +267,8 @@ a.inferredSourceChip:hover {
   color: var(--text-ink);
 }
 
-/* 물량이 실제보다 적게 나온다는 고지다 — 미확인 규준값(▲)과 같은 색으로 세운다. */
+/* 継手位置가 미확정(表5.3.3은 원문에서 이미지)이라 3D에 그리지 않는다는 고지다
+   — 미확인 규준값(▲)과 같은 색으로 세운다. */
 .splicePositionNotice {
   margin: 0;
   padding: var(--space-2) var(--space-3);

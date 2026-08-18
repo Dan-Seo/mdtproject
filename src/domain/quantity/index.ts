@@ -157,14 +157,17 @@ export function quantityLineId(groupId: string, rebar: Rebar): string {
   return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}`
 }
 
-/** 継手は方式と箇所数で単価が変わるので、質量行とは別の行キーで束ねる。 */
+/**
+ * 継手は方式と箇所数で単価が変わるので、質量行とは別の行キーで束ねる。
+ * 長さも鍵に入れる — 同じ箇所数でも長さが違えば算出式が語る根拠が違う。
+ */
 export function spliceLineId(groupId: string, rebar: Rebar): string {
   const splice = rebar.splice
   if (!splice) {
     throw new Error(`Rebar has no splice to key: ${rebar.id}`)
   }
 
-  return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}`
+  return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}|${rebar.length}`
 }
 
 function recalculate(grouped: GroupedLine): void {

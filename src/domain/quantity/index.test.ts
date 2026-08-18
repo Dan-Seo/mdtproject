@@ -362,7 +362,7 @@ describe('aggregateQuantity', () => {
     // 質量行のすぐ後に来る — 内訳書で主筋と離れると別物に見える。
     expect(lines.map(({ unit }) => unit)).toEqual(['kg', '箇所'])
     expect(spliceLine).toMatchObject({
-      id: '1階|C|C1|主筋|継手|重ね継手|1|12',
+      id: '1階|C|C1|主筋|継手|重ね継手|1|12|1000',
       groupId: mass.groupId,
       role: '主筋',
       method: '重ね継手',
@@ -375,6 +375,33 @@ describe('aggregateQuantity', () => {
     expect(spliceLine).not.toHaveProperty('requiredKg')
     expect(grandTotal(lines).designKg).toBe(mass.designKg)
     expect(storySubtotals(lines)[0].designKg).toBe(mass.designKg)
+  })
+
+  it('keeps runs of different length in separate 箇所 rows', () => {
+    const project = projectWithStories([
+      { id: '1F', name: '1階', height: 4200 },
+    ])
+    const [first, second] = project.members
+    // 5.0以上10.0未満はどちらも1か所なので、長さを鍵に入れないと同じ行に落ちる。
+    // 束ねると算出式が先に処理された方の長さだけを語り、対照できなくなる。
+    const lines = aggregateQuantity(
+      project,
+      [
+        mainRebar(first.id, { length: 5200, splice: splice() }),
+        mainRebar(second.id, {
+          id: `${second.id}|main`,
+          length: 9800,
+          splice: splice({ formula: '9.8m の算出式' }),
+        }),
+      ],
+      jpMlitRulePack,
+    )
+
+    expect(spliceLines(lines)).toHaveLength(2)
+    expect(spliceLines(lines).map(({ formula }) => formula)).toEqual([
+      '継手の算出式',
+      '9.8m の算出式',
+    ])
   })
 
   it('omits the 箇所 line when the clause counts no splice', () => {
