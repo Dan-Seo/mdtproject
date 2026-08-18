@@ -339,6 +339,189 @@ describe('parseSectionLists (synthetic)', () => {
 
     expect(c1.b).toBeUndefined()
     expect(c1.d).toBeUndefined()
+    // 읽어낸 세로 값은 원문으로 남는다 — 그냥 버리면 사용자는 왜 断面이 비었는지 모른다
+    expect(c1.raw['断面']).toBe('600')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 창의 하한을 「인식한 라벨 행의 최소 y」로 잡아도, 라벨을 하나도 인식하지 못하면
+  // 인자가 slice.endY 하나뿐이라 창이 슬라이스 전체로 열린다. 후보 배출 가드는
+  // 断面 하나만 있어도 통과하므로 배근 라벨이 전무한 표에서 断面이 지어진다
+  it('runs no horizontal fallback when no 大梁 data row is recognised', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 234, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '7', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 라벨이 전부 별칭 밖이다 — 읽어낸 항목이 없으니 断面도 만들지 않는다
+        { str: '上主筋', x: 10, y: 62, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 62, w: 32, h: 8 },
+        { str: 'スタラップ', x: 10, y: 74, w: 50, h: 8 },
+        { str: '450', x: 108, y: 74, w: 24, h: 8 },
+      ],
+    })
+    const girders = list(parsed, '大梁リスト')
+    const g1 = girders.candidates.find(
+      (entry) => entry.mark === 'G1' && entry.storyLabel === '1F',
+    )
+
+    expect(g1?.b).toBeUndefined()
+    // 표가 조용히 사라지지도 않아야 한다 — 사유를 실어 보낸다
+    expect(girders.issue).toBe('項目行未認識')
+  })
+
+  // 세로 런에는 앵커별 상한이 있는데 같은 앵커를 쓰는 가로 폴백에는 없었다 —
+  // 스케치 대역의 아무 단독 숫자나 최근접 符号에 붙어 이슈 없는 확정 b가 된다
+  it('bounds the horizontal sketch fallback by the same column limit', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 194, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 130, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 130, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 130, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '8', x: 230, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 230, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 230, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 88, y: 62, w: 24, h: 8 },
+        // 어느 열에서도 200pt 떨어진 숫자 — 열 간격 100의 두 배다
+        { str: '450', x: 388, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 82, y: 74, w: 36, h: 8 },
+        { str: '18-D25', x: 182, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('800')
+    expect(c2.issues).toContain('断面矩形不成立')
+  })
+
+  // 상한이 좌우 간격 중 큰 쪽이면, 촘촘한 열이 반대편 먼 열에서 큰 상한을 물려받아
+  // 두 열 사이 빈 대역의 회전 숫자까지 자기 d로 확정한다 — 작은 쪽을 쓴다
+  it('does not let a narrow column inherit its far neighbour gap as the limit', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 154, y: 20, w: 12, h: 8 },
+        { str: 'C3', x: 394, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 125, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 125, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 125, y: 40, w: 3, h: 6, rot: -90 },
+        // C2와 C3 사이 빈 대역. C2 앵커에서 90pt — 왼쪽 간격 60보다 멀지만
+        // 오른쪽 간격 240보다는 가깝다
+        { str: '9', x: 250, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 250, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 250, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 88, y: 62, w: 24, h: 8 },
+        { str: '500', x: 148, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 82, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 142, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c2 = candidate(columns, 'C2', '1F')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('500')
+    expect(c2.issues).toContain('断面矩形不成立')
+  })
+
+  // 位置 열은 한 符号을 여러 앵커로 늘린다 — 앵커 수로 재면 단일 符号 표에서도
+  // 가드를 통과해 상한 근거 없이 확정한다. 원래 조건은 「符号이 둘 이상」이다
+  it('does not pair vertical dimensions for a single 符号 with 位置 columns', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 114, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 90, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 130, y: 32, w: 20, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 108, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 70, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 134, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 가로 치수 폴백의 창은 스케치 대역이다. 라벨 행 하나(上端筋)에만 매어 두면 그
+  // 라벨을 인식하지 못한 표에서 창이 슬라이스 전체로 열려, 아래 행들의 단독 숫자가
+  // b로 확정된다 — 인식한 데이터 라벨 행 중 가장 위를 하한으로 쓴다
+  it('closes the 大梁 horizontal window at the first recognised data row', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'G2', x: 234, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 105, y: 32, w: 30, h: 8 },
+        { str: '全断面', x: 225, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '7', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 上端筋이 아니라 「上主筋」이라 라벨을 인식하지 못한다 — 스케치에 가로
+        // 치수가 없는데도 창이 열려 있으면 아래 備考 행의 숫자가 b가 된다
+        { str: '上主筋', x: 10, y: 62, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 62, w: 32, h: 8 },
+        { str: '下端筋', x: 10, y: 74, w: 30, h: 8 },
+        { str: '3-D25', x: 104, y: 74, w: 32, h: 8 },
+        { str: 'あばら筋', x: 10, y: 86, w: 40, h: 8 },
+        { str: 'D13-@200', x: 100, y: 86, w: 44, h: 8 },
+        { str: '備考', x: 10, y: 98, w: 20, h: 8 },
+        { str: '450', x: 108, y: 98, w: 24, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', '1F')
+
+    expect(g1.b).toBeUndefined()
+    expect(g1.depth).toBeUndefined()
+    expect(g1.raw['断面']).toBe('700')
+    expect(g1.issues).toContain('断面矩形不成立')
   })
 
   it('does not confirm a section when a cell holds two vertical dimensions', () => {
@@ -469,6 +652,198 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.b).toBeUndefined()
     expect(c1.raw['断面']).toBe('700')
     expect(c1.issues).toContain('断面矩形不成立')
+  })
+
+  // 符号 라벨은 칸 중앙에 놓이지만 칸 폭은 부재마다 다르다. 중심 사이 중점을 경계로
+  // 쓰면 좁은 칸이 넓은 칸의 오른쪽 끝을 먹는다 — 실물 ojkk 大梁 G3(폭 85) 옆의
+  // G4(폭 42.5)에서 G3의 세로 치수가 G4 것으로 배정됐다. 位置 열이 더 촘촘한 앵커다
+  it('assigns a vertical dimension by 位置 column when the neighbour column is narrower', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 194, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 314, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 150, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 230, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 305, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // x=264는 符号 중심 사이 중점(260)의 오른쪽이라 C2 것으로 배정되지만,
+        // 실제로는 C1 柱脚(중심 240) 칸 안이다
+        { str: '6', x: 264, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 264, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 264, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 344, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 344, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 344, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 168, y: 62, w: 24, h: 8 },
+        { str: '500', x: 308, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 142, y: 74, w: 36, h: 8 },
+        { str: '16-D25', x: 222, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 302, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect([
+      candidate(columns, 'C2', '1F').b,
+      candidate(columns, 'C2', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
+  // 상한을 「앵커 간격의 중앙값」으로 재면 자기 칸이 남들보다 넓은 열에서 실물 값이
+  // 잘린다. 位置 열이 촘촘한 표에 全断面 한 열만 넓게 있으면 그 열의 세로 치수는
+  // 중앙값 밖으로 나간다 — ojkk 柱 FC1이 실제로 그 형태다(位置 격자의 2배 폭,
+  // 옛 상한의 91% 지점). 상한은 그 앵커의 이웃 간격이어야 한다
+  it('keeps a wide 全断面 column pairing when the 位置 grid is much finer', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 114, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 194, y: 20, w: 12, h: 8 },
+        { str: 'C3', x: 334, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 90, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 130, y: 32, w: 20, h: 8 },
+        { str: '柱頭', x: 170, y: 32, w: 20, h: 8 },
+        { str: '柱脚', x: 210, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 325, y: 32, w: 30, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 152, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 152, y: 40, w: 3, h: 6, rot: -90 },
+        // 앵커 간격은 40·40·40(位置)과 120(全断面)이라 중앙값이 40이다. 이 런은
+        // 자기 앵커(340)에서 92pt — 중앙값 밖이지만 자기 칸(폭 200) 안이다
+        { str: '9', x: 432, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 432, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 432, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '700', x: 108, y: 62, w: 24, h: 8 },
+        { str: '800', x: 188, y: 62, w: 24, h: 8 },
+        { str: '500', x: 328, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 102, y: 74, w: 36, h: 8 },
+        { str: '18-D25', x: 182, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 322, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([700, 600])
+    expect([
+      candidate(columns, 'C3', '1F').b,
+      candidate(columns, 'C3', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
+  // 가로 치수 폴백도 같은 앵커를 봐야 한다. 符号 중심으로 배정하면 넓은 칸의 가로
+  // 치수가 좁은 이웃 칸에 끌려가고, 그러면 두 칸 모두 「열당 정확히 1개」에 걸려
+  // 조용히 미확정이 된다 — 세로에서 고친 오배정과 같은 원인이다
+  it('assigns the horizontal sketch dimension by 位置 column as well', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '全断面', x: 85, y: 32, w: 30, h: 8 },
+        { str: '端部', x: 160, y: 32, w: 20, h: 8 },
+        { str: '中央', x: 260, y: 32, w: 20, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        { str: '6', x: 115, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 115, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 115, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 310, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 310, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 310, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '300', x: 88, y: 62, w: 24, h: 8 },
+        // C2 스케치는 端部 열 아래(중심 150)에 있다 — 符号 중심으로는 C1(100)이
+        // C2(220)보다 가까워 넓은 칸의 값을 좁은 칸이 가져간다
+        { str: '500', x: 138, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '16-D25', x: 76, y: 74, w: 36, h: 8 },
+        { str: '12-D22', x: 140, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([
+      candidate(columns, 'C1', '1F').b,
+      candidate(columns, 'C1', '1F').d,
+    ]).toEqual([300, 600])
+    expect([
+      candidate(columns, 'C2', '1F').b,
+      candidate(columns, 'C2', '1F').d,
+    ]).toEqual([500, 900])
+  })
+
+  // 세로 치수는 칸 중앙이 아니라 스케치 오른쪽 끝에 붙는다 — 상한을 앵커 간격의
+  // 절반으로 두면 마지막 열에서 실물 값이 잘린다 (ojkk 柱 FC1: 앵커에서 51.7pt,
+  // 간격의 91%). 상한은 한 칸 폭(이웃 앵커까지의 간격)이다
+  it('confirms a vertical dimension that hugs the far edge of the last column', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // 앵커 간격 120의 2/3 지점 — 절반(60)을 넘지만 한 칸 폭 안이다
+        { str: '9', x: 300, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 300, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 300, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '500', x: 208, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '12-D22', x: 202, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c2 = candidate(list(parsed, '柱リスト'), 'C2', '1F')
+
+    expect([c2.b, c2.d]).toEqual([500, 900])
+  })
+
+  it('drops a vertical run more than one column pitch from every anchor', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 94, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 214, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 50, w: 10, h: 8 },
+        // 앵커 간격 120을 넘는 130pt 밖 — 어느 칸 안이라고 말할 근거가 없다
+        { str: '9', x: 350, y: 46, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 350, y: 43, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 350, y: 40, w: 3, h: 6, rot: -90 },
+        { str: '500', x: 208, y: 62, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 74, w: 20, h: 8 },
+        { str: '12-D22', x: 202, y: 74, w: 36, h: 8 },
+      ],
+    })
+    const c2 = candidate(list(parsed, '柱リスト'), 'C2', '1F')
+
+    expect(c2.b).toBeUndefined()
+    expect(c2.raw['断面']).toBe('500')
+    expect(c2.issues).toContain('断面矩形不成立')
   })
 
   it('does not pair vertical dimensions when the table has a single 符号', () => {
