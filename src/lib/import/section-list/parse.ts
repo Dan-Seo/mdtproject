@@ -206,14 +206,33 @@ function verticalRuns(items: TextItem[]): VerticalRun[] {
   return runs
 }
 
+/**
+ * 표제란(도면 우하단 블록)의 図面名称 칸에는 그 도면의 이름이 들어간다 —
+ * 「梁リスト」처럼 리스트 타이틀과 글자가 같다. 이것을 앵커로 잡으면 위 표가 거기서
+ * 끊겨 마지막 층 블록의 데이터 행이 통째로 사라진다: 실물 ojkk p3에서 2F 7칸이
+ * 조용히 없어졌고(符号 행은 경계 안, 데이터 행은 밖), 후보 0개짜리 유령 리스트가
+ * 「인식 못 한 표가 있다」로 표시됐다.
+ *
+ * 라벨은 값과 따로 떨어지기도 하고(ojkk: 「図面名称」 다음 세그먼트가 「梁リスト」)
+ * 한 덩이가 되기도 한다(yokohama: 「A1=1/30図面名称大梁断面リスト」) — 둘 다 본다.
+ * 행 전체를 보지는 않는다: 표제란 띠는 도면 폭을 가로지르므로(ojkk 실측 x=893~1150)
+ * 같은 y에 놓인 진짜 타이틀까지 함께 지워진다.
+ */
+function isTitleBlockField(segments: TextSegment[], index: number): boolean {
+  return (
+    segments[index].compact.includes('図面名称') ||
+    segments[index - 1]?.compact.endsWith('図面名称') === true
+  )
+}
+
 function titleAnchors(rows: TextRow[]): TitleAnchor[] {
   const anchors: TitleAnchor[] = []
 
   // 한 행에 타이틀이 여러 개면(좌우 병치) 전부 앵커로 잡는다
   for (const row of rows) {
-    for (const segment of row.segments) {
+    for (const [index, segment] of row.segments.entries()) {
       const match = segment.compact.match(TITLE_PATTERN)
-      if (!match) continue
+      if (!match || isTitleBlockField(row.segments, index)) continue
       anchors.push({
         listKind: match[1],
         titleText: segment.compact,
@@ -369,14 +388,20 @@ function valuesAtTargets(
 ): Map<string, string> {
   const assigned = new Map<string, TextSegment[]>()
   if (targets.length === 0) return new Map()
+  const bounded = boundedAnchors(targets)
 
   for (const segment of segments) {
-    const target = targets.reduce((closest, candidate) =>
+    const target = bounded.reduce((closest, candidate) =>
       Math.abs(candidate.centerX - segment.centerX) <
       Math.abs(closest.centerX - segment.centerX)
         ? candidate
         : closest,
     )
+    // 열 간격을 넘어 떨어진 세그먼트는 이 표의 칸이 아니다. 오른쪽 끝 열은 표
+    // 바깥의 글자를 전부 삼킨다 — 표제란이 표와 같은 행에 걸치면 「3-D22」가
+    // 「3-D22一級建築士事務所…」가 되어 확정이던 칸이 解釈不能으로 뒤집힌다
+    // (실물 ojkk p3 G5/2F). 열이 하나뿐이면 상한이 없다(limit=Infinity)
+    if (Math.abs(target.centerX - segment.centerX) > target.limit) continue
     const existing = assigned.get(target.id) ?? []
     existing.push(segment)
     assigned.set(target.id, existing)
@@ -826,11 +851,12 @@ function markAnchors(
  * 반대편 먼 열의 상한을 물려받아 두 열 사이 빈 대역까지 먹는다.
  *
  * 앵커가 하나뿐이면 간격이 없어 상한이 Infinity가 된다 — 세로 짝짓기는 符号 2개
- * 이상을 따로 요구하고, 가로는 라벨 행 대역으로 이미 좁혀져 있다.
+ * 이상을 따로 요구하고, 가로는 라벨 행 대역으로 이미 좁혀져 있으며, 셀 값은 열이
+ * 하나면 그 열이 행 전체를 받는 것이 맞다.
  */
-function boundedAnchors(
-  anchors: MarkColumn[],
-): Array<MarkColumn & { limit: number }> {
+function boundedAnchors<T extends { centerX: number }>(
+  anchors: T[],
+): Array<T & { limit: number }> {
   const sorted = [...anchors].sort(
     (left, right) => left.centerX - right.centerX,
   )
