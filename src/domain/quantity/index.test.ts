@@ -377,6 +377,36 @@ describe('aggregateQuantity', () => {
     expect(storySubtotals(lines)[0].designKg).toBe(mass.designKg)
   })
 
+  it('keeps 質量行 apart when only the 継手箇所数 differs', () => {
+    const project = projectWithStories([
+      { id: '1F', name: '1階', height: 4200 },
+    ])
+    const [first, second] = project.members
+    // ガス圧接は算入倍率が0で長さが増えないので、箇所数が違っても長さは同じに
+    // なる。長さだけを鍵にすると2本が1行に併合され、その行の算出式と出典は
+    // 片方についてしか事実でない。
+    const lines = aggregateQuantity(
+      project,
+      [
+        mainRebar(first.id, {
+          formula: '1か所の算出式',
+          splice: splice({ method: 'ガス圧接', countPerBar: 1, lengthMm: 0 }),
+        }),
+        mainRebar(second.id, {
+          id: `${second.id}|main`,
+          formula: '2か所の算出式',
+          splice: splice({ method: 'ガス圧接', countPerBar: 2, lengthMm: 0 }),
+        }),
+      ],
+      jpMlitRulePack,
+    )
+
+    expect(massLines(lines).map(({ formula }) => formula)).toEqual([
+      '1か所の算出式',
+      '2か所の算出式',
+    ])
+  })
+
   it('keeps runs of different length in separate 箇所 rows', () => {
     const project = projectWithStories([
       { id: '1F', name: '1階', height: 4200 },

@@ -153,8 +153,14 @@ function contributingRules(
 
 // 同じ符号でも階高や内法長さが違えば設計長さ・設計本数が変わる（積算基準
 // 1通則2)・7)）。両方を行キーに含め、内訳書の別行として分ける。
+//
+// 継手箇所数も鍵に入れる。長さが増えない方式（ガス圧接・機械式・溶接は
+// measure.splice.length.factor が0）だと箇所数が違っても長さが同じになり、
+// 併合された行の算出式・出典が片方についてしか事実でなくなる。
 export function quantityLineId(groupId: string, rebar: Rebar): string {
-  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}`
+  const spliceKey = rebar.splice ? `|継手${rebar.splice.countPerBar}` : ''
+
+  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}`
 }
 
 /**

@@ -741,13 +741,6 @@ function rebuildMemberScene(
     clippingPlanes: [runtime.clipPlane],
     clipShadows: true,
   })
-  const lapMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_ZONE_COLORS.重ね継手,
-    metalness: 0.6,
-    roughness: 0.35,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
   const highlightMaterial = new THREE.MeshStandardMaterial({
     color: HIGHLIGHT_COLOR,
     metalness: 0.6,
@@ -760,13 +753,11 @@ function rebuildMemberScene(
   const materials: THREE.Material[] = [
     coreMaterial,
     anchorageMaterial,
-    lapMaterial,
     highlightMaterial,
   ]
   const zoneMaterials = {
     core: coreMaterial,
     定着: anchorageMaterial,
-    重ね継手: lapMaterial,
   } satisfies Record<'core' | NonNullable<RebarBatch['zone']>, THREE.MeshStandardMaterial>
   const pickableMeshes: THREE.Mesh[] = []
   const bounds = memberBounds(view)
