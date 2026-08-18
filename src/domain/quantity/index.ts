@@ -3,6 +3,7 @@ import type {
   Member,
   MemberKind,
   Section,
+  SpliceMethod,
 } from '../model/member'
 import {
   findSection,
@@ -13,7 +14,14 @@ import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
 import { lookupMarkup, lookupUnitMass } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
-export interface QuantityLine {
+/**
+ * 内訳書の単位。鉄筋そのものは質量で、継手は箇所で数える — 数量積算基準が
+ * 1通則4)・（２）柱2)・（３）梁2) で「継手箇所数」を求めさせるからだ。
+ * 両者は足せないので行の型ごと分ける。
+ */
+export type QuantityUnit = 'kg' | '箇所'
+
+interface QuantityLineBase {
   id: string
   groupId: string
   storyName: string
@@ -22,17 +30,49 @@ export interface QuantityLine {
   sectionLabel: string
   role: RebarRole
   size: BarSize
+  /** この行が束ねた部材の数 */
+  places: number
+  rules: RuleHit[]
+  inferred: boolean
+  formula: string
+}
+
+export interface MassQuantityLine extends QuantityLineBase {
+  unit: 'kg'
   shape: RebarShape
   lengthMm: number
   countPerMember: number
-  places: number
   totalLengthMm: number
   unitMassKgPerM: number
   designKg: number
   requiredKg: number
-  rules: RuleHit[]
-  inferred: boolean
-  formula: string
+}
+
+export interface SpliceQuantityLine extends QuantityLineBase {
+  unit: '箇所'
+  method: SpliceMethod
+  /** 1部材あたりの継手箇所数 ＝ 1本あたり箇所数 × 本数 */
+  countPerMember: number
+  /** 箇所数の合計 ＝ countPerMember × places */
+  totalCount: number
+}
+
+export type QuantityLine = MassQuantityLine | SpliceQuantityLine
+
+export function isMassLine(line: QuantityLine): line is MassQuantityLine {
+  return line.unit === 'kg'
+}
+
+export function isSpliceLine(line: QuantityLine): line is SpliceQuantityLine {
+  return line.unit === '箇所'
+}
+
+export function massLines(lines: QuantityLine[]): MassQuantityLine[] {
+  return lines.filter(isMassLine)
+}
+
+export function spliceLines(lines: QuantityLine[]): SpliceQuantityLine[] {
+  return lines.filter(isSpliceLine)
 }
 
 export interface StorySubtotal {
@@ -46,11 +86,14 @@ export interface QuantityTotal {
   requiredKg: number
 }
 
-interface GroupedLine {
-  line: QuantityLine
-  memberIds: Set<string>
-  markupRate: number
+export interface SpliceTotal {
+  method: SpliceMethod
+  totalCount: number
 }
+
+type GroupedLine =
+  | { kind: 'kg'; line: MassQuantityLine; memberIds: Set<string>; markupRate: number }
+  | { kind: '箇所'; line: SpliceQuantityLine; memberIds: Set<string> }
 
 function storyName(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
@@ -114,24 +157,34 @@ export function quantityLineId(groupId: string, rebar: Rebar): string {
   return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}`
 }
 
-function assertCompatible(existing: GroupedLine, rebar: Rebar): void {
-  const { line } = existing
-  if (line.size !== rebar.size || line.shape !== rebar.shape) {
-    throw new Error(`Inconsistent size or shape in quantity group ${line.id}`)
+/** 継手は方式と箇所数で単価が変わるので、質量行とは別の行キーで束ねる。 */
+export function spliceLineId(groupId: string, rebar: Rebar): string {
+  const splice = rebar.splice
+  if (!splice) {
+    throw new Error(`Rebar has no splice to key: ${rebar.id}`)
   }
+
+  return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}`
 }
 
 function recalculate(grouped: GroupedLine): void {
-  const { line, memberIds, markupRate } = grouped
+  const { line, memberIds } = grouped
   line.places = memberIds.size
-  line.totalLengthMm =
-    line.lengthMm * line.countPerMember * line.places
-  line.designKg =
-    (line.totalLengthMm / 1000) * line.unitMassKgPerM
-  line.requiredKg = line.designKg * (1 + markupRate)
   line.inferred = line.rules.some(
     ({ confidence }) => confidence === 'inferred',
   )
+
+  if (grouped.kind === '箇所') {
+    grouped.line.totalCount =
+      grouped.line.countPerMember * grouped.line.places
+    return
+  }
+
+  const massLine = grouped.line
+  massLine.totalLengthMm =
+    massLine.lengthMm * massLine.countPerMember * massLine.places
+  massLine.designKg = (massLine.totalLengthMm / 1000) * massLine.unitMassKgPerM
+  massLine.requiredKg = massLine.designKg * (1 + grouped.markupRate)
 }
 
 export function aggregateQuantity(
@@ -160,9 +213,28 @@ export function aggregateQuantity(
     const id = quantityLineId(groupId, rebar)
     const contributions = contributingRules(pack, member, rebar)
     const existing = grouped.get(id)
+    const common = {
+      groupId,
+      storyName: storyName(project, member),
+      memberKind: member.kind,
+      mark: section.mark,
+      sectionLabel: sectionLabel(section),
+      role: rebar.role,
+      size: rebar.size,
+      places: 0,
+      inferred: false,
+    }
 
     if (existing) {
-      assertCompatible(existing, rebar)
+      if (existing.kind !== 'kg') {
+        throw new Error(`Quantity line ${id} is not measured in kg`)
+      }
+      if (
+        existing.line.size !== rebar.size ||
+        existing.line.shape !== rebar.shape
+      ) {
+        throw new Error(`Inconsistent size or shape in quantity group ${id}`)
+      }
       if (
         existing.line.unitMassKgPerM !== contributions.unitMass.value ||
         existing.markupRate !== contributions.markup.value
@@ -175,40 +247,90 @@ export function aggregateQuantity(
         ...contributions.rules,
       ])
       recalculate(existing)
+    } else {
+      const created: GroupedLine = {
+        kind: 'kg',
+        line: {
+          ...common,
+          id,
+          unit: 'kg',
+          shape: rebar.shape,
+          lengthMm: rebar.length,
+          countPerMember: rebar.count,
+          totalLengthMm: 0,
+          unitMassKgPerM: contributions.unitMass.value,
+          designKg: 0,
+          requiredKg: 0,
+          rules: contributions.rules,
+          formula: rebar.formula,
+        },
+        memberIds: new Set([member.id]),
+        markupRate: contributions.markup.value,
+      }
+      recalculate(created)
+      grouped.set(id, created)
+    }
+
+    // 継手のない鉄筋（フープ・スタラップ）と、条項が 0 か所と数えた鉄筋は
+    // 行を作らない — 0 の行は内訳書を埋めるだけで何も伝えない。
+    const splice = rebar.splice
+    if (!splice || splice.countPerBar === 0) continue
+
+    const spliceId = spliceLineId(groupId, rebar)
+    const existingSplice = grouped.get(spliceId)
+
+    if (existingSplice) {
+      if (existingSplice.kind !== '箇所') {
+        throw new Error(`Quantity line ${spliceId} is not measured in 箇所`)
+      }
+      existingSplice.memberIds.add(member.id)
+      existingSplice.line.rules = uniqueRules([
+        ...existingSplice.line.rules,
+        ...splice.rules,
+      ])
+      recalculate(existingSplice)
       continue
     }
 
-    const line: QuantityLine = {
-      id,
-      groupId,
-      storyName: storyName(project, member),
-      memberKind: member.kind,
-      mark: section.mark,
-      sectionLabel: sectionLabel(section),
-      role: rebar.role,
-      size: rebar.size,
-      shape: rebar.shape,
-      lengthMm: rebar.length,
-      countPerMember: rebar.count,
-      places: 0,
-      totalLengthMm: 0,
-      unitMassKgPerM: contributions.unitMass.value,
-      designKg: 0,
-      requiredKg: 0,
-      rules: contributions.rules,
-      inferred: false,
-      formula: rebar.formula,
-    }
-    const created: GroupedLine = {
-      line,
+    const createdSplice: GroupedLine = {
+      kind: '箇所',
+      line: {
+        ...common,
+        id: spliceId,
+        unit: '箇所',
+        method: splice.method,
+        countPerMember: splice.countPerBar * rebar.count,
+        totalCount: 0,
+        rules: splice.rules,
+        formula: splice.formula,
+      },
       memberIds: new Set([member.id]),
-      markupRate: contributions.markup.value,
     }
-    recalculate(created)
-    grouped.set(id, created)
+    recalculate(createdSplice)
+    grouped.set(spliceId, createdSplice)
   }
 
   return [...grouped.values()].map(({ line }) => line)
+}
+
+/** 継手は方式ごとに単価が違うので、合計も方式ごとに出す。 */
+export function spliceTotals(lines: QuantityLine[]): SpliceTotal[] {
+  const totals = new Map<SpliceMethod, SpliceTotal>()
+
+  for (const line of spliceLines(lines)) {
+    const total = totals.get(line.method)
+    if (total) {
+      total.totalCount += line.totalCount
+      continue
+    }
+
+    totals.set(line.method, {
+      method: line.method,
+      totalCount: line.totalCount,
+    })
+  }
+
+  return [...totals.values()]
 }
 
 export function hasInferred(lines: QuantityLine[]): boolean {
@@ -226,26 +348,28 @@ export function inferredRules(lines: QuantityLine[]): RuleHit[] {
 export function storySubtotals(lines: QuantityLine[]): StorySubtotal[] {
   const subtotals = new Map<string, StorySubtotal>()
 
+  // 階は行があれば立てるが、足すのは質量だけだ。箇所は質量に足せず、割増
+  // （1通則9)）も「設計数量の4%」＝質量に対する規定なので継手行には掛からない。
   for (const line of lines) {
-    const subtotal = subtotals.get(line.storyName)
-    if (subtotal) {
-      subtotal.designKg += line.designKg
-      subtotal.requiredKg += line.requiredKg
-      continue
+    const subtotal = subtotals.get(line.storyName) ?? {
+      storyName: line.storyName,
+      designKg: 0,
+      requiredKg: 0,
     }
 
-    subtotals.set(line.storyName, {
-      storyName: line.storyName,
-      designKg: line.designKg,
-      requiredKg: line.requiredKg,
-    })
+    if (isMassLine(line)) {
+      subtotal.designKg += line.designKg
+      subtotal.requiredKg += line.requiredKg
+    }
+
+    subtotals.set(line.storyName, subtotal)
   }
 
   return [...subtotals.values()]
 }
 
 export function grandTotal(lines: QuantityLine[]): QuantityTotal {
-  return lines.reduce<QuantityTotal>(
+  return massLines(lines).reduce<QuantityTotal>(
     (total, line) => ({
       designKg: total.designKg + line.designKg,
       requiredKg: total.requiredKg + line.requiredKg,

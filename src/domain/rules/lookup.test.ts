@@ -6,6 +6,7 @@ import {
   coverConditions,
   lookupMarkup,
   lookupRule,
+  lookupRuleSeries,
   lookupUnitMass,
 } from './lookup'
 
@@ -81,6 +82,43 @@ describe('lookupRule', () => {
   })
 })
 
+describe('lookupRuleSeries', () => {
+  // 区分表（（３）梁2) の 5.0m 未満／以上……）は行の並び自体が規準なので、
+  // 何区分あるかをコードに書かずルールパックから読む。
+  it('returns every row of the key in ascending order of the given condition', () => {
+    const third = entry('splice.band', { band: 3 }, 2)
+    const first = entry('splice.band', { band: 1 }, 0.5)
+    const second = entry('splice.band', { band: 2 }, 1)
+    const pack: RulePack = {
+      id: 'test',
+      entries: [third, first, second, entry('other', { band: 1 }, 9)],
+    }
+
+    expect(lookupRuleSeries(pack, 'splice.band', 'band')).toEqual([
+      first,
+      second,
+      third,
+    ])
+  })
+
+  it('throws when the key has no rows — a silent empty series measures nothing', () => {
+    const pack: RulePack = { id: 'test', entries: [] }
+
+    expect(() => lookupRuleSeries(pack, 'splice.band', 'band')).toThrow(
+      /not found/i,
+    )
+  })
+
+  it('throws when a row lacks the ordering condition', () => {
+    const pack: RulePack = {
+      id: 'test',
+      entries: [entry('splice.band', { band: 1 }, 0.5), entry('splice.band', {}, 1)],
+    }
+
+    expect(() => lookupRuleSeries(pack, 'splice.band', 'band')).toThrow(/band/)
+  })
+})
+
 describe('specialized lookups', () => {
   const markup = entry(
     'markup.rate',
@@ -111,6 +149,7 @@ describe('coverConditions', () => {
     grade: 'SD345',
     exposure: '屋外',
     finish: '仕上げなし',
+    spliceMethod: '重ね継手',
     main: { size: 'D25', count: 12 },
     hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
   }

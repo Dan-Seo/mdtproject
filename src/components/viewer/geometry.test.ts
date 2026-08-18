@@ -125,6 +125,7 @@ const section: ColumnSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
@@ -165,6 +166,7 @@ const girderSection: GirderSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', topCount: 4, bottomCount: 3 },
   stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
 }

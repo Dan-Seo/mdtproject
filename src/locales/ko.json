@@ -54,8 +54,8 @@
   "takeoff.places": "개소",
   "takeoff.totalLength": "총연장 (m)",
   "takeoff.unitMass": "kg/m",
-  "takeoff.designQuantity": "설계수량 (kg)",
-  "takeoff.requiredQuantity": "소요수량 (kg)",
+  "takeoff.designQuantity": "설계수량",
+  "takeoff.requiredQuantity": "소요수량",
   "takeoff.source": "출처",
   "takeoff.note": "비고",
   "takeoff.total": "합계",
@@ -67,7 +67,6 @@
   "takeoff.unsupported.reason.寸法不成立": "단면·内法 치수가 성립하지 않음",
   "takeoff.unsupported.plan.定着不成立": "定着不成立: 지점 柱 단면이나 스팬의 재검토 필요",
   "takeoff.unsupported.plan.寸法不成立": "寸法不成立: 단면이나 스팬의 재검토 필요",
-  "takeoff.spliceOmitted": "大梁 通し筋은 継手 개소수를 계상하지 않았습니다(数量積算基準 1通則4)·（３）梁2) 미구현) — 수량이 실제보다 적게 나옵니다",
   "viewer.selectMember": "부재를 선택",
   "viewer.scaleNotice": "치수 판독용이 아님",
   "viewer.empty": "배근 데이터 없음",
@@ -118,5 +117,8 @@
   "warning.m1.title": "M1 플레이스홀더",
   "warning.m1.body": "현재 룰팩 수치는 원문 추출 전의 가짜 값입니다. 검수·발주에 사용하지 마십시오.",
   "notice.source": "산출 근거: 公共建築工事標準仕様書·公共建築数量積算基準(국토교통성 공개 자료를 가공·개변하여 이용)",
-  "notice.scope": "관청시설용 기준이며, 민간공사에서는 다를 수 있습니다."
+  "notice.scope": "관청시설용 기준이며, 민간공사에서는 다를 수 있습니다.",
+  "takeoff.unit": "단위",
+  "takeoff.splice": "継手",
+  "takeoff.splicePosition": "継手 위치는 標準仕様書 表5.3.3이 원문에서 이미지라 미확정입니다 — 개소수와 설계길이만 계상하고 3D에는 그리지 않습니다"
 }

@@ -1,0 +1,197 @@
+# 公共建築数量積算基準 第4編第3章第2節 — 継手箇所数の求め方と、継手方式ごとの
+# 設計長さへの算入。ここにあるのは「何か所あるものとするか」であって、重ね継手
+# そのものの長さ（L1・L1h）は標準仕様書5章＝ lap.yaml が持つ。
+
+# 1通則4) — 単独梁の通し筋や、区分の定めがない鉄筋がこれによる。
+# 径ごとに行を分けるのは、条件照合が等値だけで範囲を書けないからである
+# （unit-mass.yaml が径を並べているのと同じ）。
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径13㎜以下）
+  expr: 6.0m ごとに1か所
+  conditions: { size: D10 }
+  value: 6000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径13㎜以下）
+  expr: 6.0m ごとに1か所
+  conditions: { size: D13 }
+  value: 6000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D16 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D19 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D22 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D25 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D29 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+- key: measure.splice.interval
+  label: 継手箇所数を求める長さの単位（径16㎜以上）
+  expr: 7.0m ごとに1か所
+  conditions: { size: D32 }
+  value: 7000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
+  confidence: stated
+  note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
+
+# 2（２）柱2) — 各階柱の全長にわたる主筋。基礎柱の但書（3.0m以上で1か所）は
+# 基礎を扱わないので載せない (ADR-005)。
+
+- key: measure.splice.column
+  label: 各階柱の全長にわたる主筋の継手箇所数
+  expr: 各階ごとに1か所
+  conditions: {}
+  value: 1
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（２）柱2), page: 16 }
+  confidence: stated
+  note: 「その他の階の各階柱の全長にわたる主筋については各階ごとに１か所の継手があるものとする」
+
+# 2（３）梁2) — 連続する梁の全長にわたる主筋。1通則4) を「かかわらず」で上書きする。
+# 区分は band の昇順で判定し、上限（.band.upper）未満ならその区分。上限を持たない
+# 区分が最後の区分である。
+
+- key: measure.splice.girder.continuous
+  label: 連続する梁の全長にわたる主筋の継手箇所数（5.0m未満）
+  expr: 0.5か所
+  conditions: { band: 1 }
+  value: 0.5
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
+  confidence: stated
+  note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
+
+- key: measure.splice.girder.continuous
+  label: 連続する梁の全長にわたる主筋の継手箇所数（5.0m以上10.0m未満）
+  expr: 1か所
+  conditions: { band: 2 }
+  value: 1
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
+  confidence: stated
+  note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
+
+- key: measure.splice.girder.continuous
+  label: 連続する梁の全長にわたる主筋の継手箇所数（10.0m以上）
+  expr: 2か所
+  conditions: { band: 3 }
+  value: 2
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
+  confidence: stated
+  note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
+
+- key: measure.splice.girder.continuous.band.upper
+  label: 連続梁 継手箇所数の区分上限（5.0m未満）
+  expr: 5.0m
+  conditions: { band: 1 }
+  value: 5000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
+  confidence: stated
+  note: 区分の境目そのもの。「５．０ｍ未満は０．５か所」の 5.0m
+
+- key: measure.splice.girder.continuous.band.upper
+  label: 連続梁 継手箇所数の区分上限（5.0m以上10.0m未満）
+  expr: 10.0m
+  conditions: { band: 2 }
+  value: 10000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
+  confidence: stated
+  note: 区分の境目そのもの。「５．０ｍ以上１０．０ｍ未満は１か所」の 10.0m
+
+# 継手1か所を設計長さにどれだけ算入するか。重ね継手長さ（lap.L1）に掛ける倍率で、
+# 0 なら質量は変わらず箇所数だけが残る。
+
+- key: measure.splice.length.factor
+  label: 継手1か所あたりに設計長さへ算入する重ね継手長さの倍率（重ね継手）
+  expr: 重ね継手長さ × 1
+  conditions: { method: 重ね継手 }
+  value: 1
+  unit: ratio
+  source: { ref: quantity, section: 第4編第3章第2節 1通則5)・6), page: 15 }
+  confidence: inferred
+  note: 算入を明示した条文はない。1通則5) がガス圧接継手に限って「長さの変化はないものとする」と定め、1通則6) が重ね継手長さの決め方を定めることから、重ね継手は箇所数分の重ね長さが設計長さに入ると解した — 反対解釈であって明文ではない (R2)
+
+- key: measure.splice.length.factor
+  label: 継手1か所あたりに設計長さへ算入する重ね継手長さの倍率（ガス圧接）
+  expr: 長さの変化なし
+  conditions: { method: ガス圧接 }
+  value: 0
+  unit: ratio
+  source: { ref: quantity, section: 第4編第3章第2節 1通則5), page: 15 }
+  confidence: stated
+  note: 「ガス圧接継手の加工のための鉄筋の長さの変化はないものとする」
+
+- key: measure.splice.length.factor
+  label: 継手1か所あたりに設計長さへ算入する重ね継手長さの倍率（機械式）
+  expr: 長さの変化なし
+  conditions: { method: 機械式 }
+  value: 0
+  unit: ratio
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4)・5), page: 15 }
+  confidence: inferred
+  note: 1通則4)・5) は重ね継手とガス圧接継手だけを名指す。機械式継手は長さの変化がない点でガス圧接に準じ、箇所数も1通則4)に準じると解した — 明文はない (R2)
+
+- key: measure.splice.length.factor
+  label: 継手1か所あたりに設計長さへ算入する重ね継手長さの倍率（溶接）
+  expr: 長さの変化なし
+  conditions: { method: 溶接 }
+  value: 0
+  unit: ratio
+  source: { ref: quantity, section: 第4編第3章第2節 1通則4)・5), page: 15 }
+  confidence: inferred
+  note: 1通則4)・5) は重ね継手とガス圧接継手だけを名指す。溶接継手は長さの変化がない点でガス圧接に準じ、箇所数も1通則4)に準じると解した — 明文はない (R2)

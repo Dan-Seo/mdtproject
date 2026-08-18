@@ -10,7 +10,12 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
-import { grandTotal, storySubtotals } from '@/domain/quantity'
+import {
+  grandTotal,
+  massLines,
+  spliceLines,
+  storySubtotals,
+} from '@/domain/quantity'
 import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
@@ -38,11 +43,21 @@ function takeoffResult() {
 // 行 id は加工長・本数まで含むので、書き下さずに集計結果から引く。
 function lineFor(role: '主筋' | '帯筋' | '上端筋') {
   const groupId = role === '上端筋' ? '1階|G|G1' : '1階|C|C1'
-  const line = takeoffLines().find(
+  const line = massLines(takeoffLines()).find(
     (candidate) => candidate.groupId === groupId && candidate.role === role,
   )
 
   if (!line) throw new Error(`QuantityLine not found: ${role}`)
+  return line
+}
+
+function spliceLineFor(role: '主筋' | '上端筋') {
+  const groupId = role === '上端筋' ? '1階|G|G1' : '1階|C|C1'
+  const line = spliceLines(takeoffLines()).find(
+    (candidate) => candidate.groupId === groupId && candidate.role === role,
+  )
+
+  if (!line) throw new Error(`継手 QuantityLine not found: ${role}`)
   return line
 }
 
@@ -63,7 +78,7 @@ describe('TakeoffPane', () => {
     vi.mocked(exportTakeoffXlsx).mockClear()
   })
 
-  it('renders the twelve DESIGN §4 headers in order', () => {
+  it('renders the DESIGN §4 headers in order with the 単位 column', () => {
     render(<TakeoffPane />)
 
     const headers = within(screen.getByTestId('takeoff-head'))
@@ -79,8 +94,10 @@ describe('TakeoffPane', () => {
       '箇所',
       '総延長 (m)',
       'kg/m',
-      '設計数量 (kg)',
-      '所要数量 (kg)',
+      // 単位が kg と箇所に分かれたので、見出しから (kg) を外して単位列を持つ。
+      '設計数量',
+      '所要数量',
+      '単位',
       '出典',
       '備考',
     ])
@@ -120,12 +137,17 @@ describe('TakeoffPane', () => {
 
     // arrayContaining은 상위집합이면 통과한다 — 通し筋이 런당 1행이 아니라
     // 부재당 1행으로 중복 생성되는 회귀를 못 잡는다. 행 구성을 그대로 박는다.
-    expect(supportedGirderLines.map(({ role }) => role)).toEqual([
-      '上端筋',
-      '下端筋',
-      'あばら筋',
-      '上端筋',
-      '下端筋',
+    // 単スパンのランは 1通則4) で 0か所なので継手行を持たず、2スパンのランだけが持つ。
+    expect(
+      supportedGirderLines.map(({ role, unit }) => `${role}:${unit}`),
+    ).toEqual([
+      '上端筋:kg',
+      '下端筋:kg',
+      'あばら筋:kg',
+      '上端筋:kg',
+      '上端筋:箇所',
+      '下端筋:kg',
+      '下端筋:箇所',
     ])
     for (const line of supportedGirderLines) {
       expect(screen.getByTestId(`quantity-line-${line.id}`)).toBeInTheDocument()
@@ -163,7 +185,8 @@ describe('TakeoffPane', () => {
 
     render(<TakeoffPane />)
 
-    const notice = screen.getByRole('note')
+    // 継手位置 고지도 role=note라 역할만으로는 좁혀지지 않는다.
+    const notice = screen.getByTestId('unsupported-notice')
     expect(notice).toHaveTextContent('定着が支点柱に収まらない')
     expect(notice).not.toHaveTextContent('M3b')
     expect(notice).toHaveTextContent('見直し')
@@ -196,19 +219,19 @@ describe('TakeoffPane', () => {
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
   })
 
-  it('always shows that 通し筋 quantities omit 継手', () => {
-    // 継手 미계상은 물량을 실제보다 적게 만든다 (R8). 접어야 보이는 산출식에만
-    // 두면 사용자가 모르고 발주에 쓴다 — 大梁 主筋 행이 있으면 항상 보여야 한다.
-    // 고지는 「근거가 없다」가 아니라 「어느 조항이 미구현이다」를 말해야 한다.
+  it('always shows that the 継手位置 is undetermined', () => {
+    // 箇所数는 계상했지만 위치는 근거가 없다(表5.3.3은 원문에서 이미지). 접어야
+    // 보이는 산출식에만 두면 3D에 継手가 없는 이유를 알 수 없다 — 継手 행이 있으면
+    // 항상 보여야 한다. 그리고 「미계상」이라고 말하면 이제 거짓이다.
     render(<TakeoffPane />)
 
-    const notice = screen.getByTestId('splice-omitted-notice')
-    expect(notice).toHaveTextContent('継手')
-    expect(notice).toHaveTextContent('1通則4)')
-    expect(notice).not.toHaveTextContent('定尺長さ')
+    const notice = screen.getByTestId('splice-position-notice')
+    expect(notice).toHaveTextContent('継手位置')
+    expect(notice).toHaveTextContent('表5.3.3')
+    expect(notice).not.toHaveTextContent('未計上')
   })
 
-  it('does not claim omitted 継手 when there is no 大梁 to omit it for', () => {
+  it('does not show the 継手位置 notice when nothing carries a 継手', () => {
     useAppStore.setState({
       project: { ...createSampleProject(), members: [] },
     })
@@ -216,8 +239,26 @@ describe('TakeoffPane', () => {
     render(<TakeoffPane />)
 
     expect(
-      screen.queryByTestId('splice-omitted-notice'),
+      screen.queryByTestId('splice-position-notice'),
     ).not.toBeInTheDocument()
+  })
+
+  it('renders the 継手 row in 箇所 and leaves the mass columns empty', () => {
+    // 単位が違う行を同じ列に混ぜると、内訳書の合計が意味を失う。
+    const line = spliceLineFor('主筋')
+
+    render(<TakeoffTable lines={takeoffLines()} />)
+
+    const row = screen.getByTestId(`quantity-line-${line.id}`)
+    const cells = within(row).getAllByRole('cell')
+
+    expect(within(row).getByRole('button')).toHaveTextContent('継手（重ね継手）')
+    expect(cells[8]).toHaveTextContent(String(line.totalCount))
+    expect(cells[10]).toHaveTextContent('箇所')
+    // 長さ・総延長・kg/m・所要数量は値を持たない。
+    for (const index of [3, 6, 7, 9]) {
+      expect(cells[index]).toHaveTextContent('—')
+    }
   })
 
   it('keeps two chips citing one table when their tooltips differ', () => {

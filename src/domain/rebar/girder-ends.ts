@@ -46,7 +46,7 @@ export interface GirderEndInput {
   bendDirection: '上' | '下'
 }
 
-function barDiameter(size: BarSize): number {
+export function barDiameter(size: BarSize): number {
   const diameter = Number(size.replace(/^D/, ''))
 
   if (!Number.isFinite(diameter) || diameter <= 0) {

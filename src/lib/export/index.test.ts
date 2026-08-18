@@ -109,7 +109,7 @@ describe('buildTakeoffWorkbook', () => {
       .toBe(true)
   })
 
-  it('emits the sixteen DESIGN §4.2 columns in order and preserves display precision', () => {
+  it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const header = spec.rows.find(({ kind }) => kind === 'header')
@@ -127,13 +127,14 @@ describe('buildTakeoffWorkbook', () => {
       '箇所',
       '総延長 (m)',
       'kg/m',
-      '設計数量 (kg)',
-      '所要数量 (kg)',
+      '設計数量',
+      '所要数量',
+      '単位',
       '出典',
       '備考',
       '算出式',
     ])
-    expect(header?.cells).toHaveLength(16)
+    expect(header?.cells).toHaveLength(17)
     expect(firstDataRow?.cells[6].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[9].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[10].numberFormat).toBe('0.000')
@@ -153,8 +154,8 @@ describe('buildTakeoffWorkbook', () => {
     const noted = rows.find(({ id }) => id === lineId)
     const others = rows.filter(({ id }) => id !== lineId)
 
-    expect(noted?.cells[14].value).toBe('要確認')
-    expect(others.every(({ cells }) => cells[14].value === '')).toBe(true)
+    expect(noted?.cells[15].value).toBe('要確認')
+    expect(others.every(({ cells }) => cells[15].value === '')).toBe(true)
   })
 
   it('includes source document names, editions, URLs, scope and modification notice', () => {
@@ -252,7 +253,7 @@ describe('buildTakeoffWorkbook', () => {
       '※ 未確認の規準値を含む — 検収前の参考値',
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
-    expect(worksheet?.getCell('P3').value).toBe('算出式')
+    expect(worksheet?.getCell('Q3').value).toBe('算出式')
     // exceljs の動的 import は npm ci 直後の初回だけ既定の5秒を超えることがある。
   }, 20000)
 })

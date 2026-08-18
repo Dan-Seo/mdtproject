@@ -12,6 +12,7 @@ import { createSampleProject } from '@/domain/model/sample-project'
 import { girderSpan } from '@/domain/model/project'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import { lookupRule } from '@/domain/rules/lookup'
+import { massLines } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { sourceLabel } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
@@ -585,7 +586,7 @@ describe('Viewer3D', () => {
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
     const { result } = renderHook(() => useTakeoff())
-    const mainLine = result.current.lines.find(
+    const mainLine = massLines(result.current.lines).find(
       ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
     )
     expect(mainLine).toBeDefined()
@@ -613,7 +614,7 @@ describe('Viewer3D', () => {
 
   it('shows 役割・径・設計本数・設計長さ from the hovered 部材 row', () => {
     const { result } = renderHook(() => useTakeoff())
-    const mainLine = result.current.lines.find(
+    const mainLine = massLines(result.current.lines).find(
       ({ groupId, role }) => groupId === '1階|C|C1' && role === '主筋',
     )
     expect(mainLine).toBeDefined()

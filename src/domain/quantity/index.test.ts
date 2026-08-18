@@ -22,6 +22,9 @@ import {
   grandTotal,
   hasInferred,
   inferredRules,
+  massLines,
+  spliceLines,
+  spliceTotals,
   storySubtotals,
 } from './index'
 
@@ -35,6 +38,7 @@ const section: ColumnSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
@@ -94,6 +98,24 @@ function mainRebar(memberId: string, overrides: Partial<Rebar> = {}): Rebar {
       }),
     ],
     formula: '主筋の算出式',
+    ...overrides,
+  }
+}
+
+function splice(
+  overrides: Partial<NonNullable<Rebar['splice']>> = {},
+): NonNullable<Rebar['splice']> {
+  return {
+    method: '重ね継手',
+    countPerBar: 1,
+    lengthMm: 1000,
+    rules: [
+      lookupRule(jpMlitRulePack, 'measure.splice.column', {}),
+      lookupRule(jpMlitRulePack, 'measure.splice.length.factor', {
+        method: overrides.method ?? '重ね継手',
+      }),
+    ],
+    formula: '継手の算出式',
     ...overrides,
   }
 }
@@ -170,7 +192,9 @@ describe('aggregateQuantity', () => {
 
     expect(lines).toHaveLength(2)
     expect(new Set(lines.map(({ id }) => id)).size).toBe(2)
-    expect(lines.map(({ lengthMm }) => lengthMm)).toEqual([1000, 1010])
+    expect(massLines(lines).map(({ lengthMm }) => lengthMm)).toEqual([
+      1000, 1010,
+    ])
     expect(lines.map(({ places }) => places)).toEqual([1, 1])
     expect(lines.every(({ groupId }) => groupId === '1階|C|C1')).toBe(true)
   })
@@ -212,7 +236,9 @@ describe('aggregateQuantity', () => {
       ),
     )
 
-    const topLines = aggregateQuantity(project, rebars, jpMlitRulePack).filter(
+    const topLines = massLines(
+      aggregateQuantity(project, rebars, jpMlitRulePack),
+    ).filter(
       ({ storyName, mark, role }) =>
         storyName === '1階' && mark === 'G1' && role === '上端筋',
     )
@@ -318,6 +344,73 @@ describe('aggregateQuantity', () => {
     expect(inferred.every(({ confidence }) => confidence === 'inferred')).toBe(
       true,
     )
+  })
+
+  it('emits a 箇所 line beside the kg line and never mixes the two units', () => {
+    const project = projectWithStories([
+      { id: '1F', name: '1階', height: 4200 },
+    ])
+    const rebars = project.members.map(({ id }) =>
+      mainRebar(id, { splice: splice() }),
+    )
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const [mass] = massLines(lines)
+    const [spliceLine] = spliceLines(lines)
+
+    expect(lines).toHaveLength(2)
+    // 質量行のすぐ後に来る — 内訳書で主筋と離れると別物に見える。
+    expect(lines.map(({ unit }) => unit)).toEqual(['kg', '箇所'])
+    expect(spliceLine).toMatchObject({
+      id: '1階|C|C1|主筋|継手|重ね継手|1|12',
+      groupId: mass.groupId,
+      role: '主筋',
+      method: '重ね継手',
+      // 1本あたり1か所 × 主筋12本 × 9部材
+      countPerMember: 12,
+      places: 9,
+      totalCount: 108,
+    })
+    // 割増（1通則9)）は設計「数量」＝質量への規定なので箇所には掛からない。
+    expect(spliceLine).not.toHaveProperty('requiredKg')
+    expect(grandTotal(lines).designKg).toBe(mass.designKg)
+    expect(storySubtotals(lines)[0].designKg).toBe(mass.designKg)
+  })
+
+  it('omits the 箇所 line when the clause counts no splice', () => {
+    const project = projectWithStories([
+      { id: '1F', name: '1階', height: 4200 },
+    ])
+    const lines = aggregateQuantity(
+      project,
+      [mainRebar(project.members[0].id, { splice: splice({ countPerBar: 0 }) })],
+      jpMlitRulePack,
+    )
+
+    expect(spliceLines(lines)).toHaveLength(0)
+  })
+
+  it('separates 継手 rows by method and totals each one', () => {
+    const project = projectWithStories([
+      { id: '1F', name: '1階', height: 4200 },
+    ])
+    const [first, second] = project.members
+    const lines = aggregateQuantity(
+      project,
+      [
+        mainRebar(first.id, { splice: splice() }),
+        mainRebar(second.id, {
+          splice: splice({ method: 'ガス圧接', lengthMm: 0 }),
+        }),
+      ],
+      jpMlitRulePack,
+    )
+
+    expect(spliceLines(lines)).toHaveLength(2)
+    expect(spliceTotals(lines)).toEqual([
+      { method: '重ね継手', totalCount: 12 },
+      { method: 'ガス圧接', totalCount: 12 },
+    ])
   })
 
   it('provides flat story subtotals and a grand total without rounding', () => {

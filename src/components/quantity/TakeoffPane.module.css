@@ -268,7 +268,7 @@ a.inferredSourceChip:hover {
 }
 
 /* 물량이 실제보다 적게 나온다는 고지다 — 미확인 규준값(▲)과 같은 색으로 세운다. */
-.spliceOmittedNotice {
+.splicePositionNotice {
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-hairline);

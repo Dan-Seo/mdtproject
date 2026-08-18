@@ -1,4 +1,4 @@
-import type { BarSize } from './member'
+import type { BarSize, SpliceMethod } from './member'
 import type { RuleHit } from '../rules/types'
 
 export type RebarRole =
@@ -45,6 +45,27 @@ export interface RebarPlacement {
   positionCount: number
 }
 
+/**
+ * この鉄筋1本が持つ継手 (数量積算基準 1通則4)・（２）柱2)・（３）梁2))。
+ *
+ * **位置は持たない。** 継手位置を定める表5.3.3 は原文で画像であり転写できていない
+ * (docs/M0-FINDINGS.md) — 位置のない継手は数量にしか現れないので、3D は
+ * `points` に継手を描かず、この値は設計長さと「箇所」の内訳行だけに効く。
+ */
+export interface RebarSplice {
+  method: SpliceMethod
+  /** 1本あたりの継手箇所数。（３）梁2) に 0.5 か所があるので整数とは限らない */
+  countPerBar: number
+  /** この継手が設計長さに算入した長さ (mm)。ガス圧接なら 0 — 1通則5) */
+  lengthMm: number
+  /**
+   * 箇所数と算入長さを決めた行だけ。かぶり等まで載せると、算出式に現れない
+   * 行を継手行の根拠として示すことになる。
+   */
+  rules: RuleHit[]
+  formula: string
+}
+
 export interface Rebar {
   id: string
   memberId: string
@@ -67,6 +88,8 @@ export interface Rebar {
   count: number
   /** 대표 1본을 실제 本数만큼 전개할 때 필요한 도메인 배치 입력. */
   placement?: RebarPlacement
+  /** 継手を持たない鉄筋（フープ・スタラップ）にはない */
+  splice?: RebarSplice
   zones?: RebarZone[]
   /** 이 철근을 산정하며 실제로 조회한 룰 행 그대로 — 키만 남기면 조회 조건을 잃는다 */
   ruleHits: RuleHit[]

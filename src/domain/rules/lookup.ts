@@ -57,6 +57,38 @@ export function lookupRule(
   return mostSpecific[0]
 }
 
+/**
+ * 같은 key의 행 전부를 `orderBy` 조건값의 오름차순으로 돌려준다.
+ *
+ * 区分表(（３）梁2))처럼 **행의 개수와 순서 자체가 규준**인 룰에 쓴다. 코드가
+ * 「区分은 3개」라고 알면 룰팩을 바꿔도 코드가 따라오지 않으므로, 조회 쪽이
+ * 표 전체를 읽는다.
+ */
+export function lookupRuleSeries(
+  pack: RulePack,
+  key: string,
+  orderBy: string,
+): RuleHit[] {
+  const rows = pack.entries.filter((entry) => entry.key === key)
+
+  if (rows.length === 0) {
+    throw new Error(`Rule series not found: ${key}`)
+  }
+
+  return [...rows]
+    .map((entry) => {
+      const order = entry.conditions[orderBy]
+      if (typeof order !== 'number') {
+        throw new Error(
+          `Rule ${key} must carry a numeric ${orderBy} condition to be ordered`,
+        )
+      }
+      return { entry, order }
+    })
+    .sort((left, right) => left.order - right.order)
+    .map(({ entry }) => entry)
+}
+
 export function lookupMarkup(
   pack: RulePack,
   memberClass: MemberClass | string,
