@@ -103,9 +103,11 @@ function PlanMember({
   const section = findSection(project, member.sectionId)
   const selected = selectedMemberId === member.id
   // 부재 id는 그리드 좌표를 담고 있어 보내지 않는다 — 어느 페인에서 골랐는지만 남긴다.
+  // 이미 선택된 부재를 다시 클릭해도 재발화하지 않는다 — SectionTable·TakeoffPane과
+  // 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
   const select = () => {
     selectMember(member.id)
-    posthog.capture('member_selected', { source: 'plan' })
+    if (!selected) posthog.capture('member_selected', { source: 'plan' })
   }
 
   if (member.kind === '柱' && !('axis' in member.position)) {

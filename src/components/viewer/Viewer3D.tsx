@@ -1158,12 +1158,14 @@ export function Viewer3D() {
   const { rebars, lines, unsupportedMembers } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
   const selectMemberRef = useRef(selectMember)
+  const selectedMemberIdRef = useRef(selectedMemberId)
   const hoverRowIdRef = useRef(hoverRowId)
   const viewerLayersRef = useRef(viewerLayers)
   const linesRef = useRef(lines)
   const projectRef = useRef(project)
   setHoverRowRef.current = setHoverRow
   selectMemberRef.current = selectMember
+  selectedMemberIdRef.current = selectedMemberId
   hoverRowIdRef.current = hoverRowId
   viewerLayersRef.current = viewerLayers
   linesRef.current = lines
@@ -1365,8 +1367,11 @@ export function Viewer3D() {
       }
       const pickedMemberId = memberIdFromHit(hit)
       if (pickedMemberId !== null) {
+        // 이미 선택된 부재를 다시 클릭해도 재발화하지 않는다 — plan·section·
+        // takeoff와 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
+        const changed = pickedMemberId !== selectedMemberIdRef.current
         selectMemberRef.current(pickedMemberId)
-        posthog.capture('member_selected', { source: 'viewer' })
+        if (changed) posthog.capture('member_selected', { source: 'viewer' })
       }
     }
     renderer.domElement.addEventListener('pointermove', handlePointerMove)

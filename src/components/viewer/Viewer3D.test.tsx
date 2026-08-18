@@ -607,6 +607,23 @@ describe('Viewer3D', () => {
     })
   })
 
+  it('does not re-report member_selected when the same member is clicked again', () => {
+    useAppStore.setState({
+      viewerMode: 'building',
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y2' },
+    })
+    render(<Viewer3D />)
+
+    const canvas = screen.getByLabelText('建物全体の3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    // RaycasterMock은 좌표와 무관하게 항상 같은 부재를 반환한다 — 선택은
+    // 이미 그 부재로 바뀌어 있으므로 다시 눌러도 계측이 또 나가선 안 된다.
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
     const { result } = renderHook(() => useTakeoff())
     const mainLine = massLines(result.current.lines).find(

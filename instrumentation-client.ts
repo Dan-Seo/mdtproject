@@ -11,6 +11,9 @@ import type { BeforeSendFn } from 'posthog-js'
  *   `Member and section kinds do not match: ${member.id}`(project.ts)가 담는
  *   `1F-G1-X1Y2-X`·`section-G1` 형태. 断面リスト 취입이 부재 id에 符号을
  *   넣는 순간 이 경로로 유출된다.
+ * ④ 범위 숫자 — `assertBounds`(geometry.ts)의 `Invalid bounds on axis ${axis}:
+ *   ${min}..${max}`처럼 두 독립 숫자를 `.`로 잇는 모양. `.`을 숫자 판정에서
+ *   완전히 배제하면 지워지지만, ①의 소수점(`342.5`)까지 갈라 반쪽만 지우게 된다.
  *
  * ①②③의 모양을 통째로 지운다. 룰 key(anchorage.L1)처럼 문자에 붙은 숫자,
  * env 안내문의 "un-configured"처럼 숫자 없는 하이픈 낱말은 룰팩 상수·정적
@@ -22,7 +25,12 @@ function scrubDrawingText(text: string): string {
     .replace(/\{.*\}/g, '{REDACTED}') // JSON.stringify(conditions) 블록 (한 줄 출력이라 개행은 없다)
     .replace(/\S*\|\S*/g, '[REDACTED]') // story.name|code|mark 형태의 그룹 id
     .replace(/(?=\S*-)(?=\S*\d)\S+/g, '[REDACTED]') // 1F-G1-X1Y2-X·section-G1 형태의 id
-    .replace(/(?<![\p{L}\d._])\d+(?:\.\d+)?(?![\p{L}\d._])/gu, '[REDACTED]') // 나머지 독립 숫자
+    // 나머지 독립 숫자. `.`을 lookaround 제외 문자에 넣으면 "342.5" 같은
+    // 소수 하나는 지키지만 "100..200"처럼 두 숫자를 `.`로 이은 범위는 양쪽
+    // 다 `.`에 막혀 못 지운다(geometry.ts의 bounds 메시지가 실제 사례) — 그래서
+    // `.`은 매치 문자 클래스 안에 넣어 숫자·점의 연속 run을 통째로 잡고,
+    // lookaround는 글자·밑줄만 배제한다(anchorage.L1의 L1은 여전히 남는다).
+    .replace(/(?<![\p{L}_])[\d.]+(?![\p{L}_])/gu, '[REDACTED]')
 }
 
 /**

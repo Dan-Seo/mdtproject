@@ -219,6 +219,29 @@ describe('instrumentation-client', () => {
     )
   })
 
+  // geometry.ts:479의 `Invalid bounds on axis ${axis}: ${min}..${max}`는 두
+  // 독립 숫자를 `..`로 잇는다. 앞 숫자 뒤·뒤 숫자 앞 모두 `.`이 있어, `.`을
+  // 「문자에 붙은 숫자」 판정에 쓰던 이전 규칙(양옆 lookaround가 `.`을 제외)이
+  // 둘 다 통과시켰다 — 도면 유래 mm 경계값이 원문 그대로 나갔다.
+  it('redacts a numeric range joined by two dots', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u8',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          { type: 'Error', value: 'Invalid bounds on axis 0: 100.25..200.5' },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Invalid bounds on axis [REDACTED]: [REDACTED]',
+    )
+  })
+
   it('leaves non-exception events untouched', async () => {
     await loadInstrumentation()
 

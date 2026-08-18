@@ -40,6 +40,17 @@ describe('PlanEditor', () => {
     expect(member).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('does not re-report member_selected when the same member is clicked again', () => {
+    render(<PlanEditor />)
+
+    const member = screen.getByRole('button', { name: 'C1 1F-X2Y2' })
+    fireEvent.click(member)
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(member)
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps the 柱 mark label out of the clickable group so it matches the marker', () => {
     render(<PlanEditor />)
 

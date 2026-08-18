@@ -101,6 +101,7 @@ const config = [
             'three',
             'zustand',
             'exceljs',
+            'posthog-js',
           ],
           patterns: [
             'react/*',
@@ -109,6 +110,7 @@ const config = [
             'three/*',
             'zustand/*',
             'exceljs/*',
+            'posthog-js/*',
           ],
         },
       ],
