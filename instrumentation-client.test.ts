@@ -48,6 +48,27 @@ describe('instrumentation-client', () => {
     expect(init).not.toHaveBeenCalled()
   })
 
+  // .gitignore가 .env*를 막으므로 새로 클론한 리포에는 이 변수가 없다. 그
+  // 상태에서 throw하면 계측 설정 실패만으로 npm run dev의 클라이언트 모듈
+  // 평가가 중단돼, 텔레메트리가 제품 기동의 전제가 된다 — 경고로 알리고
+  // 계속 진행한다.
+  it('warns instead of blocking dev startup when the token is missing', async () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    delete process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      await expect(loadInstrumentation()).resolves.not.toThrow()
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN'),
+      )
+      expect(init).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllEnvs()
+      warn.mockRestore()
+    }
+  })
+
   // src/domain/rebar/의 조회 실패 메시지는 도면 유래 mm 치수를 문자열 보간으로
   // 담는다(예: `clearMm must be finite: ${clearMm}`). capture_exceptions가 이걸
   // 스크러빙 없이 잡아 보내면 CLAUDE.md CRITICAL을 어긴다. before_send가 그
@@ -152,6 +173,49 @@ describe('instrumentation-client', () => {
 
     expect(captured.properties.$exception_list[0].value).toBe(
       'Rule not found: anchorage.L1',
+    )
+  })
+
+  // quantity/index.ts:210의 `Member not found for Rebar: ${rebar.memberId}`와
+  // project.ts:105의 `Member and section kinds do not match: ${member.id}`는
+  // 하이픈+숫자 id(예: `1F-G1-X1Y2-X`·`section-G1`)를 담는다. {}·파이프·독립
+  // 숫자 세 규칙 어디에도 이 모양이 안 걸린다 — 断面リスト 취입이 부재 id에
+  // 符号을 넣는 순간 그대로 유출된다.
+  it('redacts hyphenated ids that carry digits, like member and section ids', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u6',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          { type: 'Error', value: 'Member not found for Rebar: 1F-G1-X1Y2-X' },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Member not found for Rebar: [REDACTED]',
+    )
+  })
+
+  // 순수 문자 하이픈 낱말(숫자 없음)은 도면 데이터가 아니므로 남긴다 —
+  // env 안내 메시지의 "un-configured"가 실제 사례다.
+  it('keeps hyphenated words that carry no digits', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u7',
+      event: '$exception',
+      properties: {
+        $exception_list: [{ type: 'Error', value: 'value is un-configured' }],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'value is un-configured',
     )
   })
 

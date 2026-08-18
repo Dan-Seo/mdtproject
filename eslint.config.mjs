@@ -21,7 +21,10 @@ const config = [
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
-    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    // instrumentation-client.ts는 리포 루트(Next.js 관례)라 src/** 밖이지만
+    // 이 프로젝트의 두 번째 아웃바운드 경로다(ADR-020) — 가드 사각지대에
+    // 두면 안 된다.
+    files: ['src/**/*.{js,jsx,ts,tsx}', 'instrumentation-client.ts'],
     ignores: ['src/**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-globals': [

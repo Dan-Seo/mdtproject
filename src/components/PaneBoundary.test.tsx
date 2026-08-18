@@ -159,6 +159,48 @@ describe('PaneBoundary', () => {
     expect(captureException).toHaveBeenCalledTimes(2)
   })
 
+  // reportedReason이 복구 뒤에도 남아 있으면, 같은 원인이 다시 터지는
+  // 새 사건을 dedup이 영원히 삼켜 재발 빈도가 관측에서 사라진다.
+  it('reports again after a genuine recovery, even if the reason recurs', () => {
+    const { rerender } = render(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={0}
+      >
+        <Boom message="Rule not found: development.length" />
+      </PaneBoundary>,
+    )
+
+    expect(captureException).toHaveBeenCalledTimes(1)
+
+    // resetKey 변경 + 자식이 더 이상 던지지 않음 = 진짜 복구.
+    rerender(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={1}
+      >
+        <p>数量内訳</p>
+      </PaneBoundary>,
+    )
+
+    expect(screen.getByText('数量内訳')).toBeInTheDocument()
+
+    // 나중에 같은 원인이 새 사건으로 다시 터진다.
+    rerender(
+      <PaneBoundary
+        label="このペインを表示できません"
+        pane="takeoff-pane-body"
+        resetKey={2}
+      >
+        <Boom message="Rule not found: development.length" />
+      </PaneBoundary>,
+    )
+
+    expect(captureException).toHaveBeenCalledTimes(2)
+  })
+
   it('stays failed while resetKey is unchanged', () => {
     const { rerender } = render(
       <PaneBoundary

@@ -4,6 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSampleProject } from '@/domain/model/sample-project'
 import { useAppStore } from '@/lib/store'
 
+const { capture, captureException } = vi.hoisted(() => ({
+  capture: vi.fn(),
+  captureException: vi.fn(),
+}))
+
+vi.mock('posthog-js', () => ({ default: { capture, captureException } }))
+
 import { AppShell } from './AppShell'
 
 function Boom({ message }: { message: string }): never {
@@ -19,6 +26,8 @@ function BoomUntilRenamed() {
 
 describe('AppShell', () => {
   beforeEach(() => {
+    capture.mockClear()
+    captureException.mockClear()
     useAppStore.setState({
       project: createSampleProject(),
       locale: 'ja',
@@ -150,6 +159,14 @@ describe('AppShell', () => {
       screen.getByRole('heading', { name: '평면 에디터' }),
     ).toBeInTheDocument()
     expect(useAppStore.getState().locale).toBe('ko')
+  })
+
+  it('reports the locale switch', () => {
+    render(<AppShell />)
+
+    fireEvent.click(screen.getByRole('button', { name: '한국어' }))
+
+    expect(capture).toHaveBeenCalledWith('locale_changed', { locale: 'ko' })
   })
 
   it('publishes the active locale on the document element', () => {

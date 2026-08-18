@@ -2,21 +2,26 @@ import posthog from 'posthog-js'
 import type { BeforeSendFn } from 'posthog-js'
 
 /**
- * 도면 유래 값은 예외 message에 두 모양으로 실린다.
+ * 도면 유래 값은 예외 message에 세 모양으로 실린다.
  * ① 独立 숫자 — `clearMm must be finite: ${clearMm}` (stirrup-layout.ts).
  * ② 문자값 — lookupRule의 `Rule not found: ${key} for ${JSON.stringify(conditions)}`가
  *   담는 exposure·finish(lookup.ts)와, memberGroupKey가 만드는
  *   `${story.name}|C|${section.mark}` 형태의 그룹 id(project.ts)의 층 이름·符号.
- *   숫자만 지우면 문자값은 그대로 나간다.
+ * ③ 하이픈 id — `Member not found for Rebar: ${rebar.memberId}`(quantity/index.ts)와
+ *   `Member and section kinds do not match: ${member.id}`(project.ts)가 담는
+ *   `1F-G1-X1Y2-X`·`section-G1` 형태. 断面リスト 취입이 부재 id에 符号을
+ *   넣는 순간 이 경로로 유출된다.
  *
- * ①②의 모양을 통째로 지운 뒤 남은 독립 숫자를 지운다. 룰 key(anchorage.L1)
- * 처럼 문자에 붙은 숫자는 룰팩 상수지 도면 값이 아니므로 남긴다 — 어느 룰이
- * 없는지가 이 계측의 목적이라 PaneBoundary가 그 라벨에 기댄다.
+ * ①②③의 모양을 통째로 지운다. 룰 key(anchorage.L1)처럼 문자에 붙은 숫자,
+ * env 안내문의 "un-configured"처럼 숫자 없는 하이픈 낱말은 룰팩 상수·정적
+ * 문구지 도면 값이 아니므로 남긴다 — 어느 룰이 없는지가 이 계측의 목적이라
+ * PaneBoundary가 그 라벨에 기댄다.
  */
 function scrubDrawingText(text: string): string {
   return text
     .replace(/\{.*\}/g, '{REDACTED}') // JSON.stringify(conditions) 블록 (한 줄 출력이라 개행은 없다)
     .replace(/\S*\|\S*/g, '[REDACTED]') // story.name|code|mark 형태의 그룹 id
+    .replace(/(?=\S*-)(?=\S*\d)\S+/g, '[REDACTED]') // 1F-G1-X1Y2-X·section-G1 형태의 id
     .replace(/(?<![\p{L}\d._])\d+(?:\.\d+)?(?![\p{L}\d._])/gu, '[REDACTED]') // 나머지 독립 숫자
 }
 
@@ -57,8 +62,11 @@ if (!projectToken || !host) {
       ? 'NEXT_PUBLIC_POSTHOG_HOST'
       : 'NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN'
 
-    throw new Error(
-      `${missingVariable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingVariable} is configured`,
+    // .gitignore가 .env*를 막아 새로 클론한 리포에는 이 값이 없다. throw하면
+    // 계측 설정 실패만으로 npm run dev의 클라이언트 모듈 평가가 멎어, 텔레메트리가
+    // 제품 기동의 전제가 된다 — 경고만 하고 계속 진행한다.
+    console.warn(
+      `${missingVariable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This warning stops appearing once ${missingVariable} is configured`,
     )
   }
 } else {

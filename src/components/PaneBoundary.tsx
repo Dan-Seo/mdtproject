@@ -51,8 +51,17 @@ export class PaneBoundary extends Component<
     posthog.captureException(error, { pane: this.props.pane })
   }
 
-  componentDidUpdate(previous: PaneBoundaryProps): void {
-    if (this.state.reason === null) return
+  componentDidUpdate(
+    previous: PaneBoundaryProps,
+    previousState: PaneBoundaryState,
+  ): void {
+    if (this.state.reason === null) {
+      // 진짜 복구(자식이 더 이상 안 던짐)만 여기 온다 — 원인이 그대로면
+      // 재throw가 곧바로 새 실패 상태를 만들어 이 분기를 안 탄다. resetKey
+      // 변경 시점에 비우면 위 dedup이 무의미해지므로 복구 성공 시점에만 비운다.
+      if (previousState.reason !== null) this.reportedReason = null
+      return
+    }
     if (previous.resetKey === this.props.resetKey) return
     this.setState({ reason: null })
   }

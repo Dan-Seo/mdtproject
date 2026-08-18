@@ -133,6 +133,19 @@ describe('SectionTable', () => {
     })
   })
 
+  // 행 안의 입력칸을 클릭해 편집만 해도 onClick이 버블링돼 selectSection이
+  // 다시 불린다. 선택이 이미 그 부재였으면 member_selected가 또 나가선
+  // 안 된다 — source별 선택 수 비교가 section 쪽으로 부푼다.
+  it('does not re-report member_selected when the row is already selected', () => {
+    render(<SectionTable />)
+
+    fireEvent.click(screen.getByTestId('section-row-section-G2'))
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByTestId('section-row-section-G2'))
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
   it('follows a selection changed outside the section pane', () => {
     render(<SectionTable />)
 

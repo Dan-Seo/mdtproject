@@ -376,8 +376,11 @@ export function SectionTable() {
 
     if (!representative) return
 
+    // 행 안의 입력칸을 클릭해 편집만 해도 onClick이 버블링돼 여기로 다시
+    // 들어온다. 이미 그 부재가 선택돼 있으면 다시 세지 않는다.
+    const changed = representative.id !== selectedMemberId
     selectMember(representative.id)
-    posthog.capture('member_selected', { source: 'section' })
+    if (changed) posthog.capture('member_selected', { source: 'section' })
   }
 
   const activateRow = (

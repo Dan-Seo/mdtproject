@@ -1,12 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useAppStore } from '@/lib/store'
+
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+
+vi.mock('posthog-js', () => ({ default: { capture } }))
 
 import { ViewerTabs } from './ViewerTabs'
 
 describe('ViewerTabs', () => {
   beforeEach(() => {
+    capture.mockClear()
     useAppStore.setState({ locale: 'ja', viewerMode: 'member' })
   })
 
@@ -29,6 +34,16 @@ describe('ViewerTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: '建物' }))
 
     expect(useAppStore.getState().viewerMode).toBe('building')
+  })
+
+  it('reports the mode switch', () => {
+    render(<ViewerTabs />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '建物' }))
+
+    expect(capture).toHaveBeenCalledWith('viewer_mode_changed', {
+      mode: 'building',
+    })
   })
 
   it('translates the tab labels instead of hardcoding Japanese', () => {
