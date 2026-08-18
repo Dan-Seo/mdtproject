@@ -84,11 +84,16 @@ jobs:
         # 꼬리 4000줄을 그대로 주던 것을 축약으로 바꿨다: 줄마다 붙는 job/step/ISO
         # 타임스탬프 프리픽스만으로 30~40%가 낭비이고, 4000줄이면 에이전트의 첫 Read
         # 한 번에 60~100k 토큰이 꽂힌다. 무엇을 잘랐는지는 distill 이 본문에 밝힌다.
+        #
+        # 순서가 중요하다 — scrub 이 먼저다. scrub 의 PRIVATE KEY 마스킹은 BEGIN/END 두 줄로
+        # 범위를 잡는데(scrub-secrets.sh), distill 이 먼저 돌면 그 사이가 잘려 BEGIN 을 잃은
+        # 키 본문이 마스킹되지 않고 남는다 (PR #41 3차 리뷰의 major). scrub 의 패턴은 전부
+        # 비앵커라 프리픽스가 붙은 원본 로그에도 그대로 걸린다.
         run: |
           mkdir -p .oncall
           gh run view "$RUN_ID" -R "${{ github.repository }}" --log-failed \
             > "$RUNNER_TEMP/raw-failure.log" || true
-          bash scripts/ci/distill-failure-log.sh < "$RUNNER_TEMP/raw-failure.log" | bash scripts/ci/scrub-secrets.sh > .oncall/failure.log
+          bash scripts/ci/scrub-secrets.sh < "$RUNNER_TEMP/raw-failure.log" | bash scripts/ci/distill-failure-log.sh > .oncall/failure.log
           if [ ! -s .oncall/failure.log ]; then
             echo "(실패 로그를 가져오지 못했다 — 런 페이지를 직접 볼 것: $RUN_URL)" > .oncall/failure.log
           fi

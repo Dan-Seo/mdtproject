@@ -73,6 +73,11 @@ git cat-file -e "${PREV_SHA}^{commit}" 2>/dev/null || emit false "이전 판정 
 # 두 점 diff 다 — main 을 머지해 들어온 코드 변경도 "바뀐 것"으로 잡아 승계를 막는다.
 # 그 코드는 이미 main 에서 리뷰됐지만 이 브랜치와의 조합은 처음이므로 보수적으로 본다.
 is_inert() {
+  # 에이전트 지시문은 확장자만 보면 문서지만 실행된다 — .claude/** 의 스킬·훅 지시와
+  # 루트의 CLAUDE.md·AGENTS.md 는 다음 리뷰의 판단 자체를 바꾼다 (PR #41 3차 리뷰의 major).
+  case "$1" in
+    .claude/*|CLAUDE.md|AGENTS.md) return 1 ;;
+  esac
   case "$1" in
     docs/*|phases/*|*.md) return 0 ;;
     *.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico|*.webp|*.pdf|*.xlsx|*.woff|*.woff2|*.ttf) return 0 ;;

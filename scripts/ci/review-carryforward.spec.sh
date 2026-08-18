@@ -33,7 +33,7 @@ export PATH="$TMP/bin:$PATH"
 # 커밋 두 개짜리 임시 저장소. $1 = 두 번째 커밋에서 바꿀 파일
 make_repo() {
   rm -rf "$TMP/repo"
-  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs" "$TMP/repo/.claude/workflows"
+  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs" "$TMP/repo/.claude/workflows" "$TMP/repo/.claude/skills/s"
   cd "$TMP/repo" || exit 1
   git init -q .
   git config user.email t@t
@@ -45,6 +45,9 @@ make_repo() {
   # "실행되는가" 임을 여기서 못 박는다
   echo base > .claude/workflows/g.js
   echo base > package-lock.json
+  # 문서처럼 보이지만 에이전트가 읽고 따르는 지시문이다
+  echo base > .claude/skills/s/SKILL.md
+  echo base > CLAUDE.md
   git add -A; git commit -qm base
   BASE_SHA=$(git rev-parse HEAD)
   echo changed >> "$1"
@@ -141,6 +144,16 @@ run_case ".claude/** 가 바뀜 → 실행되는 코드라 승계 금지" false
 make_repo package-lock.json
 reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
 run_case "package-lock.json 이 바뀜 → 의존성이 달라져 승계 금지" false
+
+# 에이전트 지시문은 확장자만 보면 문서지만 실행된다 — 스킬·훅 지시가 바뀌면 다음 리뷰의
+# 판단 자체가 달라진다 (PR #41 3차 리뷰의 major).
+make_repo .claude/skills/s/SKILL.md
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case ".claude/**/*.md 가 바뀜 → 지시문이라 승계 금지" false
+
+make_repo CLAUDE.md
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case "CLAUDE.md 가 바뀜 → 지시문이라 승계 금지" false
 
 if [ "$FAILED" -ne 0 ]; then
   echo "review-carryforward.spec: 실패"
