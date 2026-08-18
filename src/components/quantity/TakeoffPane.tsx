@@ -56,6 +56,13 @@ function formatCount(count: number): string {
   return Number.isInteger(count) ? String(count) : count.toFixed(1)
 }
 
+/** 텔레메트리용 규모 버킷. 원값은 부재 수·철근 종류에서 파생된 도면 데이터다. */
+function sizeBucket(lineCount: number): 'small' | 'medium' | 'large' {
+  if (lineCount < 50) return 'small'
+  if (lineCount < 500) return 'medium'
+  return 'large'
+}
+
 /** 単位が違って値を持たないセル。空欄だと入力漏れに見える。 */
 const NOT_APPLICABLE = '—'
 
@@ -647,21 +654,20 @@ export function TakeoffActions() {
     // 클릭이 아니라 결과에 이벤트를 건다 — 내보내기는 이 제품의 산출물이고,
     // 클릭 시점에 성공을 기록하면 exceljs 청크 실패가 성공으로 집계된다.
     // 룰팩 key만 싣는다. 치수·본수는 도면 데이터라 브라우저 밖으로 내보내지 않는다.
+    // lines.length 원값도 부재 수에서 파생된 모델 규모라 마찬가지다 — 원문을
+    // 복원할 수 없는 버킷으로만 보낸다.
     exportTakeoffXlsx({ project, lines, locale }).then(
       () => {
         posthog.capture('takeoff_exported', {
           locale,
-          line_count: lines.length,
+          size_bucket: sizeBucket(lines.length),
           has_inferred: hasInferred,
           inferred_rules: inferredRules.map(({ key }) => key),
         })
       },
       (error: unknown) => {
         posthog.captureException(error, { stage: 'takeoff_export' })
-        posthog.capture('takeoff_export_failed', {
-          locale,
-          line_count: lines.length,
-        })
+        posthog.capture('takeoff_export_failed', { locale })
       },
     )
   }

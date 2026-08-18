@@ -125,3 +125,11 @@
 **트레이드오프**: 3D에 그려진 あばら筋 개수와 内訳書의 本数가 다르게 보인다(샘플 G1: 52본 대 53본). 이 어긋남 자체가 설명되어야 하므로 `formula`에 「設計長さ ／ 設計本数 ／ 3D 形状（数量には用いない）」를 모두 적는다. 숨기는 대신 근거와 함께 드러내는 쪽을 택한다(UC4).
 
 이 분리는 표시부가 형상에서 수량을 역산하지 못하게 만든다 — 그래서 `RebarPlacement.positionCount`를 도메인이 실어 보내고, 뷰어는 그 값으로만 배치 드리프트를 검사한다.
+
+### ADR-020: 프로덕션 관측에 한해 브라우저 텔레메트리를 둔다
+
+**결정**: `instrumentation-client.ts`에서 posthog-js를 초기화한다. `autocapture: false`·`disable_session_recording: true`로 DOM 자동수집·세션 리코딩을 끄고, 명시적 `capture()`·`captureException()` 호출만 이벤트를 만든다. 이벤트 속성은 룰팩 key·화면 이름·개수·enum 같은 정적 라벨과 버킷값만 싣는다. `before_send` 훅을 유일한 전송 관문으로 두어, `$exception_list[].value`(예외 message)에 남은 숫자를 정규식으로 지운다.
+
+**이유**: `src/domain/`의 가드 함수는 실패 사유를 `` `clearMm must be finite: ${clearMm}` ``처럼 값을 문자열 보간해 던진다. 이 메시지가 `PaneBoundary`·`global-error`·`TakeoffPane`의 `captureException`을 타고 그대로 나가면, 사용자가 断面一覧에 입력한 실제 건물 치수가 서드파티 서버로 전송된다 — "사용자 도면 데이터를 서버로 보내지 말 것"(CLAUDE.md CRITICAL)의 정면 위반이다. 호출부마다 개별로 스크러빙하면 새 호출부가 추가될 때마다 빠뜨릴 수 있다. `before_send`는 posthog-js의 모든 capture·captureException이 반드시 거치는 마지막 관문이라 스크러빙 지점이 하나로 고정되고, 새 이벤트가 추가돼도 회귀하지 않는다.
+
+**트레이드오프**: 숫자를 통째로 지우므로 예외의 실제 실패값(어느 mm에서 깨졌는지)은 프로덕션에서 볼 수 없다 — 앞의 라벨(`clearMm must be finite`처럼 어느 검사가 실패했는지)만 남는다. `PaneBoundary`가 이 신호를 두는 이유(룰팩 조회 공백을 찾는 것)에는 라벨만으로 충분하고, 값까지 필요해지면 사용자에게 직접 재현 정보를 요청해야 한다. 회귀 방지는 `instrumentation-client.test.ts`.

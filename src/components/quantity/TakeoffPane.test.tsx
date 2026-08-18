@@ -554,11 +554,31 @@ describe('TakeoffPane', () => {
     await waitFor(() =>
       expect(capture).toHaveBeenCalledWith('takeoff_exported', {
         locale: 'ja',
-        line_count: expect.any(Number),
+        size_bucket: expect.any(String),
         has_inferred: expect.any(Boolean),
         inferred_rules: expect.any(Array),
       }),
     )
+  })
+
+  // line_count 원값은 부재 수·철근 종류에서 파생된 모델 규모라 도면에서 나온
+  // 값이다. 「치수·본수는 도면 데이터라 내보내지 않는다」는 exportWorkbook의
+  // 주석과 어긋나므로 원문 없이도 복원 못 하는 버킷으로만 보낸다.
+  it('buckets the model size instead of sending the raw line count', async () => {
+    render(<TakeoffActions />)
+
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith(
+        'takeoff_exported',
+        expect.objectContaining({ size_bucket: 'small' }),
+      ),
+    )
+    const [, properties] = capture.mock.calls.find(
+      ([event]) => event === 'takeoff_exported',
+    )!
+    expect(properties).not.toHaveProperty('line_count')
   })
 
   it('reports a failed export instead of dropping the rejection', async () => {
@@ -575,7 +595,6 @@ describe('TakeoffPane', () => {
     )
     expect(capture).toHaveBeenCalledWith('takeoff_export_failed', {
       locale: 'ja',
-      line_count: expect.any(Number),
     })
     expect(capture).not.toHaveBeenCalledWith(
       'takeoff_exported',
