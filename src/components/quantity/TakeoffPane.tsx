@@ -13,6 +13,8 @@ import type { RebarShape } from '@/domain/model/rebar'
 import { memberGroupKey, setNote } from '@/domain/model/project'
 import {
   grandTotal,
+  isMassLine,
+  spliceLines,
   storySubtotals,
   type QuantityLine,
 } from '@/domain/quantity'
@@ -47,6 +49,14 @@ function formatLength(lengthMm: number): string {
 function formatMass(massKg: number): string {
   return massKg.toFixed(3)
 }
+
+// 継手箇所数には （３）梁2) の 0.5か所がある — 整数に丸めると条文と違う数になる。
+function formatCount(count: number): string {
+  return Number.isInteger(count) ? String(count) : count.toFixed(1)
+}
+
+/** 単位が違って値を持たないセル。空欄だと入力漏れに見える。 */
+const NOT_APPLICABLE = '—'
 
 function groupsByStory(lines: QuantityLine[]): Map<string, QuantityGroup[]> {
   const stories = new Map<string, Map<string, QuantityGroup>>()
@@ -274,6 +284,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
             >
               {t(locale, 'takeoff.requiredQuantity')}
             </th>
+            <th scope="col">{t(locale, 'takeoff.unit')}</th>
             <th scope="col">{t(locale, 'takeoff.source')}</th>
             <th scope="col">{t(locale, 'takeoff.note')}</th>
           </tr>
@@ -303,7 +314,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
             <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
               {formatMass(total.requiredKg)}
             </td>
-            <td colSpan={2} />
+            <td colSpan={3} />
           </tr>
         </tbody>
       </table>
@@ -348,7 +359,7 @@ function StoryRows({
         <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
           {formatMass(requiredKg)}
         </td>
-        <td colSpan={2} />
+        <td colSpan={3} />
       </tr>
       {groups.map((group) => {
         const representative = representatives.get(group.id)
@@ -419,7 +430,7 @@ function GroupRows({
           select()
         }}
       >
-        <th scope="row" colSpan={12}>
+        <th scope="row" colSpan={13}>
           {group.memberKind}　{group.mark}　{group.sectionLabel}　[
           {group.places} 箇所]
         </th>
@@ -480,25 +491,57 @@ function LineRows({
               toggle()
             }}
           >
-            {line.role}
+            {isMassLine(line)
+              ? line.role
+              : `${line.role}　継手（${line.method}）`}
           </button>
           <InferredWarning line={line} />
         </td>
         <td className={styles.numericCell}>{line.size}</td>
-        <td>
-          <ShapeIcon shape={line.shape} />
-        </td>
-        <td className={styles.numericCell}>{formatLength(line.lengthMm)}</td>
-        <td className={styles.numericCell}>{line.countPerMember}</td>
-        <td className={styles.numericCell}>{line.places}</td>
-        <td className={styles.numericCell}>{formatLength(line.totalLengthMm)}</td>
-        <td className={`${styles.numericCell} ${styles.unitMass}`}>
-          {line.unitMassKgPerM.toFixed(3)}
-        </td>
-        <td className={styles.numericCell}>{formatMass(line.designKg)}</td>
-        <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
-          {formatMass(line.requiredKg)}
-        </td>
+        {isMassLine(line) ? (
+          <>
+            <td>
+              <ShapeIcon shape={line.shape} />
+            </td>
+            <td className={styles.numericCell}>
+              {formatLength(line.lengthMm)}
+            </td>
+            <td className={styles.numericCell}>{line.countPerMember}</td>
+            <td className={styles.numericCell}>{line.places}</td>
+            <td className={styles.numericCell}>
+              {formatLength(line.totalLengthMm)}
+            </td>
+            <td className={`${styles.numericCell} ${styles.unitMass}`}>
+              {line.unitMassKgPerM.toFixed(3)}
+            </td>
+            <td className={styles.numericCell}>{formatMass(line.designKg)}</td>
+            <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
+              {formatMass(line.requiredKg)}
+            </td>
+          </>
+        ) : (
+          // 継手は箇所で数える。長さ・質量の列は空欄ではなく「値がない」と示す —
+          // 割増（1通則9)）も設計「数量」＝質量への規定なので所要数量は出ない。
+          <>
+            <td>{NOT_APPLICABLE}</td>
+            <td className={styles.numericCell}>{NOT_APPLICABLE}</td>
+            <td className={styles.numericCell}>
+              {formatCount(line.countPerMember)}
+            </td>
+            <td className={styles.numericCell}>{line.places}</td>
+            <td className={styles.numericCell}>{NOT_APPLICABLE}</td>
+            <td className={`${styles.numericCell} ${styles.unitMass}`}>
+              {NOT_APPLICABLE}
+            </td>
+            <td className={styles.numericCell}>
+              {formatCount(line.totalCount)}
+            </td>
+            <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
+              {NOT_APPLICABLE}
+            </td>
+          </>
+        )}
+        <td>{line.unit}</td>
         <td>
           <SourceChips rules={line.rules} />
         </td>
@@ -508,7 +551,7 @@ function LineRows({
       </tr>
       {expanded && (
         <tr className={styles.formulaRow} data-testid={`formula-${line.id}`}>
-          <td colSpan={12}>
+          <td colSpan={13}>
             <pre>{line.formula}</pre>
           </td>
         </tr>
@@ -521,26 +564,28 @@ export function TakeoffPane() {
   const { lines, unsupportedMembers } = useTakeoff()
   const locale = useAppStore(({ locale }) => locale)
 
-  // 通し筋의 継手箇所数는 数量積算基準 1通則4)·（３）梁2)에 근거가 있으나 아직
-  // 구현하지 않았다 (R8). 접힌 산출식에만 두면 사용자가 모르고 발주에 쓴다 —
-  // 大梁 主筋 행이 있으면 항상 보이게 한다.
-  const spliceOmitted = lines.some(
-    ({ memberKind, role }) => memberKind === '大梁' && role !== 'あばら筋',
-  )
+  // 箇所数は計上したが位置は決まっていない（表5.3.3 が原文で画像）。接힌
+  // 산출식에만 두면 3D에 継手가 안 보이는 이유를 사용자가 알 수 없다 —
+  // 継手 행이 하나라도 있으면 항상 보이게 한다.
+  const hasSplice = spliceLines(lines).length > 0
 
   return (
     <>
-      {spliceOmitted && (
+      {hasSplice && (
         <p
-          className={styles.spliceOmittedNotice}
+          className={styles.splicePositionNotice}
           role="note"
-          data-testid="splice-omitted-notice"
+          data-testid="splice-position-notice"
         >
-          ▲ {t(locale, 'takeoff.spliceOmitted')}
+          ▲ {t(locale, 'takeoff.splicePosition')}
         </p>
       )}
       {unsupportedMembers.length > 0 && (
-        <div className={styles.unsupportedNotice} role="note">
+        <div
+          className={styles.unsupportedNotice}
+          role="note"
+          data-testid="unsupported-notice"
+        >
           <strong>
             {t(locale, 'takeoff.unsupported.title')}{' '}
             {unsupportedMembers.length}

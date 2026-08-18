@@ -54,8 +54,8 @@
   "takeoff.places": "箇所",
   "takeoff.totalLength": "総延長 (m)",
   "takeoff.unitMass": "kg/m",
-  "takeoff.designQuantity": "設計数量 (kg)",
-  "takeoff.requiredQuantity": "所要数量 (kg)",
+  "takeoff.designQuantity": "設計数量",
+  "takeoff.requiredQuantity": "所要数量",
   "takeoff.source": "出典",
   "takeoff.note": "備考",
   "takeoff.total": "合計",
@@ -67,7 +67,6 @@
   "takeoff.unsupported.reason.寸法不成立": "断面・内法寸法が成立しない",
   "takeoff.unsupported.plan.定着不成立": "定着不成立: 支点柱の断面かスパンの見直しが必要",
   "takeoff.unsupported.plan.寸法不成立": "寸法不成立: 断面かスパンの見直しが必要",
-  "takeoff.spliceOmitted": "大梁 通し筋は継手箇所数を計上していません（数量積算基準 1通則4)・（３）梁2) が未実装）— 数量は実際より少なく出ます",
   "viewer.selectMember": "部材を選択",
   "viewer.scaleNotice": "寸法判読用ではない",
   "viewer.empty": "配筋データなし",
@@ -118,5 +117,8 @@
   "warning.m1.title": "M1 プレースホルダー",
   "warning.m1.body": "現在のルールパック数値は原文抽出前の仮値です。検収・発注には使用しないでください。",
   "notice.source": "算出根拠: 公共建築工事標準仕様書・公共建築数量積算基準（国土交通省公開資料を加工・改変して利用）",
-  "notice.scope": "官庁施設向けの基準であり、民間工事では異なる場合があります。"
+  "notice.scope": "官庁施設向けの基準であり、民間工事では異なる場合があります。",
+  "takeoff.unit": "単位",
+  "takeoff.splice": "継手",
+  "takeoff.splicePosition": "継手位置は標準仕様書 表5.3.3 が原文で画像のため未確定です — 箇所数と設計長さのみ計上し、3D には描いていません"
 }

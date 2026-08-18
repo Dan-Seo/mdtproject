@@ -11,7 +11,7 @@ import {
   type Project,
 } from '../../src/domain/model/project'
 import type { Rebar } from '../../src/domain/model/rebar'
-import { aggregateQuantity } from '../../src/domain/quantity'
+import { aggregateQuantity, massLines } from '../../src/domain/quantity'
 import {
   coverConditions,
   lookupRule,
@@ -30,6 +30,7 @@ const section: ColumnSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', count: 1 },
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
@@ -79,16 +80,18 @@ function rebarFor(member: Member, designKg: number, size: BarSize): Rebar {
 describe('公共建築数量積算基準の所要数量', () => {
   it('applies the stated page 20 markup without domain rounding', () => {
     const project = projectFor([fixture.supported.memberClass])
-    const line = aggregateQuantity(
-      project,
-      [
-        rebarFor(
-          project.members[0],
-          fixture.supported.designKg,
-          fixture.supported.size as BarSize,
-        ),
-      ],
-      jpMlitRulePack,
+    const line = massLines(
+      aggregateQuantity(
+        project,
+        [
+          rebarFor(
+            project.members[0],
+            fixture.supported.designKg,
+            fixture.supported.size as BarSize,
+          ),
+        ],
+        jpMlitRulePack,
+      ),
     )[0]
     const markupRule = line.rules.find(({ key }) => key === 'markup.rate')
 

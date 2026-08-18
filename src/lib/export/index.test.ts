@@ -12,6 +12,7 @@ import {
   aggregateQuantity,
   grandTotal,
   inferredRules,
+  spliceTotals,
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
@@ -109,7 +110,7 @@ describe('buildTakeoffWorkbook', () => {
       .toBe(true)
   })
 
-  it('emits the sixteen DESIGN §4.2 columns in order and preserves display precision', () => {
+  it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const header = spec.rows.find(({ kind }) => kind === 'header')
@@ -127,18 +128,37 @@ describe('buildTakeoffWorkbook', () => {
       '箇所',
       '総延長 (m)',
       'kg/m',
-      '設計数量 (kg)',
-      '所要数量 (kg)',
+      '設計数量',
+      '所要数量',
+      '単位',
       '出典',
       '備考',
       '算出式',
     ])
-    expect(header?.cells).toHaveLength(16)
+    expect(header?.cells).toHaveLength(17)
     expect(firstDataRow?.cells[6].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[9].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[10].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[11].numberFormat).toBe('0.000')
     expect(firstDataRow?.cells[12].numberFormat).toBe('0.000')
+  })
+
+  it('adds a 箇所 total row per 継手 method beside the kg total', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const totals = spec.rows.filter(({ kind }) => kind === 'total')
+    const [kgTotal, spliceTotal] = totals
+
+    // 継手は質量に足せないので行を分ける。分けた行が kg 合計と同じ列に
+    // 落ちていないと、単位だけ違う二つの合計が別々の欄に見える。
+    expect(kgTotal?.cells[13].value).toBe('kg')
+    expect(spliceTotal?.cells[13].value).toBe('箇所')
+    expect(spliceTotal?.cells[0].value).toContain('重ね継手')
+    expect(spliceTotal?.cells[11].value).toBe(
+      spliceTotals(input.lines)[0].totalCount,
+    )
+    // 0.5か所（（３）梁2)）を丸めず、整数に余分な小数点も残さない。
+    expect(spliceTotal?.cells[11].numberFormat).toBe('General')
   })
 
   it('writes the stored 備考 into the note column', () => {
@@ -153,8 +173,8 @@ describe('buildTakeoffWorkbook', () => {
     const noted = rows.find(({ id }) => id === lineId)
     const others = rows.filter(({ id }) => id !== lineId)
 
-    expect(noted?.cells[14].value).toBe('要確認')
-    expect(others.every(({ cells }) => cells[14].value === '')).toBe(true)
+    expect(noted?.cells[15].value).toBe('要確認')
+    expect(others.every(({ cells }) => cells[15].value === '')).toBe(true)
   })
 
   it('includes source document names, editions, URLs, scope and modification notice', () => {
@@ -252,7 +272,21 @@ describe('buildTakeoffWorkbook', () => {
       '※ 未確認の規準値を含む — 検収前の参考値',
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
-    expect(worksheet?.getCell('P3').value).toBe('算出式')
+    expect(worksheet?.getCell('Q3').value).toBe('算出式')
+    // 網掛けは発注に使う 所要数量(M) に立てる。データ行と合計行で強調列が
+    // 食い違うと同じシートの中で発注列が二つに見える。
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const dataRowNumber = spec.rows.findIndex(({ kind }) => kind === 'data') + 1
+    const totalRowNumber = spec.rows.findIndex(({ kind }) => kind === 'total') + 1
+    expect(worksheet?.getRow(dataRowNumber).getCell(13).fill).toMatchObject({
+      pattern: 'solid',
+    })
+    expect(worksheet?.getRow(dataRowNumber).getCell(15).fill).toMatchObject({
+      pattern: 'none',
+    })
+    expect(worksheet?.getRow(totalRowNumber).getCell(13).fill).toMatchObject({
+      pattern: 'solid',
+    })
     // exceljs の動的 import は npm ci 直後の初回だけ既定の5秒を超えることがある。
   }, 20000)
 })

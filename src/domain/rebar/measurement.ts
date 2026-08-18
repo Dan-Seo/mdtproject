@@ -48,6 +48,107 @@ export function hoopDesignLengthMm(
 }
 
 /**
+ * 1通則4)（紙面 p.15）
+ * 「重ね継手又はガス圧接継手について……計測・計算した鉄筋の長さについて、径１３㎜
+ *   以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるもの
+ *   として継手箇所数を求める。」
+ *
+ * 「ごとに」を長さ÷単位の整数部と読む。ちょうど倍数のときに1か所か2か所かは
+ * 原文から決まらないので、ゴールデン事例は端数を持つ長さだけを固定してある
+ * （tests/golden/fixtures/quantity-r5-ch3.json の spliceCount.interpretation）。
+ */
+export function intervalSpliceCount(
+  barLengthMm: number,
+  intervalRule: RuleHit,
+): number {
+  if (!positiveFinite(barLengthMm)) {
+    throw new Error(`鉄筋の長さ must be positive: ${barLengthMm}`)
+  }
+
+  const intervalMm = additionMm(intervalRule)
+  if (!positiveFinite(intervalMm)) {
+    throw new Error(
+      `継手箇所数を求める長さの単位 must be positive: ${intervalMm}`,
+    )
+  }
+
+  return Math.floor(barLengthMm / intervalMm)
+}
+
+/** 箇所で数える規準値を読む。0.5か所（（３）梁2)）があるので整数に丸めない。 */
+export function spliceCount(rule: RuleHit): number {
+  if (rule.unit !== '箇所') {
+    throw new Error(`Rule ${rule.key} must use 箇所: ${rule.unit}`)
+  }
+
+  return rule.value
+}
+
+/** 長さの区分で継手箇所数が変わる規準（（３）梁2)）の1区分。 */
+export interface SpliceBand {
+  countRule: RuleHit
+  /** この区分の上限 (mm)。上限を持たない区分が最後の区分になる。 */
+  upperBoundRule: RuleHit | null
+}
+
+/**
+ * 2（３）梁2)（紙面 p.17）
+ * 「連続する梁の全長にわたる主筋の継手については、１通則４）の規定にかかわらず、
+ *   梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、
+ *   １０．０ｍ以上は２か所あるものとする。」
+ *
+ * 区分の境目（5.0m・10.0m）は規準の数値なのでルールパックが持つ。ここが持つのは
+ * 「上限未満ならその区分」という読み方だけである。
+ */
+export function bandedSpliceRule(
+  lengthMm: number,
+  bands: SpliceBand[],
+): RuleHit {
+  if (!positiveFinite(lengthMm)) {
+    throw new Error(`梁の長さ must be positive: ${lengthMm}`)
+  }
+
+  const openEnded = bands.findIndex(({ upperBoundRule }) => upperBoundRule === null)
+  if (openEnded !== bands.length - 1) {
+    // 上限なしの区分が最後にちょうど1つないと、長い梁が表から落ちて箇所数が
+    // 0 になるか、短い梁が上限なしの区分に吸われる。黙って数字を返さない。
+    throw new Error(
+      '継手箇所数の区分表は上限なしの区分を最後に1つだけ持たなければならない',
+    )
+  }
+
+  for (const { countRule, upperBoundRule } of bands) {
+    if (upperBoundRule === null) return countRule
+    if (lengthMm < additionMm(upperBoundRule)) return countRule
+  }
+
+  throw new Error(`継手箇所数の区分が見つからない: ${lengthMm}`)
+}
+
+/**
+ * 継手箇所数を設計長さに算入する量。重ね継手なら1か所あたり重ね継手長さ、
+ * ガス圧接なら 1通則5)「長さの変化はないものとする」で 0 になる。
+ * どちらの倍率もルールパックの measure.splice.length.factor が持つ。
+ */
+export function spliceLengthMm(
+  count: number,
+  lapLengthMm: number,
+  factorRule: RuleHit,
+): number {
+  if (factorRule.unit !== 'ratio') {
+    throw new Error(`Rule ${factorRule.key} must use ratio: ${factorRule.unit}`)
+  }
+  if (!Number.isFinite(count) || count < 0) {
+    throw new Error(`継手箇所数 must not be negative: ${count}`)
+  }
+  if (!Number.isFinite(lapLengthMm) || lapLengthMm < 0) {
+    throw new Error(`継手の重ね長さ must not be negative: ${lapLengthMm}`)
+  }
+
+  return count * lapLengthMm * factorRule.value
+}
+
+/**
  * 1通則7)（紙面 p.15）
  * 「鉄筋の割付本数が設計図書に記載されていない場合は、その部分の長さを鉄筋の
  *   間隔で除し、小数点以下第１位を切り上げた整数……に１を加える。」

@@ -48,38 +48,52 @@ describe('useTakeoff', () => {
     expect(result.current.lines.length).toBeGreaterThan(0)
     // 単一 스팬 런 2개와 2스팬 런 1개가 만드는 행 구성을 그대로 박는다.
     // あばら筋은 X·Y 스팬 内法이 같아 한 행으로 묶이고 places로 세어진다.
-    expect(firstStoryG1Lines.map(({ role }) => role)).toEqual([
-      '上端筋',
-      '下端筋',
-      'あばら筋',
-      '上端筋',
-      '下端筋',
+    // 継手 행(箇所)은 2스팬 런에만 붙는다 — 単一 스팬은 単独梁이라 1通則4)로
+    // 돌아가고 D25 6.8m는 7.0m에 못 미쳐 0か所이며, 0 행은 만들지 않는다.
+    // 2스팬 런은 連続梁이라 （３）梁2)의 11.2m ＝ 2か所가 붙는다.
+    expect(firstStoryG1Lines.map(({ role, unit }) => `${role}/${unit}`)).toEqual([
+      '上端筋/kg',
+      '下端筋/kg',
+      'あばら筋/kg',
+      '上端筋/kg',
+      '上端筋/箇所',
+      '下端筋/kg',
+      '下端筋/箇所',
     ])
     // 샘플 1층: X 단일 스팬 런 3 + Y 2스팬 런 2 = 5런.
     // 같은 길이·符号는 QuantityLine 한 행으로 묶일 수 있으므로 places 합으로
     // 通し筋은 런 수, あばら筋은 실제 부재 수(3 + 2×2 = 7)를 검산한다.
+    // 箇所 행은 같은 役割로 따로 서므로 質量 행만 세어야 런 수가 된다.
+    const firstStoryGirderMassLines = firstStoryGirderLines.filter(
+      ({ unit }) => unit === 'kg',
+    )
     expect(
-      firstStoryGirderLines
+      firstStoryGirderMassLines
         .filter(({ role }) => role === '上端筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(5)
     expect(
-      firstStoryGirderLines
+      firstStoryGirderMassLines
         .filter(({ role }) => role === '下端筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(5)
     expect(
-      firstStoryGirderLines
+      firstStoryGirderMassLines
         .filter(({ role }) => role === 'あばら筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(7)
+    // 柱主筋에도 継手 행이 붙는다（（２）柱2) 各階ごとに1か所）— 여기서 세려는
+    // 것은 부재 수이므로 質量 행만 센다.
+    const firstStoryColumnMassLines = firstStoryColumnLines.filter(
+      ({ unit }) => unit === 'kg',
+    )
     expect(
-      firstStoryColumnLines
+      firstStoryColumnMassLines
         .filter(({ role }) => role === '主筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(columnsPerStory)
     expect(
-      firstStoryColumnLines
+      firstStoryColumnMassLines
         .filter(({ role }) => role === '帯筋')
         .reduce((sum, { places }) => sum + places, 0),
     ).toBe(columnsPerStory)

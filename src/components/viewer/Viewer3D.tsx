@@ -21,7 +21,12 @@ import {
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import type { UnsupportedReason } from '@/domain/model/unsupported'
-import { quantityLineId, type QuantityLine } from '@/domain/quantity'
+import {
+  massLines,
+  quantityLineId,
+  type MassQuantityLine,
+  type QuantityLine,
+} from '@/domain/quantity'
 import type { RuleHit } from '@/domain/rules/types'
 import {
   useTakeoff,
@@ -90,8 +95,9 @@ type HoverTooltip =
   | {
       key: string
       kind: 'member'
+      // 3D は継手を描かない（位置に根拠がない）ので、ホバーで当たるのは質量行だけだ。
       line: Pick<
-        QuantityLine,
+        MassQuantityLine,
         | 'id'
         | 'role'
         | 'size'
@@ -622,7 +628,7 @@ function tooltipFromHit(
   if (view.mode === 'member') {
     const rowId: unknown = hit.object.userData.rowId
     if (typeof rowId !== 'string') return null
-    const line = lines.find(({ id }) => id === rowId)
+    const line = massLines(lines).find(({ id }) => id === rowId)
     if (line === undefined) return null
     return { key: `row:${line.id}`, kind: 'member', line }
   }

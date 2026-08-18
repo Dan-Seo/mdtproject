@@ -65,16 +65,16 @@
       "printedPage": 15,
       "pdfPage": 20,
       "quote": "重ね継手又はガス圧接継手について、この基準で別に定める場合を除き、計測・計算した鉄筋の長さについて、径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める。径の異なる鉄筋の重ね継手は小径による継手とする。",
-      "status": "deferred",
-      "reason": "継手箇所数は未計上。数量単位に「箇所」を足す変更（QuantityLine の単位ユニオン）が要るため次段。R8 の根拠はこの条項にある"
+      "status": "covered",
+      "coveredBy": "ルールパック measure.splice.interval（径ごと）＋ intervalSpliceCount。単独梁の通し筋がこれによる（連続梁は （３）梁2) が「かかわらず」で上書きする）。適用は主筋に限る — フープ・スタラップは冒頭の「この基準で別に定める場合」に当たり、（２）柱3) が「１通則２）及び７）による」、（３）梁3) が「１通則２）、３）及び７）による」と適用条項を数え上げていて４）を含めない。継手を持つ主筋は （２）柱2) が「主筋の継手は、１通則４）の規定による」と明示する"
     },
     {
       "id": "1通則5)",
       "printedPage": 15,
       "pdfPage": 20,
       "quote": "ガス圧接継手の加工のための鉄筋の長さの変化はないものとする。",
-      "status": "deferred",
-      "reason": "継手方式の入力が未実装 — M3b"
+      "status": "covered",
+      "coveredBy": "ルールパック measure.splice.length.factor の { method: ガス圧接 } ＝ 0。重ね継手の算入倍率 1 はこの条文の反対解釈であって明文ではない — 同行は inferred"
     },
     {
       "id": "1通則6)",
@@ -121,8 +121,8 @@
       "printedPage": 16,
       "pdfPage": 21,
       "quote": "主筋の継手は、１通則４）の規定による。ただし、基礎柱については基礎柱部分の主筋の長さが３．０ｍ以上の場合は１か所、その他の階の各階柱の全長にわたる主筋については各階ごとに１か所の継手があるものとする。",
-      "status": "deferred",
-      "reason": "継手箇所数は未計上 — 1通則4) と同じ理由"
+      "status": "covered",
+      "coveredBy": "ルールパック measure.splice.column ＝ 各階ごとに1か所。基礎柱の但書は対象外（ADR-005 — 基礎は扱わない）"
     },
     {
       "id": "2（２）柱3)",
@@ -153,8 +153,8 @@
       "printedPage": 17,
       "pdfPage": 22,
       "quote": "連続する梁の全長にわたる主筋の継手については、１通則４）の規定にかかわらず、梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする。ただし、単独梁及び片持梁の主筋の継手は、１通則４）によるものとし、梁の全長にわたる主筋の径が異なる場合の継手の位置は設計図書による。",
-      "status": "deferred",
-      "reason": "継手箇所数は未計上 — 1通則4) と同じ理由"
+      "status": "covered",
+      "coveredBy": "ルールパック measure.splice.girder.continuous（区分ごとの箇所数）＋ 同 .band.upper（区分の上限）。ランが2スパン以上なら連続梁、1スパンなら単独梁として 1通則4) に戻す"
     },
     {
       "id": "2（３）梁3)",
@@ -232,6 +232,87 @@
         "expectedCount": 25
       }
     ],
+
+    "spliceCount": {
+      "interpretation": "「６．０ｍごとに継手があるものとして」を、長さを単位で割った整数部と読んだ。ちょうど倍数（12.0m など）で2か所か1か所かは原文から決まらないので、下の事例は端数を持つ長さだけを固定する — 倍数の扱いは実装の解釈であってゴールデンではない",
+      "column": [
+        {
+          "clause": "2（２）柱2)",
+          "label": "各階柱の全長にわたる主筋 — 各階ごとに1か所",
+          "expectedPerBar": 1
+        }
+      ],
+      "continuousGirder": [
+        {
+          "clause": "2（３）梁2)",
+          "label": "連続梁 4.8m — 5.0m未満",
+          "beamLengthMm": 4800,
+          "expectedPerBar": 0.5
+        },
+        {
+          "clause": "2（３）梁2)",
+          "label": "連続梁 5.2m — 5.0m以上10.0m未満",
+          "beamLengthMm": 5200,
+          "expectedPerBar": 1
+        },
+        {
+          "clause": "2（３）梁2)",
+          "label": "連続梁 9.8m — 5.0m以上10.0m未満",
+          "beamLengthMm": 9800,
+          "expectedPerBar": 1
+        },
+        {
+          "clause": "2（３）梁2)",
+          "label": "連続梁 11.2m — 10.0m以上",
+          "beamLengthMm": 11200,
+          "expectedPerBar": 2
+        }
+      ],
+      "interval": [
+        {
+          "clause": "1通則4)",
+          "label": "D13 5.9m — 6.0m に満たない",
+          "barSize": "D13",
+          "barLengthMm": 5900,
+          "expectedPerBar": 0
+        },
+        {
+          "clause": "1通則4)",
+          "label": "D13 6.1m — 6.0m ごと",
+          "barSize": "D13",
+          "barLengthMm": 6100,
+          "expectedPerBar": 1
+        },
+        {
+          "clause": "1通則4)",
+          "label": "D13 12.5m — 6.0m ごと",
+          "barSize": "D13",
+          "barLengthMm": 12500,
+          "expectedPerBar": 2
+        },
+        {
+          "clause": "1通則4)",
+          "label": "D25 6.9m — 7.0m に満たない",
+          "barSize": "D25",
+          "barLengthMm": 6900,
+          "expectedPerBar": 0
+        },
+        {
+          "clause": "1通則4)",
+          "label": "D25 7.1m — 7.0m ごと",
+          "barSize": "D25",
+          "barLengthMm": 7100,
+          "expectedPerBar": 1
+        },
+        {
+          "clause": "1通則4)",
+          "label": "D25 14.5m — 7.0m ごと",
+          "barSize": "D25",
+          "barLengthMm": 14500,
+          "expectedPerBar": 2
+        }
+      ]
+    },
 
     "continuousGirderMain": {
       "clause": "2（３）梁1)",

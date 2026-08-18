@@ -13,6 +13,7 @@ import {
 } from '../../src/domain/model/project'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
+import { intervalSpliceCount } from '../../src/domain/rebar/measurement'
 import { lookupRule, lookupUnitMass } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity-r5-ch3.json'
@@ -37,6 +38,7 @@ function columnSection(
     grade: 'SD345',
     exposure: '屋外',
     finish: '仕上げなし',
+    spliceMethod: '重ね継手',
     main: { size: 'D25', count: 12 },
     hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
     ...overrides,
@@ -56,6 +58,7 @@ function girderSection(
     grade: 'SD345',
     exposure: '屋外',
     finish: '仕上げなし',
+    spliceMethod: '重ね継手',
     main: { size: 'D25', topCount: 4, bottomCount: 4 },
     stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     ...overrides,
@@ -128,7 +131,7 @@ function columnRebarFor(section: ColumnSection, story: Story = STORY) {
       section,
       story,
       beamDepthAbove: 750,
-      ends: { bottom: '継手', top: '定着' },
+      ends: { bottom: '定着', top: '定着' },
     },
     jpMlitRulePack,
   )
@@ -334,10 +337,76 @@ describe('2（２）柱1) 主筋の長さ ＝ 柱の長さ ＋ 定着長さ及�
       (total, zone) => total + (zone.pathToMm - zone.pathFromMm),
       0,
     )
+    // 継手は （２）柱2) が別に置く分なので、柱の長さ項からは外して測る。
+    const splice = main.splice?.lengthMm ?? 0
 
-    expect(main.length - extensions).toBe(
+    expect(main.length - extensions - splice).toBe(
       fixture.cases.columnMain.storyHeightMm,
     )
+  })
+})
+
+describe('1通則4)・2（２）柱2)・（３）梁2) 継手箇所数', () => {
+  it.each(fixture.cases.spliceCount.column)(
+    '$label ＝ $expectedPerBar か所',
+    (testCase) => {
+      const main = roleOf(columnRebarFor(columnSection()), '主筋')
+
+      expect(main.splice?.countPerBar).toBe(testCase.expectedPerBar)
+    },
+  )
+
+  it.each(fixture.cases.spliceCount.continuousGirder)(
+    '$label ＝ $expectedPerBar か所',
+    (testCase) => {
+      // 梁の長さ ＝ ランの芯長（内法の和 ＋ 中間柱せい）。2スパンに割り付けて作る。
+      const column = columnSection()
+      const clear = (testCase.beamLengthMm - column.b) / 2
+      const { run, rebars } = girderRebarFor(
+        [clear + column.b, clear + column.b],
+        column,
+        girderSection(),
+      )
+
+      expect(run.coreLengthMm).toBe(testCase.beamLengthMm)
+      expect(roleOf(rebars, '上端筋').splice?.countPerBar).toBe(
+        testCase.expectedPerBar,
+      )
+    },
+  )
+
+  it.each(fixture.cases.spliceCount.interval)(
+    '$label ＝ $expectedPerBar か所',
+    (testCase) => {
+      const intervalRule = lookupRule(
+        jpMlitRulePack,
+        'measure.splice.interval',
+        { size: testCase.barSize },
+      )
+
+      expect(intervalSpliceCount(testCase.barLengthMm, intervalRule)).toBe(
+        testCase.expectedPerBar,
+      )
+    },
+  )
+
+  it('sends a single-span run to 1通則4) and a continuous run to （３）梁2)', () => {
+    // 「連続する梁」かどうかで条項が入れ替わる。取り違えると 5m 前後の単独梁が
+    // 0.5か所になり、10m を超える連続梁が長さ割りで数えられる。
+    const column = columnSection()
+    const single = girderRebarFor([6000], column, girderSection())
+    const continuous = girderRebarFor(
+      [6000, 6000],
+      column,
+      girderSection(),
+    )
+
+    expect(
+      roleOf(single.rebars, '上端筋').splice?.rules.map(({ key }) => key),
+    ).toContain('measure.splice.interval')
+    expect(
+      roleOf(continuous.rebars, '上端筋').splice?.rules.map(({ key }) => key),
+    ).toContain('measure.splice.girder.continuous')
   })
 })
 

@@ -14,7 +14,10 @@ import { coverConditions } from '../rules/lookup'
 // 없는 배치값을 룰팩에 가짜 출처로 넣는 대신 입력으로 받는다 (ADR-012).
 // v4 (2026-08-12): ColumnSection.hoop에도 같은 이유로 startOffsetMm 추가.
 // 이 값이 帯筋 本数(=물량)를 좌우하므로 제품 상수로 두지 않는다.
-export const PROJECT_SCHEMA_VERSION = 4
+// v5 (2026-08-14): Section에 필수 필드 spliceMethod 추가. 継手箇所数와 설계길이
+// 산입이 방식마다 다른데(積算基準 1通則4)·5)) 규준에 기본 방식이 없으므로
+// 조용한 기본값 대신 입력으로 받는다.
+export const PROJECT_SCHEMA_VERSION = 5
 
 export interface Grid {
   xSpans: number[]
@@ -352,18 +355,21 @@ export function girderRun(project: Project, member: Member): GirderRun {
 }
 
 /**
- * 柱主筋の端部条件 (R7)。
+ * 柱主筋の端部条件 (R7①)。
  *
- * 층간 접합부에는 이음이 **한 번만** 있어야 한다. 예전에는 모든 층이
- * 「階高 ＋ 定着 ＋ 継手」를 받아 접합부가 아래층의 継手와 위층의 定着으로
- * 두 번 계상됐다. 접합부의 継手는 **위층 부재가 부담**하고, 定着은 스택의
- * 양 끝(기초·최상단)에만 붙는다.
+ * 定着은 스택의 **양 끝**(기초·최상단)에만 붙는다. 중간 접합부는 철근이 그대로
+ * 지나가므로 어느 쪽에도 定着이 붙지 않는다.
+ *
+ * 접합부의 **継手는 여기서 다루지 않는다.** 数量積算基準 2（２）柱2)가
+ * 「各階柱の全長にわたる主筋については各階ごとに1か所」로 정하므로 층마다
+ * 조문대로 1か所이고, 그 배분을 제품이 정할 여지가 없다. 예전에는 접합부의
+ * 継手를 위층 부재에 귀속시키는 관행을 코드가 들고 있었는데(그래서 최하층은
+ * 継手가 0이었다), 조문이 그 자리를 대신한다.
  *
  * 스택 순서는 `stories` 배열 순서를 그대로 신뢰한다 — Story에 레벨 값이 없다.
- * 조문이 아니라 관행에 따른 배분이므로 이 규칙 자체는 검증되지 않은 전제다.
  */
 export interface ColumnEnds {
-  bottom: '定着' | '継手'
+  bottom: '定着' | 'なし'
   top: '定着' | 'なし'
 }
 
@@ -394,7 +400,7 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
   }
 
   return {
-    bottom: hasColumnAtLevel(level - 1) ? '継手' : '定着',
+    bottom: hasColumnAtLevel(level - 1) ? 'なし' : '定着',
     top: hasColumnAtLevel(level + 1) ? 'なし' : '定着',
   }
 }

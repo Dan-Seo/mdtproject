@@ -3,6 +3,8 @@ import {
   grandTotal,
   hasInferred,
   inferredRules,
+  isMassLine,
+  spliceTotals,
   type QuantityLine,
 } from '@/domain/quantity'
 import type { RebarShape } from '@/domain/model/rebar'
@@ -53,12 +55,19 @@ export interface TakeoffWorkbookInput {
   locale: Locale
 }
 
-const COLUMN_COUNT = 16
+const COLUMN_COUNT = 17
 const THREE_DECIMALS = '0.000'
+// 継手の 0.5か所（（３）梁2)）が 1 に丸まると条文と違う数が内訳書に出る。
+// '0.#' は書式に小数点そのものを含むので、整数の 108 が `108.` と描かれる。
+const SPLICE_COUNT_FORMAT = 'General'
 
 const COLUMN_WIDTHS = [
-  10, 12, 10, 12, 9, 13, 12, 10, 10, 15, 10, 16, 16, 36, 18, 64,
+  10, 12, 10, 12, 9, 13, 12, 10, 10, 15, 10, 16, 16, 8, 36, 18, 64,
 ]
+/** 列番号 (1 起点)。所要数量の網掛けと、出典・算出式の折り返しに使う。 */
+const REQUIRED_COLUMN = 13
+const SOURCE_COLUMN = 15
+const FORMULA_COLUMN = 17
 
 const exportCopy: Record<
   Locale,
@@ -193,6 +202,7 @@ function workbookHeaders(locale: Locale): string[] {
     t(locale, 'takeoff.unitMass'),
     t(locale, 'takeoff.designQuantity'),
     t(locale, 'takeoff.requiredQuantity'),
+    t(locale, 'takeoff.unit'),
     t(locale, 'takeoff.source'),
     t(locale, 'takeoff.note'),
     t(locale, 'export.formula'),
@@ -204,22 +214,44 @@ function dataRow(
   locale: Locale,
   note: string,
 ): WorkbookRowSpec {
+  // 継手行は箇所で数えるので、長さ・質量の列は空欄にする。0 を書くと
+  // 集計されて質量が過小に見える。
+  const measured = isMassLine(line)
+    ? [
+        cell(shapeLabel(locale, line.shape)),
+        cell(line.lengthMm / 1000, { numberFormat: THREE_DECIMALS }),
+        cell(line.countPerMember, { numberFormat: '0' }),
+        cell(line.places, { numberFormat: '0' }),
+        cell(line.totalLengthMm / 1000, { numberFormat: THREE_DECIMALS }),
+        cell(line.unitMassKgPerM, { numberFormat: THREE_DECIMALS }),
+        cell(line.designKg, { numberFormat: THREE_DECIMALS }),
+        cell(line.requiredKg, { numberFormat: THREE_DECIMALS }),
+      ]
+    : [
+        cell(null),
+        cell(null),
+        cell(line.countPerMember, { numberFormat: SPLICE_COUNT_FORMAT }),
+        cell(line.places, { numberFormat: '0' }),
+        cell(null),
+        cell(null),
+        cell(line.totalCount, { numberFormat: SPLICE_COUNT_FORMAT }),
+        cell(null),
+      ]
+
   return row(
     'data',
     [
       cell(line.storyName),
       cell(line.memberKind),
       cell(line.mark),
-      cell(`${line.inferred ? '⚠ ' : ''}${line.role}`),
+      cell(
+        `${line.inferred ? '⚠ ' : ''}${line.role}${
+          isMassLine(line) ? '' : `　${t(locale, 'takeoff.splice')}（${line.method}）`
+        }`,
+      ),
       cell(line.size),
-      cell(shapeLabel(locale, line.shape)),
-      cell(line.lengthMm / 1000, { numberFormat: THREE_DECIMALS }),
-      cell(line.countPerMember, { numberFormat: '0' }),
-      cell(line.places, { numberFormat: '0' }),
-      cell(line.totalLengthMm / 1000, { numberFormat: THREE_DECIMALS }),
-      cell(line.unitMassKgPerM, { numberFormat: THREE_DECIMALS }),
-      cell(line.designKg, { numberFormat: THREE_DECIMALS }),
-      cell(line.requiredKg, { numberFormat: THREE_DECIMALS }),
+      ...measured,
+      cell(line.unit),
       cell(lineSources(line, locale)),
       cell(note),
       cell(line.formula),
@@ -266,7 +298,18 @@ export function buildTakeoffWorkbook(
       ...Array.from({ length: 10 }, () => cell(null)),
       cell(total.designKg, { numberFormat: THREE_DECIMALS }),
       cell(total.requiredKg, { numberFormat: THREE_DECIMALS }),
+      cell('kg'),
     ]),
+    // 継手は質量に足せないので合計行を分ける。方式ごとに単価が違うので方式別に出す。
+    ...spliceTotals(lines).map(({ method, totalCount }) =>
+      row('total', [
+        cell(`${t(locale, 'takeoff.total')}　${t(locale, 'takeoff.splice')}（${method}）`),
+        ...Array.from({ length: 10 }, () => cell(null)),
+        cell(totalCount, { numberFormat: SPLICE_COUNT_FORMAT }),
+        cell(null),
+        cell('箇所'),
+      ]),
+    ),
     row('spacer', []),
     row('source-heading', [cell(copy.sourceHeading)]),
     ...contributingSources(lines).map((source) =>
@@ -341,7 +384,8 @@ export async function exportTakeoffXlsx(
       if (cellSpec.numberFormat) worksheetCell.numFmt = cellSpec.numberFormat
       worksheetCell.alignment = {
         vertical: 'middle',
-        wrapText: index === 13 || index === 15,
+        wrapText:
+          index === SOURCE_COLUMN - 1 || index === FORMULA_COLUMN - 1,
       }
       if (cellSpec.hyperlink) {
         worksheetCell.font = {
@@ -405,16 +449,16 @@ export async function exportTakeoffXlsx(
 
     if (rowSpec.kind === 'data') {
       const wrappedLineCount = Math.max(
-        String(rowSpec.cells[13].value).split('\n').length,
-        String(rowSpec.cells[15].value).split('\n').length,
+        String(rowSpec.cells[SOURCE_COLUMN - 1].value).split('\n').length,
+        String(rowSpec.cells[FORMULA_COLUMN - 1].value).split('\n').length,
       )
       worksheetRow.height = Math.max(32, (wrappedLineCount + 1) * 16)
-      worksheetRow.getCell(13).fill = {
+      worksheetRow.getCell(REQUIRED_COLUMN).fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: workbookColors.canvasSoft },
       }
-      worksheetRow.getCell(13).border = {
+      worksheetRow.getCell(REQUIRED_COLUMN).border = {
         left: { style: 'medium', color: { argb: workbookColors.ink } },
       }
       if (String(rowSpec.cells[3].value).startsWith('⚠ ')) {
@@ -432,7 +476,7 @@ export async function exportTakeoffXlsx(
           top: { style: 'medium', color: { argb: workbookColors.ink } },
         }
       })
-      worksheetRow.getCell(13).fill = {
+      worksheetRow.getCell(REQUIRED_COLUMN).fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: workbookColors.canvasSoft },

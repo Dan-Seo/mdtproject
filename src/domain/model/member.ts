@@ -18,6 +18,22 @@ export type BarSize = (typeof BAR_SIZES)[number]
 
 export type SteelGrade = 'SD295' | 'SD345' | 'SD390'
 
+/**
+ * 主筋の継手方式。断面一覧の入力であって製品が決めない (ADR-012)。
+ *
+ * 数量積算基準 1通則4)・5) が名指すのは重ね継手とガス圧接継手だけなので、
+ * 機械式・溶接の扱いはルールパック側で `inferred` の行になる — 選べるが
+ * 未確認として警告が付く (ADR-015)。
+ */
+export const SPLICE_METHODS = [
+  '重ね継手',
+  'ガス圧接',
+  '機械式',
+  '溶接',
+] as const
+
+export type SpliceMethod = (typeof SPLICE_METHODS)[number]
+
 /** 表5.3.6 のかぶり厚さセルを特定する入力 (屋内・屋外 × 仕上げの有無)。 */
 export type Exposure = '屋内' | '屋外'
 
@@ -39,6 +55,8 @@ export interface ColumnSection {
   grade: SteelGrade
   exposure: Exposure
   finish: Finish
+  /** 主筋の継手方式 — 継手箇所数と設計長さへの算入を決める (積算基準 1通則4)・5)) */
+  spliceMethod: SpliceMethod
   main: {
     size: BarSize
     count: number
@@ -66,6 +84,8 @@ export interface GirderSection {
   grade: SteelGrade
   exposure: Exposure
   finish: Finish
+  /** ColumnSection.spliceMethod と同じ。通し筋の継手箇所数に効く */
+  spliceMethod: SpliceMethod
   main: {
     size: BarSize
     topCount: number

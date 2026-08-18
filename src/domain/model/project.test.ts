@@ -33,6 +33,7 @@ const columnSection: ColumnSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
@@ -47,6 +48,7 @@ const shallowGirderSection: GirderSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D22', topCount: 4, bottomCount: 4 },
   stirrup: { size: 'D13', pitch: 150, startOffsetMm: 50 },
 }
@@ -473,7 +475,7 @@ describe('columnEnds', () => {
     stackColumn('2F', 1, 1),
   ]
 
-  it('anchors into the foundation at the lowest story and hands the joint upwards', () => {
+  it('anchors into the foundation at the lowest story and passes through the joint', () => {
     const project = stackProject(twoStories)
 
     expect(columnEnds(project, twoStories[0])).toEqual({
@@ -482,11 +484,13 @@ describe('columnEnds', () => {
     })
   })
 
-  it('makes the upper column carry the 継手 and anchor at the roof', () => {
+  it('leaves the joint bare on the upper column and anchors at the roof', () => {
+    // 접합부에는 定着이 붙지 않는다. 그 자리의 継手는 端部条件이 아니라
+    // 積算基準 2（２）柱2)의 「各階ごとに1か所」가 정한다.
     const project = stackProject(twoStories)
 
     expect(columnEnds(project, twoStories[1])).toEqual({
-      bottom: '継手',
+      bottom: 'なし',
       top: '定着',
     })
   })
@@ -523,7 +527,7 @@ describe('columnEnds', () => {
 
     // 배열이 뒤집히면 2F가 최하층으로 해석된다 — 순서가 곧 스택이다.
     expect(columnEnds(reversed, twoStories[1]).bottom).toBe('定着')
-    expect(columnEnds(reversed, twoStories[0]).bottom).toBe('継手')
+    expect(columnEnds(reversed, twoStories[0]).bottom).toBe('なし')
   })
 
   it('rejects a member that is not a 柱', () => {

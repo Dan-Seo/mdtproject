@@ -6,6 +6,7 @@ import lapYaml from './jp-mlit/lap.yaml'
 import markupYaml from './jp-mlit/markup.yaml'
 import measureYaml from './jp-mlit/measure.yaml'
 import sourcesYaml from './jp-mlit/sources.yaml'
+import spliceYaml from './jp-mlit/splice.yaml'
 import unitMassYaml from './jp-mlit/unit-mass.yaml'
 
 const files: Record<string, string> = {
@@ -16,6 +17,7 @@ const files: Record<string, string> = {
   'bend.yaml': bendYaml,
   'markup.yaml': markupYaml,
   'measure.yaml': measureYaml,
+  'splice.yaml': spliceYaml,
   'unit-mass.yaml': unitMassYaml,
 }
 

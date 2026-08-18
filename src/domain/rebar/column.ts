@@ -4,7 +4,12 @@ import type { ColumnEnds, Story } from '../model/project'
 import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
-import { distributionCount, hoopDesignLengthMm } from './measurement'
+import {
+  distributionCount,
+  hoopDesignLengthMm,
+  spliceCount,
+  spliceLengthMm,
+} from './measurement'
 import { stirrupPositions } from './stirrup-layout'
 
 export interface ColumnRebarInput {
@@ -65,6 +70,12 @@ export function generateColumnRebar(
     commonConditions,
   )
   const lapRule = lookupRule(pack, 'lap.L1', commonConditions)
+  // 継手箇所数は 2（２）柱2)「各階ごとに1か所」。設計長さに何を算入するかは
+  // 継手方式ごとに違い、ガス圧接は 1通則5) で 0 になる。
+  const spliceCountRule = lookupRule(pack, 'measure.splice.column', {})
+  const spliceFactorRule = lookupRule(pack, 'measure.splice.length.factor', {
+    method: section.spliceMethod,
+  })
   // 帯筋の数量を決めるのは積算基準の2条項だ。bend.hook135 を引かないのは
   // 1通則2) が「フックはないものとする」と定めるからで、その事実自体を
   // measure.hoop.length.addition が出典付きで持つ。
@@ -88,27 +99,36 @@ export function generateColumnRebar(
   const anchorageLength = millimetres(anchorageRule, mainDiameter)
   const lapLength = millimetres(lapRule, mainDiameter)
 
-  // 端部条件ごとの伸び (R7)。接合部の継手は上階柱が持ち、定着はスタックの
-  // 両端にしか付かない。どちらでもない端は 0 — 相手側で既に数えている。
-  const bottomExtension =
-    ends.bottom === '継手' ? lapLength : anchorageLength
+  // 端部条件ごとの伸び (R7①)。定着はスタックの両端にしか付かず、中間の接合部は
+  // 鉄筋が通り抜けるので 0 — そこにある継手は端部条件ではなく 2（２）柱2) が数える。
+  const bottomExtension = ends.bottom === '定着' ? anchorageLength : 0
   const topExtension = ends.top === '定着' ? anchorageLength : 0
-  const mainLength = story.height + bottomExtension + topExtension
-  const mainZones: RebarZone[] = [
-    {
-      kind: ends.bottom === '継手' ? '重ね継手' : '定着',
-      ruleKey: ends.bottom === '継手' ? lapRule.key : anchorageRule.key,
+  // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
+  const drawnLength = story.height + bottomExtension + topExtension
+  const spliceCountPerBar = spliceCount(spliceCountRule)
+  const spliceLength = spliceLengthMm(
+    spliceCountPerBar,
+    lapLength,
+    spliceFactorRule,
+  )
+  const mainLength = drawnLength + spliceLength
+  const mainZones: RebarZone[] = []
+
+  if (ends.bottom === '定着') {
+    mainZones.push({
+      kind: '定着',
+      ruleKey: anchorageRule.key,
       pathFromMm: 0,
       pathToMm: bottomExtension,
-    },
-  ]
+    })
+  }
 
   if (ends.top === '定着') {
     mainZones.push({
       kind: '定着',
       ruleKey: anchorageRule.key,
-      pathFromMm: mainLength - anchorageLength,
-      pathToMm: mainLength,
+      pathFromMm: drawnLength - anchorageLength,
+      pathToMm: drawnLength,
     })
   }
 
@@ -118,16 +138,13 @@ export function generateColumnRebar(
     fabricationCoverAdditionRule,
   ]
 
-  if (ends.bottom === '継手') {
-    endTerms.push(
-      `下端 重ね継手長さ L1 ${lapRule.value}d(${lapLength})`,
-    )
-    mainRuleHits.push(lapRule)
-  } else {
+  if (ends.bottom === '定着') {
     endTerms.push(
       `下端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
     )
     mainRuleHits.push(anchorageRule)
+  } else {
+    endTerms.push('下端 下階柱から通る 0')
   }
 
   if (ends.top === '定着') {
@@ -138,8 +155,19 @@ export function generateColumnRebar(
       mainRuleHits.push(anchorageRule)
     }
   } else {
-    endTerms.push('上端 上階柱が継手を負担 0')
+    endTerms.push('上端 上階柱へ通る 0')
   }
+
+  // 継手は設計長さの一部なので、質量行の出典にも載せる。重ね継手長さは
+  // 算入されるときだけ載せる — 0 のとき載せると算出式に現れない根拠になる。
+  const spliceRules: RuleHit[] = [spliceCountRule, spliceFactorRule]
+  if (spliceLength > 0) spliceRules.push(lapRule)
+  mainRuleHits.push(...spliceRules)
+
+  const spliceLengthTerm =
+    spliceLength > 0
+      ? `${spliceCountPerBar}か所 × 重ね継手長さ L1 ${lapRule.value}d(${lapLength}) ＝ ${spliceLength}`
+      : `${spliceCountPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
 
   const hoopWidth = section.b - 2 * fabricationCover
   const hoopDepth = section.d - 2 * fabricationCover
@@ -220,12 +248,26 @@ export function generateColumnRebar(
     length: mainLength,
     count: section.main.count,
     zones: mainZones,
+    splice: {
+      method: section.spliceMethod,
+      countPerBar: spliceCountPerBar,
+      lengthMm: spliceLength,
+      rules: spliceRules,
+      formula:
+        `継手箇所数 ＝ 主筋1本あたり ${spliceCountPerBar}か所` +
+        `（数量積算基準 2（２）柱2) — 各階柱の全長にわたる主筋は各階ごとに1か所） ／ ` +
+        `方式 ＝ ${section.spliceMethod} ／ ` +
+        `設計長さへの算入 ＝ ${spliceLengthTerm} ／ ` +
+        `位置 ＝ 未確定（表5.3.3 が原文で画像 — 3D には描かない）`,
+    },
     ruleHits: mainRuleHits,
     formula:
-      `加工長 ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
-      `＝ ${mainLength} ／ ` +
+      `設計長さ ＝ 階高 ${story.height} ＋ ${endTerms.join(' ＋ ')} ` +
+      `＋ 継手 ${spliceLengthTerm} ＝ ${mainLength} ／ ` +
       `配置基準 ＝ ${fabricationCoverFormula} ／ ` +
-      `本数 ＝ 断面一覧の主筋本数 ${section.main.count}`,
+      `本数 ＝ 断面一覧の主筋本数 ${section.main.count} ／ ` +
+      `3D 形状 ＝ 継手位置が未確定なので継手を描かない` +
+      `（描かれる長さ ${drawnLength} は設計長さと一致しない・数量には用いない）`,
   }
 
   const hoop: Rebar = {

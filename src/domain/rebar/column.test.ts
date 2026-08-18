@@ -28,6 +28,7 @@ const section: ColumnSection = {
   grade: 'SD345',
   exposure: '屋外',
   finish: '仕上げなし',
+  spliceMethod: '重ね継手',
   main: { size: 'D25', count: 12 },
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
@@ -42,8 +43,8 @@ function input(
     section,
     story,
     beamDepthAbove: 750,
-    // 既定は「下は継手・上は定着」＝ スタック最上段の柱。
-    ends: { bottom: '継手', top: '定着' },
+    // 既定は「下は通し・上は定着」＝ 下に柱があるスタック最上段の柱。
+    ends: { bottom: 'なし', top: '定着' },
     ...overrides,
   }
 }
@@ -136,12 +137,15 @@ describe('generateColumnRebar', () => {
       }
     }
 
-    // 端部の順（下端 → 上端）で並ぶ。既定入力は 下端 継手・上端 定着。
+    // 端部の順（下端 → 上端）のあとに継手。既定入力は 下端 通し・上端 定着で、
+    // 継手は端部条件と関係なく （２）柱2) が各階に1か所置く。
     expect(byRole(generated, '主筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
-      'lap.L1',
       'anchorage.L1',
+      'measure.splice.column',
+      'measure.splice.length.factor',
+      'lap.L1',
     ])
     // 帯筋の設計長さ・設計本数を決めるのは積算基準のこの2条項だけだ。
     // かぶりは 3D 形状 (points) にしか効かないので、内訳行の根拠に混ぜると
@@ -152,7 +156,7 @@ describe('generateColumnRebar', () => {
     ])
   })
 
-  it('counts the storey joint once instead of adding 定着 and 継手 to every storey (R7)', () => {
+  it('anchors only at the stack ends and gives every storey one 継手 (R7①・（２）柱2))', () => {
     const lower = byRole(
       generateColumnRebar(
         input({ ends: { bottom: '定着', top: 'なし' } }),
@@ -162,21 +166,19 @@ describe('generateColumnRebar', () => {
     )
     const upper = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: '継手', top: '定着' } }),
+        input({ ends: { bottom: 'なし', top: '定着' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
 
-    expect(lower.length).toBe(story.height + anchorage)
-    expect(upper.length).toBe(story.height + lap + anchorage)
-
-    // 2층 스택 합계는 「기초 定着 ＋ 접합부 継手 1회 ＋ 지붕 定着」뿐이다.
-    // 예전에는 층마다 定着＋継手가 붙어 継手 하나를 더 세고 있었다.
-    const doubleCounted = (story.height + anchorage + lap) * 2
-
-    expect(lower.length + upper.length).toBeLessThan(doubleCounted)
-    expect(doubleCounted - (lower.length + upper.length)).toBe(lap)
+    // 接合部には定着が付かない — そこにあるのは各階1か所の継手だけだ。
+    expect(lower.zones).toHaveLength(1)
+    expect(upper.zones).toHaveLength(1)
+    expect(lower.splice?.countPerBar).toBe(1)
+    expect(upper.splice?.countPerBar).toBe(1)
+    expect(lower.length).toBe(story.height + anchorage + lap)
+    expect(upper.length).toBe(story.height + anchorage + lap)
   })
 
   it('anchors both ends when the column is alone in its stack', () => {
@@ -188,79 +190,82 @@ describe('generateColumnRebar', () => {
       '主筋',
     )
 
-    expect(main.length).toBe(story.height + 2 * anchorage)
+    expect(main.length).toBe(story.height + 2 * anchorage + lap)
   })
 
   it('extends the 3D geometry by exactly what each end contributes', () => {
     const main = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: '継手', top: 'なし' } }),
+        input({ ends: { bottom: '定着', top: 'なし' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
 
-    expect(main.points[0][1]).toBe(-lap)
+    // 継手は位置が決まらないので描かない — 設計長さにだけ入る。
+    expect(main.points[0][1]).toBe(-anchorage)
     expect(main.points[1][1]).toBe(story.height)
+    expect(main.length - (main.points[1][1] - main.points[0][1])).toBe(lap)
   })
 
   it.each(
     [
       {
         ends: { bottom: '定着', top: '定着' },
-        bottomKind: '定着',
-        bottomLength: anchorage,
+        bottomAnchored: true,
         topAnchored: true,
       },
       {
         ends: { bottom: '定着', top: 'なし' },
-        bottomKind: '定着',
-        bottomLength: anchorage,
+        bottomAnchored: true,
         topAnchored: false,
       },
       {
-        ends: { bottom: '継手', top: '定着' },
-        bottomKind: '重ね継手',
-        bottomLength: lap,
+        ends: { bottom: 'なし', top: '定着' },
+        bottomAnchored: false,
         topAnchored: true,
       },
       {
-        ends: { bottom: '継手', top: 'なし' },
-        bottomKind: '重ね継手',
-        bottomLength: lap,
+        ends: { bottom: 'なし', top: 'なし' },
+        bottomAnchored: false,
         topAnchored: false,
       },
     ] satisfies {
       ends: ColumnEnds
-      bottomKind: RebarZone['kind']
-      bottomLength: number
+      bottomAnchored: boolean
       topAnchored: boolean
     }[],
   )(
     'emits path-distance zones for $ends.bottom/$ends.top ends',
-    ({ ends, bottomKind, bottomLength, topAnchored }) => {
+    ({ ends, bottomAnchored, topAnchored }) => {
       const main = byRole(
         generateColumnRebar(input({ ends }), jpMlitRulePack),
         '主筋',
       )
-      const expected: RebarZone[] = [
-        {
-          kind: bottomKind,
-          ruleKey:
-            bottomKind === '重ね継手'
-              ? lookupRule(jpMlitRulePack, 'lap.L1', conditions).key
-              : lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
+      const anchorageKey = lookupRule(
+        jpMlitRulePack,
+        'anchorage.L1',
+        conditions,
+      ).key
+      // ゾーンは描かれた polyline 上の位置なので、継手を含まない長さで測る。
+      const drawnLength = main.points[1][1] - main.points[0][1]
+      const expected: RebarZone[] = []
+
+      if (bottomAnchored) {
+        expected.push({
+          kind: '定着',
+          ruleKey: anchorageKey,
           pathFromMm: 0,
-          pathToMm: bottomLength,
-        },
-      ]
+          pathToMm: anchorage,
+        })
+      }
 
       if (topAnchored) {
         expected.push({
           kind: '定着',
-          ruleKey: lookupRule(jpMlitRulePack, 'anchorage.L1', conditions).key,
-          pathFromMm: main.length - anchorage,
-          pathToMm: main.length,
+          ruleKey: anchorageKey,
+          pathFromMm: drawnLength - anchorage,
+          pathToMm: drawnLength,
         })
       }
 
@@ -268,12 +273,12 @@ describe('generateColumnRebar', () => {
     },
   )
 
-  it('keeps every zone within the 主筋 加工長 path', () => {
+  it('keeps every zone within the drawn 主筋 path, not the 設計長さ', () => {
     const endCombinations: ColumnEnds[] = [
       { bottom: '定着', top: '定着' },
       { bottom: '定着', top: 'なし' },
-      { bottom: '継手', top: '定着' },
-      { bottom: '継手', top: 'なし' },
+      { bottom: 'なし', top: '定着' },
+      { bottom: 'なし', top: 'なし' },
     ]
 
     for (const ends of endCombinations) {
@@ -281,12 +286,13 @@ describe('generateColumnRebar', () => {
         generateColumnRebar(input({ ends }), jpMlitRulePack),
         '主筋',
       )
+      const drawnLength = main.points[1][1] - main.points[0][1]
 
       expect(main.zones).toBeDefined()
       for (const zone of main.zones ?? []) {
         expect(zone.pathFromMm).toBeGreaterThanOrEqual(0)
         expect(zone.pathFromMm).toBeLessThan(zone.pathToMm)
-        expect(zone.pathToMm).toBeLessThanOrEqual(main.length)
+        expect(zone.pathToMm).toBeLessThanOrEqual(drawnLength)
       }
     }
   })
@@ -310,31 +316,31 @@ describe('generateColumnRebar', () => {
     ])
   })
 
-  it('cites 重ね継手 only on the rows that actually carry a joint', () => {
-    const withoutLap = byRole(
-      generateColumnRebar(
-        input({ ends: { bottom: '定着', top: '定着' } }),
-        jpMlitRulePack,
-      ),
+  it('cites 重ね継手長さ only when the 継手方式 puts it into the 設計長さ', () => {
+    const lapped = byRole(
+      generateColumnRebar(input(), jpMlitRulePack),
       '主筋',
     )
-    const withLap = byRole(
+    const pressureWelded = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: '継手', top: '定着' } }),
+        input({ section: { ...section, spliceMethod: 'ガス圧接' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
 
-    expect(withoutLap.ruleHits.map(({ key }) => key)).not.toContain('lap.L1')
-    expect(withoutLap.formula).not.toContain('重ね継手')
-    expect(withLap.ruleHits.map(({ key }) => key)).toContain('lap.L1')
+    // ガス圧接は 1通則5)「長さの変化はないものとする」— 箇所数は残るが質量は変わらない。
+    expect(lapped.ruleHits.map(({ key }) => key)).toContain('lap.L1')
+    expect(pressureWelded.ruleHits.map(({ key }) => key)).not.toContain('lap.L1')
+    expect(pressureWelded.splice?.countPerBar).toBe(1)
+    expect(pressureWelded.splice?.lengthMm).toBe(0)
+    expect(lapped.length - pressureWelded.length).toBe(lap)
   })
 
   it('cites 定着 only on the rows that actually reach a stack end', () => {
     const interior = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: '継手', top: 'なし' } }),
+        input({ ends: { bottom: 'なし', top: 'なし' } }),
         jpMlitRulePack,
       ),
       '主筋',

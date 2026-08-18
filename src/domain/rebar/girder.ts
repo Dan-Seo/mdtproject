@@ -2,13 +2,26 @@ import type { GirderSection, Member } from '../model/member'
 import type { GirderRun, GirderSpan } from '../model/project'
 import type { Rebar, RebarZone } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
-import { coverConditions, lookupRule } from '../rules/lookup'
+import {
+  coverConditions,
+  lookupRule,
+  lookupRuleSeries,
+} from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import {
+  barDiameter,
   resolveGirderEnd,
   type GirderEndDetail,
 } from './girder-ends'
-import { distributionCount, hoopDesignLengthMm } from './measurement'
+import {
+  bandedSpliceRule,
+  distributionCount,
+  hoopDesignLengthMm,
+  intervalSpliceCount,
+  spliceCount,
+  spliceLengthMm,
+  type SpliceBand,
+} from './measurement'
 import { stirrupPositions } from './stirrup-layout'
 
 export interface GirderRebarInput {
@@ -101,6 +114,77 @@ function mainPoints(
   return points
 }
 
+/**
+ * （３）梁2) の区分表。何区分あるかはルールパックが決めるので、行をそのまま読む。
+ * 上限を持たない行が最後の区分になる — 判定は bandedSpliceRule がやる。
+ */
+function continuousGirderBands(pack: RulePack): SpliceBand[] {
+  const counts = lookupRuleSeries(
+    pack,
+    'measure.splice.girder.continuous',
+    'band',
+  )
+  const upperBounds = new Map(
+    lookupRuleSeries(
+      pack,
+      'measure.splice.girder.continuous.band.upper',
+      'band',
+    ).map((rule) => [rule.conditions.band, rule]),
+  )
+
+  return counts.map((countRule) => ({
+    countRule,
+    upperBoundRule: upperBounds.get(countRule.conditions.band) ?? null,
+  }))
+}
+
+interface GirderSplice {
+  countPerBar: number
+  lengthMm: number
+  rules: RuleHit[]
+  basis: string
+}
+
+/**
+ * 通し筋の継手 (数量積算基準)。
+ *
+ * ランが2スパン以上なら「連続する梁の全長にわたる主筋」なので （３）梁2) の
+ * 区分表が 1通則4) を上書きする。1スパンのランは単独梁なので同条ただし書きで
+ * 1通則4) に戻り、径ごとの長さの単位で数える。
+ */
+function resolveSplice(
+  run: GirderRun,
+  section: GirderSection,
+  designLengthBeforeSpliceMm: number,
+  lapRule: RuleHit,
+  lapLengthMm: number,
+  pack: RulePack,
+): GirderSplice {
+  const continuous = run.members.length > 1
+  const countRule = continuous
+    ? bandedSpliceRule(run.coreLengthMm, continuousGirderBands(pack))
+    : lookupRule(pack, 'measure.splice.interval', { size: section.main.size })
+  const countPerBar = continuous
+    ? spliceCount(countRule)
+    : intervalSpliceCount(designLengthBeforeSpliceMm, countRule)
+  const factorRule = lookupRule(pack, 'measure.splice.length.factor', {
+    method: section.spliceMethod,
+  })
+  const lengthMm = spliceLengthMm(countPerBar, lapLengthMm, factorRule)
+  const rules = [countRule, factorRule]
+
+  if (lengthMm > 0) rules.push(lapRule)
+
+  return {
+    countPerBar,
+    lengthMm,
+    rules,
+    basis: continuous
+      ? `連続梁 梁の長さ ${run.coreLengthMm}（数量積算基準 2（３）梁2)）`
+      : `単独梁 鉄筋の長さ ${designLengthBeforeSpliceMm} ÷ ${countRule.value}mm ごと（同 1通則4)）`,
+  }
+}
+
 function generateMain(
   input: GirderRebarInput,
   pack: RulePack,
@@ -143,7 +227,23 @@ function generateMain(
     },
     pack,
   )
-  const length = run.coreLengthMm + start.lengthMm + end.lengthMm
+  // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
+  const drawnLength = run.coreLengthMm + start.lengthMm + end.lengthMm
+  const lapRule = lookupRule(pack, 'lap.L1', {
+    fc: section.fc,
+    grade: section.grade,
+    hook: false,
+  })
+  const lapLengthMm = millimetres(lapRule, barDiameter(section.main.size))
+  const splice = resolveSplice(
+    run,
+    section,
+    drawnLength,
+    lapRule,
+    lapLengthMm,
+    pack,
+  )
+  const length = drawnLength + splice.lengthMm
   const zones: RebarZone[] = [
     {
       kind: '定着',
@@ -154,10 +254,19 @@ function generateMain(
     {
       kind: '定着',
       ruleKey: end.lengthRule,
-      pathFromMm: length - end.lengthMm,
-      pathToMm: length,
+      pathFromMm: drawnLength - end.lengthMm,
+      pathToMm: drawnLength,
     },
   ]
+  // 0か所で長さが増えないのは箇所数のせいで、方式のせいではない。
+  // 一つの分岐にまとめると 0か所の単独梁まで「その方式は長さが変わらない」と
+  // 説明し、同じ行が出典に挙げる measure.splice.length.factor と食い違う。
+  const spliceLengthTerm =
+    splice.countPerBar === 0
+      ? `0か所 ＝ 0`
+      : splice.lengthMm > 0
+        ? `${splice.countPerBar}か所 × 重ね継手長さ L1 ${lapRule.value}d(${lapLengthMm}) ＝ ${splice.lengthMm}`
+        : `${splice.countPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
   const fabricationCoverFormula =
     `加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ ` +
     `加算 ${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}）`
@@ -182,18 +291,32 @@ function generateMain(
     length,
     count: row.count,
     zones,
+    splice: {
+      method: section.spliceMethod,
+      countPerBar: splice.countPerBar,
+      lengthMm: splice.lengthMm,
+      rules: splice.rules,
+      formula:
+        `継手箇所数 ＝ ${row.role}1本あたり ${splice.countPerBar}か所` +
+        `（${splice.basis}） ／ ` +
+        `方式 ＝ ${section.spliceMethod} ／ ` +
+        `設計長さへの算入 ＝ ${spliceLengthTerm} ／ ` +
+        `位置 ＝ 未確定（表5.3.3 が原文で画像 — 3D には描かない）`,
+    },
     ruleHits: uniqueRuleHits([
       coverRule,
       fabricationCoverAdditionRule,
       ...start.usedRules,
       ...end.usedRules,
+      ...splice.rules,
     ]),
     formula:
-      `加工長 ＝ ${runCoreFormula(run)} ＋ ${endFormula('始端', start)} ` +
-      `＋ ${endFormula('終端', end)} ＝ ${length} ／ ` +
+      `設計長さ ＝ ${runCoreFormula(run)} ＋ ${endFormula('始端', start)} ` +
+      `＋ ${endFormula('終端', end)} ＋ 継手 ${spliceLengthTerm} ＝ ${length} ／ ` +
       `配置基準 ＝ ${fabricationCoverFormula} ／ ` +
       `本数 ＝ 断面一覧の${row.role}本数 ${row.count} ／ ` +
-      `継手 ＝ 未計上（数量積算基準 1通則4)・（３）梁2) が未実装）`,
+      `3D 形状 ＝ 継手位置が未確定なので継手を描かない` +
+      `（描かれる加工長 ${drawnLength} は設計長さと一致しない・数量には用いない）`,
   }
 }
 
