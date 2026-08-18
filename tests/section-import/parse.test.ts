@@ -235,12 +235,16 @@ interface ExpectedColumnsDoc {
   entries: Array<{ mark: string; stories: Record<string, ExpectedColumnCell> }>
 }
 
-interface ExpectedGirderCell {
+/** 行 라벨은 도면마다 다르다 — 전사는 그 도면이 쓴 말을 그대로 적는다 */
+interface GirderLabels {
+  top: string
+  bottom: string
+  stirrup: string
+}
+
+type ExpectedGirderCell = Record<string, unknown> & {
   b: number
   depth: number
-  上筋: Record<string, string>
-  下筋: Record<string, string>
-  ST: string
 }
 
 interface ExpectedGirdersDoc {
@@ -318,6 +322,68 @@ function sweepColumns(
   return counts
 }
 
+function sweepGirders(
+  pageFile: string,
+  expectedFile: string,
+  listKind: string,
+  labels: GirderLabels,
+): { main: number; stirrup: number; dimension: number } {
+  const doc = readExpected<ExpectedGirdersDoc>(expectedFile)
+  const girders = list(parseSectionLists(readPage(pageFile)), listKind)
+  const counts = { main: 0, stirrup: 0, dimension: 0 }
+
+  for (const entry of doc.entries) {
+    for (const [story, cell] of Object.entries(entry.stories)) {
+      const c = candidate(girders, entry.mark, story)
+      const label = `${entry.mark}/${story}`
+      const topCells = cell[labels.top] as Record<string, string>
+      const bottomCells = cell[labels.bottom] as Record<string, string>
+      const stirrupText = cell[labels.stirrup] as string
+
+      if (c.b !== undefined) {
+        expect(c.b, label).toBe(cell.b)
+        expect(c.depth, label).toBe(cell.depth)
+        counts.dimension += 1
+      }
+      if (c.girderMain) {
+        for (const text of Object.values(topCells)) {
+          expect(`${c.girderMain.topCount}-${c.girderMain.size}`, label).toBe(
+            text,
+          )
+        }
+        for (const text of Object.values(bottomCells)) {
+          expect(
+            `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+            label,
+          ).toBe(text)
+        }
+        counts.main += 1
+      } else {
+        for (const [position, text] of Object.entries(topCells)) {
+          const raw = c.raw[`${labels.top}(${position})`]
+          if (raw !== undefined) expect(raw, label).toBe(text)
+        }
+        for (const [position, text] of Object.entries(bottomCells)) {
+          const raw = c.raw[`${labels.bottom}(${position})`]
+          if (raw !== undefined) expect(raw, label).toBe(text)
+        }
+      }
+      if (c.stirrup) {
+        expect(`${c.stirrup.size}@${c.stirrup.pitchMm}`, label).toBe(
+          normPitch(stirrupText),
+        )
+        counts.stirrup += 1
+      } else if (c.raw[labels.stirrup] !== undefined) {
+        expect(normPitch(c.raw[labels.stirrup]), label).toBe(
+          normPitch(stirrupText),
+        )
+      }
+    }
+  }
+
+  return counts
+}
+
 describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
   it('ojkk 柱リスト — 19칸 (位置 2행·帯筋에 고강도 K13 포함)', () => {
     expect(
@@ -339,62 +405,29 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
   })
 
   it('yokohama 大梁断面リスト — 전사분 5칸 (位置별 상이 主筋 포함)', () => {
-    const doc = readExpected<ExpectedGirdersDoc>(
-      'yokohama-kanazawa-p14-girders.json',
-    )
-    const girders = list(
-      parseSectionLists(readPage('yokohama-p14.json')),
-      '大梁断面リスト',
-    )
-    const counts = { main: 0, stirrup: 0, dimension: 0 }
+    expect(
+      sweepGirders(
+        'yokohama-p14.json',
+        'yokohama-kanazawa-p14-girders.json',
+        '大梁断面リスト',
+        { top: '上筋', bottom: '下筋', stirrup: 'ST' },
+      ),
+      // 位置별 상이 3칸(G51 R階·2階, G55 R階)은 主筋 미확정이 정답
+    ).toEqual({ main: 2, stirrup: 5, dimension: 5 })
+  })
 
-    for (const entry of doc.entries) {
-      for (const [story, cell] of Object.entries(entry.stories)) {
-        const c = candidate(girders, entry.mark, story)
-        const label = `${entry.mark}/${story}`
-
-        if (c.b !== undefined) {
-          expect(c.b, label).toBe(cell.b)
-          expect(c.depth, label).toBe(cell.depth)
-          counts.dimension += 1
-        }
-        if (c.girderMain) {
-          for (const text of Object.values(cell.上筋)) {
-            expect(
-              `${c.girderMain.topCount}-${c.girderMain.size}`,
-              label,
-            ).toBe(text)
-          }
-          for (const text of Object.values(cell.下筋)) {
-            expect(
-              `${c.girderMain.bottomCount}-${c.girderMain.size}`,
-              label,
-            ).toBe(text)
-          }
-          counts.main += 1
-        } else {
-          for (const [position, text] of Object.entries(cell.上筋)) {
-            const raw = c.raw[`上筋(${position})`]
-            if (raw !== undefined) expect(raw, label).toBe(text)
-          }
-          for (const [position, text] of Object.entries(cell.下筋)) {
-            const raw = c.raw[`下筋(${position})`]
-            if (raw !== undefined) expect(raw, label).toBe(text)
-          }
-        }
-        if (c.stirrup) {
-          expect(`${c.stirrup.size}@${c.stirrup.pitchMm}`, label).toBe(
-            normPitch(cell.ST),
-          )
-          counts.stirrup += 1
-        } else if (c.raw['ST'] !== undefined) {
-          expect(normPitch(c.raw['ST']), label).toBe(normPitch(cell.ST))
-        }
-      }
-    }
-
-    // 位置별 상이 3칸(G51 R階·2階, G55 R階)은 主筋 미확정이 정답
-    expect(counts).toEqual({ main: 2, stirrup: 5, dimension: 5 })
+  it('ojkk 大梁リスト — 32칸 (断面 라벨 행 없음·2F에만 G1A·G2A)', () => {
+    expect(
+      sweepGirders(
+        'ojkk-p3.json',
+        'ojkk-akamichi-p3-girders.json',
+        '大梁リスト',
+        { top: '上端筋', bottom: '下端筋', stirrup: 'あばら筋' },
+      ),
+      // 断面은 라벨 행이 없지만 스케치의 가로(端部 아래)·세로(中央 오른쪽) 치수를
+      // 짝지어 전 칸 확정 — 정사각형이 아니라 가로→b·세로→depth 대응까지 대조된다.
+      // 主筋은 端部와 中央이 다른 17칸이 미확정인 것이 정답이다
+    ).toEqual({ main: 15, stirrup: 32, dimension: 32 })
   })
 
   it('kani 地中梁リスト — 전사 1칸 전부 확정', () => {
