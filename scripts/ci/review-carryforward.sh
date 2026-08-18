@@ -65,11 +65,26 @@ PREV_MARKER=$(printf '%s' "$prev" | jq -r '.body // ""' \
 [ "$PREV_SHA" != "$HEAD_SHA" ] || emit false "이미 이 커밋에 판정이 있다"
 git cat-file -e "${PREV_SHA}^{commit}" 2>/dev/null || emit false "이전 판정 커밋 ${PREV_SHA} 을 찾을 수 없다"
 
+# 승계의 기준선은 "리뷰 대상인가" 가 아니라 "실행되는가" 다. .claude/** 의 스킬·훅·워크플로
+# JS 는 리뷰 대상 밖이지만 실행되는 코드이고, package-lock.json 은 의존성을 바꾼다. 리뷰
+# 대상만 보고 승계하면 그것만 고친 push 가 이전 clean 판정을 물려받아 무리뷰로 자동 머지된다
+# (PR #41 2차 리뷰의 major). 그래서 실행되지 않는 것만 승계를 허용한다.
+#
 # 두 점 diff 다 — main 을 머지해 들어온 코드 변경도 "바뀐 것"으로 잡아 승계를 막는다.
 # 그 코드는 이미 main 에서 리뷰됐지만 이 브랜치와의 조합은 처음이므로 보수적으로 본다.
-delta=$(git diff "$PREV_SHA" "$HEAD_SHA" | bash "$(dirname "$0")/review-scope.sh" .delta \
-  | sed -n 's/^target=//p')
-[ "${delta:-1}" -eq 0 ] || emit false "직전 판정 이후 리뷰 대상 ${delta}개가 바뀌었다"
+is_inert() {
+  case "$1" in
+    docs/*|phases/*|*.md) return 0 ;;
+    *.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico|*.webp|*.pdf|*.xlsx|*.woff|*.woff2|*.ttf) return 0 ;;
+  esac
+  return 1
+}
+
+live=$(git diff --name-only "$PREV_SHA" "$HEAD_SHA" | while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  is_inert "$f" || printf '%s\n' "$f"
+done)
+[ -z "$live" ] || emit false "직전 판정 이후 실행되는 파일이 바뀌었다: $(printf '%s' "$live" | paste -sd, -)"
 
 changed=$(git diff --name-only "$PREV_SHA" "$HEAD_SHA" | paste -sd, - || true)
 {

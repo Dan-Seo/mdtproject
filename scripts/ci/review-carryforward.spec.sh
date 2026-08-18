@@ -33,7 +33,7 @@ export PATH="$TMP/bin:$PATH"
 # 커밋 두 개짜리 임시 저장소. $1 = 두 번째 커밋에서 바꿀 파일
 make_repo() {
   rm -rf "$TMP/repo"
-  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs"
+  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs" "$TMP/repo/.claude/workflows"
   cd "$TMP/repo" || exit 1
   git init -q .
   git config user.email t@t
@@ -41,6 +41,10 @@ make_repo() {
   git config core.autocrlf false
   echo base > src/domain/a.ts
   echo base > docs/D.md
+  # 리뷰 대상 밖이지만 실행되는 것들 — 승계 판정의 기준선이 "리뷰 대상"이 아니라
+  # "실행되는가" 임을 여기서 못 박는다
+  echo base > .claude/workflows/g.js
+  echo base > package-lock.json
   git add -A; git commit -qm base
   BASE_SHA=$(git rev-parse HEAD)
   echo changed >> "$1"
@@ -127,6 +131,16 @@ run_case "직전 판정 커밋이 저장소에 없음 → 리뷰" false
 make_repo docs/D.md
 reviews "$BOT" "$HEAD_SHA" "판정${NL}${MARKER_CLEAN}"
 run_case "이미 이 커밋에 판정이 있음 → 승계 대상 아님" false
+
+# 리뷰 대상 밖이라는 이유로 승계하면, 게이트 마커를 만드는 워크플로 JS 를 고친 push 가
+# 이전 clean 판정을 물려받아 무리뷰로 자동 머지된다 (PR #41 2차 리뷰의 major).
+make_repo .claude/workflows/g.js
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case ".claude/** 가 바뀜 → 실행되는 코드라 승계 금지" false
+
+make_repo package-lock.json
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case "package-lock.json 이 바뀜 → 의존성이 달라져 승계 금지" false
 
 if [ "$FAILED" -ne 0 ]; then
   echo "review-carryforward.spec: 실패"
