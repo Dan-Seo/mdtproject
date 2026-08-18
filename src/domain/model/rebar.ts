@@ -11,7 +11,11 @@ export type RebarRole =
 export type RebarShape = 'straight' | 'hook90' | 'hoop'
 
 export interface RebarZone {
-  kind: '定着' | '重ね継手'
+  /**
+   * 継手는 여기에 오지 않는다 — 位置의 근거(表5.3.3)가 원문에서 이미지라
+   * 3D에 그리지 않고 設計長さ에만 넣는다 (ADR-019).
+   */
+  kind: '定着'
   /**
    * 이 구간 길이를 정한 룰 키. 산정부만 아는 사실이다 — 표시부가 형상·길이로
    * 되짚으면 두 번째 규준 판정이 되어 도메인과 조용히 어긋난다.
