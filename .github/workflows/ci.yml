@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_failure:
+        description: 'oncall 사고 대응 경로 실검증 — 이 실행을 의도적으로 실패시킨다'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -18,6 +23,38 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      # oncall.yml 은 ci 가 실패해야만 깨어나므로, main 이 한 번도 안 깨진 지금까지
+      # 사고 대응 경로가 통째로 미검증이다 (전 실행 skipped). 그 경로를 안전하게
+      # 밟기 위한 스위치다 — push 에서는 inputs 가 비어 있어 항상 건너뛴다.
+      #
+      # 실패 내용은 아무거나가 아니라 scripts/ci/ 의 로그 처리 세 갈래를 정조준한다.
+      #  1) 800 줄 초과 → distill-failure-log.sh 의 축약 분기 (600 꼬리 + 시그니처)
+      #  2) `error TS####` → 꼬리 밖 오류 줄을 건져내는 grep 시그니처
+      #  3) 더미 PEM → scrub-secrets.sh 의 BEGIN/END 마스킹. 축약이 먼저 돌면 그 사이가
+      #     잘려 BEGIN 을 잃은 본문이 마스킹되지 않고 남는다 (PR #41 3차 리뷰의 major).
+      #     그 순서 수정이 여태 실전에서 검증된 적이 없다.
+      - name: oncall 경로 실검증용 의도적 실패
+        if: ${{ inputs.force_failure }}
+        # 줄 배치가 이 테스트의 전부다. PEM 을 로그 앞쪽에 두면 축약 때 통째로 중략 구간에
+        # 들어가 순서를 뒤집어도 아무것도 안 샌다 — 즉 아무것도 검증하지 못한다.
+        # BEGIN 은 꼬리 600 줄 **밖**, 본문 일부는 꼬리 **안**에 걸치게 배치해야
+        # 「BEGIN 을 잃은 본문이 마스킹되지 않고 남는」 그 고장이 재현된다.
+        # 로컬 실측(같은 배치): scrub→distill 잔존 0 줄 / distill→scrub 잔존 19 줄.
+        run: |
+          echo "=== 이것은 oncall 실검증용 의도적 실패입니다. 코드 결함이 아닙니다. ==="
+          echo "src/domain/rebar/measurement.ts(42,5): error TS2322: Type 'string' is not assignable to type 'number'."
+          for i in $(seq 1 400); do echo "  at Object.<anonymous> (/home/runner/work/mdtproject/node_modules/head/$i.js:1:1)"; done
+          # PEM 헤더를 런타임에 조립한다 — 리터럴로 두면 pre-commit 시크릿 훅이 막는다
+          # (그 훅이 맞다). 로그에 찍히는 문자열은 동일해 마스킹 검증에는 영향이 없다.
+          B='-----BEGIN PRIVATE'; E='-----END PRIVATE'
+          echo "$B KEY-----"
+          for i in $(seq 1 40); do echo "ZmFrZWtleWZha2VrZXlmYWtla2V5ZmFrZWtleQ$i"; done
+          echo "$E KEY-----"
+          for i in $(seq 1 580); do echo "  at Object.<anonymous> (/home/runner/work/mdtproject/node_modules/tail/$i.js:1:1)"; done
+          echo "src/domain/model/project.ts(117,3): error TS2345: Argument of type 'Rebar' is not assignable."
+          echo "npm error Lifecycle script typecheck failed with exit code 1"
+          exit 1
 
       - uses: actions/setup-node@v4
         with:
