@@ -354,6 +354,39 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // scalarDimensions(가로)의 마지막 게이트가 순수 숫자만 받아 콤마 표기(1,000mm 이상
+  // 폭)를 걸렀다 — verticalsByMark(세로)는 이미 콤마를 벗기고 있어 비대칭이었다 (#32②)
+  it('pairs a comma-formatted horizontal sketch dimension with the vertical', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 200,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '6', x: 160, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 28, w: 3, h: 6, rot: -90 },
+        { str: '9', x: 280, y: 34, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 31, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 280, y: 28, w: 3, h: 6, rot: -90 },
+        // 폭이 1,000mm 이상인 부재는 콤마로 자릿수를 나눠 적는다
+        { str: '1,200', x: 110, y: 52, w: 40, h: 8 },
+        { str: '800', x: 230, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '12-D22', x: 225, y: 64, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const c1 = candidate(columns, 'C1', '1F')
+
+    expect([c1.b, c1.d]).toEqual([1200, 600])
+    expect(c1.issues).toHaveLength(0)
+  })
+
   it('does not confirm a section when only the vertical sketch dimension exists', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
