@@ -1003,6 +1003,24 @@ function verticalsBySlice(
   return buckets
 }
 
+/**
+ * 표의 실제 바닥 y를 구한다. 마지막 블록의 endY는 다음 타이틀이 없으면 페이지
+ * 바닥까지 열려 있어, blockRows.at(-1)이 표 밖 표제란 텍스트(도면번호·축척 등)가
+ * 될 수 있다 — 符号 열의 x대역(≤ tableRight) 안에 세그먼트가 있는 행으로 먼저
+ * 좁혀야 표 밖 텍스트가 수집 창을 밀어내지 않는다 (#37, #33의 부작용)
+ */
+function tableBottomY(
+  blockRows: TextRow[],
+  marks: MarkColumn[],
+  endY: number,
+): number {
+  const tableRight = Math.max(...marks.map(({ centerX }) => centerX))
+  const withinTable = blockRows.filter((row) =>
+    row.segments.some((segment) => segment.centerX <= tableRight),
+  )
+  return withinTable.at(-1)?.y ?? endY
+}
+
 function parseColumnBlock(
   rows: TextRow[],
   headerIndex: number,
@@ -1031,10 +1049,9 @@ function parseColumnBlock(
           endY: stories[index + 1]?.row.y ?? endY,
         }))
       : [{ storyLabel: undefined, startY: header.y, endY }]
-  // 수집 창을 표의 실제 행 범위로 닫는다. 마지막 블록의 endY는 페이지 바닥까지
-  // 열려 있어(다음 타이틀이 없으면 heightPt), 표 아래 스케치의 회전 숫자가 그대로
-  // 딸려 들어온다 — 가로 치수는 라벨 행 사이로 좁게 잘리므로 같은 노출이 없다
-  const tableBottom = blockRows.at(-1)?.y ?? endY
+  // 수집 창을 표의 실제 행 범위로 닫는다. 가로 치수는 라벨 행 사이로 좁게 잘리므로
+  // 같은 노출이 없다
+  const tableBottom = tableBottomY(blockRows, marks, endY)
   const blockVerticals = verticalsBySlice(
     verticals.filter((run) => run.y > header.y && run.y < tableBottom),
     // 마지막 슬라이스의 endY는 표의 끝이 아니라 다음 타이틀·페이지 바닥이다.
@@ -1225,7 +1242,7 @@ function parseGirderBlock(
         }))
       : [{ storyLabel: undefined, startY: header.y, endY }]
   // 柱 블록과 같은 이유로 수집 창과 슬라이스 상한을 표의 실제 행 범위로 닫는다
-  const tableBottom = blockRows.at(-1)?.y ?? endY
+  const tableBottom = tableBottomY(blockRows, marks, endY)
   const blockVerticals = verticalsBySlice(
     verticals.filter((run) => run.y > header.y && run.y < tableBottom),
     slices.map((slice) => ({
