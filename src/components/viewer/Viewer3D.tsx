@@ -1315,13 +1315,15 @@ export function Viewer3D() {
     runtimeRef.current = runtime
 
     const frameTimestamps: number[] = []
-    ;(window as WindowWithViewerHook).__kijunViewerRuntime = {
-      getRendererInfo: () => ({
-        calls: renderer.info.render.calls,
-        triangles: renderer.info.render.triangles,
-      }),
-      getFrameTimestamps: () => [...frameTimestamps],
-      getRebuildStats: () => ({ ...rebuildStatsRef.current }),
+    if (process.env.NODE_ENV !== 'production') {
+      ;(window as WindowWithViewerHook).__kijunViewerRuntime = {
+        getRendererInfo: () => ({
+          calls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+        }),
+        getFrameTimestamps: () => [...frameTimestamps],
+        getRebuildStats: () => ({ ...rebuildStatsRef.current }),
+      }
     }
 
     // 사용자가 잡으면 사용자가 이긴다 — 연출을 즉시 끊는다.
