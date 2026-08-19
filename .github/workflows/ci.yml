@@ -28,6 +28,20 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+      # 게이트·리뷰 파이프라인의 결정적 검증. npm test 는 vitest 라 node:test 로 쓴
+      # .claude/workflows/review-code.test.js 도, scripts/ci/*.spec.sh 도 잡지 않는다 —
+      # 자동 승인·머지를 좌우하는 코드가 CI 에서 한 번도 안 돌고 있었다 (PR #41 리뷰의 major).
+      - run: npm run test:ci-scripts
+
+      # 머지 게이트 판정의 상세 실패 모드(커밋 불일치·작성자 위조·마커 파손·다중 마커)는
+      # pytest 가 덮고 review-verdict.spec.sh 는 계약의 뼈대만 본다. 여기에 연결하지 않으면
+      # fail-closed 경로가 회귀해도 CI 가 초록으로 지나간다 (PR #41 4차 리뷰의 major).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install --quiet pytest
+      - run: python -m pytest scripts/test_review_verdict.py -q
       - run: npm run build
 
       # 브라우저 실측 회귀 게이트. PR CI(review.yml의 verify)에는 넣지 않는다 — PR은

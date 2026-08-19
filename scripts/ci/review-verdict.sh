@@ -7,6 +7,8 @@
 #         BOT_LOGIN — 마커를 신뢰할 리뷰 작성자 (기본 github-actions[bot])
 # stdout: GITHUB_OUTPUT 형식 두 줄 — decision=merge|approve|hold, reason=<한 줄>
 #
+# 마커의 reviewed 가 false 면 "리뷰를 돌리지 않았다"는 뜻이라 지적 0건이어도 머지하지 않는다.
+#
 # 판정 근거가 조금이라도 불확실하면 hold 다 — 이 스크립트는 fail-closed.
 # 리뷰 실패·마커 누락·커밋 불일치·작성자 불일치는 전부 "승인·머지 안 함"으로 수렴한다.
 set -euo pipefail
@@ -50,12 +52,22 @@ set -- $counts
 critical=$1 major=$2 minor=$3 nit=$4 failed=$5
 tally="🔴 ${critical} · 🟠 ${major} · 🟡 ${minor} · ⚪ ${nit}"
 
+# "리뷰를 실제로 돌렸는가". 필드가 없으면 참으로 본다 — 기존 마커와 호환된다.
+reviewed=$(printf '%s' "$marker" | jq -r 'if .reviewed == false then "false" else "true" end' 2>/dev/null || printf 'true')
+
 if [ "$failed" -gt 0 ]; then
   emit hold "${tally} — 리뷰 차원 ${failed}개 실패로 판정이 불완전하다"
 fi
 
 if [ "$critical" -gt 0 ] || [ "$major" -gt 0 ]; then
   emit hold "${tally} — critical·major가 있어 승인·머지를 모두 금지한다"
+fi
+
+# 리뷰 대상이 0개라 에이전트를 띄우지 않은 경우다 (review-carryforward.sh). 지적이 없는 것과
+# 리뷰를 안 한 것은 다르다 — 후자를 머지까지 태우면 리뷰 대상 밖 파일만 고친 PR 이
+# 무리뷰로 main 에 들어간다. 게이트가 굳지 않게 승인은 하되 머지는 사람에게 남긴다.
+if [ "$reviewed" = "false" ]; then
+  emit approve "${tally} — 리뷰 대상이 없어 리뷰를 돌리지 않았다. 머지는 사람이 판단한다"
 fi
 
 if [ "$minor" -gt 0 ]; then

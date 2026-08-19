@@ -25,12 +25,19 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def marker(critical=0, major=0, minor=0, nit=0, failed=0) -> str:
+def marker(critical=0, major=0, minor=0, nit=0, failed=0, reviewed=None) -> str:
     """/review-code 가 리뷰 본문 끝에 남기는 게이트 마커."""
-    return (
-        '<!-- review-code-gate: {"critical":%d,"major":%d,"minor":%d,'
-        '"nit":%d,"failed_dimensions":%d} -->' % (critical, major, minor, nit, failed)
+    fields = '"critical":%d,"major":%d,"minor":%d,"nit":%d,"failed_dimensions":%d' % (
+        critical,
+        major,
+        minor,
+        nit,
+        failed,
     )
+    # reviewed 는 "리뷰를 실제로 돌렸는가". 생략되면 참으로 본다 — 기존 마커와 호환.
+    if reviewed is not None:
+        fields += ',"reviewed":%s' % ("true" if reviewed else "false")
+    return "<!-- review-code-gate: {%s} -->" % fields
 
 
 def review(body: str, sha: str = HEAD, login: str = BOT) -> dict:
@@ -159,3 +166,22 @@ def test_사람이_남긴_리뷰가_섞여_있어도_봇_마커로_판정한다(
 def test_사유에_심각도_집계가_담긴다():
     out = run_verdict([review(marker(critical=1, major=2))])
     assert "1" in out["reason"] and "2" in out["reason"]
+
+
+# ── 리뷰를 돌리지 않은 마커 ──────────────────────────────────────
+# 리뷰 대상이 0개면 review-carryforward.sh 가 지적 0건 마커를 게시한다. 그 마커가
+# "리뷰 결과 깨끗함"과 구별되지 않으면, 리뷰 대상 밖 파일(.claude/*·CLAUDE.md 등)만
+# 고친 PR 이 아무 리뷰 없이 자동 머지된다 — PR #41 리뷰의 critical.
+
+
+def test_리뷰를_돌리지_않았으면_머지하지_않고_승인만_한다():
+    out = run_verdict([review(marker(reviewed=False))])
+    assert out["decision"] == "approve"
+
+
+def test_리뷰를_돌렸다고_명시하면_기존대로_머지한다():
+    assert run_verdict([review(marker(reviewed=True))])["decision"] == "merge"
+
+
+def test_reviewed_필드가_없는_기존_마커는_머지한다():
+    assert run_verdict([review(marker())])["decision"] == "merge"

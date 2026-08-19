@@ -78,6 +78,10 @@ needs_test() {
   # .claude/·.codex/ 인프라(설정·훅·슬래시 커맨드)와 workflows/ 오케스트레이션 스크립트는 TDD 비대상 — 허용.
   # 이유: 워크플로우 스크립트는 런타임이 주입하는 전역(agent/pipeline/log)에 의존하는 오케스트레이션
   #       정의로, lib/services 비즈니스 로직이 아니며 유닛 테스트를 붙일 수 없다.
+  # 단, 이 면제에 기대지 말 것. agentic-eng-toolkit 플러그인의 TDD 훅은 co-located 테스트가
+  # 없는 .js 를 전역에서 차단하고, PreToolUse 는 하나라도 deny 하면 다른 훅의 allow 로 덮이지
+  # 않는다(실측). 그래서 .claude/workflows/ 의 스크립트에는 co-located 테스트를 같이 둔다 —
+  # 실제로 review-code.js 는 게이트 마커를 만들므로 테스트가 있어야 옳기도 하다.
   case "$REL_PATH" in
     .claude/*|*/.claude/*|.codex/*|*/.codex/*|workflows/*|*/workflows/*)
       return 1
