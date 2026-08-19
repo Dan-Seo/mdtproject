@@ -66,6 +66,20 @@ const TITLE_PATTERN =
 const STORY_PATTERN = /^(?:RF|R階|\d+F|\d+階)$/
 const MARK_PATTERN = /^(?:(?:C|G|FC|FG|B|CB)\d+[A-Z]?|W\d+|fg)$/i
 
+// 세로 런·행 복원 휴리스틱에서 되풀이되는 리터럴 상수. 흩어져 있으면 R10(포맷
+// 커버리지 확대)에서 어느 값을 손봐야 하는지 한 곳에서 안 보인다 (#32④)
+/** 회전각 허용오차(deg). 0도(가로)·-90도(세로) 판정 둘 다에 쓴다 */
+const ROTATION_TOLERANCE_DEG = 0.01
+/** 세로 런에서 같은 열로 보는 x 허용오차(pt) */
+const COLUMN_TOLERANCE_PT = 1
+/** 글자 진행량(w)에 곱해 인접 판정 상한을 만드는 배수 — 세로 런의 y 간격과
+ *  타이틀 앵커의 같은 행(대역) 판정 둘 다에 쓴다 */
+const PROXIMITY_MULTIPLIER = 2
+/** 세로 런을 층 슬라이스에 배정할 때의 거리 상한 = 슬라이스 폭 × 이 값.
+ *  슬라이스가 맞닿아 있어(endY[i] == startY[i+1]) 최근접 배정의 보로노이 경계와
+ *  일치해 중간 층에서는 사실상 걸러내지 못한다 — 미해결 (#32①) */
+const SLICE_DISTANCE_LIMIT_RATIO = 0.5
+
 /**
  * 하이픈류를 半角 '-'로 접는다. CP932 0x815C(全角ダッシュ)의 표준 매핑이 U+2014와
  * U+2015로 갈리므로 둘 다 넣는다 — 실물 도면(yokohama p13)은 U+2015를 쓴다.
@@ -114,7 +128,7 @@ function recoverRows(items: TextItem[]): TextRow[] {
     .filter(
       (item) =>
         item.str.trim().length > 0 &&
-        (item.rot === undefined || Math.abs(item.rot) < 0.01),
+        (item.rot === undefined || Math.abs(item.rot) < ROTATION_TOLERANCE_DEG),
     )
     .sort((left, right) => left.y - right.y || left.x - right.x)
 
@@ -162,7 +176,7 @@ function verticalRuns(items: TextItem[]): VerticalRun[] {
       (item) =>
         item.str.trim().length > 0 &&
         item.rot !== undefined &&
-        Math.abs(item.rot + 90) < 0.01,
+        Math.abs(item.rot + 90) < ROTATION_TOLERANCE_DEG,
     )
     .sort((left, right) => left.x - right.x || right.y - left.y)
 
@@ -195,9 +209,9 @@ function verticalRuns(items: TextItem[]): VerticalRun[] {
     const gap = previous === undefined ? -1 : previous.y - item.y
     const adjacent =
       previous !== undefined &&
-      Math.abs(previous.x - item.x) <= 1 &&
+      Math.abs(previous.x - item.x) <= COLUMN_TOLERANCE_PT &&
       gap >= 0 &&
-      gap <= Math.max(previous.w, item.w) * 2
+      gap <= Math.max(previous.w, item.w) * PROXIMITY_MULTIPLIER
     if (!adjacent) flush()
     current.push(item)
   }
@@ -595,7 +609,10 @@ function setDimension(
 
   // 단독 숫자는 b×d로 확정할 수 없다 — 스케치 치수선 숫자를 정사각형으로
   // 승격하면 값을 지어내는 것이 된다 (ADR-012 계열). 빈칸+원문으로 남긴다.
+  // 세로도 읽었는데 짝짓기(pairedDimension)가 거부한 경우, 가로만 남기면
+  // 원문 세로값이 조용히 사라진다 — 함께 남긴다
   candidate.raw['断面'] = compact(value)
+  if (vertical !== undefined) candidate.raw['断面(縦)'] = compact(vertical)
   addIssue(candidate, '断面矩形不成立')
 }
 
@@ -812,17 +829,20 @@ function lastPositionRow(
  * 가장 위다 — 라벨 하나에만 매어 두면 그 라벨을 못 읽은 표에서 창이 슬라이스 전체로
  * 열려 아래 행(備考 등)의 단독 숫자가 치수로 확정된다. 라벨 행을 하나도 인식하지
  * 못했으면 그 표에서 읽은 것이 없다는 뜻이므로 폴백을 돌리지 않는다.
+ *
+ * 상한에 슬라이스의 endY를 더 받지 않는다 — labelRows는 전부 rowsBetween(rows,
+ * slice.startY, slice.endY)에서 나오므로 항상 y < slice.endY다. 그 endY를 다시
+ * Math.min에 넣어도 절대 선택될 수 없어 있지도 않은 상한 보호처럼 읽혔다 (#35)
  */
 function sketchDimensions(
   rows: TextRow[],
   startY: number,
-  endY: number,
   labelRows: Array<TextRow | undefined>,
   anchors: MarkColumn[],
 ): Map<string, string> {
   const labelYs = labelRows.flatMap((row) => (row ? [row.y] : []))
   if (labelYs.length === 0) return new Map()
-  return scalarDimensions(rows, startY, Math.min(...labelYs, endY), anchors)
+  return scalarDimensions(rows, startY, Math.min(...labelYs), anchors)
 }
 
 /**
@@ -903,12 +923,15 @@ function scalarDimensions(
     perMark.set(target.mark, existing)
   }
 
+  // 콤마는 자릿수 구분이다(parseDimension도 벗겨 받는다, verticalsByMark와 같은 규약) —
+  // 여기서 「1,200」을 숫자가 아니라고 버리면 폭 1,000mm 이상인 부재를 놓친다
   return new Map(
-    [...perMark.entries()].flatMap(([mark, values]) =>
-      values.length === 1 && /^\d+$/.test(values[0])
-        ? [[mark, values[0]] as const]
-        : [],
-    ),
+    [...perMark.entries()].flatMap(([mark, values]) => {
+      const text = values[0].replace(/,/g, '')
+      return values.length === 1 && /^\d+$/.test(text)
+        ? [[mark, text] as const]
+        : []
+    }),
   )
 }
 
@@ -973,7 +996,8 @@ function verticalsBySlice(
     // 숫자든 어느 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지
     // 않고 원문으로 남는 쪽이 옳다 (R10)
     const span = slices[best].endY - slices[best].startY
-    if (Math.abs(slices[best].startY - run.y) <= span / 2) buckets[best].push(run)
+    if (Math.abs(slices[best].startY - run.y) <= span * SLICE_DISTANCE_LIMIT_RATIO)
+      buckets[best].push(run)
   }
 
   return buckets
@@ -1059,7 +1083,6 @@ function parseColumnBlock(
         : sketchDimensions(
             rows,
             slice.startY,
-            slice.endY,
             [mainRow, hoopRow],
             anchors,
           )
@@ -1257,7 +1280,6 @@ function parseGirderBlock(
         : sketchDimensions(
             rows,
             slice.startY,
-            slice.endY,
             [topRow, bottomRow, stirrupRow],
             anchors,
           )
@@ -1505,7 +1527,7 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
 
   anchors.forEach((anchor) => {
     // 같은 y대역의 오른쪽 타이틀은 아래 표가 아니라 옆 표다 — x 경계가 된다
-    const sameBand = Math.max(anchor.row.height, 1) * 2
+    const sameBand = Math.max(anchor.row.height, 1) * PROXIMITY_MULTIPLIER
     // 좌측 경계를 타이틀 x−40으로 고정하면 중앙 정렬 타이틀 표의 왼쪽 라벨열이
     // 잘린다 — 좌측 이웃 타이틀과의 중점을 쓰고, 이웃이 없으면 왼쪽을 열어 둔다
     const leftNeighbor = anchors
