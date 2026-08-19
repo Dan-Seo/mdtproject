@@ -148,7 +148,10 @@ jobs:
           fi
 
   # 결정적 검증 — LLM 판정과 무관하게 통과해야 하는 기준선.
-  # main에 브랜치 보호가 없으므로 gate의 needs 연결이 자동 머지를 막는 유일한 수단이다.
+  # main 브랜치 보호에는 required_status_checks 로 `verify`·`review` 가 걸려 있어
+  # 이 잡의 **이름 자체가 보호 규칙의 컨텍스트**다 (2026-08-19 확인). 다만
+  # required_pull_request_reviews 는 없고 enforce_admins 도 false 이므로,
+  # 「리뷰 없는 머지」를 실제로 막는 것은 여전히 gate 의 needs 연결이다.
   verify:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -223,8 +226,14 @@ jobs:
           fi
           gh api "repos/${{ github.repository }}/pulls/$PR/reviews" --paginate | jq -s 'add // []' | bash scripts/ci/review-verdict.sh | tee -a "$GITHUB_OUTPUT"
 
+      # oncall/* 제외 — 자동 머지만 막고 승인은 내주면, main 에 승인 필수
+      # (required_pull_request_reviews)를 켜는 순간 봇 승인 하나로 사람 게이트가
+      # 열린다. 지금 무해한 이유가 「그 설정이 아직 꺼져 있어서」뿐인 상태를 남기지
+      # 않는다. 사고 자동 수정은 사람이 읽고 승인한다.
       - name: 자동 승인
-        if: steps.verdict.outputs.decision == 'approve' || steps.verdict.outputs.decision == 'merge'
+        if: >-
+          (steps.verdict.outputs.decision == 'approve' || steps.verdict.outputs.decision == 'merge') &&
+          !startsWith(github.event.pull_request.head.ref, 'oncall/')
         env:
           REASON: ${{ steps.verdict.outputs.reason }}
         run: gh pr review "$PR" --approve --body "자동 승인 — $REASON"
