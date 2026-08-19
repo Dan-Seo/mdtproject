@@ -41,7 +41,11 @@ module.exports = {
       startServerReadyTimeout: 60000,
       url: ['http://localhost:3000'],
       // 중앙값을 쓰기 위한 최소 홀수. 타이밍 warn의 노이즈를 줄인다.
-      numberOfRuns: 3,
+      // LHCI_RUNS로 낮출 수 있다 — autoresearch의 내부 루프가 쓴다. 바이트 지표는
+      // 실행마다 완전히 동일하므로(3회 실측 428148/314550 동일) 1회면 충분하고,
+      // 3회는 타이밍 warn의 중앙값을 위한 것이라 언덕오르기에는 필요 없다.
+      // 기본값은 3 그대로다 — main CI 게이트의 동작은 바뀌지 않는다.
+      numberOfRuns: Number(process.env.LHCI_RUNS) || 3,
       settings: {
         // 이 제품은 데스크톱 전용 3D 툴이다 — 모바일 프리셋으로 재면 관계없는 값이 나온다.
         preset: 'desktop',

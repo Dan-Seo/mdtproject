@@ -12,8 +12,12 @@ name: oncall
 #  - gate 자동 머지(github-actions[bot])가 main을 깨는 경우는 실제 사고이므로
 #    actor 기반 skip은 하지 않는다 — 대응해도 위 구조상 루프가 닫히지 않는다.
 #
-# prod(= main, Vercel 자동 배포)는 read-only: 에이전트에 push·gh 도구를 주지 않고,
-# 워크플로의 푸시 대상은 oncall/* 로 하드코딩·가드한다.
+# prod(= main, Vercel 자동 배포)는 read-only. 이것을 지탱하는 것은 세 가지다:
+#  - 체크아웃이 push 자격증명을 워크스페이스에 심지 않는다 (persist-credentials: false).
+#    토큰은 oncall/* 푸시 스텝에서만 명시적으로 쓰인다.
+#  - 에이전트 툴 allowlist 에 push·gh 가 없고, 그 우회로가 되는 `npm exec` 도 없다
+#    (`Bash(npm:*)` 대신 개별 명령만 연다).
+#  - 워크플로의 푸시 대상은 oncall/fix-<run_id> 로 고정이고 run_id 는 숫자만 받는다.
 on:
   workflow_run:
     workflows: [ci]
@@ -41,8 +45,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         # main이 깨진 채 push가 이어지면 실패마다 PR이 쌓인다 — 사고 대응은 한 번에 하나만.
         run: |
-          open=$(gh pr list -R "${{ github.repository }}" --state open --json headRefName \
-            --jq '[.[] | select(.headRefName | startswith("oncall/"))] | length')
+          # 조회가 실패하면 중복을 감수하고 대응하는 쪽이다 — 중복 PR은 사람이 닫으면
+          # 그만이지만, 여기서 멈추면 사고가 흔적 없이 사라진다 (review.yml 의
+          # "생략 판정이 불확실하면 리뷰한다"와 같은 방향).
+          if ! open=$(gh pr list -R "${{ github.repository }}" --state open --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("oncall/"))] | length'); then
+            echo "::warning::열린 oncall PR 조회 실패 — 중복 위험을 감수하고 대응을 진행한다"
+            open=0
+          fi
           if [ "$open" -gt 0 ]; then
             echo "열린 oncall PR ${open}건 — 새 대응을 만들지 않는다"
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -52,9 +62,18 @@ jobs:
 
   fix:
     needs: guard
-    if: needs.guard.outputs.skip != 'true'
+    # 세 조건을 함께 봐야 한다.
+    #  - !cancelled(): guard 잡이 죽어도(infra) 대응은 돈다. 상태 함수가 없으면 needs
+    #    규칙이 guard 실패 시 이 잡을 통째로 건너뛰어 사고가 흔적 없이 사라진다.
+    #  - result != 'skipped': 그런데 !cancelled() 는 「의존 잡이 skipped 면 나도 skip」
+    #    규칙까지 함께 끈다. guard 는 사고가 아닐 때(ci 성공·포크·main 아님) skipped 로
+    #    끝나므로, 이 절이 없으면 **초록 CI 마다** 에이전트가 깨어난다 (run 32236001369
+    #    에서 실제로 발생 — 성공한 ci 를 받아 fix 가 돌기 시작했다).
+    #  - skip != 'true': 열린 oncall PR 이 이미 있으면 중복 대응하지 않는다.
+    if: ${{ !cancelled() && needs.guard.result != 'skipped' && needs.guard.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 재검증이 ci.yml 의 게이트를 그대로 밟으므로(lighthouse 포함) 30분으로는 모자란다
+    timeout-minutes: 45
     permissions:
       contents: write # oncall/fix-* 브랜치 푸시
       pull-requests: write # draft PR 생성
@@ -69,6 +88,12 @@ jobs:
         with:
           ref: main # 실패 시점 이후 push가 있어도 최신 main을 고친다 — PR 충돌 방지
           fetch-depth: 0 # 원인 커밋 추적에 git log/show가 필요하다
+          # prod read-only 의 실질 방어선. 기본값(true)은 contents:write 토큰을
+          # .git/config 의 extraheader 에 심어, 이 워크스페이스에서 도는 무엇이든
+          # `git push origin HEAD:main` 을 성공시킨다 — 에이전트 툴 allowlist 를
+          # 우회하는 경로(`npm exec -- git push` 등)가 그대로 prod 쓰기가 된다.
+          # 자격증명을 심지 않고, 푸시 스텝에서만 토큰을 명시해 쓴다.
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -77,20 +102,53 @@ jobs:
 
       - run: npm ci
 
+      # ci.yml 의 게이트 중 하나가 pytest 다. 여기서 깔아두지 않으면 에이전트가 그
+      # 실패를 재현조차 못 해 무조건 「재현 불가 → 분석만」으로 빠진다.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install --quiet pytest
+
       - name: 실패 잡 로그 수집·시크릿 마스킹
         env:
           GH_TOKEN: ${{ github.token }}
         # 에이전트에는 마스킹을 거친 로그 파일만 준다 — gh로 원본을 직접 읽을 수 없다.
+        # 꼬리 4000줄을 그대로 주던 것을 축약으로 바꿨다: 줄마다 붙는 job/step/ISO
+        # 타임스탬프 프리픽스만으로 30~40%가 낭비이고, 4000줄이면 에이전트의 첫 Read
+        # 한 번에 60~100k 토큰이 꽂힌다. 무엇을 잘랐는지는 distill 이 본문에 밝힌다.
+        #
+        # 순서가 중요하다 — scrub 이 먼저다. scrub 의 PRIVATE KEY 마스킹은 BEGIN/END 두 줄로
+        # 범위를 잡는데(scrub-secrets.sh), distill 이 먼저 돌면 그 사이가 잘려 BEGIN 을 잃은
+        # 키 본문이 마스킹되지 않고 남는다 (PR #41 3차 리뷰의 major). scrub 의 패턴은 전부
+        # 비앵커라 프리픽스가 붙은 원본 로그에도 그대로 걸린다.
         run: |
           mkdir -p .oncall
           gh run view "$RUN_ID" -R "${{ github.repository }}" --log-failed \
             > "$RUNNER_TEMP/raw-failure.log" || true
-          tail -n 4000 "$RUNNER_TEMP/raw-failure.log" \
-            | bash scripts/ci/scrub-secrets.sh > .oncall/failure.log
+          bash scripts/ci/scrub-secrets.sh < "$RUNNER_TEMP/raw-failure.log" | bash scripts/ci/distill-failure-log.sh > .oncall/failure.log
           if [ ! -s .oncall/failure.log ]; then
             echo "(실패 로그를 가져오지 못했다 — 런 페이지를 직접 볼 것: $RUN_URL)" > .oncall/failure.log
           fi
           wc -l .oncall/failure.log
+
+      # ci.yml 의 force_failure 는 재현 불가능한 가짜 실패라 oncall 이 늘 「분석만」으로
+      # 끝난다 — 그래서 수정 재검증·oncall/* 푸시·draft PR 경로가 통째로 미검증으로
+      # 남아 있었다 (2026-08-19 실검증에서 확인). fixable 모드 표식이 로그에 있을 때만
+      # 진짜 타입 오류를 하나 심어 그 경로를 끝까지 밟는다.
+      # 표식은 실제 사고 로그에 나올 수 없는 문자열이고, distill 이 늘 보존하는 꼬리에 있다.
+      - name: 실검증(drill) — 재현 가능한 결함 심기
+        run: |
+          grep -q 'ONCALL_DRILL_SEED' .oncall/failure.log || exit 0
+          echo "::warning::drill(fixable) 모드 — scripts/ci/oncall-drill.ts 에 의도적 타입 오류를 심는다"
+          cat > scripts/ci/oncall-drill.ts <<'TS'
+          // oncall 실검증(drill)용 파일 — 워크플로가 심었고 커밋되어 있지 않다.
+          //
+          // 아래 한 줄에 타입 오류가 있어 `npm run typecheck` 가 여기서 실패한다.
+          // 최소 수정으로 타입을 맞추고 **파일은 남길 것**. 파일을 지우면 main 대비 diff 가
+          // 비어 「수정 재검증 → 브랜치 푸시 → draft PR」 경로를 밟지 못한다 — 그 경로가
+          // 실제로 도는지 보는 것이 이 drill 의 전부다.
+          export const drillAnswer: number = '42'
+          TS
 
       - name: 근본 원인 분석·수정 (헤드리스 에이전트)
         uses: anthropics/claude-code-action@v1
@@ -99,12 +157,20 @@ jobs:
           # OIDC 앱 토큰 교환을 건너뛴다 — review.yml과 같은 이유 (id-token 권한 불필요)
           github_token: ${{ github.token }}
           prompt: |
-            너는 이 저장소의 oncall 사고 대응 에이전트다. main의 CI(lint·typecheck·test·build)가 깨졌다.
-            지금 체크아웃은 최신 main이고 npm ci는 끝나 있다.
+            너는 이 저장소의 oncall 사고 대응 에이전트다. main의 CI가 깨졌다.
+            지금 체크아웃은 최신 main이고 npm ci·pip install pytest는 끝나 있다.
+
+            ci.yml의 실패 게이트는 이 순서의 일곱이고, 이 중 하나 이상이 깨졌다.
+            전부 그대로 재현용으로 실행할 수 있다:
+              npm run lint / npm run typecheck / npm test / npm run test:ci-scripts /
+              python -m pytest scripts/test_review_verdict.py -q / npm run build / npm run lighthouse
+            (lighthouse는 npm run build 뒤에 돈다. 예산과 근거는 lighthouserc.cjs)
 
             사실:
             - 실패 커밋: ${{ github.event.workflow_run.head_sha }} (git show·git log로 변경 내용을 볼 것)
-            - 실패 잡 로그(시크릿 마스킹, 꼬리 4000줄): .oncall/failure.log — 원인 분석의 1차 근거다
+            - 실패 잡 로그(시크릿 마스킹, 축약본): .oncall/failure.log — 원인 분석의 1차 근거다.
+              머리말에 무엇을 잘랐는지 적혀 있다. 필요한 줄이 잘린 것 같으면 지어내지 말고
+              보고서에 「로그 축약분 확인 필요」라고 쓰고 런 URL 을 남겨라
 
             할 일:
             1. .oncall/failure.log에서 실패한 명령과 오류를 특정하라.
@@ -123,8 +189,23 @@ jobs:
             - .github/workflows/** 수정 — GITHUB_TOKEN으로 푸시할 수 없다. 필요하면 보고서에 제안만 써라
             - 로그 원문 대량 인용, 자격증명·토큰처럼 보이는 문자열을 보고서에 옮기는 것
             - .oncall/ 밖에 보고 파일을 만드는 것
+          # `Bash(npm:*)` 로 두면 안 된다 — `npm exec -- <아무거나>` 가 allowlist 를
+          # 통째로 우회한다. 재현에 필요한 명령만 개별로 연다. 부수 효과로
+          # `npm install <pkg>` 도 막힌다 — 의존성 추가는 자동 수정의 몫이 아니다.
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(npm:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(npm ci:*),Bash(npm run lint:*),Bash(npm run typecheck:*),Bash(npm test:*),Bash(npm run test:golden:*),Bash(npm run test:ci-scripts:*),Bash(npm run build:*),Bash(npm run lighthouse:*),Bash(python -m pytest:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      # 에이전트 실행 전문(JSON). 잡 로그에는 permission_denials_count 숫자만 남고
+      # **어떤 명령이 막혔는지**는 여기에만 있다 — allowlist 를 개별 명령으로 좁힌 뒤로는
+      # 이 파일이 없으면 재현 실패의 원인을 사후에 알 수 없다 (2026-08-19 실검증에서
+      # 거부 2건이 찍혔으나 무엇이었는지 끝내 확인하지 못했다). review.yml 과 같은 장치다.
+      - name: 실행 로그 아티팩트
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-oncall-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: ignore
 
       - name: 수정 여부 판정
         id: changes
@@ -142,11 +223,18 @@ jobs:
         id: verify
         if: steps.changes.outputs.changed == 'true'
         continue-on-error: true # 검증 실패도 PR 본문에 기록하고 PR은 연다
+        # ci.yml verify 잡의 실패 게이트를 같은 순서로 그대로 밟는다. 넷만 돌리던 때는
+        # test:ci-scripts·pytest·lighthouse 로 깨진 main 에 「✅ 통과」를 단 PR 이 열렸다 —
+        # 정작 깨진 게이트를 한 번도 다시 돌리지 않은 채였다.
+        # ci.yml 에 게이트를 추가하면 여기에도 같이 추가할 것.
         run: |
           npm run lint
           npm run typecheck
           npm test
+          npm run test:ci-scripts
+          python -m pytest scripts/test_review_verdict.py -q
           npm run build
+          npm run lighthouse
 
       - name: 제목·본문 구성
         id: body
@@ -168,7 +256,7 @@ jobs:
 
           case "$CHANGED" in
             true)
-              if [ "$VERIFY" = "success" ]; then STATUS="✅ lint·typecheck·test·build 통과"
+              if [ "$VERIFY" = "success" ]; then STATUS="✅ ci.yml 게이트 전부 통과 (lint·typecheck·test·test:ci-scripts·pytest·build·lighthouse)"
               else STATUS="❌ 재검증 실패 — 수정을 신뢰하지 말고 분석만 참고할 것"; fi ;;
             workflow) STATUS="⚠️ 수정이 .github/workflows를 건드려 푸시 불가 — 분석만 보고" ;;
             *) STATUS="⏭️ 수정 없음 — 분석만 보고" ;;
@@ -187,21 +275,32 @@ jobs:
           printf 'title=%s\n' "$TITLE" >> "$GITHUB_OUTPUT"
 
       - name: 수정 브랜치 푸시·draft PR 생성
+        id: push
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TITLE: ${{ steps.body.outputs.title }}
         run: |
+          # RUN_ID 는 브랜치 이름의 유일한 가변부다. 숫자가 아니면 만들지 않는다 —
+          # 리터럴 접두사만 검사하는 가드는 항상 참이라 아무것도 막지 못했다.
+          case "$RUN_ID" in ''|*[!0-9]*) echo "가드 위반: RUN_ID=$RUN_ID"; exit 1 ;; esac
           BRANCH="oncall/fix-${RUN_ID}"
-          # prod(main) read-only 가드 — 푸시 대상이 oncall/* 가 아니면 즉시 실패
-          case "$BRANCH" in oncall/*) ;; *) echo "가드 위반: $BRANCH"; exit 1 ;; esac
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add -A -- . ':!.oncall'
+          # `-- . ':!.oncall'` 로 두면 안 된다 — 부정 pathspec 이라도 .oncall 을 지목한
+          # 것으로 쳐서 git 이 「ignored 파일이다, -f 를 쓰라」며 exit 1 을 낸다.
+          # bash -e 라 스텝이 통째로 죽고, 분석도 PR 도 남지 않았다 (drill 32238834993).
+          # .oncall/ 은 .gitignore 에 있으므로 배제 pathspec 자체가 불필요하다.
+          # (같은 pathspec 이라도 git status 는 exit 0 이라 위 판정 스텝만 살아남았다.)
+          git add -A -- .
           git commit -m "$TITLE" -m "oncall 자동 수정 — 실패 런 ${RUN_URL}"
+          # 체크아웃이 자격증명을 심지 않으므로(persist-credentials: false) 여기서만
+          # 토큰을 명시한다. GITHUB_TOKEN 은 Actions 가 로그에서 자동 마스킹한다.
           # --force: 이전 시도가 푸시 후 PR 생성 전에 죽었어도 재실행이 막히지 않는다 (봇 전용 네임스페이스)
-          git push --force origin "HEAD:refs/heads/${BRANCH}"
+          git push --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:refs/heads/${BRANCH}"
           # draft가 원칙: 사람이 검토 후 ready로 전환해야 리뷰·verify·gate가 돈다.
           # draft를 지원하지 않는 요금제면 일반 PR로 연다 — gate의 oncall/* 제외가 자동 머지를 막는다.
           gh pr create --draft --base main --head "$BRANCH" \
@@ -209,12 +308,18 @@ jobs:
           || gh pr create --base main --head "$BRANCH" \
             --title "$TITLE" --body-file "$RUNNER_TEMP/report-body.md"
 
-      - name: 수정 불가 — 분석 이슈로 보고
-        if: steps.changes.outputs.changed != 'true'
+      - name: 수정 불가·게시 실패 — 분석 이슈로 보고
+        # 두 경우 모두 이슈로 떨어뜨린다.
+        #  - 수정 없음: 빈 diff 로는 PR 을 열 수 없다.
+        #  - 푸시·PR 실패: 분석이 통째로 사라지는 것이 사고 대응에서 가장 나쁘다.
+        #    실제로 drill 32238834993 이 git add 로 죽어 PR 도 이슈도 없이 끝났다.
+        # body 스텝이 성공했을 때만 — 본문 파일이 없으면 gh issue create 가 어차피 죽는다.
+        if: >-
+          ${{ !cancelled() && steps.body.outcome == 'success' &&
+          (steps.changes.outputs.changed != 'true' || steps.push.outcome == 'failure') }}
         env:
           GH_TOKEN: ${{ github.token }}
           TITLE: ${{ steps.body.outputs.title }}
-        # 빈 diff로는 PR을 열 수 없다 — 분석이라도 사람에게 전달한다
         run: |
           gh issue create -R "${{ github.repository }}" \
             --title "oncall: ${TITLE}" \

@@ -449,7 +449,7 @@ describe('section-import TextItem fixtures', () => {
 
   it('joins a drifting column that stays inside the tolerance', () => {
     // 앵커 체인이 하는 일 자체를 못박는다 — 0.4pt씩 밀리는 세로줄은 정수
-    // 경계(100.8과 101.2 사이)를 넘어가므로 반올림 버킷만으로는 갈린다.
+    // 경계(100.5, 100.4와 100.8 사이)를 넘어가므로 반올림 버킷만으로는 갈린다.
     // 입력 순서를 뒤집어도 같은 문자열이 나와야 한다
     const items = [
       { str: 'T', x: 100.4, y: 200, w: 8, h: 8, rot: -90 },
@@ -474,8 +474,10 @@ describe('section-import TextItem fixtures', () => {
       { str: 'L', x: 101.7, y: 180, w: 8, h: 8, rot: -90 },
     ]
 
+    const forward = joinedColumns(items)
+    expect(forward.length).toBeGreaterThan(0)
     expect([...joinedColumns([...items].reverse())].sort()).toEqual(
-      [...joinedColumns(items)].sort(),
+      [...forward].sort(),
     )
   })
 

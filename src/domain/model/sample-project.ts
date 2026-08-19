@@ -20,7 +20,7 @@ const sampleStories: Story[] = [
 // M1 화면 확인용 사용자 입력 예시이며 규준 수치가 아니다.
 // 屋外・仕上げなし는 종전 플레이스홀더 最小かぶり(40mm)와 같은 셀이다. 다만 帯筋의
 // 数量은 数量積算基準 1通則2)의 断面周長으로 바뀌었으므로 샘플 산출값은 보존되지 않는다.
-const columnSection: ColumnSection = {
+export const columnSection: ColumnSection = {
   id: 'section-C1',
   kind: '柱',
   mark: 'C1',
@@ -35,7 +35,7 @@ const columnSection: ColumnSection = {
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
-const girderSections: GirderSection[] = [
+export const girderSections: GirderSection[] = [
   {
     id: 'section-G1',
     kind: '大梁',

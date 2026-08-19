@@ -13,7 +13,8 @@
     "lighthouse": "lhci autorun --config=lighthouserc.cjs",
     "eval": "tsx --env-file-if-exists=.env evals/harness/run.ts",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
-    "hooks:install": "git config core.hooksPath scripts/githooks"
+    "hooks:install": "git config core.hooksPath scripts/githooks",
+    "test:ci-scripts": "bash scripts/ci/scrub-secrets.spec.sh && bash scripts/ci/review-scope.spec.sh && bash scripts/ci/review-carryforward.spec.sh && bash scripts/ci/review-verdict.spec.sh && bash scripts/ci/distill-failure-log.spec.sh && node --test .claude/workflows/review-code.test.js scripts/perf/budget-report.test.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

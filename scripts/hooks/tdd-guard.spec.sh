@@ -16,7 +16,19 @@ check() {
   DESC="$3"
 
   PAYLOAD=$(jq -n --arg p "$FILE_PATH" '{tool_input: {file_path: $p}}')
-  OUT=$(printf '%s' "$PAYLOAD" | bash "$GUARD")
+  OUT=$(printf '%s' "$PAYLOAD" | bash "$GUARD" 2>&1)
+  GUARD_EXIT=$?
+
+  # tdd-guard.sh는 설계상 항상 exit 0이다(허용이든 차단이든 결정은 stdout JSON으로만
+  # 알린다) — 0이 아니면 가드가 판정을 낸 게 아니라 죽은 것이다. 이걸 걸러내지
+  # 않으면 스폰 실패로 $OUT이 비었을 때 grep이 못 찾아 조용히 ALLOW로 읽힌다 —
+  # 가드가 우려하는 "조용한 무력화"가 이 스펙 자신에도 그대로 생긴다.
+  if [ "$GUARD_EXIT" -ne 0 ]; then
+    printf '  FAIL ERROR (guard exited %s, expected 0) %s\n    path: %s\n    output: %s\n' \
+      "$GUARD_EXIT" "$DESC" "$FILE_PATH" "$OUT"
+    FAILED=1
+    return
+  fi
 
   if echo "$OUT" | grep -q '"deny"'; then
     ACTUAL="DENY"
