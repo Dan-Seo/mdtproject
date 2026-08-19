@@ -162,7 +162,13 @@ interface ViewerRuntime {
   envTexture: THREE.Texture
   clipPlane: THREE.Plane
   content: THREE.Group | null
-  contentMaterials: THREE.Material[]
+  /**
+   * 머티리얼은 씬 콘텐츠가 아니라 **마운트 수명**이다. 재구축마다 새로 만들어
+   * 폐기하면 그때마다 WebGL 프로그램이 삭제·재링크된다 — 断面 편집 1회당
+   * 프로그램 여럿이 다시 링크되고, 그 드라이버 스톨이 편집 지연의 대부분이었다.
+   * 폐기는 언마운트에서 한 번만 한다.
+   */
+  materialPool: Map<MaterialKey, THREE.Material>
   highlightMaterial: THREE.MeshStandardMaterial | null
   concreteNormalMaterial: THREE.MeshStandardMaterial | null
   concreteSelectedMaterial: THREE.MeshStandardMaterial | null
@@ -173,6 +179,38 @@ interface ViewerRuntime {
   initialFitDone: boolean
   /** 마지막으로 카메라를 맞춘 대상(부재/모드). 같은 대상을 편집하는 동안은 시점을 뺏지 않는다. */
   fittedTargetKey: string | null
+}
+
+/**
+ * 部材/建物 뷰의 철근 머티리얼은 파라미터가 같아도 항목을 나눈다. 建物은
+ * InstancedMesh라 USE_INSTANCING 정의가 붙은 별도 프로그램이 필요하고, 하나를
+ * 공유하면 탭을 오갈 때마다 그 사이를 오가며 프로그램을 다시 잡는다.
+ * concrete/buildingConcrete도 opacity 값이 달라 같은 이유로 나뉜다.
+ */
+type MaterialKey =
+  | 'rebarCore'
+  | 'rebarAnchorage'
+  | 'rebarHighlight'
+  | 'buildingRebar'
+  | 'outline'
+  | 'concrete'
+  | 'grid'
+  | 'shadow'
+  | 'buildingConcrete'
+  | 'buildingConcreteSelected'
+
+/** 풀에 있으면 그대로 쓰고 없으면 만들어 넣는다. 폐기는 언마운트에서만 한다. */
+function pooledMaterial<T extends THREE.Material>(
+  runtime: ViewerRuntime,
+  key: MaterialKey,
+  create: () => T,
+): T {
+  const cached = runtime.materialPool.get(key)
+  if (cached !== undefined) return cached as T
+
+  const created = create()
+  runtime.materialPool.set(key, created)
+  return created
 }
 
 /**
@@ -234,10 +272,9 @@ function disposeContent(runtime: ViewerRuntime): void {
 
   runtime.scene.remove(content)
   for (const geometry of geometries) geometry.dispose()
-  for (const material of new Set(runtime.contentMaterials)) material.dispose()
+  // 머티리얼은 폐기하지 않는다 — materialPool이 소유하고 언마운트에서 한 번만 정리한다.
 
   runtime.content = null
-  runtime.contentMaterials = []
   runtime.highlightMaterial = null
   runtime.concreteNormalMaterial = null
   runtime.concreteSelectedMaterial = null
@@ -352,24 +389,33 @@ function memberBounds(view: SelectedSupportedMemberView): Bounds {
 function addMemberConcrete(
   content: THREE.Group,
   view: SelectedSupportedMemberView,
-  materials: THREE.Material[],
-  clipPlane: THREE.Plane,
+  runtime: ViewerRuntime,
 ): void {
-  const outlineMaterial = new THREE.LineBasicMaterial({
-    color: OUTLINE_COLOR,
-    clippingPlanes: [clipPlane],
-    clipShadows: true,
-  })
-  const concreteMaterial = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.14,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-    clippingPlanes: [clipPlane],
-    clipShadows: true,
-  })
+  const outlineMaterial = pooledMaterial(
+    runtime,
+    'outline',
+    () =>
+      new THREE.LineBasicMaterial({
+        color: OUTLINE_COLOR,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const concreteMaterial = pooledMaterial(
+    runtime,
+    'concrete',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.14,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
 
   for (const box of concreteBoxes(view)) {
     const geometry = new THREE.BoxGeometry(
@@ -391,14 +437,12 @@ function addMemberConcrete(
     solid.receiveShadow = true
     content.add(outline, solid)
   }
-
-  materials.push(outlineMaterial, concreteMaterial)
 }
 
 function addGround(
   content: THREE.Group,
   bounds: Bounds,
-  materials: THREE.Material[],
+  runtime: ViewerRuntime,
 ): void {
   const centerX = ((bounds.min[0] + bounds.max[0]) / 2) * MILLIMETRES_TO_SCENE
   const centerZ = ((bounds.min[2] + bounds.max[2]) / 2) * MILLIMETRES_TO_SCENE
@@ -409,13 +453,28 @@ function addGround(
     3
 
   const grid = new THREE.GridHelper(span, 24, OUTLINE_COLOR, GRID_COLOR_SOFT)
+  // GridHelper는 머티리얼을 스스로 만든다. 처음 것을 풀에 넣어두고, 이후에는 갓
+  // 만들어진 것을 버리고 풀의 것을 쓴다 — 아직 렌더된 적이 없어 프로그램을 잡기
+  // 전이라 버려도 된다.
+  const gridMaterial = pooledMaterial(runtime, 'grid', () =>
+    Array.isArray(grid.material) ? grid.material[0] : grid.material,
+  )
+  if (grid.material !== gridMaterial) {
+    for (const own of Array.isArray(grid.material)
+      ? grid.material
+      : [grid.material]) {
+      own.dispose()
+    }
+    grid.material = gridMaterial
+  }
   grid.position.set(centerX, floorY, centerZ)
   content.add(grid)
-  materials.push(
-    ...(Array.isArray(grid.material) ? grid.material : [grid.material]),
-  )
 
-  const shadowMaterial = new THREE.ShadowMaterial({ opacity: 0.3 })
+  const shadowMaterial = pooledMaterial(
+    runtime,
+    'shadow',
+    () => new THREE.ShadowMaterial({ opacity: 0.3 }),
+  )
   const plane = new THREE.Mesh(
     new THREE.PlaneGeometry(span, span),
     shadowMaterial,
@@ -425,7 +484,6 @@ function addGround(
   plane.position.set(centerX, floorY - 0.002, centerZ)
   plane.receiveShadow = true
   content.add(plane)
-  materials.push(shadowMaterial)
 }
 
 function fitShadowToBounds(
@@ -745,34 +803,44 @@ function rebuildMemberScene(
   }
 
   const content = new THREE.Group()
-  const coreMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const anchorageMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_ZONE_COLORS.定着,
-    metalness: 0.6,
-    roughness: 0.35,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const highlightMaterial = new THREE.MeshStandardMaterial({
-    color: HIGHLIGHT_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-    emissive: HIGHLIGHT_COLOR,
-    emissiveIntensity: 0.35,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const materials: THREE.Material[] = [
-    coreMaterial,
-    anchorageMaterial,
-    highlightMaterial,
-  ]
+  const coreMaterial = pooledMaterial(
+    runtime,
+    'rebarCore',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const anchorageMaterial = pooledMaterial(
+    runtime,
+    'rebarAnchorage',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_ZONE_COLORS.定着,
+        metalness: 0.6,
+        roughness: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const highlightMaterial = pooledMaterial(
+    runtime,
+    'rebarHighlight',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: HIGHLIGHT_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        emissive: HIGHLIGHT_COLOR,
+        emissiveIntensity: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
   const zoneMaterials = {
     core: coreMaterial,
     定着: anchorageMaterial,
@@ -780,8 +848,8 @@ function rebuildMemberScene(
   const pickableMeshes: THREE.Mesh[] = []
   const bounds = memberBounds(view)
 
-  addMemberConcrete(content, view, materials, runtime.clipPlane)
-  addGround(content, bounds, materials)
+  addMemberConcrete(content, view, runtime)
+  addGround(content, bounds, runtime)
 
   // 通し筋은 런 원점 기준, あばら筋은 자기 스팬 원점 기준으로 만들어진다. 런을 한
   // 프레임에 그리므로 부재별 오프셋을 걸어 맞춘다 — 通し筋의 memberId는 런 대표
@@ -818,7 +886,6 @@ function rebuildMemberScene(
   }
 
   runtime.content = content
-  runtime.contentMaterials = materials
   runtime.highlightMaterial = highlightMaterial
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
@@ -831,46 +898,63 @@ function rebuildBuildingScene(
   layout: BuildingLayout,
 ): void {
   const content = new THREE.Group()
-  const steelMaterial = new THREE.MeshStandardMaterial({
-    color: REBAR_COLOR,
-    metalness: 0.6,
-    roughness: 0.35,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const concreteMaterial = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.18,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const concreteSelectedMaterial = new THREE.MeshStandardMaterial({
-    color: CONCRETE_COLOR,
-    transparent: true,
-    opacity: 0.18,
-    roughness: 0.9,
-    metalness: 0,
-    depthWrite: false,
-    emissive: HIGHLIGHT_COLOR,
-    emissiveIntensity: 0.3,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const outlineMaterial = new THREE.LineBasicMaterial({
-    color: OUTLINE_COLOR,
-    clippingPlanes: [runtime.clipPlane],
-    clipShadows: true,
-  })
-  const materials: THREE.Material[] = [
-    steelMaterial,
-    concreteMaterial,
-    concreteSelectedMaterial,
-    outlineMaterial,
-  ]
+  // 파라미터는 部材 뷰의 철근과 같지만 **항목을 나눈다.** 여기는 InstancedMesh라
+  // USE_INSTANCING 정의가 붙은 별도 프로그램이 필요하고, 하나를 공유하면 탭을
+  // 오갈 때마다 그 사이를 오가며 프로그램을 다시 잡는다.
+  const steelMaterial = pooledMaterial(
+    runtime,
+    'buildingRebar',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const concreteMaterial = pooledMaterial(
+    runtime,
+    'buildingConcrete',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const concreteSelectedMaterial = pooledMaterial(
+    runtime,
+    'buildingConcreteSelected',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+        emissive: HIGHLIGHT_COLOR,
+        emissiveIntensity: 0.3,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const outlineMaterial = pooledMaterial(
+    runtime,
+    'outline',
+    () =>
+      new THREE.LineBasicMaterial({
+        color: OUTLINE_COLOR,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
   const pickableMeshes: THREE.Mesh[] = []
 
   for (const box of layout.boxes) {
@@ -941,10 +1025,9 @@ function rebuildBuildingScene(
     pickableMeshes.push(instanced)
   }
 
-  addGround(content, layout.bounds, materials)
+  addGround(content, layout.bounds, runtime)
 
   runtime.content = content
-  runtime.contentMaterials = materials
   runtime.concreteNormalMaterial = concreteMaterial
   runtime.concreteSelectedMaterial = concreteSelectedMaterial
   runtime.pickableMeshes = pickableMeshes
@@ -1302,7 +1385,7 @@ export function Viewer3D() {
         CLIP_DISABLED_CONSTANT,
       ),
       content: null,
-      contentMaterials: [],
+      materialPool: new Map(),
       highlightMaterial: null,
       concreteNormalMaterial: null,
       concreteSelectedMaterial: null,
@@ -1444,6 +1527,8 @@ export function Viewer3D() {
       renderer.domElement.removeEventListener('click', handleClick)
       observer.disconnect()
       disposeContent(runtime)
+      for (const material of runtime.materialPool.values()) material.dispose()
+      runtime.materialPool.clear()
       envTexture.dispose()
       controls.dispose()
       renderer.dispose()
