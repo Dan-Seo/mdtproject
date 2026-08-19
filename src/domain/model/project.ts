@@ -355,10 +355,17 @@ export function girderRun(project: Project, member: Member): GirderRun {
 }
 
 /**
- * 柱主筋の端部条件 (R7①)。
+ * 柱主筋の端部条件 (R7①・R9①)。
  *
- * 定着은 스택의 **양 끝**(기초·최상단)에만 붙는다. 중간 접합부는 철근이 그대로
- * 지나가므로 어느 쪽에도 定着이 붙지 않는다.
+ * 定着(bottom)은 스택의 **최하단**(기초)에만 붙는다. 中間 접합부는 철근이
+ * 그대로 지나가므로 なし다.
+ *
+ * top은 定着을 붙이지 않는다 — 항상 なし(중간 접합부, 위층으로 통과) 아니면
+ * 先端(스택 최상단, 위에 柱가 없음)이다. 数量積算基準 1通則1)「先端で止まる
+ * 鉄筋は、コンクリートの設計寸法をその部分の鉄筋の長さとする」＋（２）柱1)
+ * 但書「最上階柱の主筋については、１通則１）による」가 最上階柱主筋을 명시적으로
+ * 1通則1)에 걸어두므로, 스택 최상단은 定着 없이 콘크리트 설계 치수까지만
+ * 간다(R9①). 이전에는 스택 최상단에도 定着을 붙였는데, 이는 조문과 어긋났다.
  *
  * 접합부의 **継手는 여기서 다루지 않는다.** 数量積算基準 2（２）柱2)가
  * 「各階柱の全長にわたる主筋については各階ごとに1か所」로 정하므로 층마다
@@ -370,7 +377,7 @@ export function girderRun(project: Project, member: Member): GirderRun {
  */
 export interface ColumnEnds {
   bottom: '定着' | 'なし'
-  top: '定着' | 'なし'
+  top: 'なし' | '先端'
 }
 
 export function columnEnds(project: Project, member: Member): ColumnEnds {
@@ -401,7 +408,7 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
 
   return {
     bottom: hasColumnAtLevel(level - 1) ? 'なし' : '定着',
-    top: hasColumnAtLevel(level + 1) ? 'なし' : '定着',
+    top: hasColumnAtLevel(level + 1) ? 'なし' : '先端',
   }
 }
 
