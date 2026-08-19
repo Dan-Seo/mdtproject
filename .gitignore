@@ -19,6 +19,10 @@ phases/**/step*-output.json
 # oncall 에이전트 작업 파일 (실패 로그·보고서 — 커밋 금지)
 .oncall/
 
+# autoresearch 에이전트 작업 파일 (보고서·기준선 — 커밋 금지)
+.autoresearch/
+.lighthouseci-baseline/
+
 # 레포 안에 둔 git worktree — 체크아웃된 소스 전체가 untracked로 잡힌다
 .claude/worktrees/
 
