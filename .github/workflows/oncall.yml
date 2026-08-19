@@ -62,10 +62,15 @@ jobs:
 
   fix:
     needs: guard
-    # !cancelled(): guard 잡 자체가 죽어도 대응은 돈다 (skip 이 빈 값 → 진행).
-    # 상태 함수가 없으면 needs 규칙이 guard 실패 시 이 잡을 통째로 건너뛴다 —
-    # 사고가 흔적 없이 사라지는 쪽이라 열어 두는 쪽이 맞다.
-    if: ${{ !cancelled() && needs.guard.outputs.skip != 'true' }}
+    # 세 조건을 함께 봐야 한다.
+    #  - !cancelled(): guard 잡이 죽어도(infra) 대응은 돈다. 상태 함수가 없으면 needs
+    #    규칙이 guard 실패 시 이 잡을 통째로 건너뛰어 사고가 흔적 없이 사라진다.
+    #  - result != 'skipped': 그런데 !cancelled() 는 「의존 잡이 skipped 면 나도 skip」
+    #    규칙까지 함께 끈다. guard 는 사고가 아닐 때(ci 성공·포크·main 아님) skipped 로
+    #    끝나므로, 이 절이 없으면 **초록 CI 마다** 에이전트가 깨어난다 (run 32236001369
+    #    에서 실제로 발생 — 성공한 ci 를 받아 fix 가 돌기 시작했다).
+    #  - skip != 'true': 열린 oncall PR 이 이미 있으면 중복 대응하지 않는다.
+    if: ${{ !cancelled() && needs.guard.result != 'skipped' && needs.guard.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     # 재검증이 ci.yml 의 게이트를 그대로 밟으므로(lighthouse 포함) 30분으로는 모자란다
     timeout-minutes: 45
