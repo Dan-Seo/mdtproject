@@ -49,6 +49,7 @@ vi.mock('three', async (importOriginal) => {
     toneMappingExposure = 1
     outputColorSpace = ''
     localClippingEnabled = false
+    info = { render: { calls: 0, triangles: 0 } }
 
     constructor() {
       mocks.rendererInstances.push(this)
@@ -244,6 +245,49 @@ describe('Viewer3D', () => {
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
     expect(mocks.envTextureDispose).toHaveBeenCalledOnce()
+  })
+
+  // R4 성능 측정 하네스(dev-browser)가 실행 중인 페이지에서 renderer.info와
+  // 프레임 타임스탬프를 읽을 방법이 필요하다 — 컴포넌트 클로저 밖에서는 닿지 않는다.
+  it('exposes renderer stats and frame timestamps on window while mounted, and clears them on unmount', () => {
+    type KijunViewerRuntimeHook = {
+      getRendererInfo(): { calls: number; triangles: number }
+      getFrameTimestamps(): number[]
+    }
+    const getHook = () =>
+      (window as unknown as { __kijunViewerRuntime?: KijunViewerRuntimeHook })
+        .__kijunViewerRuntime
+
+    const { unmount } = render(<Viewer3D />)
+
+    expect(getHook()).toBeDefined()
+    expect(getHook()?.getRendererInfo()).toEqual({ calls: 0, triangles: 0 })
+    expect(getHook()?.getFrameTimestamps()).toEqual([])
+
+    runNextAnimationFrame()
+    expect(getHook()?.getFrameTimestamps()).toHaveLength(1)
+
+    unmount()
+    expect(getHook()).toBeUndefined()
+  })
+
+  // R4 조사에서 정상 프레임타임보다 project 변경마다 InstancedMesh를 통째로
+  // dispose·재생성하는 rebuildScene 쪽이 실제 병목일 가능성이 나왔다 — 그
+  // 소요시간을 하네스가 읽을 수 있어야 후보 최적화를 비교할 수 있다.
+  it('tracks scene-rebuild duration on window for the perf harness', () => {
+    type KijunViewerRuntimeHook = {
+      getRebuildStats(): { lastRebuildMs: number | null; rebuildCount: number }
+    }
+    const getHook = () =>
+      (window as unknown as { __kijunViewerRuntime?: KijunViewerRuntimeHook })
+        .__kijunViewerRuntime
+
+    render(<Viewer3D />)
+
+    const stats = getHook()?.getRebuildStats()
+    expect(stats?.rebuildCount).toBeGreaterThanOrEqual(1)
+    expect(stats?.lastRebuildMs).not.toBeNull()
+    expect(stats?.lastRebuildMs).toBeGreaterThanOrEqual(0)
   })
 
   it('enables shadows, tone mapping, colour space and an environment map', () => {

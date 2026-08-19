@@ -175,6 +175,24 @@ interface ViewerRuntime {
   fittedTargetKey: string | null
 }
 
+/**
+ * R4(InstancedMesh 1만 개 규모) 측정용 하네스가 실행 중인 페이지에서 읽는 훅.
+ * 컴포넌트 클로저 밖에서는 renderer.info·프레임 타이밍에 닿을 방법이 없어서
+ * 마운트 동안만 window에 노출한다 — 프로덕션 동작에는 영향이 없다.
+ */
+interface RebuildStats {
+  lastRebuildMs: number | null
+  rebuildCount: number
+}
+interface KijunViewerRuntimeHook {
+  getRendererInfo(): { calls: number; triangles: number }
+  getFrameTimestamps(): number[]
+  getRebuildStats(): RebuildStats
+}
+type WindowWithViewerHook = Window & {
+  __kijunViewerRuntime?: KijunViewerRuntimeHook
+}
+
 function vector(point: Point3): THREE.Vector3 {
   return new THREE.Vector3(...point).multiplyScalar(MILLIMETRES_TO_SCENE)
 }
@@ -1139,6 +1157,10 @@ export function Viewer3D() {
   const tooltipRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef<ViewerRuntime | null>(null)
   const tooltipKeyRef = useRef<string | null>(null)
+  const rebuildStatsRef = useRef<RebuildStats>({
+    lastRebuildMs: null,
+    rebuildCount: 0,
+  })
   const [tooltip, setTooltip] = useState<HoverTooltip | null>(null)
   const [clip, setClip] = useState<ClipState>({
     enabled: false,
@@ -1292,6 +1314,16 @@ export function Viewer3D() {
     }
     runtimeRef.current = runtime
 
+    const frameTimestamps: number[] = []
+    ;(window as WindowWithViewerHook).__kijunViewerRuntime = {
+      getRendererInfo: () => ({
+        calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+      }),
+      getFrameTimestamps: () => [...frameTimestamps],
+      getRebuildStats: () => ({ ...rebuildStatsRef.current }),
+    }
+
     // 사용자가 잡으면 사용자가 이긴다 — 연출을 즉시 끊는다.
     controls.addEventListener('start', () => {
       runtime.cameraTween = null
@@ -1396,11 +1428,14 @@ export function Viewer3D() {
         performance.now() - runtime.lastInteractionAt > AUTO_ROTATE_DELAY_MS
       controls.update()
       renderer.render(scene, camera)
+      frameTimestamps.push(performance.now())
+      if (frameTimestamps.length > 300) frameTimestamps.shift()
       animationFrame = window.requestAnimationFrame(renderFrame)
     }
     animationFrame = window.requestAnimationFrame(renderFrame)
 
     return () => {
+      delete (window as WindowWithViewerHook).__kijunViewerRuntime
       window.cancelAnimationFrame(animationFrame)
       renderer.domElement.removeEventListener('pointermove', handlePointerMove)
       renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
@@ -1420,7 +1455,12 @@ export function Viewer3D() {
     if (runtime === null) return
     tooltipKeyRef.current = null
     setTooltip(null)
+    const rebuildStartedAt = performance.now()
     rebuildScene(runtime, viewRef.current, hoverRowIdRef.current)
+    rebuildStatsRef.current = {
+      lastRebuildMs: performance.now() - rebuildStartedAt,
+      rebuildCount: rebuildStatsRef.current.rebuildCount + 1,
+    }
     applyViewerLayers(runtime, viewerLayersRef.current)
   }, [sceneKey])
 
