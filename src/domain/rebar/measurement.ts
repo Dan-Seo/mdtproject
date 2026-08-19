@@ -99,6 +99,10 @@ export interface SpliceBand {
  *
  * 区分の境目（5.0m・10.0m）は規準の数値なのでルールパックが持つ。ここが持つのは
  * 「上限未満ならその区分」という読み方だけである。
+ *
+ * bands は上限の昇順で渡す。昇順でない区分表はここでは検査しない —
+ * ルールパックはビルド時に固まるチェックイン済みの YAML で、順序は
+ * src/rulepack/index.test.ts が値で固定する。
  */
 export function bandedSpliceRule(
   lengthMm: number,
