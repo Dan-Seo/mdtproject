@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { lookupRuleSeries } from '../domain/rules/lookup'
 import { jpMlitRulePack } from './index'
 
 describe('jpMlitRulePack', () => {
@@ -59,5 +60,21 @@ describe('jpMlitRulePack', () => {
         '鉄筋コンクリート用棒鋼',
       ].sort(),
     )
+  })
+
+  it('keeps 継手箇所数の区分上限 strictly ascending in band order', () => {
+    // bandedSpliceRule は先頭一致で区分を返すので、上限が昇順でないと後ろの
+    // 区分が前の区分に食われ、例外ではなく黙って違う箇所数が出る。順序は
+    // 実行時に検査せずここで値として固定する — ルールパックはチェックイン済みの
+    // YAML で、破れるのは実行時ではなく編集時だからである。
+    // 境目の値そのものは tests/golden が押さえるのでここでは書かない。
+    const uppers = lookupRuleSeries(
+      jpMlitRulePack,
+      'measure.splice.girder.continuous.band.upper',
+      'band',
+    ).map(({ value }) => value)
+
+    expect(uppers).toEqual([...uppers].sort((left, right) => left - right))
+    expect(new Set(uppers).size).toBe(uppers.length)
   })
 })
