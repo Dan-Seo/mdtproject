@@ -5,7 +5,7 @@ const { captureException } = vi.hoisted(() => ({
   captureException: vi.fn(),
 }))
 
-vi.mock('posthog-js', () => ({ default: { captureException } }))
+vi.mock('@/lib/telemetry', () => ({ captureException }))
 
 import GlobalError from './global-error'
 

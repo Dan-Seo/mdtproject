@@ -8,7 +8,7 @@ import { SectionTable } from './SectionTable'
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 
-vi.mock('posthog-js', () => ({ default: { capture } }))
+vi.mock('@/lib/telemetry', () => ({ capture }))
 
 describe('SectionTable', () => {
   beforeEach(() => {

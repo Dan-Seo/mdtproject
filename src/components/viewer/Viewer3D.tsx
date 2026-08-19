@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import posthog from 'posthog-js'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -39,6 +38,7 @@ import {
   useAppStore,
   type ViewerLayer,
 } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import {
   buildingLayout,
@@ -1479,7 +1479,7 @@ export function Viewer3D() {
       if (typeof rowId === 'string') {
         setHoverRowRef.current(rowId)
         // 部材 뷰에서 3D가 하는 유일한 일이다 — 이게 안 쓰이면 ADR-016의 근거가 약해진다.
-        posthog.capture('rebar_picked')
+        capture('rebar_picked')
         return
       }
       const pickedMemberId = memberIdFromHit(hit)
@@ -1488,7 +1488,7 @@ export function Viewer3D() {
         // takeoff와 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
         const changed = pickedMemberId !== selectedMemberIdRef.current
         selectMemberRef.current(pickedMemberId)
-        if (changed) posthog.capture('member_selected', { source: 'viewer' })
+        if (changed) capture('member_selected', { source: 'viewer' })
       }
     }
     renderer.domElement.addEventListener('pointermove', handlePointerMove)
@@ -1498,7 +1498,7 @@ export function Viewer3D() {
     // 컨텍스트 손실은 던지지 않는다 — 캔버스가 그대로 얼어붙고 PaneBoundary도 걸리지
     // 않는다. 복구는 시도하지 않고(마운트가 씬을 소유한다) 보고만 한다.
     const handleContextLost = () => {
-      posthog.capture('viewer_webgl_context_lost', {
+      capture('viewer_webgl_context_lost', {
         mode: viewRef.current?.mode ?? null,
       })
     }

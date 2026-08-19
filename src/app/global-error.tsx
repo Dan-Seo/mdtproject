@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import posthog from 'posthog-js'
+
+import { captureException } from '@/lib/telemetry'
 
 export default function GlobalError({
   error,
@@ -11,7 +12,7 @@ export default function GlobalError({
   reset: () => void
 }>) {
   useEffect(() => {
-    posthog.captureException(error)
+    captureException(error)
   }, [error])
 
   // 루트 레이아웃(layout.tsx)까지 죽었을 수 있어 스토어에 기댈 수 없다 —

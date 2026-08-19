@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, type KeyboardEvent } from 'react'
-import posthog from 'posthog-js'
 
 import type { Member } from '@/domain/model/member'
 import {
@@ -11,6 +10,7 @@ import {
 } from '@/domain/model/project'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import { spanCoordinates, updateProjectSpans, type SpanAxis } from './grid'
 import styles from './PlanEditor.module.css'
@@ -78,7 +78,7 @@ export function StoryTabs() {
             aria-selected={selected}
             onClick={() => {
               setActiveStory(story.id)
-              posthog.capture('story_selected')
+              capture('story_selected')
             }}
           >
             {story.name}
@@ -107,7 +107,7 @@ function PlanMember({
   // 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
   const select = () => {
     selectMember(member.id)
-    if (!selected) posthog.capture('member_selected', { source: 'plan' })
+    if (!selected) capture('member_selected', { source: 'plan' })
   }
 
   if (member.kind === '柱' && !('axis' in member.position)) {
@@ -221,7 +221,7 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
     // 이벤트가 타이핑 속도가 아니라 편집 여부를 세게 한다.
     if (editReported.current) return
     editReported.current = true
-    posthog.capture('grid_edited', { axis })
+    capture('grid_edited', { axis })
   }
 
   return (

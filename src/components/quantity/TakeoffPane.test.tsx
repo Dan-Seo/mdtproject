@@ -35,7 +35,7 @@ const { capture, captureException } = vi.hoisted(() => ({
   captureException: vi.fn(),
 }))
 
-vi.mock('posthog-js', () => ({ default: { capture, captureException } }))
+vi.mock('@/lib/telemetry', () => ({ capture, captureException }))
 
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())

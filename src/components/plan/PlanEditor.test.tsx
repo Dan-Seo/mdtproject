@@ -9,7 +9,7 @@ import { PlanEditor, StoryTabs } from './PlanEditor'
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 
-vi.mock('posthog-js', () => ({ default: { capture } }))
+vi.mock('@/lib/telemetry', () => ({ capture }))
 
 describe('PlanEditor', () => {
   beforeEach(() => {

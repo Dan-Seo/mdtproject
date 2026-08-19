@@ -8,7 +8,6 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from 'react'
-import posthog from 'posthog-js'
 
 import type { RebarShape } from '@/domain/model/rebar'
 import { memberGroupKey, setNote } from '@/domain/model/project'
@@ -26,6 +25,7 @@ import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
+import { capture, captureException } from '@/lib/telemetry'
 import { jpMlitRulePack } from '@/rulepack'
 
 import styles from './TakeoffPane.module.css'
@@ -254,7 +254,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
     // 선택이 아니다. 매번 발화하면 source별 선택 수 비교가 takeoff 쪽으로 부푼다.
     const changed = groupId !== selectedGroup
     selectGroup(groupId, memberId)
-    if (changed) posthog.capture('member_selected', { source: 'takeoff' })
+    if (changed) capture('member_selected', { source: 'takeoff' })
   }
 
   const toggleLine = (line: QuantityLine, memberId: string) => {
@@ -661,7 +661,7 @@ export function TakeoffActions() {
     // 복원할 수 없는 버킷으로만 보낸다.
     exportTakeoffXlsx({ project, lines, locale }).then(
       () => {
-        posthog.capture('takeoff_exported', {
+        capture('takeoff_exported', {
           locale,
           size_bucket: sizeBucket(lines.length),
           has_inferred: hasInferred,
@@ -669,8 +669,8 @@ export function TakeoffActions() {
         })
       },
       (error: unknown) => {
-        posthog.captureException(error, { stage: 'takeoff_export' })
-        posthog.capture('takeoff_export_failed', { locale })
+        captureException(error, { stage: 'takeoff_export' })
+        capture('takeoff_export_failed', { locale })
       },
     )
   }

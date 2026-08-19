@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, type KeyboardEvent } from 'react'
-import posthog from 'posthog-js'
 
 import {
   BAR_SIZES,
@@ -16,6 +15,7 @@ import {
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import styles from './SectionTable.module.css'
 
@@ -364,7 +364,7 @@ export function SectionTable() {
     // 断面表를 손댔는가"(열람 → 편집 → 내보내기 퍼널의 가운데 칸)이므로 한 번으로 합친다.
     if (sectionEditReported.current) return
     sectionEditReported.current = true
-    posthog.capture('section_edited')
+    capture('section_edited')
   }
 
   const selectSection = (sectionId: string) => {
@@ -380,7 +380,7 @@ export function SectionTable() {
     // 들어온다. 이미 그 부재가 선택돼 있으면 다시 세지 않는다.
     const changed = representative.id !== selectedMemberId
     selectMember(representative.id)
-    if (changed) posthog.capture('member_selected', { source: 'section' })
+    if (changed) capture('member_selected', { source: 'section' })
   }
 
   const activateRow = (

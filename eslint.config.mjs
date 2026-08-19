@@ -89,6 +89,30 @@ const config = [
     },
   },
   {
+    // posthog-js 직접 import는 src/lib/telemetry.ts 하나만 허용한다. 다른
+    // 컴포넌트가 직접 import하면 (1) SDK가 그 컴포넌트의 번들에 정적으로
+    // 끌려 들어오고(instrumentation-client.ts만 동적 import해서는 안 막힌다
+    // — 실측: 다른 파일이 정적 import하면 그 파일이 속한 청크에도 SDK
+    // 전체가 실린다), (2) before_send 스크러빙은 posthog.init을 실제로
+    // 호출한 telemetry.ts를 거쳐야만 걸리는데 그 경로를 우회하게 된다.
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    ignores: ['src/lib/telemetry.ts', 'src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'posthog-js',
+              message:
+                'capture·captureException은 src/lib/telemetry.ts를 거친다 — 속성에 도면 유래 값이 실리지 않게 호출부를 한 곳으로 모은다 (ADR-020)',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/domain/**/*.{js,jsx,ts,tsx}'],
     rules: {
       'no-restricted-imports': [

@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, type ReactNode } from 'react'
-import posthog from 'posthog-js'
 
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import styles from './AppShell.module.css'
 import { PaneBoundary } from './PaneBoundary'
@@ -94,7 +94,7 @@ export function AppShell({
               aria-pressed={locale === option}
               onClick={() => {
                 setLocale(option)
-                posthog.capture('locale_changed', { locale: option })
+                capture('locale_changed', { locale: option })
               }}
             >
               {t(locale, `locale.${option}`)}

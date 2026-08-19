@@ -1,13 +1,12 @@
 'use client'
 
-import posthog from 'posthog-js'
-
 import { t } from '@/lib/i18n'
 import {
   useAppStore,
   type ViewerLayer,
   type ViewerMode,
 } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import styles from './ViewerTabs.module.css'
 
@@ -38,7 +37,7 @@ export function ViewerTabs() {
             aria-selected={selected}
             onClick={() => {
               setViewerMode(mode)
-              posthog.capture('viewer_mode_changed', { mode })
+              capture('viewer_mode_changed', { mode })
             }}
           >
             {t(locale, `viewer.tab.${mode}`)}

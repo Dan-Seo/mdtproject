@@ -20,7 +20,7 @@ import { jpMlitRulePack } from '@/rulepack'
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 
-vi.mock('posthog-js', () => ({ default: { capture } }))
+vi.mock('@/lib/telemetry', () => ({ capture }))
 
 const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),

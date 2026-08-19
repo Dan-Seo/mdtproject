@@ -1,7 +1,8 @@
 'use client'
 
 import { Component, type ReactNode } from 'react'
-import posthog from 'posthog-js'
+
+import { captureException } from '@/lib/telemetry'
 
 import styles from './PaneBoundary.module.css'
 
@@ -48,7 +49,7 @@ export class PaneBoundary extends Component<
     if (reason === this.reportedReason) return
 
     this.reportedReason = reason
-    posthog.captureException(error, { pane: this.props.pane })
+    captureException(error, { pane: this.props.pane })
   }
 
   componentDidUpdate(

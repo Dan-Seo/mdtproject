@@ -7,7 +7,7 @@ const { captureException } = vi.hoisted(() => ({
   captureException: vi.fn(),
 }))
 
-vi.mock('posthog-js', () => ({ default: { captureException } }))
+vi.mock('@/lib/telemetry', () => ({ captureException }))
 
 function Boom({ message }: { message: string }): never {
   throw new Error(message)
