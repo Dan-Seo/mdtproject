@@ -27,6 +27,7 @@ describe('jpMlitRulePack', () => {
         'cover.fabrication.addition',
         'measure.hoop.length.addition',
         'measure.distribution.addition',
+        'measure.tip.length.addition',
         'measure.splice.interval',
         'measure.splice.column',
         'measure.splice.girder.continuous',
