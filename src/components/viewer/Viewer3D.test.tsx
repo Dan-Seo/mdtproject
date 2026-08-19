@@ -957,6 +957,89 @@ describe('Viewer3D', () => {
     dispose.mockRestore()
   })
 
+  it('reuses pooled materials across a scene rebuild instead of relinking a WebGL program', () => {
+    // 머티리얼은 씬 콘텐츠가 아니라 마운트 수명이다 — 断面 편집으로 콘텐츠 그룹이
+    // 바뀌어도(disposeContent → rebuild) 머티리얼 인스턴스는 그대로여야 한다.
+    render(<Viewer3D />)
+
+    const contentBefore = latestContent()
+    const materialsBefore = clipTargetMaterials(contentBefore)
+    expect(materialsBefore.length).toBeGreaterThan(0)
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, hoop: { ...section.hoop, pitch: 200 } }
+            : section,
+        ),
+      })),
+    )
+
+    const contentAfter = latestContent()
+    expect(contentAfter).not.toBe(contentBefore)
+
+    const materialsAfter = clipTargetMaterials(contentAfter)
+    expect(materialsAfter).toHaveLength(materialsBefore.length)
+    expect(
+      materialsAfter.every((material) => materialsBefore.includes(material)),
+    ).toBe(true)
+  })
+
+  it('reuses building-view materials across repeated tab switches', () => {
+    // 建物은 InstancedMesh라 USE_INSTANCING 정의가 붙은 별도 프로그램이 필요하다.
+    // 탭을 오갈 때마다 새로 만들면 그 사이를 오가며 매번 프로그램을 다시 잡는다.
+    useAppStore.setState({ viewerMode: 'building' })
+    render(<Viewer3D />)
+
+    const materialsFirst = clipTargetMaterials(latestContent())
+    expect(materialsFirst.length).toBeGreaterThan(0)
+
+    act(() => useAppStore.setState({ viewerMode: 'member' }))
+    act(() => useAppStore.setState({ viewerMode: 'building' }))
+
+    const materialsSecond = clipTargetMaterials(latestContent())
+    expect(materialsSecond).toHaveLength(materialsFirst.length)
+    expect(
+      materialsSecond.every((material) => materialsFirst.includes(material)),
+    ).toBe(true)
+  })
+
+  it('disposes pooled materials exactly once, on unmount, not on scene rebuilds', async () => {
+    const THREE = await import('three')
+    const dispose = vi.spyOn(THREE.Material.prototype, 'dispose')
+    const { unmount } = render(<Viewer3D />)
+
+    const materialsBefore = clipTargetMaterials(latestContent())
+    expect(materialsBefore.length).toBeGreaterThan(0)
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, hoop: { ...section.hoop, pitch: 200 } }
+            : section,
+        ),
+      })),
+    )
+
+    // GridHelper가 재구축마다 스스로 새 머티리얼을 만들어 던지는 것(addGround의
+    // throwaway 정리)은 여기서 봐줄 대상이 아니다 — 풀에 실제로 담긴 머티리얼만 본다.
+    expect(dispose.mock.instances.some((instance) =>
+      materialsBefore.includes(instance as import('three').Material),
+    )).toBe(false)
+
+    unmount()
+
+    const disposedInstances = dispose.mock.instances
+    for (const material of materialsBefore) {
+      expect(disposedInstances).toContain(material)
+    }
+    dispose.mockRestore()
+  })
+
   it('keeps the camera while the 断面 of the selected member is edited', () => {
     render(<Viewer3D />)
     const framesAfterMount = mocks.controlsTargetSet.mock.calls.length

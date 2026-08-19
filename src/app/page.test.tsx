@@ -20,11 +20,13 @@ describe('Home', () => {
     })
   })
 
-  it('wires the viewer tabs into the 3D pane header', () => {
+  // Viewer3D는 next/dynamic 경계 뒤에 있어 마운트 직후가 아니라 청크 해결 후에 나타난다.
+  // 단언은 그대로 두고 비동기 조회로만 바꾼다.
+  it('wires the viewer tabs into the 3D pane header', async () => {
     render(<Home />)
 
     expect(screen.getByRole('tab', { name: '部材' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '建物' })).toBeInTheDocument()
-    expect(screen.getByTestId('viewer3d')).toBeInTheDocument()
+    expect(await screen.findByTestId('viewer3d')).toBeInTheDocument()
   })
 })
