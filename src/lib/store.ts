@@ -117,3 +117,10 @@ export const useAppStore = create<AppState>((set) => ({
     set(({ project }) => ({ project: updater(project) }))
   },
 }))
+
+// R4 성능 측정 하네스(dev-browser)가 스토어에 대용량 Project를 주입할 방법이
+// 필요하다. 도면 데이터가 든 전체 상태라 프로덕션 빌드에는 노출하지 않는다.
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  ;(window as Window & { __kijunStore?: typeof useAppStore }).__kijunStore =
+    useAppStore
+}

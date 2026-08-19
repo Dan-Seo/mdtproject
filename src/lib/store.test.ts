@@ -4,6 +4,16 @@ import { createSampleProject } from '@/domain/model/sample-project'
 
 import { useAppStore } from './store'
 
+describe('useAppStore dev instrumentation', () => {
+  // R4 성능 측정 하네스가 브라우저에서 대용량 Project를 주입할 방법이 필요하다 —
+  // 이 노출이 없으면 dev-browser 스크립트가 스토어에 닿을 길이 없다.
+  it('exposes the store on window for the stress-scale measurement harness', () => {
+    expect((window as unknown as { __kijunStore?: unknown }).__kijunStore).toBe(
+      useAppStore,
+    )
+  })
+})
+
 describe('useAppStore initial state', () => {
   it('lands with a 柱 already selected so the 3D pane is not empty', () => {
     const { sel, activeStoryId, project } = useAppStore.getInitialState()
