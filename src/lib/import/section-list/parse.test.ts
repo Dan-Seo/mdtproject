@@ -899,6 +899,44 @@ describe('parseSectionLists (synthetic)', () => {
     expect(c1.issues).toContain('断面矩形不成立')
   })
 
+  // #33이 표제란 図面名称을 타이틀 앵커에서 뺐다. 그 부작용으로 마지막 블록의
+  // 수집 창(tableBottom)이 다음 타이틀 없이는 페이지 바닥까지 열린다 — 表 아래
+  // 符号 열 x대역 밖의 표제란류 텍스트(도면번호·축척 등)가 blockRows.at(-1)이
+  // 되면, 그 텍스트보다 위이지만 실제 마지막 데이터 행보다는 아래인 회전 숫자가
+  // 표 안으로 빨려들어 확정 d가 될 수 있다 (#37)
+  it('does not let title-block text below the table push tableBottom past the last real row', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 35, w: 10, h: 8 },
+        { str: '700', x: 110, y: 45, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 55, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 55, w: 36, h: 8 },
+        // 符号 열 x대역(≤ tableRight ≈ C2 중심 246) 밖의 표제란류 텍스트. y는
+        // 마지막 데이터 행(55)보다 아래다 — 이 행이 blockRows.at(-1)이 되면
+        // tableBottom이 120까지 밀려난다
+        { str: '図面番号', x: 400, y: 90, w: 40, h: 8 },
+        { str: 'A-101', x: 400, y: 120, w: 30, h: 8 },
+        // 표 안 C1 열(x대역)의 회전 숫자 — 실제 마지막 데이터 행(55)보다 아래,
+        // 표제란 텍스트보다 위. tableBottom이 120까지 밀려나면 이 숫자가 C1의
+        // 확정 d(500)가 되어 b가 700으로 채워진다
+        { str: '5', x: 160, y: 68, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 65, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 62, w: 3, h: 6, rot: -90 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.b).toBeUndefined()
+    expect(c1.raw['断面']).toBe('700')
+    expect(c1.issues).toContain('断面矩形不成立')
+  })
+
   it('falls back to raw dimension capture when the 断面 label row has no values', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
