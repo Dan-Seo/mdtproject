@@ -131,6 +131,25 @@ jobs:
           fi
           wc -l .oncall/failure.log
 
+      # ci.yml 의 force_failure 는 재현 불가능한 가짜 실패라 oncall 이 늘 「분석만」으로
+      # 끝난다 — 그래서 수정 재검증·oncall/* 푸시·draft PR 경로가 통째로 미검증으로
+      # 남아 있었다 (2026-08-19 실검증에서 확인). fixable 모드 표식이 로그에 있을 때만
+      # 진짜 타입 오류를 하나 심어 그 경로를 끝까지 밟는다.
+      # 표식은 실제 사고 로그에 나올 수 없는 문자열이고, distill 이 늘 보존하는 꼬리에 있다.
+      - name: 실검증(drill) — 재현 가능한 결함 심기
+        run: |
+          grep -q 'ONCALL_DRILL_SEED' .oncall/failure.log || exit 0
+          echo "::warning::drill(fixable) 모드 — scripts/ci/oncall-drill.ts 에 의도적 타입 오류를 심는다"
+          cat > scripts/ci/oncall-drill.ts <<'TS'
+          // oncall 실검증(drill)용 파일 — 워크플로가 심었고 커밋되어 있지 않다.
+          //
+          // 아래 한 줄에 타입 오류가 있어 `npm run typecheck` 가 여기서 실패한다.
+          // 최소 수정으로 타입을 맞추고 **파일은 남길 것**. 파일을 지우면 main 대비 diff 가
+          // 비어 「수정 재검증 → 브랜치 푸시 → draft PR」 경로를 밟지 못한다 — 그 경로가
+          // 실제로 도는지 보는 것이 이 drill 의 전부다.
+          export const drillAnswer: number = '42'
+          TS
+
       - name: 근본 원인 분석·수정 (헤드리스 에이전트)
         uses: anthropics/claude-code-action@v1
         with:
@@ -175,6 +194,18 @@ jobs:
           # `npm install <pkg>` 도 막힌다 — 의존성 추가는 자동 수정의 몫이 아니다.
           claude_args: |
             --allowedTools "Read,Grep,Glob,Edit,Write,Bash(npm ci:*),Bash(npm run lint:*),Bash(npm run typecheck:*),Bash(npm test:*),Bash(npm run test:golden:*),Bash(npm run test:ci-scripts:*),Bash(npm run build:*),Bash(npm run lighthouse:*),Bash(python -m pytest:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      # 에이전트 실행 전문(JSON). 잡 로그에는 permission_denials_count 숫자만 남고
+      # **어떤 명령이 막혔는지**는 여기에만 있다 — allowlist 를 개별 명령으로 좁힌 뒤로는
+      # 이 파일이 없으면 재현 실패의 원인을 사후에 알 수 없다 (2026-08-19 실검증에서
+      # 거부 2건이 찍혔으나 무엇이었는지 끝내 확인하지 못했다). review.yml 과 같은 장치다.
+      - name: 실행 로그 아티팩트
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-oncall-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: ignore
 
       - name: 수정 여부 판정
         id: changes

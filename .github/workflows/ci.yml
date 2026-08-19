@@ -11,6 +11,10 @@ on:
         description: 'oncall 사고 대응 경로 실검증 — 이 실행을 의도적으로 실패시킨다'
         type: boolean
         default: false
+      fixable:
+        description: 'force_failure 와 함께: oncall 이 재현 가능한 결함을 심어 수정·재검증·PR 경로까지 밟는다'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -54,6 +58,11 @@ jobs:
           for i in $(seq 1 580); do echo "  at Object.<anonymous> (/home/runner/work/mdtproject/node_modules/tail/$i.js:1:1)"; done
           echo "src/domain/model/project.ts(117,3): error TS2345: Argument of type 'Rebar' is not assignable."
           echo "npm error Lifecycle script typecheck failed with exit code 1"
+          # fixable 모드 표식. 이 가짜 실패는 재현이 안 돼 oncall 이 항상 「분석만」으로
+          # 끝나므로, 수정·재검증·푸시·PR 경로가 통째로 미검증으로 남는다. 이 표식을 본
+          # oncall 이 워크스페이스에 진짜 타입 오류를 하나 심어 그 경로를 끝까지 밟는다.
+          # **꼬리에 찍어야 한다** — distill 이 무조건 보존하는 구간은 마지막 600줄이다.
+          if [ "${{ inputs.fixable }}" = "true" ]; then echo "ONCALL_DRILL_SEED"; fi
           exit 1
 
       - uses: actions/setup-node@v4
