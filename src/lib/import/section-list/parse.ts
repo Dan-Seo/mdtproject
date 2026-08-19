@@ -595,7 +595,10 @@ function setDimension(
 
   // 단독 숫자는 b×d로 확정할 수 없다 — 스케치 치수선 숫자를 정사각형으로
   // 승격하면 값을 지어내는 것이 된다 (ADR-012 계열). 빈칸+원문으로 남긴다.
+  // 세로도 읽었는데 짝짓기(pairedDimension)가 거부한 경우, 가로만 남기면
+  // 원문 세로값이 조용히 사라진다 — 함께 남긴다
   candidate.raw['断面'] = compact(value)
+  if (vertical !== undefined) candidate.raw['断面(縦)'] = compact(vertical)
   addIssue(candidate, '断面矩形不成立')
 }
 
@@ -812,17 +815,20 @@ function lastPositionRow(
  * 가장 위다 — 라벨 하나에만 매어 두면 그 라벨을 못 읽은 표에서 창이 슬라이스 전체로
  * 열려 아래 행(備考 등)의 단독 숫자가 치수로 확정된다. 라벨 행을 하나도 인식하지
  * 못했으면 그 표에서 읽은 것이 없다는 뜻이므로 폴백을 돌리지 않는다.
+ *
+ * 상한에 슬라이스의 endY를 더 받지 않는다 — labelRows는 전부 rowsBetween(rows,
+ * slice.startY, slice.endY)에서 나오므로 항상 y < slice.endY다. 그 endY를 다시
+ * Math.min에 넣어도 절대 선택될 수 없어 있지도 않은 상한 보호처럼 읽혔다 (#35)
  */
 function sketchDimensions(
   rows: TextRow[],
   startY: number,
-  endY: number,
   labelRows: Array<TextRow | undefined>,
   anchors: MarkColumn[],
 ): Map<string, string> {
   const labelYs = labelRows.flatMap((row) => (row ? [row.y] : []))
   if (labelYs.length === 0) return new Map()
-  return scalarDimensions(rows, startY, Math.min(...labelYs, endY), anchors)
+  return scalarDimensions(rows, startY, Math.min(...labelYs), anchors)
 }
 
 /**
@@ -1059,7 +1065,6 @@ function parseColumnBlock(
         : sketchDimensions(
             rows,
             slice.startY,
-            slice.endY,
             [mainRow, hoopRow],
             anchors,
           )
@@ -1257,7 +1262,6 @@ function parseGirderBlock(
         : sketchDimensions(
             rows,
             slice.startY,
-            slice.endY,
             [topRow, bottomRow, stirrupRow],
             anchors,
           )
