@@ -119,6 +119,25 @@ describe('telemetry', () => {
       expect(() => capture('member_selected')).not.toThrow()
       expect(() => captureException(new Error('boom'))).not.toThrow()
     })
+
+    // 9차 리뷰 major 지적: 청크 로드·init 실패가 캐시된 rejected promise가 되면
+    // instrumentation-client.ts의 부수 효과 import(아무도 안 기다림)부터 이후
+    // capture()·captureException() 호출마다 unhandled rejection이 난다 —
+    // loadClient()가 실패를 삼켜 null로 떨어뜨려야 한다. loadTelemetry() 헬퍼는
+    // posthogInit을 내부에서 await하므로(실패하면 헬퍼 자체가 reject한다) 이
+    // 테스트는 그 헬퍼를 쓰지 않고 모듈을 직접 불러 posthogInit 자체가
+    // reject하지 않는지 확인한다.
+    it('does not leave an unhandled rejection when posthog.init throws', async () => {
+      init.mockImplementationOnce(() => {
+        throw new Error('network unreachable')
+      })
+      vi.resetModules()
+
+      const mod = await import('./telemetry')
+
+      await expect(mod.posthogInit).resolves.not.toBeInstanceOf(Error)
+      expect(() => mod.capture('member_selected')).not.toThrow()
+    })
   })
 
   describe('before_send scrubbing', () => {
@@ -198,6 +217,35 @@ describe('telemetry', () => {
 
       expect(captured.properties.$exception_list[0].value).toBe(
         'Inconsistent size or shape in quantity group [REDACTED]',
+      )
+    })
+
+    // 9차 리뷰 critical 지적: letter+digit 토큰(D25·anchorage.L1 같은 룰팩
+    // 상수)을 통째로 남기는 규칙이, 같은 모양인 階 라벨(1F 등)도 함께
+    // 살려 보낸다 — project.ts 등 10곳의 "Story not found: ${storyId}"가
+    // 정확히 이 모양이었다. 룰팩 상수와 도면 라벨은 값의 모양만으로
+    // 구분할 수 없으므로(둘 다 letter+digit), 스크러버가 아니라 호출부를
+    // 고쳐 JSON 블록으로 감싼다 — lookupRule의 Rule not found 메시지가
+    // 이미 쓰는 관례와 같다.
+    it('redacts a story id wrapped as a JSON block, unlike a bare letter+digit label', async () => {
+      await loadTelemetry()
+
+      const beforeSend = init.mock.calls[0][1].before_send
+      const captured = beforeSend({
+        uuid: 'u15',
+        event: '$exception',
+        properties: {
+          $exception_list: [
+            {
+              type: 'Error',
+              value: 'Story not found: {"storyId":"1F"}',
+            },
+          ],
+        },
+      })
+
+      expect(captured.properties.$exception_list[0].value).toBe(
+        'Story not found: {REDACTED}',
       )
     })
 
@@ -427,6 +475,46 @@ describe('telemetry', () => {
       expect(captured.properties.$lib_version).toBe('1.417.4')
       expect(captured.properties.$exception_list[0].value).toBe(
         'boom: [REDACTED]',
+      )
+    })
+
+    // 9차 리뷰 major 지적: "$ 접두 키는 항상 SDK 예약 속성"이라는 면제가
+    // 깊이와 무관하게 적용되면, properties 안쪽 어딘가에 우연히 $로
+    // 시작하는 키가 있어도(도면 데이터를 담고 있어도) 그대로 샌다. 예외
+    // 없이 스크러빙되는지 top-level이 아닌 자리에서 확인한다.
+    it('does not exempt a $-prefixed key that appears below the top level', async () => {
+      await loadTelemetry()
+
+      const beforeSend = init.mock.calls[0][1].before_send
+      const captured = beforeSend({
+        uuid: 'u16',
+        event: '$exception',
+        properties: {
+          context: { $sectionMark: 'Member not found for Rebar: 1F-G1-X1Y2-X' },
+        },
+      })
+
+      expect(captured.properties.context.$sectionMark).toBe(
+        'Member not found for Rebar: [REDACTED]',
+      )
+    })
+
+    // 같은 지적의 또 다른 면: type·filename처럼 stacktrace 프레임에서 쓰는
+    // 흔한 이름의 키가 $exception_list 밖에 있으면 스크러빙 대상이어야
+    // 한다 — scrubExceptionListEntry는 오직 $exception_list의 원소에만
+    // 적용되므로, 밖에서는 "이름이 겹친다"는 이유로 면제되지 않는다.
+    it('does not exempt a generic stack-frame-like key outside $exception_list', async () => {
+      await loadTelemetry()
+
+      const beforeSend = init.mock.calls[0][1].before_send
+      const captured = beforeSend({
+        uuid: 'u17',
+        event: 'member_selected',
+        properties: { filename: 'Rule not found: anchorage.L1 for 1F-G1' },
+      })
+
+      expect(captured.properties.filename).toBe(
+        'Rule not found: anchorage.L1 for [REDACTED]',
       )
     })
 

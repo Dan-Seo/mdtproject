@@ -81,7 +81,9 @@ function buildTakeoff(project: Project): TakeoffResult {
     const section = findSection(project, member.sectionId)
     const story = project.stories.find(({ id }) => id === member.storyId)
     if (!story) {
-      throw new Error(`Story not found: ${member.storyId}`)
+      throw new Error(
+        `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
+      )
     }
 
     if (member.kind === '柱') {
@@ -153,7 +155,9 @@ function buildTakeoff(project: Project): TakeoffResult {
           )
         }
         if (!runStory) {
-          throw new Error(`Story not found: ${runMember.storyId}`)
+          throw new Error(
+            `Story not found: ${JSON.stringify({ storyId: runMember.storyId })}`,
+          )
         }
 
         unsupportedMembers.push({

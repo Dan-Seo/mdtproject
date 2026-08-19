@@ -77,7 +77,7 @@ export function storyElevation(stories: Story[], storyId: string): number {
   const index = stories.findIndex(({ id }) => id === storyId)
 
   if (index < 0) {
-    throw new Error(`Story not found: ${storyId}`)
+    throw new Error(`Story not found: ${JSON.stringify({ storyId })}`)
   }
 
   return stories.slice(0, index).reduce((sum, story) => sum + story.height, 0)
@@ -96,7 +96,9 @@ export function findSection(project: Project, sectionId: string): Section {
 export function memberGroupKey(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (!story) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw new Error(
+      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
+    )
   }
 
   const section = findSection(project, member.sectionId)
@@ -389,7 +391,9 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
 
   const level = project.stories.findIndex(({ id }) => id === member.storyId)
   if (level < 0) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw new Error(
+      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
+    )
   }
 
   const hasColumnAtLevel = (candidateLevel: number): boolean => {

@@ -97,8 +97,15 @@ describe('storyElevation', () => {
     expect(storyElevation([stories[0]], '1F')).toBe(0)
   })
 
-  it('throws on an unknown story id', () => {
-    expect(() => storyElevation(stories, 'RF')).toThrow('Story not found: RF')
+  // storyId를 그냥 보간하면(예: "Story not found: 1F") 텔레메트리
+  // 스크러버가 letter+digit 토큰을 룰팩 상수(D25 등)로 오인해 그대로
+  // 통과시킨다 — 階 라벨도 断面リスト 취입으로 도면에서 들어오는 값이라
+  // JSON 블록으로 감싸 기존 스크러빙 규칙(JSON.stringify(conditions)와
+  // 같은 관례)에 걸리게 한다.
+  it('throws on an unknown story id with the id wrapped as a JSON block', () => {
+    expect(() => storyElevation(stories, 'RF')).toThrow(
+      'Story not found: {"storyId":"RF"}',
+    )
   })
 })
 

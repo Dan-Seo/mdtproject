@@ -41,50 +41,48 @@ function scrubDrawingText(text: string): string {
 }
 
 /**
- * 값의 *모양*으로는 지우면 안 되는 구조적 필드들. 프로덕션 빌드 산출물 경로
- * (`/_next/static/chunks/app-page-4f2a1b.js`)는 하이픈+숫자를 동시에 가져
- * 하이픈+숫자 id 규칙에 걸리고, $session_id·$device_id 같은 UUID도 마찬가지다
- * — stacktrace 프레임과 SDK 예약 속성을 값 모양만으로 재귀 스크러빙에
- * 넘기면 진단에 필요한 파일명·행·세션/기기/SDK 버전 연결이 전부 깨진다.
- * 도면 데이터는 이 키들에 실리지 않으므로 그대로 둔다.
+ * $exception_list[] 원소는 진단 메타데이터(type·stacktrace 등)와 자유
+ * 텍스트(value)가 섞여 있다. value만 뽑아 스크러빙하고 나머지는 손대지
+ * 않는다 — 필드 이름을 나열해 "면제"하는 대신 value 하나만 "대상"으로
+ * 짚으므로, SDK가 스택프레임에 새 필드(module·mechanism 등)를 추가해도
+ * 값의 모양(하이픈+숫자로 보이는 빌드 산출물 경로 등)과 무관하게 안전하게
+ * 남는다. type처럼 흔한 이름의 필드를 이 배열 밖 다른 곳에서 만나도(9차
+ * 리뷰 major) 여기서는 건드리지 않는다 — 이 destructure는 오직
+ * $exception_list의 원소에만 적용된다.
  */
-const STACK_FRAME_KEYS = new Set([
-  'type',
-  'stacktrace',
-  'frames',
-  'filename',
-  'function',
-  'module',
-  'abs_path',
-  'lineno',
-  'colno',
-  'in_app',
-])
-
-function isPreservedKey(key: string): boolean {
-  // $exception* 는 도면 유래 텍스트를 담을 수 있어 계속 지운다 — 그 외
-  // $ 접두 키는 SDK가 모든 이벤트에 붙이는 예약 속성이다.
-  if (key.startsWith('$')) return !key.startsWith('$exception')
-  return STACK_FRAME_KEYS.has(key)
+function scrubExceptionListEntry(entry: unknown): unknown {
+  if (entry === null || typeof entry !== 'object') return entry
+  const { value, ...rest } = entry as Record<string, unknown>
+  return {
+    ...rest,
+    value: typeof value === 'string' ? scrubDrawingText(value) : value,
+  }
 }
 
 /**
- * posthog-js는 예외 텍스트를 $exception_list[].value 하나에만 담지 않는다 —
- * $exception_message·$exception_type처럼 최상위 속성에도 같은 값을 중복해
- * 싣는다. 필드 하나씩 이름으로 짚어 지우면 SDK가 새 중복 필드를 추가할
- * 때마다 또 구멍이 생긴다 — properties를 재귀로 훑어 만나는 모든 문자열에
- * scrubDrawingText를 적용한다. 단 isPreservedKey에 걸리는 구조적·SDK 예약
- * 필드는 재귀에 들어가지 않고 그대로 남긴다.
+ * properties를 재귀로 훑어 만나는 모든 문자열에 scrubDrawingText를
+ * 적용한다 — posthog-js가 예외 텍스트를 $exception_list[].value 하나가
+ * 아니라 $exception_message 같은 중복 필드에도 싣기 때문이다. topLevel일
+ * 때만(즉 properties의 직계 자식일 때만) $ 접두 키를 SDK 예약 속성으로
+ * 보고 지나친다 — $session_id·$lib_version 같은 값은 항상 이 위치에만
+ * 나타난다. 깊이와 무관하게 "$로 시작하면 전부 면제"하면(9차 리뷰 major)
+ * 중첩된 곳의 우연한 $ 키까지 스크러빙을 피해가므로, 이 예외는 최상위
+ * 한 겹에만 적용한다.
  */
-function scrubDrawingDeep(value: unknown): unknown {
+function scrubDrawingDeep(value: unknown, topLevel = false): unknown {
   if (typeof value === 'string') return scrubDrawingText(value)
-  if (Array.isArray(value)) return value.map(scrubDrawingDeep)
+  if (Array.isArray(value)) return value.map((entry) => scrubDrawingDeep(entry))
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [
-        key,
-        isPreservedKey(key) ? entry : scrubDrawingDeep(entry),
-      ]),
+      Object.entries(value).map(([key, entry]) => {
+        if (topLevel && key.startsWith('$') && !key.startsWith('$exception')) {
+          return [key, entry]
+        }
+        if (key === '$exception_list' && Array.isArray(entry)) {
+          return [key, entry.map(scrubExceptionListEntry)]
+        }
+        return [key, scrubDrawingDeep(entry)]
+      }),
     )
   }
   return value
@@ -109,6 +107,7 @@ const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
     ...captureResult,
     properties: scrubDrawingDeep(
       captureResult.properties,
+      true,
     ) as typeof captureResult.properties,
   }
 }
@@ -186,6 +185,18 @@ function loadClient(): Promise<PostHog | null> {
       before_send: scrubDrawingDigits,
     })
     return posthog
+  })
+  client = client.catch((error: unknown) => {
+    // 청크 로드 실패(오프라인 등)나 init 자체가 던지는 경우 여기서 안
+    // 삼키면 client가 rejected promise로 캐시돼, 이후 모든 capture()·
+    // captureException() 호출(loadClient().then(...))마다 unhandled
+    // rejection이 반복된다(9차 리뷰 major) — 텔레메트리가 죽었을 뿐인데
+    // 애플리케이션 코드가 그 실패를 잡을 방법이 없다. null로 떨어뜨려
+    // capture()·captureException()이 조용히 no-op하게 한다.
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('PostHog telemetry failed to load — disabled for this session', error)
+    }
+    return null
   })
   return client
 }

@@ -289,7 +289,9 @@ export function PlanEditor() {
   )
 
   if (!story) {
-    throw new Error(`Story not found: ${activeStoryId}`)
+    throw new Error(
+      `Story not found: ${JSON.stringify({ storyId: activeStoryId })}`,
+    )
   }
 
   return (

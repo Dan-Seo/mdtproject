@@ -98,7 +98,9 @@ type GroupedLine =
 function storyName(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (!story) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw new Error(
+      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
+    )
   }
   return story.name
 }
