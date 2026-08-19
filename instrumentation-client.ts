@@ -15,22 +15,30 @@ import type { BeforeSendFn } from 'posthog-js'
  *   ${min}..${max}`처럼 두 독립 숫자를 `.`로 잇는 모양. `.`을 숫자 판정에서
  *   완전히 배제하면 지워지지만, ①의 소수점(`342.5`)까지 갈라 반쪽만 지우게 된다.
  *
- * ①②③의 모양을 통째로 지운다. 룰 key(anchorage.L1)처럼 문자에 붙은 숫자,
- * env 안내문의 "un-configured"처럼 숫자 없는 하이픈 낱말은 룰팩 상수·정적
- * 문구지 도면 값이 아니므로 남긴다 — 어느 룰이 없는지가 이 계측의 목적이라
- * PaneBoundary가 그 라벨에 기댄다.
+ * ①②③의 모양을 통째로 지운다. 룰 key(anchorage.L1)나 D25·SD345 같은 철근
+ * 규격 표기처럼 문자에 붙은 숫자, env 안내문의 "un-configured"처럼 숫자
+ * 없는 하이픈 낱말은 룰팩 상수·정적 문구지 도면 값이 아니므로 남긴다 —
+ * 어느 룰이 없는지가 이 계측의 목적이라 PaneBoundary가 그 라벨에 기댄다.
  */
 function scrubDrawingText(text: string): string {
   return text
     .replace(/\{.*\}/g, '{REDACTED}') // JSON.stringify(conditions) 블록 (한 줄 출력이라 개행은 없다)
     .replace(/\S*\|\S*/g, '[REDACTED]') // story.name|code|mark 형태의 그룹 id
     .replace(/(?=\S*-)(?=\S*\d)\S+/g, '[REDACTED]') // 1F-G1-X1Y2-X·section-G1 형태의 id
-    // 나머지 독립 숫자. `.`을 lookaround 제외 문자에 넣으면 "342.5" 같은
-    // 소수 하나는 지키지만 "100..200"처럼 두 숫자를 `.`로 이은 범위는 양쪽
-    // 다 `.`에 막혀 못 지운다(geometry.ts의 bounds 메시지가 실제 사례) — 그래서
-    // `.`은 매치 문자 클래스 안에 넣어 숫자·점의 연속 run을 통째로 잡고,
-    // lookaround는 글자·밑줄만 배제한다(anchorage.L1의 L1은 여전히 남는다).
-    .replace(/(?<![\p{L}_])[\d.]+(?![\p{L}_])/gu, '[REDACTED]')
+    // 나머지 독립 숫자(소수·범위 포함)를 지운다. 이전에는 lookaround
+    // `(?<![\p{L}_])[\d.]+(?![\p{L}_])`로 앞뒤 경계만 봤는데, `+`가 최대
+    // 길이를 먼저 그리디하게 시도하다 경계 실패로 한 글자씩 물러날 때
+    // run 중간에서 멈추는 backtrack 자체는 막지 못했다 — 그 결과 D25가
+    // "D2[REDACTED]"로, SD345가 "SD3[REDACTED]"로 숫자 대부분이 그대로
+    // 남는 반쪽짜리 매치가 났다(경계만 봤지 run 내부 분할은 안 봤다).
+    // 그래서 문자·숫자·밑줄·점을 먼저 한 토큰으로 통째로 묶고, 그 토큰에
+    // 글자가 하나라도 있는지로 한 번에 판정한다 — 글자가 있으면 토큰
+    // 전체를 남기고(anchorage.L1·D25는 여전히 남는다), 숫자·점만으로 된
+    // 토큰이면 통째로 지운다. 판정이 토큰 전체 단위라 부분 매치가 나올
+    // 자리가 없다.
+    .replace(/[\p{L}\d_.]+/gu, (token) =>
+      /\p{L}/u.test(token) || !/\d/.test(token) ? token : '[REDACTED]',
+    )
 }
 
 /**

@@ -242,6 +242,33 @@ describe('instrumentation-client', () => {
     )
   })
 
+  // 5차 리뷰 지적: `(?<![\p{L}_])[\d.]+(?![\p{L}_])`는 경계(앞뒤)만 보고
+  // `+`의 backtrack은 막지 않는다 — 탐욕적으로 최대 길이를 먼저 시도하다
+  // 경계 실패로 한 글자씩 물러나던 중 남은 부분이 우연히 경계 조건을
+  // 통과하면 거기서 매치가 성립해, D25 같은 값이 "D2[REDACTED]"로(숫자
+  // "5"만 지워지고 "D2"는 그대로), SD345가 "SD3[REDACTED]"로 반쪽만
+  // 지워졌다 — 지운 척하면서 값 대부분을 그대로 흘려보내는, 안 지우느니만
+  // 못한 결과다. 문자가 하나라도 붙은 토큰은 부분 매치 없이 통째로
+  // 남아야 한다.
+  it('does not leak a partial digit when a multi-digit value directly touches a letter', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u9',
+      event: '$exception',
+      properties: {
+        $exception_list: [
+          { type: 'Error', value: 'Invalid BarSize: D25, grade SD345' },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_list[0].value).toBe(
+      'Invalid BarSize: D25, grade SD345',
+    )
+  })
+
   it('leaves non-exception events untouched', async () => {
     await loadInstrumentation()
 
