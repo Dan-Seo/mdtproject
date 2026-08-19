@@ -42,30 +42,44 @@ function scrubDrawingText(text: string): string {
 }
 
 /**
+ * posthog-js는 예외 텍스트를 $exception_list[].value 하나에만 담지 않는다 —
+ * $exception_message·$exception_type처럼 최상위 속성에도 같은 값을 중복해
+ * 싣는다(6차 리뷰 critical). 필드 하나씩 이름으로 짚어 지우면 SDK가 새 중복
+ * 필드를 추가할 때마다 또 구멍이 생긴다 — properties를 재귀로 훑어 만나는
+ * 모든 문자열에 scrubDrawingText를 적용한다. scrubDrawingText 자체가 값의
+ * *모양*(숫자·JSON·id)으로 판정하므로, pane 같은 정적 라벨 문자열이나
+ * stacktrace의 filename처럼 도면과 무관한 문자열은 이 재귀를 거쳐도
+ * 그대로 남는다 — 지울 자리를 넓히는 것이지 판정 기준을 바꾸는 게 아니다.
+ */
+function scrubDrawingDeep(value: unknown): unknown {
+  if (typeof value === 'string') return scrubDrawingText(value)
+  if (Array.isArray(value)) return value.map(scrubDrawingDeep)
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        scrubDrawingDeep(entry),
+      ]),
+    )
+  }
+  return value
+}
+
+/**
  * capture_exceptions가 未捕捉 예외를 스크러빙 없이 잡아 보내면 사용자 도면
  * 데이터가 서버로 나간다 (CLAUDE.md CRITICAL — 이 관문의 근거는 ADR-020).
  * posthog-js의 모든 capture·captureException이 여길 거치므로, 호출부마다
- * 흩어놓지 않고 여기 하나로 모은다.
+ * 흩어놓지 않고 여기 하나로 모은다. properties를 통째로 재귀 처리하므로
+ * $exception_list가 배열이 아닌 모양이어도(SDK 버전 변화 등) 원문을 그대로
+ * 통과시키지 않는다(6차 리뷰 major — 이전 코드는 그 경우 fail-open이었다).
  */
 const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
   if (captureResult === null) return captureResult
   if (captureResult.event !== '$exception') return captureResult
 
-  const exceptionList = captureResult.properties.$exception_list
-  if (!Array.isArray(exceptionList)) return captureResult
-
   return {
     ...captureResult,
-    properties: {
-      ...captureResult.properties,
-      $exception_list: exceptionList.map((exception) => ({
-        ...exception,
-        value:
-          typeof exception.value === 'string'
-            ? scrubDrawingText(exception.value)
-            : exception.value,
-      })),
-    },
+    properties: scrubDrawingDeep(captureResult.properties) as typeof captureResult.properties,
   }
 }
 

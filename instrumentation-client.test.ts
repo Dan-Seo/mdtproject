@@ -269,6 +269,50 @@ describe('instrumentation-client', () => {
     )
   })
 
+  // 6차 리뷰 critical 지적: posthog-js는 exception 텍스트를 $exception_list[].value
+  // 뿐 아니라 $exception_message 같은 최상위 필드에도 중복해서 싣는다. 이전
+  // 스크러버는 $exception_list 경로만 봐서 이 중복 경로로 도면 값이 그대로 나갔다.
+  it('redacts drawing-derived text that posthog-js duplicates outside $exception_list', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u10',
+      event: '$exception',
+      properties: {
+        $exception_message: 'clearMm must be finite: 342.5',
+        $exception_type: 'Error',
+        $exception_list: [
+          { type: 'Error', value: 'clearMm must be finite: 342.5' },
+        ],
+      },
+    })
+
+    expect(captured.properties.$exception_message).toBe(
+      'clearMm must be finite: [REDACTED]',
+    )
+    expect(captured.properties.$exception_type).toBe('Error')
+  })
+
+  // 6차 리뷰 major 지적: $exception_list가 배열이 아니면(다른 필드에만 텍스트가
+  // 실린 경우 포함) 이전 코드는 스크러빙 없이 원문 그대로 통과시켰다(fail-open).
+  it('still scrubs drawing-derived text when $exception_list is absent or malformed', async () => {
+    await loadInstrumentation()
+
+    const beforeSend = init.mock.calls[0][1].before_send
+    const captured = beforeSend({
+      uuid: 'u11',
+      event: '$exception',
+      properties: {
+        $exception_message: 'Member not found for Rebar: 1F-G1-X1Y2-X',
+      },
+    })
+
+    expect(captured.properties.$exception_message).toBe(
+      'Member not found for Rebar: [REDACTED]',
+    )
+  })
+
   it('leaves non-exception events untouched', async () => {
     await loadInstrumentation()
 
