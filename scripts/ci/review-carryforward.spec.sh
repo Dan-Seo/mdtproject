@@ -33,7 +33,7 @@ export PATH="$TMP/bin:$PATH"
 # 커밋 두 개짜리 임시 저장소. $1 = 두 번째 커밋에서 바꿀 파일
 make_repo() {
   rm -rf "$TMP/repo"
-  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs" "$TMP/repo/.claude/workflows" "$TMP/repo/.claude/skills/s"
+  mkdir -p "$TMP/repo/src/domain" "$TMP/repo/docs" "$TMP/repo/.claude/workflows" "$TMP/repo/.claude/skills/s"            "$TMP/repo/evals/harness/cases/review" "$TMP/repo/tests/fixtures"
   cd "$TMP/repo" || exit 1
   git init -q .
   git config user.email t@t
@@ -48,6 +48,10 @@ make_repo() {
   # 문서처럼 보이지만 에이전트가 읽고 따르는 지시문이다
   echo base > .claude/skills/s/SKILL.md
   echo base > CLAUDE.md
+  # 리뷰 대상 디렉터리 안의 .md — review-scope.sh 는 이것을 리뷰 대상으로 잡는다.
+  # 확장자만 보고 무시하면 리뷰 대상이 무리뷰로 흘러간다.
+  echo base > evals/harness/cases/review/c.md
+  echo base > tests/fixtures/S.md
   git add -A; git commit -qm base
   BASE_SHA=$(git rev-parse HEAD)
   echo changed >> "$1"
@@ -154,6 +158,17 @@ run_case ".claude/**/*.md 가 바뀜 → 지시문이라 승계 금지" false
 make_repo CLAUDE.md
 reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
 run_case "CLAUDE.md 가 바뀜 → 지시문이라 승계 금지" false
+
+# 확장자가 .md 라도 리뷰 대상 디렉터리 안이면 리뷰 대상이다. 두 필터가 갈리면
+# 리뷰어 자신을 채점하는 eval 케이스와 골든 픽스처 출처가 무리뷰로 머지된다
+# (PR #41 5차 리뷰의 major). 승계 판정은 review-filter.sh 의 is_target 하나만 본다.
+make_repo evals/harness/cases/review/c.md
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case "evals/**/*.md 가 바뀜 → 리뷰 대상이라 승계 금지" false
+
+make_repo tests/fixtures/S.md
+reviews "$BOT" "$BASE_SHA" "판정${NL}${MARKER_CLEAN}"
+run_case "tests/**/*.md 가 바뀜 → 리뷰 대상이라 승계 금지" false
 
 if [ "$FAILED" -ne 0 ]; then
   echo "review-carryforward.spec: 실패"

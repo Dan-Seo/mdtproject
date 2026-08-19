@@ -25,6 +25,8 @@
 # 검증: review-carryforward.spec.sh
 set -euo pipefail
 
+. "$(dirname "${BASH_SOURCE[0]}")/review-filter.sh"
+
 BOT_LOGIN="${BOT_LOGIN:-github-actions[bot]}"
 EXCLUDED="${EXCLUDED:-.review/excluded.txt}"
 BODY_OUT="${BODY_OUT:-.review/skip-body.md}"
@@ -73,6 +75,11 @@ git cat-file -e "${PREV_SHA}^{commit}" 2>/dev/null || emit false "이전 판정 
 # 두 점 diff 다 — main 을 머지해 들어온 코드 변경도 "바뀐 것"으로 잡아 승계를 막는다.
 # 그 코드는 이미 main 에서 리뷰됐지만 이 브랜치와의 조합은 처음이므로 보수적으로 본다.
 is_inert() {
+  # 리뷰 대상이면 절대 승계하지 않는다. 판정은 review-filter.sh 의 is_target 하나만 쓴다 —
+  # 여기에 규칙을 따로 두면 scope 와 갈라지고, 갈라진 쪽이 리뷰 대상을 무리뷰로 흘려보낸다.
+  # 실제로 아래 `*.md` 가 evals/**·tests/** 의 .md 12개를 삼켰다 (PR #41 5차 리뷰의 major).
+  is_target "$1" && return 1
+
   # 에이전트 지시문은 확장자만 보면 문서지만 실행된다 — .claude/** 의 스킬·훅 지시와
   # 루트의 CLAUDE.md·AGENTS.md 는 다음 리뷰의 판단 자체를 바꾼다 (PR #41 3차 리뷰의 major).
   case "$1" in
