@@ -109,7 +109,9 @@ const DIMENSIONS = [
     prompt: COMMON + `
 
 차원: security — 너는 데이터가 새는 경로만 본다. 아래 검사 항목 밖의 이슈(계산 버그·규칙 위반 등)는 발견해도 보고하지 마라 — 다른 차원 에이전트의 소관이다. 검사 항목:
-1. 서버 전송 코드의 등장 자체가 무조건 critical: fetch, axios, XMLHttpRequest, WebSocket, sendBeacon, 외부 analytics·SDK. 이 앱은 클라이언트 온리이고 현재 네트워크 코드가 0건이다 — 신규 등장 = 즉시 finding
+1. 아웃바운드 전송 경로: fetch, axios, XMLHttpRequest, WebSocket, sendBeacon, 외부 analytics·SDK. 이 앱은 클라이언트 온리라 이런 코드는 기본적으로 없어야 한다. 발견하면 docs/ADR.md 를 Grep 해 그 경로를 승인한 ADR 이 있는지 **먼저** 확인하라.
+   - 승인 ADR 이 없으면 critical — 신규 아웃바운드 경로의 등장 자체가 finding 이다.
+   - 승인 ADR 이 있으면 **경로의 존재 자체는 보고하지 마라**. 이미 내려진 결정이라 리뷰가 재심할 사안이 아니고, 매 회차 같은 지적이 다시 나면 그 PR 은 영원히 머지되지 못한다. 대신 그 ADR 이 정한 조건에서 코드가 벗어난 부분만 보고한다 — ADR 이 끄기로 한 수집 옵션이 켜져 있다, ADR 이 유일한 관문으로 정한 훅을 우회하는 전송 경로가 새로 생겼다, ADR 이 싣기로 한 범위 밖의 값이 페이로드에 들어간다 같은 것들이다.
 2. exceljs formula injection 경로 확장: 사용자 자유 텍스트가 셀 값으로 들어가는 새 경로(= + - @ 시작 값 무이스케이프)는 major. 기존 2개 경로(src/lib/export/index.ts 의 mark·notes)는 보고 금지
 3. XSS: dangerouslySetInnerHTML, innerHTML 직접 대입, href 에 사용자 입력
 4. eval·new Function 등 동적 코드 실행 도입 — 특히 룰팩 expr 필드 처리에 들어오면 critical
