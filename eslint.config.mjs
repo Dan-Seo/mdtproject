@@ -117,6 +117,10 @@ const config = [
     },
   },
   {
+    // domain이 실제로 닿을 수 있는 브라우저 전용 경로는 posthog-js 자체가
+    // 아니라 그걸 감싼 @/lib/telemetry다 — 별칭만 막으면 domain에서
+    // window.localStorage·동적 import를 쓰는 그 모듈이 lint 없이 들어온다
+    // (10차 리뷰 minor).
     files: ['src/domain/**/*.{js,jsx,ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -130,6 +134,7 @@ const config = [
             'zustand',
             'exceljs',
             'posthog-js',
+            '@/lib/telemetry',
           ],
           patterns: [
             'react/*',
@@ -139,6 +144,7 @@ const config = [
             'zustand/*',
             'exceljs/*',
             'posthog-js/*',
+            '@/lib/*',
           ],
         },
       ],

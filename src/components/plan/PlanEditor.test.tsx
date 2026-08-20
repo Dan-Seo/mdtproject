@@ -119,6 +119,7 @@ describe('PlanEditor', () => {
 
 describe('StoryTabs', () => {
   beforeEach(() => {
+    capture.mockClear()
     useAppStore.setState({
       project: createSampleProject(),
       sel: { group: null, memberId: null },
@@ -133,6 +134,24 @@ describe('StoryTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: '2階' }))
 
     expect(useAppStore.getState().activeStoryId).toBe('2F')
+  })
+
+  it('reports the story switch', () => {
+    render(<StoryTabs />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '2階' }))
+
+    expect(capture).toHaveBeenCalledWith('story_selected')
+  })
+
+  // ViewerTabs·member_selected와 같은 기준 — 이미 활성인 층을 다시
+  // 눌러도 전환이 아니다 (10차 리뷰 minor).
+  it('does not report when clicking the already-active story tab', () => {
+    render(<StoryTabs />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '1階' }))
+
+    expect(capture).not.toHaveBeenCalled()
   })
 
   it('follows a selection changed outside the plan pane', () => {

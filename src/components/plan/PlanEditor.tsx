@@ -79,7 +79,9 @@ export function StoryTabs() {
             aria-selected={selected}
             onClick={() => {
               setActiveStory(story.id)
-              capture('story_selected')
+              // ViewerTabs·member_selected와 같은 기준 — 이미 활성인 층을
+              // 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
+              if (!selected) capture('story_selected')
             }}
           >
             {story.name}

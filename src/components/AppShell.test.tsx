@@ -169,6 +169,16 @@ describe('AppShell', () => {
     expect(capture).toHaveBeenCalledWith('locale_changed', { locale: 'ko' })
   })
 
+  // 이미 활성인 언어를 다시 눌러도 전환이 아니다 — member_selected와
+  // 발화 기준을 맞춘다 (10차 리뷰 minor).
+  it('does not report when clicking the already-active language', () => {
+    render(<AppShell />)
+
+    fireEvent.click(screen.getByRole('button', { name: '日本語' }))
+
+    expect(capture).not.toHaveBeenCalled()
+  })
+
   it('publishes the active locale on the document element', () => {
     render(<AppShell />)
     expect(document.documentElement).toHaveAttribute('lang', 'ja')

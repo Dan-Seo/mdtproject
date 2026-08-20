@@ -105,6 +105,44 @@ describe('telemetry', () => {
       await Promise.resolve()
       expect(capturePosthog).not.toHaveBeenCalled()
     })
+
+    // 10차 리뷰 major 지적: 쿠키·저장소가 차단된 브라우저(Chrome '모든
+    // 쿠키 차단', 샌드박스 iframe)에서 localStorage 접근은 SecurityError를
+    // 던진다. capture()·captureException()이 에러 바운더리(PaneBoundary·
+    // global-error.tsx) 안에서 불리므로, 여기서 안 막으면 예외를 보고하는
+    // 호출 자체가 새 예외를 던져 그 바운더리를 깨뜨린다.
+    it('does not throw when localStorage access itself throws', async () => {
+      const getItem = vi
+        .spyOn(Storage.prototype, 'getItem')
+        .mockImplementation(() => {
+          throw new DOMException('blocked', 'SecurityError')
+        })
+
+      try {
+        await expect(loadTelemetry()).resolves.toBeDefined()
+        expect(init).not.toHaveBeenCalled()
+      } finally {
+        getItem.mockRestore()
+      }
+    })
+
+    // 9차 리뷰가 닫은 "동의 없음은 캐시하지 않는다"의 대칭짝: 동의 상태로
+    // 한 번 초기화된 뒤 opt-in 값을 지워도, loadClient()는 이미 캐시된
+    // client를 그대로 돌려줘 capture()가 계속 나간다.
+    it('stops sending once consent is revoked mid-session', async () => {
+      const { capture } = await loadTelemetry()
+
+      capture('member_selected')
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(capturePosthog).toHaveBeenCalledTimes(1)
+
+      window.localStorage.clear()
+      capture('member_selected')
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(capturePosthog).toHaveBeenCalledTimes(1)
+    })
   })
 
   // .gitignore가 .env*를 막으므로 새로 클론한 리포에는 이 변수가 없다. 그
@@ -522,6 +560,26 @@ describe('telemetry', () => {
       expect(captured.properties.$lib_version).toBe('1.417.4')
       expect(captured.properties.$exception_list[0].value).toBe(
         'boom: [REDACTED]',
+      )
+    })
+
+    // 10차 리뷰 major 지적: 최상위 $ 접두 면제가 예약 속성 "이름 목록"이
+    // 아니라 "$로 시작하는 모양"이라, SDK 업그레이드나 수집기 재활성화로
+    // 생기는 미지의 $ 속성($elements_chain 등)도 그대로 통과한다.
+    it('does not exempt an unrecognised top-level $-prefixed key', async () => {
+      await loadTelemetry()
+
+      const beforeSend = init.mock.calls[0][1].before_send
+      const captured = beforeSend({
+        uuid: 'u18',
+        event: '$autocapture',
+        properties: {
+          $elements_chain: 'Rule not found: anchorage.L1 for 1F-G1',
+        },
+      })
+
+      expect(captured.properties.$elements_chain).toBe(
+        'Rule not found: anchorage.L1 for [REDACTED]',
       )
     })
 

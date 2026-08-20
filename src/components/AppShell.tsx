@@ -94,7 +94,9 @@ export function AppShell({
               aria-pressed={locale === option}
               onClick={() => {
                 setLocale(option)
-                capture('locale_changed', { locale: option })
+                // member_selected·viewer_mode_changed와 같은 기준 — 이미
+                // 활성인 언어를 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
+                if (locale !== option) capture('locale_changed', { locale: option })
               }}
             >
               {t(locale, `locale.${option}`)}

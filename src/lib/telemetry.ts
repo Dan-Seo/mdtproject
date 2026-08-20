@@ -60,14 +60,33 @@ function scrubExceptionListEntry(entry: unknown): unknown {
 }
 
 /**
+ * posthog-js가 이벤트마다 top-level properties에 싣는 고정 메타데이터.
+ * "$로 시작하면 예약 속성"이라는 모양 규칙은(10차 리뷰 major) SDK
+ * 업그레이드나 수집기 재활성화로 생기는 미지의 $ 속성($elements_chain
+ * 등, 도면 유래 텍스트를 담을 수 있다)까지 함께 면제해버린다 — 이름을
+ * 아는 것만 면제하는 허용목록으로 좁힌다.
+ */
+const RESERVED_TOP_LEVEL_KEYS = new Set([
+  '$session_id',
+  '$device_id',
+  '$window_id',
+  '$lib',
+  '$lib_version',
+  '$time',
+  '$sent_at',
+  '$insert_id',
+  '$os',
+  '$browser',
+  '$browser_version',
+])
+
+/**
  * properties를 재귀로 훑어 만나는 모든 문자열에 scrubDrawingText를
  * 적용한다 — posthog-js가 예외 텍스트를 $exception_list[].value 하나가
  * 아니라 $exception_message 같은 중복 필드에도 싣기 때문이다. topLevel일
- * 때만(즉 properties의 직계 자식일 때만) $ 접두 키를 SDK 예약 속성으로
- * 보고 지나친다 — $session_id·$lib_version 같은 값은 항상 이 위치에만
- * 나타난다. 깊이와 무관하게 "$로 시작하면 전부 면제"하면(9차 리뷰 major)
- * 중첩된 곳의 우연한 $ 키까지 스크러빙을 피해가므로, 이 예외는 최상위
- * 한 겹에만 적용한다.
+ * 때만(즉 properties의 직계 자식일 때만) RESERVED_TOP_LEVEL_KEYS를 지나친다
+ * — 깊이와 무관하게 면제하면(9차 리뷰 major) 중첩된 곳의 우연한 $ 키까지
+ * 스크러빙을 피해가므로, 이 예외는 최상위 한 겹에만 적용한다.
  */
 function scrubDrawingDeep(value: unknown, topLevel = false): unknown {
   if (typeof value === 'string') return scrubDrawingText(value)
@@ -75,7 +94,7 @@ function scrubDrawingDeep(value: unknown, topLevel = false): unknown {
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => {
-        if (topLevel && key.startsWith('$') && !key.startsWith('$exception')) {
+        if (topLevel && RESERVED_TOP_LEVEL_KEYS.has(key)) {
           return [key, entry]
         }
         if (key === '$exception_list' && Array.isArray(entry)) {
@@ -125,7 +144,18 @@ const TELEMETRY_OPT_IN_KEY = 'kijun:telemetry-opt-in'
  * 통째로 꺼져 있는 게 정상이다.
  */
 function hasTelemetryConsent(): boolean {
-  return window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === 'yes'
+  if (typeof window === 'undefined') return false
+
+  try {
+    return window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === 'yes'
+  } catch {
+    // 쿠키·저장소 차단(Chrome '모든 쿠키 차단', 샌드박스 iframe)에서는
+    // localStorage 접근 자체가 SecurityError를 던진다. 이 함수는
+    // capture()·captureException()을 거쳐 에러 바운더리 안에서도 불리므로,
+    // 여기서 안 막으면 예외를 보고하는 호출이 새 예외를 던져 그 바운더리를
+    // 깨뜨린다(10차 리뷰 major).
+    return false
+  }
 }
 
 /**
@@ -145,12 +175,12 @@ function loadClient(): Promise<PostHog | null> {
   if (client) return client
 
   // 이 파일을 정적 import하는 컴포넌트 7개는 Next의 서버 프리렌더에서도
-  // 모듈 평가를 겪는다(9차 리뷰 minor) — SSR에는 window도 동의도 없으니
-  // 여기서 끊는다. 동의가 없는 동안은 `client`에 캐시하지 않고 매번 다시
-  // 확인한다 — 나중에 동의 UI가 생겨 사용자가 뒤늦게 켜도 이 세션이
-  // 캐시된 null에 페이지 새로고침 없이는 못 빠져나오는 상태에 갇히지
-  // 않게 하기 위함이다.
-  if (typeof window === 'undefined' || !hasTelemetryConsent()) {
+  // 모듈 평가를 겪는다(9차 리뷰 minor) — hasTelemetryConsent()가 SSR(창
+  // 없음)도 동의 없음으로 함께 처리한다. 동의가 없는 동안은 `client`에
+  // 캐시하지 않고 매번 다시 확인한다 — 나중에 동의 UI가 생겨 사용자가
+  // 뒤늦게 켜도 이 세션이 캐시된 null에 페이지 새로고침 없이는 못
+  // 빠져나오는 상태에 갇히지 않게 하기 위함이다.
+  if (!hasTelemetryConsent()) {
     return Promise.resolve(null)
   }
 
@@ -243,10 +273,17 @@ export const posthogInit = loadClient()
  * 않고는 걸리지 않는다. eslint.config.mjs의 no-restricted-imports가
  * src/lib/telemetry.ts 밖에서 posthog-js를 직접 import하지 못하게 막는다.
  */
+/**
+ * loadClient()의 `if (client) return client`는 일단 동의 상태로 초기화된
+ * 뒤에는 client를 영구 캐시한다 — opt-in 값을 지워도(10차 리뷰 minor)
+ * loadClient() 자신은 그걸 다시 보지 않는다. 전송 진입점인 여기서 매번
+ * 다시 확인해 동의 철회가 페이지 새로고침 없이도 즉시 반영되게 한다.
+ */
 export function capture(
   event: string,
   properties?: Record<string, unknown>,
 ): void {
+  if (!hasTelemetryConsent()) return
   void loadClient().then((posthog) => posthog?.capture(event, properties))
 }
 
@@ -254,6 +291,7 @@ export function captureException(
   error: unknown,
   properties?: Record<string, unknown>,
 ): void {
+  if (!hasTelemetryConsent()) return
   void loadClient().then((posthog) =>
     posthog?.captureException(error, properties),
   )
