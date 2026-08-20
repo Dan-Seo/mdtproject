@@ -52,9 +52,12 @@ const body = [
   `_출처: ${path.basename(file)} — 결정적 지표(전송 바이트·요청 수)만 낸다. 타이밍은 러너에 GPU 가 없어 실행마다 흔들리므로 추세로 못 읽는다._`,
 ].join('\n')
 
+// 표는 언제나 stdout 에 낸다. 잡 요약에만 쓰면 GITHUB_STEP_SUMMARY 가 설정된 환경
+// (헤드리스 에이전트가 그렇다) 에서 표를 읽을 방법이 없어진다 — autoresearch run
+// 32248514375 에서 에이전트가 기준선을 못 읽고 세 번 우회를 시도하다 막혔다.
+process.stdout.write(body + '\n')
 const summary = process.env.GITHUB_STEP_SUMMARY
 if (summary) fs.appendFileSync(summary, body + '\n')
-else process.stdout.write(body + '\n')
 
 for (const r of rows) {
   if (r.value === null) process.stdout.write(`::warning::${r.key} 미측정 — 예산은 있는데 값이 없다\n`)

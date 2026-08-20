@@ -5,13 +5,21 @@ import type { ReactNode } from 'react'
 
 import './globals.css'
 
+// weight를 적으면 Google Fonts가 wght 축을 그 범위로 좁힌 가변 폰트를 준다 —
+// JetBrains Mono latin이 40,480 → 31,340 B로 줄었다(Inter는 48,432 B로 동일).
+// 목록은 CSS가 실제로 쓰는 값 전부다: 토큰이 400·600을 쓰고, th·strong의
+// 브라우저 기본값이 700이다. 700을 빼면 그 자리가 600으로 주저앉으므로 지우지 말 것
+// (파일 크기는 700을 넣어도 그대로다 — 실측으로 확인했다).
+// 여기 없는 굵기(500·800 등)를 CSS에 새로 쓸 때는 이 목록에도 함께 더할 것.
 const inter = Inter({
   subsets: ['latin'],
+  weight: ['400', '600', '700'],
   variable: '--font-inter',
 })
 
 const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
+  weight: ['400', '600', '700'],
   variable: '--font-jetbrains-mono',
 })
 

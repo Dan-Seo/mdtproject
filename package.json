@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
     "lighthouse": "lhci autorun --config=lighthouserc.cjs",
+    "perf:measure": "rm -rf .lighthouseci; LHCI_RUNS=1 lhci autorun --config=lighthouserc.cjs; node scripts/perf/report.mjs",
     "eval": "tsx --env-file-if-exists=.env evals/harness/run.ts",
     "test:hooks": "bash scripts/hooks/tdd-guard.spec.sh",
     "hooks:install": "git config core.hooksPath scripts/githooks",
