@@ -89,6 +89,14 @@ export function generateColumnRebar(
     'measure.distribution.addition',
     {},
   )
+  // 主筋の上端は定着しない — スタック最上端（先端）は 1通則1)「先端で止まる
+  // 鉄筋はコンクリートの設計寸法」＋（２）柱1) 但書が最上階柱主筋をこの条項に
+  // 明示的に委ねる (R9①)。
+  const tipLengthAdditionRule = lookupRule(
+    pack,
+    'measure.tip.length.addition',
+    {},
+  )
 
   const minimumCover = millimetres(coverRule)
   const fabricationCoverAddition = millimetres(
@@ -99,10 +107,11 @@ export function generateColumnRebar(
   const anchorageLength = millimetres(anchorageRule, mainDiameter)
   const lapLength = millimetres(lapRule, mainDiameter)
 
-  // 端部条件ごとの伸び (R7①)。定着はスタックの両端にしか付かず、中間の接合部は
-  // 鉄筋が通り抜けるので 0 — そこにある継手は端部条件ではなく 2（２）柱2) が数える。
+  // 端部条件ごとの伸び (R7①・R9①)。定着はスタックの下端(基礎)にしか付かない。
+  // 上端は常に 0 — 中間の接合部は鉄筋が通り抜け(継手は端部条件ではなく
+  // 2（２）柱2) が数える)、スタック最上端(先端)は 1通則1) が定着を加えない。
   const bottomExtension = ends.bottom === '定着' ? anchorageLength : 0
-  const topExtension = ends.top === '定着' ? anchorageLength : 0
+  const topExtension = 0
   // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
   const drawnLength = story.height + bottomExtension + topExtension
   const spliceCountPerBar = spliceCount(spliceCountRule)
@@ -123,14 +132,7 @@ export function generateColumnRebar(
     })
   }
 
-  if (ends.top === '定着') {
-    mainZones.push({
-      kind: '定着',
-      ruleKey: anchorageRule.key,
-      pathFromMm: drawnLength - anchorageLength,
-      pathToMm: drawnLength,
-    })
-  }
+  // 上端は定着しない(なし・先端いずれも)ので、ここにゾーンは無い(R9①)。
 
   const endTerms: string[] = []
   const mainRuleHits: RuleHit[] = [
@@ -147,13 +149,9 @@ export function generateColumnRebar(
     endTerms.push('下端 下階柱から通る 0')
   }
 
-  if (ends.top === '定着') {
-    endTerms.push(
-      `上端 定着長さ L1 ${anchorageRule.value}d(${anchorageLength})`,
-    )
-    if (!mainRuleHits.includes(anchorageRule)) {
-      mainRuleHits.push(anchorageRule)
-    }
+  if (ends.top === '先端') {
+    endTerms.push('上端 先端（コンクリート設計寸法まで）0')
+    mainRuleHits.push(tipLengthAdditionRule)
   } else {
     endTerms.push('上端 上階柱へ通る 0')
   }

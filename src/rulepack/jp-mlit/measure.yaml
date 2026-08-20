@@ -21,3 +21,13 @@
   source: { ref: quantity, section: 第4編第3章第2節 1通則7), page: 15 }
   confidence: stated
   note: 「その部分の長さを鉄筋の間隔で除し、小数点以下第1位を切り上げた整数（同一の部分で間隔の異なる場合はその整数の和）に1を加える」
+
+- key: measure.tip.length.addition
+  label: 先端で止まる鉄筋の設計長さに加える定着長さ
+  expr: コンクリートの設計寸法 ＋ 0（設計図書指定時のみフック余長）
+  conditions: {}
+  value: 0
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則1), page: 15 }
+  confidence: stated
+  note: 「基礎、柱、梁、床板、壁等の先端で止まる鉄筋は、コンクリートの設計寸法をその部分の鉄筋の長さとし、これに設計図書等で指定された場合はフックの長さを加える」。最上階柱の主筋は２（２）柱1)「最上階柱の主筋については、１通則１）による」によりこの条項の対象 — 定着長さを加えない (R9①)

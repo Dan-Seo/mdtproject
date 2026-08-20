@@ -1,15 +1,17 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
 
 import type { Member } from '@/domain/model/member'
 import {
   findSection,
   gridPoint,
+  storyNotFound,
   type Project,
 } from '@/domain/model/project'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import { spanCoordinates, updateProjectSpans, type SpanAxis } from './grid'
 import styles from './PlanEditor.module.css'
@@ -75,7 +77,12 @@ export function StoryTabs() {
               selected ? styles.storyTabActive : ''
             }`}
             aria-selected={selected}
-            onClick={() => setActiveStory(story.id)}
+            onClick={() => {
+              setActiveStory(story.id)
+              // ViewerTabs·member_selected와 같은 기준 — 이미 활성인 층을
+              // 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
+              if (!selected) capture('story_selected')
+            }}
           >
             {story.name}
           </button>
@@ -98,7 +105,13 @@ function PlanMember({
   const selectMember = useAppStore(({ selectMember }) => selectMember)
   const section = findSection(project, member.sectionId)
   const selected = selectedMemberId === member.id
-  const select = () => selectMember(member.id)
+  // 부재 id는 그리드 좌표를 담고 있어 보내지 않는다 — 어느 페인에서 골랐는지만 남긴다.
+  // 이미 선택된 부재를 다시 클릭해도 재발화하지 않는다 — SectionTable·TakeoffPane과
+  // 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
+  const select = () => {
+    selectMember(member.id)
+    if (!selected) capture('member_selected', { source: 'plan' })
+  }
 
   if (member.kind === '柱' && !('axis' in member.position)) {
     const point = gridPoint(
@@ -200,11 +213,18 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const spans = axis === 'x' ? project.grid.xSpans : project.grid.ySpans
   const axisLabel = axis.toUpperCase()
+  const editReported = useRef(false)
 
   const commit = (nextSpans: number[]) => {
     updateProject((current) =>
       updateProjectSpans(current, axis, nextSpans),
     )
+
+    // number input의 onChange는 "6000"을 치면 네 번 들어온다. 축마다 한 번으로 합쳐
+    // 이벤트가 타이핑 속도가 아니라 편집 여부를 세게 한다.
+    if (editReported.current) return
+    editReported.current = true
+    capture('grid_edited', { axis })
   }
 
   return (
@@ -272,7 +292,7 @@ export function PlanEditor() {
   )
 
   if (!story) {
-    throw new Error(`Story not found: ${activeStoryId}`)
+    throw storyNotFound(activeStoryId)
   }
 
   return (

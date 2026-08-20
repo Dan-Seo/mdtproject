@@ -43,8 +43,9 @@ function input(
     section,
     story,
     beamDepthAbove: 750,
-    // 既定は「下は通し・上は定着」＝ 下に柱があるスタック最上段の柱。
-    ends: { bottom: 'なし', top: '定着' },
+    // 既定は「下は通し・上は先端」＝ 下に柱があるスタック最上段の柱
+    // （1通則1)＋（２）柱1) 但書により先端は定着を加えない、R9①）。
+    ends: { bottom: 'なし', top: '先端' },
     ...overrides,
   }
 }
@@ -137,12 +138,12 @@ describe('generateColumnRebar', () => {
       }
     }
 
-    // 端部の順（下端 → 上端）のあとに継手。既定入力は 下端 通し・上端 定着で、
+    // 端部の順（下端 → 上端）のあとに継手。既定入力は 下端 通し・上端 先端で、
     // 継手は端部条件と関係なく （２）柱2) が各階に1か所置く。
     expect(byRole(generated, '主筋').ruleHits.map(({ key }) => key)).toEqual([
       'cover.minimum',
       'cover.fabrication.addition',
-      'anchorage.L1',
+      'measure.tip.length.addition',
       'measure.splice.column',
       'measure.splice.length.factor',
       'lap.L1',
@@ -156,41 +157,43 @@ describe('generateColumnRebar', () => {
     ])
   })
 
-  it('anchors only at the stack ends and gives every storey one 継手 (R7①・（２）柱2))', () => {
-    const lower = byRole(
+  it('anchors the base of the stack but adds nothing at the roof, and gives every storey one 継手 (R7①・R9①・（２）柱2))', () => {
+    const base = byRole(
       generateColumnRebar(
         input({ ends: { bottom: '定着', top: 'なし' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
-    const upper = byRole(
+    const roof = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: 'なし', top: '定着' } }),
+        input({ ends: { bottom: 'なし', top: '先端' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
 
-    // 接合部には定着が付かない — そこにあるのは各階1か所の継手だけだ。
-    expect(lower.zones).toHaveLength(1)
-    expect(upper.zones).toHaveLength(1)
-    expect(lower.splice?.countPerBar).toBe(1)
-    expect(upper.splice?.countPerBar).toBe(1)
-    expect(lower.length).toBe(story.height + anchorage + lap)
-    expect(upper.length).toBe(story.height + anchorage + lap)
+    // 接合部には定着が付かない。屋上（先端）にも定着は付かない —
+    // 1通則1)＋（２）柱1) 但書により最上階柱主筋はコンクリート設計寸法までで
+    // 止まる。どちらにも各階1か所の継手だけが付く。
+    expect(base.zones).toHaveLength(1)
+    expect(roof.zones).toHaveLength(0)
+    expect(base.splice?.countPerBar).toBe(1)
+    expect(roof.splice?.countPerBar).toBe(1)
+    expect(base.length).toBe(story.height + anchorage + lap)
+    expect(roof.length).toBe(story.height + lap)
   })
 
-  it('anchors both ends when the column is alone in its stack', () => {
+  it('anchors only the base — not the roof — when the column stands alone in its stack (R9①)', () => {
     const main = byRole(
       generateColumnRebar(
-        input({ ends: { bottom: '定着', top: '定着' } }),
+        input({ ends: { bottom: '定着', top: '先端' } }),
         jpMlitRulePack,
       ),
       '主筋',
     )
 
-    expect(main.length).toBe(story.height + 2 * anchorage + lap)
+    expect(main.length).toBe(story.height + anchorage + lap)
   })
 
   it('extends the 3D geometry by exactly what each end contributes', () => {
@@ -210,34 +213,18 @@ describe('generateColumnRebar', () => {
 
   it.each(
     [
-      {
-        ends: { bottom: '定着', top: '定着' },
-        bottomAnchored: true,
-        topAnchored: true,
-      },
-      {
-        ends: { bottom: '定着', top: 'なし' },
-        bottomAnchored: true,
-        topAnchored: false,
-      },
-      {
-        ends: { bottom: 'なし', top: '定着' },
-        bottomAnchored: false,
-        topAnchored: true,
-      },
-      {
-        ends: { bottom: 'なし', top: 'なし' },
-        bottomAnchored: false,
-        topAnchored: false,
-      },
+      { ends: { bottom: '定着', top: 'なし' }, bottomAnchored: true },
+      { ends: { bottom: '定着', top: '先端' }, bottomAnchored: true },
+      { ends: { bottom: 'なし', top: 'なし' }, bottomAnchored: false },
+      { ends: { bottom: 'なし', top: '先端' }, bottomAnchored: false },
     ] satisfies {
       ends: ColumnEnds
       bottomAnchored: boolean
-      topAnchored: boolean
     }[],
   )(
-    'emits path-distance zones for $ends.bottom/$ends.top ends',
-    ({ ends, bottomAnchored, topAnchored }) => {
+    // 上端は なし・先端いずれも定着しない(R9①) — ゾーンは下端の定着だけが決める。
+    'emits a path-distance zone only for a 定着 bottom, never for the top ($ends.bottom/$ends.top)',
+    ({ ends, bottomAnchored }) => {
       const main = byRole(
         generateColumnRebar(input({ ends }), jpMlitRulePack),
         '主筋',
@@ -247,8 +234,6 @@ describe('generateColumnRebar', () => {
         'anchorage.L1',
         conditions,
       ).key
-      // ゾーンは描かれた polyline 上の位置なので、継手を含まない長さで測る。
-      const drawnLength = main.points[1][1] - main.points[0][1]
       const expected: RebarZone[] = []
 
       if (bottomAnchored) {
@@ -260,24 +245,15 @@ describe('generateColumnRebar', () => {
         })
       }
 
-      if (topAnchored) {
-        expected.push({
-          kind: '定着',
-          ruleKey: anchorageKey,
-          pathFromMm: drawnLength - anchorage,
-          pathToMm: drawnLength,
-        })
-      }
-
       expect(main.zones).toEqual(expected)
     },
   )
 
   it('keeps every zone within the drawn 主筋 path, not the 設計長さ', () => {
     const endCombinations: ColumnEnds[] = [
-      { bottom: '定着', top: '定着' },
+      { bottom: '定着', top: '先端' },
       { bottom: '定着', top: 'なし' },
-      { bottom: 'なし', top: '定着' },
+      { bottom: 'なし', top: '先端' },
       { bottom: 'なし', top: 'なし' },
     ]
 
@@ -408,7 +384,11 @@ describe('generateColumnRebar', () => {
   })
 
   it('keeps mm geometry and reproducible calculations on each row', () => {
-    const generated = generateColumnRebar(input(), jpMlitRulePack)
+    // 定着長さの文言を検証する必要があるので、既定(先端)ではなく下端定着で作る。
+    const generated = generateColumnRebar(
+      input({ ends: { bottom: '定着', top: 'なし' } }),
+      jpMlitRulePack,
+    )
     const main = byRole(generated, '主筋')
     const hoop = byRole(generated, '帯筋')
     const anchorage = lookupRule(jpMlitRulePack, 'anchorage.L1', {

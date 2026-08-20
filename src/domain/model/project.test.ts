@@ -97,8 +97,15 @@ describe('storyElevation', () => {
     expect(storyElevation([stories[0]], '1F')).toBe(0)
   })
 
-  it('throws on an unknown story id', () => {
-    expect(() => storyElevation(stories, 'RF')).toThrow('Story not found: RF')
+  // 階 라벨은 断面リスト 취입으로 도면에서 들어오는 값이라 메시지에 맨몸으로
+  // 싣지 않고 JSON 블록으로 감싼다. 원래는 텔레메트리 스크러버(블랙리스트)가
+  // letter+digit 토큰을 룰팩 상수로 오인해 통과시키는 것을 피하려는 조치였다.
+  // ADR-020이 허용목록으로 바뀌어 예외 message 자체가 안 나가므로 그 결합은
+  // 사라졌다 — 이 모양을 되돌리는 것은 별건이다.
+  it('throws on an unknown story id with the id wrapped as a JSON block', () => {
+    expect(() => storyElevation(stories, 'RF')).toThrow(
+      'Story not found: {"storyId":"RF"}',
+    )
   })
 })
 
@@ -484,23 +491,25 @@ describe('columnEnds', () => {
     })
   })
 
-  it('leaves the joint bare on the upper column and anchors at the roof', () => {
+  it('leaves the joint bare on the upper column and stops at the roof without anchoring (R9①)', () => {
     // 접합부에는 定着이 붙지 않는다. 그 자리의 継手는 端部条件이 아니라
-    // 積算基準 2（２）柱2)의 「各階ごとに1か所」가 정한다.
+    // 積算基準 2（２）柱2)의 「各階ごとに1か所」가 정한다. 屋上(위에 柱가 없음)도
+    // 定着을 붙이지 않는다 — 1通則1)＋（２）柱1) 但書가 最上階柱主筋을 「先端で
+    // 止まる鉄筋」으로 다뤄 コンクリートの設計寸法까지만 간다.
     const project = stackProject(twoStories)
 
     expect(columnEnds(project, twoStories[1])).toEqual({
       bottom: 'なし',
-      top: '定着',
+      top: '先端',
     })
   })
 
-  it('anchors at both ends when the column stands alone in its stack', () => {
+  it('anchors only the base and stops at the roof (先端) when the column stands alone in its stack', () => {
     const project = stackProject([twoStories[0]])
 
     expect(columnEnds(project, twoStories[0])).toEqual({
       bottom: '定着',
-      top: '定着',
+      top: '先端',
     })
   })
 
@@ -512,7 +521,7 @@ describe('columnEnds', () => {
 
     expect(columnEnds(project, stackColumn('1F', 1, 1))).toEqual({
       bottom: '定着',
-      top: '定着',
+      top: '先端',
     })
   })
 

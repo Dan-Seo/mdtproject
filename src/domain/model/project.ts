@@ -72,12 +72,24 @@ export function gridPoint(
   }
 }
 
+/**
+ * storyId는 "1F" 같은 letter+digit 라벨이라 룰팩 상수(D25 등)와 값의
+ * 모양만으로 구분되지 않는다 — telemetry.ts의 스크러버는 letter+digit
+ * 토큰을 통째로 남기므로, 그냥 보간하면 階 라벨이 그대로 새어 나간다(9차
+ * 리뷰 critical). JSON 블록으로 감싸면 스크러버의 `{...}` 규칙에 걸린다.
+ * 이 포맷을 함수 하나로 고정해 다음 호출부가 규약을 손으로 다시 베끼지
+ * 않게 한다(9차 리뷰 minor).
+ */
+export function storyNotFound(storyId: string): Error {
+  return new Error(`Story not found: ${JSON.stringify({ storyId })}`)
+}
+
 /** 층 바닥의 누적 표고(mm). stories 배열 순서대로 아래층 height를 누적한다. */
 export function storyElevation(stories: Story[], storyId: string): number {
   const index = stories.findIndex(({ id }) => id === storyId)
 
   if (index < 0) {
-    throw new Error(`Story not found: ${storyId}`)
+    throw storyNotFound(storyId)
   }
 
   return stories.slice(0, index).reduce((sum, story) => sum + story.height, 0)
@@ -96,7 +108,7 @@ export function findSection(project: Project, sectionId: string): Section {
 export function memberGroupKey(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (!story) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw storyNotFound(member.storyId)
   }
 
   const section = findSection(project, member.sectionId)
@@ -355,10 +367,17 @@ export function girderRun(project: Project, member: Member): GirderRun {
 }
 
 /**
- * 柱主筋の端部条件 (R7①)。
+ * 柱主筋の端部条件 (R7①・R9①)。
  *
- * 定着은 스택의 **양 끝**(기초·최상단)에만 붙는다. 중간 접합부는 철근이 그대로
- * 지나가므로 어느 쪽에도 定着이 붙지 않는다.
+ * 定着(bottom)은 스택의 **최하단**(기초)에만 붙는다. 中間 접합부는 철근이
+ * 그대로 지나가므로 なし다.
+ *
+ * top은 定着을 붙이지 않는다 — 항상 なし(중간 접합부, 위층으로 통과) 아니면
+ * 先端(스택 최상단, 위에 柱가 없음)이다. 数量積算基準 1通則1)「先端で止まる
+ * 鉄筋は、コンクリートの設計寸法をその部分の鉄筋の長さとする」＋（２）柱1)
+ * 但書「最上階柱の主筋については、１通則１）による」가 最上階柱主筋을 명시적으로
+ * 1通則1)에 걸어두므로, 스택 최상단은 定着 없이 콘크리트 설계 치수까지만
+ * 간다(R9①). 이전에는 스택 최상단에도 定着을 붙였는데, 이는 조문과 어긋났다.
  *
  * 접합부의 **継手는 여기서 다루지 않는다.** 数量積算基準 2（２）柱2)가
  * 「各階柱の全長にわたる主筋については各階ごとに1か所」로 정하므로 층마다
@@ -370,7 +389,7 @@ export function girderRun(project: Project, member: Member): GirderRun {
  */
 export interface ColumnEnds {
   bottom: '定着' | 'なし'
-  top: '定着' | 'なし'
+  top: 'なし' | '先端'
 }
 
 export function columnEnds(project: Project, member: Member): ColumnEnds {
@@ -382,7 +401,7 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
 
   const level = project.stories.findIndex(({ id }) => id === member.storyId)
   if (level < 0) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw storyNotFound(member.storyId)
   }
 
   const hasColumnAtLevel = (candidateLevel: number): boolean => {
@@ -401,7 +420,7 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
 
   return {
     bottom: hasColumnAtLevel(level - 1) ? 'なし' : '定着',
-    top: hasColumnAtLevel(level + 1) ? 'なし' : '定着',
+    top: hasColumnAtLevel(level + 1) ? 'なし' : '先端',
   }
 }
 

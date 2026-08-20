@@ -18,6 +18,10 @@ import { sourceLabel } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
 
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+
+vi.mock('@/lib/telemetry', () => ({ capture }))
+
 const mocks = vi.hoisted(() => ({
   controlsDispose: vi.fn(),
   controlsTargetSet: vi.fn(),
@@ -49,6 +53,7 @@ vi.mock('three', async (importOriginal) => {
     toneMappingExposure = 1
     outputColorSpace = ''
     localClippingEnabled = false
+    info = { render: { calls: 0, triangles: 0 } }
 
     constructor() {
       mocks.rendererInstances.push(this)
@@ -204,6 +209,7 @@ function runNextAnimationFrame(): void {
 
 describe('Viewer3D', () => {
   beforeEach(() => {
+    capture.mockClear()
     mocks.controlsDispose.mockClear()
     mocks.controlsTargetSet.mockClear()
     mocks.rendererDispose.mockClear()
@@ -244,6 +250,64 @@ describe('Viewer3D', () => {
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
     expect(mocks.envTextureDispose).toHaveBeenCalledOnce()
+  })
+
+  // 컨텍스트 손실은 예외를 던지지 않는다 — 뷰어가 조용히 얼어붙고 경계도 걸리지 않으므로
+  // 여기서 보고하지 않으면 프로덕션에 흔적이 남지 않는다 (R4: 층당 철근 1만 개).
+  it('reports a lost WebGL context instead of freezing in silence', () => {
+    render(<Viewer3D />)
+
+    fireEvent(
+      screen.getByLabelText('選択部材の配筋3D'),
+      new Event('webglcontextlost'),
+    )
+
+    expect(capture).toHaveBeenCalledWith('viewer_webgl_context_lost', {
+      mode: 'member',
+    })
+  })
+
+  // R4 성능 측정 하네스(dev-browser)가 실행 중인 페이지에서 renderer.info와
+  // 프레임 타임스탬프를 읽을 방법이 필요하다 — 컴포넌트 클로저 밖에서는 닿지 않는다.
+  it('exposes renderer stats and frame timestamps on window while mounted, and clears them on unmount', () => {
+    type KijunViewerRuntimeHook = {
+      getRendererInfo(): { calls: number; triangles: number }
+      getFrameTimestamps(): number[]
+    }
+    const getHook = () =>
+      (window as unknown as { __kijunViewerRuntime?: KijunViewerRuntimeHook })
+        .__kijunViewerRuntime
+
+    const { unmount } = render(<Viewer3D />)
+
+    expect(getHook()).toBeDefined()
+    expect(getHook()?.getRendererInfo()).toEqual({ calls: 0, triangles: 0 })
+    expect(getHook()?.getFrameTimestamps()).toEqual([])
+
+    runNextAnimationFrame()
+    expect(getHook()?.getFrameTimestamps()).toHaveLength(1)
+
+    unmount()
+    expect(getHook()).toBeUndefined()
+  })
+
+  // R4 조사에서 정상 프레임타임보다 project 변경마다 InstancedMesh를 통째로
+  // dispose·재생성하는 rebuildScene 쪽이 실제 병목일 가능성이 나왔다 — 그
+  // 소요시간을 하네스가 읽을 수 있어야 후보 최적화를 비교할 수 있다.
+  it('tracks scene-rebuild duration on window for the perf harness', () => {
+    type KijunViewerRuntimeHook = {
+      getRebuildStats(): { lastRebuildMs: number | null; rebuildCount: number }
+    }
+    const getHook = () =>
+      (window as unknown as { __kijunViewerRuntime?: KijunViewerRuntimeHook })
+        .__kijunViewerRuntime
+
+    render(<Viewer3D />)
+
+    const stats = getHook()?.getRebuildStats()
+    expect(stats?.rebuildCount).toBeGreaterThanOrEqual(1)
+    expect(stats?.lastRebuildMs).not.toBeNull()
+    expect(stats?.lastRebuildMs).toBeGreaterThanOrEqual(0)
   })
 
   it('enables shadows, tone mapping, colour space and an environment map', () => {
@@ -582,6 +646,26 @@ describe('Viewer3D', () => {
 
     // RaycasterMock은 첫 pickable(첫 콘크리트 박스 = 1F-X1Y1)을 반환한다.
     expect(useAppStore.getState().sel.memberId).toBe('1F-X1Y1')
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'viewer',
+    })
+  })
+
+  it('does not re-report member_selected when the same member is clicked again', () => {
+    useAppStore.setState({
+      viewerMode: 'building',
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y2' },
+    })
+    render(<Viewer3D />)
+
+    const canvas = screen.getByLabelText('建物全体の3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    // RaycasterMock은 좌표와 무관하게 항상 같은 부재를 반환한다 — 선택은
+    // 이미 그 부재로 바뀌어 있으므로 다시 눌러도 계측이 또 나가선 안 된다.
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    expect(capture).toHaveBeenCalledTimes(1)
   })
 
   it('maps a clicked rebar mesh back to its QuantityLine id', () => {
@@ -598,6 +682,8 @@ describe('Viewer3D', () => {
     })
 
     expect(useAppStore.getState().hoverRowId).toBe(mainLine?.id)
+    // 3D 철근 → 내역서 행. 部材 뷰에서 3D가 하는 유일한 일이고 ADR-016 전제의 증거다.
+    expect(capture).toHaveBeenCalledWith('rebar_picked')
   })
 
   it('records pointermove without raycasting until the next frame', () => {
@@ -954,6 +1040,89 @@ describe('Viewer3D', () => {
     )
 
     expect(dispose).toHaveBeenCalled()
+    dispose.mockRestore()
+  })
+
+  it('reuses pooled materials across a scene rebuild instead of relinking a WebGL program', () => {
+    // 머티리얼은 씬 콘텐츠가 아니라 마운트 수명이다 — 断面 편집으로 콘텐츠 그룹이
+    // 바뀌어도(disposeContent → rebuild) 머티리얼 인스턴스는 그대로여야 한다.
+    render(<Viewer3D />)
+
+    const contentBefore = latestContent()
+    const materialsBefore = clipTargetMaterials(contentBefore)
+    expect(materialsBefore.length).toBeGreaterThan(0)
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, hoop: { ...section.hoop, pitch: 200 } }
+            : section,
+        ),
+      })),
+    )
+
+    const contentAfter = latestContent()
+    expect(contentAfter).not.toBe(contentBefore)
+
+    const materialsAfter = clipTargetMaterials(contentAfter)
+    expect(materialsAfter).toHaveLength(materialsBefore.length)
+    expect(
+      materialsAfter.every((material) => materialsBefore.includes(material)),
+    ).toBe(true)
+  })
+
+  it('reuses building-view materials across repeated tab switches', () => {
+    // 建物은 InstancedMesh라 USE_INSTANCING 정의가 붙은 별도 프로그램이 필요하다.
+    // 탭을 오갈 때마다 새로 만들면 그 사이를 오가며 매번 프로그램을 다시 잡는다.
+    useAppStore.setState({ viewerMode: 'building' })
+    render(<Viewer3D />)
+
+    const materialsFirst = clipTargetMaterials(latestContent())
+    expect(materialsFirst.length).toBeGreaterThan(0)
+
+    act(() => useAppStore.setState({ viewerMode: 'member' }))
+    act(() => useAppStore.setState({ viewerMode: 'building' }))
+
+    const materialsSecond = clipTargetMaterials(latestContent())
+    expect(materialsSecond).toHaveLength(materialsFirst.length)
+    expect(
+      materialsSecond.every((material) => materialsFirst.includes(material)),
+    ).toBe(true)
+  })
+
+  it('disposes pooled materials exactly once, on unmount, not on scene rebuilds', async () => {
+    const THREE = await import('three')
+    const dispose = vi.spyOn(THREE.Material.prototype, 'dispose')
+    const { unmount } = render(<Viewer3D />)
+
+    const materialsBefore = clipTargetMaterials(latestContent())
+    expect(materialsBefore.length).toBeGreaterThan(0)
+
+    act(() =>
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        sections: project.sections.map((section) =>
+          section.id === 'section-C1' && section.kind === '柱'
+            ? { ...section, hoop: { ...section.hoop, pitch: 200 } }
+            : section,
+        ),
+      })),
+    )
+
+    // GridHelper가 재구축마다 스스로 새 머티리얼을 만들어 던지는 것(addGround의
+    // throwaway 정리)은 여기서 봐줄 대상이 아니다 — 풀에 실제로 담긴 머티리얼만 본다.
+    expect(dispose.mock.instances.some((instance) =>
+      materialsBefore.includes(instance as import('three').Material),
+    )).toBe(false)
+
+    unmount()
+
+    const disposedInstances = dispose.mock.instances
+    for (const material of materialsBefore) {
+      expect(disposedInstances).toContain(material)
+    }
     dispose.mockRestore()
   })
 

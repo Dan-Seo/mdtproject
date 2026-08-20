@@ -336,8 +336,15 @@ function sweepGirders(
     for (const [story, cell] of Object.entries(entry.stories)) {
       const c = candidate(girders, entry.mark, story)
       const label = `${entry.mark}/${story}`
-      const topCells = cell[labels.top] as Record<string, string>
-      const bottomCells = cell[labels.bottom] as Record<string, string>
+      const topCellsRaw = cell[labels.top]
+      const bottomCellsRaw = cell[labels.bottom]
+      expect(topCellsRaw, `${label} ${labels.top} fixture key missing`).toBeDefined()
+      expect(
+        bottomCellsRaw,
+        `${label} ${labels.bottom} fixture key missing`,
+      ).toBeDefined()
+      const topCells = topCellsRaw as Record<string, string>
+      const bottomCells = bottomCellsRaw as Record<string, string>
       const stirrupText = cell[labels.stirrup] as string
 
       if (c.b !== undefined) {
@@ -361,11 +368,16 @@ function sweepGirders(
       } else {
         for (const [position, text] of Object.entries(topCells)) {
           const raw = c.raw[`${labels.top}(${position})`]
-          if (raw !== undefined) expect(raw, label).toBe(text)
+          expect(raw, `${label} ${labels.top}(${position}) 원문 소실`).toBeDefined()
+          expect(raw, label).toBe(text)
         }
         for (const [position, text] of Object.entries(bottomCells)) {
           const raw = c.raw[`${labels.bottom}(${position})`]
-          if (raw !== undefined) expect(raw, label).toBe(text)
+          expect(
+            raw,
+            `${label} ${labels.bottom}(${position}) 원문 소실`,
+          ).toBeDefined()
+          expect(raw, label).toBe(text)
         }
       }
       if (c.stirrup) {

@@ -6,6 +6,7 @@ import type {
   Member,
 } from '../../src/domain/model/member'
 import {
+  columnEnds,
   PROJECT_SCHEMA_VERSION,
   girderRun,
   type Project,
@@ -131,7 +132,8 @@ function columnRebarFor(section: ColumnSection, story: Story = STORY) {
       section,
       story,
       beamDepthAbove: 750,
-      ends: { bottom: '定着', top: '定着' },
+      // 既定は単独スタック（1階建て）— 基礎に定着し、屋上は先端（1通則1)、R9①）。
+      ends: { bottom: '定着', top: '先端' },
     },
     jpMlitRulePack,
   )
@@ -332,7 +334,9 @@ describe('2（２）柱1) 主筋の長さ ＝ 柱の長さ ＋ 定着長さ及�
     const main = roleOf(columnRebarFor(columnSection()), '主筋')
     const ends = main.zones ?? []
 
-    expect(ends).toHaveLength(2)
+    // 既定 ends は下端 定着・上端 先端（R9①） — 先端は 1通則1) により
+    // 定着を加えないので、ゾーンは下端の1本だけになる。
+    expect(ends).toHaveLength(1)
     const extensions = ends.reduce(
       (total, zone) => total + (zone.pathToMm - zone.pathFromMm),
       0,
@@ -342,6 +346,84 @@ describe('2（２）柱1) 主筋の長さ ＝ 柱の長さ ＋ 定着長さ及�
 
     expect(main.length - extensions - splice).toBe(
       fixture.cases.columnMain.storyHeightMm,
+    )
+  })
+})
+
+describe('1通則1)・2（２）柱1) 但書 — 最上階柱の主筋は１通則１）による（R9①）', () => {
+  it('marks the tip-termination clause as covered in the fixture', () => {
+    const clause = fixture.clauses.find(({ id }) => id === '1通則1)')!
+
+    expect(clause.status).toBe('covered')
+  })
+
+  it('columnEnds treats the stack top (no column above) as 先端, not 定着', () => {
+    const column = columnSection()
+    const stories: Story[] = [
+      { id: '1F', name: '1階', height: 4200 },
+      { id: '2F', name: '2階', height: 3600 },
+    ]
+    const project: Project = {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: 'R9①端部条件テスト',
+      grid: { xSpans: [6000], ySpans: [6000] },
+      stories,
+      sections: [column],
+      members: stories.map((story) => ({
+        id: `${story.id}-C1`,
+        kind: '柱',
+        memberClass: '躯体',
+        sectionId: column.id,
+        storyId: story.id,
+        position: { ix: 0, iy: 0 },
+      })),
+    }
+    const [ground, roof] = project.members
+
+    // 基礎への定着は変わらない — 変わるのは「上に柱がない」屋上だけ。
+    expect(columnEnds(project, ground)).toEqual({ bottom: '定着', top: 'なし' })
+    expect(columnEnds(project, roof)).toEqual({ bottom: 'なし', top: '先端' })
+  })
+
+  it('adds no length at a 先端 end — matches an unanchored なし end exactly', () => {
+    const column = columnSection()
+    const withJoint = roleOf(
+      generateColumnRebar(
+        {
+          member: columnMember(0, column.id),
+          section: column,
+          story: STORY,
+          beamDepthAbove: 750,
+          ends: { bottom: '定着', top: 'なし' },
+        },
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+    const withTip = roleOf(
+      generateColumnRebar(
+        {
+          member: columnMember(0, column.id),
+          section: column,
+          story: STORY,
+          beamDepthAbove: 750,
+          ends: { bottom: '定着', top: '先端' },
+        },
+        jpMlitRulePack,
+      ),
+      '主筋',
+    )
+
+    // 1通則1)「先端で止まる鉄筋は、コンクリートの設計寸法をその部分の鉄筋の
+    // 長さとする」— 定着長さを加えない点は中間接合部の通し（なし）と同じ質量になる。
+    expect(withTip.length).toBe(withJoint.length)
+    expect(withTip.zones).toHaveLength(1)
+
+    const tipRule = lookupRule(jpMlitRulePack, 'measure.tip.length.addition', {})
+    expect(tipRule.source.section).toBe('第4編第3章第2節 1通則1)')
+    expect(tipRule.confidence).toBe('stated')
+    expect(withTip.ruleHits.map(({ key }) => key)).toContain(
+      'measure.tip.length.addition',
     )
   })
 })
