@@ -180,6 +180,8 @@ findings.sort(bySeverityThenPosition)
 // 컨텍스트가 findings JSON(수 KB)뿐이라 메인의 70~87k 짜리 턴이 통째로 사라진다.
 // 대신 판정자는 소스를 못 본다 — 그래서 evidence 인용이 부실하면 심각도를 내리지 말고
 // unverifiable 로 표시만 하게 하고, 집계에서는 **빼지 않는다** (게이트의 fail-closed 유지).
+// 단 **상향도 적용하지 않는다** — 못 믿겠다고 표시한 인용을 근거로 등급을 올리는 것은
+// 자기모순이고, 실제로 PR #6 에서 그 상향이 되먹임 루프의 시작점이었다.
 phase('Judge')
 let adjustments = []
 let unverifiable = []
@@ -205,8 +207,10 @@ evidence 는 리뷰어가 실제 소스에서 인용한 코드다.
    안 바뀌면 넣지 마라 — 빈 배열이 정상이다.
 2. dimensions 가 2개 이상이면 서로 다른 관점이 같은 행을 지적한 것이다. 상향을 검토하라.
 3. evidence 가 인용으로서 부실해(코드가 아니라 서술이거나, 주장과 무관한 줄) 판정을 신뢰하기
-   어려우면 그 index 를 unverifiable 에 넣어라. **낮추지는 마라** — 근거가 약하다는 것이
-   문제가 없다는 뜻은 아니고, 이 게이트는 불확실하면 보류하는 쪽으로 설계돼 있다.
+   어려우면 그 index 를 unverifiable 에 넣어라. **낮추지도 올리지도 마라** — 낮추면 근거가
+   약하다는 것을 문제가 없다는 뜻으로 바꿔버리고(이 게이트는 불확실하면 보류하는 쪽이다),
+   올리면 못 믿겠다고 한 그 인용을 근거로 등급을 올리는 자기모순이 된다. unverifiable 로
+   표시한 건에 대한 상향은 적용되지 않으니 넣지 마라 — 차원이 보고한 등급 그대로 간다.
 
 findings:
 ${JSON.stringify(input, null, 1)}`, { label: 'judge', phase: 'Judge', schema: JUDGE_SCHEMA })
@@ -221,9 +225,20 @@ ${JSON.stringify(input, null, 1)}`, { label: 'judge', phase: 'Judge', schema: JU
   }
 }
 
+const unverifiableIndexes = new Set(unverifiable)
+
 for (const a of adjustments) {
   const f = findings[a.index]
   if (!f || !(a.severity in SEV) || a.severity === f.severity) continue
+  // 근거 부실로 표시한 건은 올리지 않는다. 판정자는 소스를 못 읽고 evidence 인용만
+  // 보는데, 그 인용을 스스로 못 믿겠다고 해놓고 등급을 올리는 것은 앞뒤가 안 맞는다
+  // — 올릴 근거도 같은 인용뿐이기 때문이다. 내리는 것은 프롬프트가 이미 금지하므로
+  // unverifiable 은 「조정 없음」으로 수렴하고 차원이 보고한 등급 그대로 간다.
+  //
+  // PR #6 에서 이 모순이 되먹임을 만들었다: 9차 리뷰의 minor→major (⚠근거 부실)가
+  // 게이트를 막았고, 그걸 닫으려 넣은 코드가 10차 리뷰의 critical 2건을 낳았다.
+  // 차원이 critical 로 본 것은 그대로 critical 이므로 fail-closed 는 유지된다.
+  if (unverifiableIndexes.has(a.index) && SEV[a.severity] < SEV[f.severity]) continue
   f.adjustedFrom = f.severity
   f.severity = a.severity
   f.adjustReason = a.reason
