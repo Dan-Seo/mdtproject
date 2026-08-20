@@ -236,3 +236,51 @@ test('판정 문구는 심각도 사다리를 그대로 따른다', async () => 
     assert.equal(result.verdict, expected, `${severity} 의 판정이 게이트와 어긋난다`)
   }
 })
+
+// 판정자는 소스를 못 읽고 evidence 인용만 본다. 그 인용이 부실해 판정을 신뢰할 수
+// 없다고 스스로 표시해 놓고 심각도를 **올리는** 것은 앞뒤가 맞지 않는다 — 올릴
+// 근거도 그 인용뿐이기 때문이다.
+//
+// 이 모순이 실제로 루프를 만들었다. PR #6 9차 리뷰에서 「동의 게이트 없이 초기화된다」가
+// minor→major (⚠근거 부실)로 올라가 게이트를 막았고(critical·major 둘 다 hold),
+// 그걸 닫으려 넣은 동의 게이트 코드가 10차 리뷰의 critical 2건을 낳았다. 판정자가
+// 못 믿는 지적이 새 코드를 부르고 그 코드가 새 critical 을 부르는 되먹임이다.
+//
+// 내리는 것은 이미 프롬프트가 금지한다. 그래서 unverifiable 은 「조정 없음」으로
+// 수렴한다 — 차원이 보고한 등급 그대로 간다. 차원이 critical 로 본 것은 그대로
+// critical 이므로 게이트의 fail-closed 는 그대로다.
+test('근거 부실로 표시한 finding 은 심각도를 올리지 않는다', async () => {
+  const { result } = await runWorkflow({
+    byDimension: {
+      correctness: { findings: [finding({ severity: 'minor', title: '근거가 부실한 지적' })] },
+      security: none,
+      architecture: none,
+    },
+    judge: () => ({
+      adjustments: [{ index: 0, severity: 'major', reason: '올려야 한다' }],
+      unverifiable: [0],
+    }),
+  })
+  assert.equal(result.findings[0].severity, 'minor', '상향은 적용되지 않는다')
+  assert.equal(result.findings[0].adjustedFrom, undefined, '재조정 표기도 남기지 않는다')
+  assert.equal(result.findings[0].unverifiable, true, '근거 부실 표시 자체는 남는다')
+  assert.deepEqual(result.tally, { critical: 0, major: 0, minor: 1, nit: 0 })
+  // 이것이 이 규칙의 효과다 — 판정자가 못 믿는 지적이 더는 머지를 막지 않는다.
+  // 보고는 그대로 남으므로 사람이 판단할 재료는 잃지 않는다.
+  assert.equal(result.verdict, 'Approve — 머지는 사람이')
+})
+
+// 차원이 애초에 critical 로 본 것은 근거 부실 표시가 붙어도 그대로 막는다.
+// 불확실하면 보류하는 게이트 설계를 약화시키지 않는다.
+test('근거 부실이어도 차원이 보고한 등급 자체는 그대로 막는다', async () => {
+  const { result } = await runWorkflow({
+    byDimension: {
+      correctness: { findings: [finding({ severity: 'critical', title: '근거는 부실하나 critical' })] },
+      security: none,
+      architecture: none,
+    },
+    judge: () => ({ adjustments: [], unverifiable: [0] }),
+  })
+  assert.equal(result.findings[0].severity, 'critical')
+  assert.equal(result.verdict, 'Blocked(승인·머지 없음)')
+})
