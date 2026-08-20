@@ -145,6 +145,11 @@ const config = [
             'exceljs/*',
             'posthog-js/*',
             '@/lib/*',
+            // 별칭만 막으면 `import { capture } from '../../lib/telemetry'` 가
+            // 그대로 통과한다 — src/domain 의 순수성을 지키는 장치가 이 규칙
+            // 하나뿐이라 구멍이 있으면 규칙이 없는 것과 같다 (#53). `../` 로
+            // 시작하는 모양만 막아 도메인 안끼리의 상대 import 는 남긴다.
+            '../**/lib/*',
           ],
         },
       ],
