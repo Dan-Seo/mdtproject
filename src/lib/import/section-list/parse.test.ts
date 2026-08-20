@@ -751,6 +751,42 @@ describe('parseSectionLists (synthetic)', () => {
     expect(candidate(columns, 'C1', '2F').issues).toContain('断面矩形不成立')
   })
 
+  // 앵커는 **표 안 행**이어야 한다. 표제란은 표와 같은 y대역에 걸쳐 있어 y로는
+  // 못 가르고, 실물 ojkk p3 에서는 図面名称 행이 2F 스케치의 세로 치수에서 0.6pt
+  // 거리라 층 라벨(12.3pt)보다 가까웠다 — 그 행이 앵커가 되면 배정이 한 층 위로
+  // 밀리고 lastRowY 아래가 되어 치수가 통째로 폐기된다.
+  // 이 불변식의 유일한 방어가 .cache/ 가 비면 스킵되는 로컬 전용 real-pdf 테스트라
+  // CI 에서는 무방비였다 — 합성으로 고정한다 (#61 리뷰 minor)
+  it('does not anchor a vertical run on a title-block row outside the table', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 符号 열 x대역(≤ C2 중심 246) 밖의 표제란 행 — 런(131)에서 1pt 거리라
+        // 2F 라벨(140, 9pt)보다 가깝다
+        { str: '図面名称', x: 400, y: 130, w: 40, h: 8 },
+        { str: '5', x: 160, y: 134, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 131, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 128, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+
+    expect([c1.b, c1.d]).toEqual([800, 500])
+  })
+
   // 자기 행 범위를 슬라이스의 endY 로 끊으면 최하층에서만 규칙이 깨진다 —
   // 호출부가 마지막 슬라이스의 endY 를 tableBottom(= 표 바닥 행 자신의 y)으로
   // 자르므로 배타 상한이 그 행을 빼버려 lastRowY 가 한 행 위로 밀린다.
