@@ -49,6 +49,17 @@
 // 앞 판의 여유는 script 450 B·total 1,854 B뿐이었다 — 래칫이 조여진 게 아니라 다음
 // 변경이 무엇이든 깨지는 상태였고, 실제로 세 PR이 연달아 넘겼다. 새 값은 같은 방식
 // (실측 + 약 5%)으로 다시 잡았다.
+//
+// ── 2026-08-20 조이기 (font 95,000 → 85,000 / total 457,000 → 448,000)
+// #49(폰트 wght 축을 400·600·700으로 좁힘)가 머지된 뒤의 러너 실측이다.
+// run 32344630194, 3회 전부 동일값:
+//   font 89,512 B → 80,372 B (−9,140)   total 435,719 B → 426,732 B (−8,987)
+//   script 320,965 B (12 요청) 불변 — 이 변경은 script를 건드리지 않는다.
+// 위의 재산정은 값을 올리는 쪽이었고 이건 내리는 쪽이다. 최적화로 실측이 내려가면
+// 예산도 그 자리에서 같이 조인다 — 안 조이면 그만큼이 다음 회귀의 침묵 구간이 된다.
+// 여유는 앞 판과 같은 비율로 뒀다: font +5.8%, total +5.0%.
+// 이 예산이 지키는 것 — JetBrains Mono에 굵기 하나를 더 얹으면 9,140 B가 도로
+// 늘어 font 예산을 넘는다. 즉 wght 목록이 조용히 넓어지는 것을 이 줄이 잡는다.
 module.exports = {
   ci: {
     collect: {
@@ -80,11 +91,11 @@ module.exports = {
         'categories:seo': ['error', { minScore: 1 }],
 
         // 번들 래칫. 실측 + 약 5% 여유 — three.js를 무심코 초기 로드에 더 끌어오면 걸린다.
-        // 값의 근거와 2026-08-20 재산정 이력은 파일 상단에 있다.
+        // 값의 근거와 2026-08-20 재산정·조이기 이력은 파일 상단에 있다.
         'resource-summary:script:size': ['error', { maxNumericValue: 337000 }],
         'resource-summary:script:count': ['error', { maxNumericValue: 13 }],
-        'resource-summary:font:size': ['error', { maxNumericValue: 95000 }],
-        'resource-summary:total:size': ['error', { maxNumericValue: 457000 }],
+        'resource-summary:font:size': ['error', { maxNumericValue: 85000 }],
+        'resource-summary:total:size': ['error', { maxNumericValue: 448000 }],
 
         // ── 러너 노이즈에 흔들림 → warn (리포트에만 남는다) ──────────────
         // 러너 실측 중앙값(0.69 / 15,840ms)에 여유를 준 값이다. 로컬 값(0.91 / 242ms)으로
