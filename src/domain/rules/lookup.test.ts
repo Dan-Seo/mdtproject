@@ -7,7 +7,6 @@ import {
   lookupMarkup,
   lookupRule,
   lookupRuleSeries,
-  lookupUnitMass,
 } from './lookup'
 
 function entry(
@@ -125,16 +124,11 @@ describe('specialized lookups', () => {
     { memberClass: '躯体' },
     Number.EPSILON,
   )
-  const unitMass = entry('unit-mass.value', { size: 'D13' }, 0.995)
-  const pack: RulePack = { id: 'test', entries: [markup, unitMass] }
+  const pack: RulePack = { id: 'test', entries: [markup] }
 
   it('looks up markup by the supplied member class without a fallback', () => {
     expect(lookupMarkup(pack, '躯体')).toBe(markup)
     expect(() => lookupMarkup(pack, '山留め壁')).toThrow(/not found/i)
-  })
-
-  it('looks up unit mass by BarSize', () => {
-    expect(lookupUnitMass(pack, 'D13')).toBe(unitMass)
   })
 })
 

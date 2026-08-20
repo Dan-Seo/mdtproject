@@ -1,4 +1,5 @@
 import type {
+  BarSize,
   ColumnSection,
   ColumnPosition,
   GirderPosition,
@@ -17,7 +18,12 @@ import { coverConditions } from '../rules/lookup'
 // v5 (2026-08-14): Section에 필수 필드 spliceMethod 추가. 継手箇所数와 설계길이
 // 산입이 방식마다 다른데(積算基準 1通則4)·5)) 규준에 기본 방식이 없으므로
 // 조용한 기본값 대신 입력으로 받는다.
-export const PROJECT_SCHEMA_VERSION = 5
+// v6 (2026-08-20): Project에 선택 필드 unitMass 추가. 数量積算基準 1通則 前文은
+// 質量을 「設計長さ × JIS G 3112 の単位質量」으로 정의할 뿐 값 자체는 JIS에
+// 위임한다. JIS는 유료 규격이라 확보하지 못했고, 읽지 않은 문헌을 룰팩의
+// 出典에 세울 수는 없으므로(ADR-003) 값을 입력으로 받는다. 미입력 径은 키가
+// 없고, 그 径의 kg은 산출하지 않는다.
+export const PROJECT_SCHEMA_VERSION = 6
 
 export interface Grid {
   xSpans: number[]
@@ -39,6 +45,11 @@ export interface Project {
   members: Member[]
   /** 내역서 備考. QuantityLine.id를 키로 쓴다. 값이 없는 행은 키 자체가 없다. */
   notes?: Record<string, string>
+  /**
+   * 径별 単位質量 (kg/m) — 利用者入力. 미입력 径은 키가 없다.
+   * 규준이 JIS에 위임한 값이라 룰팩이 아니라 프로젝트가 들고 있다.
+   */
+  unitMass?: Partial<Record<BarSize, number>>
 }
 
 export function gridPointCount(grid: Grid): { nx: number; ny: number } {
@@ -465,6 +476,20 @@ export function setNote(
   else notes[lineId] = note
 
   return { ...project, notes }
+}
+
+/** 빈 입력은 키를 지운다 — 0 kg/m는 입력이 아니라 없는 값이다. */
+export function setUnitMass(
+  project: Project,
+  size: BarSize,
+  value: number | null,
+): Project {
+  const unitMass = { ...project.unitMass }
+
+  if (value === null) delete unitMass[size]
+  else unitMass[size] = value
+
+  return { ...project, unitMass }
 }
 
 export function serializeProject(project: Project): string {

@@ -1,4 +1,4 @@
-import type { BarSize, MemberClass, Section } from '../model/member'
+import type { MemberClass, Section } from '../model/member'
 import type { RuleHit, RulePack } from './types'
 
 /**
@@ -94,8 +94,4 @@ export function lookupMarkup(
   memberClass: MemberClass | string,
 ): RuleHit {
   return lookupRule(pack, 'markup.rate', { memberClass })
-}
-
-export function lookupUnitMass(pack: RulePack, size: BarSize): RuleHit {
-  return lookupRule(pack, 'unit-mass.value', { size })
 }

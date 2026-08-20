@@ -47,7 +47,16 @@ const coverHit = lookupRule(jpMlitRulePack, 'cover.minimum', {
   ...coverConditions(section),
 })
 
-function projectWithStories(stories: Story[]): Project {
+/**
+ * 単位質量は JIS G 3112 の値で規準側にはない — 製品は利用者入力として受け取る。
+ * 算術がそのまま読めるように、テストでは規格値ではなく合成値を使う。
+ */
+const testUnitMass: Project['unitMass'] = { D25: 4, D13: 1 }
+
+function projectWithStories(
+  stories: Story[],
+  unitMass: Project['unitMass'] = testUnitMass,
+): Project {
   const members: Member[] = stories.flatMap((story) =>
     Array.from({ length: 9 }, (_, index) => ({
       id: `${story.id}-C${index + 1}`,
@@ -66,6 +75,7 @@ function projectWithStories(stories: Story[]): Project {
     stories,
     sections: [section],
     members,
+    unitMass,
   }
 }
 
@@ -143,6 +153,14 @@ function hoopRebar(memberId: string): Rebar {
     ],
     formula: '帯筋の算出式',
   }
+}
+
+/** 単位質量が入っている前提の小計を足す — 欠けていればテストの前提が崩れる。 */
+function sumKnown(values: (number | null)[]): number {
+  return values.reduce<number>((sum, value) => {
+    expect(value).not.toBeNull()
+    return sum + value!
+  }, 0)
 }
 
 function ruleIdentity(rule: { key: string; conditions: object }): string {
@@ -316,7 +334,6 @@ describe('aggregateQuantity', () => {
     expect(line.rules.some(({ confidence }) => confidence === 'inferred')).toBe(
       true,
     )
-    expect(line.rules.map(({ key }) => key)).toContain('unit-mass.value')
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
     expect(line.inferred).toBe(true)
     expect(hasInferred([line])).toBe(true)
@@ -327,9 +344,33 @@ describe('aggregateQuantity', () => {
       { id: '1F', name: '1階', height: 4200 },
     ])
     const memberId = project.members[0].id
+    // 折曲げ内法直径は径で変わる（表5.3.2）。主筋 D25 と帯筋 D13 が同じキーの
+    // 別条件を引くので、キーだけで束ねると片方の行の根拠が消える。
+    const bent = mainRebar(memberId, {
+      ruleHits: [
+        ...mainRebar(memberId).ruleHits,
+        lookupRule(jpMlitRulePack, 'bend.inside-diameter', {
+          grade: 'SD345',
+          size: 'D25',
+        }),
+      ],
+    })
+    const hoop = hoopRebar(memberId)
     const lines = aggregateQuantity(
       project,
-      [mainRebar(memberId), hoopRebar(memberId)],
+      [
+        bent,
+        {
+          ...hoop,
+          ruleHits: [
+            ...hoop.ruleHits,
+            lookupRule(jpMlitRulePack, 'bend.inside-diameter', {
+              grade: 'SD345',
+              size: 'D13',
+            }),
+          ],
+        },
+      ],
       jpMlitRulePack,
     )
 
@@ -338,9 +379,9 @@ describe('aggregateQuantity', () => {
 
     expect(inferred).toHaveLength(7)
     expect(new Set(identities).size).toBe(inferred.length)
-    expect(inferred.filter(({ key }) => key === 'unit-mass.value')).toHaveLength(
-      2,
-    )
+    expect(
+      inferred.filter(({ key }) => key === 'bend.inside-diameter'),
+    ).toHaveLength(2)
     expect(inferred.every(({ confidence }) => confidence === 'inferred')).toBe(
       true,
     )
@@ -484,10 +525,62 @@ describe('aggregateQuantity', () => {
     expect(subtotals).toHaveLength(2)
     expect(subtotals.map(({ storyName }) => storyName)).toEqual(['1階', '2階'])
     expect(total.designKg).toBe(
-      subtotals.reduce((sum, subtotal) => sum + subtotal.designKg, 0),
+      sumKnown(subtotals.map(({ designKg }) => designKg)),
     )
     expect(total.requiredKg).toBe(
-      subtotals.reduce((sum, subtotal) => sum + subtotal.requiredKg, 0),
+      sumKnown(subtotals.map(({ requiredKg }) => requiredKg)),
     )
+  })
+})
+
+describe('単位質量は利用者入力', () => {
+  const stories: Story[] = [{ id: '1F', name: '1階', height: 4200 }]
+
+  it('leaves the mass unknown until a 単位質量 is entered', () => {
+    const project = projectWithStories(stories, {})
+    const rebars = project.members.map(({ id }) => mainRebar(id))
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const [line] = massLines(lines)
+
+    // 総延長までは規準（積算基準 1通則2)・7)）で出る。kg は JIS G 3112 の
+    // 単位質量なしには出ない — 0 でも既定値でもなく「まだ分からない」だ。
+    expect(line.totalLengthMm).toBe(108000)
+    expect(line.unitMassKgPerM).toBeNull()
+    expect(line.designKg).toBeNull()
+    expect(line.requiredKg).toBeNull()
+    expect(storySubtotals(lines)[0].designKg).toBeNull()
+    expect(grandTotal(lines).designKg).toBeNull()
+    expect(grandTotal(lines).requiredKg).toBeNull()
+  })
+
+  it('computes the mass from the 単位質量 the user entered', () => {
+    const project = projectWithStories(stories)
+    const rebars = project.members.map(({ id }) => mainRebar(id))
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const [line] = massLines(lines)
+
+    // 108.000 m × 4 kg/m = 432 kg、所要数量は 1通則9) の4%割増
+    expect(line.unitMassKgPerM).toBe(4)
+    expect(line.designKg).toBe(432)
+    expect(line.requiredKg).toBeCloseTo(449.28, 6)
+  })
+
+  it('keeps the subtotal unknown while any 径 is still missing', () => {
+    // 入力済みの径だけ足した小計は、足りない径を隠したまま「合計」に見える。
+    const project = projectWithStories(stories, { D25: 4 })
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const byRole = new Map(massLines(lines).map((line) => [line.role, line]))
+
+    expect(byRole.get('主筋')?.designKg).toBe(432)
+    expect(byRole.get('帯筋')?.designKg).toBeNull()
+    expect(storySubtotals(lines)[0].designKg).toBeNull()
+    expect(grandTotal(lines).designKg).toBeNull()
   })
 })

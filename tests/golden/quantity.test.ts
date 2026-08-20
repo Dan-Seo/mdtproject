@@ -12,11 +12,7 @@ import {
 } from '../../src/domain/model/project'
 import type { Rebar } from '../../src/domain/model/rebar'
 import { aggregateQuantity, massLines } from '../../src/domain/quantity'
-import {
-  coverConditions,
-  lookupRule,
-  lookupUnitMass,
-} from '../../src/domain/rules/lookup'
+import { coverConditions, lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity.json'
 
@@ -35,6 +31,13 @@ const section: ColumnSection = {
   hoop: { size: 'D13', pitch: 100, startOffsetMm: 0 },
 }
 
+/**
+ * 単位質量은 JIS G 3112의 값이라 규준 쪽에 없고, 제품은 利用者入力으로 받는다.
+ * 이 픽스처가 고정하는 것은 1通則9)의 4% 割増뿐이므로, 設計数量이 픽스처 값
+ * 그대로가 되도록 합성값 1 kg/m를 넣는다.
+ */
+const GOLDEN_UNIT_MASS_KG_PER_M = 1
+
 function projectFor(memberClasses: string[]): Project {
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
@@ -42,6 +45,9 @@ function projectFor(memberClasses: string[]): Project {
     grid: { xSpans: [6000], ySpans: [6000] },
     stories: [{ id: '1F', name: '1階', height: 4200 }],
     sections: [section],
+    unitMass: {
+      [fixture.supported.size as BarSize]: GOLDEN_UNIT_MASS_KG_PER_M,
+    },
     members: memberClasses.map((memberClass, index) => ({
       id: `1F-C${index + 1}`,
       kind: '柱',
@@ -54,8 +60,7 @@ function projectFor(memberClasses: string[]): Project {
 }
 
 function rebarFor(member: Member, designKg: number, size: BarSize): Rebar {
-  const unitMass = lookupUnitMass(jpMlitRulePack, size)
-  const length = (designKg / unitMass.value) * 1000
+  const length = (designKg / GOLDEN_UNIT_MASS_KG_PER_M) * 1000
 
   return {
     id: `${member.id}|main`,

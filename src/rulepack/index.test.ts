@@ -34,7 +34,6 @@ describe('jpMlitRulePack', () => {
         'measure.splice.girder.continuous.band.upper',
         'measure.splice.length.factor',
         'markup.rate',
-        'unit-mass.value',
       ]),
     )
   })
@@ -55,11 +54,7 @@ describe('jpMlitRulePack', () => {
     const cited = new Set(jpMlitRulePack.entries.map(({ source }) => source.doc))
 
     expect([...cited].sort()).toEqual(
-      [
-        '公共建築工事標準仕様書（建築工事編）',
-        '公共建築数量積算基準',
-        '鉄筋コンクリート用棒鋼',
-      ].sort(),
+      ['公共建築工事標準仕様書（建築工事編）', '公共建築数量積算基準'].sort(),
     )
   })
 

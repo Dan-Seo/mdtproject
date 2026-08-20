@@ -9,6 +9,7 @@ import {
 } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { setUnitMass } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   grandTotal,
@@ -42,6 +43,22 @@ function takeoffLines() {
   return result.current.lines
 }
 
+/**
+ * 単位質量は利用者入力なので、サンプル案件には入っていない。質量列を見る
+ * テストはまずこれを呼ぶ — 合成値 1 kg/m なら設計数量は総延長(m)そのものだ。
+ */
+function enterUnitMass(value = 1) {
+  const sizes = [...new Set(massLines(takeoffLines()).map(({ size }) => size))]
+
+  act(() => {
+    useAppStore
+      .getState()
+      .updateProject((project) =>
+        sizes.reduce((next, size) => setUnitMass(next, size, value), project),
+      )
+  })
+}
+
 function takeoffResult() {
   const { result } = renderHook(() => useTakeoff())
   return result.current
@@ -56,6 +73,33 @@ function lineFor(role: '主筋' | '帯筋' | '上端筋') {
 
   if (!line) throw new Error(`QuantityLine not found: ${role}`)
   return line
+}
+
+const UNAVAILABLE_SOURCE = '有償規格'
+
+/**
+ * 原文URLを持たない出典（有償規格など）はリンクにできない。今のルールパックは
+ * 全行がURLを持つので、その表示は合成のルール行で確かめる。
+ */
+function lineWithUnavailableSource() {
+  const line = lineFor('主筋')
+  const [cited] = line.rules
+
+  return {
+    ...line,
+    rules: [
+      {
+        ...cited,
+        source: {
+          ...cited.source,
+          short: UNAVAILABLE_SOURCE,
+          section: null,
+          page: null,
+          url: null,
+        },
+      },
+    ],
+  }
 }
 
 function spliceLineFor(role: '主筋' | '上端筋') {
@@ -461,6 +505,7 @@ describe('TakeoffPane', () => {
   })
 
   it('renders story subtotals and the grand total from domain helpers', () => {
+    enterUnitMass()
     const lines = takeoffLines()
     const subtotals = storySubtotals(lines)
     const total = grandTotal(lines)
@@ -469,15 +514,15 @@ describe('TakeoffPane', () => {
     for (const subtotal of subtotals) {
       const row = screen.getByTestId(`story-subtotal-${subtotal.storyName}`)
       const cells = within(row).getAllByRole('cell')
-      expect(cells[0]).toHaveTextContent(subtotal.designKg.toFixed(3))
-      expect(cells[1]).toHaveTextContent(subtotal.requiredKg.toFixed(3))
+      expect(cells[0]).toHaveTextContent(subtotal.designKg!.toFixed(3))
+      expect(cells[1]).toHaveTextContent(subtotal.requiredKg!.toFixed(3))
     }
 
     const totalCells = within(screen.getByTestId('grand-total')).getAllByRole(
       'cell',
     )
-    expect(totalCells[0]).toHaveTextContent(total.designKg.toFixed(3))
-    expect(totalCells[1]).toHaveTextContent(total.requiredKg.toFixed(3))
+    expect(totalCells[0]).toHaveTextContent(total.designKg!.toFixed(3))
+    expect(totalCells[1]).toHaveTextContent(total.requiredKg!.toFixed(3))
   })
 
   it('selects a representative member and scrolls to external selections', () => {
@@ -499,11 +544,11 @@ describe('TakeoffPane', () => {
   })
 
   it('renders unavailable sources as disabled chips instead of links', () => {
-    const lineId = lineFor('主筋').id
-    render(<TakeoffPane />)
+    const line = lineWithUnavailableSource()
+    render(<TakeoffTable lines={[line]} />)
 
-    const row = screen.getByTestId(`quantity-line-${lineId}`)
-    const chip = within(row).getByText('JIS G 3112')
+    const row = screen.getByTestId(`quantity-line-${line.id}`)
+    const chip = within(row).getByText(UNAVAILABLE_SOURCE)
 
     expect(chip).toHaveAttribute('aria-disabled', 'true')
     expect(chip).toHaveAttribute('title', expect.stringContaining('未確保'))
@@ -551,12 +596,15 @@ describe('TakeoffPane', () => {
   })
 
   it('keeps an unavailable source chip reachable by keyboard', () => {
-    render(<TakeoffPane />)
+    const line = lineWithUnavailableSource()
+    render(<TakeoffTable lines={[line]} />)
 
-    const row = screen.getByTestId(`quantity-line-${lineFor('主筋').id}`)
-    const chip = within(row).getByText('JIS G 3112')
+    const row = screen.getByTestId(`quantity-line-${line.id}`)
 
-    expect(chip).toHaveAttribute('tabindex', '0')
+    expect(within(row).getByText(UNAVAILABLE_SOURCE)).toHaveAttribute(
+      'tabindex',
+      '0',
+    )
   })
 
   it('shows the rulepack markup and exports the current project as xlsx', async () => {
@@ -632,6 +680,93 @@ describe('TakeoffPane', () => {
     expect(capture).not.toHaveBeenCalledWith(
       'takeoff_exported',
       expect.anything(),
+    )
+  })
+})
+
+describe('単位質量の入力', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      project: createSampleProject(),
+      sel: { group: null, memberId: null },
+      hoverRowId: null,
+      activeStoryId: '1F',
+      locale: 'ja',
+    })
+  })
+
+  it('leaves the mass columns empty until a 単位質量 is entered', () => {
+    const line = lineFor('主筋')
+    render(<TakeoffPane />)
+
+    const cells = within(
+      screen.getByTestId(`quantity-line-${line.id}`),
+    ).getAllByRole('cell')
+
+    // 総延長は規準（1通則2)・7)）で出るが、単位質量・設計数量・所要数量は出ない。
+    expect(cells[6]).not.toHaveTextContent('—')
+    expect(cells[7]).toHaveTextContent('—')
+    expect(cells[8]).toHaveTextContent('—')
+    expect(cells[9]).toHaveTextContent('—')
+    expect(
+      within(screen.getByTestId('grand-total')).getAllByRole('cell')[0],
+    ).toHaveTextContent('—')
+  })
+
+  it('asks for exactly the 径 the takeoff needs, in ascending order', () => {
+    const sizes = [...new Set(massLines(takeoffLines()).map(({ size }) => size))]
+    render(<TakeoffPane />)
+
+    const inputs = within(screen.getByTestId('unit-mass-input')).getAllByRole(
+      'spinbutton',
+    )
+
+    expect(inputs.map((input) => input.getAttribute('data-size'))).toEqual(
+      [...sizes].sort(
+        (left, right) => Number(left.slice(1)) - Number(right.slice(1)),
+      ),
+    )
+  })
+
+  it('computes the mass from what the user typed', () => {
+    const line = lineFor('主筋')
+    render(<TakeoffPane />)
+
+    fireEvent.change(screen.getByLabelText(`${line.size} 単位質量`), {
+      target: { value: '2' },
+    })
+
+    expect(useAppStore.getState().project.unitMass?.[line.size]).toBe(2)
+    const cells = within(
+      screen.getByTestId(`quantity-line-${line.id}`),
+    ).getAllByRole('cell')
+    expect(cells[7]).toHaveTextContent('2.000')
+    expect(cells[8]).toHaveTextContent(
+      ((line.totalLengthMm / 1000) * 2).toFixed(3),
+    )
+  })
+
+  it('treats a cleared field as "not entered", not as zero', () => {
+    const line = lineFor('主筋')
+    render(<TakeoffPane />)
+    const input = screen.getByLabelText(`${line.size} 単位質量`)
+
+    fireEvent.change(input, { target: { value: '2' } })
+    fireEvent.change(input, { target: { value: '' } })
+
+    expect(useAppStore.getState().project.unitMass?.[line.size]).toBeUndefined()
+    expect(
+      within(screen.getByTestId(`quantity-line-${line.id}`)).getAllByRole(
+        'cell',
+      )[8],
+    ).toHaveTextContent('—')
+  })
+
+  it('says why the product does not ship the values', () => {
+    render(<TakeoffPane />)
+
+    expect(screen.getByTestId('unit-mass-notice')).toHaveTextContent(
+      'JIS G 3112',
     )
   })
 })

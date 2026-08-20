@@ -1,11 +1,13 @@
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { BAR_SIZES } from '@/domain/model/member'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  setUnitMass,
   type Project,
 } from '@/domain/model/project'
 import {
@@ -22,8 +24,16 @@ import { jpMlitRulePack } from '@/rulepack'
 
 import { buildTakeoffWorkbook, exportTakeoffXlsx } from './index'
 
+/**
+ * 単位質量は利用者入力で、サンプル案件には入っていない。kg 列を見る書き出し
+ * テストはまずこれを通す — 合成値 1 kg/m なら設計数量は総延長(m)そのものだ。
+ */
+function withUnitMass(project: Project): Project {
+  return BAR_SIZES.reduce((next, size) => setUnitMass(next, size, 1), project)
+}
+
 function sampleInput(): { project: Project; lines: QuantityLine[] } {
-  const project = createSampleProject()
+  const project = withUnitMass(createSampleProject())
   const rebars = project.members.flatMap((member) => {
     if (member.kind !== '柱') return []
 
@@ -53,7 +63,7 @@ function sampleInput(): { project: Project; lines: QuantityLine[] } {
 
 describe('buildTakeoffWorkbook', () => {
   it('includes generated 大梁 rows in the exported kg totals', () => {
-    const project = createSampleProject()
+    const project = withUnitMass(createSampleProject())
     useAppStore.setState({ project })
     const { result } = renderHook(() => useTakeoff())
     const { lines } = result.current
@@ -100,14 +110,20 @@ describe('buildTakeoffWorkbook', () => {
     }
   })
 
-  it('prefixes the item-name cell of every inferred row', () => {
+  it('prefixes the item-name cell of exactly the inferred rows', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const dataRows = spec.rows.filter(({ kind }) => kind === 'data')
 
     expect(dataRows).toHaveLength(input.lines.length)
-    expect(dataRows.every(({ cells }) => String(cells[3].value).startsWith('⚠ ')))
-      .toBe(true)
+    // ⚠ は未確認の規準値（inferred）の印だ。全行に付いても一行も付かなくても
+    // 印は意味を失う — 行ごとに一致していなければならない。帯筋の質量行は
+    // 1通則2)・7)・9) だけで出るので stated だ。
+    expect(
+      dataRows.map(({ cells }) => String(cells[3].value).startsWith('⚠ ')),
+    ).toEqual(input.lines.map(({ inferred }) => inferred))
+    expect(input.lines.some(({ inferred }) => inferred)).toBe(true)
+    expect(input.lines.some(({ inferred }) => !inferred)).toBe(true)
   })
 
   it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
