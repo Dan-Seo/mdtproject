@@ -1018,9 +1018,14 @@ function verticalsBySlice(
     // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 넣으면 어떤 숫자든 어느
     // 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지 않고 원문으로
     // 남는 쪽이 옳다 (R10)
-    const span = slices[best].endY - slices[best].startY
-    if (Math.abs(slices[best].startY - run.y) <= span * SLICE_DISTANCE_LIMIT_RATIO)
-      buckets[best].push(run)
+    //
+    // 거리는 라벨(startY) 한 점이 아니라 슬라이스 **대역**까지로 잰다. 앵커가 행인데
+    // 상한만 라벨 기준이면 임자 슬라이스가 자기 런을 버린다 — 대역 하반부에 놓인
+    // 런은 옳게 배정되고도 startY 에서 span/2 를 넘어 폐기된다 (PR #61 리뷰 major)
+    const { startY, endY } = slices[best]
+    const span = endY - startY
+    const distance = Math.max(startY - run.y, run.y - endY, 0)
+    if (distance <= span * SLICE_DISTANCE_LIMIT_RATIO) buckets[best].push(run)
   }
 
   return buckets

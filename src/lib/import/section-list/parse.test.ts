@@ -696,15 +696,29 @@ describe('parseSectionLists (synthetic)', () => {
         { str: '20-D25', x: 105, y: 264, w: 36, h: 8 },
       ],
     })
-    const second = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+    const columns = list(parsed, '柱リスト')
+    const first = candidate(columns, 'C1', '1F')
+    const second = candidate(columns, 'C1', '2F')
 
+    // 임자는 1F다 — 행이 감싸고 있고, 대역 안이라 상한도 걸리지 않는다
+    expect([first.b, first.d]).toEqual([700, 500])
     expect(second.b).toBeUndefined()
     expect(second.d).toBeUndefined()
     expect(second.raw['断面']).toBe('800')
     expect(second.issues).toContain('断面矩形不成立')
   })
 
-  it('drops a vertical run that sits far from the story label it is nearest to', () => {
+  // 이 테스트가 지키는 것은 「2F가 남의 치수를 가져가지 않는다」이다 — PR #30에서
+  // 마지막 슬라이스의 endY가 표 끝이 아니라 페이지 바닥이면 상한이 층 간격의 몇
+  // 배로 벌어져 이 숫자가 2F의 확정 d가 됐다.
+  //
+  // 1F가 이 숫자를 갖는 것은 #61에서 바뀐 부분이다. 예전에는 배정 앵커가 층
+  // 라벨이라 1F 라벨(40)에서 57pt 떨어진 이 런이 상한(span/2=50)에 걸려 통째로
+  // 버려졌다 — 그래서 이름이 「drops」였다. 앵커가 표의 행으로 바뀌고 거리를
+  // 슬라이스 대역까지로 재면서, 1F 대역(40~140) 안에 있는 이 런은 1F 것이 된다.
+  // 원 테스트는 1F에 대해 아무것도 주장하지 않았으므로 의도를 뒤집는 것은 아니다.
+  // 실물에서 세로 치수가 놓이는 자리가 바로 이 대역이라 이쪽이 옳은 판정이다.
+  it('keeps a run inside the 1F band with 1F and never hands it to the nearer 2F label', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
       heightPt: 300,
@@ -729,9 +743,13 @@ describe('parseSectionLists (synthetic)', () => {
         { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
       ],
     })
-    const second = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+    const columns = list(parsed, '柱リスト')
+    const first = candidate(columns, 'C1', '1F')
+    const second = candidate(columns, 'C1', '2F')
 
+    expect([first.b, first.d]).toEqual([700, 500])
     expect(second.b).toBeUndefined()
+    expect(second.d).toBeUndefined()
     expect(second.raw['断面']).toBe('800')
     expect(second.issues).toContain('断面矩形不成立')
   })
