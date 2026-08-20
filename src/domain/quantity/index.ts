@@ -8,6 +8,7 @@ import type {
 import {
   findSection,
   memberGroupKey,
+  storyNotFound,
   type Project,
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
@@ -98,7 +99,7 @@ type GroupedLine =
 function storyName(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (!story) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw storyNotFound(member.storyId)
   }
   return story.name
 }

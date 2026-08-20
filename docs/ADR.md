@@ -125,3 +125,25 @@
 **트레이드오프**: 3D에 그려진 あばら筋 개수와 内訳書의 本数가 다르게 보인다(샘플 G1: 52본 대 53본). 이 어긋남 자체가 설명되어야 하므로 `formula`에 「設計長さ ／ 設計本数 ／ 3D 形状（数量には用いない）」를 모두 적는다. 숨기는 대신 근거와 함께 드러내는 쪽을 택한다(UC4).
 
 이 분리는 표시부가 형상에서 수량을 역산하지 못하게 만든다 — 그래서 `RebarPlacement.positionCount`를 도메인이 실어 보내고, 뷰어는 그 값으로만 배치 드리프트를 검사한다.
+
+### ADR-020: 프로덕션 관측에 한해 브라우저 텔레메트리를 둔다
+
+**결정**: `src/lib/telemetry.ts`에서 posthog-js를 동적 import로 초기화한다(관례 파일 `instrumentation-client.ts`는 그 초기화를 re-export만 한다). `autocapture: false`·`disable_session_recording: true`·`capture_heatmaps: false`·`capture_dead_clicks: false`·`disable_external_dependency_loading: true`·`advanced_disable_flags: true`로 DOM 자동수집·세션 리코딩·CDN 지연 로드·원격 설정을 끈다. `capture_exceptions: true`로 미처리 예외(전역 `onerror`·`unhandledrejection`)는 자동 수집하고, 그 외 이벤트는 명시적 `capture()` 호출만 만든다.
+
+`before_send` 훅을 유일한 전송 관문으로 두되, **허용목록으로 동작한다** — 나가면 안 되는 것을 지우는 게 아니라 나가도 되는 것만 싣고, 목록 밖의 키는 값을 보지 않고 버린다. 나가는 것은 셋뿐이다: ① posthog-js의 식별·환경 메타데이터(`distinct_id`·`$session_id`·`$lib_version`·`$browser` 등), ② 예외의 구조화 필드 — 에러 클래스명(`type`)과 스택 프레임의 `filename`·`function`·`lineno`·`colno`, ③ 명시 `capture()` 호출부가 싣는 속성(`locale`·`source`·`axis`·`mode`·`stage`·`pane`·`size_bucket`·`has_inferred`·`inferred_rules`) — 전부 enum·버킷·불리언·룰팩 key다.
+
+**예외 message(`$exception_list[].value`)는 통째로 버리고 `[REDACTED]` 상수로 대체한다.** URL 계열(`$current_url`·`$pathname`)과 스택 프레임의 `context_line`도 목록에 넣지 않았다. 허용목록은 `properties` 안쪽만이 아니라 **페이로드 최상위에도 적용한다** — `$set`·`$set_once`는 person property라 posthog 프로필에 영구 저장되는데 이 리포는 `identify()`를 부르지 않으므로 통째로 버린다. `PaneBoundary`는 같은 메시지를 resetKey 변경마다 다시 보고하지 않는다 — resetKey는 프로젝트 편집마다 바뀌므로, 안 지우면 근본 원인 하나가 무관한 편집 횟수만큼 captureException을 발화시킨다. 전송 자체는 `kijun:telemetry-opt-in` 동의 게이트 뒤에 있다(동의 UI는 아직 없어 현재는 아무것도 나가지 않는다). **동의 확인은 `capture()`·`captureException()` 래퍼와 `before_send` 양쪽에 둔다** — `capture_exceptions`가 설치하는 posthog 자체 핸들러(전역 `onerror`·`unhandledrejection`)와 pageview 수집기는 래퍼를 거치지 않으므로, 래퍼에만 두면 세션 중 철회해도 그 경로는 계속 나간다. `before_send`는 SDK 내부 발화까지 포함해 모든 전송이 반드시 거치는 유일한 지점이다.
+
+**이유**: `src/domain/`의 가드 함수는 실패 사유를 `` `clearMm must be finite: ${clearMm}` ``처럼 값을 문자열 보간해 던지고, `lookupRule`의 `Rule not found` 메시지는 `JSON.stringify(conditions)`로 exposure·finish 같은 문자값을, `memberGroupKey`가 만드는 그룹 id는 층 이름·符号을 담는다. 이 메시지들이 `captureException`을 타고 그대로 나가면 「사용자 도면 데이터를 서버로 보내지 말 것」(CLAUDE.md CRITICAL)의 정면 위반이다.
+
+이 ADR의 초판은 그 관문을 **블랙리스트**로 뒀다 — 예외 message에서 독립 숫자·JSON 블록·pipe id 같은 「도면 유래 모양」을 지우는 방식이다. **그 설계는 수렴하지 않았고, 그것이 지금 방향을 뒤집은 이유다.** PR #6의 리뷰 10회차 중 7회차가 같은 정규식의 새 구멍이었다: 문자값 통과 → 하이픈 id 통과 → `100..200` 범위숫자 통과 → 그리디 backtrack 반쪽매치(`D25`→`D2[REDACTED]`) → 글자 포함 토큰 통째 통과 → `$` 접두 키 면제. 마지막에는 방향이 뒤집혀 posthog의 `distinct_id`까지 지우는 과다삭제가 났다. 지울 모양의 가짓수에 상한이 없으므로 이 목록은 원리상 완성되지 않는다.
+
+결정적인 차이는 **실패 방향**이다. 블랙리스트는 못 본 모양이 생기면 데이터가 나간다(유출). 허용목록은 SDK가 필드를 추가하거나 개발자가 새 throw 사이트를 만들면 그 값이 조용히 사라진다(관측 가치 저하). 후자는 리뷰가 팔 표면도 유한하다 — 나가는 것의 목록이 코드에 이름으로 적혀 있고 그게 전부다.
+
+블랙리스트는 순수 레이어까지 오염시켰다. `storyElevation`(`src/domain/model/project.ts`)은 `Story not found: {"storyId":"RF"}`처럼 값을 JSON 블록으로 감싸 던지는데, 그 이유가 오직 「스크러버의 letter+digit 오인을 피하려고」였다 — `src/domain/`이 텔레메트리 구현 세부에 결합된 것이다. 허용목록에서는 message를 아예 싣지 않으므로 이 결합의 근거가 사라진다(원상 복구는 별건).
+
+**트레이드오프**: 예외 message의 라벨(`clearMm must be finite`처럼 어느 검사가 실패했는지)을 잃는다. 스택 프레임의 `filename`·`lineno`·`function`이 그 자리를 대신하고, 어느 가드인지만 알려주는 라벨보다 어느 줄인지 알려주는 프레임이 더 정확하다 — 다만 프로덕션 번들은 난독화되므로 이 대체가 성립하려면 **소스맵 업로드가 전제**다. 그 전까지는 `filename:lineno`가 청크 좌표로만 남는다.
+
+「어느 룰팩 key가 없는가」는 `lookupRule` 실패 message에서 읽을 수 없게 됐다. 이 계측의 목적 중 하나였으므로 손실이다 — 되찾으려면 message를 파싱하는 게 아니라 호출부가 `captureException(error, { rule_key })`처럼 **구조화 속성으로 명시해** 실어야 한다(별건). `takeoff_exported`의 `inferred_rules`는 그 경로로 이미 나가고 있다.
+
+허용목록은 유지보수 대상이다. posthog-js가 유용한 필드를 새로 추가해도 목록에 넣기 전까지는 버려진다. 이 비용은 의도적이다 — 목록에 넣는 것은 사람이 한 번 판단해서 하는 일이고, 안 넣었을 때의 결과가 유출이 아니라 누락이다. 회귀 방지는 `src/lib/telemetry.test.ts`·`PaneBoundary.test.tsx`.

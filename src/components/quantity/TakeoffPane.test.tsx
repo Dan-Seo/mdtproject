@@ -30,6 +30,13 @@ vi.mock('@/lib/export', () => ({
   exportTakeoffXlsx: vi.fn().mockResolvedValue(undefined),
 }))
 
+const { capture, captureException } = vi.hoisted(() => ({
+  capture: vi.fn(),
+  captureException: vi.fn(),
+}))
+
+vi.mock('@/lib/telemetry', () => ({ capture, captureException }))
+
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())
   return result.current.lines
@@ -76,6 +83,8 @@ describe('TakeoffPane', () => {
       value: vi.fn(),
     })
     vi.mocked(exportTakeoffXlsx).mockClear()
+    capture.mockClear()
+    captureException.mockClear()
   })
 
   it('renders the DESIGN §4 headers in order with the 単位 column', () => {
@@ -391,6 +400,42 @@ describe('TakeoffPane', () => {
     expect(screen.getByTestId(`formula-${line.id}`)).toHaveTextContent(
       line.formula,
     )
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'takeoff',
+    })
+  })
+
+  // toggleLine은 이미 선택된 그룹의 행을 펼치고 접는 것도 selectQuantityGroup을
+  // 거친다. 선택이 실제로 바뀌지 않았는데도 매번 발화하면 source별 선택 수
+  // 비교가 takeoff 쪽으로 부풀어, 계측을 붙이는 이 PR에서 계측값 자체가 깨진다.
+  it('reports member_selected only when the selected group actually changes', () => {
+    const lines = takeoffLines()
+    const line = lineFor('帯筋')
+    render(<TakeoffTable lines={lines} />)
+
+    const cell = screen.getByTestId(`quantity-line-${line.id}`)
+    fireEvent.click(cell)
+    expect(capture).toHaveBeenCalledTimes(1)
+
+    // 같은 행을 다시 눌러 펼침/접힘만 토글한다 — 선택 그룹은 그대로다.
+    fireEvent.click(cell)
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
+  // groupId만 비교하면, plan·section·viewer에서 같은 그룹의 다른 柱(예:
+  // X2Y1)를 이미 골라둔 상태에서 takeoff 행을 눌러 대표 부재로 되돌아가도
+  // memberId가 실제로 바뀌었는데 발화하지 않는다 (9차 리뷰 minor).
+  it('reports member_selected when memberId changes even if the group stays the same', () => {
+    const lines = takeoffLines()
+    const line = lineFor('帯筋')
+    useAppStore.setState({ sel: { group: '1階|C|C1', memberId: '1F-X2Y1' } })
+    render(<TakeoffTable lines={lines} />)
+
+    fireEvent.click(screen.getByTestId(`quantity-line-${line.id}`))
+
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'takeoff',
+    })
   })
 
   // row(role=row)의 aria-expanded는 treegrid 안에서만 유효하다 — 평범한 table에서는
@@ -526,5 +571,67 @@ describe('TakeoffPane', () => {
       lines: expect.any(Array),
       locale: 'ja',
     })
+  })
+
+  // 파일이 실제로 내려간 뒤에만 발화해야 퍼널의 마지막 칸이 "받았다"를 뜻한다.
+  // 미검증 룰팩 항목이 섞인 채로도 내보내는지가 ADR-015가 걸어둔 가설이다.
+  it('reports the export only after the workbook resolves, with the inferred rules it carried', async () => {
+    render(<TakeoffActions />)
+
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+    expect(capture).not.toHaveBeenCalledWith(
+      'takeoff_exported',
+      expect.anything(),
+    )
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith('takeoff_exported', {
+        locale: 'ja',
+        size_bucket: expect.any(String),
+        has_inferred: expect.any(Boolean),
+        inferred_rules: expect.any(Array),
+      }),
+    )
+  })
+
+  // line_count 원값은 부재 수·철근 종류에서 파생된 모델 규모라 도면에서 나온
+  // 값이다. 「치수·본수는 도면 데이터라 내보내지 않는다」는 exportWorkbook의
+  // 주석과 어긋나므로 원문 없이도 복원 못 하는 버킷으로만 보낸다.
+  it('buckets the model size instead of sending the raw line count', async () => {
+    render(<TakeoffActions />)
+
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith(
+        'takeoff_exported',
+        expect.objectContaining({ size_bucket: 'small' }),
+      ),
+    )
+    const [, properties] = capture.mock.calls.find(
+      ([event]) => event === 'takeoff_exported',
+    )!
+    expect(properties).not.toHaveProperty('line_count')
+  })
+
+  it('reports a failed export instead of dropping the rejection', async () => {
+    const failure = new Error('exceljs chunk failed to load')
+    vi.mocked(exportTakeoffXlsx).mockRejectedValueOnce(failure)
+
+    render(<TakeoffActions />)
+    fireEvent.click(screen.getByRole('button', { name: '書き出し' }))
+
+    await waitFor(() =>
+      expect(captureException).toHaveBeenCalledWith(failure, {
+        stage: 'takeoff_export',
+      }),
+    )
+    expect(capture).toHaveBeenCalledWith('takeoff_export_failed', {
+      locale: 'ja',
+    })
+    expect(capture).not.toHaveBeenCalledWith(
+      'takeoff_exported',
+      expect.anything(),
+    )
   })
 })

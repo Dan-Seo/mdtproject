@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from 'react'
 
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import styles from './AppShell.module.css'
 import { PaneBoundary } from './PaneBoundary'
@@ -38,12 +39,20 @@ function Pane({ id, title, children, actions }: PaneProps) {
         <h2 id={titleId} className={`${styles.paneTitle} t-caption-uppercase`}>
           {title}
         </h2>
-        <PaneBoundary label={failureLabel} resetKey={project}>
+        <PaneBoundary
+          label={failureLabel}
+          pane={`${id}-actions`}
+          resetKey={project}
+        >
           {actions}
         </PaneBoundary>
       </header>
       <div className={styles.paneBody}>
-        <PaneBoundary label={failureLabel} resetKey={project}>
+        <PaneBoundary
+          label={failureLabel}
+          pane={`${id}-body`}
+          resetKey={project}
+        >
           {children}
         </PaneBoundary>
       </div>
@@ -83,7 +92,12 @@ export function AppShell({
                 locale === option ? styles.localeButtonActive : ''
               }`}
               aria-pressed={locale === option}
-              onClick={() => setLocale(option)}
+              onClick={() => {
+                setLocale(option)
+                // member_selected·viewer_mode_changed와 같은 기준 — 이미
+                // 활성인 언어를 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
+                if (locale !== option) capture('locale_changed', { locale: option })
+              }}
             >
               {t(locale, `locale.${option}`)}
             </button>

@@ -4,6 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSampleProject } from '@/domain/model/sample-project'
 import { useAppStore } from '@/lib/store'
 
+const { capture, captureException } = vi.hoisted(() => ({
+  capture: vi.fn(),
+  captureException: vi.fn(),
+}))
+
+vi.mock('@/lib/telemetry', () => ({ capture, captureException }))
+
 import { AppShell } from './AppShell'
 
 function Boom({ message }: { message: string }): never {
@@ -19,6 +26,8 @@ function BoomUntilRenamed() {
 
 describe('AppShell', () => {
   beforeEach(() => {
+    capture.mockClear()
+    captureException.mockClear()
     useAppStore.setState({
       project: createSampleProject(),
       locale: 'ja',
@@ -150,6 +159,24 @@ describe('AppShell', () => {
       screen.getByRole('heading', { name: '평면 에디터' }),
     ).toBeInTheDocument()
     expect(useAppStore.getState().locale).toBe('ko')
+  })
+
+  it('reports the locale switch', () => {
+    render(<AppShell />)
+
+    fireEvent.click(screen.getByRole('button', { name: '한국어' }))
+
+    expect(capture).toHaveBeenCalledWith('locale_changed', { locale: 'ko' })
+  })
+
+  // 이미 활성인 언어를 다시 눌러도 전환이 아니다 — member_selected와
+  // 발화 기준을 맞춘다 (10차 리뷰 minor).
+  it('does not report when clicking the already-active language', () => {
+    render(<AppShell />)
+
+    fireEvent.click(screen.getByRole('button', { name: '日本語' }))
+
+    expect(capture).not.toHaveBeenCalled()
   })
 
   it('publishes the active locale on the document element', () => {

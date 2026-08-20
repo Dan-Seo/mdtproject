@@ -1,6 +1,6 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
@@ -15,6 +15,7 @@ import {
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import styles from './SectionTable.module.css'
 
@@ -348,6 +349,7 @@ export function SectionTable() {
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectMember = useAppStore(({ selectMember }) => selectMember)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
+  const sectionEditReported = useRef(false)
   const selectedSectionId = project.members.find(
     ({ id }) => id === selectedMemberId,
   )?.sectionId
@@ -357,6 +359,12 @@ export function SectionTable() {
     updater: (section: Section) => Section,
   ) => {
     updateProject((current) => replaceSection(current, sectionId, updater))
+
+    // onChange는 키 입력마다 들어온다. 알고 싶은 것은 편집 횟수가 아니라 "이 세션에서
+    // 断面表를 손댔는가"(열람 → 편집 → 내보내기 퍼널의 가운데 칸)이므로 한 번으로 합친다.
+    if (sectionEditReported.current) return
+    sectionEditReported.current = true
+    capture('section_edited')
   }
 
   const selectSection = (sectionId: string) => {
@@ -366,7 +374,13 @@ export function SectionTable() {
           member.storyId === activeStoryId && member.sectionId === sectionId,
       ) ?? project.members.find((member) => member.sectionId === sectionId)
 
-    if (representative) selectMember(representative.id)
+    if (!representative) return
+
+    // 행 안의 입력칸을 클릭해 편집만 해도 onClick이 버블링돼 여기로 다시
+    // 들어온다. 이미 그 부재가 선택돼 있으면 다시 세지 않는다.
+    const changed = representative.id !== selectedMemberId
+    selectMember(representative.id)
+    if (changed) capture('member_selected', { source: 'section' })
   }
 
   const activateRow = (

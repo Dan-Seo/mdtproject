@@ -25,6 +25,7 @@ import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
+import { capture, captureException } from '@/lib/telemetry'
 import { jpMlitRulePack } from '@/rulepack'
 
 import styles from './TakeoffPane.module.css'
@@ -53,6 +54,13 @@ function formatMass(massKg: number): string {
 // 継手箇所数には （３）梁2) の 0.5か所がある — 整数に丸めると条文と違う数になる。
 function formatCount(count: number): string {
   return Number.isInteger(count) ? String(count) : count.toFixed(1)
+}
+
+/** 텔레메트리용 규모 버킷. 원값은 부재 수·철근 종류에서 파생된 도면 데이터다. */
+function sizeBucket(lineCount: number): 'small' | 'medium' | 'large' {
+  if (lineCount < 50) return 'small'
+  if (lineCount < 500) return 'medium'
+  return 'large'
 }
 
 /** 単位が違って値を持たないセル。空欄だと入力漏れに見える。 */
@@ -218,6 +226,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
   const selectedGroup = useAppStore(({ sel }) => sel.group)
+  const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectGroup = useAppStore(({ selectGroup }) => selectGroup)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
@@ -242,7 +251,13 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
   }, [selectedGroup])
 
   const selectQuantityGroup = (groupId: string, memberId: string) => {
+    // toggleLine도 이 함수를 거친다 — 같은 그룹의 산식 행을 펼치고 접는 것은
+    // 선택이 아니다. 매번 발화하면 source별 선택 수 비교가 takeoff 쪽으로 부푼다.
+    // groupId만 보면 같은 그룹 안에서 부재가 바뀌는 선택(대표 부재 갱신)이
+    // 안 잡힌다 — memberId도 함께 본다 (9차 리뷰 minor).
+    const changed = groupId !== selectedGroup || memberId !== selectedMemberId
     selectGroup(groupId, memberId)
+    if (changed) capture('member_selected', { source: 'takeoff' })
   }
 
   const toggleLine = (line: QuantityLine, memberId: string) => {
@@ -619,7 +634,7 @@ export function TakeoffPane() {
 export function TakeoffActions() {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
-  const { lines } = useTakeoff()
+  const { lines, hasInferred, inferredRules } = useTakeoff()
   const markupRate = useMemo(() => {
     const rates = [
       ...new Set(
@@ -642,7 +657,25 @@ export function TakeoffActions() {
   ).format(markupRate)
 
   const exportWorkbook = () => {
-    void exportTakeoffXlsx({ project, lines, locale })
+    // 클릭이 아니라 결과에 이벤트를 건다 — 내보내기는 이 제품의 산출물이고,
+    // 클릭 시점에 성공을 기록하면 exceljs 청크 실패가 성공으로 집계된다.
+    // 룰팩 key만 싣는다. 치수·본수는 도면 데이터라 브라우저 밖으로 내보내지 않는다.
+    // lines.length 원값도 부재 수에서 파생된 모델 규모라 마찬가지다 — 원문을
+    // 복원할 수 없는 버킷으로만 보낸다.
+    exportTakeoffXlsx({ project, lines, locale }).then(
+      () => {
+        capture('takeoff_exported', {
+          locale,
+          size_bucket: sizeBucket(lines.length),
+          has_inferred: hasInferred,
+          inferred_rules: inferredRules.map(({ key }) => key),
+        })
+      },
+      (error: unknown) => {
+        captureException(error, { stage: 'takeoff_export' })
+        capture('takeoff_export_failed', { locale })
+      },
+    )
   }
 
   return (

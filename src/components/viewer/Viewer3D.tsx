@@ -15,6 +15,7 @@ import {
   findSection,
   girderRun,
   girderSupportSections,
+  storyNotFound,
   type GirderRun,
   type Project,
   type Story,
@@ -38,6 +39,7 @@ import {
   useAppStore,
   type ViewerLayer,
 } from '@/lib/store'
+import { capture } from '@/lib/telemetry'
 
 import {
   buildingLayout,
@@ -1144,7 +1146,7 @@ function selectedMemberView(
   const section = findSection(project, member.sectionId)
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (story === undefined) {
-    throw new Error(`Story not found: ${member.storyId}`)
+    throw storyNotFound(member.storyId)
   }
   // 부재 종류를 가리지 않는다 — 柱도 断面一覧 입력에 따라 형상이 성립하지
   // 않을 수 있고, 그때 内訳는 未対応인데 3D만 지원으로 보이면 안 된다.
@@ -1262,12 +1264,14 @@ export function Viewer3D() {
   const { rebars, lines, unsupportedMembers } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
   const selectMemberRef = useRef(selectMember)
+  const selectedMemberIdRef = useRef(selectedMemberId)
   const hoverRowIdRef = useRef(hoverRowId)
   const viewerLayersRef = useRef(viewerLayers)
   const linesRef = useRef(lines)
   const projectRef = useRef(project)
   setHoverRowRef.current = setHoverRow
   selectMemberRef.current = selectMember
+  selectedMemberIdRef.current = selectedMemberId
   hoverRowIdRef.current = hoverRowId
   viewerLayersRef.current = viewerLayers
   linesRef.current = lines
@@ -1475,16 +1479,31 @@ export function Viewer3D() {
       const { rowId } = hit.object.userData
       if (typeof rowId === 'string') {
         setHoverRowRef.current(rowId)
+        // 部材 뷰에서 3D가 하는 유일한 일이다 — 이게 안 쓰이면 ADR-016의 근거가 약해진다.
+        capture('rebar_picked')
         return
       }
       const pickedMemberId = memberIdFromHit(hit)
       if (pickedMemberId !== null) {
+        // 이미 선택된 부재를 다시 클릭해도 재발화하지 않는다 — plan·section·
+        // takeoff와 같은 판정이라 source별 선택 수 비교가 어느 한쪽으로 부풀지 않는다.
+        const changed = pickedMemberId !== selectedMemberIdRef.current
         selectMemberRef.current(pickedMemberId)
+        if (changed) capture('member_selected', { source: 'viewer' })
       }
     }
     renderer.domElement.addEventListener('pointermove', handlePointerMove)
     renderer.domElement.addEventListener('pointerleave', handlePointerLeave)
     renderer.domElement.addEventListener('click', handleClick)
+
+    // 컨텍스트 손실은 던지지 않는다 — 캔버스가 그대로 얼어붙고 PaneBoundary도 걸리지
+    // 않는다. 복구는 시도하지 않고(마운트가 씬을 소유한다) 보고만 한다.
+    const handleContextLost = () => {
+      capture('viewer_webgl_context_lost', {
+        mode: viewRef.current?.mode ?? null,
+      })
+    }
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost)
 
     let animationFrame = 0
     const renderFrame = () => {
@@ -1525,6 +1544,10 @@ export function Viewer3D() {
       renderer.domElement.removeEventListener('pointermove', handlePointerMove)
       renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
       renderer.domElement.removeEventListener('click', handleClick)
+      renderer.domElement.removeEventListener(
+        'webglcontextlost',
+        handleContextLost,
+      )
       observer.disconnect()
       disposeContent(runtime)
       for (const material of runtime.materialPool.values()) material.dispose()
