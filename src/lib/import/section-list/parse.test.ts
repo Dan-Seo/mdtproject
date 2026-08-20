@@ -660,6 +660,201 @@ describe('parseSectionLists (synthetic)', () => {
     expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
   })
 
+  // 배정 기준이 「가장 가까운 층 라벨」이면, 자기 층 데이터 행 사이에 있는 세로
+  // 치수가 아래 층으로 넘어간다 — 아래 층 라벨이 자기 층 라벨보다 가깝기 때문이다.
+  // 그러면 아래 층이 남의 치수로 확정된다(틀린 값이 조용히 들어간다). 배정은 표의
+  // 실제 행을 최근접 대상으로 삼아야 한다 — 그 행이 든 슬라이스가 임자다 (#32①)
+  it('does not hand a run enclosed by 1F rows to the nearer 2F label', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 1F의 主筋(64)과 帯筋(130) 사이 — 즉 1F 행들이 감싸고 있다. 그런데 층
+        // 라벨까지의 거리는 2F(19)가 1F(81)보다 가깝다
+        { str: '5', x: 160, y: 124, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 121, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 118, w: 3, h: 6, rot: -90 },
+        { str: '帯筋', x: 10, y: 130, w: 20, h: 8 },
+        { str: 'D13@100', x: 105, y: 130, w: 44, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+        // 2F가 마지막 슬라이스면 tableBottom 클램프로 상한이 좁아져 이미 걸린다 —
+        // 중간 층에서 재현해야 한다
+        { str: '3F', x: 10, y: 240, w: 10, h: 8 },
+        { str: '900', x: 110, y: 252, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 264, w: 20, h: 8 },
+        { str: '20-D25', x: 105, y: 264, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+    const first = candidate(columns, 'C1', '1F')
+    const second = candidate(columns, 'C1', '2F')
+
+    // 임자는 1F다 — 행이 감싸고 있고, 대역 안이라 상한도 걸리지 않는다
+    expect([first.b, first.d]).toEqual([700, 500])
+    expect(second.b).toBeUndefined()
+    expect(second.d).toBeUndefined()
+    expect(second.raw['断面']).toBe('800')
+    expect(second.issues).toContain('断面矩形不成立')
+  })
+
+  // 런이 층 사이 빈칸에 있으면 앵커(가장 가까운 행)가 이전 층의 마지막 데이터
+  // 행으로 잡힌다 — 여기서는 1F 帯筋(76)이 24pt, 다음 층 라벨 2F(140)가 40pt다.
+  // 대역만 보면 그 빈칸도 아직 1F라 거리가 0이 되어 1F가 남의 치수를 확정한다.
+  // 임자를 가릴 근거가 없으므로 어느 층도 확정하지 않는다 — 실물에서 세로 치수는
+  // 이 빈칸의 아래쪽(자기 층 라벨 위 7.68~13.46pt)에 놓이고, 여기처럼 위쪽에 뜬
+  // 숫자는 관측된 적이 없다. 확정하지 않고 원문으로 남기는 쪽이 옳다 (R10, #61)
+  it('confirms no story for a run stranded in the gap above the next label', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 76, w: 20, h: 8 },
+        { str: 'D13@100', x: 105, y: 76, w: 44, h: 8 },
+        // 빈칸 한복판 — 帯筋(76)까지 24pt, 2F 라벨(140)까지 40pt
+        { str: '5', x: 160, y: 103, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 100, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 97, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+        { str: '3F', x: 10, y: 240, w: 10, h: 8 },
+        { str: '900', x: 110, y: 252, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 264, w: 20, h: 8 },
+        { str: '20-D25', x: 105, y: 264, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect(candidate(columns, 'C1', '1F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '2F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '1F').issues).toContain('断面矩形不成立')
+    expect(candidate(columns, 'C1', '2F').issues).toContain('断面矩形不成立')
+  })
+
+  // 앵커는 **표 안 행**이어야 한다. 표제란은 표와 같은 y대역에 걸쳐 있어 y로는
+  // 못 가르고, 실물 ojkk p3 에서는 図面名称 행이 2F 스케치의 세로 치수에서 0.6pt
+  // 거리라 층 라벨(12.3pt)보다 가까웠다 — 그 행이 앵커가 되면 배정이 한 층 위로
+  // 밀리고 lastRowY 아래가 되어 치수가 통째로 폐기된다.
+  // 이 불변식의 유일한 방어가 .cache/ 가 비면 스킵되는 로컬 전용 real-pdf 테스트라
+  // CI 에서는 무방비였다 — 합성으로 고정한다 (#61 리뷰 minor)
+  it('does not anchor a vertical run on a title-block row outside the table', () => {
+    const parsed = parseSectionLists({
+      widthPt: 500,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 符号 열 x대역(≤ C2 중심 246) 밖의 표제란 행 — 런(131)에서 1pt 거리라
+        // 2F 라벨(140, 9pt)보다 가깝다
+        { str: '図面名称', x: 400, y: 130, w: 40, h: 8 },
+        { str: '5', x: 160, y: 134, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 131, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 128, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+
+    expect([c1.b, c1.d]).toEqual([800, 500])
+  })
+
+  // 자기 행 범위를 슬라이스의 endY 로 끊으면 최하층에서만 규칙이 깨진다 —
+  // 호출부가 마지막 슬라이스의 endY 를 tableBottom(= 표 바닥 행 자신의 y)으로
+  // 자르므로 배타 상한이 그 행을 빼버려 lastRowY 가 한 행 위로 밀린다.
+  // 여기서는 2F 의 断面(152)과 主筋(164) 사이에 낀 런이 최하층이라는 이유만으로
+  // 폐기된다 — 같은 기하가 중간 층이면 확정된다 (#61 리뷰 major)
+  it('keeps a run between the last two rows of the bottom story', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        // 2F 断面(152)과 主筋(164) 사이 — 표의 마지막 행이 바로 아래다
+        { str: '5', x: 160, y: 161, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 158, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 155, w: 3, h: 6, rot: -90 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
+  })
+
+  // 거리 상한의 **폐기** 경로를 고정한다. 대역 안 런은 distance가 0이라 상한이
+  // 무조건 참이므로, 폐기를 지키려면 앵커가 대역 밖인 기하가 필요하다. 여기서는
+  // 2F가 마지막 슬라이스라 endY가 표 바닥(164)으로 클램프되어 span=24·상한=12이고,
+  // 런(120)은 2F 라벨(140) 위 20pt라 상한을 넘는다 — 어느 층도 확정하지 않는다.
+  // 이 경로에 테스트가 없으면 R10 가드(미지 형식에서는 확정하지 않는다)가
+  // 회귀 테스트 없이 남는다 (#61 리뷰 minor)
+  it('drops a run that overshoots its slice band by more than half the span', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '5', x: 160, y: 123, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 120, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 117, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect(candidate(columns, 'C1', '1F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '2F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '2F').issues).toContain('断面矩形不成立')
+  })
+
   it('drops a vertical run that sits far from the story label it is nearest to', () => {
     const parsed = parseSectionLists({
       widthPt: 400,
