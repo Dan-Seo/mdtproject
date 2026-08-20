@@ -226,6 +226,7 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
   const selectedGroup = useAppStore(({ sel }) => sel.group)
+  const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectGroup = useAppStore(({ selectGroup }) => selectGroup)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
@@ -252,7 +253,9 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
   const selectQuantityGroup = (groupId: string, memberId: string) => {
     // toggleLine도 이 함수를 거친다 — 같은 그룹의 산식 행을 펼치고 접는 것은
     // 선택이 아니다. 매번 발화하면 source별 선택 수 비교가 takeoff 쪽으로 부푼다.
-    const changed = groupId !== selectedGroup
+    // groupId만 보면 같은 그룹 안에서 부재가 바뀌는 선택(대표 부재 갱신)이
+    // 안 잡힌다 — memberId도 함께 본다 (9차 리뷰 minor).
+    const changed = groupId !== selectedGroup || memberId !== selectedMemberId
     selectGroup(groupId, memberId)
     if (changed) capture('member_selected', { source: 'takeoff' })
   }

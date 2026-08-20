@@ -8,6 +8,7 @@ import {
   columnEnds,
   findSection,
   girderRun,
+  storyNotFound,
   type GirderRun,
   type Project,
 } from '@/domain/model/project'
@@ -81,9 +82,7 @@ function buildTakeoff(project: Project): TakeoffResult {
     const section = findSection(project, member.sectionId)
     const story = project.stories.find(({ id }) => id === member.storyId)
     if (!story) {
-      throw new Error(
-        `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-      )
+      throw storyNotFound(member.storyId)
     }
 
     if (member.kind === '柱') {
@@ -155,9 +154,7 @@ function buildTakeoff(project: Project): TakeoffResult {
           )
         }
         if (!runStory) {
-          throw new Error(
-            `Story not found: ${JSON.stringify({ storyId: runMember.storyId })}`,
-          )
+          throw storyNotFound(runMember.storyId)
         }
 
         unsupportedMembers.push({

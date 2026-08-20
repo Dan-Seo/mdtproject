@@ -6,6 +6,7 @@ import type { Member } from '@/domain/model/member'
 import {
   findSection,
   gridPoint,
+  storyNotFound,
   type Project,
 } from '@/domain/model/project'
 import { t } from '@/lib/i18n'
@@ -289,9 +290,7 @@ export function PlanEditor() {
   )
 
   if (!story) {
-    throw new Error(
-      `Story not found: ${JSON.stringify({ storyId: activeStoryId })}`,
-    )
+    throw storyNotFound(activeStoryId)
   }
 
   return (

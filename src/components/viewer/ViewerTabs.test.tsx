@@ -46,6 +46,16 @@ describe('ViewerTabs', () => {
     })
   })
 
+  // 이미 활성인 탭을 다시 눌러도 전환이 아니다 — member_selected와 발화
+  // 기준을 맞춘다 (9차 리뷰 nit).
+  it('does not report when clicking the already-active tab', () => {
+    render(<ViewerTabs />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '部材' }))
+
+    expect(capture).not.toHaveBeenCalled()
+  })
+
   it('translates the tab labels instead of hardcoding Japanese', () => {
     useAppStore.setState({ locale: 'ko' })
     render(<ViewerTabs />)

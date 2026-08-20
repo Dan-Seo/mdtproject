@@ -15,6 +15,7 @@ import {
   findSection,
   girderRun,
   girderSupportSections,
+  storyNotFound,
   type GirderRun,
   type Project,
   type Story,
@@ -1145,9 +1146,7 @@ function selectedMemberView(
   const section = findSection(project, member.sectionId)
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (story === undefined) {
-    throw new Error(
-      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-    )
+    throw storyNotFound(member.storyId)
   }
   // 부재 종류를 가리지 않는다 — 柱도 断面一覧 입력에 따라 형상이 성립하지
   // 않을 수 있고, 그때 内訳는 未対応인데 3D만 지원으로 보이면 안 된다.

@@ -95,7 +95,10 @@ const config = [
     // — 실측: 다른 파일이 정적 import하면 그 파일이 속한 청크에도 SDK
     // 전체가 실린다), (2) before_send 스크러빙은 posthog.init을 실제로
     // 호출한 telemetry.ts를 거쳐야만 걸리는데 그 경로를 우회하게 된다.
-    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    // instrumentation-client.ts는 리포 루트라 src/** 밖인데도 이 프로젝트의
+    // 진입점이라, files에 명시하지 않으면 정작 그 파일만 이 규칙 밖에
+    // 남는다 (9차 리뷰 minor).
+    files: ['src/**/*.{js,jsx,ts,tsx}', 'instrumentation-client.ts'],
     ignores: ['src/lib/telemetry.ts', 'src/**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -108,6 +111,7 @@ const config = [
                 'capture·captureException은 src/lib/telemetry.ts를 거친다 — 속성에 도면 유래 값이 실리지 않게 호출부를 한 곳으로 모은다 (ADR-020)',
             },
           ],
+          patterns: ['posthog-js/*'],
         },
       ],
     },

@@ -37,7 +37,9 @@ export function ViewerTabs() {
             aria-selected={selected}
             onClick={() => {
               setViewerMode(mode)
-              capture('viewer_mode_changed', { mode })
+              // 이미 활성인 탭을 다시 눌러도 전환은 아니다 — member_selected와
+              // 같은 변경 여부 기준을 맞춘다 (9차 리뷰 nit).
+              if (!selected) capture('viewer_mode_changed', { mode })
             }}
           >
             {t(locale, `viewer.tab.${mode}`)}

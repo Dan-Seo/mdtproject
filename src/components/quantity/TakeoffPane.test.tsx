@@ -422,6 +422,22 @@ describe('TakeoffPane', () => {
     expect(capture).toHaveBeenCalledTimes(1)
   })
 
+  // groupId만 비교하면, plan·section·viewer에서 같은 그룹의 다른 柱(예:
+  // X2Y1)를 이미 골라둔 상태에서 takeoff 행을 눌러 대표 부재로 되돌아가도
+  // memberId가 실제로 바뀌었는데 발화하지 않는다 (9차 리뷰 minor).
+  it('reports member_selected when memberId changes even if the group stays the same', () => {
+    const lines = takeoffLines()
+    const line = lineFor('帯筋')
+    useAppStore.setState({ sel: { group: '1階|C|C1', memberId: '1F-X2Y1' } })
+    render(<TakeoffTable lines={lines} />)
+
+    fireEvent.click(screen.getByTestId(`quantity-line-${line.id}`))
+
+    expect(capture).toHaveBeenCalledWith('member_selected', {
+      source: 'takeoff',
+    })
+  })
+
   // row(role=row)의 aria-expanded는 treegrid 안에서만 유효하다 — 평범한 table에서는
   // 보조기술이 읽지 못한다. 펼침 상태는 실제 컨트롤이 들고 있어야 한다.
   it('carries the disclosure state on a real control, not on the row', () => {

@@ -115,6 +115,19 @@ const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
 const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
+const TELEMETRY_OPT_IN_KEY = 'kijun:telemetry-opt-in'
+
+/**
+ * before_send 스크러빙(ADR-020)과는 별개의 관문이다 — 스크러버가 뚫리는
+ * 경우에도 애초에 동의 없이는 아웃바운드 요청 자체가 나가지 않아야 한다
+ * (9차 리뷰 major). 이 값을 켜는 UI(동의 배너·설정 등)는 이 PR 범위
+ * 밖이라 아직 없다 — 그 전까지는 아무도 opt-in 하지 않아 텔레메트리가
+ * 통째로 꺼져 있는 게 정상이다.
+ */
+function hasTelemetryConsent(): boolean {
+  return window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === 'yes'
+}
+
 /**
  * 이 파일이 posthog-js를 정적 import하면, 이 파일을 import하는 컴포넌트
  * 7개(AppShell·PaneBoundary·PlanEditor·TakeoffPane·SectionTable·Viewer3D·
@@ -130,6 +143,16 @@ let client: Promise<PostHog | null> | null = null
 
 function loadClient(): Promise<PostHog | null> {
   if (client) return client
+
+  // 이 파일을 정적 import하는 컴포넌트 7개는 Next의 서버 프리렌더에서도
+  // 모듈 평가를 겪는다(9차 리뷰 minor) — SSR에는 window도 동의도 없으니
+  // 여기서 끊는다. 동의가 없는 동안은 `client`에 캐시하지 않고 매번 다시
+  // 확인한다 — 나중에 동의 UI가 생겨 사용자가 뒤늦게 켜도 이 세션이
+  // 캐시된 null에 페이지 새로고침 없이는 못 빠져나오는 상태에 갇히지
+  // 않게 하기 위함이다.
+  if (typeof window === 'undefined' || !hasTelemetryConsent()) {
+    return Promise.resolve(null)
+  }
 
   if (!projectToken || !host) {
     if (process.env.NODE_ENV === 'development') {
@@ -173,15 +196,20 @@ function loadClient(): Promise<PostHog | null> {
       // 이 플래그가 막는 건 session-recording·surveys·toolbar처럼
       // loadExternalDependency를 타는 확장뿐이다.
       disable_external_dependency_loading: true,
+      // 원격 설정(/flags)이 코드 변경 없이 autocapture 등을 되살릴 수
+      // 있다 — 잠금 고정 버전(package.json)에 더해 이 채널도 끈다.
+      advanced_disable_flags: true,
       // 모든 capture·captureException 호출이 여길 거친다 — 스크러빙 지점을
       // 호출부마다 흩어놓지 않고 여기 하나로 모은다. 남는 잔여 위험은
       // scrubDrawingText 자체가 블랙리스트라는 점이다 — 화이트리스트로
       // 바꾸려면 이 리포가 쓰는 모든 정적 라벨 키를 유지보수 목록으로
       // 못박아야 하는데, $exception_list[].value처럼 개발자가 문자열
       // 보간으로 던지는 자유 텍스트는 애초에 어떤 키 화이트리스트로도
-      // 막지 못한다(값 자체를 걸러야 한다). 이 트레이드오프는 ADR-020이
-      // 이미 검토해 받아들인 것이고, opt-in 동의 토글은 별도 UX 결정이
-      // 필요한 기능 추가라 이 범위에 넣지 않았다.
+      // 막지 못한다(값 자체를 걸러야 한다) — anchorage.L1·D25 같은 룰팩
+      // 상수와 계측 목적상 남겨야 하는 라벨(어느 룰이 없는지)까지
+      // 함께 잘려나간다. 이 트레이드오프는 ADR-020이 이미 검토해
+      // 받아들인 것이다. 대신 loadClient()의 동의 게이트가 스크러버가
+      // 뚫리는 경우의 노출 범위를 "opt-in한 사용자"로 좁힌다.
       before_send: scrubDrawingDigits,
     })
     return posthog

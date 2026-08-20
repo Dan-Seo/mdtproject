@@ -4,6 +4,7 @@ import {
   girderSpan,
   gridPoint,
   storyElevation,
+  storyNotFound,
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
@@ -75,9 +76,7 @@ export function buildingLayout(
   for (const member of project.members) {
     const story = project.stories.find(({ id }) => id === member.storyId)
     if (!story) {
-      throw new Error(
-        `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-      )
+      throw storyNotFound(member.storyId)
     }
     const elevation = storyElevation(project.stories, member.storyId)
     const section = findSection(project, member.sectionId)
@@ -174,9 +173,7 @@ export function buildingLayout(
       }
       const story = project.stories.find(({ id }) => id === member.storyId)
       if (!story) {
-        throw new Error(
-        `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-      )
+        throw storyNotFound(member.storyId)
       }
       const start = gridPoint(
         project.grid,

@@ -9,11 +9,15 @@ describe('instrumentation-client', () => {
     init.mockClear()
     process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = 'phc_test'
     process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://us.i.posthog.com'
+    // 동의 게이트 자체의 회귀 방지는 telemetry.test.ts가 맡는다 — 여기서는
+    // 재노출이 초기화까지 이어지는지만 본다.
+    window.localStorage.setItem('kijun:telemetry-opt-in', 'yes')
   })
 
   afterEach(() => {
     delete process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
     delete process.env.NEXT_PUBLIC_POSTHOG_HOST
+    window.localStorage.clear()
   })
 
   // Next.js가 이 파일을 부수 효과만을 위해 import한다 — 실제 초기화 로직은

@@ -72,12 +72,24 @@ export function gridPoint(
   }
 }
 
+/**
+ * storyId는 "1F" 같은 letter+digit 라벨이라 룰팩 상수(D25 등)와 값의
+ * 모양만으로 구분되지 않는다 — telemetry.ts의 스크러버는 letter+digit
+ * 토큰을 통째로 남기므로, 그냥 보간하면 階 라벨이 그대로 새어 나간다(9차
+ * 리뷰 critical). JSON 블록으로 감싸면 스크러버의 `{...}` 규칙에 걸린다.
+ * 이 포맷을 함수 하나로 고정해 다음 호출부가 규약을 손으로 다시 베끼지
+ * 않게 한다(9차 리뷰 minor).
+ */
+export function storyNotFound(storyId: string): Error {
+  return new Error(`Story not found: ${JSON.stringify({ storyId })}`)
+}
+
 /** 층 바닥의 누적 표고(mm). stories 배열 순서대로 아래층 height를 누적한다. */
 export function storyElevation(stories: Story[], storyId: string): number {
   const index = stories.findIndex(({ id }) => id === storyId)
 
   if (index < 0) {
-    throw new Error(`Story not found: ${JSON.stringify({ storyId })}`)
+    throw storyNotFound(storyId)
   }
 
   return stories.slice(0, index).reduce((sum, story) => sum + story.height, 0)
@@ -96,9 +108,7 @@ export function findSection(project: Project, sectionId: string): Section {
 export function memberGroupKey(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
   if (!story) {
-    throw new Error(
-      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-    )
+    throw storyNotFound(member.storyId)
   }
 
   const section = findSection(project, member.sectionId)
@@ -391,9 +401,7 @@ export function columnEnds(project: Project, member: Member): ColumnEnds {
 
   const level = project.stories.findIndex(({ id }) => id === member.storyId)
   if (level < 0) {
-    throw new Error(
-      `Story not found: ${JSON.stringify({ storyId: member.storyId })}`,
-    )
+    throw storyNotFound(member.storyId)
   }
 
   const hasColumnAtLevel = (candidateLevel: number): boolean => {

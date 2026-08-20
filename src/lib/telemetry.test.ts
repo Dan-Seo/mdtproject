@@ -30,11 +30,15 @@ describe('telemetry', () => {
     captureExceptionPosthog.mockClear()
     process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = 'phc_test'
     process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://us.i.posthog.com'
+    // 대부분의 테스트는 동의가 있는 상태의 동작을 본다 — 동의 게이트 자체는
+    // 아래 'telemetry consent' describe에서 opt-in 값을 직접 조작해 확인한다.
+    window.localStorage.setItem('kijun:telemetry-opt-in', 'yes')
   })
 
   afterEach(() => {
     delete process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
     delete process.env.NEXT_PUBLIC_POSTHOG_HOST
+    window.localStorage.clear()
   })
 
   // 자동수집은 $elements_chain에 부재 aria-label과 平面 SVG 좌표를 실어 보낸다.
@@ -58,6 +62,49 @@ describe('telemetry', () => {
     await loadTelemetry()
 
     expect(init).not.toHaveBeenCalled()
+  })
+
+  // 원격 설정(/flags)이 코드 변경 없이 autocapture 등 수집 동작을 되살릴 수
+  // 있다 — 잠금 고정 버전에 더해 이 채널도 끈다 (9차 리뷰 minor).
+  it('disables remote feature-flag configuration', async () => {
+    await loadTelemetry()
+
+    expect(init.mock.calls[0][1]).toMatchObject({
+      advanced_disable_flags: true,
+    })
+  })
+
+  describe('telemetry consent', () => {
+    // 9차 리뷰 major 지적: 동의 게이트 없이 모듈 평가 시점에 무조건
+    // 초기화된다. 이 값을 켜는 UI(동의 배너 등)는 이 PR 범위 밖이라 아직
+    // 없다 — 그 전까지는 아무도 opt-in 하지 않아 텔레메트리가 통째로
+    // 꺼져 있는 게 정상이다.
+    it('does not initialise without stored consent', async () => {
+      window.localStorage.clear()
+
+      await loadTelemetry()
+
+      expect(init).not.toHaveBeenCalled()
+    })
+
+    it('initialises once consent is stored', async () => {
+      window.localStorage.setItem('kijun:telemetry-opt-in', 'yes')
+
+      await loadTelemetry()
+
+      expect(init).toHaveBeenCalledTimes(1)
+    })
+
+    it('silently drops calls when consent was never granted', async () => {
+      window.localStorage.clear()
+      const { capture, captureException } = await loadTelemetry()
+
+      expect(() => capture('member_selected')).not.toThrow()
+      expect(() => captureException(new Error('boom'))).not.toThrow()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(capturePosthog).not.toHaveBeenCalled()
+    })
   })
 
   // .gitignore가 .env*를 막으므로 새로 클론한 리포에는 이 변수가 없다. 그
