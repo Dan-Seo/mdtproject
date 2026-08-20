@@ -660,6 +660,50 @@ describe('parseSectionLists (synthetic)', () => {
     expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
   })
 
+  // 배정 기준이 「가장 가까운 층 라벨」이면, 자기 층 데이터 행 사이에 있는 세로
+  // 치수가 아래 층으로 넘어간다 — 아래 층 라벨이 자기 층 라벨보다 가깝기 때문이다.
+  // 그러면 아래 층이 남의 치수로 확정된다(틀린 값이 조용히 들어간다). 배정은 표의
+  // 실제 행을 최근접 대상으로 삼아야 한다 — 그 행이 든 슬라이스가 임자다 (#32①)
+  it('does not hand a run enclosed by 1F rows to the nearer 2F label', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        // 1F의 主筋(64)과 帯筋(130) 사이 — 즉 1F 행들이 감싸고 있다. 그런데 층
+        // 라벨까지의 거리는 2F(19)가 1F(81)보다 가깝다
+        { str: '5', x: 160, y: 124, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 121, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 118, w: 3, h: 6, rot: -90 },
+        { str: '帯筋', x: 10, y: 130, w: 20, h: 8 },
+        { str: 'D13@100', x: 105, y: 130, w: 44, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+        // 2F가 마지막 슬라이스면 tableBottom 클램프로 상한이 좁아져 이미 걸린다 —
+        // 중간 층에서 재현해야 한다
+        { str: '3F', x: 10, y: 240, w: 10, h: 8 },
+        { str: '900', x: 110, y: 252, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 264, w: 20, h: 8 },
+        { str: '20-D25', x: 105, y: 264, w: 36, h: 8 },
+      ],
+    })
+    const second = candidate(list(parsed, '柱リスト'), 'C1', '2F')
+
+    expect(second.b).toBeUndefined()
+    expect(second.d).toBeUndefined()
+    expect(second.raw['断面']).toBe('800')
+    expect(second.issues).toContain('断面矩形不成立')
+  })
+
   it('drops a vertical run that sits far from the story label it is nearest to', () => {
     const parsed = parseSectionLists({
       widthPt: 400,

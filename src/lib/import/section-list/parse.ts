@@ -76,8 +76,10 @@ const COLUMN_TOLERANCE_PT = 1
  *  타이틀 앵커의 같은 행(대역) 판정 둘 다에 쓴다 */
 const PROXIMITY_MULTIPLIER = 2
 /** 세로 런을 층 슬라이스에 배정할 때의 거리 상한 = 슬라이스 폭 × 이 값.
- *  슬라이스가 맞닿아 있어(endY[i] == startY[i+1]) 최근접 배정의 보로노이 경계와
- *  일치해 중간 층에서는 사실상 걸러내지 못한다 — 미해결 (#32①) */
+ *  배정 앵커가 층 라벨이던 동안에는 이 검사가 중간 층에서 항상 참이었다 —
+ *  슬라이스가 맞닿아 있어(endY[i] == startY[i+1]) 라벨 최근접의 보로노이 경계가
+ *  span/2와 정확히 일치했기 때문이다. 앵커를 표의 행으로 바꿔 상한이 실제로
+ *  작동하게 됐다 (#32①, verticalsBySlice 참고) */
 const SLICE_DISTANCE_LIMIT_RATIO = 0.5
 
 /**
@@ -977,24 +979,45 @@ function verticalsByMark(
 /**
  * 세로 치수를 층 슬라이스에 배정한다. 스케치의 세로 치수는 층 라벨 행보다 위에
  * 놓이기도 해서 슬라이스의 y대역(라벨 행 ~ 다음 라벨 행)으로 자르면 통째로 빠진다.
- * 가장 가까운 층 라벨에 붙인다 — 실물에서 층 간격의 1/10 이하로 붙어 있어 갈릴 여지가 없다.
+ *
+ * 배정 앵커는 **표의 행 중 런에 가장 가까운 것**이고, 그 행이 든 슬라이스가 임자다.
+ * 층 라벨을 앵커로 쓰면 둘이 함께 망가졌다 (#32①):
+ *   - 슬라이스가 맞닿아 있어(endY[i] == startY[i+1]) 라벨 최근접의 보로노이 경계가
+ *     span/2와 정확히 일치한다 — 아래 거리 상한이 중간 층에서 항상 참이 됐다.
+ *   - 자기 층 데이터 행 사이에 있는 런이 더 가까운 아래 층 라벨로 넘어가, 그 층이
+ *     남의 치수로 확정됐다.
+ * 행을 앵커로 쓰면 라벨까지의 거리가 span/2를 넘을 수 있어 상한이 실제로 작동한다.
+ *
+ * rows에 표 밖 행을 넘기지 말 것 — 실물 ojkk p3의 2F 스케치에서는 표제란의
+ * 図面名称 행이 세로 치수에서 0.6pt 거리라 층 라벨(12.3pt)보다 가깝다.
+ *
+ * 실물 5면 70건에서 이 배정은 층 라벨 최근접과 결과가 같다(전수 대조). 바뀌는 것은
+ * 위 두 실패뿐이다.
  */
 function verticalsBySlice(
   runs: VerticalRun[],
   slices: Array<{ startY: number; endY: number }>,
+  rows: TextRow[],
 ): VerticalRun[][] {
   const buckets: VerticalRun[][] = slices.map(() => [])
   if (slices.length === 0) return buckets
 
   for (const run of runs) {
+    const anchorY =
+      rows.length > 0
+        ? rows.reduce((closest, row) =>
+            Math.abs(row.y - run.y) < Math.abs(closest.y - run.y) ? row : closest,
+          ).y
+        : run.y
+    // 슬라이스는 맞닿아 정렬돼 있으므로, startY가 앵커 이하인 마지막 슬라이스가
+    // 그 행을 담은 슬라이스다. 첫 슬라이스보다 위(머리행 등)면 첫 슬라이스로 본다
     let best = 0
     slices.forEach((slice, index) => {
-      if (Math.abs(slice.startY - run.y) < Math.abs(slices[best].startY - run.y))
-        best = index
+      if (slice.startY <= anchorY) best = index
     })
-    // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 최근접에 넣으면 어떤
-    // 숫자든 어느 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지
-    // 않고 원문으로 남는 쪽이 옳다 (R10)
+    // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 넣으면 어떤 숫자든 어느
+    // 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지 않고 원문으로
+    // 남는 쪽이 옳다 (R10)
     const span = slices[best].endY - slices[best].startY
     if (Math.abs(slices[best].startY - run.y) <= span * SLICE_DISTANCE_LIMIT_RATIO)
       buckets[best].push(run)
@@ -1014,11 +1037,18 @@ function tableBottomY(
   marks: MarkColumn[],
   endY: number,
 ): number {
+  return rowsWithinTable(blockRows, marks).at(-1)?.y ?? endY
+}
+
+/**
+ * 표 안 행만 남긴다 — 符号 열의 x대역(≤ tableRight) 안에 세그먼트가 있는 행이다.
+ * 표제란(図面名称·管理建築士 등)은 표와 같은 y대역에 걸쳐 있어 y로는 못 가른다.
+ */
+function rowsWithinTable(blockRows: TextRow[], marks: MarkColumn[]): TextRow[] {
   const tableRight = Math.max(...marks.map(({ centerX }) => centerX))
-  const withinTable = blockRows.filter((row) =>
+  return blockRows.filter((row) =>
     row.segments.some((segment) => segment.centerX <= tableRight),
   )
-  return withinTable.at(-1)?.y ?? endY
 }
 
 function parseColumnBlock(
@@ -1060,6 +1090,7 @@ function parseColumnBlock(
       startY: slice.startY,
       endY: Math.min(slice.endY, tableBottom),
     })),
+    rowsWithinTable(blockRows, marks),
   )
 
   const candidates: SectionCandidate[] = []
@@ -1249,6 +1280,7 @@ function parseGirderBlock(
       startY: slice.startY,
       endY: Math.min(slice.endY, tableBottom),
     })),
+    rowsWithinTable(blockRows, marks),
   )
   const candidates: SectionCandidate[] = []
 
