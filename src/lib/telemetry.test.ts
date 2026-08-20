@@ -473,6 +473,47 @@ describe('telemetry', () => {
       expect('$exception_list' in captured.properties).toBe(false)
     })
 
+    // capture_exceptions 가 설치하는 posthog 자체 핸들러는 우리 capture() 래퍼를
+    // 거치지 않는다 — 래퍼에만 동의 게이트를 두면 세션 중 철회해도 SDK 가 잡은
+    // 예외는 계속 나간다. before_send 는 SDK 내부 발화까지 포함해 모든 전송이
+    // 반드시 거치는 유일한 관문이라, 게이트를 여기에도 둔다.
+    it('drops the event outright once consent is revoked, including SDK-internal sends', async () => {
+      await loadTelemetry()
+      const beforeSend = beforeSendOf()
+
+      window.localStorage.removeItem('kijun:telemetry-opt-in')
+
+      expect(
+        beforeSend({
+          uuid: 'u10',
+          event: '$exception',
+          properties: { $exception_list: [] },
+        }),
+      ).toBeNull()
+    })
+
+    // 허용목록이 properties 만 덮으면 페이로드의 나머지가 무검사로 나간다.
+    // $set·$set_once 는 person property 라 posthog 프로필에 영구 저장된다.
+    it('drops person properties, which never pass through the properties gate', async () => {
+      await loadTelemetry()
+
+      const captured = beforeSendOf()({
+        uuid: 'u11',
+        event: 'section_edited',
+        timestamp: 't',
+        properties: { locale: 'ja' },
+        $set: { story: '1F', mark: 'G1' },
+        $set_once: { first_mark: 'G1' },
+      })
+
+      expect(captured).toEqual({
+        uuid: 'u11',
+        event: 'section_edited',
+        timestamp: 't',
+        properties: { locale: 'ja' },
+      })
+    })
+
     it('passes through a null capture result', async () => {
       await loadTelemetry()
 

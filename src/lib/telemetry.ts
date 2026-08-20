@@ -142,19 +142,37 @@ function allowProperties(properties: unknown): Record<string, unknown> {
 }
 
 /**
- * posthog-js 의 모든 capture·captureException 이 여길 거친다 (ADR-020). 이벤트
- * 종류로 가르지 않고 전부 같은 관문을 통과시킨다 — $exception 만 거르면 capture()
- * 호출부가 실수로 도면 값을 실었을 때 걸러지지 않는다.
+ * 페이로드 최상위에서 남길 필드. properties 만 거르면 나머지가 무검사로 나간다
+ * — 특히 $set·$set_once 는 person property 라 posthog 프로필에 영구 저장된다.
+ * 이 리포는 identify()·setPersonProperties() 를 부르지 않으므로 통째로 버린다.
  */
-const allowOutgoingProperties: BeforeSendFn = (captureResult) => {
+const ALLOWED_PAYLOAD_KEYS: ReadonlySet<string> = new Set([
+  'uuid',
+  'event',
+  'timestamp',
+  'properties',
+])
+
+/**
+ * posthog-js 의 모든 전송이 여길 거친다 (ADR-020). 이벤트 종류로 가르지 않고
+ * 전부 같은 관문을 통과시킨다 — $exception 만 거르면 capture() 호출부가 실수로
+ * 도면 값을 실었을 때 걸러지지 않는다.
+ */
+const allowOutgoingPayload: BeforeSendFn = (captureResult) => {
   if (captureResult === null) return captureResult
 
-  return {
-    ...captureResult,
-    properties: allowProperties(
-      captureResult.properties,
-    ) as typeof captureResult.properties,
-  }
+  // capture_exceptions 가 설치하는 posthog 자체 핸들러(전역 onerror·
+  // unhandledrejection)와 pageview 수집기는 capture()·captureException() 래퍼를
+  // 거치지 않는다. 래퍼에만 동의 게이트를 두면 세션 중 철회해도 그 경로는 계속
+  // 나가므로, SDK 내부 발화까지 잡히는 이 관문에도 같은 게이트를 둔다.
+  if (!hasTelemetryConsent()) return null
+
+  const allowed = pickAllowed(
+    captureResult as unknown as Record<string, unknown>,
+    ALLOWED_PAYLOAD_KEYS,
+  )
+  allowed.properties = allowProperties(captureResult.properties)
+  return allowed as unknown as typeof captureResult
 }
 
 const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
@@ -262,7 +280,7 @@ function loadClient(): Promise<PostHog | null> {
       // 이전 판은 반대 방향(나가면 안 되는 모양을 지우는 블랙리스트)이었고
       // 수렴하지 않았다 — 상단 주석에 그 경위를 남겼다. loadClient() 의 동의
       // 게이트가 이 관문과 별개의 두 번째 방어선이다.
-      before_send: allowOutgoingProperties,
+      before_send: allowOutgoingPayload,
     })
     return posthog
   })
