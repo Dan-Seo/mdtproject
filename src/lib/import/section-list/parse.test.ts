@@ -708,6 +708,81 @@ describe('parseSectionLists (synthetic)', () => {
     expect(second.issues).toContain('断面矩形不成立')
   })
 
+  // 런이 층 사이 빈칸에 있으면 앵커(가장 가까운 행)가 이전 층의 마지막 데이터
+  // 행으로 잡힌다 — 여기서는 1F 帯筋(76)이 24pt, 자기 층 라벨 2F(140)가 40pt다.
+  // 그대로 두면 1F 대역 안이라 거리 상한도 안 걸려 1F가 남의 치수를 확정한다.
+  // 실물에서 스케치의 세로 치수는 이 빈칸의 아래쪽, 자기 층 라벨 바로 위다 (#61)
+  it('gives a run in the gap to the story label below it, not the row above', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 400,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '帯筋', x: 10, y: 76, w: 20, h: 8 },
+        { str: 'D13@100', x: 105, y: 76, w: 44, h: 8 },
+        // 빈칸 한복판 — 帯筋(76)까지 24pt, 2F 라벨(140)까지 40pt
+        { str: '5', x: 160, y: 103, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 100, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 97, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+        { str: '3F', x: 10, y: 240, w: 10, h: 8 },
+        { str: '900', x: 110, y: 252, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 264, w: 20, h: 8 },
+        { str: '20-D25', x: 105, y: 264, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
+    expect(candidate(columns, 'C1', '1F').b).toBeUndefined()
+    expect(candidate(columns, 'C1', '1F').issues).toContain('断面矩形不成立')
+  })
+
+  // 거리 상한의 **폐기** 경로를 고정한다. 대역 안 런은 distance가 0이라 상한이
+  // 무조건 참이므로, 폐기를 지키려면 앵커가 대역 밖인 기하가 필요하다. 여기서는
+  // 2F가 마지막 슬라이스라 endY가 표 바닥(164)으로 클램프되어 span=24·상한=12이고,
+  // 런(120)은 2F 라벨(140) 위 20pt라 상한을 넘는다 — 어느 층도 확정하지 않는다.
+  // 이 경로에 테스트가 없으면 R10 가드(미지 형식에서는 확정하지 않는다)가
+  // 회귀 테스트 없이 남는다 (#61 리뷰 minor)
+  it('drops a run that overshoots its slice band by more than half the span', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '5', x: 160, y: 123, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 120, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 117, w: 3, h: 6, rot: -90 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect(candidate(columns, 'C1', '1F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '2F').d).toBeUndefined()
+    expect(candidate(columns, 'C1', '2F').issues).toContain('断面矩形不成立')
+  })
+
   // 이 테스트가 지키는 것은 「2F가 남의 치수를 가져가지 않는다」이다 — PR #30에서
   // 마지막 슬라이스의 endY가 표 끝이 아니라 페이지 바닥이면 상한이 층 간격의 몇
   // 배로 벌어져 이 숫자가 2F의 확정 d가 됐다.
