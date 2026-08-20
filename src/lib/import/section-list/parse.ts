@@ -1015,22 +1015,22 @@ function verticalsBySlice(
     slices.forEach((slice, index) => {
       if (slice.startY <= anchorY) best = index
     })
-    // 런이 층 사이 빈칸(이전 층 마지막 데이터 행 ~ 이 층 라벨)에 있으면 앵커가
-    // 이전 층의 마지막 행으로 잡힐 수 있다 — 자기 층 라벨보다 1pt만 가까워도
-    // 그렇고, 그러면 대역 안이라 아래 거리 상한도 걸리지 않아 이전 층이 남의
-    // 치수를 조용히 확정한다. 실물에서 스케치의 세로 치수는 그 빈칸의 **아래쪽**,
-    // 자기 층 라벨 바로 위에 놓인다(실측 7.68~13.46pt, 5면 51건). 런과 다음 층
-    // 라벨 사이에 표의 행이 하나도 없고 그 라벨이 상한 안이면 다음 층이 임자다.
-    // run.y < next.startY는 구성상 성립한다 — 런이 라벨보다 아래면 라벨 행이
-    // 이전 층 어느 행보다 가까워 best가 이미 다음 층이다 (PR #61 리뷰 major)
-    const next = slices[best + 1]
-    if (
-      next !== undefined &&
-      next.startY - run.y <=
-        (next.endY - next.startY) * SLICE_DISTANCE_LIMIT_RATIO &&
-      rows.every((row) => row.y <= run.y || row.y >= next.startY)
+    // 자기 블록의 마지막 행보다 아래에 있는 런은 어느 층의 것도 아니다. 그
+    // 블록의 내용은 거기서 끝나고 다음 층 라벨까지는 빈칸인데, 대역만 보면 그
+    // 빈칸도 아직 이 슬라이스라 아래 거리가 0이 되어 남의 치수가 조용히 확정된다.
+    // 실물에서 세로 치수는 빈칸의 **아래쪽**, 자기 층 라벨 바로 위에 놓이므로
+    // (실측 7.68~13.46pt, 5면 51건) 자기 블록의 첫 행보다도 위다 — 이 규칙에
+    // 걸리지 않는다. 빈칸 위쪽에 뜬 숫자는 임자를 가릴 근거가 없으니 확정하지
+    // 않고 원문으로 남긴다 (R10, PR #61 리뷰 major)
+    const lastRowY = rows.reduce(
+      (last, row) =>
+        row.y >= slices[best].startY && row.y < slices[best].endY && row.y > last
+          ? row.y
+          : last,
+      slices[best].startY,
     )
-      best += 1
+    if (run.y > lastRowY) continue
+
     // 자기 층 스케치가 아닌 런은 버린다. 거리 제한 없이 넣으면 어떤 숫자든 어느
     // 층엔가 붙어 이슈 없는 확정 d가 된다 — 미지 형식에서는 확정하지 않고 원문으로
     // 남는 쪽이 옳다 (R10)
