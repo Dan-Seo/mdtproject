@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const init = vi.fn()
@@ -29,5 +31,14 @@ describe('instrumentation-client', () => {
     await mod.posthogInit
 
     expect(init).toHaveBeenCalledTimes(1)
+  })
+
+  // 이 프로젝트는 src/app을 쓰므로 관례 파일의 자리는 src/다. 리포 루트에도
+  // 같은 파일이 남아 있으면 Next.js가 어느 쪽을 진입점으로 잡는지 배치만
+  // 보고는 알 수 없고, 옮긴 쪽만 고치는 사고가 난다 (#54).
+  it('keeps the convention file only under src/', () => {
+    expect(existsSync(new URL('../instrumentation-client.ts', import.meta.url))).toBe(
+      false,
+    )
   })
 })

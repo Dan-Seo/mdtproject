@@ -21,10 +21,10 @@ const config = [
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
-    // instrumentation-client.ts는 리포 루트(Next.js 관례)라 src/** 밖이지만
-    // 이 프로젝트의 두 번째 아웃바운드 경로다(ADR-020) — 가드 사각지대에
-    // 두면 안 된다.
-    files: ['src/**/*.{js,jsx,ts,tsx}', 'instrumentation-client.ts'],
+    // src/instrumentation-client.ts는 이 프로젝트의 두 번째 아웃바운드
+    // 경로다(ADR-020) — 가드 사각지대에 두면 안 된다. src/ 안에 있으므로
+    // 아래 files 로 함께 덮인다.
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     ignores: ['src/**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-globals': [
@@ -95,10 +95,10 @@ const config = [
     // — 실측: 다른 파일이 정적 import하면 그 파일이 속한 청크에도 SDK
     // 전체가 실린다), (2) before_send 스크러빙은 posthog.init을 실제로
     // 호출한 telemetry.ts를 거쳐야만 걸리는데 그 경로를 우회하게 된다.
-    // instrumentation-client.ts는 리포 루트라 src/** 밖인데도 이 프로젝트의
-    // 진입점이라, files에 명시하지 않으면 정작 그 파일만 이 규칙 밖에
-    // 남는다 (9차 리뷰 minor).
-    files: ['src/**/*.{js,jsx,ts,tsx}', 'instrumentation-client.ts'],
+    // src/instrumentation-client.ts도 이 규칙 안에 있어야 한다 — Next.js가
+    // 모든 페이지에서 부수 효과로 로드하는 진입점이라, 여기서 posthog-js를
+    // 직접 잡으면 SDK가 초기 번들에 그대로 실린다 (9차 리뷰 minor).
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     ignores: ['src/lib/telemetry.ts', 'src/**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
