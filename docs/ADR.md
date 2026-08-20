@@ -128,8 +128,22 @@
 
 ### ADR-020: 프로덕션 관측에 한해 브라우저 텔레메트리를 둔다
 
-**결정**: `instrumentation-client.ts`에서 posthog-js를 초기화한다. `autocapture: false`·`disable_session_recording: true`·`capture_heatmaps: false`·`capture_dead_clicks: false`·`disable_external_dependency_loading: true`로 DOM 자동수집·세션 리코딩·CDN 지연 로드를 끈다. `capture_exceptions: true`로 미처리 예외(전역 `onerror`·`unhandledrejection`)는 자동 수집하고, 그 외 이벤트는 명시적 `capture()` 호출만 만든다. 이벤트 속성은 룰팩 key·화면 이름·개수·enum 같은 정적 라벨과 버킷값만 싣는다. `before_send` 훅을 유일한 전송 관문으로 두어, 예외 message에서 ① 문자에 붙지 않은 독립 숫자와 ② `JSON.stringify(conditions)`·`story.name|code|mark` 같은 문자값 모양을 지운다. `PaneBoundary`는 같은 메시지를 resetKey 변경마다 다시 보고하지 않는다 — resetKey는 프로젝트 편집마다 바뀌므로, 안 지우면 근본 원인 하나가 무관한 편집 횟수만큼 captureException을 발화시킨다.
+**결정**: `src/lib/telemetry.ts`에서 posthog-js를 동적 import로 초기화한다(관례 파일 `instrumentation-client.ts`는 그 초기화를 re-export만 한다). `autocapture: false`·`disable_session_recording: true`·`capture_heatmaps: false`·`capture_dead_clicks: false`·`disable_external_dependency_loading: true`·`advanced_disable_flags: true`로 DOM 자동수집·세션 리코딩·CDN 지연 로드·원격 설정을 끈다. `capture_exceptions: true`로 미처리 예외(전역 `onerror`·`unhandledrejection`)는 자동 수집하고, 그 외 이벤트는 명시적 `capture()` 호출만 만든다.
 
-**이유**: `src/domain/`의 가드 함수는 실패 사유를 `` `clearMm must be finite: ${clearMm}` ``처럼 값을 문자열 보간해 던지고, `lookupRule`의 `Rule not found` 메시지는 `JSON.stringify(conditions)`로 exposure·finish 같은 문자값을, `memberGroupKey`가 만드는 그룹 id는 층 이름·符号을 담는다. 이 메시지들이 `PaneBoundary`·`global-error`·`TakeoffPane`의 `captureException`을 타고 그대로 나가면, 사용자가 断面一覧에 입력한 실제 건물 데이터가 서드파티 서버로 전송된다 — "사용자 도면 데이터를 서버로 보내지 말 것"(CLAUDE.md CRITICAL)의 정면 위반이다. 호출부마다 개별로 스크러빙하면 새 호출부가 추가될 때마다 빠뜨릴 수 있다. `before_send`는 posthog-js의 모든 capture·captureException이 반드시 거치는 마지막 관문이라 스크러빙 지점이 하나로 고정되고, 새 이벤트가 추가돼도 회귀하지 않는다.
+`before_send` 훅을 유일한 전송 관문으로 두되, **허용목록으로 동작한다** — 나가면 안 되는 것을 지우는 게 아니라 나가도 되는 것만 싣고, 목록 밖의 키는 값을 보지 않고 버린다. 나가는 것은 셋뿐이다: ① posthog-js의 식별·환경 메타데이터(`distinct_id`·`$session_id`·`$lib_version`·`$browser` 등), ② 예외의 구조화 필드 — 에러 클래스명(`type`)과 스택 프레임의 `filename`·`function`·`lineno`·`colno`, ③ 명시 `capture()` 호출부가 싣는 속성(`locale`·`source`·`axis`·`mode`·`stage`·`pane`·`size_bucket`·`has_inferred`·`inferred_rules`) — 전부 enum·버킷·불리언·룰팩 key다.
 
-**트레이드오프**: 숫자·JSON 블록·pipe로 이어진 id를 통째로 지우므로 예외의 실제 실패값(어느 mm에서 깨졌는지, 어느 조건 조합인지)은 프로덕션에서 볼 수 없다 — 앞의 라벨(`clearMm must be finite`·`Rule not found: <룰 key>`처럼 어느 검사가 실패했는지)만 남는다. `PaneBoundary`가 이 신호를 두는 이유(룰팩 조회 공백을 찾는 것)에는 라벨만으로 충분하고, 값까지 필요해지면 사용자에게 직접 재현 정보를 요청해야 한다. 스크러빙은 알려진 두 모양(독립 숫자·JSON 블록·pipe id)을 지우는 블랙리스트라, 아직 못 본 모양의 도메인 예외 메시지가 새로 생기면 또 구멍이 될 수 있다 — 새 throw 사이트를 추가할 때 이 관문을 통과시켜 보는 것이 검증 절차다. 회귀 방지는 `instrumentation-client.test.ts`·`PaneBoundary.test.tsx`.
+**예외 message(`$exception_list[].value`)는 통째로 버리고 `[REDACTED]` 상수로 대체한다.** URL 계열(`$current_url`·`$pathname`)과 스택 프레임의 `context_line`도 목록에 넣지 않았다. `PaneBoundary`는 같은 메시지를 resetKey 변경마다 다시 보고하지 않는다 — resetKey는 프로젝트 편집마다 바뀌므로, 안 지우면 근본 원인 하나가 무관한 편집 횟수만큼 captureException을 발화시킨다. 전송 자체는 `kijun:telemetry-opt-in` 동의 게이트 뒤에 있다(동의 UI는 아직 없어 현재는 아무것도 나가지 않는다).
+
+**이유**: `src/domain/`의 가드 함수는 실패 사유를 `` `clearMm must be finite: ${clearMm}` ``처럼 값을 문자열 보간해 던지고, `lookupRule`의 `Rule not found` 메시지는 `JSON.stringify(conditions)`로 exposure·finish 같은 문자값을, `memberGroupKey`가 만드는 그룹 id는 층 이름·符号을 담는다. 이 메시지들이 `captureException`을 타고 그대로 나가면 「사용자 도면 데이터를 서버로 보내지 말 것」(CLAUDE.md CRITICAL)의 정면 위반이다.
+
+이 ADR의 초판은 그 관문을 **블랙리스트**로 뒀다 — 예외 message에서 독립 숫자·JSON 블록·pipe id 같은 「도면 유래 모양」을 지우는 방식이다. **그 설계는 수렴하지 않았고, 그것이 지금 방향을 뒤집은 이유다.** PR #6의 리뷰 10회차 중 7회차가 같은 정규식의 새 구멍이었다: 문자값 통과 → 하이픈 id 통과 → `100..200` 범위숫자 통과 → 그리디 backtrack 반쪽매치(`D25`→`D2[REDACTED]`) → 글자 포함 토큰 통째 통과 → `$` 접두 키 면제. 마지막에는 방향이 뒤집혀 posthog의 `distinct_id`까지 지우는 과다삭제가 났다. 지울 모양의 가짓수에 상한이 없으므로 이 목록은 원리상 완성되지 않는다.
+
+결정적인 차이는 **실패 방향**이다. 블랙리스트는 못 본 모양이 생기면 데이터가 나간다(유출). 허용목록은 SDK가 필드를 추가하거나 개발자가 새 throw 사이트를 만들면 그 값이 조용히 사라진다(관측 가치 저하). 후자는 리뷰가 팔 표면도 유한하다 — 나가는 것의 목록이 코드에 이름으로 적혀 있고 그게 전부다.
+
+블랙리스트는 순수 레이어까지 오염시켰다. `storyElevation`(`src/domain/model/project.ts`)은 `Story not found: {"storyId":"RF"}`처럼 값을 JSON 블록으로 감싸 던지는데, 그 이유가 오직 「스크러버의 letter+digit 오인을 피하려고」였다 — `src/domain/`이 텔레메트리 구현 세부에 결합된 것이다. 허용목록에서는 message를 아예 싣지 않으므로 이 결합의 근거가 사라진다(원상 복구는 별건).
+
+**트레이드오프**: 예외 message의 라벨(`clearMm must be finite`처럼 어느 검사가 실패했는지)을 잃는다. 스택 프레임의 `filename`·`lineno`·`function`이 그 자리를 대신하고, 어느 가드인지만 알려주는 라벨보다 어느 줄인지 알려주는 프레임이 더 정확하다 — 다만 프로덕션 번들은 난독화되므로 이 대체가 성립하려면 **소스맵 업로드가 전제**다. 그 전까지는 `filename:lineno`가 청크 좌표로만 남는다.
+
+「어느 룰팩 key가 없는가」는 `lookupRule` 실패 message에서 읽을 수 없게 됐다. 이 계측의 목적 중 하나였으므로 손실이다 — 되찾으려면 message를 파싱하는 게 아니라 호출부가 `captureException(error, { rule_key })`처럼 **구조화 속성으로 명시해** 실어야 한다(별건). `takeoff_exported`의 `inferred_rules`는 그 경로로 이미 나가고 있다.
+
+허용목록은 유지보수 대상이다. posthog-js가 유용한 필드를 새로 추가해도 목록에 넣기 전까지는 버려진다. 이 비용은 의도적이다 — 목록에 넣는 것은 사람이 한 번 판단해서 하는 일이고, 안 넣었을 때의 결과가 유출이 아니라 누락이다. 회귀 방지는 `src/lib/telemetry.test.ts`·`PaneBoundary.test.tsx`.

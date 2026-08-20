@@ -1,72 +1,32 @@
 import type { BeforeSendFn, PostHog } from 'posthog-js'
 
 /**
- * 도면 유래 값은 예외 message에 세 모양으로 실린다.
- * ① 独立 숫자 — `clearMm must be finite: ${clearMm}` (stirrup-layout.ts).
- * ② 문자값 — lookupRule의 `Rule not found: ${key} for ${JSON.stringify(conditions)}`가
- *   담는 exposure·finish(lookup.ts)와, memberGroupKey가 만드는
- *   `${story.name}|C|${section.mark}` 형태의 그룹 id(project.ts)의 층 이름·符号.
- * ③ 하이픈 id — `Member not found for Rebar: ${rebar.memberId}`(quantity/index.ts)와
- *   `Member and section kinds do not match: ${member.id}`(project.ts)가 담는
- *   `1F-G1-X1Y2-X`·`section-G1` 형태. 断面リスト 취입이 부재 id에 符号을
- *   넣는 순간 이 경로로 유출된다.
- * ④ 범위 숫자 — `assertBounds`(geometry.ts)의 `Invalid bounds on axis ${axis}:
- *   ${min}..${max}`처럼 두 독립 숫자를 `.`로 잇는 모양. `.`을 숫자 판정에서
- *   완전히 배제하면 지워지지만, ①의 소수점(`342.5`)까지 갈라 반쪽만 지우게 된다.
+ * 이 관문은 「나가면 안 되는 것을 지운다」가 아니라 「나가도 되는 것만 싣는다」로
+ * 동작한다. 목록에 없는 키는 값을 보지 않고 버린다.
  *
- * ①②③의 모양을 통째로 지운다. 룰 key(anchorage.L1)나 D25·SD345 같은 철근
- * 규격 표기처럼 문자에 붙은 숫자, env 안내문의 "un-configured"처럼 숫자
- * 없는 하이픈 낱말은 룰팩 상수·정적 문구지 도면 값이 아니므로 남긴다 —
- * 어느 룰이 없는지가 이 계측의 목적이라 PaneBoundary가 그 라벨에 기댄다.
+ * 방향을 뒤집은 이유는 앞선 설계가 수렴하지 않았기 때문이다. 예외 message 에서
+ * 도면 유래 모양을 지우는 블랙리스트는 지울 모양의 가짓수가 무한하다 — 이 PR 의
+ * 리뷰 10 회차 중 7 회차가 같은 정규식의 새 구멍이었고(문자값 → 하이픈 id →
+ * `100..200` 범위숫자 → 그리디 backtrack 반쪽매치 → 글자 포함 토큰 → `$` 접두
+ * 키), 마지막엔 posthog 의 distinct_id 까지 지우는 과다삭제로 방향이 뒤집혔다.
+ * 못 본 모양이 생길 때마다 실패 방향이 「유출」인 설계였다.
+ *
+ * 허용목록은 반대로 실패한다. SDK 가 필드를 추가하거나 개발자가 새 throw 사이트를
+ * 만들면 그 값은 조용히 사라진다 — 관측 가치가 줄 뿐 데이터는 나가지 않는다.
  */
-function scrubDrawingText(text: string): string {
-  return text
-    .replace(/\{.*\}/g, '{REDACTED}') // JSON.stringify(conditions) 블록 (한 줄 출력이라 개행은 없다)
-    .replace(/\S*\|\S*/g, '[REDACTED]') // story.name|code|mark 형태의 그룹 id
-    .replace(/(?=\S*-)(?=\S*\d)\S+/g, '[REDACTED]') // 1F-G1-X1Y2-X·section-G1 형태의 id
-    // 나머지 독립 숫자(소수·범위 포함)를 지운다. 이전에는 lookaround
-    // `(?<![\p{L}_])[\d.]+(?![\p{L}_])`로 앞뒤 경계만 봤는데, `+`가 최대
-    // 길이를 먼저 그리디하게 시도하다 경계 실패로 한 글자씩 물러날 때
-    // run 중간에서 멈추는 backtrack 자체는 막지 못했다 — 그 결과 D25가
-    // "D2[REDACTED]"로, SD345가 "SD3[REDACTED]"로 숫자 대부분이 그대로
-    // 남는 반쪽짜리 매치가 났다(경계만 봤지 run 내부 분할은 안 봤다).
-    // 그래서 문자·숫자·밑줄·점을 먼저 한 토큰으로 통째로 묶고, 그 토큰에
-    // 글자가 하나라도 있는지로 한 번에 판정한다 — 글자가 있으면 토큰
-    // 전체를 남기고(anchorage.L1·D25는 여전히 남는다), 숫자·점만으로 된
-    // 토큰이면 통째로 지운다. 판정이 토큰 전체 단위라 부분 매치가 나올
-    // 자리가 없다.
-    .replace(/[\p{L}\d_.]+/gu, (token) =>
-      /\p{L}/u.test(token) || !/\d/.test(token) ? token : '[REDACTED]',
-    )
-}
+const REDACTED = '[REDACTED]'
 
 /**
- * $exception_list[] 원소는 진단 메타데이터(type·stacktrace 등)와 자유
- * 텍스트(value)가 섞여 있다. value만 뽑아 스크러빙하고 나머지는 손대지
- * 않는다 — 필드 이름을 나열해 "면제"하는 대신 value 하나만 "대상"으로
- * 짚으므로, SDK가 스택프레임에 새 필드(module·mechanism 등)를 추가해도
- * 값의 모양(하이픈+숫자로 보이는 빌드 산출물 경로 등)과 무관하게 안전하게
- * 남는다. type처럼 흔한 이름의 필드를 이 배열 밖 다른 곳에서 만나도(9차
- * 리뷰 major) 여기서는 건드리지 않는다 — 이 destructure는 오직
- * $exception_list의 원소에만 적용된다.
+ * 최상위 property 중 브라우저 밖으로 나갈 수 있는 것.
+ *
+ * URL 계열($current_url·$pathname·$referrer)은 일부러 뺐다. 이 앱은 단일 경로라
+ * 얻는 정보가 없는데, 나중에 프로젝트 식별자가 쿼리스트링에 실리면 그대로 유출
+ * 경로가 된다.
  */
-function scrubExceptionListEntry(entry: unknown): unknown {
-  if (entry === null || typeof entry !== 'object') return entry
-  const { value, ...rest } = entry as Record<string, unknown>
-  return {
-    ...rest,
-    value: typeof value === 'string' ? scrubDrawingText(value) : value,
-  }
-}
-
-/**
- * posthog-js가 이벤트마다 top-level properties에 싣는 고정 메타데이터.
- * "$로 시작하면 예약 속성"이라는 모양 규칙은(10차 리뷰 major) SDK
- * 업그레이드나 수집기 재활성화로 생기는 미지의 $ 속성($elements_chain
- * 등, 도면 유래 텍스트를 담을 수 있다)까지 함께 면제해버린다 — 이름을
- * 아는 것만 면제하는 허용목록으로 좁힌다.
- */
-const RESERVED_TOP_LEVEL_KEYS = new Set([
+const ALLOWED_PROPERTY_KEYS: ReadonlySet<string> = new Set([
+  // posthog-js 가 이벤트마다 싣는 식별·환경 메타데이터. 사용자를 세고 재현
+  // 환경을 아는 데 필요하고, 어느 것도 도면 유래가 아니다.
+  'distinct_id',
   '$session_id',
   '$device_id',
   '$window_id',
@@ -76,57 +36,123 @@ const RESERVED_TOP_LEVEL_KEYS = new Set([
   '$sent_at',
   '$insert_id',
   '$os',
+  '$os_version',
   '$browser',
   '$browser_version',
+  // 예외 이벤트의 구조화 필드. $exception_list 는 아래 allowExceptionEntry 가
+  // 한 겹 더 거른다. level·handled 는 열거값·불리언이다.
+  '$exception_list',
+  '$exception_level',
+  '$exception_handled',
+  // 명시 capture 호출부가 싣는 속성. 전부 enum(locale·source·axis·mode·stage·
+  // pane)·버킷(size_bucket)·불리언(has_inferred)·룰팩 key 배열(inferred_rules)
+  // 이라 호출부에서 이미 도면 값이 실릴 자리가 없다.
+  'locale',
+  'source',
+  'axis',
+  'mode',
+  'stage',
+  'pane',
+  'size_bucket',
+  'has_inferred',
+  'inferred_rules',
 ])
 
 /**
- * properties를 재귀로 훑어 만나는 모든 문자열에 scrubDrawingText를
- * 적용한다 — posthog-js가 예외 텍스트를 $exception_list[].value 하나가
- * 아니라 $exception_message 같은 중복 필드에도 싣기 때문이다. topLevel일
- * 때만(즉 properties의 직계 자식일 때만) RESERVED_TOP_LEVEL_KEYS를 지나친다
- * — 깊이와 무관하게 면제하면(9차 리뷰 major) 중첩된 곳의 우연한 $ 키까지
- * 스크러빙을 피해가므로, 이 예외는 최상위 한 겹에만 적용한다.
+ * 스택 프레임에서 남길 필드. 전부 빌드 산출물 유래(번들 경로·소스 식별자·행열
+ * 번호)라 도면 값이 실릴 자리가 없다.
+ *
+ * context_line·pre_context·post_context 는 없다 — 소스맵을 붙이면 posthog 가
+ * 실을 수 있는 필드인데, 그 한 줄이 곧 `throw new Error(...)` 원문이라 보간 전
+ * 템플릿이 아니라 보간 후 값이 실릴 수 있다.
  */
-function scrubDrawingDeep(value: unknown, topLevel = false): unknown {
-  if (typeof value === 'string') return scrubDrawingText(value)
-  if (Array.isArray(value)) return value.map((entry) => scrubDrawingDeep(entry))
-  if (value !== null && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => {
-        if (topLevel && RESERVED_TOP_LEVEL_KEYS.has(key)) {
-          return [key, entry]
-        }
-        if (key === '$exception_list' && Array.isArray(entry)) {
-          return [key, entry.map(scrubExceptionListEntry)]
-        }
-        return [key, scrubDrawingDeep(entry)]
-      }),
-    )
-  }
-  return value
+const ALLOWED_FRAME_KEYS: ReadonlySet<string> = new Set([
+  'filename',
+  'function',
+  'lineno',
+  'colno',
+  'in_app',
+  'platform',
+  'lang',
+  'resolved',
+])
+
+function pickAllowed(
+  source: Record<string, unknown>,
+  allowed: ReadonlySet<string>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(source).filter(([key]) => allowed.has(key)),
+  )
+}
+
+function allowFrame(frame: unknown): Record<string, unknown> {
+  if (frame === null || typeof frame !== 'object') return {}
+  return pickAllowed(frame as Record<string, unknown>, ALLOWED_FRAME_KEYS)
+}
+
+function allowStacktrace(stacktrace: unknown): Record<string, unknown> | null {
+  if (stacktrace === null || typeof stacktrace !== 'object') return null
+
+  const { type, frames } = stacktrace as Record<string, unknown>
+  const allowed: Record<string, unknown> = {}
+  // 'raw' | 'resolved' — posthog 가 소스맵 적용 여부를 판단하는 열거값이다.
+  if (typeof type === 'string') allowed.type = type
+  if (Array.isArray(frames)) allowed.frames = frames.map(allowFrame)
+  return allowed
 }
 
 /**
- * capture_exceptions가 未捕捉 예외를 스크러빙 없이 잡아 보내면 사용자 도면
- * 데이터가 서버로 나간다 (CLAUDE.md CRITICAL — 이 관문의 근거는 ADR-020).
- * posthog-js의 모든 capture·captureException이 여길 거치므로, 호출부마다
- * 흩어놓지 않고 여기 하나로 모은다.
+ * value 는 개발자가 문자열 보간으로 만든 자유 텍스트다 — `clearMm must be
+ * finite: ${clearMm}`(stirrup-layout.ts:14)처럼 라벨과 도면 값이 한 문자열에
+ * 섞여 있어 값만 골라낼 방법이 없다. 통째로 버리고 상수로 대체한다.
  *
- * event 종류로 가르지 않고 모든 이벤트에 같은 관문을 적용한다 — 이전에는
- * event !== '$exception'이면 무조건 통과시켜, capture() 호출부가 실수로
- * 도면 값을 실어도 걸러지지 않았다. properties를 통째로 재귀 처리하므로
- * $exception_list가 배열이 아닌 모양이어도(SDK 버전 변화 등) 원문을 그대로
- * 통과시키지 않는다.
+ * 그 대가로 「어느 검사가 실패했는지」를 잃지만, stacktrace 의 filename·lineno·
+ * function 이 그 자리를 대신하고 그쪽이 더 정확하다 — 라벨은 어느 가드인지만
+ * 알려주고 프레임은 어느 줄인지 알려준다.
  */
-const scrubDrawingDigits: BeforeSendFn = (captureResult) => {
+function allowExceptionEntry(entry: unknown): Record<string, unknown> {
+  const allowed: Record<string, unknown> = { value: REDACTED }
+  if (entry === null || typeof entry !== 'object') return allowed
+
+  const { type, stacktrace } = entry as Record<string, unknown>
+  // 에러 클래스명. 코드의 고정 식별자라 보간될 자리가 없다.
+  if (typeof type === 'string') allowed.type = type
+  const allowedStacktrace = allowStacktrace(stacktrace)
+  if (allowedStacktrace) allowed.stacktrace = allowedStacktrace
+  return allowed
+}
+
+function allowProperties(properties: unknown): Record<string, unknown> {
+  if (properties === null || typeof properties !== 'object') return {}
+
+  const allowed: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(
+    properties as Record<string, unknown>,
+  )) {
+    if (!ALLOWED_PROPERTY_KEYS.has(key)) continue
+    if (key === '$exception_list') {
+      // 배열이 아닌 모양으로 오면(SDK 버전 변화) 원문을 통과시키지 않고 버린다.
+      if (Array.isArray(value)) allowed[key] = value.map(allowExceptionEntry)
+      continue
+    }
+    allowed[key] = value
+  }
+  return allowed
+}
+
+/**
+ * posthog-js 의 모든 capture·captureException 이 여길 거친다 (ADR-020). 이벤트
+ * 종류로 가르지 않고 전부 같은 관문을 통과시킨다 — $exception 만 거르면 capture()
+ * 호출부가 실수로 도면 값을 실었을 때 걸러지지 않는다.
+ */
+const allowOutgoingProperties: BeforeSendFn = (captureResult) => {
   if (captureResult === null) return captureResult
 
   return {
     ...captureResult,
-    properties: scrubDrawingDeep(
+    properties: allowProperties(
       captureResult.properties,
-      true,
     ) as typeof captureResult.properties,
   }
 }
@@ -229,18 +255,14 @@ function loadClient(): Promise<PostHog | null> {
       // 원격 설정(/flags)이 코드 변경 없이 autocapture 등을 되살릴 수
       // 있다 — 잠금 고정 버전(package.json)에 더해 이 채널도 끈다.
       advanced_disable_flags: true,
-      // 모든 capture·captureException 호출이 여길 거친다 — 스크러빙 지점을
-      // 호출부마다 흩어놓지 않고 여기 하나로 모은다. 남는 잔여 위험은
-      // scrubDrawingText 자체가 블랙리스트라는 점이다 — 화이트리스트로
-      // 바꾸려면 이 리포가 쓰는 모든 정적 라벨 키를 유지보수 목록으로
-      // 못박아야 하는데, $exception_list[].value처럼 개발자가 문자열
-      // 보간으로 던지는 자유 텍스트는 애초에 어떤 키 화이트리스트로도
-      // 막지 못한다(값 자체를 걸러야 한다) — anchorage.L1·D25 같은 룰팩
-      // 상수와 계측 목적상 남겨야 하는 라벨(어느 룰이 없는지)까지
-      // 함께 잘려나간다. 이 트레이드오프는 ADR-020이 이미 검토해
-      // 받아들인 것이다. 대신 loadClient()의 동의 게이트가 스크러버가
-      // 뚫리는 경우의 노출 범위를 "opt-in한 사용자"로 좁힌다.
-      before_send: scrubDrawingDigits,
+      // 모든 capture·captureException 호출이 여길 거친다 — 관문을 호출부마다
+      // 흩어놓지 않고 여기 하나로 모은다. 파일 상단의 허용목록이 나갈 수 있는
+      // 것을 이름으로 못박고, 목록 밖은 값을 보지 않고 버린다.
+      //
+      // 이전 판은 반대 방향(나가면 안 되는 모양을 지우는 블랙리스트)이었고
+      // 수렴하지 않았다 — 상단 주석에 그 경위를 남겼다. loadClient() 의 동의
+      // 게이트가 이 관문과 별개의 두 번째 방어선이다.
+      before_send: allowOutgoingProperties,
     })
     return posthog
   })

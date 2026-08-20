@@ -26,13 +26,16 @@ tests/
 템플릿에 있던 `services/`(외부 API 래퍼)는 두지 않는다.
 
 외부 API 호출은 둘뿐이다. **서버 쪽**은 운영 알림 수신 라우트(`app/api/oncall`)의
-GitHub API 호출이다 (ADR-017). **브라우저 쪽**은 `instrumentation-client.ts`의
+GitHub API 호출이다 (ADR-017). **브라우저 쪽**은 `src/lib/telemetry.ts`의
 PostHog 계측이다 (ADR-020) — `capture()`·`captureException()`은 룰팩 key·화면
 이름·개수 같은 정적 라벨만 싣는다. `before_send`가 모든 이벤트의 유일한 관문으로
-서서 `$exception_list[].value`의 숫자를 지운다 — `src/domain/rebar/`의 조회
-실패 메시지가 도면 유래 mm 치수를 문자열 보간으로 담기 때문이다(예:
-`clearMm must be finite: ${clearMm}`). 도면 데이터를 서버로 보내지 않는다는
-CLAUDE.md CRITICAL 규칙은 이 경로에도 그대로 적용된다.
+서되 **허용목록으로 동작한다** — 이름을 아는 키만 통과시키고 나머지는 값을 보지
+않고 버린다. 예외 message(`$exception_list[].value`)는 아예 싣지 않는다:
+`src/domain/rebar/`의 조회 실패 메시지가 도면 유래 mm 치수를 문자열 보간으로
+담고(예: `clearMm must be finite: ${clearMm}`), 라벨과 값이 한 문자열에 섞여
+있어 값만 골라낼 방법이 없기 때문이다. 위치는 스택 프레임이 대신한다. 도면
+데이터를 서버로 보내지 않는다는 CLAUDE.md CRITICAL 규칙은 이 경로에도 그대로
+적용된다.
 
 `types/`를 따로 두지 않고 `domain/model/`에 둔다. 타입과 그 타입을 다루는 순수 함수가 붙어 있는 편이 낫다.
 

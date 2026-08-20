@@ -225,20 +225,34 @@ describe('telemetry', () => {
     })
   })
 
-  describe('before_send scrubbing', () => {
-    // src/domain/rebar/의 조회 실패 메시지는 도면 유래 mm 치수를 문자열 보간으로
-    // 담는다(예: `clearMm must be finite: ${clearMm}`). capture_exceptions가 이걸
-    // 스크러빙 없이 잡아 보내면 CLAUDE.md CRITICAL을 어긴다. before_send가 그
-    // 유일한 관문이다(ADR-020).
-    it('redacts drawing-derived digits from exception messages before they leave the browser', async () => {
+  // ADR-020 은 이 관문을 「예외 message 에서 도면 유래 모양을 지우는」 블랙리스트로
+  // 뒀다. 그 설계는 지울 모양의 가짓수가 무한해 수렴하지 않았다 — PR #6 의 리뷰
+  // 10 회차 중 7 회차가 같은 함수의 새 구멍이었고(문자값 → 하이픈 id → 100..200
+  // 범위숫자 → 그리디 backtrack 반쪽매치 → 글자 포함 토큰 → $ 접두 키), 마지막엔
+  // distinct_id 까지 지우는 과다삭제로 방향이 뒤집혔다. 실패 방향이 「유출」인
+  // 설계라 못 본 모양이 생길 때마다 데이터가 나간다.
+  //
+  // 관문을 뒤집는다. 자유 텍스트는 지우는 게 아니라 애초에 싣지 않고, 실을 것만
+  // 이름으로 못박는다. 목록 밖은 전부 버려지므로 SDK 가 새 필드를 추가하거나
+  // 개발자가 새 throw 사이트를 만들어도 기본값이 「안 나간다」이다 — 실패 방향이
+  // 유출이 아니라 관측 가치 저하다.
+  //
+  // 잃는 것: 예외 message 의 라벨(어느 검사가 실패했는지). 스택 프레임의
+  // filename·lineno·function 이 그 자리를 대신하고, 그쪽이 더 정확하다 — 라벨은
+  // 어느 가드인지만 알려주지만 프레임은 어느 줄인지 알려준다.
+  describe('before_send allowlist', () => {
+    const beforeSendOf = () => init.mock.calls[0][1].before_send
+
+    // 진원지. `clearMm must be finite: ${clearMm}`(stirrup-layout.ts:14) 같은
+    // 자유 텍스트는 라벨과 값이 한 문자열에 섞여 있어 값만 골라낼 방법이 없다.
+    // 통째로 버린다.
+    it('drops the free-text exception message entirely, label and all', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
+      const captured = beforeSendOf()({
         uuid: 'u1',
         event: '$exception',
         properties: {
-          pane: 'quantity-body',
           $exception_list: [
             {
               type: 'Error',
@@ -249,255 +263,17 @@ describe('telemetry', () => {
         },
       })
 
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'clearMm must be finite: [REDACTED]',
-      )
+      expect(captured.properties.$exception_list[0].value).toBe('[REDACTED]')
       expect(captured.properties.$exception_list[0].type).toBe('Error')
-      expect(captured.properties.$exception_list[0].stacktrace).toEqual({
-        frames: [{ filename: 'stirrup-layout.ts', lineno: 14 }],
-      })
-      expect(captured.properties.pane).toBe('quantity-body')
     })
 
-    it('redacts the JSON conditions blob in rule-lookup failures, not just digits', async () => {
+    // message 를 버린 대가로 이쪽이 유일한 위치 정보가 된다. 전부 빌드 산출물
+    // 유래라 도면 값이 실릴 자리가 없다.
+    it('keeps stack-frame metadata, which replaces the discarded message', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u3',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            {
-              type: 'Error',
-              value:
-                'Rule not found: measure.splice.interval for {"exposure":"屋外","finish":"打放し"}',
-            },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Rule not found: measure.splice.interval for {REDACTED}',
-      )
-    })
-
-    it('redacts pipe-joined group ids in quantity aggregation failures', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u4',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            {
-              type: 'Error',
-              value:
-                'Inconsistent size or shape in quantity group 1階|C|C1|主筋|1000|12',
-            },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Inconsistent size or shape in quantity group [REDACTED]',
-      )
-    })
-
-    // 9차 리뷰 critical 지적: letter+digit 토큰(D25·anchorage.L1 같은 룰팩
-    // 상수)을 통째로 남기는 규칙이, 같은 모양인 階 라벨(1F 등)도 함께
-    // 살려 보낸다 — project.ts 등 10곳의 "Story not found: ${storyId}"가
-    // 정확히 이 모양이었다. 룰팩 상수와 도면 라벨은 값의 모양만으로
-    // 구분할 수 없으므로(둘 다 letter+digit), 스크러버가 아니라 호출부를
-    // 고쳐 JSON 블록으로 감싼다 — lookupRule의 Rule not found 메시지가
-    // 이미 쓰는 관례와 같다.
-    it('redacts a story id wrapped as a JSON block, unlike a bare letter+digit label', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u15',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            {
-              type: 'Error',
-              value: 'Story not found: {"storyId":"1F"}',
-            },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Story not found: {REDACTED}',
-      )
-    })
-
-    it('keeps digits attached to letters, like rule keys and bar sizes', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u5',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            { type: 'Error', value: 'Rule not found: anchorage.L1' },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Rule not found: anchorage.L1',
-      )
-    })
-
-    it('redacts hyphenated ids that carry digits, like member and section ids', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u6',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            { type: 'Error', value: 'Member not found for Rebar: 1F-G1-X1Y2-X' },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Member not found for Rebar: [REDACTED]',
-      )
-    })
-
-    it('keeps hyphenated words that carry no digits', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u7',
-        event: '$exception',
-        properties: {
-          $exception_list: [{ type: 'Error', value: 'value is un-configured' }],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'value is un-configured',
-      )
-    })
-
-    it('redacts a numeric range joined by two dots', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u8',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            { type: 'Error', value: 'Invalid bounds on axis 0: 100.25..200.5' },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Invalid bounds on axis [REDACTED]: [REDACTED]',
-      )
-    })
-
-    it('does not leak a partial digit when a multi-digit value directly touches a letter', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u9',
-        event: '$exception',
-        properties: {
-          $exception_list: [
-            { type: 'Error', value: 'Invalid BarSize: D25, grade SD345' },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'Invalid BarSize: D25, grade SD345',
-      )
-    })
-
-    it('redacts drawing-derived text that posthog-js duplicates outside $exception_list', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u10',
-        event: '$exception',
-        properties: {
-          $exception_message: 'clearMm must be finite: 342.5',
-          $exception_type: 'Error',
-          $exception_list: [
-            { type: 'Error', value: 'clearMm must be finite: 342.5' },
-          ],
-        },
-      })
-
-      expect(captured.properties.$exception_message).toBe(
-        'clearMm must be finite: [REDACTED]',
-      )
-      expect(captured.properties.$exception_type).toBe('Error')
-    })
-
-    it('still scrubs drawing-derived text when $exception_list is absent or malformed', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u11',
-        event: '$exception',
-        properties: {
-          $exception_message: 'Member not found for Rebar: 1F-G1-X1Y2-X',
-        },
-      })
-
-      expect(captured.properties.$exception_message).toBe(
-        'Member not found for Rebar: [REDACTED]',
-      )
-    })
-
-    it('leaves static, non-drawing labels on non-exception events unchanged', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const event = {
+      const captured = beforeSendOf()({
         uuid: 'u2',
-        event: 'member_selected',
-        properties: { source: 'viewer' },
-      }
-
-      expect(beforeSend(event)).toEqual(event)
-    })
-
-    it('also scrubs drawing-derived text on non-exception events, not only $exception', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u12',
-        event: 'member_selected',
-        properties: { groupId: '1階|C|C1' },
-      })
-
-      expect(captured.properties.groupId).toBe('[REDACTED]')
-    })
-
-    it('preserves stack-frame metadata even when filenames look like hyphenated ids', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u13',
         event: '$exception',
         properties: {
           $exception_list: [
@@ -505,6 +281,7 @@ describe('telemetry', () => {
               type: 'Error',
               value: 'clearMm must be finite: 342.5',
               stacktrace: {
+                type: 'raw',
                 frames: [
                   {
                     filename: '/_next/static/chunks/app-page-4f2a1b.js',
@@ -512,6 +289,7 @@ describe('telemetry', () => {
                     lineno: 14,
                     colno: 8,
                     in_app: true,
+                    platform: 'web:javascript',
                   },
                 ],
               },
@@ -520,10 +298,8 @@ describe('telemetry', () => {
         },
       })
 
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'clearMm must be finite: [REDACTED]',
-      )
       expect(captured.properties.$exception_list[0].stacktrace).toEqual({
+        type: 'raw',
         frames: [
           {
             filename: '/_next/static/chunks/app-page-4f2a1b.js',
@@ -531,104 +307,176 @@ describe('telemetry', () => {
             lineno: 14,
             colno: 8,
             in_app: true,
+            platform: 'web:javascript',
           },
         ],
       })
     })
 
-    it('preserves PostHog reserved $-prefixed properties like session and device ids', async () => {
+    // 기본값이 「안 나간다」임을 고정하는 테스트다. 블랙리스트에서는 SDK 가 필드를
+    // 하나 늘릴 때마다 새 구멍이었다. context_line 은 소스맵을 붙이면 posthog 가
+    // 실제로 실을 수 있는 필드이고, 그 한 줄이 곧 throw 문 원문이다.
+    it('drops a stack-frame field it does not know, even one that looks harmless', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u14',
+      const captured = beforeSendOf()({
+        uuid: 'u3',
         event: '$exception',
         properties: {
-          $session_id: '018f4b2a-7e3d-7000-8000-1234567890ab',
-          $device_id: '018f4b2a-7e3d-7000-8000-abcdef123456',
-          $lib_version: '1.417.4',
-          $exception_list: [{ type: 'Error', value: 'boom: 42' }],
+          $exception_list: [
+            {
+              type: 'Error',
+              stacktrace: {
+                frames: [
+                  {
+                    filename: 'a.js',
+                    lineno: 1,
+                    context_line: 'clearMm must be finite: 342.5',
+                  },
+                ],
+              },
+            },
+          ],
         },
       })
 
-      expect(captured.properties.$session_id).toBe(
-        '018f4b2a-7e3d-7000-8000-1234567890ab',
-      )
-      expect(captured.properties.$device_id).toBe(
-        '018f4b2a-7e3d-7000-8000-abcdef123456',
-      )
-      expect(captured.properties.$lib_version).toBe('1.417.4')
-      expect(captured.properties.$exception_list[0].value).toBe(
-        'boom: [REDACTED]',
-      )
-    })
-
-    // 10차 리뷰 major 지적: 최상위 $ 접두 면제가 예약 속성 "이름 목록"이
-    // 아니라 "$로 시작하는 모양"이라, SDK 업그레이드나 수집기 재활성화로
-    // 생기는 미지의 $ 속성($elements_chain 등)도 그대로 통과한다.
-    it('does not exempt an unrecognised top-level $-prefixed key', async () => {
-      await loadTelemetry()
-
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u18',
-        event: '$autocapture',
-        properties: {
-          $elements_chain: 'Rule not found: anchorage.L1 for 1F-G1',
-        },
+      expect(captured.properties.$exception_list[0].stacktrace.frames[0]).toEqual({
+        filename: 'a.js',
+        lineno: 1,
       })
-
-      expect(captured.properties.$elements_chain).toBe(
-        'Rule not found: anchorage.L1 for [REDACTED]',
-      )
     })
 
-    // 9차 리뷰 major 지적: "$ 접두 키는 항상 SDK 예약 속성"이라는 면제가
-    // 깊이와 무관하게 적용되면, properties 안쪽 어딘가에 우연히 $로
-    // 시작하는 키가 있어도(도면 데이터를 담고 있어도) 그대로 샌다. 예외
-    // 없이 스크러빙되는지 top-level이 아닌 자리에서 확인한다.
-    it('does not exempt a $-prefixed key that appears below the top level', async () => {
+    // $elements_chain 은 autocapture 를 끈 지금은 안 실리지만, 원격 설정이나 SDK
+    // 업그레이드로 되살아나면 부재 aria-label 과 平面 SVG 좌표를 담는다. 이름을
+    // 모르는 키를 버리는 설계에서는 이 사고가 성립하지 않는다.
+    it('drops an unknown top-level property such as a revived $elements_chain', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u16',
+      const captured = beforeSendOf()({
+        uuid: 'u4',
         event: '$exception',
         properties: {
-          context: { $sectionMark: 'Member not found for Rebar: 1F-G1-X1Y2-X' },
+          $session_id: 's1',
+          $elements_chain: 'button:text="1F-G1-X1Y2 G1"',
+          $exception_list: [],
         },
       })
 
-      expect(captured.properties.context.$sectionMark).toBe(
-        'Member not found for Rebar: [REDACTED]',
-      )
+      expect(captured.properties.$session_id).toBe('s1')
+      expect('$elements_chain' in captured.properties).toBe(false)
     })
 
-    // 같은 지적의 또 다른 면: type·filename처럼 stacktrace 프레임에서 쓰는
-    // 흔한 이름의 키가 $exception_list 밖에 있으면 스크러빙 대상이어야
-    // 한다 — scrubExceptionListEntry는 오직 $exception_list의 원소에만
-    // 적용되므로, 밖에서는 "이름이 겹친다"는 이유로 면제되지 않는다.
-    it('does not exempt a generic stack-frame-like key outside $exception_list', async () => {
+    // posthog-js 가 예외 텍스트를 $exception_list 밖에 중복으로 싣는 경로.
+    // 이름을 모르므로 그냥 없어진다 — 지울 모양을 따로 배울 필요가 없다.
+    it('drops a duplicated exception message carried outside $exception_list', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-      const captured = beforeSend({
-        uuid: 'u17',
-        event: 'member_selected',
-        properties: { filename: 'Rule not found: anchorage.L1 for 1F-G1' },
+      const captured = beforeSendOf()({
+        uuid: 'u5',
+        event: '$exception',
+        properties: {
+          $exception_message: 'Rule not found: anchorage.L1 for {"exposure":"x"}',
+          $exception_list: [],
+        },
       })
 
-      expect(captured.properties.filename).toBe(
-        'Rule not found: anchorage.L1 for [REDACTED]',
-      )
+      expect('$exception_message' in captured.properties).toBe(false)
+    })
+
+    // distinct_id 가 스크러빙에 지워져 전 이벤트가 한 사용자로 합쳐지던 10 회차
+    // major 의 회귀 방지. 허용목록은 통과시킨 값을 손대지 않으므로 원리상
+    // 재발하지 않는다.
+    it('leaves allowed identity and metadata values byte-for-byte', async () => {
+      await loadTelemetry()
+
+      const captured = beforeSendOf()({
+        uuid: 'u6',
+        event: '$exception',
+        properties: {
+          distinct_id: '0198f2c1-4d3e-7a00-8b1c-2f9e6a5d4c3b',
+          $session_id: '0198f2c1-aaaa',
+          $device_id: '0198f2c1-bbbb',
+          $lib_version: '1.297.3',
+          $browser_version: '141.0.0',
+          $exception_list: [],
+        },
+      })
+
+      expect(captured.properties).toMatchObject({
+        distinct_id: '0198f2c1-4d3e-7a00-8b1c-2f9e6a5d4c3b',
+        $session_id: '0198f2c1-aaaa',
+        $device_id: '0198f2c1-bbbb',
+        $lib_version: '1.297.3',
+        $browser_version: '141.0.0',
+      })
+    })
+
+    // 명시 capture 의 속성은 전부 enum·버킷·불리언·룰팩 key 라 호출부에서 이미
+    // 안전하다. 관문이 그걸 다시 망가뜨리지 않는지 본다.
+    it('keeps the properties the explicit capture call sites send', async () => {
+      await loadTelemetry()
+
+      const captured = beforeSendOf()({
+        uuid: 'u7',
+        event: 'takeoff_exported',
+        properties: {
+          locale: 'ja',
+          source: 'viewer',
+          axis: 'x',
+          mode: 'building',
+          stage: 'takeoff_export',
+          pane: 'quantity-body',
+          size_bucket: '100-999',
+          has_inferred: true,
+          inferred_rules: ['anchorage.L1', 'lap.L1'],
+        },
+      })
+
+      expect(captured.properties).toEqual({
+        locale: 'ja',
+        source: 'viewer',
+        axis: 'x',
+        mode: 'building',
+        stage: 'takeoff_export',
+        pane: 'quantity-body',
+        size_bucket: '100-999',
+        has_inferred: true,
+        inferred_rules: ['anchorage.L1', 'lap.L1'],
+      })
+    })
+
+    // URL 계열은 허용목록에 넣지 않았다. 이 앱은 단일 경로라 얻는 게 없는데,
+    // 나중에 프로젝트 식별자가 쿼리스트링에 실리면 그대로 유출 경로가 된다.
+    it('drops url-shaped properties, which buy nothing on a single-page tool', async () => {
+      await loadTelemetry()
+
+      const captured = beforeSendOf()({
+        uuid: 'u8',
+        event: 'section_edited',
+        properties: { $current_url: 'https://example.test/?project=1F-G1', $pathname: '/' },
+      })
+
+      expect(captured.properties).toEqual({})
+    })
+
+    // $exception_list 가 배열이 아닌 모양으로 오면(SDK 버전 변화) 원문을
+    // 통과시키지 않고 버린다.
+    it('drops a malformed $exception_list instead of passing it through', async () => {
+      await loadTelemetry()
+
+      const captured = beforeSendOf()({
+        uuid: 'u9',
+        event: '$exception',
+        properties: { $exception_list: 'clearMm must be finite: 342.5' },
+      })
+
+      expect('$exception_list' in captured.properties).toBe(false)
     })
 
     it('passes through a null capture result', async () => {
       await loadTelemetry()
 
-      const beforeSend = init.mock.calls[0][1].before_send
-
-      expect(beforeSend(null)).toBeNull()
+      expect(beforeSendOf()(null)).toBeNull()
     })
   })
 })

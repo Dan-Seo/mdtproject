@@ -97,11 +97,11 @@ describe('storyElevation', () => {
     expect(storyElevation([stories[0]], '1F')).toBe(0)
   })
 
-  // storyId를 그냥 보간하면(예: "Story not found: 1F") 텔레메트리
-  // 스크러버가 letter+digit 토큰을 룰팩 상수(D25 등)로 오인해 그대로
-  // 통과시킨다 — 階 라벨도 断面リスト 취입으로 도면에서 들어오는 값이라
-  // JSON 블록으로 감싸 기존 스크러빙 규칙(JSON.stringify(conditions)와
-  // 같은 관례)에 걸리게 한다.
+  // 階 라벨은 断面リスト 취입으로 도면에서 들어오는 값이라 메시지에 맨몸으로
+  // 싣지 않고 JSON 블록으로 감싼다. 원래는 텔레메트리 스크러버(블랙리스트)가
+  // letter+digit 토큰을 룰팩 상수로 오인해 통과시키는 것을 피하려는 조치였다.
+  // ADR-020이 허용목록으로 바뀌어 예외 message 자체가 안 나가므로 그 결합은
+  // 사라졌다 — 이 모양을 되돌리는 것은 별건이다.
   it('throws on an unknown story id with the id wrapped as a JSON block', () => {
     expect(() => storyElevation(stories, 'RF')).toThrow(
       'Story not found: {"storyId":"RF"}',
