@@ -751,6 +751,39 @@ describe('parseSectionLists (synthetic)', () => {
     expect(candidate(columns, 'C1', '2F').issues).toContain('断面矩形不成立')
   })
 
+  // 자기 행 범위를 슬라이스의 endY 로 끊으면 최하층에서만 규칙이 깨진다 —
+  // 호출부가 마지막 슬라이스의 endY 를 tableBottom(= 표 바닥 행 자신의 y)으로
+  // 자르므로 배타 상한이 그 행을 빼버려 lastRowY 가 한 행 위로 밀린다.
+  // 여기서는 2F 의 断面(152)과 主筋(164) 사이에 낀 런이 최하층이라는 이유만으로
+  // 폐기된다 — 같은 기하가 중간 층이면 확정된다 (#61 리뷰 major)
+  it('keeps a run between the last two rows of the bottom story', () => {
+    const parsed = parseSectionLists({
+      widthPt: 400,
+      heightPt: 300,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: 'C2', x: 240, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 40, w: 10, h: 8 },
+        { str: '700', x: 110, y: 52, w: 24, h: 8 },
+        { str: '主筋', x: 10, y: 64, w: 20, h: 8 },
+        { str: '16-D25', x: 105, y: 64, w: 36, h: 8 },
+        { str: '2F', x: 10, y: 140, w: 10, h: 8 },
+        { str: '800', x: 110, y: 152, w: 24, h: 8 },
+        // 2F 断面(152)과 主筋(164) 사이 — 표의 마지막 행이 바로 아래다
+        { str: '5', x: 160, y: 161, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 158, w: 3, h: 6, rot: -90 },
+        { str: '0', x: 160, y: 155, w: 3, h: 6, rot: -90 },
+        { str: '主筋', x: 10, y: 164, w: 20, h: 8 },
+        { str: '18-D25', x: 105, y: 164, w: 36, h: 8 },
+      ],
+    })
+    const columns = list(parsed, '柱リスト')
+
+    expect([candidate(columns, 'C1', '2F').b, candidate(columns, 'C1', '2F').d]).toEqual([800, 500])
+  })
+
   // 거리 상한의 **폐기** 경로를 고정한다. 대역 안 런은 distance가 0이라 상한이
   // 무조건 참이므로, 폐기를 지키려면 앵커가 대역 밖인 기하가 필요하다. 여기서는
   // 2F가 마지막 슬라이스라 endY가 표 바닥(164)으로 클램프되어 span=24·상한=12이고,

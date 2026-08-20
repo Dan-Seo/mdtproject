@@ -1022,9 +1022,14 @@ function verticalsBySlice(
     // (실측 7.68~13.46pt, 5면 51건) 자기 블록의 첫 행보다도 위다 — 이 규칙에
     // 걸리지 않는다. 빈칸 위쪽에 뜬 숫자는 임자를 가릴 근거가 없으니 확정하지
     // 않고 원문으로 남긴다 (R10, PR #61 리뷰 major)
+    // 자기 행의 범위는 endY 가 아니라 **다음 슬라이스의 startY** 로 끊는다.
+    // 호출부가 마지막 슬라이스의 endY 를 tableBottom(= 표 바닥 행 자신의 y)으로
+    // 자르므로, endY 를 배타 상한으로 쓰면 그 행이 빠져 최하층에서만 lastRowY 가
+    // 한 행 위로 밀린다 (PR #61 리뷰 major)
+    const bandEnd = slices[best + 1]?.startY ?? Number.POSITIVE_INFINITY
     const lastRowY = rows.reduce(
       (last, row) =>
-        row.y >= slices[best].startY && row.y < slices[best].endY && row.y > last
+        row.y >= slices[best].startY && row.y < bandEnd && row.y > last
           ? row.y
           : last,
       slices[best].startY,
