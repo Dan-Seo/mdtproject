@@ -32,6 +32,23 @@
 //
 // 값을 **올릴 때는 근거를 함께 적을 것** — 래칫은 한 방향으로만 조여야 의미가 있다.
 // 최적화로 값이 내려가면 그 자리에서 예산도 같이 조인다.
+//
+// ── 2026-08-20 재산정 (script 315,000 → 337,000 / count 10 → 13 / total 430,000 → 457,000)
+// 러너 실측(3회 동일값). 앞 판은 run 32250937490(08-19 12:06, 마지막 초록),
+// 뒤 판은 run 32333928288:
+//   script 314,550 B (9 요청) → 320,965 B (12)   total 428,146 B (15) → 435,719 B (19)
+//   TBT 중앙값 18,791ms → 14,729ms
+// 늘어난 6,415 B의 출처는 셋이고 전부 설명된다:
+//   - #48 three 청크 분리 +3,905 B — Viewer3D(869)·three 유틸(981)·dynamic 로더(121)로
+//     갈라지며 요청이 3개 늘었다. 그 대가로 TBT가 22% 내려갔다(−4,062ms). 전송 바이트를
+//     주고 블로킹 시간을 산 것이라 되돌리지 않는다 — 이 래칫이 막으려는 「무심코 커짐」이
+//     아니다.
+//   - #50 R9①(柱主筋 최상단 先端 계상) +211 B
+//   - #6 PostHog 계측 +2,299 B — global-error 청크(999 B)와 부트 엔트리 증가분이다.
+//     SDK 자체는 동적 청크로 갈라져 초기 로드에 없다(ADR-020).
+// 앞 판의 여유는 script 450 B·total 1,854 B뿐이었다 — 래칫이 조여진 게 아니라 다음
+// 변경이 무엇이든 깨지는 상태였고, 실제로 세 PR이 연달아 넘겼다. 새 값은 같은 방식
+// (실측 + 약 5%)으로 다시 잡았다.
 module.exports = {
   ci: {
     collect: {
@@ -63,10 +80,11 @@ module.exports = {
         'categories:seo': ['error', { minScore: 1 }],
 
         // 번들 래칫. 실측 + 약 5% 여유 — three.js를 무심코 초기 로드에 더 끌어오면 걸린다.
-        'resource-summary:script:size': ['error', { maxNumericValue: 315000 }],
-        'resource-summary:script:count': ['error', { maxNumericValue: 10 }],
+        // 값의 근거와 2026-08-20 재산정 이력은 파일 상단에 있다.
+        'resource-summary:script:size': ['error', { maxNumericValue: 337000 }],
+        'resource-summary:script:count': ['error', { maxNumericValue: 13 }],
         'resource-summary:font:size': ['error', { maxNumericValue: 95000 }],
-        'resource-summary:total:size': ['error', { maxNumericValue: 430000 }],
+        'resource-summary:total:size': ['error', { maxNumericValue: 457000 }],
 
         // ── 러너 노이즈에 흔들림 → warn (리포트에만 남는다) ──────────────
         // 러너 실측 중앙값(0.69 / 15,840ms)에 여유를 준 값이다. 로컬 값(0.91 / 242ms)으로
