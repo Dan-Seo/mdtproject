@@ -1641,6 +1641,17 @@
       },
       "prohibited": true,
       "imageRead": false
+    },
+    {
+      "table": "5.3.4(5)(ｲ)(a)",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.bent.total-length.minimum",
+      "conditions": {},
+      "quote": "全長は、表5.3.4 の直線定着の長さ以上とする。",
+      "referencesKind": "anchorage.L1",
+      "imageRead": false,
+      "note": "折曲げ定着の全長の下限は他の行への参照であって数値ではない — ルールパックに置ける形をしていないので constraints に入れ、組み立ては resolveGirderEnd が行う (ADR-002)。同じ条の (b) 余長8d と (c) 投影 La は数値なので entries 側にある"
     }
   ]
 }

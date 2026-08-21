@@ -54,14 +54,17 @@ function endFormula(label: string, detail: GirderEndDetail): string {
     return `${label} 直線定着 L1 ${detail.lengthMm}`
   }
 
-  // lengthMm·projectionMm 은 최소치와의 max 결과다 — L1h·La 로 표기하면 表5.3.4·
+  // lengthMm·projectionMm 은 최소치와의 max 결과다 — L1·La 로 표기하면 表5.3.4·
   // 表5.3.5 와 대조하는 검토자에게 근거가 틀린 것으로 보인다. 지배한 항을 밝힌다.
+  // max 가 걸리는 대상은 「垂直余長」이 아니라 **全長**이다 — 5.3.4(5)(ｲ)(a) 가
+  // 全長에, (b) 가 余長에 하한을 주므로 (b) 를 全長 하한으로 환산해 비교한다.
   const verticalTailMm = detail.lengthMm - detail.projectionMm
   return (
-    `${label} 折曲げ定着 加工長 ${detail.lengthMm}` +
-    `（投影 ${detail.projectionMm}［La ${detail.laMm} と 柱せい×投影下限 ` +
-    `${detail.projectionMinimumMm} の大］ ＋ 垂直余長 ${verticalTailMm}` +
-    `［L1h ${detail.l1hMm} と 投影＋余長下限 ${detail.tailMinimumMm} の大］）`
+    `${label} 折曲げ定着 全長 ${detail.lengthMm}` +
+    `［(a) 直線定着 L1 ${detail.straightMinimumMm} と ` +
+    `(b) 投影＋余長下限 ${detail.tailMinimumMm} の大］` +
+    `（内訳 ＝ 投影 ${detail.projectionMm}［(c) La ${detail.laMm} と ` +
+    `柱せい×投影下限 ${detail.projectionMinimumMm} の大］ ＋ 垂直余長 ${verticalTailMm}）`
   )
 }
 

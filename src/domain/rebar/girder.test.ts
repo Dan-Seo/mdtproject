@@ -188,8 +188,11 @@ describe('generateGirderRebar', () => {
 
     expect(start.kind).toBe('折曲げ定着')
     expect(end.kind).toBe('折曲げ定着')
-    expect(top.length).toBe(span.clear + start.lengthMm + end.lengthMm)
-    expect(polylineLength(top.points, top.closed)).toBe(top.length)
+    // 設計長さには継手が入り、3D の加工長には入らない (ADR-019)。両端の折曲げ
+    // 定着が加算されたことを見たいので、継手分を外して突き合わせる。
+    const drawnLengthMm = span.clear + start.lengthMm + end.lengthMm
+    expect(top.length - (top.splice?.lengthMm ?? 0)).toBe(drawnLengthMm)
+    expect(polylineLength(top.points, top.closed)).toBe(drawnLengthMm)
     expect(top.formula).not.toContain('切上げ')
   })
 
@@ -265,6 +268,8 @@ describe('generateGirderRebar', () => {
         jpMlitRulePack,
       )
 
+      const drawnLengthMm = main.length - (main.splice?.lengthMm ?? 0)
+
       expect(main.zones).toEqual([
         {
           kind: '定着',
@@ -274,9 +279,11 @@ describe('generateGirderRebar', () => {
         },
         {
           kind: '定着',
+          // zone は 3D の加工長の座標系にある — 継手は位置が決まらず描かれない
+          // ので、設計長さ(main.length)ではなく継手を除いた長さで測る (ADR-019)。
           ruleKey: end.lengthRule,
-          pathFromMm: main.length - end.lengthMm,
-          pathToMm: main.length,
+          pathFromMm: drawnLengthMm - end.lengthMm,
+          pathToMm: drawnLengthMm,
         },
       ])
 
@@ -442,10 +449,14 @@ describe('generateGirderRebar', () => {
   })
 
   it('explains a 0か所 splice by the count, not by the method', () => {
-    // この単独梁は 6.0m 足らずで 0か所だ。長さが増えないのは方式のせいでは
-    // ないのに「重ね継手は長さの変化なし」と書くと、同じ行が出典に挙げる
-    // measure.splice.length.factor{重ね継手}=1（算入する）と食い違う。
-    const generated = generateGirderRebar(input(), jpMlitRulePack)
+    // 長さが増えないのは方式のせいではないのに「重ね継手は長さの変化なし」と
+    // 書くと、同じ行が出典に挙げる measure.splice.length.factor{重ね継手}=1
+    // （算入する）と食い違う。D25 は 7.0m ごとなので、それに満たない梁を使う。
+    const shortSpan: GirderSpan = { ...span, centerSpan: 5600, clear: 4800 }
+    const generated = generateGirderRebar(
+      input({ run: runWithSpan(shortSpan) }),
+      jpMlitRulePack,
+    )
     const { formula } = byRole(generated, '上端筋')
 
     expect(formula).toContain('継手 0か所 ＝ 0')
@@ -460,15 +471,17 @@ describe('generateGirderRebar', () => {
       'cover.minimum',
       'cover.fabrication.addition',
       'anchorage.L1',
-      'anchorage.L1h',
+      // anchorage.L1h は載らない — 5.3.4(5)(ｲ)(a) の全長下限は直線定着 L1 で、
+      // L1h は同条の適用条件にすぎず、どの値も決めない。
       'anchorage.La',
       'anchorage.bent.tail.minimum',
       'anchorage.bent.projection.minimum',
       'cover.minimum',
       // 継手は設計長さの一部なので質量行の出典にも載る。この単独梁は
-      // 6.0m 足らずで 0か所なので、重ね継手長さ（lap.L1）は載らない。
+      // 両端の折曲げ定着を含めて 7.2m あり、D25 の 7.0m を超えるので 1か所。
       'measure.splice.interval',
       'measure.splice.length.factor',
+      'lap.L1',
     ]
 
     expect(

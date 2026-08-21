@@ -17,15 +17,16 @@ export type GirderEndDetail =
   | ({
       kind: '折曲げ定着'
       /**
-       * 加工長을 실제로 정한 항. `max(L1h, 投影＋余長下限)`이므로 余長下限이
-       * 지배하면 그 길이는 表5.3.4에 없는 값이다 — L1h로 표시하면 근거가 거짓이 된다.
+       * 加工長을 실제로 정한 항. `max(L1, 投影＋余長下限)`이므로 余長下限이
+       * 지배하면 그 길이는 表5.3.4에 없는 값이다 — L1로 표시하면 근거가 거짓이 된다.
        */
-      lengthRule: 'anchorage.L1h' | 'anchorage.bent.tail.minimum'
+      lengthRule: 'anchorage.L1' | 'anchorage.bent.tail.minimum'
       /** 投影長도 `max(La, 柱せい×3/4)` — 근거는 이긴 항에 붙는다 */
       projectionRule: 'anchorage.La' | 'anchorage.bent.projection.minimum'
-      /** max(L1h, 投影＋余長下限) — 算出式이 어느 항이 지배했는지 밝힐 수 있게 원항도 싣는다 */
+      /** max(L1, 投影＋余長下限) — 算出式이 어느 항이 지배했는지 밝힐 수 있게 원항도 싣는다 */
       lengthMm: number
-      l1hMm: number
+      /** 5.3.4(5)(ｲ)(a)「全長は、表5.3.4 の直線定着の長さ以上とする」의 그 L1 */
+      straightMinimumMm: number
       tailMinimumMm: number
       /** max(La, 柱せい×投影下限) */
       projectionMm: number
@@ -144,29 +145,34 @@ export function resolveGirderEnd(
     )
   }
 
-  const l1hMm = millimetres(bentRule, diameter)
+  // 5.3.4(5)(ｲ) は (a) 全長 ≧ 表5.3.4 の**直線**定着の長さ、(b) 余長 ≧ 8d を
+  // ともに課す。フックありの L1h は同条の**適用条件**（「フックありの定着の長さを
+  // 確保できない場合」）であって全長の下限ではない — 下限に L1h を置くと L1 > L1h
+  // の分だけ全長が条文より短くなり、内訳が過小計上になる。
   const tailMinimumMm = projectionMm + millimetres(tailMinimumRule, diameter)
-  const lengthMm = Math.max(l1hMm, tailMinimumMm)
+  const lengthMm = Math.max(straightLengthMm, tailMinimumMm)
 
   return {
     kind: '折曲げ定着',
     lengthRule:
-      l1hMm >= tailMinimumMm ? 'anchorage.L1h' : 'anchorage.bent.tail.minimum',
+      straightLengthMm >= tailMinimumMm
+        ? 'anchorage.L1'
+        : 'anchorage.bent.tail.minimum',
     projectionRule:
       laMm >= projectionMinimumMm
         ? 'anchorage.La'
         : 'anchorage.bent.projection.minimum',
     lengthMm,
-    l1hMm,
+    straightMinimumMm: straightLengthMm,
     tailMinimumMm,
     projectionMm,
     laMm,
     projectionMinimumMm,
     direction: input.bendDirection,
-    // 直線 L1 은 折曲げ 채택 판정의 비교원이므로 기여 룰로 남긴다
+    // L1 은 折曲げ 채택 판정의 비교원이자 (a)의 全長 下限이다.
+    // L1h(anchorage.L1h)는 어떤 값도 정하지 않으므로 出典에 싣지 않는다.
     usedRules: [
       straightRule,
-      bentRule,
       projectionRule,
       tailMinimumRule,
       projectionMinimumRule,

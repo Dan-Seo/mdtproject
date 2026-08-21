@@ -151,7 +151,9 @@ describe('TakeoffPane', () => {
       supportedGirderLines.map(({ role, unit }) => `${role}:${unit}`),
     ).toEqual([
       '上端筋:kg',
+      '上端筋:箇所',
       '下端筋:kg',
+      '下端筋:箇所',
       'あばら筋:kg',
       '幅止め筋:kg',
       '腹筋:kg',

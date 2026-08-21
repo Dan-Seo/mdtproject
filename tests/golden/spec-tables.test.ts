@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { resolveGirderEnd } from '../../src/domain/rebar/girder-ends'
 import { lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/spec-r7-ch5.json'
@@ -348,5 +349,65 @@ describe('픽스처 대조 완전성', () => {
     expect(
       uncompared.map(({ key, conditions }) => ({ key, conditions })),
     ).toEqual([])
+  })
+})
+
+describe('5.3.4(5)(ｲ) 折曲げ定着は (a)(b)(c) を全て満たす', () => {
+  // 사이즈·강도·지점 치수를 하나로 고정해 세 조건을 절대값으로 박는다.
+  // 상대식(`length === clear + start + end`)만 두면 하한을 어느 항으로 잡든
+  // 통과한다 — 실제로 (a)에 L1 대신 L1h가 들어가 있어도 초록이었다.
+  const D25 = 25
+  const supportLengthMm = 800 // 柱 800×800
+  const fabricationCoverMm = 50 // 最小かぶり 40 ＋ 加工用 10（屋外・仕上げなし）
+
+  const end = resolveGirderEnd(
+    {
+      supportLengthMm,
+      supportCover: {
+        memberKind: '柱',
+        soilContact: false,
+        exposure: '屋外',
+        finish: '仕上げなし',
+      },
+      barSize: 'D25',
+      fc: 24,
+      grade: 'SD345',
+      bendDirection: '下',
+    },
+    jpMlitRulePack,
+  )
+
+  it('falls to 折曲げ定着 because 直線定着 does not fit the support', () => {
+    // L1 40d ＝ 1000 > 使用可能 800 − 50 ＝ 750
+    expect(end.kind).toBe('折曲げ定着')
+  })
+
+  it('(c) 投影 ＝ max(表5.3.5 La, 柱せいの3/4)', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    expect(end.laMm).toBe(20 * D25) // 表5.3.5 SD345 Fc24 ＝ 20d
+    expect(end.projectionMinimumMm).toBe(supportLengthMm * 0.75)
+    expect(end.projectionMm).toBe(600) // max(500, 600)
+    expect(end.projectionMm).toBeLessThanOrEqual(
+      supportLengthMm - fabricationCoverMm,
+    )
+  })
+
+  it('(b) 余長 ＝ 全長 − 投影 は 8d 以上', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    expect(end.lengthMm - end.projectionMm).toBeGreaterThanOrEqual(8 * D25)
+  })
+
+  it('(a) 全長は 表5.3.4 の直線定着の長さ(L1)以上 — フックあり(L1h)ではない', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    const l1Mm = 40 * D25 // 表5.3.4 SD345 Fc24 直線 ＝ 40d
+    const l1hMm = 30 * D25 // 同 フックあり ＝ 30d
+
+    // 下限に L1h を使うと max(750, 600＋200) ＝ 800 になり、条文より 200mm 短い。
+    expect(end.lengthMm).toBeGreaterThanOrEqual(l1Mm)
+    expect(end.lengthMm).toBe(1000)
+    expect(end.lengthMm).toBeGreaterThan(l1hMm)
   })
 })

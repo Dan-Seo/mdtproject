@@ -82,7 +82,7 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
   it('keeps non-numeric 조문 as constraints, separate from rule-shaped entries', () => {
     // 수치가 아닌 제약(D35以上 重ね継手 금지)은 룰팩 스키마로 표현할 수 없다 —
     // entries에 섞으면 value must be a finite number 검사와 충돌하는 죽은 데이터가 된다.
-    expect(fixture.constraints).toHaveLength(1)
+    expect(fixture.constraints).toHaveLength(2)
     expect(fixture.constraints[0]).toMatchObject({
       table: '5.3.4(1)',
       kind: 'lap.prohibited.minimum-bar-size',
@@ -92,5 +92,21 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     expect(
       fixture.entries.some(({ kind }) => kind.startsWith('lap.prohibited')),
     ).toBe(false)
+  })
+
+  it('carries 折曲げ定着 の全長下限 as a reference to 直線定着, not a number', () => {
+    // この条項が fixture に無かったせいで resolveGirderEnd が下限に L1h を使い、
+    // 全長が条文より短く出ていた。参照先の kind をここで名指ししておく。
+    const total = fixture.constraints.find(
+      ({ kind }) => kind === 'anchorage.bent.total-length.minimum',
+    )!
+
+    expect(total).toBeDefined()
+    expect(total.table).toBe('5.3.4(5)(ｲ)(a)')
+    expect(total.printedPage).toBe(31)
+    expect(total.quote).toBe('全長は、表5.3.4 の直線定着の長さ以上とする。')
+    // 「フックありの定着の長さ」ではない — L1h は (ｲ) の適用条件であって下限ではない。
+    expect(total.referencesKind).toBe('anchorage.L1')
+    expect(total.quote).not.toContain('フックあり')
   })
 })
