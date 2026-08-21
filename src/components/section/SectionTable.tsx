@@ -59,11 +59,15 @@ function NumberInput({
   onChange,
   // 치수·ピッチ·本数는 0이 성립하지 않지만 初期オフセット은 0이 정상값이다.
   minimum = 1,
+  // 幅止め筋·腹筋처럼 「なし」가 성립하는 항목은 그 배근이 없을 때 입력을 막는다.
+  // 열어 두면 updater 가 current 를 그대로 돌려줘 입력이 흔적 없이 사라진다.
+  disabled = false,
 }: {
   label: string
   value: number
   onChange(value: number): void
   minimum?: number
+  disabled?: boolean
 }) {
   return (
     <input
@@ -72,6 +76,7 @@ function NumberInput({
       min={minimum}
       step="1"
       value={value}
+      disabled={disabled}
       aria-label={label}
       onChange={(event) => {
         const next = boundedNumber(event.currentTarget.value, minimum)
@@ -494,6 +499,7 @@ function GirderDetailField({
       <span aria-hidden="true">@</span>
       <NumberInput
         label={`${sectionMarkLabel(section)} 幅止め筋 ピッチ`}
+        disabled={widthTie === undefined}
         value={widthTie?.pitch ?? section.stirrup.pitch}
         onChange={(pitch) =>
           update((current) =>
@@ -517,12 +523,12 @@ function GirderDetailField({
             }
             return {
               ...current,
-              // 本数の種は両側面に1本ずつの2本。余長は 0 —
-              // JASS 5 が未確保で規準値がないので、入れないかぎり計上しない (R9②)。
-              sideBar: current.sideBar ?? {
+              sideBar: {
                 size,
-                count: 2,
-                extraLengthMm: 0,
+                // 本数の種は両側面に1本ずつの2本。余長は 0 —
+                // JASS 5 が未確保で規準値がないので、入れないかぎり計上しない (R9②)。
+                count: current.sideBar?.count ?? 2,
+                extraLengthMm: current.sideBar?.extraLengthMm ?? 0,
               },
             }
           })
@@ -531,6 +537,7 @@ function GirderDetailField({
       <span aria-hidden="true">×</span>
       <NumberInput
         label={`${sectionMarkLabel(section)} 腹筋 本数`}
+        disabled={sideBar === undefined}
         value={sideBar?.count ?? 2}
         onChange={(count) =>
           update((current) =>
@@ -543,6 +550,7 @@ function GirderDetailField({
       <span>余長</span>
       <NumberInput
         label={`${sectionMarkLabel(section)} 腹筋 余長`}
+        disabled={sideBar === undefined}
         minimum={0}
         value={sideBar?.extraLengthMm ?? 0}
         onChange={(extraLengthMm) =>

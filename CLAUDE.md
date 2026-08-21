@@ -13,7 +13,7 @@
 ## 아키텍처 규칙
 - CRITICAL: **배근 규준 수치를 코드에 쓰지 말 것.** 定着長さ, 重ね継手長さ, 折曲げ, かぶり厚さ, 할증률 등 모든 수치는 `src/rulepack/`의 YAML에서 조회한다. `.ts` 파일에 규준 숫자 리터럴이 나타나면 잘못된 것이다. 조회 **로직**은 평범한 TS 함수로 쓰고, 룰 DSL·평가기는 만들지 말 것 (ADR-002).
 - CRITICAL: **主筋 경·본수와 帯筋/あばら筋 피치는 입력이다.** 단면일람에서 받은 값을 제품이 바꾸지 않는다. 룰팩 조회 대상은 배근 상세값(定着·重ね継手·折曲げ·かぶり)뿐이다. 主筋 본수를 룰팩에서 조회하는 코드를 쓰지 말 것 (ADR-012).
-- CRITICAL: **룰팩 항목에 `source`와 `confidence`가 없으면 추가하지 말 것.** `source`는 문서명·URL·페이지, `confidence`는 `stated`(원문 명시) 또는 `inferred`(추론). 근거 없는 값은 넣지 않는다.
+- CRITICAL: **룰팩 항목에 `source`와 `confidence`가 없으면 추가하지 말 것.** `source`는 문서명·URL·페이지, `confidence`는 `stated`(원문 명시 ＋ 독립 검토 완료) / `transcribed`(원문 명시, 전사자＝승인자) / `inferred`(원문에 그 값이 없음)의 3단계다 (ADR-023). 근거 없는 값은 넣지 않는다. `stated`로 올리는 것은 사람의 독립 검토가 있어야 하고 `src/rulepack/index.test.ts`가 「`stated`는 0행」을 고정하고 있으므로 조용히 승급되지 않는다.
 - CRITICAL: **`src/domain/`은 순수 TypeScript.** React, DOM, three.js, Next.js를 import하지 않는다. Node에서 그대로 실행되어야 골든테스트가 돈다.
 - CRITICAL: **사용자 도면 데이터를 서버로 보내지 말 것.** 모든 계산은 브라우저에서. 서버 저장·전송 코드를 만들지 않는다. 예외는 둘이며 둘 다 도면 데이터와 무관하다 — 운영 알림 수신 라우트 `src/app/api/oncall/alert`(ADR-017)와 브라우저 텔레메트리 `src/lib/telemetry.ts`(ADR-020, `before_send`가 허용목록으로 동작해 예외 메시지 자체를 싣지 않는다).
 - CRITICAL: **출처 표시는 법적 의무다.** 근거 자료는 PDL1.0 준거로 출처 표시와 개변 사실 표시가 요구된다. UI 하단 고지와 룰팩 `source` 필드를 제거하지 말 것.

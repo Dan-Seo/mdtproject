@@ -1,4 +1,8 @@
+import { readdirSync, readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
+
+import { jpMlitRulePack } from '../../src/rulepack'
 
 import fixture from './fixtures/spec-r7-ch5.json'
 
@@ -133,6 +137,43 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
 
     expect(unused.kinds).toContain('anchorage.lightweight.addition')
     expect(unused.reason).toContain('入力として受け取らない')
+
+    // 折曲げ定着の全長下限が L1h から L1 に直った時点で L1h はどの値も決めなく
+    // なった。台帳に載せないと「死んだ行」が「まだ書いていない行」に見える。
+    const kinds = fixture.unused.flatMap(({ kinds: list }) => list)
+    expect(kinds).toContain('anchorage.L1h')
+    expect(kinds).toContain('anchorage.L2')
+    for (const entry of fixture.unused) {
+      expect(entry.quote, entry.kinds.join(',')).not.toBe('')
+      expect(entry.reason, entry.kinds.join(',')).not.toBe('')
+    }
+  })
+
+  /**
+   * 台帳が実態から外れたら落ちる。ルールパックのキーのうち、ドメインコードが
+   * 文字列リテラルで引いていないものは全部ここに名前が載っていなければならない
+   * — でなければこの台帳は作られた日にしか正しくない。
+   */
+  it('lists every rulepack key the product never looks up', () => {
+    const roots = ['src/domain', 'src/lib', 'src/components']
+    const sources = roots.flatMap((root) => {
+      const dir = new URL(`../../${root}/`, import.meta.url)
+      return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+        .filter((name) => /\.tsx?$/.test(name) && !name.includes('.test.'))
+        .map((name) => readFileSync(new URL(name, dir), 'utf8'))
+    })
+    const looked = new Set(
+      sources
+        .join(' ')
+        .match(/'[a-z][a-zA-Z0-9]*(?:\.[a-zA-Z0-9-]+)+'/g)
+        ?.map((quoted) => quoted.slice(1, -1)) ?? [],
+    )
+    const ledger = new Set(fixture.unused.flatMap(({ kinds }) => kinds))
+    const orphans = [
+      ...new Set(jpMlitRulePack.entries.map(({ key }) => key)),
+    ].filter((key) => !looked.has(key) && !ledger.has(key))
+
+    expect(orphans, '台帳に無い未照会キー').toEqual([])
   })
 
   it('carries 折曲げ定着 の全長下限 as a reference to 直線定着, not a number', () => {

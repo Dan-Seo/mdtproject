@@ -723,8 +723,11 @@ describe('Viewer3D', () => {
     expect(within(tooltip).getByText('設計長さ')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)
     // 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 등급 표시가 붙어야 한다.
-    // kg 행은 定着·継手가 標準仕様書 전사값(△)이라도 JIS 単位質量(원문 미확보)을
-    // 반드시 타므로 행 등급은 가장 약한 ▲ 가 된다. 등급은 가장 약한 근거를 따른다.
+    // 이 행을 ▲ 로 끌어내리는 근거는 지금 `measure.splice.length.factor` 하나뿐이다
+    // (反対解釈로 세운 継手 算入倍率 — 原文에 明文이 없다). 定着·継手 길이는
+    // 標準仕様書 전사값이라 △ 다. 등급은 가장 약한 근거를 따르므로 행은 ▲ 가 된다.
+    // 単位質量은 schema v6 에서 룰팩을 떠나 Project.unitMass 입력이 됐으므로
+    // 더 이상 이 판정에 관여하지 않는다 — 継手 算入倍率이 승급되면 여기가 △ 로 바뀐다.
     expect(mainLine?.confidence).toBe('inferred')
     expect(
       within(tooltip).getByLabelText('原文に値のない規準値'),

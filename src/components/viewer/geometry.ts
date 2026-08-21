@@ -262,12 +262,11 @@ function girderSideBarPlacements(
 
   return Array.from({ length: rebar.count }, (_, index): Point3 => {
     const tier = Math.floor(index / 2)
-    // 段が1つなら梁せいの中央、複数なら上端筋・下端筋の間を均等に割る。
+    // 上端筋・下端筋の「間」を均等に割る。tiers-1 で割ると最初の段が下端筋の
+    // 位置に、最後の段が上端筋の位置に立ってしまい、4-D10 のようなありふれた
+    // 入力で腹筋が主筋の列に重なる。区間を tiers+1 に割って内側の点だけ使う。
     const spanMm = section.depth - 2 * nearFaceZ
-    const y =
-      tiers === 1
-        ? 0
-        : nearFaceZ + (tier * spanMm) / (tiers - 1) - midDepthMm
+    const y = nearFaceZ + ((tier + 1) * spanMm) / (tiers + 1) - midDepthMm
     const z = index % 2 === 0 ? 0 : farFaceZ - nearFaceZ
 
     return [0, y, z]

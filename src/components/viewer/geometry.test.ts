@@ -753,9 +753,26 @@ describe('M3c の日本固有詳細を 3D に展開する', () => {
     const placements = rebarPlacements(sideBar, girderSection)
     const ys = placements.map(([, y]) => y)
 
+    const cover = 50
+    const webSpan = girderSection.depth - 2 * cover
+    const mid = 375
+
     expect(placements).toHaveLength(4)
-    // 2段が上端筋・下端筋の間を均等に割る — 代表点(梁せいの中央)からの差で見る。
-    expect(ys).toEqual([50 - 375, 50 - 375, 700 - 375, 700 - 375])
+    // 2段が上端筋・下端筋の「間」を均等に割る — 代表点(梁せいの中央)からの差で見る。
+    // 区間を段数+1 に割った内側の点なので、下端筋(y=かぶり)にも上端筋
+    // (y=せい−かぶり)にも重ならない。
+    expect(ys).toEqual([
+      cover + webSpan / 3 - mid,
+      cover + webSpan / 3 - mid,
+      cover + (2 * webSpan) / 3 - mid,
+      cover + (2 * webSpan) / 3 - mid,
+    ])
+    // 主筋の列に重ならないことを不等式でも押さえる — 上の等式だけだと、
+    // 割り方を変えたときに何が壊れたのか読めない。
+    for (const y of ys) {
+      expect(y).toBeGreaterThan(cover - mid)
+      expect(y).toBeLessThan(girderSection.depth - cover - mid)
+    }
   })
 })
 
