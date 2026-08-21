@@ -30,9 +30,14 @@ async function ruleIdsFor(filePath: string, source: string): Promise<string[]> {
 }
 
 describe('src/domain 순수성 가드', () => {
-  beforeAll(() => {
+  // 첫 lintText 는 flat config 로드와 TS 파서 초기화까지 함께 치러서 수 초가 걸린다.
+  // 그 비용을 첫 케이스의 5초 예산에 청구하면 부하가 걸린 머신에서 그 케이스만
+  // 타임아웃으로 죽는다(로컬 4회 중 3회). 워밍업을 훅으로 옮겨 케이스들은 데워진
+  // 인스턴스만 쓰게 한다 — 훅에는 넉넉한 예산을 준다.
+  beforeAll(async () => {
     eslint = new FlatESLint({ overrideConfigFile: 'eslint.config.mjs' })
-  })
+    await ruleIdsFor('src/domain/probe.ts', 'export const warmup = 0')
+  }, 60_000)
 
   it('별칭으로 들어오는 @/lib 를 막는다', async () => {
     const ruleIds = await ruleIdsFor(
