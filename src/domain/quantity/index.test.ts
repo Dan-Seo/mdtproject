@@ -49,7 +49,16 @@ const coverHit = lookupRule(jpMlitRulePack, 'cover.minimum', {
   ...coverConditions(section),
 })
 
-function projectWithStories(stories: Story[]): Project {
+/**
+ * 単位質量は JIS G 3112 の値で規準側にはない — 製品は利用者入力として受け取る。
+ * 算術がそのまま読めるように、テストでは規格値ではなく合成値を使う。
+ */
+const testUnitMass: Project['unitMass'] = { D25: 4, D13: 1 }
+
+function projectWithStories(
+  stories: Story[],
+  unitMass: Project['unitMass'] = testUnitMass,
+): Project {
   const members: Member[] = stories.flatMap((story) =>
     Array.from({ length: 9 }, (_, index) => ({
       id: `${story.id}-C${index + 1}`,
@@ -68,6 +77,7 @@ function projectWithStories(stories: Story[]): Project {
     stories,
     sections: [section],
     members,
+    unitMass,
   }
 }
 
@@ -145,6 +155,14 @@ function hoopRebar(memberId: string): Rebar {
     ],
     formula: '帯筋の算出式',
   }
+}
+
+/** 単位質量が入っている前提の小計を足す — 欠けていればテストの前提が崩れる。 */
+function sumKnown(values: (number | null)[]): number {
+  return values.reduce<number>((sum, value) => {
+    expect(value).not.toBeNull()
+    return sum + value!
+  }, 0)
 }
 
 function ruleIdentity(rule: { key: string; conditions: object }): string {
@@ -305,7 +323,7 @@ describe('aggregateQuantity', () => {
     expect(hoops[0].groupId).toBe('1階|C|C1')
   })
 
-  it('propagates an inferred contributing rule to the whole row', () => {
+  it('propagates the weakest contributing rule grade to the whole row', () => {
     const project = projectWithStories([
       { id: '1F', name: '1階', height: 4200 },
     ])
@@ -315,12 +333,15 @@ describe('aggregateQuantity', () => {
       jpMlitRulePack,
     )[0]
 
-    expect(line.rules.some(({ confidence }) => confidence === 'inferred')).toBe(
-      true,
-    )
-    expect(line.rules.map(({ key }) => key)).toContain('unit-mass.value')
+    // 실룰팩에 inferred 행은 더 이상 없다 — 유일한 예였던 JIS 単位質量이
+    // 프로젝트 입력으로 빠졌기 때문이다. 실제 최약 등급인 transcribed 가 행
+    // 전체로 번지는지를 본다. 등급 순서 자체는 weakestConfidence 쪽이 합성
+    // 룰로 따로 고정하므로 여기서 중복해서 보지 않는다.
+    expect(
+      line.rules.some(({ confidence }) => confidence === 'transcribed'),
+    ).toBe(true)
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
-    expect(line.confidence).toBe('inferred')
+    expect(line.confidence).toBe('transcribed')
     expect(hasUnverified([line])).toBe(true)
   })
 
@@ -365,9 +386,33 @@ describe('aggregateQuantity', () => {
       { id: '1F', name: '1階', height: 4200 },
     ])
     const memberId = project.members[0].id
+    // 折曲げ内法直径は径で変わる（表5.3.2）。主筋 D25 と帯筋 D13 が同じキーの
+    // 別条件を引くので、キーだけで束ねると片方の行の根拠が消える。
+    const bent = mainRebar(memberId, {
+      ruleHits: [
+        ...mainRebar(memberId).ruleHits,
+        lookupRule(jpMlitRulePack, 'bend.inside-diameter', {
+          grade: 'SD345',
+          size: 'D25',
+        }),
+      ],
+    })
+    const hoop = hoopRebar(memberId)
     const lines = aggregateQuantity(
       project,
-      [mainRebar(memberId), hoopRebar(memberId)],
+      [
+        bent,
+        {
+          ...hoop,
+          ruleHits: [
+            ...hoop.ruleHits,
+            lookupRule(jpMlitRulePack, 'bend.inside-diameter', {
+              grade: 'SD345',
+              size: 'D13',
+            }),
+          ],
+        },
+      ],
       jpMlitRulePack,
     )
 
@@ -375,24 +420,23 @@ describe('aggregateQuantity', () => {
     const inferred = inferredRules(lines)
 
     // 조회 조건이 다른 같은 key 는 서로 다른 행이다 — 하나로 접으면 D25 와 D13
-    // 単位質量 중 하나가 근거 목록에서 사라진다.
-    // 8 = 예전 inferred 7 ＋ markup.rate. 割増率은 예전에 stated 였으나
-    // 같은 단일 전사자라 transcribed 로 내려왔다 (ADR-023).
+    // 折曲げ内法直径 중 하나가 근거 목록에서 사라진다.
+    // 조회 조건이 다른 같은 key 는 서로 다른 행이다 — 하나로 접으면 D25 와 D13
+    // 折曲げ内法直径 중 하나가 근거 목록에서 사라진다.
     expect(unverified).toHaveLength(8)
     expect(new Set(unverified.map(ruleIdentity)).size).toBe(unverified.length)
     expect(
-      unverified.filter(({ key }) => key === 'unit-mass.value'),
+      unverified.filter(({ key }) => key === 'bend.inside-diameter'),
     ).toHaveLength(2)
     expect(unverified.every(({ confidence }) => confidence !== 'stated')).toBe(
       true,
     )
 
-    // 그중 「원문에 값이 아예 없는」 것은 JIS 単位質量 2행뿐이다. 나머지 5행은
-    // 標準仕様書·積算基準에 명시된 값이라 transcribed 다 (ADR-023).
-    expect(inferred).toHaveLength(2)
-    expect(new Set(inferred.map(({ key }) => key))).toEqual(
-      new Set(['unit-mass.value']),
-    )
+    // 「원문에 값이 아예 없는」 행은 이제 없다. ADR-023 은 그 유일한 예로 JIS
+    // 単位質量을 들었는데, 같은 이유로 単位質量이 룰팩에서 빠지고 프로젝트
+    // 입력이 됐기 때문이다(schema v6). 남은 8행은 전부 標準仕様書·積算基準에
+    // 명시된 값이라 transcribed 다 — 즉 kg 행도 ▲가 아니라 △다.
+    expect(inferred).toEqual([])
   })
 
   it('emits a 箇所 line beside the kg line and never mixes the two units', () => {
@@ -533,10 +577,62 @@ describe('aggregateQuantity', () => {
     expect(subtotals).toHaveLength(2)
     expect(subtotals.map(({ storyName }) => storyName)).toEqual(['1階', '2階'])
     expect(total.designKg).toBe(
-      subtotals.reduce((sum, subtotal) => sum + subtotal.designKg, 0),
+      sumKnown(subtotals.map(({ designKg }) => designKg)),
     )
     expect(total.requiredKg).toBe(
-      subtotals.reduce((sum, subtotal) => sum + subtotal.requiredKg, 0),
+      sumKnown(subtotals.map(({ requiredKg }) => requiredKg)),
     )
+  })
+})
+
+describe('単位質量は利用者入力', () => {
+  const stories: Story[] = [{ id: '1F', name: '1階', height: 4200 }]
+
+  it('leaves the mass unknown until a 単位質量 is entered', () => {
+    const project = projectWithStories(stories, {})
+    const rebars = project.members.map(({ id }) => mainRebar(id))
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const [line] = massLines(lines)
+
+    // 総延長までは規準（積算基準 1通則2)・7)）で出る。kg は JIS G 3112 の
+    // 単位質量なしには出ない — 0 でも既定値でもなく「まだ分からない」だ。
+    expect(line.totalLengthMm).toBe(108000)
+    expect(line.unitMassKgPerM).toBeNull()
+    expect(line.designKg).toBeNull()
+    expect(line.requiredKg).toBeNull()
+    expect(storySubtotals(lines)[0].designKg).toBeNull()
+    expect(grandTotal(lines).designKg).toBeNull()
+    expect(grandTotal(lines).requiredKg).toBeNull()
+  })
+
+  it('computes the mass from the 単位質量 the user entered', () => {
+    const project = projectWithStories(stories)
+    const rebars = project.members.map(({ id }) => mainRebar(id))
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const [line] = massLines(lines)
+
+    // 108.000 m × 4 kg/m = 432 kg、所要数量は 1通則9) の4%割増
+    expect(line.unitMassKgPerM).toBe(4)
+    expect(line.designKg).toBe(432)
+    expect(line.requiredKg).toBeCloseTo(449.28, 6)
+  })
+
+  it('keeps the subtotal unknown while any 径 is still missing', () => {
+    // 入力済みの径だけ足した小計は、足りない径を隠したまま「合計」に見える。
+    const project = projectWithStories(stories, { D25: 4 })
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const byRole = new Map(massLines(lines).map((line) => [line.role, line]))
+
+    expect(byRole.get('主筋')?.designKg).toBe(432)
+    expect(byRole.get('帯筋')?.designKg).toBeNull()
+    expect(storySubtotals(lines)[0].designKg).toBeNull()
+    expect(grandTotal(lines).designKg).toBeNull()
   })
 })

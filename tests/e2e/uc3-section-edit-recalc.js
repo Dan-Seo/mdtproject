@@ -26,6 +26,19 @@ const snapshot = () =>
     };
   });
 
+// 単位質量は JIS G 3112 の値で規準側になく、利用者入力だ。入れるまで質量列は
+// 「—」のままなので、まず未入力の姿を撮ってから入力する。
+const beforeUnitMass = await snapshot();
+
+const sizes = await page.evaluate(() =>
+  [...document.querySelectorAll("[data-testid='unit-mass-input'] input")].map(
+    (input) => input.dataset.size,
+  ),
+);
+for (const size of sizes) {
+  await page.fill(`input[aria-label='${size} 単位質量']`, "1");
+}
+
 const base = await snapshot();
 
 // 主筋 本数 12 → 16
@@ -40,5 +53,11 @@ const afterPitch = await snapshot();
 await page.fill("input[aria-label='C1 断面 b']", "900");
 const afterWidth = await snapshot();
 
-console.log(JSON.stringify({ base, afterMain, afterPitch, afterWidth }, null, 2));
+console.log(
+  JSON.stringify(
+    { sizes, beforeUnitMass, base, afterMain, afterPitch, afterWidth },
+    null,
+    2,
+  ),
+);
 console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc3-section-edit.png")));

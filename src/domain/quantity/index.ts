@@ -12,7 +12,7 @@ import {
   type Project,
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
-import { lookupMarkup, lookupUnitMass } from '../rules/lookup'
+import { lookupMarkup } from '../rules/lookup'
 import {
   CONFIDENCE_ORDER,
   type RuleConfidence,
@@ -47,15 +47,21 @@ interface QuantityLineBase {
   formula: string
 }
 
+/**
+ * 質量の3列は「まだ分からない」を持つ。積算基準 1通則 前文は質量を
+ * 「設計長さ × JIS G 3112 の単位質量」と定めるが、値そのものは JIS に委ねる。
+ * その JIS を確保できていないので、利用者が単位質量を入れるまで kg は出ない —
+ * 0 を入れると内訳書で合計され、質量が過小に見える。
+ */
 export interface MassQuantityLine extends QuantityLineBase {
   unit: 'kg'
   shape: RebarShape
   lengthMm: number
   countPerMember: number
   totalLengthMm: number
-  unitMassKgPerM: number
-  designKg: number
-  requiredKg: number
+  unitMassKgPerM: number | null
+  designKg: number | null
+  requiredKg: number | null
 }
 
 export interface SpliceQuantityLine extends QuantityLineBase {
@@ -85,15 +91,16 @@ export function spliceLines(lines: QuantityLine[]): SpliceQuantityLine[] {
   return lines.filter(isSpliceLine)
 }
 
+/** 単位質量が一つでも欠けたら小計・合計も出ない — 入った径だけの和は合計ではない。 */
 export interface StorySubtotal {
   storyName: string
-  designKg: number
-  requiredKg: number
+  designKg: number | null
+  requiredKg: number | null
 }
 
 export interface QuantityTotal {
-  designKg: number
-  requiredKg: number
+  designKg: number | null
+  requiredKg: number | null
 }
 
 export interface SpliceTotal {
@@ -140,23 +147,18 @@ function contributingRules(
   pack: RulePack,
   member: Member,
   rebar: Rebar,
-): { rules: RuleHit[]; unitMass: RuleHit; markup: RuleHit } {
+): { rules: RuleHit[]; markup: RuleHit } {
   // 산정부가 실제로 조회한 행을 그대로 쓴다 — 키에서 조회 조건을 되짚으면
   // 되짚을 수 없는 조회(지점 柱의 かぶり)가 근거에서 사라진다.
   const rebarRules = rebar.ruleHits
-  const unitMass = lookupUnitMass(pack, rebar.size)
   const markup = lookupMarkup(pack, member.memberClass)
 
-  if (unitMass.unit !== 'kg/m') {
-    throw new Error(`Rule ${unitMass.key} must use kg/m`)
-  }
   if (markup.unit !== 'ratio') {
     throw new Error(`Rule ${markup.key} must use ratio`)
   }
 
   return {
-    rules: uniqueRules([...rebarRules, unitMass, markup]),
-    unitMass,
+    rules: uniqueRules([...rebarRules, markup]),
     markup,
   }
 }
@@ -200,6 +202,13 @@ function recalculate(grouped: GroupedLine): void {
   const massLine = grouped.line
   massLine.totalLengthMm =
     massLine.lengthMm * massLine.countPerMember * massLine.places
+
+  if (massLine.unitMassKgPerM === null) {
+    massLine.designKg = null
+    massLine.requiredKg = null
+    return
+  }
+
   massLine.designKg = (massLine.totalLengthMm / 1000) * massLine.unitMassKgPerM
   massLine.requiredKg = massLine.designKg * (1 + grouped.markupRate)
 }
@@ -253,10 +262,7 @@ export function aggregateQuantity(
       ) {
         throw new Error(`Inconsistent size or shape in quantity group ${id}`)
       }
-      if (
-        existing.line.unitMassKgPerM !== contributions.unitMass.value ||
-        existing.markupRate !== contributions.markup.value
-      ) {
+      if (existing.markupRate !== contributions.markup.value) {
         throw new Error(`Inconsistent quantity rules in group ${id}`)
       }
       existing.memberIds.add(member.id)
@@ -276,9 +282,11 @@ export function aggregateQuantity(
           lengthMm: rebar.length,
           countPerMember: rebar.count,
           totalLengthMm: 0,
-          unitMassKgPerM: contributions.unitMass.value,
-          designKg: 0,
-          requiredKg: 0,
+          // 径で引いて未入力なら null。同じ行に集まる鉄筋は径が同じなので
+          // （上の size 検査）、行の中で値が食い違うことはない。
+          unitMassKgPerM: project.unitMass?.[rebar.size] ?? null,
+          designKg: null,
+          requiredKg: null,
           rules: contributions.rules,
           formula: rebar.formula,
         },
@@ -388,6 +396,12 @@ export function inferredRules(lines: QuantityLine[]): RuleHit[] {
   )
 }
 
+/** 一つでも分からなければ和も分からない — 入った分だけ足すと不足が隠れる。 */
+function addMass(sum: number | null, value: number | null): number | null {
+  if (sum === null || value === null) return null
+  return sum + value
+}
+
 export function storySubtotals(lines: QuantityLine[]): StorySubtotal[] {
   const subtotals = new Map<string, StorySubtotal>()
 
@@ -401,8 +415,8 @@ export function storySubtotals(lines: QuantityLine[]): StorySubtotal[] {
     }
 
     if (isMassLine(line)) {
-      subtotal.designKg += line.designKg
-      subtotal.requiredKg += line.requiredKg
+      subtotal.designKg = addMass(subtotal.designKg, line.designKg)
+      subtotal.requiredKg = addMass(subtotal.requiredKg, line.requiredKg)
     }
 
     subtotals.set(line.storyName, subtotal)
@@ -414,8 +428,8 @@ export function storySubtotals(lines: QuantityLine[]): StorySubtotal[] {
 export function grandTotal(lines: QuantityLine[]): QuantityTotal {
   return massLines(lines).reduce<QuantityTotal>(
     (total, line) => ({
-      designKg: total.designKg + line.designKg,
-      requiredKg: total.requiredKg + line.requiredKg,
+      designKg: addMass(total.designKg, line.designKg),
+      requiredKg: addMass(total.requiredKg, line.requiredKg),
     }),
     { designKg: 0, requiredKg: 0 },
   )

@@ -304,3 +304,53 @@ a.transcribedSourceChip:hover {
   padding: 0;
   list-style: none;
 }
+
+/* 単位質量은 규준이 JIS에 위임한 값이라 제품이 가질 수 없다 — 입력받는다.
+   미입력이면 質量列이 「—」이므로, 표보다 위에 두어 이유가 먼저 보이게 한다. */
+.unitMassPanel {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-hairline);
+  background: var(--color-canvas-soft);
+}
+
+.unitMassTitle {
+  margin: 0;
+  color: var(--text-ink);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.unitMassNotice {
+  margin: var(--space-xxs) 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.unitMassFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs) var(--space-sm);
+}
+
+.unitMassField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  font-size: var(--type-caption-size);
+}
+
+.unitMassSize {
+  color: var(--text-muted);
+}
+
+.unitMassInput {
+  width: 72px;
+  min-height: 28px;
+  padding: 0 var(--space-xxs);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--color-canvas);
+  color: var(--text-body);
+  font: inherit;
+  text-align: right;
+}

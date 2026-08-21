@@ -12,10 +12,11 @@ import {
   type Project,
   type Story,
 } from '../../src/domain/model/project'
+import { aggregateQuantity, massLines } from '../../src/domain/quantity'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
 import { intervalSpliceCount } from '../../src/domain/rebar/measurement'
-import { lookupRule, lookupUnitMass } from '../../src/domain/rules/lookup'
+import { lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity-r5-ch3.json'
 
@@ -195,11 +196,43 @@ describe('公共建築数量積算基準 令和5年改定 第4編第3章 fixture
 })
 
 describe('1通則 前文 — 設計長さ × JIS の単位質量', () => {
-  it('delegates the unit mass to JIS rather than carrying its own value', () => {
-    const unitMass = lookupUnitMass(jpMlitRulePack, 'D25')
+  // 条文は質量を「設計長さ × JIS G 3112 の単位質量」と定めるだけで、値そのものは
+  // JIS に委ねる。その JIS は有償規格で未確保だ — ルールパックに値を置けば、
+  // 読んでいない文献を出典に立てることになる（出典表示は法的義務 — ADR-003）。
+  it('carries no 単位質量 of its own because the clause delegates it to JIS', () => {
+    expect(
+      jpMlitRulePack.entries.filter(({ key }) => key.startsWith('unit-mass')),
+    ).toHaveLength(0)
+  })
 
-    expect(unitMass.source.short).toBe('JIS G 3112')
-    expect(unitMass.unit).toBe('kg/m')
+  it('takes the 単位質量 from the project instead, and stays silent until it is entered', () => {
+    const section = columnSection()
+    const project: Project = {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: '単位質量テスト',
+      grid: { xSpans: [6000], ySpans: [6000] },
+      stories: [STORY],
+      sections: [section],
+      members: [columnMember(0, section.id)],
+    }
+    const rebars = columnRebarFor(section)
+    const main = roleOf(rebars, '主筋')
+
+    const withoutInput = massLines(
+      aggregateQuantity(project, rebars, jpMlitRulePack),
+    )
+    const withInput = massLines(
+      aggregateQuantity(
+        { ...project, unitMass: { [main.size]: 1 } },
+        rebars,
+        jpMlitRulePack,
+      ),
+    )
+    const line = withInput.find(({ role }) => role === '主筋')!
+
+    expect(withoutInput.every(({ designKg }) => designKg === null)).toBe(true)
+    // 1 kg/m なら設計数量は総延長(m)そのもの — 前文の積がそのまま見える。
+    expect(line.designKg).toBe(line.totalLengthMm / 1000)
   })
 })
 

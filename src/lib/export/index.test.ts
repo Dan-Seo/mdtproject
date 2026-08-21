@@ -1,11 +1,13 @@
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { BAR_SIZES } from '@/domain/model/member'
 import { createSampleProject } from '@/domain/model/sample-project'
 import {
   beamDepthAbove,
   columnEnds,
   findSection,
+  setUnitMass,
   type Project,
 } from '@/domain/model/project'
 import {
@@ -22,8 +24,16 @@ import { jpMlitRulePack } from '@/rulepack'
 
 import { buildTakeoffWorkbook, exportTakeoffXlsx } from './index'
 
+/**
+ * 単位質量は利用者入力で、サンプル案件には入っていない。kg 列を見る書き出し
+ * テストはまずこれを通す — 合成値 1 kg/m なら設計数量は総延長(m)そのものだ。
+ */
+function withUnitMass(project: Project): Project {
+  return BAR_SIZES.reduce((next, size) => setUnitMass(next, size, 1), project)
+}
+
 function sampleInput(): { project: Project; lines: QuantityLine[] } {
-  const project = createSampleProject()
+  const project = withUnitMass(createSampleProject())
   const rebars = project.members.flatMap((member) => {
     if (member.kind !== '柱') return []
 
@@ -53,7 +63,7 @@ function sampleInput(): { project: Project; lines: QuantityLine[] } {
 
 describe('buildTakeoffWorkbook', () => {
   it('includes generated 大梁 rows in the exported kg totals', () => {
-    const project = createSampleProject()
+    const project = withUnitMass(createSampleProject())
     useAppStore.setState({ project })
     const { result } = renderHook(() => useTakeoff())
     const { lines } = result.current
@@ -103,7 +113,16 @@ describe('buildTakeoffWorkbook', () => {
   it('prefixes the item-name cell with the row grade mark', () => {
     // 画面の ▲/△ と同じ意味の印を内訳書にも付ける。全部同じ印なら印の意味が
     // なくなるので、等級ごとに違う文字であることも見る (ADR-023)。
-    const input = sampleInput()
+    // 実ルールパックに inferred の行はもう無い — 唯一の例だった JIS 単位質量が
+    // プロジェクト入力に移ったからだ。そのままだと全行 △ で、印の区別を一つも
+    // 証明しない。一行だけ人為的に下げて二つの印が実際に分かれることを見る。
+    const sample = sampleInput()
+    const input = {
+      ...sample,
+      lines: sample.lines.map((line, index) =>
+        index === 0 ? { ...line, confidence: 'inferred' as const } : line,
+      ),
+    }
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const dataRows = spec.rows.filter(({ kind }) => kind === 'data')
     const marks = dataRows.map(({ cells }) =>
@@ -112,6 +131,7 @@ describe('buildTakeoffWorkbook', () => {
 
     expect(dataRows).toHaveLength(input.lines.length)
     expect(marks.every((mark) => mark === '▲ ' || mark === '△ ')).toBe(true)
+    expect(new Set(marks).size).toBe(2)
     for (const [index, line] of input.lines.entries()) {
       expect(marks[index]).toBe(line.confidence === 'inferred' ? '▲ ' : '△ ')
     }

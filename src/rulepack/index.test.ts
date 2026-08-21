@@ -35,7 +35,6 @@ describe('jpMlitRulePack', () => {
         'measure.splice.girder.continuous.band.upper',
         'measure.splice.length.factor',
         'markup.rate',
-        'unit-mass.value',
       ]),
     )
   })
@@ -52,14 +51,16 @@ describe('jpMlitRulePack', () => {
   })
 
   it('marks every 原文明示 row transcribed and only sourceless rows inferred', () => {
-    // 원문에 값이 없는 것만 inferred 다. 지금은 두 갈래뿐 —
-    // ① 反対解釈로 세운 継手 算入倍率(明文なし), ② 원문 자체가 미확보인 JIS 単位質量.
+    // 원문에 값이 없는 것만 inferred 다. 지금은 反対解釈로 세운 継手 算入倍率
+    // (明文なし) 하나뿐이다 — 또 하나였던 JIS 単位質量은 원문 자체가 미확보라
+    // 룰팩에서 빼고 프로젝트 입력으로 받는다(schema v6). 읽지 않은 문헌을
+    // 出典에 세우지 않는다는 ADR-003 을 등급이 아니라 구조로 지킨 것이다.
     const inferred = jpMlitRulePack.entries.filter(
       ({ confidence }) => confidence === 'inferred',
     )
 
     expect(new Set(inferred.map(({ key }) => key))).toEqual(
-      new Set(['measure.splice.length.factor', 'unit-mass.value']),
+      new Set(['measure.splice.length.factor']),
     )
     for (const rule of inferred) {
       expect(
@@ -87,11 +88,7 @@ describe('jpMlitRulePack', () => {
     const cited = new Set(jpMlitRulePack.entries.map(({ source }) => source.doc))
 
     expect([...cited].sort()).toEqual(
-      [
-        '公共建築工事標準仕様書（建築工事編）',
-        '公共建築数量積算基準',
-        '鉄筋コンクリート用棒鋼',
-      ].sort(),
+      ['公共建築工事標準仕様書（建築工事編）', '公共建築数量積算基準'].sort(),
     )
   })
 

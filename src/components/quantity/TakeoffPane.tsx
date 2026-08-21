@@ -9,11 +9,13 @@ import {
   type MouseEvent,
 } from 'react'
 
+import type { BarSize } from '@/domain/model/member'
 import type { RebarShape } from '@/domain/model/rebar'
-import { memberGroupKey, setNote } from '@/domain/model/project'
+import { memberGroupKey, setNote, setUnitMass } from '@/domain/model/project'
 import {
   grandTotal,
   isMassLine,
+  massLines,
   spliceLines,
   storySubtotals,
   type QuantityLine,
@@ -47,8 +49,9 @@ function formatLength(lengthMm: number): string {
   return (lengthMm / 1000).toFixed(3)
 }
 
-function formatMass(massKg: number): string {
-  return massKg.toFixed(3)
+// 単位質量が未入力なら質量は「まだ分からない」— 0 と書くと合計されてしまう。
+function formatMass(massKg: number | null): string {
+  return massKg === null ? NOT_APPLICABLE : massKg.toFixed(3)
 }
 
 // 継手箇所数には （３）梁2) の 0.5か所がある — 整数に丸めると条文と違う数になる。
@@ -233,6 +236,80 @@ function NoteInput({ lineId }: { lineId: string }) {
   )
 }
 
+/**
+ * 単位質量は積算基準 1通則 前文が JIS G 3112 に委ねた値で、その JIS は有償
+ * 規格だ。製品が値を持てないので利用者に聞く — 入るまで質量は算出しない。
+ */
+function UnitMassField({ size }: { size: BarSize }) {
+  const stored = useAppStore(({ project }) => project.unitMass?.[size])
+  const updateProject = useAppStore(({ updateProject }) => updateProject)
+  // 打鍵の途中（"0" → "0.9"）で欄が消えないよう、表示は打った文字列のまま持つ。
+  const [draft, setDraft] = useState(stored === undefined ? '' : String(stored))
+
+  return (
+    <label className={styles.unitMassField}>
+      <span className={styles.unitMassSize}>{size}</span>
+      <input
+        className={styles.unitMassInput}
+        type="number"
+        min="0"
+        step="0.001"
+        inputMode="decimal"
+        data-size={size}
+        aria-label={`${size} 単位質量`}
+        value={draft}
+        onChange={(event) => {
+          const next = event.currentTarget.value
+          setDraft(next)
+
+          // 空欄も 0 も「入っていない」だ。0 を通すと 0kg として合計され、
+          // 内訳書では入力漏れと区別がつかない。
+          const parsed = Number(next)
+          const value =
+            next.trim() !== '' && Number.isFinite(parsed) && parsed > 0
+              ? parsed
+              : null
+
+          updateProject((project) => setUnitMass(project, size, value))
+        }}
+      />
+    </label>
+  )
+}
+
+export function UnitMassInput({ lines }: TakeoffTableProps) {
+  const locale = useAppStore(({ locale }) => locale)
+  const sizes = useMemo(
+    () =>
+      [...new Set(massLines(lines).map(({ size }) => size))].sort(
+        (left, right) => Number(left.slice(1)) - Number(right.slice(1)),
+      ),
+    [lines],
+  )
+
+  if (sizes.length === 0) return null
+
+  return (
+    <section className={styles.unitMassPanel} data-testid="unit-mass-input">
+      <h3 className={styles.unitMassTitle}>
+        {t(locale, 'takeoff.unitMassInput.title')}
+      </h3>
+      <p
+        className={styles.unitMassNotice}
+        role="note"
+        data-testid="unit-mass-notice"
+      >
+        {t(locale, 'takeoff.unitMassInput.notice')}
+      </p>
+      <div className={styles.unitMassFields}>
+        {sizes.map((size) => (
+          <UnitMassField key={size} size={size} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function TakeoffTable({ lines }: TakeoffTableProps) {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
@@ -350,8 +427,8 @@ export function TakeoffTable({ lines }: TakeoffTableProps) {
 
 interface StoryRowsProps {
   storyName: string
-  designKg: number
-  requiredKg: number
+  designKg: number | null
+  requiredKg: number | null
   groups: QuantityGroup[]
   representatives: Map<string, string>
   selectedGroup: string | null
@@ -538,7 +615,7 @@ function LineRows({
               {formatLength(line.totalLengthMm)}
             </td>
             <td className={`${styles.numericCell} ${styles.unitMass}`}>
-              {line.unitMassKgPerM.toFixed(3)}
+              {formatMass(line.unitMassKgPerM)}
             </td>
             <td className={styles.numericCell}>{formatMass(line.designKg)}</td>
             <td className={`${styles.numericCell} ${styles.requiredColumn}`}>
@@ -652,6 +729,7 @@ export function TakeoffPane() {
           </p>
         </div>
       )}
+      <UnitMassInput lines={lines} />
       <TakeoffTable lines={lines} />
     </>
   )
