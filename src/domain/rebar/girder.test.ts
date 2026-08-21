@@ -87,7 +87,7 @@ function runWithSpan(nextSpan: GirderSpan): GirderRun {
 
 function byRole(
   generated: ReturnType<typeof generateGirderRebar>,
-  role: '上端筋' | '下端筋' | 'あばら筋',
+  role: '上端筋' | '下端筋' | 'あばら筋' | '幅止め筋' | '腹筋',
 ) {
   const rebar = generated.find((candidate) => candidate.role === role)
   expect(rebar, `${role} should be generated`).toBeDefined()
@@ -555,5 +555,86 @@ describe('generateGirderRebar', () => {
     } catch (error) {
       expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
     }
+  })
+})
+
+describe('幅止め筋 (M3c)', () => {
+  const withWidthTie: GirderSection = {
+    ...section,
+    widthTie: { size: 'D10', pitch: 1000 },
+  }
+
+  it('draws across the width between the 加工用かぶり faces', () => {
+    const generated = generateGirderRebar(
+      input({ section: withWidthTie }),
+      jpMlitRulePack,
+    )
+    const tie = byRole(generated, '幅止め筋')
+
+    // 加工長は幅からかぶり2面分を引いた実寸、設計長さは幅そのもの — わざと
+    // 食い違う (ADR-019)。ここが一致してしまうと 1通則3) を取り違えている。
+    expect(polylineLength(tie.points, tie.closed)).toBeLessThan(tie.length)
+    expect(tie.length).toBe(withWidthTie.b)
+    expect(tie.closed).toBe(false)
+  })
+
+  it('repeats along the span from the same start offset as the あばら筋', () => {
+    const generated = generateGirderRebar(
+      input({ section: withWidthTie }),
+      jpMlitRulePack,
+    )
+    const tie = byRole(generated, '幅止め筋')
+    const stirrup = byRole(generated, 'あばら筋')
+
+    expect(tie.placement?.axis).toBe('x')
+    expect(tie.placement?.startOffsetMm).toBe(stirrup.placement?.startOffsetMm)
+    expect(tie.placement?.pitchMm).toBe(1000)
+    expect(tie.placement?.positionCount).toBe(
+      stirrupPositions(span.clear, 1000, section.stirrup.startOffsetMm)
+        .positionsMm.length,
+    )
+  })
+
+  it('rejects a section too narrow for the fabrication cover', () => {
+    const narrow: GirderSection = {
+      ...withWidthTie,
+      b: 2 * coverRule.value,
+    }
+
+    expect(() =>
+      generateGirderRebar(input({ section: narrow }), jpMlitRulePack),
+    ).toThrow(MemberUnsupportedError)
+  })
+})
+
+describe('腹筋 (M3c)', () => {
+  const withSideBar: GirderSection = {
+    ...section,
+    sideBar: { size: 'D10', count: 2, extraLengthMm: 150 },
+  }
+
+  it('draws exactly the 設計長さ — 内法 plus the input 余長 at both ends', () => {
+    const generated = generateGirderRebar(
+      input({ section: withSideBar }),
+      jpMlitRulePack,
+    )
+    const sideBar = byRole(generated, '腹筋')
+
+    // 余長は入力なので加工形状と設計長さが食い違う理由がない。あばら筋のように
+    // 数量側の簡略化が入らないことを固定する。
+    expect(polylineLength(sideBar.points, sideBar.closed)).toBe(sideBar.length)
+    expect(sideBar.length).toBe(span.clear + 2 * 150)
+    expect(sideBar.placement).toBeUndefined()
+  })
+
+  it('rejects a negative 余長 rather than shortening the bar', () => {
+    const negative: GirderSection = {
+      ...section,
+      sideBar: { size: 'D10', count: 2, extraLengthMm: -50 },
+    }
+
+    expect(() =>
+      generateGirderRebar(input({ section: negative }), jpMlitRulePack),
+    ).toThrow(MemberUnsupportedError)
   })
 })

@@ -47,7 +47,8 @@ describe('useTakeoff', () => {
     expect(result.current.rebars.length).toBeGreaterThan(0)
     expect(result.current.lines.length).toBeGreaterThan(0)
     // 単一 스팬 런 2개와 2스팬 런 1개가 만드는 행 구성을 그대로 박는다.
-    // あばら筋은 X·Y 스팬 内法이 같아 한 행으로 묶이고 places로 세어진다.
+    // あばら筋·幅止め筋·腹筋은 X·Y 스팬 内法이 같아 각각 한 행으로 묶이고
+    // places로 세어진다 — 셋 다 부재(梁)마다 생기는 배근이라 런으로 묶이지 않는다.
     // 継手 행(箇所)은 2스팬 런에만 붙는다 — 単一 스팬은 単独梁이라 1通則4)로
     // 돌아가고 D25 6.8m는 7.0m에 못 미쳐 0か所이며, 0 행은 만들지 않는다.
     // 2스팬 런은 連続梁이라 （３）梁2)의 11.2m ＝ 2か所가 붙는다.
@@ -55,6 +56,8 @@ describe('useTakeoff', () => {
       '上端筋/kg',
       '下端筋/kg',
       'あばら筋/kg',
+      '幅止め筋/kg',
+      '腹筋/kg',
       '上端筋/kg',
       '上端筋/箇所',
       '下端筋/kg',
@@ -105,7 +108,7 @@ describe('useTakeoff', () => {
       result.current.rebars
         .filter(({ memberId }) => memberId === yRun.ownerId)
         .map(({ role }) => role),
-    ).toEqual(['上端筋', '下端筋', 'あばら筋'])
+    ).toEqual(['上端筋', '下端筋', 'あばら筋', '幅止め筋', '腹筋'])
     expect(
       yRun.members.every(({ id: memberId }) =>
         result.current.rebars.some(

@@ -70,7 +70,12 @@ export function roleToLayer(role: RebarRole): RebarLayer {
       return 'main'
     case '帯筋':
     case 'あばら筋':
+    // 幅止め筋은 あばら筋에 결속되는 가로 방향 보조근이라 같은 레이어에 둔다.
+    case '幅止め筋':
       return 'hoop'
+    // 腹筋은 스팬 방향으로 흐르는 세로근이라 主筋과 같은 레이어다.
+    case '腹筋':
+      return 'main'
     default: {
       const unsupported: never = role
       throw new Error(`Unsupported RebarRole: ${unsupported}`)
@@ -186,9 +191,13 @@ function columnHoopPlacements(rebar: Rebar): Point3[] {
   return positions.map((y): Point3 => [0, y, 0])
 }
 
-function girderStirrupPlacements(rebar: Rebar): Point3[] {
+/**
+ * 内法 방향으로 되풀이되는 大梁 철근(あばら筋·幅止め筋)의 전개. 도메인
+ * `stirrupPositions`가 유일한 출처인 것은 柱 帯筋과 같다.
+ */
+function girderRepeatedPlacements(rebar: Rebar): Point3[] {
   if (rebar.placement?.axis !== 'x') {
-    throw new Error(`あばら筋 x-axis placement is missing: ${rebar.id}`)
+    throw new Error(`${rebar.role} x-axis placement is missing: ${rebar.id}`)
   }
 
   const positions = stirrupPositions(
@@ -199,7 +208,7 @@ function girderStirrupPlacements(rebar: Rebar): Point3[] {
 
   if (positions.length !== rebar.placement.positionCount) {
     throw new Error(
-      `あばら筋 placement count mismatch: ${positions.length} !== ` +
+      `${rebar.role} placement count mismatch: ${positions.length} !== ` +
         `${rebar.placement.positionCount}`,
     )
   }
@@ -207,12 +216,42 @@ function girderStirrupPlacements(rebar: Rebar): Point3[] {
   return positions.map((x): Point3 => [x, 0, 0])
 }
 
+/**
+ * 腹筋은 좌우 두 側面에 나뉘어 붙는다. 段数 ＝ ⌈本数 ÷ 2⌉ 이고, 홀수면 마지막
+ * 한 본이 한쪽 면에만 남는다. 段의 높이는 上端筋·下端筋 사이를 균등 분할한 값이다
+ * — 規準値가 아니라 작도 규칙이며, 数量은 이 배치를 쓰지 않는다 (ADR-019).
+ */
+function girderSideBarPlacements(
+  rebar: Rebar,
+  section: GirderSection,
+): Point3[] {
+  const [, midDepthMm, nearFaceZ] = rebar.points[0]
+  const farFaceZ = section.b - nearFaceZ
+  const tiers = Math.ceil(rebar.count / 2)
+
+  return Array.from({ length: rebar.count }, (_, index): Point3 => {
+    const tier = Math.floor(index / 2)
+    // 段が1つなら梁せいの中央、複数なら上端筋・下端筋の間を均等に割る。
+    const spanMm = section.depth - 2 * nearFaceZ
+    const y =
+      tiers === 1
+        ? 0
+        : nearFaceZ + (tier * spanMm) / (tiers - 1) - midDepthMm
+    const z = index % 2 === 0 ? 0 : farFaceZ - nearFaceZ
+
+    return [0, y, z]
+  })
+}
+
 export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
   if (section.kind === '柱') {
     return columnRebarPlacements(rebar, section)
   }
-  if (rebar.role === 'あばら筋') {
-    return girderStirrupPlacements(rebar)
+  if (rebar.role === 'あばら筋' || rebar.role === '幅止め筋') {
+    return girderRepeatedPlacements(rebar)
+  }
+  if (rebar.role === '腹筋') {
+    return girderSideBarPlacements(rebar, section)
   }
 
   return girderMainPlacements(rebar, section)

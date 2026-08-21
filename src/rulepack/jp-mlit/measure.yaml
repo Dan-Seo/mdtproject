@@ -12,6 +12,16 @@
   confidence: stated
   note: 「フープ、スタラップの長さは、それぞれ柱、基礎梁、梁及び壁梁のコンクリートの断面の設計寸法による周長を鉄筋の長さとし、フックはないものとする」— かぶりを控除せず、フック余長も加えない
 
+- key: measure.width-tie.length.addition
+  label: 幅止筋の設計長さに加えるフック余長
+  expr: コンクリートの設計幅 b ＋ 0
+  conditions: {}
+  value: 0
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 1通則3), page: 15 }
+  confidence: stated
+  note: 「幅止筋の長さは、基礎梁、梁、壁梁、壁のコンクリートの設計幅又は厚さとし、フックはないものとする」— 断面の設計幅そのもので、フック余長を加えない。条項が挙げる部材に柱はないので柱には適用しない
+
 - key: measure.distribution.addition
   label: 割付本数に加える本数
   expr: ⌈その部分の長さ ÷ 鉄筋の間隔⌉ ＋ 1

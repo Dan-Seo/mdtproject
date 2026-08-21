@@ -26,6 +26,7 @@ describe('jpMlitRulePack', () => {
         'bend.hook-tome',
         'cover.fabrication.addition',
         'measure.hoop.length.addition',
+        'measure.width-tie.length.addition',
         'measure.distribution.addition',
         'measure.tip.length.addition',
         'measure.splice.interval',

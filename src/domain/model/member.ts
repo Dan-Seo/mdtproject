@@ -97,6 +97,30 @@ export interface GirderSection {
     /** 両端の柱面から第1・最終あばら筋をどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
     startOffsetMm: number
   }
+  /**
+   * 幅止め筋。断面一覧に記載のない梁には無い配筋なので任意項目とし、
+   * `undefined` は「配筋なし」を意味する — 製品が勝手に足さない (ADR-012)。
+   * 設計長さは数量積算基準 1通則3) が断面の設計幅と定めるので入力は径とピッチだけ。
+   */
+  widthTie?: {
+    size: BarSize
+    pitch: number
+  }
+  /**
+   * 腹筋。`undefined` は「配筋なし」。本数は図面が「2-D10」と記載する数そのもの
+   * なので 1通則7) の割付ではない。
+   */
+  sideBar?: {
+    size: BarSize
+    count: number
+    /**
+     * 梁の両端で内法を越えて伸びる余長 (mm)。数量積算基準 2（３）梁3) は
+     * これを 1通則6) に委ね、同項は設計図書に記載がなければ JASS 5 準用と
+     * する。JASS 5 は有料規格で未確保、標準仕様書5章には腹筋の記述が一切
+     * ないため規準値を取れない — 設計図書の値を入力として受け取る (R9②)。
+     */
+    extraLengthMm: number
+  }
 }
 
 export type Section = ColumnSection | GirderSection

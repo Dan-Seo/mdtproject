@@ -527,3 +527,158 @@ describe('2（３）梁1) 連続する主筋は定着にかえて柱幅の1/2', 
     expect(top.zones?.filter(({ kind }) => kind === '定着')).toHaveLength(2)
   })
 })
+
+describe('1通則3) 幅止筋の長さ ＝ コンクリートの設計幅（フックなし）', () => {
+  it('cites 1通則3) with its printed page', () => {
+    const entry = fixture.clauses.find(({ id }) => id === '1通則3)')!
+    const hit = lookupRule(
+      jpMlitRulePack,
+      'measure.width-tie.length.addition',
+      {},
+    )
+
+    expect(hit.source.doc).toBe(fixture.source.doc)
+    expect(hit.source.edition).toBe(fixture.source.edition)
+    expect(hit.source.section).toBe(`${fixture.source.chapterShort} 1通則3)`)
+    expect(hit.source.page).toBe(entry.printedPage)
+    expect(hit.confidence).toBe('stated')
+    expect(entry.status).toBe('covered')
+  })
+
+  it.each(fixture.cases.widthTieDesignLength)(
+    '$label ＝ $expectedMm',
+    (testCase) => {
+      const { rebars } = girderRebarFor(
+        [6000],
+        columnSection(),
+        girderSection({
+          b: testCase.sectionWidthMm,
+          widthTie: { size: 'D10', pitch: 1000 },
+        }),
+      )
+
+      expect(roleOf(rebars, '幅止め筋').length).toBe(testCase.expectedMm)
+    },
+  )
+
+  it('measures the design width itself — never the あばら筋 の周長', () => {
+    // 1通則2) と 3) は隣り合う条項で、取り違えると幅止筋が周長 2×(b＋D) になる。
+    const section = girderSection({
+      b: 400,
+      depth: 750,
+      widthTie: { size: 'D10', pitch: 1000 },
+    })
+    const { rebars } = girderRebarFor([6000], columnSection(), section)
+
+    expect(roleOf(rebars, '幅止め筋').length).toBe(section.b)
+    expect(roleOf(rebars, 'あばら筋').length).not.toBe(section.b)
+  })
+
+  it('generates no 幅止め筋 for 柱 — the clause lists only 基礎梁・梁・壁梁・壁', () => {
+    const generated = columnRebarFor(columnSection())
+
+    expect(generated.some(({ role }) => role === '幅止め筋')).toBe(false)
+  })
+
+  it('omits the 幅止め筋 entirely when the section list has none', () => {
+    // 断面一覧に記載のない配筋を製品が勝手に足さない (ADR-012)。
+    const { rebars } = girderRebarFor([6000], columnSection(), girderSection())
+
+    expect(rebars.some(({ role }) => role === '幅止め筋')).toBe(false)
+  })
+})
+
+describe('2（３）梁3) 幅止筋の本数 ＝ 各梁ごとに 1通則7)', () => {
+  it.each(fixture.cases.widthTieCount)(
+    '$label ＝ $expectedCount 本',
+    (testCase) => {
+      const column = columnSection()
+      const { rebars } = girderRebarFor(
+        [testCase.partLengthMm + column.b],
+        column,
+        girderSection({
+          widthTie: { size: 'D10', pitch: testCase.pitchMm },
+        }),
+      )
+
+      expect(roleOf(rebars, '幅止め筋').count).toBe(testCase.expectedCount)
+    },
+  )
+
+  it('carries both governing clauses as its 出典', () => {
+    const { rebars } = girderRebarFor(
+      [6000],
+      columnSection(),
+      girderSection({ widthTie: { size: 'D10', pitch: 1000 } }),
+    )
+
+    expect(roleOf(rebars, '幅止め筋').ruleHits.map(({ key }) => key)).toEqual([
+      'measure.width-tie.length.addition',
+      'measure.distribution.addition',
+    ])
+  })
+
+  it('counts per 梁 — a 2-span run gets one 幅止め筋 row per span', () => {
+    const { rebars } = girderRebarFor(
+      [6000, 6000],
+      columnSection(),
+      girderSection({ widthTie: { size: 'D10', pitch: 1000 } }),
+    )
+
+    expect(rebars.filter(({ role }) => role === '幅止め筋')).toHaveLength(2)
+  })
+})
+
+describe('1通則6) 腹筋の余長 — JASS 5 未確保のため断面一覧の入力', () => {
+  it('keeps the clause deferred rather than inventing a 余長', () => {
+    const clause = fixture.clauses.find(({ id }) => id === '1通則6)')!
+
+    expect(clause.status).toBe('deferred')
+  })
+
+  it('carries no rule pack row for the 腹筋 — the value has no source', () => {
+    // 標準仕様書 R7 全330頁に「腹筋」は0件、積算基準は余長を JASS 5 に委任する。
+    // 出典のない数値をルールパックに置かない (CLAUDE.md CRITICAL)。
+    const keys = jpMlitRulePack.entries.map(({ key }) => key)
+
+    expect(keys.some((key) => key.includes('side-bar'))).toBe(false)
+    expect(keys.some((key) => key.includes('腹筋'))).toBe(false)
+  })
+
+  it('takes the 余長 from the section list and shows it in the 設計長さ', () => {
+    const column = columnSection()
+    const lengths = [0, 150].map((extraLengthMm) => {
+      const { rebars } = girderRebarFor(
+        [6000],
+        column,
+        girderSection({
+          sideBar: { size: 'D10', count: 2, extraLengthMm },
+        }),
+      )
+      return roleOf(rebars, '腹筋').length
+    })
+    const [withoutTail, withTail] = lengths
+
+    // 余長は梁の両端に付く。入力がそのまま設計長さに出ないと、利用者は
+    // 図面の値を入れたのに数量が動かない画面を見ることになる。
+    expect(withTail - withoutTail).toBe(2 * 150)
+    expect(withoutTail).toBe(6000 - column.b)
+  })
+
+  it('uses the 記載本数 rather than 1通則7) — 腹筋 is written as 2-D10', () => {
+    const { rebars } = girderRebarFor(
+      [6000],
+      columnSection(),
+      girderSection({ sideBar: { size: 'D10', count: 2, extraLengthMm: 0 } }),
+    )
+
+    expect(roleOf(rebars, '腹筋').count).toBe(2)
+    expect(roleOf(rebars, '腹筋').ruleHits).toEqual([])
+  })
+
+  it('omits the 腹筋 entirely when the section list has none', () => {
+    const { rebars } = girderRebarFor([6000], columnSection(), girderSection())
+
+    expect(rebars.some(({ role }) => role === '腹筋')).toBe(false)
+  })
+})

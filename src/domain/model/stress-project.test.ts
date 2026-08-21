@@ -11,7 +11,7 @@ describe('createStressProject', () => {
       storyCount: 2,
     })
 
-    expect(project.schemaVersion).toBe(5)
+    expect(project.schemaVersion).toBe(6)
     expect(project.stories).toHaveLength(2)
     expect(JSON.parse(JSON.stringify(project))).toEqual(project)
   })

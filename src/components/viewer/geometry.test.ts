@@ -598,6 +598,104 @@ describe('rebarRadius', () => {
   })
 })
 
+describe('M3c の日本固有詳細を 3D に展開する', () => {
+  const widthTieLayout = stirrupPositions(
+    GIRDER_CLEAR_MM,
+    1000,
+    girderSection.stirrup.startOffsetMm,
+  )
+  const widthTie: Rebar = {
+    id: '1F-G1|width-tie',
+    memberId: '1F-G1',
+    role: '幅止め筋',
+    size: 'D10',
+    shape: 'straight',
+    points: [
+      [0, 375, 50],
+      [0, 375, 350],
+    ],
+    closed: false,
+    length: girderSection.b,
+    count: 7,
+    placement: {
+      axis: 'x',
+      clearMm: GIRDER_CLEAR_MM,
+      pitchMm: 1000,
+      startOffsetMm: girderSection.stirrup.startOffsetMm,
+      lastGapMm: widthTieLayout.lastGapMm,
+      positionCount: widthTieLayout.positionsMm.length,
+    },
+    ruleHits: [],
+    formula: 'test',
+  }
+
+  it('repeats the 幅止め筋 from the domain layout, not from its 設計本数', () => {
+    // count(7) は 1通則7) の割付本数で、配置が作る本数とは正当に違う (ADR-019)。
+    const placements = rebarPlacements(widthTie, girderSection)
+
+    expect(placements).toEqual(
+      widthTieLayout.positionsMm.map((x): Point3 => [x, 0, 0]),
+    )
+    // 設計本数を動かしても配置は動かない — 配置の出所はドメインのレイアウトだけだ。
+    expect(
+      rebarPlacements({ ...widthTie, count: widthTie.count + 5 }, girderSection),
+    ).toEqual(placements)
+  })
+
+  it('splits the 腹筋 between the two side faces', () => {
+    const sideBar: Rebar = {
+      id: '1F-G1|side-bar',
+      memberId: '1F-G1',
+      role: '腹筋',
+      size: 'D10',
+      shape: 'straight',
+      points: [
+        [-150, 375, 50],
+        [5350, 375, 50],
+      ],
+      closed: false,
+      length: 5500,
+      count: 2,
+      ruleHits: [],
+      formula: 'test',
+    }
+    const placements = rebarPlacements(sideBar, girderSection)
+    const zs = placements.map(([, , z]) => z)
+
+    expect(placements).toHaveLength(2)
+    // 代表1本は手前面 (z=50) にあるので、オフセット 0 と 幅−2×かぶり で
+    // 両側面に1本ずつ立つ。
+    expect(zs).toEqual([0, girderSection.b - 2 * 50])
+    // 1段なので高さは動かない。
+    expect(placements.map(([, y]) => y)).toEqual([0, 0])
+  })
+
+  it('stacks 腹筋 tiers evenly when the section list asks for more than a pair', () => {
+    const sideBar: Rebar = {
+      id: '1F-G1|side-bar',
+      memberId: '1F-G1',
+      role: '腹筋',
+      size: 'D10',
+      shape: 'straight',
+      points: [
+        [0, 375, 50],
+        [5200, 375, 50],
+      ],
+      closed: false,
+      length: 5200,
+      count: 4,
+      ruleHits: [],
+      formula: 'test',
+    }
+    const placements = rebarPlacements(sideBar, girderSection)
+    const ys = placements.map(([, y]) => y)
+
+    expect(placements).toHaveLength(4)
+    // 2段が上端筋・下端筋の間を均等に割る — 代表点(梁せいの中央)からの差で見る。
+    expect(ys).toEqual([50 - 375, 50 - 375, 700 - 375, 700 - 375])
+  })
+})
+
 describe('roleToLayer', () => {
   it.each([
     ['主筋', 'main'],
@@ -605,6 +703,8 @@ describe('roleToLayer', () => {
     ['下端筋', 'main'],
     ['帯筋', 'hoop'],
     ['あばら筋', 'hoop'],
+    ['幅止め筋', 'hoop'],
+    ['腹筋', 'main'],
   ] satisfies [RebarRole, 'main' | 'hoop'][])(
     'maps %s to %s',
     (role, expected) => {

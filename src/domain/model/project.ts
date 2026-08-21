@@ -17,7 +17,11 @@ import { coverConditions } from '../rules/lookup'
 // v5 (2026-08-14): Section에 필수 필드 spliceMethod 추가. 継手箇所数와 설계길이
 // 산입이 방식마다 다른데(積算基準 1通則4)·5)) 규준에 기본 방식이 없으므로
 // 조용한 기본값 대신 입력으로 받는다.
-export const PROJECT_SCHEMA_VERSION = 5
+// v6 (2026-08-21): GirderSection에 任意 필드 widthTie·sideBar 추가 (M3c).
+// 둘 다 「断面一覧에 없으면 그 배근이 없다」를 뜻하는 optional이다 — 있는지
+// 없는지를 제품이 정하지 않는다. 腹筋의 余長은 積算基準 1通則6)이 JASS 5에
+// 위임하는데 그 규격이 미확보라 룰팩 행이 아니라 입력으로 받는다 (R9②).
+export const PROJECT_SCHEMA_VERSION = 6
 
 export interface Grid {
   xSpans: number[]

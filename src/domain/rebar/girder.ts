@@ -20,6 +20,7 @@ import {
   intervalSpliceCount,
   spliceCount,
   spliceLengthMm,
+  widthTieDesignLengthMm,
   type SpliceBand,
 } from './measurement'
 import { stirrupPositions } from './stirrup-layout'
@@ -416,6 +417,132 @@ function generateStirrup(
   }
 }
 
+/**
+ * 幅止め筋 (数量積算基準 1通則3)・2（３）梁3))。
+ *
+ * 設計長さは断面の設計幅そのもの、設計本数は各梁ごとの割付である。隣の
+ * 1通則2)（フープ・スタラップ＝周長）と取り違えないよう、長さは専用の
+ * `widthTieDesignLengthMm` を通す。
+ */
+function generateWidthTie(
+  member: Member,
+  span: GirderSpan,
+  section: GirderSection,
+  widthTie: NonNullable<GirderSection['widthTie']>,
+  fabricationCoverMm: number,
+  widthTieLengthAdditionRule: RuleHit,
+  distributionAdditionRule: RuleHit,
+): Rebar {
+  // 幅止め筋はあばら筋に結束するので、第1本の位置はあばら筋と同じ面から測る。
+  // これは 3D の作図規則にすぎない — 設計本数は 1通則7) で数えるので初期
+  // オフセットに左右されない (ADR-019)。
+  const startOffsetMm = section.stirrup.startOffsetMm
+  const tieWidthMm = section.b - 2 * fabricationCoverMm
+
+  if (tieWidthMm <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `幅止め筋 加工寸法 must be positive: ${member.id} ` +
+        `(幅 ${section.b} − 2×加工用かぶり ${fabricationCoverMm})`,
+    )
+  }
+
+  const layout = stirrupPositions(span.clear, widthTie.pitch, startOffsetMm)
+  const lengthMm = widthTieDesignLengthMm(
+    section.b,
+    widthTieLengthAdditionRule,
+  )
+  const count = distributionCount(
+    span.clear,
+    widthTie.pitch,
+    distributionAdditionRule,
+  )
+  const midDepthMm = section.depth / 2
+
+  return {
+    id: `${member.id}|width-tie`,
+    memberId: member.id,
+    role: '幅止め筋',
+    size: widthTie.size,
+    shape: 'straight',
+    points: [
+      [0, midDepthMm, fabricationCoverMm],
+      [0, midDepthMm, section.b - fabricationCoverMm],
+    ],
+    closed: false,
+    length: lengthMm,
+    count,
+    placement: {
+      axis: 'x',
+      clearMm: span.clear,
+      pitchMm: widthTie.pitch,
+      startOffsetMm,
+      lastGapMm: layout.lastGapMm,
+      positionCount: layout.positionsMm.length,
+    },
+    ruleHits: [widthTieLengthAdditionRule, distributionAdditionRule],
+    formula:
+      `設計長さ ＝ コンクリートの設計幅 ${section.b} ＝ ${lengthMm}` +
+      `（数量積算基準 1通則3) — フックを計上しない） ／ ` +
+      `設計本数 ＝ ⌈内法長さ ${span.clear} ÷ ピッチ ${widthTie.pitch}⌉ ＋ 1 ` +
+      `＝ ${count}（同 （３）梁3)・1通則7) — 各梁ごと、内法長さは代表値） ／ ` +
+      `3D 形状 ＝ 実配筋（かぶりを控除しあばら筋と同じ初期オフセットに合わせる` +
+      `ため、表示される長さ・本数は設計値と一致しない・数量には用いない）`,
+  }
+}
+
+/**
+ * 腹筋 (数量積算基準 2（３）梁3))。
+ *
+ * この条項が定めるのは「余長は 1通則6) による」の一点だけで、同項は設計図書に
+ * 記載がなければ JASS 5 準用とする。JASS 5 は有料規格で未確保、標準仕様書5章に
+ * 腹筋の記述は一切ない（R7 全330頁で0件）ので規準値が取れない — 余長も本数も
+ * 断面一覧の入力をそのまま使い、ルールパックを引かない (ADR-012、R9②)。
+ * だから `ruleHits` は空である。出典のない数値に出典を貼らない。
+ */
+function generateSideBar(
+  member: Member,
+  span: GirderSpan,
+  section: GirderSection,
+  sideBar: NonNullable<GirderSection['sideBar']>,
+  fabricationCoverMm: number,
+): Rebar {
+  if (sideBar.extraLengthMm < 0 || !Number.isFinite(sideBar.extraLengthMm)) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `腹筋 余長 must be non-negative and finite: ${member.id} ` +
+        `(${sideBar.extraLengthMm})`,
+    )
+  }
+
+  const lengthMm = span.clear + 2 * sideBar.extraLengthMm
+  const midDepthMm = section.depth / 2
+
+  return {
+    id: `${member.id}|side-bar`,
+    memberId: member.id,
+    role: '腹筋',
+    size: sideBar.size,
+    shape: 'straight',
+    points: [
+      [-sideBar.extraLengthMm, midDepthMm, fabricationCoverMm],
+      [span.clear + sideBar.extraLengthMm, midDepthMm, fabricationCoverMm],
+    ],
+    closed: false,
+    length: lengthMm,
+    count: sideBar.count,
+    ruleHits: [],
+    formula:
+      `設計長さ ＝ 内法長さ ${span.clear} ＋ 余長 ${sideBar.extraLengthMm} × 2 ` +
+      `＝ ${lengthMm}（数量積算基準 2（３）梁3) は余長を 1通則6) に委ね、同項は` +
+      `設計図書に記載がなければ JASS 5 準用と定める。JASS 5 は未確保・` +
+      `標準仕様書5章に腹筋の記述なし — 余長は断面一覧の入力である／R9②） ／ ` +
+      `設計本数 ＝ 断面一覧の腹筋本数 ${sideBar.count}` +
+      `（図面に記載された本数なので 1通則7) の割付ではない） ／ ` +
+      `3D 形状 ＝ 両側面に振り分けて描く（振り分けは作図規則）`,
+  }
+}
+
 export function generateGirderRebar(
   input: GirderRebarInput,
   pack: RulePack,
@@ -494,6 +621,34 @@ export function generateGirderRebar(
       distributionAdditionRule,
     ),
   )
+  // 幅止め筋・腹筋は断面一覧にある梁にだけ付く。無い梁に製品が足さない (ADR-012)。
+  const { widthTie, sideBar } = section
+  const widthTies =
+    widthTie === undefined
+      ? []
+      : run.members.map((member, index) =>
+          generateWidthTie(
+            member,
+            run.spans[index],
+            section,
+            widthTie,
+            fabricationCoverMm,
+            lookupRule(pack, 'measure.width-tie.length.addition', {}),
+            distributionAdditionRule,
+          ),
+        )
+  const sideBars =
+    sideBar === undefined
+      ? []
+      : run.members.map((member, index) =>
+          generateSideBar(
+            member,
+            run.spans[index],
+            section,
+            sideBar,
+            fabricationCoverMm,
+          ),
+        )
 
-  return [top, bottom, ...stirrups]
+  return [top, bottom, ...stirrups, ...widthTies, ...sideBars]
 }

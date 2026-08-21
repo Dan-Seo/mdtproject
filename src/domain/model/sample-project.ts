@@ -49,6 +49,12 @@ export const girderSections: GirderSection[] = [
     spliceMethod: '重ね継手',
     main: { size: 'D25', topCount: 4, bottomCount: 4 },
     stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
+    // M3c の日本固有詳細。実図面の断面リストにある値をそのまま例に使う
+    // （幅止筋 D10@1000・腹筋 2-D10）。腹筋の余長は規準値が取れないので
+    // 0＝未入力のまま — 入れない限り計上しない (R9②)。G2 は両方とも
+    // 「なし」にして、断面一覧に記載がない梁の見え方も残す。
+    widthTie: { size: 'D10', pitch: 1000 },
+    sideBar: { size: 'D10', count: 2, extraLengthMm: 0 },
   },
   {
     id: 'section-G2',

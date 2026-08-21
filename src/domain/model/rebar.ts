@@ -7,6 +7,8 @@ export type RebarRole =
   | '上端筋'
   | '下端筋'
   | 'あばら筋'
+  | '幅止め筋'
+  | '腹筋'
 
 export type RebarShape = 'straight' | 'hook90' | 'hoop'
 

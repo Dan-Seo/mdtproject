@@ -102,6 +102,39 @@ function BarSizeSelect({
   )
 }
 
+/**
+ * 幅止め筋·腹筋은 断面一覧에 없으면 그 배근이 없는 것이다 — 「なし」를 고르면
+ * 필드 자체를 지운다. 제품이 있는 셈 치고 계상하지 않는다 (ADR-012).
+ */
+function OptionalBarSizeSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: BarSize | null
+  onChange(value: BarSize | null): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value ?? ''}
+      aria-label={label}
+      onChange={(event) => {
+        const next = event.currentTarget.value
+        onChange(next === '' ? null : (next as BarSize))
+      }}
+    >
+      <option value="">なし</option>
+      {barSizes.map((size) => (
+        <option key={size} value={size}>
+          {size}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function GradeSelect({
   label,
   value,
@@ -343,6 +376,115 @@ function ShearField({
   )
 }
 
+/**
+ * M3c の日本固有詳細 — 幅止め筋と腹筋。どちらも大梁だけに置く。
+ * 幅止め筋を挙げる数量積算基準 1通則3) の部材は基礎梁・梁・壁梁・壁で柱を含まず、
+ * 腹筋を扱う 2（３）梁3) も梁の条項だからである。
+ */
+function GirderDetailField({
+  section,
+  update,
+}: {
+  section: GirderSection
+  update(updater: (section: Section) => Section): void
+}) {
+  const { widthTie, sideBar } = section
+
+  return (
+    <div className={styles.girderDetailField}>
+      <span>幅止</span>
+      <OptionalBarSizeSelect
+        label={`${sectionMarkLabel(section)} 幅止め筋 径`}
+        value={widthTie?.size ?? null}
+        onChange={(size) =>
+          update((current) => {
+            if (current.kind !== '大梁') return current
+            if (size === null) {
+              const next = { ...current }
+              delete next.widthTie
+              return next
+            }
+            return {
+              ...current,
+              // ピッチの種は利用者自身が入れたあばら筋ピッチを借りる — 規準に
+              // 幅止め筋のピッチはなく、製品が数字を作らない。
+              widthTie: {
+                size,
+                pitch: current.widthTie?.pitch ?? current.stirrup.pitch,
+              },
+            }
+          })
+        }
+      />
+      <span aria-hidden="true">@</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 幅止め筋 ピッチ`}
+        value={widthTie?.pitch ?? section.stirrup.pitch}
+        onChange={(pitch) =>
+          update((current) =>
+            current.kind !== '大梁' || current.widthTie === undefined
+              ? current
+              : { ...current, widthTie: { ...current.widthTie, pitch } },
+          )
+        }
+      />
+      <span>腹筋</span>
+      <OptionalBarSizeSelect
+        label={`${sectionMarkLabel(section)} 腹筋 径`}
+        value={sideBar?.size ?? null}
+        onChange={(size) =>
+          update((current) => {
+            if (current.kind !== '大梁') return current
+            if (size === null) {
+              const next = { ...current }
+              delete next.sideBar
+              return next
+            }
+            return {
+              ...current,
+              // 本数の種は両側面に1本ずつの2本。余長は 0 —
+              // JASS 5 が未確保で規準値がないので、入れないかぎり計上しない (R9②)。
+              sideBar: current.sideBar ?? {
+                size,
+                count: 2,
+                extraLengthMm: 0,
+              },
+            }
+          })
+        }
+      />
+      <span aria-hidden="true">×</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 腹筋 本数`}
+        value={sideBar?.count ?? 2}
+        onChange={(count) =>
+          update((current) =>
+            current.kind !== '大梁' || current.sideBar === undefined
+              ? current
+              : { ...current, sideBar: { ...current.sideBar, count } },
+          )
+        }
+      />
+      <span>余長</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 腹筋 余長`}
+        minimum={0}
+        value={sideBar?.extraLengthMm ?? 0}
+        onChange={(extraLengthMm) =>
+          update((current) =>
+            current.kind !== '大梁' || current.sideBar === undefined
+              ? current
+              : {
+                  ...current,
+                  sideBar: { ...current.sideBar, extraLengthMm },
+                },
+          )
+        }
+      />
+    </div>
+  )
+}
+
 export function SectionTable() {
   const project = useAppStore(({ project }) => project)
   const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
@@ -401,6 +543,7 @@ export function SectionTable() {
             <th scope="col">断面</th>
             <th scope="col">主筋</th>
             <th scope="col">帯筋 / あばら筋</th>
+            <th scope="col">幅止め筋 / 腹筋</th>
             <th scope="col">Fc</th>
             <th scope="col">grade</th>
             <th scope="col">かぶり条件</th>
@@ -456,6 +599,17 @@ export function SectionTable() {
                 </td>
                 <td>
                   <ShearField section={section} update={updateCurrent} />
+                </td>
+                <td>
+                  {section.kind === '大梁' ? (
+                    <GirderDetailField
+                      section={section}
+                      update={updateCurrent}
+                    />
+                  ) : (
+                    // 柱には置かない配筋なので、空欄ではなく「対象外」と示す。
+                    <span className={styles.notApplicable}>—</span>
+                  )}
                 </td>
                 <td>
                   <NumberInput
