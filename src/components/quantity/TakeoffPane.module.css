@@ -111,6 +111,12 @@
   font-size: var(--type-caption-uppercase-size);
 }
 
+/* 原文明示だが独立検討待ち — 誤りではないので error 色にはしない */
+.transcribedWarning {
+  color: var(--color-caution);
+  font-size: var(--type-caption-uppercase-size);
+}
+
 .shapeIcon {
   display: block;
   color: var(--text-muted);
@@ -168,6 +174,18 @@ a.inferredSourceChip:hover {
   border-color: var(--color-error);
   border-bottom-color: var(--color-error);
   color: var(--color-error);
+}
+
+.transcribedSourceChip,
+a.transcribedSourceChip {
+  border-color: var(--color-caution);
+  color: var(--color-caution);
+}
+
+a.transcribedSourceChip:hover {
+  border-color: var(--color-caution);
+  border-bottom-color: var(--color-caution);
+  color: var(--color-caution);
 }
 
 .disabledSourceChip {

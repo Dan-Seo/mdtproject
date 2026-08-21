@@ -25,7 +25,13 @@ export function sourceTooltip(rule: RuleHit): string {
   return [
     `${rule.label} ＝ ${rule.expr}`,
     location,
-    rule.confidence === 'inferred' ? '⚠ 未確認 —' : null,
+    // 등급마다 다른 말이 붙어야 한다 — 「원문에 없다」와 「원문에 있는데
+    // 검토가 1인이다」를 같은 문구로 덮으면 등급을 나눈 의미가 없다.
+    rule.confidence === 'inferred'
+      ? '⚠ 原文に値なし（推論）—'
+      : rule.confidence === 'transcribed'
+        ? '△ 原文明示・独立検討待ち（R6）—'
+        : null,
     note,
   ]
     .filter(Boolean)

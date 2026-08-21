@@ -57,4 +57,6 @@
 /* ---- semantic status ---- */
 --color-success:var(--kj-green);
 --color-error:var(--kj-crimson);
+/* 独立検討待ち(transcribed) — 誤りではないので error より弱い注意色 */
+--color-caution:var(--kj-gold);
 }

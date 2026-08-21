@@ -196,8 +196,10 @@ describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -222,8 +224,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -236,8 +240,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -251,7 +257,7 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
+      expect(hit.confidence).toBe('transcribed')
       expect(hit.note).toContain('画像')
     },
   )
@@ -265,8 +271,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -278,7 +286,7 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     expect(hit.unit).toBe(entry.unit)
     expect(hit.source.section).toBe(entry.table)
     expect(hit.source.page).toBe(entry.printedPage)
-    expect(hit.confidence).toBe('inferred')
+    expect(hit.confidence).toBe('transcribed')
     expect(hit.key).toBe(entry.kind)
   })
 })

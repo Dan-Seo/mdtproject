@@ -49,11 +49,19 @@ describe('sourceTooltip', () => {
     )
   })
 
-  it('marks an inferred value as unconfirmed', () => {
-    // 추출자＝승인자 문제(R6)가 남아 있는 값이라 화면에서 구분되어야 한다.
+  it('separates 原文に値なし from 独立検討待ち', () => {
+    // 두 사실은 다르다 — 하나는 제품이 지어낸 값이고, 다른 하나는 원문에 있는
+    // 값인데 검토자가 전사자와 같을 뿐이다 (R6). 같은 문구로 덮으면 등급을
+    // 나눈 의미가 사라진다 (ADR-023).
     expect(sourceTooltip(rule({ confidence: 'inferred' }))).toContain(
-      '⚠ 未確認 —',
+      '⚠ 原文に値なし（推論）—',
     )
+    expect(sourceTooltip(rule({ confidence: 'transcribed' }))).toContain(
+      '△ 原文明示・独立検討待ち（R6）—',
+    )
+    const statedTooltip = sourceTooltip(rule({ confidence: 'stated' }))
+    expect(statedTooltip).not.toContain('推論')
+    expect(statedTooltip).not.toContain('独立検討待ち')
   })
 
   it('says the original URL is missing instead of silently omitting it', () => {

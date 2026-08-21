@@ -13,7 +13,12 @@ import {
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
 import { lookupMarkup, lookupUnitMass } from '../rules/lookup'
-import type { RuleHit, RulePack } from '../rules/types'
+import {
+  CONFIDENCE_ORDER,
+  type RuleConfidence,
+  type RuleHit,
+  type RulePack,
+} from '../rules/types'
 
 /**
  * 内訳書の単位。鉄筋そのものは質量で、継手は箇所で数える — 数量積算基準が
@@ -34,7 +39,11 @@ interface QuantityLineBase {
   /** この行が束ねた部材の数 */
   places: number
   rules: RuleHit[]
-  inferred: boolean
+  /**
+   * 이 행이 기댄 근거 중 **가장 약한** 등급. 한 행이라도 약한 근거를 쓰면
+   * 그 행 전체가 그만큼만 확실하다 — 강한 쪽으로 반올림하지 않는다.
+   */
+  confidence: RuleConfidence
   formula: string
 }
 
@@ -180,9 +189,7 @@ export function spliceLineId(groupId: string, rebar: Rebar): string {
 function recalculate(grouped: GroupedLine): void {
   const { line, memberIds } = grouped
   line.places = memberIds.size
-  line.inferred = line.rules.some(
-    ({ confidence }) => confidence === 'inferred',
-  )
+  line.confidence = weakestConfidence(line.rules)
 
   if (grouped.kind === '箇所') {
     grouped.line.totalCount =
@@ -232,7 +239,8 @@ export function aggregateQuantity(
       role: rebar.role,
       size: rebar.size,
       places: 0,
-      inferred: false,
+      // recalculate() 가 행의 근거 전부를 보고 다시 정한다 — 여기 값은 자리표다.
+      confidence: 'stated' as RuleConfidence,
     }
 
     if (existing) {
@@ -343,10 +351,35 @@ export function spliceTotals(lines: QuantityLine[]): SpliceTotal[] {
   return [...totals.values()]
 }
 
-export function hasInferred(lines: QuantityLine[]): boolean {
-  return lines.some(({ inferred }) => inferred)
+/** 여러 근거를 묶을 때의 대표 등급 — 가장 약한 것. 근거가 없으면 `stated`. */
+export function weakestConfidence(rules: RuleHit[]): RuleConfidence {
+  return rules.reduce<RuleConfidence>(
+    (weakest, { confidence }) =>
+      CONFIDENCE_ORDER.indexOf(confidence) < CONFIDENCE_ORDER.indexOf(weakest)
+        ? confidence
+        : weakest,
+    'stated',
+  )
 }
 
+/**
+ * 独立検討가 끝나지 않은 근거가 하나라도 있는가 — 즉 `stated` 가 아닌 행이 있는가.
+ * `transcribed`(원문 명시·검토 대기)도 여기 들어간다. 경고를 내릴지 판단하는 값이므로
+ * 「원문에 값이 없다」(inferred)만 세면 검토 대기분이 조용히 통과한다 (ADR-015).
+ */
+export function hasUnverified(lines: QuantityLine[]): boolean {
+  return lines.some(({ confidence }) => confidence !== 'stated')
+}
+
+export function unverifiedRules(lines: QuantityLine[]): RuleHit[] {
+  return uniqueRules(
+    lines.flatMap(({ rules }) =>
+      rules.filter(({ confidence }) => confidence !== 'stated'),
+    ),
+  )
+}
+
+/** 원문에 값이 아예 없는 근거만. 텔레메트리의 `inferred_rules` 가 이것이다. */
 export function inferredRules(lines: QuantityLine[]): RuleHit[] {
   return uniqueRules(
     lines.flatMap(({ rules }) =>

@@ -40,12 +40,43 @@ describe('jpMlitRulePack', () => {
     )
   })
 
+  it('claims no independently reviewed value while R6 is open', () => {
+    // `stated` 는 「원문 명시 ＋ 독립 검토 완료」다. 아직 독립 검토를 거친 행이
+    // 없으므로 0행이어야 한다 — 여기가 늘어나는 순간이 R6 를 실제로 닫는 때이고,
+    // 늘리려면 docs/ADR.md ADR-023 의 승급 조건을 먼저 만족시켜야 한다.
+    const stated = jpMlitRulePack.entries.filter(
+      ({ confidence }) => confidence === 'stated',
+    )
+
+    expect(stated).toHaveLength(0)
+  })
+
+  it('marks every 原文明示 row transcribed and only sourceless rows inferred', () => {
+    // 원문에 값이 없는 것만 inferred 다. 지금은 두 갈래뿐 —
+    // ① 反対解釈로 세운 継手 算入倍率(明文なし), ② 원문 자체가 미확보인 JIS 単位質量.
+    const inferred = jpMlitRulePack.entries.filter(
+      ({ confidence }) => confidence === 'inferred',
+    )
+
+    expect(new Set(inferred.map(({ key }) => key))).toEqual(
+      new Set(['measure.splice.length.factor', 'unit-mass.value']),
+    )
+    for (const rule of inferred) {
+      expect(
+        rule.note,
+        `${rule.key} must say why the original has no value`,
+      ).toMatch(/明文ではない|明文はない|未確保/)
+    }
+  })
+
   it('resolves source and confidence metadata for every entry', () => {
     expect(jpMlitRulePack.entries.length).toBeGreaterThan(0)
     for (const rule of jpMlitRulePack.entries) {
       expect(rule.source.doc).not.toBe('')
       expect(rule.source.publisher).not.toBe('')
-      expect(['stated', 'inferred']).toContain(rule.confidence)
+      expect(['stated', 'transcribed', 'inferred']).toContain(
+        rule.confidence,
+      )
     }
   })
 

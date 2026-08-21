@@ -113,11 +113,10 @@ export function resolveGirderEnd(
     }
   }
 
-  const bentRule = lookupRule(pack, 'anchorage.L1h', {
-    fc: input.fc,
-    grade: input.grade,
-    hook: true,
-  })
+  // anchorage.L1h 는 여기서 조회하지 않는다 — 5.3.4(5)(ｲ) 에서 L1h 는 이 조항이
+  // 적용되는 **조건**(「フックありの定着の長さを確保できない場合」)일 뿐이고,
+  // (a)(b)(c) 중 어느 값도 정하지 않는다. 조회해두면 出典 칩에 산출식에 한 번도
+  // 나오지 않는 행이 실린다.
   const projectionRule = lookupRule(pack, 'anchorage.La', {
     fc: input.fc,
     grade: input.grade,

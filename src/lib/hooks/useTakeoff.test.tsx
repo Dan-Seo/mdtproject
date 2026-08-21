@@ -123,7 +123,9 @@ describe('useTakeoff', () => {
         result.current.rebars.some((rebar) => rebar.memberId === memberId),
       ),
     ).toBe(true)
-    expect(result.current.hasInferred).toBe(true)
+    expect(result.current.hasUnverified).toBe(true)
+    expect(result.current.unverifiedRules.length).toBeGreaterThan(0)
+    // kg 행은 JIS 単位質量(원문 미확보)을 반드시 타므로 추론 근거도 남는다.
     expect(result.current.inferredRules.length).toBeGreaterThan(0)
   })
 

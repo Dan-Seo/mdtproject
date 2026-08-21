@@ -1,7 +1,7 @@
 import type { Project } from '@/domain/model/project'
 import {
   grandTotal,
-  hasInferred,
+  hasUnverified,
   inferredRules,
   isMassLine,
   spliceTotals,
@@ -80,6 +80,7 @@ const exportCopy: Record<
     unavailableUrl: string
     unknownSection: string
     inferredList: string
+    transcribedOnly: string
   }
 > = {
   ja: {
@@ -92,7 +93,8 @@ const exportCopy: Record<
     unavailableEdition: '版未確認',
     unavailableUrl: '原文URL未確保',
     unknownSection: '条項未確認',
-    inferredList: '未確認項目',
+    inferredList: '原文に値なし（推論）',
+    transcribedOnly: '全て原文明示だが独立検討待ち（R6）',
   },
   ko: {
     sheetName: '수량 내역서',
@@ -104,7 +106,8 @@ const exportCopy: Record<
     unavailableEdition: '판 미확인',
     unavailableUrl: '원문 URL 미확보',
     unknownSection: '조항 미확인',
-    inferredList: '미확인 항목',
+    inferredList: '원문에 값 없음(추론)',
+    transcribedOnly: '전부 원문 명시이나 독립 검토 대기(R6)',
   },
 }
 
@@ -209,6 +212,13 @@ function workbookHeaders(locale: Locale): string[] {
   ]
 }
 
+/** 内訳の役割セルに付ける等級マーク — 画面の ▲/△ と同じ意味にそろえる。 */
+function confidenceMark(confidence: QuantityLine['confidence']): string {
+  if (confidence === 'inferred') return '▲ '
+  if (confidence === 'transcribed') return '△ '
+  return ''
+}
+
 function dataRow(
   line: QuantityLine,
   locale: Locale,
@@ -245,7 +255,7 @@ function dataRow(
       cell(line.memberKind),
       cell(line.mark),
       cell(
-        `${line.inferred ? '⚠ ' : ''}${line.role}${
+        `${confidenceMark(line.confidence)}${line.role}${
           isMassLine(line) ? '' : `　${t(locale, 'takeoff.splice')}（${line.method}）`
         }`,
       ),
@@ -267,14 +277,23 @@ export function buildTakeoffWorkbook(
   const copy = exportCopy[locale]
   const rows: WorkbookRowSpec[] = []
 
-  if (hasInferred(lines)) {
+  if (hasUnverified(lines)) {
+    // 警告は2行のままにする（DESIGN §4.2 — ヘッダ行の位置が動くと読み手側の
+    // 参照が全部ずれる）。1行目でどちらの等級が混ざっているかを言い、2行目には
+    // **原文に値がない項目だけ**を挙げる — 独立検討待ちは今ほぼ全行に付くので
+    // 並べても読み手の作業リストにならない。
+    const inferred = inferredRules(lines)
     rows.push(
-      row('watermark', [cell('※ 未確認の規準値を含む — 検収前の参考値')]),
+      row('watermark', [
+        cell('※ 独立検討が済んでいない規準値を含む — 検収前の参考値'),
+      ]),
       row('watermark', [
         cell(
-          `${copy.inferredList}: ${inferredRules(lines)
-            .map((rule) => sourceLocation(rule, locale, true))
-            .join(' / ')}`,
+          inferred.length === 0
+            ? copy.transcribedOnly
+            : `${copy.inferredList}: ${inferred
+                .map((rule) => sourceLocation(rule, locale, true))
+                .join(' / ')}`,
         ),
       ]),
     )

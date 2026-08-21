@@ -350,25 +350,45 @@ describe('TakeoffPane', () => {
     ).toHaveLength(1)
   })
 
-  it('shows a row warning only from QuantityLine.inferred', () => {
+  it('marks a row by its confidence tier — ▲ inferred, △ transcribed, none stated', () => {
+    // 세 등급이 화면에서 갈려야 한다. 예전에는 ▲ 하나뿐이라 전 행에 붙었고,
+    // 그래서 ▲ 가 아무것도 가리키지 못했다 (ADR-023).
     const lines = takeoffLines()
-    const inferredLine = lines[0]
-    const statedLine = { ...lines[1], inferred: false }
+    const inferredLine = { ...lines[0], confidence: 'inferred' as const }
+    const transcribedLine = { ...lines[1], confidence: 'transcribed' as const }
+    const statedLine = { ...lines[1], confidence: 'stated' as const }
 
     const { rerender } = render(<TakeoffTable lines={[inferredLine]} />)
+    const inferredRow = () =>
+      within(screen.getByTestId(`quantity-line-${inferredLine.id}`))
+
+    expect(inferredRow().getByLabelText('原文に値のない規準値')).toHaveTextContent(
+      '▲',
+    )
+    expect(
+      inferredRow().queryByLabelText('独立検討待ちの規準値'),
+    ).not.toBeInTheDocument()
+
+    rerender(<TakeoffTable lines={[transcribedLine]} />)
+    const transcribedRow = () =>
+      within(screen.getByTestId(`quantity-line-${transcribedLine.id}`))
 
     expect(
-      within(
-        screen.getByTestId(`quantity-line-${inferredLine.id}`),
-      ).getByLabelText('未確認の規準値'),
-    ).toBeInTheDocument()
+      transcribedRow().getByLabelText('独立検討待ちの規準値'),
+    ).toHaveTextContent('△')
+    expect(
+      transcribedRow().queryByLabelText('原文に値のない規準値'),
+    ).not.toBeInTheDocument()
 
     rerender(<TakeoffTable lines={[statedLine]} />)
+    const statedRow = () =>
+      within(screen.getByTestId(`quantity-line-${statedLine.id}`))
 
     expect(
-      within(
-        screen.getByTestId(`quantity-line-${statedLine.id}`),
-      ).queryByLabelText('未確認の規準値'),
+      statedRow().queryByLabelText('原文に値のない規準値'),
+    ).not.toBeInTheDocument()
+    expect(
+      statedRow().queryByLabelText('独立検討待ちの規準値'),
     ).not.toBeInTheDocument()
   })
 
@@ -628,7 +648,10 @@ describe('TakeoffPane', () => {
       expect(capture).toHaveBeenCalledWith('takeoff_exported', {
         locale: 'ja',
         size_bucket: expect.any(String),
+        // has_inferred 는 「원문에 값이 없는 근거를 썼는가」 그대로다.
+        // has_unverified 는 独立検討 대기까지 포함한 넓은 쪽이라 지금은 항상 참이다.
         has_inferred: expect.any(Boolean),
+        has_unverified: expect.any(Boolean),
         inferred_rules: expect.any(Array),
       }),
     )

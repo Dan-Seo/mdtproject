@@ -20,7 +20,9 @@ import { jpMlitRulePack } from '../../rulepack'
 import {
   aggregateQuantity,
   grandTotal,
-  hasInferred,
+  hasUnverified,
+  unverifiedRules,
+  weakestConfidence,
   inferredRules,
   massLines,
   spliceLines,
@@ -318,8 +320,44 @@ describe('aggregateQuantity', () => {
     )
     expect(line.rules.map(({ key }) => key)).toContain('unit-mass.value')
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
-    expect(line.inferred).toBe(true)
-    expect(hasInferred([line])).toBe(true)
+    expect(line.confidence).toBe('inferred')
+    expect(hasUnverified([line])).toBe(true)
+  })
+
+  it('takes the weakest confidence of the row, never the strongest', () => {
+    // 한 행이라도 약한 근거를 쓰면 그 행 전체가 그만큼만 확실하다.
+    // 강한 쪽으로 반올림하면 「전사 대기」가 「검토 완료」로 보인다.
+    const rule = (confidence: 'stated' | 'transcribed' | 'inferred') => ({
+      key: `probe.${confidence}`,
+      label: confidence,
+      expr: '',
+      conditions: {},
+      value: 1,
+      unit: 'mm',
+      source: {
+        short: 'probe',
+        doc: 'probe',
+        edition: null,
+        publisher: 'probe',
+        url: null,
+        section: null,
+        page: 1,
+      },
+      confidence,
+      note: '',
+    })
+
+    expect(weakestConfidence([])).toBe('stated')
+    expect(weakestConfidence([rule('stated')])).toBe('stated')
+    expect(weakestConfidence([rule('stated'), rule('transcribed')])).toBe(
+      'transcribed',
+    )
+    expect(
+      weakestConfidence([rule('stated'), rule('transcribed'), rule('inferred')]),
+    ).toBe('inferred')
+    expect(weakestConfidence([rule('inferred'), rule('stated')])).toBe(
+      'inferred',
+    )
   })
 
   it('returns every inferred contribution once without collapsing variants', () => {
@@ -333,16 +371,27 @@ describe('aggregateQuantity', () => {
       jpMlitRulePack,
     )
 
+    const unverified = unverifiedRules(lines)
     const inferred = inferredRules(lines)
-    const identities = inferred.map(ruleIdentity)
 
-    expect(inferred).toHaveLength(7)
-    expect(new Set(identities).size).toBe(inferred.length)
-    expect(inferred.filter(({ key }) => key === 'unit-mass.value')).toHaveLength(
-      2,
-    )
-    expect(inferred.every(({ confidence }) => confidence === 'inferred')).toBe(
+    // 조회 조건이 다른 같은 key 는 서로 다른 행이다 — 하나로 접으면 D25 와 D13
+    // 単位質量 중 하나가 근거 목록에서 사라진다.
+    // 8 = 예전 inferred 7 ＋ markup.rate. 割増率은 예전에 stated 였으나
+    // 같은 단일 전사자라 transcribed 로 내려왔다 (ADR-023).
+    expect(unverified).toHaveLength(8)
+    expect(new Set(unverified.map(ruleIdentity)).size).toBe(unverified.length)
+    expect(
+      unverified.filter(({ key }) => key === 'unit-mass.value'),
+    ).toHaveLength(2)
+    expect(unverified.every(({ confidence }) => confidence !== 'stated')).toBe(
       true,
+    )
+
+    // 그중 「원문에 값이 아예 없는」 것은 JIS 単位質量 2행뿐이다. 나머지 5행은
+    // 標準仕様書·積算基準에 명시된 값이라 transcribed 다 (ADR-023).
+    expect(inferred).toHaveLength(2)
+    expect(new Set(inferred.map(({ key }) => key))).toEqual(
+      new Set(['unit-mass.value']),
     )
   })
 

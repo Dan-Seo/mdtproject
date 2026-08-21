@@ -13,7 +13,7 @@
   value: 6000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -23,7 +23,7 @@
   value: 6000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -33,7 +33,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -43,7 +43,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -53,7 +53,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -63,7 +63,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -73,7 +73,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 - key: measure.splice.interval
@@ -83,7 +83,7 @@
   value: 7000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 1通則4), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「径１３㎜以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるものとして継手箇所数を求める」
 
 # 2（２）柱2) — 各階柱の全長にわたる主筋。基礎柱の但書（3.0m以上で1か所）は
@@ -96,7 +96,7 @@
   value: 1
   unit: 箇所
   source: { ref: quantity, section: 第4編第3章第2節 2（２）柱2), page: 16 }
-  confidence: stated
+  confidence: transcribed
   note: 「その他の階の各階柱の全長にわたる主筋については各階ごとに１か所の継手があるものとする」
 
 # 2（３）梁2) — 連続する梁の全長にわたる主筋。1通則4) を「かかわらず」で上書きする。
@@ -110,7 +110,7 @@
   value: 0.5
   unit: 箇所
   source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
-  confidence: stated
+  confidence: transcribed
   note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
 
 - key: measure.splice.girder.continuous
@@ -120,7 +120,7 @@
   value: 1
   unit: 箇所
   source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
-  confidence: stated
+  confidence: transcribed
   note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
 
 - key: measure.splice.girder.continuous
@@ -130,7 +130,7 @@
   value: 2
   unit: 箇所
   source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
-  confidence: stated
+  confidence: transcribed
   note: 「梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、１０．０ｍ以上は２か所あるものとする」
 
 - key: measure.splice.girder.continuous.band.upper
@@ -140,7 +140,7 @@
   value: 5000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
-  confidence: stated
+  confidence: transcribed
   note: 区分の境目そのもの。「５．０ｍ未満は０．５か所」の 5.0m
 
 - key: measure.splice.girder.continuous.band.upper
@@ -150,7 +150,7 @@
   value: 10000
   unit: mm
   source: { ref: quantity, section: 第4編第3章第2節 2（３）梁2), page: 17 }
-  confidence: stated
+  confidence: transcribed
   note: 区分の境目そのもの。「５．０ｍ以上１０．０ｍ未満は１か所」の 10.0m
 
 # 継手1か所を設計長さにどれだけ算入するか。重ね継手長さ（lap.L1）に掛ける倍率で、
@@ -173,7 +173,7 @@
   value: 0
   unit: ratio
   source: { ref: quantity, section: 第4編第3章第2節 1通則5), page: 15 }
-  confidence: stated
+  confidence: transcribed
   note: 「ガス圧接継手の加工のための鉄筋の長さの変化はないものとする」
 
 - key: measure.splice.length.factor

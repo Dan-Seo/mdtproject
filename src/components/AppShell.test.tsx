@@ -85,9 +85,12 @@ describe('AppShell', () => {
       '公共建築数量積算基準',
     )
     expect(screen.getByRole('contentinfo')).toHaveTextContent('改変')
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '原文抽出前の仮値',
-    )
+    // 배너는 「지금 무엇이 확인 안 됐는지」를 말해야 한다. 전사는 끝났으므로
+    // 「原文抽出前の仮値」는 더 이상 사실이 아니다 (ADR-023).
+    const banner = screen.getByRole('status')
+    expect(banner).toHaveTextContent('独立検討')
+    expect(banner).toHaveTextContent('検収・発注には使用しないでください')
+    expect(banner).not.toHaveTextContent('原文抽出前')
   })
 
   it('does not use role=alert for the always-present M1 banner', () => {

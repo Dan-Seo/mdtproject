@@ -39,7 +39,9 @@ const legend = await page.evaluate(() => {
       href: a.getAttribute("href"),
       clickable: getComputedStyle(a).pointerEvents !== "none",
     })),
-    inferredMarks: el.querySelectorAll("[aria-label='未確認の規準値']").length,
+    // 등급마다 다른 표시가 붙는다 (ADR-023) — 定着은 標準仕様書 전사값이라 △다.
+    inferredMarks: el.querySelectorAll("[aria-label='原文に値のない規準値']").length,
+    transcribedMarks: el.querySelectorAll("[aria-label='独立検討待ちの規準値']").length,
   };
 });
 checks.legendShown = legend !== null && legend.chips.length > 0;
@@ -47,7 +49,9 @@ checks.legendHasAnchorage = !!legend && legend.chips.some((c) => c.includes("定
 checks.legendHasNumbers = !!legend && legend.chips.some((c) => /\d/.test(c));
 checks.legendCitesSource = !!legend && legend.sources.length > 0;
 checks.legendSourceClickable = !!legend && legend.sources.every((s) => s.clickable);
-checks.legendFlagsInferred = !!legend && legend.inferredMarks > 0;
+// 定着長さ는 表5.3.4 전사값이므로 △(独立検討待ち)가 붙어야 한다. ▲가 붙으면
+// 원문에 없는 값을 쓰고 있다는 뜻이라 그쪽이 오히려 결함이다.
+checks.legendFlagsConfidence = !!legend && legend.transcribedMarks > 0;
 
 // ── ① 레이어 토글 ──────────────────────────────────────────────
 const layerState = () =>

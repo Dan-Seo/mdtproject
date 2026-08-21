@@ -59,18 +59,21 @@ checks.throughBarRows = selected.rows.some((t) => /上端筋/.test(t)) &&
   selected.rows.some((t) => /下端筋/.test(t));
 
 // 런 모델이 맞으면 같은 符号 G1(D25)에 두 길이가 공존한다:
-// 단일 스팬 6,800 = 内法 5,200 ＋ 定着 800×2 (継手 0か所 — 1通則4) 7.0m 미만)
-// 연속 2스팬 14,800 = (内法 5,200×2 ＋ 中間柱せい 800) ＋ 定着 800×2 ＋ 継手 2か所×1,000
+// 折曲げ定着 全長은 5.3.4(5)(ｲ)(a)에 따라 直線定着 L1 40d ＝ 1,000 이다
+//   (2026-08-21 이전에는 L1h 를 하한으로 써서 800 이었다 — R7③-1).
+// 단일 스팬 8,200 = 内法 5,200 ＋ 定着 1,000×2 ＋ 継手 1か所×1,000
+//   (1通則4) — 鉄筋 7.2m 가 D25 의 7.0m 를 넘겨 1か所. 예전 6.8m 에서는 0か所였다)
+// 연속 2스팬 15,200 = (内法 5,200×2 ＋ 中間柱せい 800) ＋ 定着 1,000×2 ＋ 継手 2か所×1,000
 //   (（３）梁2) — 梁の長さ 12.8m ≥ 10.0m 이므로 2か所. R8 해소로 계상된다)
 // 연속 쪽이 없으면 미지원으로 빠진 것이고, 단일 쪽이 없으면 런 탐색이 과하게 묶은 것이다.
-checks.singleSpanLengthPresent = selected.rows.some((t) => /上端筋.*D25\s*6\.800/.test(t));
-checks.continuousRunLengthPresent = selected.rows.some((t) => /上端筋.*D25\s*14\.800/.test(t));
+checks.singleSpanLengthPresent = selected.rows.some((t) => /上端筋.*D25\s*8\.200/.test(t));
+checks.continuousRunLengthPresent = selected.rows.some((t) => /上端筋.*D25\s*15\.200/.test(t));
 
 // ── ③ 산출식이 런 구성과 継手 계상 근거를 밝힌다 ────────────────
 // 산출식 행은 内訳 행을 눌러야 펼쳐진다.
 const expanded = await page.evaluate(() => {
   const row = [...document.querySelectorAll("[data-testid^='quantity-line-']")].find(
-    (r) => /上端筋/.test(r.textContent) && r.textContent.includes("14.800"),
+    (r) => /上端筋/.test(r.textContent) && r.textContent.includes("15.200"),
   );
   if (!row) return false;
   row.click();

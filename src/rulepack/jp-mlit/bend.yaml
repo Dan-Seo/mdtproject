@@ -5,8 +5,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -15,8 +15,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -25,8 +25,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -35,8 +35,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -45,8 +45,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -55,8 +55,8 @@
   value: 3
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D16以下帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D16以下帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -65,8 +65,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -75,8 +75,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -85,8 +85,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -95,8 +95,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -105,8 +105,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -115,8 +115,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -125,8 +125,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -135,8 +135,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -145,8 +145,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -155,8 +155,8 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -165,8 +165,8 @@
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -175,8 +175,8 @@
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -185,8 +185,8 @@
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -195,8 +195,8 @@
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.inside-diameter
   label: 折曲げ内法直径
@@ -205,8 +205,8 @@
   value: 5
   unit: d
   source: { ref: spec, section: 表5.3.1, page: 27 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.1 D19-D38帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.1 D19-D38帯）
 
 - key: bend.hook180
   label: 180°フック余長
@@ -215,7 +215,7 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
-  confidence: inferred
+  confidence: transcribed
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
 
 - key: bend.hook135
@@ -225,7 +225,7 @@
   value: 6
   unit: d
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
-  confidence: inferred
+  confidence: transcribed
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
 
 - key: bend.hook90
@@ -235,7 +235,7 @@
   value: 8
   unit: d
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
-  confidence: inferred
+  confidence: transcribed
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち
 
 - key: bend.hook-tome
@@ -245,5 +245,5 @@
   value: 4
   unit: d
   source: { ref: spec, section: 表5.3.1 折曲げ図, page: 27 }
-  confidence: inferred
+  confidence: transcribed
   note: 表5.3.1 折曲げ図（画像）判読 — 独立検討待ち

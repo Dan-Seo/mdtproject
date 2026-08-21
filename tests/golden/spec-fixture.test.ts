@@ -94,6 +94,47 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     ).toBe(false)
   })
 
+  it('records who re-read the original, how, and what it proved', () => {
+    // 「独立検討済み(stated)」に上げてよいかを判断する材料は、値そのものでは
+    // なく**誰がどうやって確かめたか**だ。ここが空のまま等級だけ上がるのを防ぐ。
+    const [verification] = fixture.source.verifications
+
+    expect(fixture.source.verifications.length).toBeGreaterThan(0)
+    expect(verification.date).not.toBe('')
+    expect(verification.method).not.toBe('')
+    expect(verification.tables.length).toBeGreaterThan(0)
+    expect(verification.cells).toBeGreaterThan(0)
+    // 2回目の読みが転写者と同じ人格なら、それは独立検討ではない。
+    // その事実を書き残していないと、後から「検証済み」とだけ読まれる。
+    expect(verification.note).toContain('独立検討ではない')
+  })
+
+  it('separates 意図した除外 from 転写漏れ', () => {
+    // 表5.3.4 の L3・L3h と表5.3.5 の Lb は小梁・スラブ専用で ADR-005 の対象外だ。
+    // どこにも書いていないと、後で「表を全部写していない」と読まれる。
+    const excludedColumns = fixture.excluded.flatMap(({ columns }) => columns)
+
+    expect(excludedColumns).toEqual(['L3', 'L3h', 'Lb'])
+    for (const entry of fixture.excluded) {
+      expect(entry.reason).toContain('ADR-005')
+      expect(entry.quote).not.toBe('')
+    }
+    // 除外した列が entries に紛れ込んでいない。
+    expect(
+      fixture.entries.some(({ kind }) => /\.L3h?$|\.Lb$/.test(kind)),
+    ).toBe(false)
+  })
+
+  it('names the rules that are transcribed but not yet reachable', () => {
+    // 軽量コンクリートの 5d 加算は原文の注を写してあるが、製品が軽量かどうかを
+    // 入力に持たないので今はどの照会にも当たらない。値が誤っているのではなく
+    // 使い道がまだない — 「死んだ行」と「間違った行」を取り違えないための記録。
+    const [unused] = fixture.unused
+
+    expect(unused.kinds).toContain('anchorage.lightweight.addition')
+    expect(unused.reason).toContain('入力として受け取らない')
+  })
+
   it('carries 折曲げ定着 の全長下限 as a reference to 直線定着, not a number', () => {
     // この条項が fixture に無かったせいで resolveGirderEnd が下限に L1h を使い、
     // 全長が条文より短く出ていた。参照先の kind をここで名指ししておく。

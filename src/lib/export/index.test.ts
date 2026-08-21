@@ -84,7 +84,7 @@ describe('buildTakeoffWorkbook', () => {
       'watermark',
     ])
     expect(spec.rows[0].cells[0].value).toBe(
-      '※ 未確認の規準値を含む — 検収前の参考値',
+      '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     )
   })
 
@@ -100,14 +100,21 @@ describe('buildTakeoffWorkbook', () => {
     }
   })
 
-  it('prefixes the item-name cell of every inferred row', () => {
+  it('prefixes the item-name cell with the row grade mark', () => {
+    // 画面の ▲/△ と同じ意味の印を内訳書にも付ける。全部同じ印なら印の意味が
+    // なくなるので、等級ごとに違う文字であることも見る (ADR-023)。
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const dataRows = spec.rows.filter(({ kind }) => kind === 'data')
+    const marks = dataRows.map(({ cells }) =>
+      String(cells[3].value).slice(0, 2),
+    )
 
     expect(dataRows).toHaveLength(input.lines.length)
-    expect(dataRows.every(({ cells }) => String(cells[3].value).startsWith('⚠ ')))
-      .toBe(true)
+    expect(marks.every((mark) => mark === '▲ ' || mark === '△ ')).toBe(true)
+    for (const [index, line] of input.lines.entries()) {
+      expect(marks[index]).toBe(line.confidence === 'inferred' ? '▲ ' : '△ ')
+    }
   })
 
   it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
@@ -269,7 +276,7 @@ describe('buildTakeoffWorkbook', () => {
     const worksheet = workbook.getWorksheet('数量内訳書')
 
     expect(worksheet?.getCell('A1').value).toBe(
-      '※ 未確認の規準値を含む — 検収前の参考値',
+      '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
     expect(worksheet?.getCell('Q3').value).toBe('算出式')

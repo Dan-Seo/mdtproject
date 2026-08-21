@@ -457,13 +457,14 @@ describe('Viewer3D', () => {
     )
     const ruleKey = top?.zones?.[0].ruleKey
     const rule = top?.ruleHits.find(({ key }) => key === ruleKey)
-    expect(rule?.confidence).toBe('inferred')
+    // 定着長さ는 標準仕様書 표의 전사값이라 추론이 아니라 独立検討 대기다.
+    expect(rule?.confidence).toBe('transcribed')
 
     render(<Viewer3D />)
 
     const legend = screen.getByLabelText('定着・継手凡例')
     expect(
-      within(legend).getAllByLabelText('未確認の規準値').length,
+      within(legend).getAllByLabelText('独立検討待ちの規準値').length,
     ).toBeGreaterThan(0)
     expect(legend).toHaveTextContent(sourceLabel(rule!))
   })
@@ -721,10 +722,12 @@ describe('Viewer3D', () => {
     expect(tooltip).toHaveTextContent(String(mainLine?.countPerMember))
     expect(within(tooltip).getByText('設計長さ')).toBeInTheDocument()
     expect(tooltip).toHaveTextContent(`${mainLine?.lengthMm} mm`)
-    // 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 미확인 표시가 붙어야 한다.
-    expect(mainLine?.inferred).toBe(true)
+    // 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 등급 표시가 붙어야 한다.
+    // kg 행은 定着·継手가 標準仕様書 전사값(△)이라도 JIS 単位質量(원문 미확보)을
+    // 반드시 타므로 행 등급은 가장 약한 ▲ 가 된다. 등급은 가장 약한 근거를 따른다.
+    expect(mainLine?.confidence).toBe('inferred')
     expect(
-      within(tooltip).getByLabelText('未確認の規準値'),
+      within(tooltip).getByLabelText('原文に値のない規準値'),
     ).toBeInTheDocument()
   })
 

@@ -166,6 +166,12 @@
   font-size: var(--type-caption-uppercase-size);
 }
 
+/* 原文明示だが独立検討待ち — 誤りではないので error 色にはしない */
+.transcribedMark {
+  color: var(--color-caution);
+  font-size: var(--type-caption-uppercase-size);
+}
+
 /* .legend 전체가 pointer-events: none 이라 出典 링크만 되살린다 — 범례가
    3D 조작을 막지 않으면서도 근거는 눌러서 열 수 있어야 한다. */
 .legendSource {

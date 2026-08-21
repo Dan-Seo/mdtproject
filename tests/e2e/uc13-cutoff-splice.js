@@ -35,20 +35,21 @@ checks.noCutoffNoticeBefore =
   (await page.evaluate(
     () => document.querySelector("[data-testid='cutoff-anchorage-notice']") !== null,
   )) === false;
-// 継手는 이미 계상되고 있다 — 連続 2スパン 12,800 ＋ 継手 2か所×1,000 ＝ 14,800
-checks.continuousLengthWithSplice = before.some((t) => /上端筋.*D25\s*14\.800/.test(t));
+// 継手는 이미 계상되고 있다 — 連続 2スパン 13,200 ＋ 継手 2か所×1,000 ＝ 15,200
+//   (折曲げ定着 全長은 5.3.4(5)(ｲ)(a) 의 直線定着 L1 1,000. R7③-1 이전에는 800 이었다)
+checks.continuousLengthWithSplice = before.some((t) => /上端筋.*D25\s*15\.200/.test(t));
 
 // ── ② 端部 本数를 올리면 カットオフ筋이 선다 ─────────────────────
 await page.fill("input[aria-label='G1 主筋 上 端部 本数']", "6");
 await page.waitForTimeout(400);
 
 const after = await rowTexts();
-// 外側支点: 定着 800 ＋ カットオフ位置 1,500 ＝ 2,300 을 両端에 2本씩 ＝ 4本
-checks.outerCutoffRow = after.some((t) => /上端カットオフ筋.*D25\s*2\.300/.test(t));
+// 外側支点: 折曲げ定着 全長 1,000 ＋ カットオフ位置 1,500 ＝ 2,500 을 両端에 2本씩 ＝ 4本
+checks.outerCutoffRow = after.some((t) => /上端カットオフ筋.*D25\s*2\.500/.test(t));
 // 中間支点: カットオフ位置 1,500×2 ＋ 中間柱せい 800 ＝ 3,800 (定着 없음)
 checks.interiorCutoffRow = after.some((t) => /上端カットオフ筋.*D25\s*3\.800/.test(t));
-// 通し筋은 중앙 本数 그대로 4本이고 길이는 변하지 않는다
-checks.throughRowUnchanged = after.some((t) => /上端筋.*D25\s*6\.800/.test(t));
+// 通し筋은 중앙 本数 그대로 4本이고 길이는 변하지 않는다 (単一 스팬 8,200)
+checks.throughRowUnchanged = after.some((t) => /上端筋.*D25\s*8\.200/.test(t));
 checks.cutoffNoticeShown = await page.evaluate(() => {
   const notice = document.querySelector("[data-testid='cutoff-anchorage-notice']");
   return notice !== null && notice.textContent.includes("定着");
@@ -90,8 +91,8 @@ await page.waitForTimeout(400);
 
 const gasPressed = await rowTexts();
 checks.spliceMethodChangesLength =
-  gasPressed.some((t) => /上端筋.*D25\s*12\.800/.test(t)) &&
-  gasPressed.every((t) => !/上端筋.*D25\s*14\.800/.test(t));
+  gasPressed.some((t) => /上端筋.*D25\s*13\.200/.test(t)) &&
+  gasPressed.every((t) => !/上端筋.*D25\s*15\.200/.test(t));
 checks.spliceRowShowsMethod = gasPressed.some((t) => /ガス圧接/.test(t));
 
 // ── ⑥ カットオフ位置를 지우면 고칠 곳을 짚어 준다 ────────────────

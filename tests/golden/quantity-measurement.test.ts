@@ -221,8 +221,9 @@ describe('計測規則の出典がルールパックに載っている', () => {
       `${fixture.source.chapterShort} ${clause}`,
     )
     expect(hit.source.page).toBe(entry.printedPage)
-    // 原文に明記された条項なので推定ではない。
-    expect(hit.confidence).toBe('stated')
+    // 原文に明記された条項なので推定(inferred)ではない。ただし転写者＝承認者
+    // なので独立検討済み(stated)でもない — transcribed である (R6・ADR-023)。
+    expect(hit.confidence).toBe('transcribed')
     expect(entry.status).toBe('covered')
   })
 
@@ -426,7 +427,7 @@ describe('1通則1)・2（２）柱1) 但書 — 最上階柱の主筋は１通�
 
     const tipRule = lookupRule(jpMlitRulePack, 'measure.tip.length.addition', {})
     expect(tipRule.source.section).toBe('第4編第3章第2節 1通則1)')
-    expect(tipRule.confidence).toBe('stated')
+    expect(tipRule.confidence).toBe('transcribed')
     expect(withTip.ruleHits.map(({ key }) => key)).toContain(
       'measure.tip.length.addition',
     )
@@ -546,7 +547,7 @@ describe('1通則3) 幅止筋の長さ ＝ コンクリートの設計幅（フ�
     expect(hit.source.edition).toBe(fixture.source.edition)
     expect(hit.source.section).toBe(`${fixture.source.chapterShort} 1通則3)`)
     expect(hit.source.page).toBe(entry.printedPage)
-    expect(hit.confidence).toBe('stated')
+    expect(hit.confidence).toBe('transcribed')
     expect(entry.status).toBe('covered')
   })
 
