@@ -715,26 +715,26 @@ describe('generateGirderRebar — カットオフ筋', () => {
     expect(cutoff.splice?.formula).toContain('1通則4)')
   })
 
-  it('カットオフ位置がスパンに納まらない断面は寸法不成立で落とす', () => {
-    const tooDeep = withMain({
+  // 直しどころが違うので断面・内法の寸法不成立とは別の理由にする —
+  // 直すのは支点柱でもスパンでもなく断面一覧のカットオフ位置である。
+  it.each([
+    ['スパンに納まらない', 2700],
+    ['未入力', 0],
+  ])('カットオフ位置が%sなら黙って0にせずカットオフ位置不成立で落とす', (_label, cutoffFromSupportFaceMm) => {
+    const broken = withMain({
       top: { endCount: 6, centerCount: 4 },
-      cutoffFromSupportFaceMm: 2700,
+      cutoffFromSupportFaceMm,
     })
 
-    expect(() =>
-      generateGirderRebar(input({ section: tooDeep }), jpMlitRulePack),
-    ).toThrow(MemberUnsupportedError)
-  })
-
-  it('カットオフ筋があるのに位置が未入力なら黙って0にせず落とす', () => {
-    const noPosition = withMain({
-      top: { endCount: 6, centerCount: 4 },
-      cutoffFromSupportFaceMm: 0,
-    })
-
-    expect(() =>
-      generateGirderRebar(input({ section: noPosition }), jpMlitRulePack),
-    ).toThrow(MemberUnsupportedError)
+    try {
+      generateGirderRebar(input({ section: broken }), jpMlitRulePack)
+      expect.unreachable('should have thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe(
+        'カットオフ位置不成立',
+      )
+    }
   })
 
   it('端部と中央が同数ならカットオフ筋を出さない', () => {

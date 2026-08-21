@@ -413,7 +413,7 @@ function cutoffPositions(
 
   if (cutoffMm <= 0) {
     throw new MemberUnsupportedError(
-      '寸法不成立',
+      'カットオフ位置不成立',
       `カットオフ位置 must be positive when 端部と中央の本数が違う: ` +
         `${run.ownerId} (${row.role} ${row.count}本)`,
     )
@@ -423,7 +423,7 @@ function cutoffPositions(
   const tooShort = run.spans.find(({ clear }) => clear <= 2 * cutoffMm)
   if (tooShort) {
     throw new MemberUnsupportedError(
-      '寸法不成立',
+      'カットオフ位置不成立',
       `内法長さ must exceed 2×カットオフ位置: ${run.ownerId} ` +
         `(内法 ${tooShort.clear} ≤ 2×${cutoffMm})`,
     )

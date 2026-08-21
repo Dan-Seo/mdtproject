@@ -94,7 +94,23 @@ checks.spliceMethodChangesLength =
   gasPressed.every((t) => !/上端筋.*D25\s*14\.800/.test(t));
 checks.spliceRowShowsMethod = gasPressed.some((t) => /ガス圧接/.test(t));
 
-console.log(JSON.stringify({ inputs, cutoffFormula, checks }, null, 2));
+// ── ⑥ カットオフ位置를 지우면 고칠 곳을 짚어 준다 ────────────────
+// 断面·内法의 寸法不成立과 같은 문구로 묶이면 「支点柱나 스팬을 고치라」는
+// 엉뚱한 안내가 나간다 — 고칠 곳은 断面一覧의 カットオフ位置다.
+await page.fill("input[aria-label='G1 カットオフ位置']", "0");
+await page.waitForTimeout(400);
+
+const unsupported = await page.evaluate(() => {
+  const notice = document.querySelector("[data-testid='unsupported-notice']");
+  return notice ? notice.textContent.replace(/\s+/g, " ").trim() : null;
+});
+checks.unsupportedNoticeShown = unsupported !== null;
+checks.unsupportedNamesCutoffPosition =
+  unsupported !== null && unsupported.includes("カットオフ位置");
+checks.unsupportedKeepsNoRawKey =
+  unsupported !== null && !unsupported.includes("unsupported.reason");
+
+console.log(JSON.stringify({ inputs, cutoffFormula, unsupported, checks }, null, 2));
 console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc13-splice-method.png")));
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);
