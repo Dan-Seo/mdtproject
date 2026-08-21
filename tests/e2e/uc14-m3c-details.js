@@ -130,7 +130,7 @@ console.log(
     2,
   ),
 );
-console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc13-m3c-details.png")));
+console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc14-m3c-details.png")));
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);
 if (failed.length) throw new Error("FAILED CHECKS: " + failed.join(", "));
