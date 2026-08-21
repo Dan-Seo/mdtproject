@@ -1,4 +1,4 @@
-// UC-7: 산출 근거 — source chip / inferred ▲ / 算出式 펼치기 (법적 의무 표시)
+// UC-7: 산출 근거 — source chip / 등급 표시 ▲△ / 算出式 펼치기 (법적 의무 표시)
 const page = await browser.getPage("kijun");
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("canvas");
@@ -16,11 +16,17 @@ const before = await page.evaluate(() => ({
     disabled: c.getAttribute("aria-disabled"),
     title: c.getAttribute("title"),
   })),
+  // ▲(원문에 값 없음)와 △(원문 명시·독립 검토 대기)를 갈라서 센다 (ADR-023).
   inferredMarks: [...document.querySelectorAll("[class*='inferredWarning']")].map((s) => ({
     text: s.textContent.trim(),
     ariaLabel: s.getAttribute("aria-label"),
     title: s.getAttribute("title"),
   })),
+  transcribedMarks: [...document.querySelectorAll("[class*='transcribedWarning']")].map((s) => ({
+    text: s.textContent.trim(),
+    ariaLabel: s.getAttribute("aria-label"),
+  })),
+  banner: document.querySelector("[role='status']")?.textContent.trim() ?? null,
 }));
 
 await page.locator("[data-testid^='quantity-line-']").first().click();

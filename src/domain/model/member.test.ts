@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 
 import {
   sectionMarkLabel,
+  splitGirderMainRow,
   type BarSize,
   type ColumnSection,
   type GirderSection,
@@ -51,7 +52,12 @@ describe('member model', () => {
       exposure: '屋外',
       finish: '仕上げなし',
       spliceMethod: '重ね継手',
-      main: { size: 'D25', topCount: 4, bottomCount: 4 },
+      main: {
+        size: 'D25',
+        top: { endCount: 4, centerCount: 4 },
+        bottom: { endCount: 4, centerCount: 4 },
+        cutoffFromSupportFaceMm: 0,
+      },
       stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     }
     const sections: Section[] = [column, girder]
@@ -98,5 +104,32 @@ describe('member model', () => {
     expect(sectionMarkLabel({ ...base, storyLabel: '2階' })).toBe('C51(2階)')
     // 内訳書는 이미 階별로 묶인다 — 저장되는 符号에는 階가 들어가지 않는다
     expect({ ...base, storyLabel: '2階' }.mark).toBe('C51')
+  })
+})
+
+describe('splitGirderMainRow', () => {
+  // 積算基準 2（３）梁1) が定めるのは「梁の全長にわたる主筋」だけで、
+  // トップ筋・補強筋等は設計図書に委ねられる — 少ない方が通し筋である。
+  it('端部が多い断面では差が端部側のカットオフ筋になる', () => {
+    expect(splitGirderMainRow({ endCount: 5, centerCount: 3 })).toEqual({
+      throughCount: 3,
+      cutoffCount: 2,
+      cutoffAt: '端部',
+    })
+  })
+
+  it('中央が多い断面では差が中央側のカットオフ筋になる', () => {
+    expect(splitGirderMainRow({ endCount: 2, centerCount: 4 })).toEqual({
+      throughCount: 2,
+      cutoffCount: 2,
+      cutoffAt: '中央',
+    })
+  })
+
+  it('同数なら通し筋だけでカットオフ筋は立たない', () => {
+    expect(splitGirderMainRow({ endCount: 4, centerCount: 4 })).toMatchObject({
+      throughCount: 4,
+      cutoffCount: 0,
+    })
   })
 })

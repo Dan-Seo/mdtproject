@@ -47,14 +47,19 @@ describe('useTakeoff', () => {
     expect(result.current.rebars.length).toBeGreaterThan(0)
     expect(result.current.lines.length).toBeGreaterThan(0)
     // 単一 스팬 런 2개와 2스팬 런 1개가 만드는 행 구성을 그대로 박는다.
-    // あばら筋은 X·Y 스팬 内法이 같아 한 행으로 묶이고 places로 세어진다.
-    // 継手 행(箇所)은 2스팬 런에만 붙는다 — 単一 스팬은 単独梁이라 1通則4)로
-    // 돌아가고 D25 6.8m는 7.0m에 못 미쳐 0か所이며, 0 행은 만들지 않는다.
-    // 2스팬 런은 連続梁이라 （３）梁2)의 11.2m ＝ 2か所가 붙는다.
+    // あばら筋·幅止め筋·腹筋은 X·Y 스팬 内法이 같아 각각 한 행으로 묶이고
+    // places로 세어진다 — 셋 다 부재(梁)마다 생기는 배근이라 런으로 묶이지 않는다.
+    // 継手 행(箇所)은 単一 스팬 런에도 붙는다 — 単独梁이라 1通則4)로 돌아가는데
+    // 折曲げ定着 全長이 5.3.4(5)(ｲ)(a)의 L1 하한을 받으면서 D25 通し筋이 7.2m가
+    // 되어 7.0m를 넘긴다(1か所). 2스팬 런은 連続梁이라 （３）梁2)의 11.2m ＝ 2か所.
     expect(firstStoryG1Lines.map(({ role, unit }) => `${role}/${unit}`)).toEqual([
       '上端筋/kg',
+      '上端筋/箇所',
       '下端筋/kg',
+      '下端筋/箇所',
       'あばら筋/kg',
+      '幅止め筋/kg',
+      '腹筋/kg',
       '上端筋/kg',
       '上端筋/箇所',
       '下端筋/kg',
@@ -105,7 +110,7 @@ describe('useTakeoff', () => {
       result.current.rebars
         .filter(({ memberId }) => memberId === yRun.ownerId)
         .map(({ role }) => role),
-    ).toEqual(['上端筋', '下端筋', 'あばら筋'])
+    ).toEqual(['上端筋', '下端筋', 'あばら筋', '幅止め筋', '腹筋'])
     expect(
       yRun.members.every(({ id: memberId }) =>
         result.current.rebars.some(
@@ -118,7 +123,11 @@ describe('useTakeoff', () => {
         result.current.rebars.some((rebar) => rebar.memberId === memberId),
       ),
     ).toBe(true)
-    expect(result.current.hasInferred).toBe(true)
+    expect(result.current.hasUnverified).toBe(true)
+    expect(result.current.unverifiedRules.length).toBeGreaterThan(0)
+    // kg 행은 継手 算入倍率(measure.splice.length.factor — 反対解釈로 세운 것이라
+    // 原文에 明文이 없다)을 타므로 추론 근거가 남는다. 単位質量은 schema v6 에서
+    // 룰팩을 떠나 Project.unitMass 입력이 됐으므로 더 이상 여기 관여하지 않는다.
     expect(result.current.inferredRules.length).toBeGreaterThan(0)
   })
 

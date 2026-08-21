@@ -167,7 +167,12 @@ const girderSection: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   spliceMethod: '重ね継手',
-  main: { size: 'D25', topCount: 4, bottomCount: 3 },
+  main: {
+    size: 'D25',
+    top: { endCount: 4, centerCount: 4 },
+    bottom: { endCount: 3, centerCount: 3 },
+    cutoffFromSupportFaceMm: 0,
+  },
   stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
 }
 
@@ -183,7 +188,7 @@ const girderTop: Rebar = {
   ],
   closed: false,
   length: 6200,
-  count: girderSection.main.topCount,
+  count: girderSection.main.top.endCount,
   ruleHits: [],
   formula: 'test',
 }
@@ -196,7 +201,7 @@ const girderBottom: Rebar = {
     [-500, 50, 50],
     [5700, 50, 50],
   ],
-  count: girderSection.main.bottomCount,
+  count: girderSection.main.bottom.endCount,
 }
 
 const GIRDER_CLEAR_MM = 5250
@@ -400,9 +405,67 @@ describe('rebarPlacements for 大梁', () => {
     const gaps = zValues.slice(1).map((z, index) => z - zValues[index])
 
     expect(run.members).toHaveLength(2)
-    expect(horizontalSegments).toHaveLength(section.main.topCount)
-    expect(placements).toHaveLength(section.main.topCount)
+    expect(horizontalSegments).toHaveLength(section.main.top.endCount)
+    expect(placements).toHaveLength(section.main.top.endCount)
     expect(new Set(gaps.map((gap) => gap.toFixed(6)))).toHaveLength(1)
+  })
+})
+
+describe('rebarPlacements — カットオフ筋', () => {
+  // 通し筋とカットオフ筋は同じ段に並ぶ。段の総本数は端部・中央の多い方で、
+  // 通し筋が手前の枠、カットオフ筋が残りの枠を取る — 重ねて描くと本数が
+  // 見た目で合わなくなる。
+  const cutoffSection: GirderSection = {
+    ...girderSection,
+    main: {
+      ...girderSection.main,
+      top: { endCount: 6, centerCount: 4 },
+      cutoffFromSupportFaceMm: 1500,
+    },
+  }
+  const cutoff: Rebar = {
+    id: '1F-G1|cutoff-top-0',
+    memberId: '1F-G1',
+    role: '上端カットオフ筋',
+    size: 'D25',
+    shape: 'straight',
+    points: [
+      [0, 700, 50],
+      [1500, 700, 50],
+    ],
+    closed: false,
+    length: 2500,
+    // 2本 × 外側支点2か所
+    count: 4,
+    axisOffsetsMm: [0, 3700],
+    ruleHits: [],
+    formula: 'test',
+  }
+
+  it('位置ごとに本数分だけ置き、通し筋が使わない枠に入れる', () => {
+    const through = rebarPlacements(
+      { ...girderTop, count: 4 },
+      cutoffSection,
+    )
+    const placements = rebarPlacements(cutoff, cutoffSection)
+
+    expect(placements).toHaveLength(4)
+    expect(placements.map(([x]) => x)).toEqual([0, 0, 3700, 3700])
+    // 段は6枠。通し筋が 4枠を取り、カットオフ筋は残り 2枠に入る
+    expect(through).toHaveLength(4)
+    const throughZ = through.map(([, , z]) => z)
+    const cutoffZ = placements.map(([, , z]) => z)
+    expect(new Set(cutoffZ).size).toBe(2)
+    expect(throughZ.some((z) => cutoffZ.includes(z))).toBe(false)
+    expect(Math.min(...cutoffZ)).toBeGreaterThan(Math.max(...throughZ))
+  })
+
+  it('位置の数だけ離れた場所にセグメントを出す', () => {
+    const segments = rebarSegments(cutoff, cutoffSection)
+    const starts = segments.map(({ from }) => from[0])
+
+    expect(segments).toHaveLength(4)
+    expect(new Set(starts)).toEqual(new Set([0, 3700]))
   })
 })
 
@@ -598,13 +661,132 @@ describe('rebarRadius', () => {
   })
 })
 
+describe('M3c の日本固有詳細を 3D に展開する', () => {
+  const widthTieLayout = stirrupPositions(
+    GIRDER_CLEAR_MM,
+    1000,
+    girderSection.stirrup.startOffsetMm,
+  )
+  const widthTie: Rebar = {
+    id: '1F-G1|width-tie',
+    memberId: '1F-G1',
+    role: '幅止め筋',
+    size: 'D10',
+    shape: 'straight',
+    points: [
+      [0, 375, 50],
+      [0, 375, 350],
+    ],
+    closed: false,
+    length: girderSection.b,
+    count: 7,
+    placement: {
+      axis: 'x',
+      clearMm: GIRDER_CLEAR_MM,
+      pitchMm: 1000,
+      startOffsetMm: girderSection.stirrup.startOffsetMm,
+      lastGapMm: widthTieLayout.lastGapMm,
+      positionCount: widthTieLayout.positionsMm.length,
+    },
+    ruleHits: [],
+    formula: 'test',
+  }
+
+  it('repeats the 幅止め筋 from the domain layout, not from its 設計本数', () => {
+    // count(7) は 1通則7) の割付本数で、配置が作る本数とは正当に違う (ADR-019)。
+    const placements = rebarPlacements(widthTie, girderSection)
+
+    expect(placements).toEqual(
+      widthTieLayout.positionsMm.map((x): Point3 => [x, 0, 0]),
+    )
+    // 設計本数を動かしても配置は動かない — 配置の出所はドメインのレイアウトだけだ。
+    expect(
+      rebarPlacements({ ...widthTie, count: widthTie.count + 5 }, girderSection),
+    ).toEqual(placements)
+  })
+
+  it('splits the 腹筋 between the two side faces', () => {
+    const sideBar: Rebar = {
+      id: '1F-G1|side-bar',
+      memberId: '1F-G1',
+      role: '腹筋',
+      size: 'D10',
+      shape: 'straight',
+      points: [
+        [-150, 375, 50],
+        [5350, 375, 50],
+      ],
+      closed: false,
+      length: 5500,
+      count: 2,
+      ruleHits: [],
+      formula: 'test',
+    }
+    const placements = rebarPlacements(sideBar, girderSection)
+    const zs = placements.map(([, , z]) => z)
+
+    expect(placements).toHaveLength(2)
+    // 代表1本は手前面 (z=50) にあるので、オフセット 0 と 幅−2×かぶり で
+    // 両側面に1本ずつ立つ。
+    expect(zs).toEqual([0, girderSection.b - 2 * 50])
+    // 1段なので高さは動かない。
+    expect(placements.map(([, y]) => y)).toEqual([0, 0])
+  })
+
+  it('stacks 腹筋 tiers evenly when the section list asks for more than a pair', () => {
+    const sideBar: Rebar = {
+      id: '1F-G1|side-bar',
+      memberId: '1F-G1',
+      role: '腹筋',
+      size: 'D10',
+      shape: 'straight',
+      points: [
+        [0, 375, 50],
+        [5200, 375, 50],
+      ],
+      closed: false,
+      length: 5200,
+      count: 4,
+      ruleHits: [],
+      formula: 'test',
+    }
+    const placements = rebarPlacements(sideBar, girderSection)
+    const ys = placements.map(([, y]) => y)
+
+    const cover = 50
+    const webSpan = girderSection.depth - 2 * cover
+    const mid = 375
+
+    expect(placements).toHaveLength(4)
+    // 2段が上端筋・下端筋の「間」を均等に割る — 代表点(梁せいの中央)からの差で見る。
+    // 区間を段数+1 に割った内側の点なので、下端筋(y=かぶり)にも上端筋
+    // (y=せい−かぶり)にも重ならない。
+    expect(ys).toEqual([
+      cover + webSpan / 3 - mid,
+      cover + webSpan / 3 - mid,
+      cover + (2 * webSpan) / 3 - mid,
+      cover + (2 * webSpan) / 3 - mid,
+    ])
+    // 主筋の列に重ならないことを不等式でも押さえる — 上の等式だけだと、
+    // 割り方を変えたときに何が壊れたのか読めない。
+    for (const y of ys) {
+      expect(y).toBeGreaterThan(cover - mid)
+      expect(y).toBeLessThan(girderSection.depth - cover - mid)
+    }
+  })
+})
+
 describe('roleToLayer', () => {
   it.each([
     ['主筋', 'main'],
     ['上端筋', 'main'],
     ['下端筋', 'main'],
+    ['上端カットオフ筋', 'main'],
+    ['下端カットオフ筋', 'main'],
     ['帯筋', 'hoop'],
     ['あばら筋', 'hoop'],
+    ['幅止め筋', 'hoop'],
+    ['腹筋', 'main'],
   ] satisfies [RebarRole, 'main' | 'hoop'][])(
     'maps %s to %s',
     (role, expected) => {

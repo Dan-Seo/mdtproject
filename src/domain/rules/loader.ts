@@ -180,13 +180,30 @@ function parseEntry(
   if (typeof raw.unit !== 'string' || raw.unit.length === 0) {
     fail(fileName, key, 'unit must be a non-empty string')
   }
-  if (raw.confidence !== 'stated' && raw.confidence !== 'inferred') {
-    fail(fileName, key, "confidence must be 'stated' or 'inferred'")
+  if (
+    raw.confidence !== 'stated' &&
+    raw.confidence !== 'transcribed' &&
+    raw.confidence !== 'inferred'
+  ) {
+    fail(
+      fileName,
+      key,
+      "confidence must be 'stated', 'transcribed' or 'inferred'",
+    )
   }
 
   const source = resolveSource(raw.source, sources, fileName, key)
-  if (raw.confidence === 'stated' && source.page === null) {
-    fail(fileName, key, "confidence 'stated' requires source.page")
+  // 원문에 있다고 주장하는 등급은 어느 쪽 쪽수인지 반드시 대야 한다 —
+  // 쪽수 없는 「원문 명시」는 대조할 수 없어서 주장만 남는다.
+  if (
+    (raw.confidence === 'stated' || raw.confidence === 'transcribed') &&
+    source.page === null
+  ) {
+    fail(
+      fileName,
+      key,
+      `confidence '${raw.confidence}' requires source.page`,
+    )
   }
 
   if (raw.expr !== undefined && typeof raw.expr !== 'string') {

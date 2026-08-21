@@ -23,7 +23,17 @@ import { coverConditions } from '../rules/lookup'
 // 위임한다. JIS는 유료 규격이라 확보하지 못했고, 읽지 않은 문헌을 룰팩의
 // 出典에 세울 수는 없으므로(ADR-003) 값을 입력으로 받는다. 미입력 径은 키가
 // 없고, 그 径의 kg은 산출하지 않는다.
-export const PROJECT_SCHEMA_VERSION = 6
+// v7 (2026-08-21): GirderSection에 두 갈래 변경이 함께 들어갔다 — 둘 다
+// 영속 데이터가 없는 상태에서 같은 판으로 나가므로 버전은 하나다.
+//   ① (M3b) main の topCount·bottomCount を位置別 (端部·中央) の GirderMainRow に
+//      置き換え、カットオフ位置を必須入力にした。積算基準 2（３）梁1) が定めるのは
+//      「梁の全長にわたる主筋」だけで、トップ筋等は設計図書に委ねられる —
+//      位置別本数がないと通し筋とカットオフ筋を分けられない。
+//   ② (M3c) 任意 필드 widthTie·sideBar 추가. 둘 다 「断面一覧에 없으면 그 배근이
+//      없다」를 뜻하는 optional이다 — 있는지 없는지를 제품이 정하지 않는다.
+//      腹筋의 余長은 積算基準 1通則6)이 JASS 5에 위임하는데 그 규격이 미확보라
+//      룰팩 행이 아니라 입력으로 받는다 (R9②).
+export const PROJECT_SCHEMA_VERSION = 7
 
 export interface Grid {
   xSpans: number[]

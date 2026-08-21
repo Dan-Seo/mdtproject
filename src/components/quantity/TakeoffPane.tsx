@@ -128,6 +128,7 @@ function SourceChip({ rule }: { rule: RuleHit }) {
   const className = [
     styles.sourceChip,
     rule.confidence === 'inferred' ? styles.inferredSourceChip : '',
+    rule.confidence === 'transcribed' ? styles.transcribedSourceChip : '',
     rule.source.url === null ? styles.disabledSourceChip : '',
   ]
     .filter(Boolean)
@@ -182,22 +183,32 @@ function SourceChips({ rules }: { rules: RuleHit[] }) {
   )
 }
 
-function InferredWarning({ line }: { line: QuantityLine }) {
-  if (!line.inferred) return null
+/**
+ * 行の근거 등급 표시. ▲(원문에 값 없음)와 △(원문 명시·검토 대기)를 갈라
+ * 붙인다 — 예전에는 둘 다 ▲ 여서 전 행에 ▲ 가 붙었고, 그래서 ▲ 가 아무것도
+ * 가리키지 못했다.
+ */
+function ConfidenceWarning({ line }: { line: QuantityLine }) {
+  if (line.confidence === 'stated') return null
 
+  const inferredRow = line.confidence === 'inferred'
   const labels = line.rules
-    .filter(({ confidence }) => confidence === 'inferred')
+    .filter(({ confidence }) =>
+      inferredRow ? confidence === 'inferred' : confidence !== 'stated',
+    )
     .map(({ label }) => label)
     .join('、')
 
   return (
     <span
-      className={styles.inferredWarning}
+      className={
+        inferredRow ? styles.inferredWarning : styles.transcribedWarning
+      }
       role="img"
-      aria-label="未確認の規準値"
+      aria-label={inferredRow ? '原文に値のない規準値' : '独立検討待ちの規準値'}
       title={labels}
     >
-      ▲
+      {inferredRow ? '▲' : '△'}
     </span>
   )
 }
@@ -587,7 +598,7 @@ function LineRows({
               ? line.role
               : `${line.role}　継手（${line.method}）`}
           </button>
-          <InferredWarning line={line} />
+          <ConfidenceWarning line={line} />
         </td>
         <td className={styles.numericCell}>{line.size}</td>
         {isMassLine(line) ? (
@@ -660,6 +671,12 @@ export function TakeoffPane() {
   // 산출식에만 두면 3D에 継手가 안 보이는 이유를 사용자가 알 수 없다 —
   // 継手 행이 하나라도 있으면 항상 보이게 한다.
   const hasSplice = spliceLines(lines).length > 0
+  // 描かれる長さが設計長さより短い理由も同じ扱いにする — 3D とつき合わせる
+  // ときに読む必要があるので、折りたたまれた算出式の中だけには置かない。
+  const hasCutoff = lines.some(
+    ({ role }) =>
+      role === '上端カットオフ筋' || role === '下端カットオフ筋',
+  )
 
   return (
     <>
@@ -670,6 +687,15 @@ export function TakeoffPane() {
           data-testid="splice-position-notice"
         >
           ▲ {t(locale, 'takeoff.splicePosition')}
+        </p>
+      )}
+      {hasCutoff && (
+        <p
+          className={styles.splicePositionNotice}
+          role="note"
+          data-testid="cutoff-anchorage-notice"
+        >
+          ▲ {t(locale, 'takeoff.cutoffAnchorage')}
         </p>
       )}
       {unsupportedMembers.length > 0 && (
@@ -712,7 +738,7 @@ export function TakeoffPane() {
 export function TakeoffActions() {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
-  const { lines, hasInferred, inferredRules } = useTakeoff()
+  const { lines, hasUnverified, inferredRules } = useTakeoff()
   const markupRate = useMemo(() => {
     const rates = [
       ...new Set(
@@ -745,7 +771,10 @@ export function TakeoffActions() {
         capture('takeoff_exported', {
           locale,
           size_bucket: sizeBucket(lines.length),
-          has_inferred: hasInferred,
+          // 텔레메트리 키는 「원문에 값이 없는 근거를 썼는가」 그대로 둔다 —
+          // 独立検討 대기(transcribed)는 전 행에 붙어 있어 신호가 되지 않는다.
+          has_inferred: inferredRules.length > 0,
+          has_unverified: hasUnverified,
           inferred_rules: inferredRules.map(({ key }) => key),
         })
       },

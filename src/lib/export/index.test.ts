@@ -94,7 +94,7 @@ describe('buildTakeoffWorkbook', () => {
       'watermark',
     ])
     expect(spec.rows[0].cells[0].value).toBe(
-      '※ 未確認の規準値を含む — 検収前の参考値',
+      '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     )
   })
 
@@ -110,20 +110,31 @@ describe('buildTakeoffWorkbook', () => {
     }
   })
 
-  it('prefixes the item-name cell of exactly the inferred rows', () => {
-    const input = sampleInput()
+  it('prefixes the item-name cell with the row grade mark', () => {
+    // 画面の ▲/△ と同じ意味の印を内訳書にも付ける。全部同じ印なら印の意味が
+    // なくなるので、等級ごとに違う文字であることも見る (ADR-023)。
+    // 実ルールパックに inferred の行はもう無い — 唯一の例だった JIS 単位質量が
+    // プロジェクト入力に移ったからだ。そのままだと全行 △ で、印の区別を一つも
+    // 証明しない。一行だけ人為的に下げて二つの印が実際に分かれることを見る。
+    const sample = sampleInput()
+    const input = {
+      ...sample,
+      lines: sample.lines.map((line, index) =>
+        index === 0 ? { ...line, confidence: 'inferred' as const } : line,
+      ),
+    }
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
     const dataRows = spec.rows.filter(({ kind }) => kind === 'data')
+    const marks = dataRows.map(({ cells }) =>
+      String(cells[3].value).slice(0, 2),
+    )
 
     expect(dataRows).toHaveLength(input.lines.length)
-    // ⚠ は未確認の規準値（inferred）の印だ。全行に付いても一行も付かなくても
-    // 印は意味を失う — 行ごとに一致していなければならない。帯筋の質量行は
-    // 1通則2)・7)・9) だけで出るので stated だ。
-    expect(
-      dataRows.map(({ cells }) => String(cells[3].value).startsWith('⚠ ')),
-    ).toEqual(input.lines.map(({ inferred }) => inferred))
-    expect(input.lines.some(({ inferred }) => inferred)).toBe(true)
-    expect(input.lines.some(({ inferred }) => !inferred)).toBe(true)
+    expect(marks.every((mark) => mark === '▲ ' || mark === '△ ')).toBe(true)
+    expect(new Set(marks).size).toBe(2)
+    for (const [index, line] of input.lines.entries()) {
+      expect(marks[index]).toBe(line.confidence === 'inferred' ? '▲ ' : '△ ')
+    }
   })
 
   it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
@@ -285,7 +296,7 @@ describe('buildTakeoffWorkbook', () => {
     const worksheet = workbook.getWorksheet('数量内訳書')
 
     expect(worksheet?.getCell('A1').value).toBe(
-      '※ 未確認の規準値を含む — 検収前の参考値',
+      '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     )
     expect(worksheet?.getCell('A3').value).toBe('階')
     expect(worksheet?.getCell('Q3').value).toBe('算出式')

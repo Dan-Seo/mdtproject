@@ -81,7 +81,16 @@ describe('legendEntries', () => {
   })
 
   it('keeps different start and end 定着 lengths as separate entries', () => {
-    const { section, span, run } = sampleGirder()
+    // 5.3.4(5)(ｲ) の (a) L1 が支配すると折曲げ定着の全長は直線定着とぴったり
+    // 同じ値・同じ行になり、凡例は正しく1件にまとまる。この検査が見たいのは
+    // 「違う長さは分かれて残るか」なので、(b) 投影＋余長が支配する断面を使う。
+    // D13/柱560 がその窓に入る — 折曲げになるには柱せい < L1 520 ＋ かぶり 50、
+    // (b) が勝つには 0.75×柱せい ＋ 8d 104 > 520 すなわち柱せい > 554.7。
+    const { section: sampleSection, span, run } = sampleGirder()
+    const section: GirderSection = {
+      ...sampleSection,
+      main: { ...sampleSection.main, size: 'D13' },
+    }
     const straightRule = lookupRule(jpMlitRulePack, 'anchorage.L1', {
       fc: section.fc,
       grade: section.grade,
@@ -91,10 +100,11 @@ describe('legendEntries', () => {
     const asymmetricSpan: GirderSpan = {
       ...span,
       startSupportLengthAlongAxisMm: straightLengthMm * 2,
+      endSupportLengthAlongAxisMm: 560,
     }
     const bentEnd = resolveGirderEnd(
       {
-        supportLengthMm: span.endSupportLengthAlongAxisMm,
+        supportLengthMm: asymmetricSpan.endSupportLengthAlongAxisMm,
         supportCover: span.endSupportCover,
         barSize: section.main.size,
         fc: section.fc,
@@ -112,6 +122,9 @@ describe('legendEntries', () => {
       bentEnd.kind === '折曲げ定着' ? bentEnd.lengthRule : undefined
 
     expect(bentEnd.kind).toBe('折曲げ定着')
+    // (b) が支配していないと両端が同じ L1 になり、この検査は何も守らない。
+    expect(bentLengthRule).toBe('anchorage.bent.tail.minimum')
+    expect(bentEnd.lengthMm).not.toBe(straightLengthMm)
     expect(legendEntries(rebars)).toEqual([
       {
         kind: '定着',

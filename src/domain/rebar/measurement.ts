@@ -48,6 +48,26 @@ export function hoopDesignLengthMm(
 }
 
 /**
+ * 1通則3)（紙面 p.15）
+ * 「幅止筋の長さは、基礎梁、梁、壁梁、壁のコンクリートの設計幅又は厚さとし、
+ *   フックはないものとする。」
+ *
+ * 隣の 1通則2) と違って周長ではない — 断面の設計幅そのものである。加工用かぶりを
+ * 控除せず、フック余長も足さない。「足さない量」を `measure.width-tie.length.addition`
+ * が持つ。条項が挙げる部材に柱はないので、柱にはこの関数を使わない。
+ */
+export function widthTieDesignLengthMm(
+  sectionWidthMm: number,
+  additionRule: RuleHit,
+): number {
+  if (!positiveFinite(sectionWidthMm)) {
+    throw new Error(`コンクリートの設計幅 must be positive: ${sectionWidthMm}`)
+  }
+
+  return sectionWidthMm + additionMm(additionRule)
+}
+
+/**
  * 1通則4)（紙面 p.15）
  * 「重ね継手又はガス圧接継手について……計測・計算した鉄筋の長さについて、径１３㎜
  *   以下の鉄筋は６．０ｍごとに、径１６㎜以上の鉄筋は７．０ｍごとに継手があるもの

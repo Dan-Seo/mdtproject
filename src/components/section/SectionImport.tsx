@@ -144,7 +144,23 @@ function applyParsedFields(
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
       ...(candidate.girderMain === undefined
         ? {}
-        : { main: { ...section.main, ...candidate.girderMain } }),
+        : {
+            main: {
+              ...section.main,
+              size: candidate.girderMain.size,
+              // girderMain が立つのは位置別行が同値だったときだけである
+              // (parse.ts) — 端部・中央に同じ本数を入れる。位置別の相異値の
+              // 取り込みはまだない (ADR-018)。
+              top: {
+                endCount: candidate.girderMain.topCount,
+                centerCount: candidate.girderMain.topCount,
+              },
+              bottom: {
+                endCount: candidate.girderMain.bottomCount,
+                centerCount: candidate.girderMain.bottomCount,
+              },
+            },
+          }),
       ...(candidate.stirrup === undefined
         ? {}
         : {
@@ -216,7 +232,9 @@ function sectionSummary(section: Section): string {
   if (section.kind === '柱') {
     return `${sectionMarkLabel(section)} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
   }
-  return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${section.main.topCount}・下${section.main.bottomCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
+  const { top, bottom } = section.main
+
+  return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${top.endCount}／${top.centerCount}・下${bottom.endCount}／${bottom.centerCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
 }
 
 function candidateFields(candidate: SectionCandidate): string[] {
