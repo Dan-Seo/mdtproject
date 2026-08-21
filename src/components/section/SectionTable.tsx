@@ -4,6 +4,7 @@ import { useRef, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
+  SPLICE_METHODS,
   sectionMarkLabel,
   type BarSize,
   type ColumnSection,
@@ -11,6 +12,7 @@ import {
   type Finish,
   type GirderSection,
   type Section,
+  type SpliceMethod,
   type SteelGrade,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
@@ -22,6 +24,8 @@ import styles from './SectionTable.module.css'
 const barSizes: readonly BarSize[] = BAR_SIZES
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
+
+const spliceMethods: readonly SpliceMethod[] = SPLICE_METHODS
 
 const exposures: Exposure[] = ['屋内', '屋外']
 
@@ -121,6 +125,33 @@ function GradeSelect({
       {steelGrades.map((grade) => (
         <option key={grade} value={grade}>
           {grade}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+function SpliceMethodSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: SpliceMethod
+  onChange(value: SpliceMethod): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value}
+      aria-label={label}
+      onChange={(event) =>
+        onChange(event.currentTarget.value as SpliceMethod)
+      }
+    >
+      {spliceMethods.map((method) => (
+        <option key={method} value={method}>
+          {method}
         </option>
       ))}
     </select>
@@ -403,6 +434,7 @@ export function SectionTable() {
             <th scope="col">帯筋 / あばら筋</th>
             <th scope="col">Fc</th>
             <th scope="col">grade</th>
+            <th scope="col">継手方式</th>
             <th scope="col">かぶり条件</th>
           </tr>
         </thead>
@@ -472,6 +504,18 @@ export function SectionTable() {
                     value={section.grade}
                     onChange={(grade) =>
                       updateCurrent((current) => ({ ...current, grade }))
+                    }
+                  />
+                </td>
+                <td>
+                  <SpliceMethodSelect
+                    label={`${sectionMarkLabel(section)} 継手方式`}
+                    value={section.spliceMethod}
+                    onChange={(spliceMethod) =>
+                      updateCurrent((current) => ({
+                        ...current,
+                        spliceMethod,
+                      }))
                     }
                   />
                 </td>
