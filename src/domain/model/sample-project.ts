@@ -47,7 +47,14 @@ export const girderSections: GirderSection[] = [
     exposure: '屋外',
     finish: '仕上げなし',
     spliceMethod: '重ね継手',
-    main: { size: 'D25', topCount: 4, bottomCount: 4 },
+    main: {
+      size: 'D25',
+      top: { endCount: 4, centerCount: 4 },
+      bottom: { endCount: 4, centerCount: 4 },
+      // 設計図書由来の入力 — 規準に値はない (ADR-012)。端部と中央が同数の
+      // このサンプルではカットオフ筋が立たないので算出には効かない。
+      cutoffFromSupportFaceMm: 1500,
+    },
     stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     // M3c の日本固有詳細。実図面の断面リストにある値をそのまま例に使う
     // （幅止筋 D10@1000・腹筋 2-D10）。腹筋の余長は規準値が取れないので
@@ -67,7 +74,14 @@ export const girderSections: GirderSection[] = [
     exposure: '屋外',
     finish: '仕上げなし',
     spliceMethod: '重ね継手',
-    main: { size: 'D22', topCount: 4, bottomCount: 4 },
+    main: {
+      size: 'D22',
+      top: { endCount: 4, centerCount: 4 },
+      bottom: { endCount: 4, centerCount: 4 },
+      // 設計図書由来の入力 — 規準に値はない (ADR-012)。端部と中央が同数の
+      // このサンプルではカットオフ筋が立たないので算出には効かない。
+      cutoffFromSupportFaceMm: 1500,
+    },
     stirrup: { size: 'D13', pitch: 150, startOffsetMm: 50 },
   },
 ]

@@ -583,6 +583,12 @@ export function TakeoffPane() {
   // 산출식에만 두면 3D에 継手가 안 보이는 이유를 사용자가 알 수 없다 —
   // 継手 행이 하나라도 있으면 항상 보이게 한다.
   const hasSplice = spliceLines(lines).length > 0
+  // 描かれる長さが設計長さより短い理由も同じ扱いにする — 3D とつき合わせる
+  // ときに読む必要があるので、折りたたまれた算出式の中だけには置かない。
+  const hasCutoff = lines.some(
+    ({ role }) =>
+      role === '上端カットオフ筋' || role === '下端カットオフ筋',
+  )
 
   return (
     <>
@@ -593,6 +599,15 @@ export function TakeoffPane() {
           data-testid="splice-position-notice"
         >
           ▲ {t(locale, 'takeoff.splicePosition')}
+        </p>
+      )}
+      {hasCutoff && (
+        <p
+          className={styles.splicePositionNotice}
+          role="note"
+          data-testid="cutoff-anchorage-notice"
+        >
+          ▲ {t(locale, 'takeoff.cutoffAnchorage')}
         </p>
       )}
       {unsupportedMembers.length > 0 && (

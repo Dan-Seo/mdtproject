@@ -33,7 +33,12 @@ const section: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   spliceMethod: '重ね継手',
-  main: { size: 'D25', topCount: 4, bottomCount: 4 },
+  main: {
+    size: 'D25',
+    top: { endCount: 4, centerCount: 4 },
+    bottom: { endCount: 4, centerCount: 4 },
+    cutoffFromSupportFaceMm: 0,
+  },
   stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
 }
 
@@ -421,7 +426,11 @@ describe('generateGirderRebar', () => {
   it('keeps both 主筋 counts exactly as supplied by the section list (ADR-012)', () => {
     const changedSection: GirderSection = {
       ...section,
-      main: { ...section.main, topCount: 7, bottomCount: 9 },
+      main: {
+        ...section.main,
+        top: { endCount: 7, centerCount: 7 },
+        bottom: { endCount: 9, centerCount: 9 },
+      },
     }
     const generated = generateGirderRebar(
       input({ section: changedSection }),
@@ -636,5 +645,189 @@ describe('腹筋 (M3c)', () => {
     expect(() =>
       generateGirderRebar(input({ section: negative }), jpMlitRulePack),
     ).toThrow(MemberUnsupportedError)
+  })
+})
+
+describe('generateGirderRebar — カットオフ筋', () => {
+  // 数量積算基準 2（３）梁1)「トップ筋、ハンチ部分の主筋、補強筋等は設計図書に
+  // よる」— 位置別本数の差がカットオフ筋で、切り止め位置は入力である。
+  const cutoffMm = 1500
+
+  function withMain(
+    overrides: Partial<GirderSection['main']>,
+  ): GirderSection {
+    return {
+      ...section,
+      main: {
+        ...section.main,
+        cutoffFromSupportFaceMm: cutoffMm,
+        ...overrides,
+      },
+    }
+  }
+
+  function topEnd(supportLengthMm: number) {
+    return resolveGirderEnd(
+      {
+        barSize: section.main.size,
+        supportCover,
+        fc: section.fc,
+        grade: section.grade,
+        bendDirection: '下',
+        supportLengthMm,
+      },
+      jpMlitRulePack,
+    )
+  }
+
+  function byCutoffRole(
+    generated: Rebar[],
+    role: '上端カットオフ筋' | '下端カットオフ筋',
+  ): Rebar[] {
+    return generated.filter((rebar) => rebar.role === role)
+  }
+
+  const twoSpanRun: GirderRun = {
+    axis: 'X',
+    members: [
+      member,
+      { ...member, id: '1F-G1-X2Y1-X', position: { axis: 'X', ix: 1, iy: 0 } },
+    ],
+    ownerId: member.id,
+    spans: [span, { ...span }],
+    memberOffsetsMm: [0, span.clear + span.endSupportLengthAlongAxisMm],
+    coreLengthMm:
+      span.clear + span.endSupportLengthAlongAxisMm + span.clear,
+  }
+
+  it('端部が多い断面は通し筋を中央本数で数え、差を外側支点のカットオフ筋にする', () => {
+    const generated = generateGirderRebar(
+      input({ section: withMain({ top: { endCount: 6, centerCount: 4 } }) }),
+      jpMlitRulePack,
+    )
+    const cutoffs = byCutoffRole(generated, '上端カットオフ筋')
+    const start = topEnd(span.startSupportLengthAlongAxisMm)
+
+    expect(byRole(generated, '上端筋').count).toBe(4)
+    expect(cutoffs).toHaveLength(1)
+    expect(cutoffs[0]).toMatchObject({
+      memberId: run.ownerId,
+      size: section.main.size,
+      // 2本 × 外側支点2か所。両端の定着長さが同じなので1行に束ねる
+      count: 4,
+      axisOffsetsMm: [0, span.clear - cutoffMm],
+    })
+    expect(cutoffs[0].length).toBe(start.lengthMm + cutoffMm)
+    // 定着は設計長さに入るが 3D には描かない（両端で向きが反転するため）
+    expect(polylineLength(cutoffs[0].points, cutoffs[0].closed)).toBe(cutoffMm)
+  })
+
+  it('中央が多い断面はスパンごとに中央のカットオフ筋を出す', () => {
+    const generated = generateGirderRebar(
+      input({
+        section: withMain({ bottom: { endCount: 2, centerCount: 4 } }),
+      }),
+      jpMlitRulePack,
+    )
+    const cutoffs = byCutoffRole(generated, '下端カットオフ筋')
+
+    expect(byRole(generated, '下端筋').count).toBe(2)
+    expect(cutoffs).toHaveLength(1)
+    expect(cutoffs[0]).toMatchObject({
+      memberId: member.id,
+      count: 2,
+      length: span.clear - 2 * cutoffMm,
+      axisOffsetsMm: [cutoffMm],
+    })
+  })
+
+  it('連続スパンでは中間支点を通すカットオフ筋が別行になる', () => {
+    const generated = generateGirderRebar(
+      input({
+        run: twoSpanRun,
+        section: withMain({ top: { endCount: 6, centerCount: 4 } }),
+      }),
+      jpMlitRulePack,
+    )
+    const cutoffs = byCutoffRole(generated, '上端カットオフ筋')
+    const outer = topEnd(span.startSupportLengthAlongAxisMm)
+    const interiorLength =
+      2 * cutoffMm + span.endSupportLengthAlongAxisMm
+
+    expect(cutoffs).toHaveLength(2)
+    expect(cutoffs[0]).toMatchObject({
+      count: 4,
+      length: outer.lengthMm + cutoffMm,
+      axisOffsetsMm: [0, twoSpanRun.coreLengthMm - cutoffMm],
+    })
+    expect(cutoffs[1]).toMatchObject({
+      // 中間支点は貫通するので定着がつかない — 2本 × 1か所
+      count: 2,
+      length: interiorLength,
+      axisOffsetsMm: [span.clear - cutoffMm],
+    })
+    expect(
+      polylineLength(cutoffs[1].points, cutoffs[1].closed),
+    ).toBe(interiorLength)
+  })
+
+  it('カットオフ筋の継手箇所数は連続梁の区分表ではなく 1通則4) で数える', () => {
+    const wideSpan: GirderSpan = { ...span, centerSpan: 7800, clear: 7000 }
+    const wideRun: GirderRun = {
+      ...twoSpanRun,
+      spans: [wideSpan, { ...wideSpan }],
+      memberOffsetsMm: [0, wideSpan.clear + wideSpan.endSupportLengthAlongAxisMm],
+      coreLengthMm:
+        wideSpan.clear + wideSpan.endSupportLengthAlongAxisMm + wideSpan.clear,
+    }
+    const generated = generateGirderRebar(
+      input({
+        run: wideRun,
+        section: withMain({ bottom: { endCount: 2, centerCount: 4 } }),
+      }),
+      jpMlitRulePack,
+    )
+    const [cutoff] = byCutoffRole(generated, '下端カットオフ筋')
+
+    // 4.0m の鉄筋。連続梁の区分表なら 5.0m 未満で 0.5か所になるが、
+    // カットオフ筋は「梁の全長にわたる主筋」ではないので 1通則4) に戻る。
+    expect(cutoff.length).toBe(wideSpan.clear - 2 * cutoffMm)
+    expect(cutoff.splice?.countPerBar).toBe(0)
+    expect(cutoff.splice?.formula).toContain('1通則4)')
+  })
+
+  // 直しどころが違うので断面・内法の寸法不成立とは別の理由にする —
+  // 直すのは支点柱でもスパンでもなく断面一覧のカットオフ位置である。
+  it.each([
+    ['スパンに納まらない', 2700],
+    ['未入力', 0],
+  ])('カットオフ位置が%sなら黙って0にせずカットオフ位置不成立で落とす', (_label, cutoffFromSupportFaceMm) => {
+    const broken = withMain({
+      top: { endCount: 6, centerCount: 4 },
+      cutoffFromSupportFaceMm,
+    })
+
+    try {
+      generateGirderRebar(input({ section: broken }), jpMlitRulePack)
+      expect.unreachable('should have thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe(
+        'カットオフ位置不成立',
+      )
+    }
+  })
+
+  it('端部と中央が同数ならカットオフ筋を出さない', () => {
+    const generated = generateGirderRebar(
+      input({ section: withMain({}) }),
+      jpMlitRulePack,
+    )
+
+    expect(generated.map(({ role }) => role)).toEqual([
+      '上端筋',
+      '下端筋',
+      'あばら筋',
+    ])
   })
 })

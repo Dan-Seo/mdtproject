@@ -49,7 +49,12 @@ const shallowGirderSection: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   spliceMethod: '重ね継手',
-  main: { size: 'D22', topCount: 4, bottomCount: 4 },
+  main: {
+    size: 'D22',
+    top: { endCount: 4, centerCount: 4 },
+    bottom: { endCount: 4, centerCount: 4 },
+    cutoffFromSupportFaceMm: 0,
+  },
   stirrup: { size: 'D13', pitch: 150, startOffsetMm: 50 },
 }
 

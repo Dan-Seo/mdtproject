@@ -1,8 +1,10 @@
-import type {
-  BarSize,
-  ColumnSection,
-  GirderSection,
-  Section,
+import {
+  splitGirderMainRow,
+  type BarSize,
+  type ColumnSection,
+  type GirderMainRow,
+  type GirderSection,
+  type Section,
 } from '@/domain/model/member'
 import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
@@ -67,6 +69,8 @@ export function roleToLayer(role: RebarRole): RebarLayer {
     case '主筋':
     case '上端筋':
     case '下端筋':
+    case '上端カットオフ筋':
+    case '下端カットオフ筋':
       return 'main'
     case '帯筋':
     case 'あばら筋':
@@ -140,28 +144,55 @@ function columnRebarPlacements(
   })
 }
 
+/** 主筋 1段の枠割り。通し筋とカットオフ筋が同じ段を分け合う。 */
+function girderMainRowOf(
+  role: RebarRole,
+  section: GirderSection,
+): { row: GirderMainRow; upper: boolean; cutoff: boolean } {
+  switch (role) {
+    case '上端筋':
+      return { row: section.main.top, upper: true, cutoff: false }
+    case '上端カットオフ筋':
+      return { row: section.main.top, upper: true, cutoff: true }
+    case '下端筋':
+      return { row: section.main.bottom, upper: false, cutoff: false }
+    case '下端カットオフ筋':
+      return { row: section.main.bottom, upper: false, cutoff: true }
+    default:
+      throw new Error(`Unsupported 大梁 main role: ${role}`)
+  }
+}
+
 function girderMainPlacements(
   rebar: Rebar,
   section: GirderSection,
 ): Point3[] {
-  if (rebar.role !== '上端筋' && rebar.role !== '下端筋') {
-    throw new Error(`Unsupported 大梁 main role: ${rebar.role}`)
-  }
-
+  const { row, upper, cutoff } = girderMainRowOf(rebar.role, section)
+  const split = splitGirderMainRow(row)
+  // 段の総本数は端部・中央の多い方だ。通し筋が手前の枠、カットオフ筋が
+  // 残りの枠を取る — 行ごとに全幅へ広げると同じ枠に二重に描かれる。
+  const slots = split.throughCount + split.cutoffCount
   const [, , insetZ] = rebar.points[0]
   const inward =
     2 * rebarRadius(section.stirrup.size) + rebarRadius(rebar.size)
   const width = Math.max(0, section.b - 2 * (insetZ + inward))
-  const y = rebar.role === '上端筋' ? -inward : inward
+  const y = upper ? -inward : inward
+  // 数量の count は「1か所あたり本数 × 位置数」なので、枠の数は位置で割る。
+  const offsets = rebar.axisOffsetsMm ?? [0]
+  const perPlacement = rebar.count / offsets.length
+  const firstSlot = cutoff ? split.throughCount : 0
 
-  return Array.from({ length: rebar.count }, (_, index): Point3 => {
-    const z =
-      rebar.count === 1
-        ? inward + width / 2
-        : inward + (index * width) / (rebar.count - 1)
+  return offsets.flatMap((offsetMm) =>
+    Array.from({ length: perPlacement }, (_, index): Point3 => {
+      const slot = firstSlot + index
+      const z =
+        slots === 1
+          ? inward + width / 2
+          : inward + (slot * width) / (slots - 1)
 
-    return [0, y, z]
-  })
+      return [offsetMm, y, z]
+    }),
+  )
 }
 
 /**

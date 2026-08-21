@@ -60,7 +60,12 @@ function girderSection(
     exposure: '屋外',
     finish: '仕上げなし',
     spliceMethod: '重ね継手',
-    main: { size: 'D25', topCount: 4, bottomCount: 4 },
+    main: {
+      size: 'D25',
+      top: { endCount: 4, centerCount: 4 },
+      bottom: { endCount: 4, centerCount: 4 },
+      cutoffFromSupportFaceMm: 0,
+    },
     stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     ...overrides,
   }

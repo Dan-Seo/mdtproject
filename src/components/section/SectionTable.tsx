@@ -4,6 +4,7 @@ import { useRef, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
+  SPLICE_METHODS,
   sectionMarkLabel,
   type BarSize,
   type ColumnSection,
@@ -11,6 +12,7 @@ import {
   type Finish,
   type GirderSection,
   type Section,
+  type SpliceMethod,
   type SteelGrade,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
@@ -22,6 +24,8 @@ import styles from './SectionTable.module.css'
 const barSizes: readonly BarSize[] = BAR_SIZES
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
+
+const spliceMethods: readonly SpliceMethod[] = SPLICE_METHODS
 
 const exposures: Exposure[] = ['屋内', '屋外']
 
@@ -160,6 +164,33 @@ function GradeSelect({
   )
 }
 
+function SpliceMethodSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: SpliceMethod
+  onChange(value: SpliceMethod): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value}
+      aria-label={label}
+      onChange={(event) =>
+        onChange(event.currentTarget.value as SpliceMethod)
+      }
+    >
+      {spliceMethods.map((method) => (
+        <option key={method} value={method}>
+          {method}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function CoverConditionField({
   section,
   update,
@@ -270,6 +301,41 @@ function ColumnMainField({
   )
 }
 
+function GirderMainCountInput({
+  section,
+  row,
+  place,
+  update,
+}: {
+  section: GirderSection
+  row: 'top' | 'bottom'
+  place: '端部' | '中央'
+  update(updater: (section: Section) => Section): void
+}) {
+  const key = place === '端部' ? 'endCount' : 'centerCount'
+
+  return (
+    <NumberInput
+      label={`${sectionMarkLabel(section)} 主筋 ${
+        row === 'top' ? '上' : '下'
+      } ${place} 本数`}
+      value={section.main[row][key]}
+      onChange={(count) =>
+        update((current) => {
+          if (current.kind !== '大梁') return current
+          return {
+            ...current,
+            main: {
+              ...current.main,
+              [row]: { ...current.main[row], [key]: count },
+            },
+          }
+        })
+      }
+    />
+  )
+}
+
 function GirderMainField({
   section,
   update,
@@ -279,18 +345,24 @@ function GirderMainField({
 }) {
   return (
     <div className={styles.girderMainField}>
-      <span>上</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 上 本数`}
-        value={section.main.topCount}
-        onChange={(topCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return { ...current, main: { ...current.main, topCount } }
-          })
-        }
-      />
-      <span>−</span>
+      {(['top', 'bottom'] as const).map((row) => (
+        <div key={row} className={styles.compoundField}>
+          <span>{row === 'top' ? '上' : '下'}</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="端部"
+            update={update}
+          />
+          <span aria-hidden="true">／</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="中央"
+            update={update}
+          />
+        </div>
+      ))}
       <BarSizeSelect
         label={`${sectionMarkLabel(section)} 主筋 径`}
         value={section.main.size}
@@ -301,20 +373,23 @@ function GirderMainField({
           })
         }
       />
-      <span>下</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 下 本数`}
-        value={section.main.bottomCount}
-        onChange={(bottomCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return {
-              ...current,
-              main: { ...current.main, bottomCount },
-            }
-          })
-        }
-      />
+      <div className={styles.compoundField}>
+        <span>カットオフ</span>
+        <NumberInput
+          label={`${sectionMarkLabel(section)} カットオフ位置`}
+          minimum={0}
+          value={section.main.cutoffFromSupportFaceMm}
+          onChange={(cutoffFromSupportFaceMm) =>
+            update((current) => {
+              if (current.kind !== '大梁') return current
+              return {
+                ...current,
+                main: { ...current.main, cutoffFromSupportFaceMm },
+              }
+            })
+          }
+        />
+      </div>
     </div>
   )
 }
@@ -546,6 +621,7 @@ export function SectionTable() {
             <th scope="col">幅止め筋 / 腹筋</th>
             <th scope="col">Fc</th>
             <th scope="col">grade</th>
+            <th scope="col">継手方式</th>
             <th scope="col">かぶり条件</th>
           </tr>
         </thead>
@@ -626,6 +702,18 @@ export function SectionTable() {
                     value={section.grade}
                     onChange={(grade) =>
                       updateCurrent((current) => ({ ...current, grade }))
+                    }
+                  />
+                </td>
+                <td>
+                  <SpliceMethodSelect
+                    label={`${sectionMarkLabel(section)} 継手方式`}
+                    value={section.spliceMethod}
+                    onChange={(spliceMethod) =>
+                      updateCurrent((current) => ({
+                        ...current,
+                        spliceMethod,
+                      }))
                     }
                   />
                 </td>

@@ -1,4 +1,8 @@
-import type { GirderSection, Member } from '../model/member'
+import {
+  splitGirderMainRow,
+  type GirderSection,
+  type Member,
+} from '../model/member'
 import type { GirderRun, GirderSpan } from '../model/project'
 import type { Rebar, RebarZone } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
@@ -45,7 +49,7 @@ function uniqueRuleHits(hits: RuleHit[]): RuleHit[] {
   return [...new Set(hits)]
 }
 
-function endFormula(label: '始端' | '終端', detail: GirderEndDetail): string {
+function endFormula(label: string, detail: GirderEndDetail): string {
   if (detail.kind === '直線定着') {
     return `${label} 直線定着 L1 ${detail.lengthMm}`
   }
@@ -153,21 +157,15 @@ interface GirderSplice {
  * 区分表が 1通則4) を上書きする。1スパンのランは単独梁なので同条ただし書きで
  * 1通則4) に戻り、径ごとの長さの単位で数える。
  */
-function resolveSplice(
-  run: GirderRun,
+function spliceFrom(
+  countRule: RuleHit,
+  countPerBar: number,
+  basis: string,
   section: GirderSection,
-  designLengthBeforeSpliceMm: number,
   lapRule: RuleHit,
   lapLengthMm: number,
   pack: RulePack,
 ): GirderSplice {
-  const continuous = run.members.length > 1
-  const countRule = continuous
-    ? bandedSpliceRule(run.coreLengthMm, continuousGirderBands(pack))
-    : lookupRule(pack, 'measure.splice.interval', { size: section.main.size })
-  const countPerBar = continuous
-    ? spliceCount(countRule)
-    : intervalSpliceCount(designLengthBeforeSpliceMm, countRule)
   const factorRule = lookupRule(pack, 'measure.splice.length.factor', {
     method: section.spliceMethod,
   })
@@ -176,14 +174,69 @@ function resolveSplice(
 
   if (lengthMm > 0) rules.push(lapRule)
 
-  return {
-    countPerBar,
-    lengthMm,
-    rules,
-    basis: continuous
-      ? `連続梁 梁の長さ ${run.coreLengthMm}（数量積算基準 2（３）梁2)）`
-      : `単独梁 鉄筋の長さ ${designLengthBeforeSpliceMm} ÷ ${countRule.value}mm ごと（同 1通則4)）`,
+  return { countPerBar, lengthMm, rules, basis }
+}
+
+/**
+ * 1通則4) — 径ごとの長さの単位で数える。「梁の全長にわたる主筋」でない鉄筋
+ * （単独梁の通し筋・カットオフ筋）はここに戻る（（３）梁2) ただし書き）。
+ */
+function intervalSplice(
+  label: string,
+  section: GirderSection,
+  designLengthBeforeSpliceMm: number,
+  lapRule: RuleHit,
+  lapLengthMm: number,
+  pack: RulePack,
+): GirderSplice {
+  const countRule = lookupRule(pack, 'measure.splice.interval', {
+    size: section.main.size,
+  })
+
+  return spliceFrom(
+    countRule,
+    intervalSpliceCount(designLengthBeforeSpliceMm, countRule),
+    `${label} 鉄筋の長さ ${designLengthBeforeSpliceMm} ÷ ${countRule.value}mm ごと（数量積算基準 1通則4)）`,
+    section,
+    lapRule,
+    lapLengthMm,
+    pack,
+  )
+}
+
+function resolveSplice(
+  run: GirderRun,
+  section: GirderSection,
+  designLengthBeforeSpliceMm: number,
+  lapRule: RuleHit,
+  lapLengthMm: number,
+  pack: RulePack,
+): GirderSplice {
+  if (run.members.length === 1) {
+    return intervalSplice(
+      '単独梁',
+      section,
+      designLengthBeforeSpliceMm,
+      lapRule,
+      lapLengthMm,
+      pack,
+    )
   }
+
+  const countRule = bandedSpliceRule(
+    run.coreLengthMm,
+    continuousGirderBands(pack),
+  )
+
+  return spliceFrom(
+    countRule,
+    spliceCount(countRule),
+    `連続梁 梁の長さ ${run.coreLengthMm}（数量積算基準 2（３）梁2)）`,
+    section,
+    lapRule,
+    lapLengthMm,
+    pack,
+  )
 }
 
 function generateMain(
@@ -319,6 +372,237 @@ function generateMain(
       `3D 形状 ＝ 継手位置が未確定なので継手を描かない` +
       `（描かれる加工長 ${drawnLength} は設計長さと一致しない・数量には用いない）`,
   }
+}
+
+/**
+ * カットオフ筋（梁の全長にわたらない主筋）1本が立つ位置。
+ *
+ * 数量積算基準 2（３）梁1) が「トップ筋、ハンチ部分の主筋、補強筋等は設計図書
+ * による」と委ねるので、切り止め位置は断面一覧の入力である。ここが組み立てるのは
+ * その入力と支点寸法・定着長さからの長さだけで、規準値は定着しか使わない。
+ */
+interface CutoffPosition {
+  /** 귀속 부재 — 数量의 束ね 단위가 된다 */
+  memberId: string
+  /** 부재 로컬 x에서 그리기 시작하는 위치 (mm) */
+  fromMm: number
+  /** 3D에 그리는 길이 (mm) */
+  drawnMm: number
+  /** 継手 산입 전의 設計長さ (mm) */
+  designMm: number
+  /** 이 위치의 길이를 정한 룰 행 (외측 지점의 定着) */
+  rules: RuleHit[]
+  basis: string
+}
+
+interface CutoffRow {
+  role: '上端カットオフ筋' | '下端カットオフ筋'
+  /** 1か所あたりの本数 = 端部と中央の差 */
+  count: number
+  at: '端部' | '中央'
+  y: number
+  bendDirection: '上' | '下'
+}
+
+function cutoffPositions(
+  input: GirderRebarInput,
+  pack: RulePack,
+  row: CutoffRow,
+): CutoffPosition[] {
+  const { run, section } = input
+  const cutoffMm = section.main.cutoffFromSupportFaceMm
+
+  if (cutoffMm <= 0) {
+    throw new MemberUnsupportedError(
+      'カットオフ位置不成立',
+      `カットオフ位置 must be positive when 端部と中央の本数が違う: ` +
+        `${run.ownerId} (${row.role} ${row.count}本)`,
+    )
+  }
+  // 両端から伸びるカットオフ筋が出会う長さでは、その本数は中央にも立って
+  // いることになり「位置別に本数が違う」という入力自体が成り立たない。
+  const tooShort = run.spans.find(({ clear }) => clear <= 2 * cutoffMm)
+  if (tooShort) {
+    throw new MemberUnsupportedError(
+      'カットオフ位置不成立',
+      `内法長さ must exceed 2×カットオフ位置: ${run.ownerId} ` +
+        `(内法 ${tooShort.clear} ≤ 2×${cutoffMm})`,
+    )
+  }
+
+  if (row.at === '中央') {
+    return run.members.map((member, index) => {
+      const { clear } = run.spans[index]
+      const designMm = clear - 2 * cutoffMm
+
+      return {
+        memberId: member.id,
+        fromMm: cutoffMm,
+        drawnMm: designMm,
+        designMm,
+        rules: [],
+        basis:
+          `内法長さ ${clear} − カットオフ位置 ${cutoffMm} ×2 ＝ ${designMm}` +
+          `（両側の支点手前で切り止まるので定着はない）`,
+      }
+    })
+  }
+
+  const endInput = {
+    barSize: section.main.size,
+    fc: section.fc,
+    grade: section.grade,
+    bendDirection: row.bendDirection,
+  }
+  const startSpan = run.spans[0]
+  const endSpan = run.spans[run.spans.length - 1]
+  const start = resolveGirderEnd(
+    {
+      ...endInput,
+      supportLengthMm: startSpan.startSupportLengthAlongAxisMm,
+      supportCover: startSpan.startSupportCover,
+    },
+    pack,
+  )
+  const end = resolveGirderEnd(
+    {
+      ...endInput,
+      supportLengthMm: endSpan.endSupportLengthAlongAxisMm,
+      supportCover: endSpan.endSupportCover,
+    },
+    pack,
+  )
+  // 始端・終端を名で分けない — 両端の定着が同じなら基礎式も同じ文字列になり、
+  // 1行に束ねたときに同じ計算が二度並ばない。違えば設計長さも違うので別行になる。
+  const outer = (
+    detail: GirderEndDetail,
+    fromMm: number,
+  ): CutoffPosition => ({
+    memberId: run.ownerId,
+    fromMm,
+    drawnMm: cutoffMm,
+    designMm: detail.lengthMm + cutoffMm,
+    rules: detail.usedRules,
+    basis:
+      `${endFormula('外側支点', detail)} ＋ カットオフ位置 ${cutoffMm} ＝ ` +
+      `${detail.lengthMm + cutoffMm}`,
+  })
+  // 中間支点は通し筋と同じく貫通する — 定着はつかず、両隣のスパンへ
+  // カットオフ位置ぶんずつ伸びる。
+  const interior = run.spans.slice(0, -1).map((_span, index): CutoffPosition => {
+    const supportStartMm = run.memberOffsetsMm[index] + run.spans[index].clear
+    const supportMm = run.memberOffsetsMm[index + 1] - supportStartMm
+    const designMm = 2 * cutoffMm + supportMm
+
+    return {
+      memberId: run.ownerId,
+      fromMm: supportStartMm - cutoffMm,
+      drawnMm: designMm,
+      designMm,
+      rules: [],
+      basis:
+        `カットオフ位置 ${cutoffMm} ×2 ＋ 中間柱せい ${supportMm} ＝ ${designMm}` +
+        `（中間支点を通すので定着はない）`,
+    }
+  })
+
+  return [
+    outer(start, 0),
+    ...interior,
+    outer(end, run.coreLengthMm - cutoffMm),
+  ]
+}
+
+function generateCutoff(
+  input: GirderRebarInput,
+  pack: RulePack,
+  coverRule: RuleHit,
+  fabricationCoverAdditionRule: RuleHit,
+  fabricationCoverMm: number,
+  row: CutoffRow,
+): Rebar[] {
+  const { section } = input
+  const lapRule = lookupRule(pack, 'lap.L1', {
+    fc: section.fc,
+    grade: section.grade,
+    hook: false,
+  })
+  const lapLengthMm = millimetres(lapRule, barDiameter(section.main.size))
+  // 束ねる鍵は設計長さである — 積算基準 前文が「規格、形状、寸法等ごとに」と
+  // 定めるので、同じ長さの位置は同じ内訳行になる。3D は代表位置の描画長さで
+  // 描くので、設計長さが同じで描画長さが違う位置（定着 − カットオフ位置 が
+  // 中間柱せいに一致するときだけ起こる）は代表値で描かれる (ADR-019)。
+  const groups = new Map<string, CutoffPosition[]>()
+
+  for (const position of cutoffPositions(input, pack, row)) {
+    const key = `${position.memberId}|${position.designMm}`
+    const group = groups.get(key)
+    if (group) group.push(position)
+    else groups.set(key, [position])
+  }
+
+  return [...groups.values()].map((positions, index): Rebar => {
+    const [first] = positions
+    const count = row.count * positions.length
+    const splice = intervalSplice(
+      'カットオフ筋',
+      section,
+      first.designMm,
+      lapRule,
+      lapLengthMm,
+      pack,
+    )
+    const length = first.designMm + splice.lengthMm
+    const spliceLengthTerm =
+      splice.countPerBar === 0
+        ? `0か所 ＝ 0`
+        : splice.lengthMm > 0
+          ? `${splice.countPerBar}か所 × 重ね継手長さ L1 ${lapRule.value}d(${lapLengthMm}) ＝ ${splice.lengthMm}`
+          : `${splice.countPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
+    const basis = [...new Set(positions.map(({ basis }) => basis))].join(' ／ ')
+
+    return {
+      id: `${first.memberId}|cutoff-${row.role}-${index}`,
+      memberId: first.memberId,
+      role: row.role,
+      size: section.main.size,
+      shape: 'straight',
+      points: [
+        [0, row.y, fabricationCoverMm],
+        [first.drawnMm, row.y, fabricationCoverMm],
+      ],
+      closed: false,
+      length,
+      count,
+      axisOffsetsMm: positions.map(({ fromMm }) => fromMm),
+      splice: {
+        method: section.spliceMethod,
+        countPerBar: splice.countPerBar,
+        lengthMm: splice.lengthMm,
+        rules: splice.rules,
+        formula:
+          `継手箇所数 ＝ ${row.role}1本あたり ${splice.countPerBar}か所` +
+          `（${splice.basis}） ／ ` +
+          `方式 ＝ ${section.spliceMethod} ／ ` +
+          `設計長さへの算入 ＝ ${spliceLengthTerm} ／ ` +
+          `位置 ＝ 未確定（表5.3.3 が原文で画像 — 3D には描かない）`,
+      },
+      ruleHits: uniqueRuleHits([
+        coverRule,
+        fabricationCoverAdditionRule,
+        ...positions.flatMap(({ rules }) => rules),
+        ...splice.rules,
+      ]),
+      formula:
+        `設計長さ ＝ ${basis} ＋ 継手 ${spliceLengthTerm} ＝ ${length} ／ ` +
+        `本数 ＝ 1か所あたり ${row.count}（断面一覧の端部・中央の差 — ` +
+        `数量積算基準 2（３）梁1)「トップ筋、ハンチ部分の主筋、補強筋等は設計図書` +
+        `による」） × ${positions.length}か所 ＝ ${count} ／ ` +
+        `配置基準 ＝ 加工用かぶり厚さ ${fabricationCoverMm} ／ ` +
+        `3D 形状 ＝ 柱面から内側だけを描く（定着は向きが端で反転するので描かず、` +
+        `設計長さにだけ算入する・描かれる長さ ${first.drawnMm} は数量には用いない）`,
+    }
+  })
 }
 
 function generateStirrup(
@@ -569,33 +853,59 @@ export function generateGirderRebar(
   const fabricationCoverMm =
     minimumCoverMm + fabricationCoverAdditionMm
 
-  const top = generateMain(
-    input,
-    pack,
-    coverRule,
-    fabricationCoverAdditionRule,
-    fabricationCoverMm,
+  // 位置別本数を通し筋とカットオフ筋に分ける。数量積算基準 2（３）梁1) が
+  // 長さを定めるのは「梁の全長にわたる主筋」だけで、差の分は設計図書による。
+  const rows = [
     {
-      id: 'top',
-      role: '上端筋',
-      count: section.main.topCount,
+      id: 'top' as const,
+      role: '上端筋' as const,
+      cutoffRole: '上端カットオフ筋' as const,
+      split: splitGirderMainRow(section.main.top),
       y: section.depth - fabricationCoverMm,
-      bendDirection: '下',
+      bendDirection: '下' as const,
     },
-  )
-  const bottom = generateMain(
-    input,
-    pack,
-    coverRule,
-    fabricationCoverAdditionRule,
-    fabricationCoverMm,
     {
-      id: 'bottom',
-      role: '下端筋',
-      count: section.main.bottomCount,
+      id: 'bottom' as const,
+      role: '下端筋' as const,
+      cutoffRole: '下端カットオフ筋' as const,
+      split: splitGirderMainRow(section.main.bottom),
       y: fabricationCoverMm,
-      bendDirection: '上',
+      bendDirection: '上' as const,
     },
+  ]
+  const through = rows.map((row) =>
+    generateMain(
+      input,
+      pack,
+      coverRule,
+      fabricationCoverAdditionRule,
+      fabricationCoverMm,
+      {
+        id: row.id,
+        role: row.role,
+        count: row.split.throughCount,
+        y: row.y,
+        bendDirection: row.bendDirection,
+      },
+    ),
+  )
+  const cutoffs = rows.flatMap((row) =>
+    row.split.cutoffCount === 0
+      ? []
+      : generateCutoff(
+          input,
+          pack,
+          coverRule,
+          fabricationCoverAdditionRule,
+          fabricationCoverMm,
+          {
+            role: row.cutoffRole,
+            count: row.split.cutoffCount,
+            at: row.split.cutoffAt,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          },
+        ),
   )
   // bend.hook135 を引かないのは積算基準 1通則2) が「フックはないものとする」と
   // 定めるからで、その事実自体を measure.hoop.length.addition が出典付きで持つ。
@@ -650,5 +960,5 @@ export function generateGirderRebar(
           ),
         )
 
-  return [top, bottom, ...stirrups, ...widthTies, ...sideBars]
+  return [...through, ...cutoffs, ...stirrups, ...widthTies, ...sideBars]
 }

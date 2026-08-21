@@ -9,7 +9,11 @@
  * 룰팩 공백(`Rule not found`)이나 타입 위반 같은 실제 결함은 이 오류로 감싸지
  * 말 것 — 조용히 「미지원 부재」로 흡수되면 결함이 화면에서 사라진다.
  */
-export type UnsupportedReason = '定着不成立' | '寸法不成立'
+export type UnsupportedReason =
+  | '定着不成立'
+  | '寸法不成立'
+  /** カットオフ位置が未入力、または内法に納まらない (ADR-021) */
+  | 'カットオフ位置不成立'
 
 export class MemberUnsupportedError extends Error {
   readonly reason: UnsupportedReason

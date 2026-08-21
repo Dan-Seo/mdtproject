@@ -37,6 +37,20 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('C1 主筋 本数')).toHaveValue(10)
   })
 
+  it('keeps a user change to 継手方式 in Project', () => {
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 継手方式'), {
+      target: { value: 'ガス圧接' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    expect(section?.spliceMethod).toBe('ガス圧接')
+    expect(screen.getByLabelText('G1 継手方式')).toHaveValue('ガス圧接')
+  })
+
   it('keeps a user change to かぶり条件 in Project', () => {
     render(<SectionTable />)
 

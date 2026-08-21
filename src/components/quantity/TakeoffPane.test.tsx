@@ -254,6 +254,42 @@ describe('TakeoffPane', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows that カットオフ筋 の定着 is left out of the 3D when one exists', () => {
+    // 3D に描かれる長さが設計長さより短い理由は、折りたたまれた算出式の中に
+    // だけ置くと読まれない — 継手位置の告知と同じ扱いにする。
+    const project = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...project,
+        sections: project.sections.map((section) =>
+          section.kind === '大梁'
+            ? {
+                ...section,
+                main: {
+                  ...section.main,
+                  top: { endCount: 6, centerCount: 4 },
+                },
+              }
+            : section,
+        ),
+      },
+    })
+
+    render(<TakeoffPane />)
+
+    const notice = screen.getByTestId('cutoff-anchorage-notice')
+    expect(notice).toHaveTextContent('カットオフ筋')
+    expect(notice).toHaveTextContent('定着')
+  })
+
+  it('does not show the カットオフ notice when 端部と中央 hold the same count', () => {
+    render(<TakeoffPane />)
+
+    expect(
+      screen.queryByTestId('cutoff-anchorage-notice'),
+    ).not.toBeInTheDocument()
+  })
+
   it('renders the 継手 row in 箇所 and leaves the mass columns empty', () => {
     // 単位が違う行を同じ列に混ぜると、内訳書の合計が意味を失う。
     const line = spliceLineFor('主筋')
