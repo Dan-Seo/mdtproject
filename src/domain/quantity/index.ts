@@ -171,8 +171,13 @@ function contributingRules(
 // 併合された行の算出式・出典が片方についてしか事実でなくなる。
 export function quantityLineId(groupId: string, rebar: Rebar): string {
   const spliceKey = rebar.splice ? `|継手${rebar.splice.countPerBar}` : ''
+  // 前文は「規格、形状、寸法等ごとに」なので、寸法(設計長さ)だけでなく加工形状も
+  // 鍵に入れる — 設計長さが同じでも折れ線が違えば別の鉄筋だ (ADR-019)。同じ行に
+  // 落とすと places は部材数で数えるため、同じ部材から来た片方の本数がまるごと
+  // 数量から消える（カットオフ筋で実際に起こる — girder.ts の束ね鍵を見よ）。
+  const shapeKey = rebar.points.map((point) => point.join(',')).join(';')
 
-  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}`
+  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}|形状${shapeKey}`
 }
 
 /**

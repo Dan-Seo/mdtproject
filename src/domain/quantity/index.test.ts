@@ -184,7 +184,7 @@ describe('aggregateQuantity', () => {
 
     expect(lines).toHaveLength(1)
     expect(lines[0]).toMatchObject({
-      id: '1階|C|C1|主筋|1000|12',
+      id: '1階|C|C1|主筋|1000|12|形状0,0,0;0,1000,0',
       groupId: '1階|C|C1',
       storyName: '1階',
       memberKind: '柱',
@@ -617,6 +617,31 @@ describe('単位質量は利用者入力', () => {
     expect(line.unitMassKgPerM).toBe(4)
     expect(line.designKg).toBe(432)
     expect(line.requiredKg).toBeCloseTo(449.28, 6)
+  })
+
+  // カットオフ筋は同じ部材から設計長さも本数も同じで折れ線だけ違う鉄筋を出す
+  // ことがある。places は部材数で数えるので、1行に束ねると片方の本数がまるごと
+  // 消えて過少計上になる — 黙って消えないことを固定する。
+  it('keeps 加工形状 apart even when 設計長さ and 本数 match', () => {
+    const project = projectWithStories(stories)
+    const [member] = project.members
+    const rebars = [
+      mainRebar(member.id),
+      mainRebar(member.id, {
+        id: `${member.id}|main-bent`,
+        points: [
+          [0, 0, 0],
+          [1000, 0, 0],
+        ],
+      }),
+    ]
+
+    const lines = massLines(aggregateQuantity(project, rebars, jpMlitRulePack))
+
+    expect(lines).toHaveLength(2)
+    expect(lines.map(({ totalLengthMm }) => totalLengthMm)).toEqual([
+      12000, 12000,
+    ])
   })
 
   it('keeps the subtotal unknown while any 径 is still missing', () => {

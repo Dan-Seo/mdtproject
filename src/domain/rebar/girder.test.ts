@@ -600,6 +600,22 @@ describe('幅止め筋 (M3c)', () => {
     expect(tie.closed).toBe(false)
   })
 
+  // 規準に幅止め筋のピッチはないので、未入力を道具が埋めることはできない。
+  // 埋めれば利用者が入れていない数字がそのまま 1通則7) の割付本数になる。
+  it('未入力のピッチを黙って埋めず寸法不成立で落とす', () => {
+    try {
+      generateGirderRebar(
+        input({ section: { ...section, widthTie: { size: 'D10', pitch: 0 } } }),
+        jpMlitRulePack,
+      )
+      expect.unreachable('should have thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+      expect((error as Error).message).toContain('幅止め筋 ピッチ')
+    }
+  })
+
   it('repeats along the span from the same start offset as the あばら筋', () => {
     const generated = generateGirderRebar(
       input({ section: withWidthTie }),
@@ -829,6 +845,49 @@ describe('generateGirderRebar — カットオフ筋', () => {
         'カットオフ位置不成立',
       )
     }
+  })
+
+  // 定着 ＝ カットオフ位置 ＋ 中間柱せい だと外側支点と中間支点の設計長さが
+  // 一致する（D25・柱800 の定着は 1000 なので カットオフ位置 200 でぶつかる）。
+  // 設計長さだけで束ねていた頃は、中間支点を貫く鉄筋が外側支点の短い描画長さで
+  // 描かれていた — 数量は正しいまま 3D だけが嘘をつく。
+  it('設計長さがぶつかっても中間支点を貫く鉄筋を外側の描画長さで描かない', () => {
+    const collidingCutoffMm = 200
+    const generated = generateGirderRebar(
+      input({
+        run: twoSpanRun,
+        section: withMain({
+          top: { endCount: 6, centerCount: 4 },
+          cutoffFromSupportFaceMm: collidingCutoffMm,
+        }),
+      }),
+      jpMlitRulePack,
+    )
+    const cutoffs = byCutoffRole(generated, '上端カットオフ筋')
+    const outer = topEnd(span.startSupportLengthAlongAxisMm)
+    const interiorLength =
+      2 * collidingCutoffMm + span.endSupportLengthAlongAxisMm
+
+    // 前提の確認 — ぶつかっていなければこのテストは何も守っていない
+    expect(outer.lengthMm + collidingCutoffMm).toBe(interiorLength)
+
+    expect(cutoffs).toHaveLength(2)
+    expect(cutoffs[0]).toMatchObject({
+      count: 4,
+      axisOffsetsMm: [0, twoSpanRun.coreLengthMm - collidingCutoffMm],
+    })
+    expect(cutoffs[1]).toMatchObject({
+      count: 2,
+      axisOffsetsMm: [span.clear - collidingCutoffMm],
+    })
+    // 設計長さは同じ。違うのは描画長さのほうだ
+    expect(cutoffs[0].length).toBe(cutoffs[1].length)
+    expect(polylineLength(cutoffs[0].points, cutoffs[0].closed)).toBe(
+      collidingCutoffMm,
+    )
+    expect(polylineLength(cutoffs[1].points, cutoffs[1].closed)).toBe(
+      interiorLength,
+    )
   })
 
   it('端部と中央が同数ならカットオフ筋を出さない', () => {

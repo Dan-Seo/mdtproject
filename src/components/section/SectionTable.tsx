@@ -486,12 +486,11 @@ function GirderDetailField({
             }
             return {
               ...current,
-              // ピッチの種は利用者自身が入れたあばら筋ピッチを借りる — 規準に
-              // 幅止め筋のピッチはなく、製品が数字を作らない。
-              widthTie: {
-                size,
-                pitch: current.widthTie?.pitch ?? current.stirrup.pitch,
-              },
+              // ピッチは断面一覧の入力だ (ADR-012)。規準に幅止め筋のピッチはなく、
+              // あばら筋の値を借りれば利用者が入れていない数字が 1通則7) の
+              // 割付本数に入ってしまう。0 ＝ 未入力としてカットオフ位置と同じく
+              // 道具側に判定させる (ADR-021 ④)。
+              widthTie: { size, pitch: current.widthTie?.pitch ?? 0 },
             }
           })
         }
@@ -500,7 +499,8 @@ function GirderDetailField({
       <NumberInput
         label={`${sectionMarkLabel(section)} 幅止め筋 ピッチ`}
         disabled={widthTie === undefined}
-        value={widthTie?.pitch ?? section.stirrup.pitch}
+        minimum={0}
+        value={widthTie?.pitch ?? 0}
         onChange={(pitch) =>
           update((current) =>
             current.kind !== '大梁' || current.widthTie === undefined

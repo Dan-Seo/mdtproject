@@ -125,7 +125,9 @@ describe('useTakeoff', () => {
     ).toBe(true)
     expect(result.current.hasUnverified).toBe(true)
     expect(result.current.unverifiedRules.length).toBeGreaterThan(0)
-    // kg 행은 JIS 単位質量(원문 미확보)을 반드시 타므로 추론 근거도 남는다.
+    // kg 행은 継手 算入倍率(measure.splice.length.factor — 反対解釈로 세운 것이라
+    // 原文에 明文이 없다)을 타므로 추론 근거가 남는다. 単位質量은 schema v6 에서
+    // 룰팩을 떠나 Project.unitMass 입력이 됐으므로 더 이상 여기 관여하지 않는다.
     expect(result.current.inferredRules.length).toBeGreaterThan(0)
   })
 

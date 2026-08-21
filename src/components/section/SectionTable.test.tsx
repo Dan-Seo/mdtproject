@@ -93,6 +93,23 @@ describe('SectionTable', () => {
     expect(select).toHaveValue('D13')
   })
 
+  // ADR-012 — 断面一覧の値は入力だ。あばら筋のピッチを種に借りると、利用者が
+  // 幅止め筋について一度も入れていない数字が 1通則7) の割付本数を決めてしまう。
+  it('does not borrow the あばら筋 pitch when 幅止め筋 is switched back on', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('G1 幅止め筋 径')
+    fireEvent.change(select, { target: { value: '' } })
+    fireEvent.change(select, { target: { value: 'D13' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.widthTie?.pitch).toBe(0)
+    expect(section.widthTie?.pitch).not.toBe(section.stirrup.pitch)
+  })
+
   it('drops the field entirely when 腹筋 is set back to なし', () => {
     render(<SectionTable />)
 

@@ -531,14 +531,15 @@ function generateCutoff(
     hook: false,
   })
   const lapLengthMm = millimetres(lapRule, barDiameter(section.main.size))
-  // 束ねる鍵は設計長さである — 積算基準 前文が「規格、形状、寸法等ごとに」と
-  // 定めるので、同じ長さの位置は同じ内訳行になる。3D は代表位置の描画長さで
-  // 描くので、設計長さが同じで描画長さが違う位置（定着 − カットオフ位置 が
-  // 中間柱せいに一致するときだけ起こる）は代表値で描かれる (ADR-019)。
+  // 束ねる鍵は設計長さと描画長さの両方だ — 積算基準 前文が「規格、形状、寸法等
+  // ごとに」と定めるので、寸法(設計長さ)が揃っただけでは足りず形状も揃う必要が
+  // ある。設計長さが同じで描画長さが違う位置は実際に起こる（定着 ＝ カットオフ
+  // 位置 ＋ 中間柱せい のとき）— 束ねると Rebar は折れ線を1本しか持てないので、
+  // 中間支点を貫く鉄筋が外側支点の短い描画長さで描かれてしまう (ADR-019)。
   const groups = new Map<string, CutoffPosition[]>()
 
   for (const position of cutoffPositions(input, pack, row)) {
-    const key = `${position.memberId}|${position.designMm}`
+    const key = `${position.memberId}|${position.designMm}|${position.drawnMm}`
     const group = groups.get(key)
     if (group) group.push(position)
     else groups.set(key, [position])
@@ -731,6 +732,16 @@ function generateWidthTie(
       '寸法不成立',
       `幅止め筋 加工寸法 must be positive: ${member.id} ` +
         `(幅 ${section.b} − 2×加工用かぶり ${fabricationCoverMm})`,
+    )
+  }
+
+  // 0 ＝ 未入力。規準に幅止め筋のピッチはないので道具が代わりに決めることは
+  // できない — 黙って何かを埋めず、直しどころを名指しして落とす (ADR-012)。
+  if (widthTie.pitch <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `幅止め筋 ピッチ must be positive: ${member.id} ` +
+        `(${widthTie.pitch} — 断面一覧で未入力)`,
     )
   }
 
