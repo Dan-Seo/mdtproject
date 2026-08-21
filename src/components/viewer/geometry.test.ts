@@ -411,6 +411,64 @@ describe('rebarPlacements for 大梁', () => {
   })
 })
 
+describe('rebarPlacements — カットオフ筋', () => {
+  // 通し筋とカットオフ筋は同じ段に並ぶ。段の総本数は端部・中央の多い方で、
+  // 通し筋が手前の枠、カットオフ筋が残りの枠を取る — 重ねて描くと本数が
+  // 見た目で合わなくなる。
+  const cutoffSection: GirderSection = {
+    ...girderSection,
+    main: {
+      ...girderSection.main,
+      top: { endCount: 6, centerCount: 4 },
+      cutoffFromSupportFaceMm: 1500,
+    },
+  }
+  const cutoff: Rebar = {
+    id: '1F-G1|cutoff-top-0',
+    memberId: '1F-G1',
+    role: '上端カットオフ筋',
+    size: 'D25',
+    shape: 'straight',
+    points: [
+      [0, 700, 50],
+      [1500, 700, 50],
+    ],
+    closed: false,
+    length: 2500,
+    // 2本 × 外側支点2か所
+    count: 4,
+    axisOffsetsMm: [0, 3700],
+    ruleHits: [],
+    formula: 'test',
+  }
+
+  it('位置ごとに本数分だけ置き、通し筋が使わない枠に入れる', () => {
+    const through = rebarPlacements(
+      { ...girderTop, count: 4 },
+      cutoffSection,
+    )
+    const placements = rebarPlacements(cutoff, cutoffSection)
+
+    expect(placements).toHaveLength(4)
+    expect(placements.map(([x]) => x)).toEqual([0, 0, 3700, 3700])
+    // 段は6枠。通し筋が 4枠を取り、カットオフ筋は残り 2枠に入る
+    expect(through).toHaveLength(4)
+    const throughZ = through.map(([, , z]) => z)
+    const cutoffZ = placements.map(([, , z]) => z)
+    expect(new Set(cutoffZ).size).toBe(2)
+    expect(throughZ.some((z) => cutoffZ.includes(z))).toBe(false)
+    expect(Math.min(...cutoffZ)).toBeGreaterThan(Math.max(...throughZ))
+  })
+
+  it('位置の数だけ離れた場所にセグメントを出す', () => {
+    const segments = rebarSegments(cutoff, cutoffSection)
+    const starts = segments.map(({ from }) => from[0])
+
+    expect(segments).toHaveLength(4)
+    expect(new Set(starts)).toEqual(new Set([0, 3700]))
+  })
+})
+
 describe('rebarSegments', () => {
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
     const segments = rebarSegments(hoopOf(3), section)
@@ -608,6 +666,8 @@ describe('roleToLayer', () => {
     ['主筋', 'main'],
     ['上端筋', 'main'],
     ['下端筋', 'main'],
+    ['上端カットオフ筋', 'main'],
+    ['下端カットオフ筋', 'main'],
     ['帯筋', 'hoop'],
     ['あばら筋', 'hoop'],
   ] satisfies [RebarRole, 'main' | 'hoop'][])(
