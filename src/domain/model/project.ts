@@ -17,7 +17,11 @@ import { coverConditions } from '../rules/lookup'
 // v5 (2026-08-14): Section에 필수 필드 spliceMethod 추가. 継手箇所数와 설계길이
 // 산입이 방식마다 다른데(積算基準 1通則4)·5)) 규준에 기본 방식이 없으므로
 // 조용한 기본값 대신 입력으로 받는다.
-export const PROJECT_SCHEMA_VERSION = 5
+// v6 (2026-08-21): GirderSection.main の topCount·bottomCount を位置別
+// (端部·中央) の GirderMainRow に置き換え、カットオフ位置を必須入力にした。
+// 積算基準 2（３）梁1) が定めるのは「梁の全長にわたる主筋」だけで、トップ筋等は
+// 設計図書に委ねられる — 位置別本数がないと通し筋とカットオフ筋を分けられない。
+export const PROJECT_SCHEMA_VERSION = 6
 
 export interface Grid {
   xSpans: number[]

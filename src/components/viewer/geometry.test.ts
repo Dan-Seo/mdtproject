@@ -167,7 +167,12 @@ const girderSection: GirderSection = {
   exposure: '屋外',
   finish: '仕上げなし',
   spliceMethod: '重ね継手',
-  main: { size: 'D25', topCount: 4, bottomCount: 3 },
+  main: {
+    size: 'D25',
+    top: { endCount: 4, centerCount: 4 },
+    bottom: { endCount: 3, centerCount: 3 },
+    cutoffFromSupportFaceMm: 0,
+  },
   stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
 }
 
@@ -183,7 +188,7 @@ const girderTop: Rebar = {
   ],
   closed: false,
   length: 6200,
-  count: girderSection.main.topCount,
+  count: girderSection.main.top.endCount,
   ruleHits: [],
   formula: 'test',
 }
@@ -196,7 +201,7 @@ const girderBottom: Rebar = {
     [-500, 50, 50],
     [5700, 50, 50],
   ],
-  count: girderSection.main.bottomCount,
+  count: girderSection.main.bottom.endCount,
 }
 
 const GIRDER_CLEAR_MM = 5250
@@ -400,8 +405,8 @@ describe('rebarPlacements for 大梁', () => {
     const gaps = zValues.slice(1).map((z, index) => z - zValues[index])
 
     expect(run.members).toHaveLength(2)
-    expect(horizontalSegments).toHaveLength(section.main.topCount)
-    expect(placements).toHaveLength(section.main.topCount)
+    expect(horizontalSegments).toHaveLength(section.main.top.endCount)
+    expect(placements).toHaveLength(section.main.top.endCount)
     expect(new Set(gaps.map((gap) => gap.toFixed(6)))).toHaveLength(1)
   })
 })

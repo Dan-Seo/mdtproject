@@ -1,4 +1,8 @@
-import type { GirderSection, Member } from '../model/member'
+import {
+  splitGirderMainRow,
+  type GirderSection,
+  type Member,
+} from '../model/member'
 import type { GirderRun, GirderSpan } from '../model/project'
 import type { Rebar, RebarZone } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
@@ -451,7 +455,7 @@ export function generateGirderRebar(
     {
       id: 'top',
       role: '上端筋',
-      count: section.main.topCount,
+      count: splitGirderMainRow(section.main.top).throughCount,
       y: section.depth - fabricationCoverMm,
       bendDirection: '下',
     },
@@ -465,7 +469,7 @@ export function generateGirderRebar(
     {
       id: 'bottom',
       role: '下端筋',
-      count: section.main.bottomCount,
+      count: splitGirderMainRow(section.main.bottom).throughCount,
       y: fabricationCoverMm,
       bendDirection: '上',
     },

@@ -72,6 +72,36 @@ export interface ColumnSection {
   }
 }
 
+/** 大梁 主筋 1段（上端または下端）の位置別本数。断面リストの端部・中央行に対応する。 */
+export interface GirderMainRow {
+  /** 端部（支点側）の本数 */
+  endCount: number
+  /** 中央の本数 */
+  centerCount: number
+}
+
+/**
+ * 位置別本数を「梁の全長にわたる主筋」と「そうでない主筋」に分けた結果。
+ *
+ * 数量積算基準 2（３）梁1) が長さを定めるのは全長にわたる主筋だけで、トップ筋・
+ * 補強筋等は設計図書に委ねられる。両位置に共通して立つ本数（少ない方）が通し筋、
+ * 差がカットオフ筋である。
+ */
+export interface GirderMainSplit {
+  throughCount: number
+  cutoffCount: number
+  /** カットオフ筋が立つ側。cutoffCount が 0 なら意味を持たない */
+  cutoffAt: '端部' | '中央'
+}
+
+export function splitGirderMainRow(row: GirderMainRow): GirderMainSplit {
+  return {
+    throughCount: Math.min(row.endCount, row.centerCount),
+    cutoffCount: Math.abs(row.endCount - row.centerCount),
+    cutoffAt: row.endCount >= row.centerCount ? '端部' : '中央',
+  }
+}
+
 export interface GirderSection {
   id: string
   kind: '大梁'
@@ -88,8 +118,18 @@ export interface GirderSection {
   spliceMethod: SpliceMethod
   main: {
     size: BarSize
-    topCount: number
-    bottomCount: number
+    /** 上端筋の位置別本数 — 断面リストの端部・中央行がそのまま入る */
+    top: GirderMainRow
+    /** 下端筋の位置別本数 */
+    bottom: GirderMainRow
+    /**
+     * カットオフ筋を柱面から梁の内側へ何 mm で切り止めるか。
+     *
+     * 数量積算基準 2（３）梁1) が「トップ筋、ハンチ部分の主筋、補強筋等は設計図書
+     * による」と委ねるので規準側に値がない — 断面一覧の入力である (ADR-012)。
+     * 端部と中央が同数（カットオフ筋がない）断面では使われない。
+     */
+    cutoffFromSupportFaceMm: number
   }
   stirrup: {
     size: BarSize

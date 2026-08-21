@@ -268,6 +268,41 @@ function ColumnMainField({
   )
 }
 
+function GirderMainCountInput({
+  section,
+  row,
+  place,
+  update,
+}: {
+  section: GirderSection
+  row: 'top' | 'bottom'
+  place: '端部' | '中央'
+  update(updater: (section: Section) => Section): void
+}) {
+  const key = place === '端部' ? 'endCount' : 'centerCount'
+
+  return (
+    <NumberInput
+      label={`${sectionMarkLabel(section)} 主筋 ${
+        row === 'top' ? '上' : '下'
+      } ${place} 本数`}
+      value={section.main[row][key]}
+      onChange={(count) =>
+        update((current) => {
+          if (current.kind !== '大梁') return current
+          return {
+            ...current,
+            main: {
+              ...current.main,
+              [row]: { ...current.main[row], [key]: count },
+            },
+          }
+        })
+      }
+    />
+  )
+}
+
 function GirderMainField({
   section,
   update,
@@ -277,18 +312,24 @@ function GirderMainField({
 }) {
   return (
     <div className={styles.girderMainField}>
-      <span>上</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 上 本数`}
-        value={section.main.topCount}
-        onChange={(topCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return { ...current, main: { ...current.main, topCount } }
-          })
-        }
-      />
-      <span>−</span>
+      {(['top', 'bottom'] as const).map((row) => (
+        <div key={row} className={styles.compoundField}>
+          <span>{row === 'top' ? '上' : '下'}</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="端部"
+            update={update}
+          />
+          <span aria-hidden="true">／</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="中央"
+            update={update}
+          />
+        </div>
+      ))}
       <BarSizeSelect
         label={`${sectionMarkLabel(section)} 主筋 径`}
         value={section.main.size}
@@ -299,20 +340,23 @@ function GirderMainField({
           })
         }
       />
-      <span>下</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 下 本数`}
-        value={section.main.bottomCount}
-        onChange={(bottomCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return {
-              ...current,
-              main: { ...current.main, bottomCount },
-            }
-          })
-        }
-      />
+      <div className={styles.compoundField}>
+        <span>カットオフ</span>
+        <NumberInput
+          label={`${sectionMarkLabel(section)} カットオフ位置`}
+          minimum={0}
+          value={section.main.cutoffFromSupportFaceMm}
+          onChange={(cutoffFromSupportFaceMm) =>
+            update((current) => {
+              if (current.kind !== '大梁') return current
+              return {
+                ...current,
+                main: { ...current.main, cutoffFromSupportFaceMm },
+              }
+            })
+          }
+        />
+      </div>
     </div>
   )
 }
