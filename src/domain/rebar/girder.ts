@@ -519,7 +519,7 @@ function generateCutoff(
   fabricationCoverMm: number,
   row: CutoffRow,
 ): Rebar[] {
-  const { run, section } = input
+  const { section } = input
   const lapRule = lookupRule(pack, 'lap.L1', {
     fc: section.fc,
     grade: section.grade,
