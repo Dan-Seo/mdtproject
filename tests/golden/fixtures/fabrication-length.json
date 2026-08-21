@@ -1,15 +1,28 @@
 {
-  "source": {
-    "doc": "公共建築工事標準仕様書（建築工事編）",
-    "edition": "令和7年版",
-    "sha256": "8fd3c83ca92b01a26e53071efdb3e871e4b5672583f8473ba062cbcc45759acc",
-    "url": "https://www.mlit.go.jp/gobuild/content/001888816.pdf"
-  },
+  "sources": [
+    {
+      "id": "spec",
+      "doc": "公共建築工事標準仕様書（建築工事編）",
+      "edition": "令和7年版",
+      "sha256": "8fd3c83ca92b01a26e53071efdb3e871e4b5672583f8473ba062cbcc45759acc",
+      "url": "https://www.mlit.go.jp/gobuild/content/001888816.pdf",
+      "pageNote": "printedPage は紙面の頁番号、pdfPage は PDF の通し頁。この文書では pdfPage ＝ printedPage ＋ 6。"
+    },
+    {
+      "id": "quantity",
+      "doc": "公共建築数量積算基準",
+      "edition": "令和5年3月29日改定（国営積第8号）",
+      "sha256": "801d7917e81369dd4eac551af76f00aba6fa7d7e8224703f162a0435b46d9a30",
+      "url": "https://www.mlit.go.jp/common/001178206.pdf",
+      "pageNote": "pdfPage ＝ printedPage ＋ 5。加工長そのものは標準仕様書が定めるが、柱主筋の上端で定着を加えないという判定だけはこちらが根拠（R9①）。"
+    }
+  ],
   "scope": "3D に描かれる加工形状の長さ（加工長）＝ Rebar.points が描く折れ線の実長。数量積算基準の設計長さ（Rebar.length）とは別物で、一致する必要もない（ADR-019）。設計長さ側は tests/golden/quantity*.test.ts が固定する。継手は位置が未確定なので描かれず、この加工長には入らない。",
   "derivedBy": "各期待値は下の terms（原文表の独立転写）だけを使った手計算である。lookupRule を通していない（ADR-010）。",
   "terms": [
     {
       "id": "L1",
+      "sourceId": "spec",
       "table": "表5.3.4",
       "printedPage": 30,
       "pdfPage": 36,
@@ -20,6 +33,7 @@
     },
     {
       "id": "L1h",
+      "sourceId": "spec",
       "table": "表5.3.4",
       "printedPage": 30,
       "pdfPage": 36,
@@ -30,6 +44,7 @@
     },
     {
       "id": "La",
+      "sourceId": "spec",
       "table": "表5.3.5",
       "printedPage": 31,
       "pdfPage": 37,
@@ -40,6 +55,7 @@
     },
     {
       "id": "tailMinimum",
+      "sourceId": "spec",
       "table": "5.3.4(5)(ｲ)(b)",
       "printedPage": 31,
       "pdfPage": 37,
@@ -50,6 +66,7 @@
     },
     {
       "id": "projectionMinimum",
+      "sourceId": "spec",
       "table": "5.3.4(5)(ｲ)(c)",
       "printedPage": 31,
       "pdfPage": 37,
@@ -60,6 +77,7 @@
     },
     {
       "id": "minimumCover",
+      "sourceId": "spec",
       "table": "表5.3.6",
       "printedPage": 33,
       "pdfPage": 39,
@@ -70,6 +88,7 @@
     },
     {
       "id": "fabricationCoverAddition",
+      "sourceId": "spec",
       "table": "5.3.5(2)",
       "printedPage": 33,
       "pdfPage": 39,
@@ -77,6 +96,30 @@
       "conditions": {},
       "value": 10,
       "unit": "mm"
+    },
+    {
+      "id": "tipNoAddition",
+      "sourceId": "quantity",
+      "table": "第4編第3章第2節 1通則1)・2（２）柱1)",
+      "printedPage": 15,
+      "pdfPage": 20,
+      "label": "先端で止まる鉄筋には定着長さを加えない",
+      "quote": "基礎、柱、梁、床板、壁等の先端で止まる鉄筋は、コンクリートの設計寸法をその部分の鉄筋の長さとし、これに設計図書等で指定された場合はフックの長さを加える。／（２）柱1)「最上階柱の主筋については、１通則１）による」（printedPage 16・pdfPage 21）",
+      "conditions": { "end": "先端" },
+      "value": 0,
+      "unit": "mm"
+    },
+    {
+      "id": "hook135",
+      "sourceId": "spec",
+      "table": "表5.3.1 折曲げ図",
+      "printedPage": 27,
+      "pdfPage": 33,
+      "label": "135°フックの余長（6d）",
+      "conditions": { "bend": "135°" },
+      "imageRead": true,
+      "value": 6,
+      "unit": "d"
     }
   ],
   "cases": [
@@ -100,8 +143,8 @@
         "beamDepthAboveMm": 750,
         "ends": { "bottom": "定着", "top": "先端" }
       },
-      "uses": ["L1"],
-      "derivation": "下端 定着 ＝ L1 40d × D25 ＝ 40 × 25 ＝ 1000 ／ 上端 先端 ＝ 0（定着を加えない、R9①） ／ 加工長 ＝ 階高 3500 ＋ 1000 ＋ 0 ＝ 4500",
+      "uses": ["L1", "tipNoAddition"],
+      "derivation": "下端 定着 ＝ L1 40d × D25 ＝ 40 × 25 ＝ 1000 ／ 上端 先端 ＝ 0（tipNoAddition — 数量積算基準 1通則1)、R9①） ／ 加工長 ＝ 階高 3500 ＋ 1000 ＋ 0 ＝ 4500",
       "expectedFabricationLengthMm": 4500
     },
     {
@@ -150,7 +193,13 @@
       },
       "uses": ["minimumCover", "fabricationCoverAddition"],
       "derivation": "加工用かぶり ＝ 最小かぶり 40 ＋ 加算 10 ＝ 50 ／ 加工寸法 ＝ (800 − 2×50) × (800 − 2×50) ＝ 700 × 700 ／ 閉合周長 ＝ 2 × (700 ＋ 700) ＝ 2800",
-      "knownGap": "135°フック余長（bend.hook135 ＝ 6d）は加工形状に反映されていない。数量側は 1通則2) が「フックはないものとする」と定めるので影響しないが、3D は実形状であるべきなので既知の残件として別枠で扱う。",
+      "status": "deviation-from-source",
+      "deviation": {
+        "term": "hook135",
+        "missingMm": 156,
+        "withHookTailMm": 2956,
+        "note": "135°フック余長 6d × D13 ＝ 78 が両端に付くので 2800 ＋ 2 × 78 ＝ 2956。実装の points は閉合矩形のままで余長を描かない（R12）。数量側は 1通則2) が「フックはないものとする」と定めるので影響しない。withHookTailMm は余長だけを足した下限であり、表5.3.1 の折曲げ内法直径による曲げ部の伸びは別途 — その表自体が画像判読（imageRead）で inferred のままなので、実装するときも ▲ が付く。"
+      },
       "expectedFabricationLengthMm": 2800
     },
     {
@@ -200,6 +249,63 @@
       ],
       "derivation": "支点柱の加工用かぶり ＝ 40 ＋ 10 ＝ 50 ／ 使用可能投影 ＝ 柱せい 800 − 50 ＝ 750 ／ 直線 L1 ＝ 40 × 25 ＝ 1000 ＞ 750 なので折曲げ定着 ／ 投影 ＝ max(La 20 × 25 ＝ 500, 柱せい 800 × 3/4 ＝ 600) ＝ 600 ≦ 750 ／ 端部加工長 ＝ max(L1h 30 × 25 ＝ 750, 投影 600 ＋ 余長下限 8 × 25 ＝ 200 → 800) ＝ 800（余長下限が支配） ／ 加工長 ＝ 内法 5200 ＋ 800 ＋ 800 ＝ 6800",
       "expectedFabricationLengthMm": 6800
+    },
+    {
+      "id": "girder-main-bent-l1h-governs",
+      "title": "大梁主筋 — 折曲げ定着で L1h が支配する（余長下限が支配する上の例と対）",
+      "role": "上端筋",
+      "given": {
+        "kind": "大梁",
+        "section": {
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "main": {
+            "size": "D25",
+            "topCount": 4,
+            "bottomCount": 4
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          }
+        },
+        "supportSection": {
+          "b": 600,
+          "d": 600,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし"
+        },
+        "spans": [
+          {
+            "centerSpan": 5800,
+            "clear": 5200,
+            "startFaceOffsetMm": 300,
+            "endFaceOffsetMm": 300,
+            "startSupportLengthAlongAxisMm": 600,
+            "endSupportLengthAlongAxisMm": 600
+          }
+        ],
+        "coreLengthMm": 5200
+      },
+      "uses": [
+        "L1",
+        "L1h",
+        "La",
+        "tailMinimum",
+        "projectionMinimum",
+        "minimumCover",
+        "fabricationCoverAddition"
+      ],
+      "derivation": "支点柱の加工用かぶり ＝ 40 ＋ 10 ＝ 50 ／ 使用可能投影 ＝ 柱せい 600 − 50 ＝ 550 ／ 直線 L1 ＝ 40 × 25 ＝ 1000 ＞ 550 なので折曲げ定着 ／ 投影 ＝ max(La 20 × 25 ＝ 500, 柱せい 600 × 3/4 ＝ 450) ＝ 500 ≦ 550 ／ 端部加工長 ＝ max(L1h 30 × 25 ＝ 750, 投影 500 ＋ 余長下限 8 × 25 ＝ 200 → 700) ＝ 750（L1h が支配） ／ 加工長 ＝ 内法 5200 ＋ 750 ＋ 750 ＝ 6700",
+      "constrains": "この一件だけが L1h を上下から縛る（30d を 28d に下げても 32d に上げても 6700 が崩れる）。La は投影を支配するので上向きに縛られ（24d にすると投影 600 ＞ 550 で定着不成立に落ちる）、下向きは girder-anchorage-not-realisable が縛る。",
+      "expectedFabricationLengthMm": 6700
     },
     {
       "id": "girder-main-straight-anchorage",
@@ -335,7 +441,13 @@
       },
       "uses": ["minimumCover", "fabricationCoverAddition"],
       "derivation": "加工用かぶり ＝ 最小かぶり 40 ＋ 加算 10 ＝ 50 ／ 加工寸法 ＝ (せい 750 − 2×50) × (幅 400 − 2×50) ＝ 650 × 300 ／ 閉合周長 ＝ 2 × (650 ＋ 300) ＝ 1900",
-      "knownGap": "柱帯筋と同じく 135°フック余長は加工形状に反映されていない。",
+      "status": "deviation-from-source",
+      "deviation": {
+        "term": "hook135",
+        "missingMm": 156,
+        "withHookTailMm": 2056,
+        "note": "柱帯筋と同じ理由（R12）。1900 ＋ 2 × 6d × D13(78) ＝ 2056。"
+      },
       "expectedFabricationLengthMm": 1900
     },
     {

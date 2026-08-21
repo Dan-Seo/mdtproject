@@ -20,6 +20,7 @@ import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/fabrication-length.json'
 
 type Case = (typeof fixture.cases)[number]
+type Deviation = NonNullable<Case['deviation']>
 
 /**
  * 加工長 ＝ points が描く折れ線の実長。設計長さ(Rebar.length)を読まないのは、
@@ -112,13 +113,24 @@ function girderRun(given: Case['given']): GirderRun {
     ]
   }, [])
 
+  // 픽스처의 coreLengthMm을 그대로 꽂으면 中間柱せい 누적이 테스트 밖에 남는다.
+  // 스팬에서 다시 유도해 픽스처 값과 대조하고, 그 값을 런에 넣는다.
+  const coreFromSpans = spans.reduce(
+    (total, span, index) =>
+      total +
+      span.clear +
+      (index < spans.length - 1 ? span.endSupportLengthAlongAxisMm : 0),
+    0,
+  )
+  expect(coreFromSpans, '中間柱せい の累積').toBe(given.coreLengthMm)
+
   return {
     axis: 'X',
     members,
     ownerId: members[0].id,
     spans,
     memberOffsetsMm,
-    coreLengthMm: given.coreLengthMm!,
+    coreLengthMm: coreFromSpans,
   }
 }
 
@@ -162,9 +174,41 @@ function generate(testCase: Case): Rebar[] {
 describe('加工長 골든테스트 — 標準仕様書 5章の表から手で導いた加工形状の実長', () => {
   it('픽스처가 참조하는 用語 id는 모두 terms에 있다', () => {
     const known = new Set(fixture.terms.map((term) => term.id))
-    const referenced = fixture.cases.flatMap((testCase) => testCase.uses)
+    const referenced = fixture.cases.flatMap((testCase) => [
+      ...testCase.uses,
+      ...(testCase.deviation ? [testCase.deviation.term] : []),
+    ])
 
     expect([...new Set(referenced)].filter((id) => !known.has(id))).toEqual([])
+  })
+
+  it('각 用語는 出典 문서를 하나씩 가리킨다', () => {
+    const known = new Set(fixture.sources.map((source) => source.id))
+
+    expect(
+      fixture.terms.filter((term) => !known.has(term.sourceId)),
+    ).toEqual([])
+  })
+
+  /**
+   * 期待値이 原文 준거값이 아닌 케이스는 그 사실과 차액을 대장에 적는다
+   * (quantity-r5-ch3.json 의 status 대장과 같은 방식). 차액이 맞아떨어지는지
+   * 여기서 확인해야 대장이 구현과 따로 놀지 않는다.
+   */
+  it('原文과 어긋나는 케이스는 차액이 대장과 맞는다', () => {
+    const deviating = fixture.cases.filter(
+      (testCase): testCase is Case & { deviation: Deviation } =>
+        testCase.deviation !== undefined,
+    )
+
+    expect(deviating.length).toBeGreaterThan(0)
+    for (const testCase of deviating) {
+      expect(testCase.status, testCase.id).toBe('deviation-from-source')
+      expect(
+        testCase.expectedFabricationLengthMm! + testCase.deviation.missingMm,
+        `${testCase.id} — ${testCase.deviation.note}`,
+      ).toBe(testCase.deviation.withHookTailMm)
+    }
   })
 
   it.each(
