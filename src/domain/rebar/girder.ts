@@ -48,7 +48,7 @@ function uniqueRuleHits(hits: RuleHit[]): RuleHit[] {
   return [...new Set(hits)]
 }
 
-function endFormula(label: '始端' | '終端', detail: GirderEndDetail): string {
+function endFormula(label: string, detail: GirderEndDetail): string {
   if (detail.kind === '直線定着') {
     return `${label} 直線定着 L1 ${detail.lengthMm}`
   }
@@ -471,8 +471,9 @@ function cutoffPositions(
     },
     pack,
   )
+  // 始端・終端を名で分けない — 両端の定着が同じなら基礎式も同じ文字列になり、
+  // 1行に束ねたときに同じ計算が二度並ばない。違えば設計長さも違うので別行になる。
   const outer = (
-    label: '始端' | '終端',
     detail: GirderEndDetail,
     fromMm: number,
   ): CutoffPosition => ({
@@ -482,7 +483,7 @@ function cutoffPositions(
     designMm: detail.lengthMm + cutoffMm,
     rules: detail.usedRules,
     basis:
-      `${endFormula(label, detail)} ＋ カットオフ位置 ${cutoffMm} ＝ ` +
+      `${endFormula('外側支点', detail)} ＋ カットオフ位置 ${cutoffMm} ＝ ` +
       `${detail.lengthMm + cutoffMm}`,
   })
   // 中間支点は通し筋と同じく貫通する — 定着はつかず、両隣のスパンへ
@@ -505,9 +506,9 @@ function cutoffPositions(
   })
 
   return [
-    outer('始端', start, 0),
+    outer(start, 0),
     ...interior,
-    outer('終端', end, run.coreLengthMm - cutoffMm),
+    outer(end, run.coreLengthMm - cutoffMm),
   ]
 }
 
