@@ -54,6 +54,8 @@
   "takeoff.places": "箇所",
   "takeoff.totalLength": "総延長 (m)",
   "takeoff.unitMass": "kg/m",
+  "takeoff.unitMassInput.title": "単位質量 (kg/m)",
+  "takeoff.unitMassInput.notice": "JIS G 3112 は有償規格のため、単位質量の値は製品に収録していません。設計図書または規格票の値を入力してください。入力するまで質量は算出しません。",
   "takeoff.designQuantity": "設計数量",
   "takeoff.requiredQuantity": "所要数量",
   "takeoff.source": "出典",

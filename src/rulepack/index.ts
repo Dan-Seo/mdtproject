@@ -7,7 +7,6 @@ import markupYaml from './jp-mlit/markup.yaml'
 import measureYaml from './jp-mlit/measure.yaml'
 import sourcesYaml from './jp-mlit/sources.yaml'
 import spliceYaml from './jp-mlit/splice.yaml'
-import unitMassYaml from './jp-mlit/unit-mass.yaml'
 
 const files: Record<string, string> = {
   'sources.yaml': sourcesYaml,
@@ -18,7 +17,6 @@ const files: Record<string, string> = {
   'markup.yaml': markupYaml,
   'measure.yaml': measureYaml,
   'splice.yaml': spliceYaml,
-  'unit-mass.yaml': unitMassYaml,
 }
 
 export const jpMlitRulePack = parseRulePack(files)
