@@ -7,7 +7,9 @@ import { useAppStore } from '@/lib/store'
 const { capture, captureException, exportRebarGlb } = vi.hoisted(() => ({
   capture: vi.fn(),
   captureException: vi.fn(),
-  exportRebarGlb: vi.fn(async (_input: RebarModelInput) => {}),
+  exportRebarGlb: vi.fn<(input: RebarModelInput) => Promise<void>>(() =>
+    Promise.resolve(),
+  ),
 }))
 
 vi.mock('@/lib/telemetry', () => ({ capture, captureException }))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState, type ChangeEvent } from 'react'
+import { useId, useState, type ChangeEvent } from 'react'
 
 import { t } from '@/lib/i18n'
 import { downloadProjectJson, readProjectFile } from '@/lib/persist/file'
@@ -19,7 +19,6 @@ export function ProjectActions() {
   const loadProject = useAppStore(({ loadProject }) => loadProject)
   const locale = useAppStore(({ locale }) => locale)
   const [failed, setFailed] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
 
   const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +56,6 @@ export function ProjectActions() {
         {t(locale, 'project.load')}
       </label>
       <input
-        ref={inputRef}
         id={inputId}
         type="file"
         accept="application/json,.json"
