@@ -559,17 +559,26 @@ function isProjectShape(value: unknown): boolean {
       hasShape(story, { id: isString, name: isString, height: isFiniteNumber }),
     ) &&
     Array.isArray(sections) &&
-    sections.every((section) =>
-      // せい (柱 は d、大梁 は depth) は種別で鍵が違う。骨格の検査で union を
-      // 開くと、断面の型が増えるたびにここも直す羽目になる — 共通の場所だけ見る。
-      hasShape(section, {
-        id: isString,
-        // 判別子は特別だ。ここが union の外の値だと、形は通ったまま
-        // 断面の枝分かれが選べず、算定の途中で落ちる。
-        kind: isMemberKind,
-        mark: isString,
-        b: isFiniteNumber,
-      }),
+    sections.every(
+      (section) =>
+        hasShape(section, {
+          id: isString,
+          // 判別子は特別だ。ここが union の外の値だと、形は通ったまま
+          // 断面の枝分かれが選べず、算定の途中で落ちる。
+          kind: isMemberKind,
+          mark: isString,
+          b: isFiniteNumber,
+        }) &&
+        // せい は種別で鍵が違う (柱 は d、大梁 は depth)。共通の場所だけで
+        // 済ませると、せい の欠けた断面が通り、帯筋の加工寸法が NaN のまま
+        // 内訳書の合計まで流れる—この関数が止めたかった結果そのものだ。
+        // 枝を選べるのは上で判別子を検めてあるからだ。
+        hasShape(
+          section,
+          (section as { kind: MemberKind }).kind === '柱'
+            ? { d: isFiniteNumber }
+            : { depth: isFiniteNumber },
+        ),
     ) &&
     Array.isArray(members) &&
     members.every((member) =>

@@ -38,8 +38,20 @@ function run<T>(
   return openDatabase().then(
     (database) =>
       new Promise<T>((resolve, reject) => {
-        const transaction = database.transaction(STORE_NAME, mode)
-        const request = operation(transaction.objectStore(STORE_NAME))
+        // transaction の作成は同期に投げる (ストアの無い DB なら
+        // NotFoundError)。後始末がイベントハンドラの中にしか無いと、
+        // その接続が開いたまま呼び出しの数だけ残る—以後の自動保存は
+        // 永遠に失敗し、版を上げるとき onblocked で止まる。
+        let transaction: IDBTransaction
+        let request: IDBRequest<T>
+        try {
+          transaction = database.transaction(STORE_NAME, mode)
+          request = operation(transaction.objectStore(STORE_NAME))
+        } catch (error) {
+          database.close()
+          reject(error)
+          return
+        }
 
         transaction.oncomplete = () => {
           database.close()

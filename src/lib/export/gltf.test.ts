@@ -1,14 +1,16 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ColumnSection } from '@/domain/model/member'
+import type { BarSize, ColumnSection } from '@/domain/model/member'
 import {
   beamDepthAbove,
   columnEnds,
   findSection,
 } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
+import { barDiameter } from '@/domain/rebar/girder-ends'
 import { buildingLayout } from '@/lib/viewer/building'
+import type { RadiusOf } from '@/lib/viewer/geometry'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -53,6 +55,25 @@ function instancedMeshes(scene: THREE.Scene): THREE.InstancedMesh[] {
   return found
 }
 
+/** 実寸の半径 (mm)。書き出しが使うのと同じ規則を domain から引く。 */
+const trueRadius: RadiusOf = (size: BarSize) => barDiameter(size) / 2
+
+/** インスタンス行列の位置を mm に戻す。 */
+function instancePositionsMm(mesh: THREE.InstancedMesh): THREE.Vector3[] {
+  const matrix = new THREE.Matrix4()
+
+  return Array.from({ length: mesh.count }, (_, index) => {
+    mesh.getMatrixAt(index, matrix)
+    return new THREE.Vector3()
+      .setFromMatrixPosition(matrix)
+      .multiplyScalar(1000)
+  })
+}
+
+function sortedCoordinates(values: number[]): string[] {
+  return values.map((value) => value.toFixed(3)).sort()
+}
+
 describe('buildRebarScene', () => {
   it('draws every 鉄筋 segment of the 案件, not just the selected 部材', () => {
     const { project, rebars } = sampleInput()
@@ -84,6 +105,32 @@ describe('buildRebarScene', () => {
     expect(d25).toBeDefined()
     // 単位は m。D25 の半径は 12.5mm。
     expect(geometry.parameters.radiusTop).toBeCloseTo(0.0125, 6)
+  })
+
+  it('places 主筋 by the real bar size, not the inflated display radius', () => {
+    // 半径は太さだけでなく**位置**を決める — 帯筋をすり抜けないよう
+    // 主筋を内側へ入れる分がそれだ。太さだけ実寸にしても、位置が画面のままなら
+    // 渡した模型の主筋は設計より数十 mm 深く埋まっている。
+    const { project, rebars } = sampleInput()
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
+
+    const mesh = instancedMeshes(scene).find(({ name }) => name === '主筋 D25')
+    expect(mesh).toBeDefined()
+    const drawn = sortedCoordinates(
+      instancePositionsMm(mesh!).map(({ x }) => x),
+    )
+
+    const layoutX = (radiusOf?: RadiusOf): string[] =>
+      sortedCoordinates(
+        buildingLayout(project, rebars, new Set<string>(), radiusOf)
+          .rebar.filter(({ role, size }) => role === '主筋' && size === 'D25')
+          .map(({ from, to }) => (from[0] + to[0]) / 2),
+      )
+
+    expect(drawn).toEqual(layoutX(trueRadius))
+    // 画面の表示半径 (既定) で組むと合わない — 合ってしまうなら、
+    // この検査は何も固定していない。
+    expect(drawn).not.toEqual(layoutX())
   })
 
   it('names each mesh by 役割 and 呼び名 so the file reads on its own', () => {

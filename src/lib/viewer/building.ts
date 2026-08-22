@@ -10,10 +10,12 @@ import {
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
 
 import {
+  rebarRadius,
   rebarSegments,
   roleToLayer,
   type Bounds,
   type Point3,
+  type RadiusOf,
   type RebarLayer,
 } from './geometry'
 
@@ -30,7 +32,7 @@ export interface RebarInstance {
   memberId: string
   from: Point3
   to: Point3
-  /** 画面用に太らせた表示半径 (rebarRadius)。実寸ではない。 */
+  /** buildingLayout に渡した radiusOf が出した半径 (mm)。既定は表示値だ。 */
   radius: number
   /** 呼び名。書き出す模型は表示半径ではなく此処から実寸を出す。 */
   size: BarSize
@@ -76,6 +78,7 @@ export function buildingLayout(
   project: Project,
   rebars: Rebar[],
   unsupportedMemberIds: ReadonlySet<string>,
+  radiusOf: RadiusOf = rebarRadius,
 ): BuildingLayout {
   const boxes: ConcreteBox[] = []
   const instances: RebarInstance[] = []
@@ -210,7 +213,7 @@ export function buildingLayout(
 
     const layer = roleToLayer(rebar.role)
 
-    for (const segment of rebarSegments(rebar, section)) {
+    for (const segment of rebarSegments(rebar, section, radiusOf)) {
       const from = worldPoint(segment.from)
       const to = worldPoint(segment.to)
       instances.push({

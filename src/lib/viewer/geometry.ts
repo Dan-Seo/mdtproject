@@ -105,6 +105,17 @@ export function rebarRadius(size: BarSize): number {
 }
 
 /**
+ * 呼び名から半径 (mm) を出す。画面は読みやすさのための表示値
+ * (`rebarRadius`)を、書き出す模型は実寸を渡す。
+ *
+ * 半径は太さだけでなく**位置**を決める — 帯筋をすり抜けないよう
+ * 主筋を内側へ入れる分がこれだ。実寸の模型に表示値を使うと、
+ * D13 帯筋・D25 主筋で 84.8mm 入る—実際は 25.5mm だ — 主筋が設計より
+ * 深く埋まった模型を渡すことになる。
+ */
+export type RadiusOf = (size: BarSize) => number
+
+/**
  * `Rebar`는 「대표 1본 + 本数」로 모델링된다 — 수량은 그것으로 충분하지만
  * 3D는 실제 本数만큼 그려야 한다. 배치는 규準値가 아니라 작도 규칙이므로
  * 룰팩을 타지 않고 단면 치수와 대표 배근 위치에서만 유도한다.
@@ -117,6 +128,7 @@ export function rebarRadius(size: BarSize): number {
 function columnRebarPlacements(
   rebar: Rebar,
   section: ColumnSection,
+  radiusOf: RadiusOf,
 ): Point3[] {
   if (rebar.shape === 'hoop') {
     return columnHoopPlacements(rebar)
@@ -124,8 +136,7 @@ function columnRebarPlacements(
 
   // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
   const [insetX, , insetZ] = rebar.points[0]
-  const inward =
-    2 * rebarRadius(section.hoop.size) + rebarRadius(rebar.size)
+  const inward = 2 * radiusOf(section.hoop.size) + radiusOf(rebar.size)
   const width = Math.max(0, section.b - 2 * (insetX + inward))
   const depth = Math.max(0, section.d - 2 * (insetZ + inward))
   const perimeter = 2 * (width + depth)
@@ -166,6 +177,7 @@ function girderMainRowOf(
 function girderMainPlacements(
   rebar: Rebar,
   section: GirderSection,
+  radiusOf: RadiusOf,
 ): Point3[] {
   const { row, upper, cutoff } = girderMainRowOf(rebar.role, section)
   const split = splitGirderMainRow(row)
@@ -173,8 +185,7 @@ function girderMainPlacements(
   // 残りの枠を取る — 行ごとに全幅へ広げると同じ枠に二重に描かれる。
   const slots = split.throughCount + split.cutoffCount
   const [, , insetZ] = rebar.points[0]
-  const inward =
-    2 * rebarRadius(section.stirrup.size) + rebarRadius(rebar.size)
+  const inward = 2 * radiusOf(section.stirrup.size) + radiusOf(rebar.size)
   const width = Math.max(0, section.b - 2 * (insetZ + inward))
   const y = upper ? -inward : inward
   // 数量の count は「1か所あたり本数 × 位置数」なので、枠の数は位置で割る。
@@ -273,9 +284,13 @@ function girderSideBarPlacements(
   })
 }
 
-export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
+export function rebarPlacements(
+  rebar: Rebar,
+  section: Section,
+  radiusOf: RadiusOf = rebarRadius,
+): Point3[] {
   if (section.kind === '柱') {
-    return columnRebarPlacements(rebar, section)
+    return columnRebarPlacements(rebar, section, radiusOf)
   }
   if (rebar.role === 'あばら筋' || rebar.role === '幅止め筋') {
     return girderRepeatedPlacements(rebar)
@@ -284,7 +299,7 @@ export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
     return girderSideBarPlacements(rebar, section)
   }
 
-  return girderMainPlacements(rebar, section)
+  return girderMainPlacements(rebar, section, radiusOf)
 }
 
 function insetCoordinate(
@@ -434,13 +449,17 @@ function pathRuns(rebar: Rebar): PathRun[] {
   return runs
 }
 
-function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
-  const radius = rebarRadius(rebar.size)
+function rebarSegmentRuns(
+  rebar: Rebar,
+  section: Section,
+  radiusOf: RadiusOf = rebarRadius,
+): SegmentRun[] {
+  const radius = radiusOf(rebar.size)
   const displayPoint = (point: Point3): Point3 =>
     rebar.shape === 'hoop'
       ? hoopDisplayPoint(point, rebar.points, radius, section)
       : point
-  const placements = rebarPlacements(rebar, section)
+  const placements = rebarPlacements(rebar, section, radiusOf)
 
   return pathRuns(rebar).map(({ zone, segments }) => ({
     zone,
@@ -454,8 +473,14 @@ function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
   }))
 }
 
-export function rebarSegments(rebar: Rebar, section: Section): Segment[] {
-  return rebarSegmentRuns(rebar, section).flatMap(({ segments }) => segments)
+export function rebarSegments(
+  rebar: Rebar,
+  section: Section,
+  radiusOf: RadiusOf = rebarRadius,
+): Segment[] {
+  return rebarSegmentRuns(rebar, section, radiusOf).flatMap(
+    ({ segments }) => segments,
+  )
 }
 
 export interface RebarBatch {

@@ -30,15 +30,23 @@ export interface RebarModelInput {
 }
 
 /**
- * 呼び名そのままの実半径 (m)。画面の rebarRadius は読みやすさのために
+ * 呼び名そのままの実半径 (mm)。画面の rebarRadius は読みやすさのために
  * 最小 ⌀14・1.6倍に太らせた**表示値**で、渡す模型でそれを使うと D25 が
  * ⌀40 の棒として計られる。書き出しは実寸で出す。
+ *
+ * 太さだけでは足りない — 帯筋をすり抜けないよう主筋を内側へ入れる分もこの
+ * 半径から出るので、buildingLayout にも同じ関数を渡す。片方だけ実寸にすると、
+ * 太さは正しいのに位置が設計より数十 mm 内側に寄った模型が出る。
  *
  * 呼び名の読み方そのものは domain の barDiameter に任せる — 書き写すと、
  * 規則が変わったとき 3D の実寸だけが黙って古いままになる。
  */
+function trueRadiusMm(size: BarSize): number {
+  return barDiameter(size) / 2
+}
+
 function trueRadiusMetres(size: BarSize): number {
-  return (barDiameter(size) / 2) * MILLIMETRES_TO_METRES
+  return trueRadiusMm(size) * MILLIMETRES_TO_METRES
 }
 
 function metres([x, y, z]: readonly number[]): THREE.Vector3 {
@@ -137,6 +145,7 @@ export function buildRebarScene(input: RebarModelInput): THREE.Scene {
     input.project,
     input.rebars,
     input.unsupportedMemberIds ?? new Set<string>(),
+    trueRadiusMm,
   )
   const scene = new THREE.Scene()
   scene.name = input.project.name

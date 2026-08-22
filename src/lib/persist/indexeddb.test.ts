@@ -17,6 +17,15 @@ async function reset(): Promise<void> {
   await clearStoredProject()
 }
 
+function deleteStore(): Promise<void> {
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase('kijun')
+    request.onsuccess = () => resolve()
+    request.onerror = () => resolve()
+    request.onblocked = () => resolve()
+  })
+}
+
 beforeEach(reset)
 afterEach(reset)
 
@@ -43,6 +52,32 @@ describe('IndexedDB への自動保存', () => {
     } as Project)
 
     expect(await loadStoredProject()).toBeNull()
+  })
+
+  it('closes the connection when the transaction cannot be created', async () => {
+    // ストアの無い v1 DB — onupgradeneeded を付けずに開いたコードが作る
+    // (tests/e2e の筋書きがこの形で開く)。database.transaction() はそこで
+    // 同期に投げる。
+    await deleteStore()
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('kijun', 1)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        request.result.close()
+        resolve()
+      }
+    })
+
+    const close = vi.spyOn(IDBDatabase.prototype, 'close')
+    try {
+      await expect(saveProject(createSampleProject())).rejects.toThrow()
+      // 閉じずに reject すると、その接続が呼び出しの数だけ残る —
+      // 以後の自動保存は永遠に失敗し、版を上げるとき onblocked で止まる。
+      expect(close).toHaveBeenCalled()
+    } finally {
+      close.mockRestore()
+      await deleteStore()
+    }
   })
 
   it('survives a corrupted record without throwing at start-up', async () => {

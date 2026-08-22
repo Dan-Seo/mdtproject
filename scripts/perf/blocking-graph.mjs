@@ -26,11 +26,25 @@ if (!Array.isArray(chunks)) {
   process.exit(1)
 }
 
-const offenders = chunks.filter(
-  (chunk) =>
-    chunk.endsWith('.js') &&
-    existsSync(`.next/${chunk}`) &&
-    THREE_MARKERS.test(readFileSync(`.next/${chunk}`, 'utf8')),
+const jsChunks = chunks.filter((chunk) => chunk.endsWith('.js'))
+const missing = jsChunks.filter((chunk) => !existsSync(`.next/${chunk}`))
+
+// 読めない chunk を飛ばしてはいけない。manifest の経路が `.next/` 基準で
+// なくなれば全部が黙って連れ去られ、offenders は 0 になって `ok:` を名乗る。
+// 一度も検めない門は、門が無いより悪い—取り付けたという事実が残るからだ。
+if (jsChunks.length === 0 || missing.length > 0) {
+  console.error(
+    [
+      `${MANIFEST} の chunk を .next/ で解決できない。manifest の形が変わった—`,
+      'この門は今何も検めていない。',
+      ...missing.map((chunk) => `  ${chunk}`),
+    ].join('\n'),
+  )
+  process.exit(1)
+}
+
+const offenders = jsChunks.filter((chunk) =>
+  THREE_MARKERS.test(readFileSync(`.next/${chunk}`, 'utf8')),
 )
 
 if (offenders.length > 0) {
@@ -46,4 +60,4 @@ if (offenders.length > 0) {
   process.exit(1)
 }
 
-console.log(`ok: ${PAGE} の遮断経路 ${chunks.length} 個に three は無い`)
+console.log(`ok: ${PAGE} の遮断経路 ${jsChunks.length} 個を読んだ。three は無い`)
