@@ -20,10 +20,3 @@
   background: var(--color-canvas-soft);
   color: var(--color-primary);
 }
-
-.viewerExportFailure {
-  align-self: center;
-  padding-left: var(--space-xxs);
-  color: var(--color-error);
-  font-size: var(--type-caption-size);
-}

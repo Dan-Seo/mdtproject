@@ -477,6 +477,84 @@ describe('project serialization', () => {
       '柱断面が depth を持つ',
       { sections: [{ id: 'x', kind: '柱', mark: 'C1', b: 800, depth: 800 }] },
     ],
+    // 配筋の入力が欠ければ generateColumnRebar の中で TypeError になる —
+    // 何が足りないか言えないままペインが落ちる。
+    [
+      '柱断面に主筋が無い',
+      { sections: [{ id: 'x', kind: '柱', mark: 'C1', b: 800, d: 800 }] },
+    ],
+    [
+      '帯筋のピッチが文字列',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '柱',
+            mark: 'C1',
+            b: 800,
+            d: 800,
+            main: { size: 'D25', count: 12 },
+            hoop: { size: 'D13', pitch: '100', startOffsetMm: 50 },
+          },
+        ],
+      },
+    ],
+    [
+      '大梁断面にあばら筋が無い',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '大梁',
+            mark: 'G1',
+            b: 400,
+            depth: 800,
+            main: {
+              size: 'D25',
+              top: { endCount: 4, centerCount: 2 },
+              bottom: { endCount: 2, centerCount: 4 },
+              cutoffFromSupportFaceMm: 1000,
+            },
+          },
+        ],
+      },
+    ],
+    [
+      '大梁主筋の上端行が無い',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '大梁',
+            mark: 'G1',
+            b: 400,
+            depth: 800,
+            main: { size: 'D25', cutoffFromSupportFaceMm: 1000 },
+            stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
+          },
+        ],
+      },
+    ],
+    // position が無ければ buildingLayout の `'axis' in member.position` が落ちる。
+    [
+      '部材に位置が無い',
+      { members: [{ id: 'm', kind: '柱', sectionId: 's', storyId: '1F' }] },
+    ],
+    // 軸を緩く取ると三項演算子で Y に落ち、図面に無い向きの大梁ができる。
+    [
+      '大梁の軸が X・Y でない',
+      {
+        members: [
+          {
+            id: 'm',
+            kind: '大梁',
+            sectionId: 's',
+            storyId: '1F',
+            position: { axis: 'Z', ix: 0, iy: 0 },
+          },
+        ],
+      },
+    ],
     ['部材の kind が無い', { members: [{ id: 'm', sectionId: 's', storyId: '1F' }] }],
     ['部材の階 id が無い', { members: [{ id: 'm', kind: '柱', sectionId: 's' }] }],
     ['備考の値が文字列でない', { notes: { row: 3 } }],

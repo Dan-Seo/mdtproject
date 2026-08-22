@@ -7,7 +7,9 @@ import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 import { capture, captureException } from '@/lib/telemetry'
 
-import styles from './ViewerTabs.module.css'
+// 釦はタブと同じ帯に並ぶので見た目を借りる。自分しか使わない類だけ自分で持つ。
+import tabStyles from './ViewerTabs.module.css'
+import styles from './ViewerExportButton.module.css'
 
 /**
  * 案件まるごとを glTF (glb) で書き出す (PRD §4)。画面のタブが 部材 でも
@@ -51,16 +53,16 @@ export function ViewerExportButton() {
   }
 
   return (
-    <div className={styles.viewerTabs} role="group">
+    <div className={tabStyles.viewerTabs} role="group">
       <button
         type="button"
-        className={styles.viewerTab}
+        className={tabStyles.viewerTab}
         onClick={exportModel}
       >
         {t(locale, 'viewer.export')}
       </button>
       {failed ? (
-        <span role="alert" className={styles.viewerExportFailure}>
+        <span role="alert" className={styles.exportFailure}>
           {t(locale, 'viewer.exportFailed')}
         </span>
       ) : null}

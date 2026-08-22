@@ -14,6 +14,32 @@ const PAGE = '/page'
 /** three が入っていれば必ず出てくる識別子。 */
 const THREE_MARKERS = /InstancedMesh|WebGLRenderer/
 
+// 目印が three に実在するかを先に検める。three の版が上がって識別子が
+// 消えれば、正規表現は何にも当たらないまま `ok:` を名乗る—門の体をなさない。
+const threeEntry = (() => {
+  const manifest = 'node_modules/three/package.json'
+  if (!existsSync(manifest)) return null
+  const pkg = JSON.parse(readFileSync(manifest, 'utf8'))
+  const entry = pkg.exports?.['.']?.import ?? pkg.module ?? pkg.main
+  return typeof entry === 'string'
+    ? `node_modules/three/${entry.replace(/^\.\//, '')}`
+    : null
+})()
+
+if (threeEntry === null || !existsSync(threeEntry)) {
+  console.error(
+    'three の入口を node_modules で見つけられない。npm ci を先に走らせること。',
+  )
+  process.exit(1)
+}
+
+if (!THREE_MARKERS.test(readFileSync(threeEntry, 'utf8'))) {
+  console.error(
+    `THREE_MARKERS が ${threeEntry} に無い — この門は今何も検めていない。`,
+  )
+  process.exit(1)
+}
+
 if (!existsSync(MANIFEST)) {
   console.error(`${MANIFEST} が無い。先に npm run build を走らせること。`)
   process.exit(1)

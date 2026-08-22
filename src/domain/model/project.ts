@@ -530,6 +530,51 @@ function hasShape(
 const isNumberArray = (value: unknown): boolean =>
   Array.isArray(value) && value.every(isFiniteNumber)
 
+/** 呼び名＋本数のような小さな組を検める。 */
+const shapedAs =
+  (fields: Record<string, (field: unknown) => boolean>) =>
+  (value: unknown): boolean =>
+    hasShape(value, fields)
+
+const isMainRow = shapedAs({
+  endCount: isFiniteNumber,
+  centerCount: isFiniteNumber,
+})
+
+const isAxis = (value: unknown): boolean => value === 'X' || value === 'Y'
+
+/**
+ * 種別ごとに、**取り込んだ直後の計算が見守りなしに参照する**場だけを並べる。
+ *
+ * ここに無い場 (fc・grade・exposure・spliceMethod など) は、欠けてもルールパック
+ * 引きが名前のある例外で止める — どこで何が足りないかが画面に出る。
+ * 選んであるのは TypeError になる場 — それだけが「何が起きたか言えない落ち方」をする。
+ */
+const COLUMN_SECTION_FIELDS = {
+  d: isFiniteNumber,
+  main: shapedAs({ size: isString, count: isFiniteNumber }),
+  hoop: shapedAs({
+    size: isString,
+    pitch: isFiniteNumber,
+    startOffsetMm: isFiniteNumber,
+  }),
+}
+
+const GIRDER_SECTION_FIELDS = {
+  depth: isFiniteNumber,
+  main: shapedAs({
+    size: isString,
+    top: isMainRow,
+    bottom: isMainRow,
+    cutoffFromSupportFaceMm: isFiniteNumber,
+  }),
+  stirrup: shapedAs({
+    size: isString,
+    pitch: isFiniteNumber,
+    startOffsetMm: isFiniteNumber,
+  }),
+}
+
 const isMemberKind = (value: unknown): boolean =>
   MEMBER_KINDS.includes(value as MemberKind)
 
@@ -569,25 +614,40 @@ function isProjectShape(value: unknown): boolean {
           mark: isString,
           b: isFiniteNumber,
         }) &&
-        // せい は種別で鍵が違う (柱 は d、大梁 は depth)。共通の場所だけで
-        // 済ませると、せい の欠けた断面が通り、帯筋の加工寸法が NaN のまま
-        // 内訳書の合計まで流れる—この関数が止めたかった結果そのものだ。
+        // せいも配筋の入力も種別で鍵が違う。共通の場所だけで済ませると、
+        // せい の欠けた断面が通って帯筋の加工寸法が NaN のまま内訳書の合計まで
+        // 流れ、main/hoop/stirrup の欠けた断面は generateColumnRebar の中で
+        // TypeError になる—どちらもこの関数が止めたかった結果そのものだ。
         // 枝を選べるのは上で判別子を検めてあるからだ。
         hasShape(
           section,
           (section as { kind: MemberKind }).kind === '柱'
-            ? { d: isFiniteNumber }
-            : { depth: isFiniteNumber },
+            ? COLUMN_SECTION_FIELDS
+            : GIRDER_SECTION_FIELDS,
         ),
     ) &&
     Array.isArray(members) &&
-    members.every((member) =>
-      hasShape(member, {
-        id: isString,
-        kind: isMemberKind,
-        sectionId: isString,
-        storyId: isString,
-      }),
+    members.every(
+      (member) =>
+        hasShape(member, {
+          id: isString,
+          kind: isMemberKind,
+          sectionId: isString,
+          storyId: isString,
+        }) &&
+        // position が無ければ buildingLayout の `'axis' in member.position` が
+        // その場で TypeError になる。軸は 'X'/'Y' 以外を通さない —
+        // 三項演算子で Y に落ちて、図面に無い向きの大梁を黙って作る。
+        hasShape(member, {
+          position:
+            (member as { kind: MemberKind }).kind === '柱'
+              ? shapedAs({ ix: isFiniteNumber, iy: isFiniteNumber })
+              : shapedAs({
+                  axis: isAxis,
+                  ix: isFiniteNumber,
+                  iy: isFiniteNumber,
+                }),
+        }),
     ) &&
     (notes === undefined ||
       (isRecord(notes) && Object.values(notes).every(isString))) &&
