@@ -588,6 +588,29 @@ const isMemberKind = (value: unknown): boolean =>
  * 本数が正か) はここでは見ない — それは断面一覧の入力検査の持ち場で、
  * ここで二重に持つと規準が二か所に分かれる。
  */
+/**
+ * 形だけ通って中身の参照が切れている記録を切る。
+ *
+ * ここで見ないと、後から描画の途中で落ちる — useProjectPersistence の
+ * catch は loadProject が触った所 (最初の柱) しか見ないので、大梁の断面が
+ * 欠けている記録はそこを素通りして PaneBoundary に出る。
+ */
+function hasIntactReferences(
+  sections: { id: string; kind: MemberKind }[],
+  stories: { id: string }[],
+  members: { kind: MemberKind; sectionId: string; storyId: string }[],
+): boolean {
+  const sectionKinds = new Map(sections.map(({ id, kind }) => [id, kind]))
+  const storyIds = new Set(stories.map(({ id }) => id))
+
+  return members.every(
+    (member) =>
+      // 種別違いも切る。大梁が柱の断面を指すと buildingLayout が投げる。
+      sectionKinds.get(member.sectionId) === member.kind &&
+      storyIds.has(member.storyId),
+  )
+}
+
 function isProjectShape(value: unknown): boolean {
   if (!isRecord(value)) return false
 
@@ -652,7 +675,13 @@ function isProjectShape(value: unknown): boolean {
     (notes === undefined ||
       (isRecord(notes) && Object.values(notes).every(isString))) &&
     (unitMass === undefined ||
-      (isRecord(unitMass) && Object.values(unitMass).every(isFiniteNumber)))
+      (isRecord(unitMass) && Object.values(unitMass).every(isFiniteNumber))) &&
+    // ここまでで 3 つの配列は形が済んでいる。残るのは互いの指し合いだ。
+    hasIntactReferences(
+      sections as { id: string; kind: MemberKind }[],
+      stories as { id: string }[],
+      members as { kind: MemberKind; sectionId: string; storyId: string }[],
+    )
   )
 }
 

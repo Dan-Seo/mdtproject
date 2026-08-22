@@ -567,6 +567,45 @@ describe('project serialization', () => {
     ).toThrow()
   })
 
+  // 形だけ通って参照が切れている記録は、描画の途中で初めて落ちる —
+  // その頃にはもう store に入っているので、「サンプルに戻る」が効かない。
+  it.each([
+    ['部材が実在しない断面を指す', 'sectionId'],
+    ['部材が実在しない階を指す', 'storyId'],
+  ])('rejects a project whose references are broken: %s', (_label, field) => {
+    const project = createProject()
+    const broken = {
+      ...project,
+      members: project.members.map((member, index) =>
+        index === project.members.length - 1
+          ? { ...member, [field]: 'nowhere' }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
+  it('rejects a 大梁 that points at a 柱 断面', () => {
+    // 種別違いは buildingLayout が投げる — 形の検査で止める方が早い。
+    const project = createSampleProject()
+    const column = project.sections.find(({ kind }) => kind === '柱')
+    const girder = project.members.find(({ kind }) => kind === '大梁')
+    expect(column).toBeDefined()
+    expect(girder).toBeDefined()
+
+    const crossed = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === girder!.id
+          ? { ...member, sectionId: column!.id }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(crossed))).toThrow()
+  })
+
   it('accepts a project without the optional 備考・単位質量', () => {
     const project = createProject()
 

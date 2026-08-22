@@ -22,9 +22,13 @@
   background: var(--color-canvas-soft);
 }
 
+/*
+ * `~` は後ろの兄弟しか選べないが、DOM は label → input の順だった —
+ * 古い選択子は一度も当たっていなかった。鍵盤で「案件を読み込み」に到っても
+ * 何も出ない。label は input の直前なので :has() で逆に見る。
+ */
 .actionButton:focus-visible,
-.fileInput:focus-visible + .failure,
-.fileInput:focus-visible ~ .actionButton {
+.actionButton:has(+ .fileInput:focus-visible) {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

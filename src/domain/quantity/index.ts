@@ -394,7 +394,18 @@ export function weakestConfidence(rules: RuleHit[]): RuleConfidence {
  * 「원문에 값이 없다」(inferred)만 세면 검토 대기분이 조용히 통과한다 (ADR-015).
  */
 export function hasUnverified(lines: QuantityLine[]): boolean {
-  return lines.some(({ confidence }) => confidence !== 'stated')
+  return hasUnverifiedRules(lines)
+}
+
+/**
+ * 同じ判定を RuleHit の列に。glTF は行を持たず ruleHits を直に持つので、
+ * 向こうで書き直すと ADR-023 の等級が変わったとき xlsx・印刷と glb で
+ * 警告の有無が食い違う。
+ */
+export function hasUnverifiedRules(
+  entries: { confidence: RuleConfidence }[],
+): boolean {
+  return entries.some(({ confidence }) => confidence !== 'stated')
 }
 
 export function unverifiedRules(lines: QuantityLine[]): RuleHit[] {

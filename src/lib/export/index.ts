@@ -2,6 +2,7 @@ import type { Project } from '@/domain/model/project'
 import {
   grandTotal,
   hasUnverified,
+  hasUnverifiedRules,
   inferredRules,
   isMassLine,
   sizeSubtotals,
@@ -533,9 +534,7 @@ export function modelNotices(
   const copy = exportCopy[locale]
 
   return {
-    ...(rules.some(({ confidence }) => confidence !== 'stated')
-      ? { warning: copy.unverifiedWarning }
-      : {}),
+    ...(hasUnverifiedRules(rules) ? { warning: copy.unverifiedWarning } : {}),
     sources: contributingSources(rules).map((source) =>
       sourceNotice(source, locale),
     ),

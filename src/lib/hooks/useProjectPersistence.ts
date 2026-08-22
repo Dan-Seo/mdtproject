@@ -37,9 +37,10 @@ export function useProjectPersistence(): ProjectPersistence {
           useAppStore.getState().loadProject(stored)
         }
       } catch {
-        // 形は通ったが中身の参照が切れている記録 (部材が指す断面が無い等) は
-        // ここで初めて分かる。捨ててサンプルのまま進む — 復元の失敗が
-        // 自動保存を道連れにすると、以後の編集が黙って保存されなくなる。
+        // 参照切れは deserializeProject が切る (ここには来ない)。残るのは
+        // loadProject 自体が投げる場合だけだ — 拾うのは、復元の失敗が
+        // 自動保存を道連れにすると以後の編集が黙って保存されなくなるからで、
+        // 「形は通ったが中身が壊れた記録」を止めるのはここではない。
       }
 
       const autosave = createAutosave()
