@@ -76,7 +76,7 @@
 // 어차피 받으므로 총량도 요청 수도 거의 그대로이고, 바뀐 것은 그것이 동기 그래프에
 // 들어가는지뿐이었다. `/`의 First Load JS만 167 kB → 226 kB로 움직였다. 차단 경로는
 // 예산이 아니라 `.next/app-build-manifest.json`의 `pages['/page']`에 three 청크가
-// 있는지로 본다 (ADR-024).
+// 있는지로 본다 — `scripts/perf/blocking-graph.mjs`가 빌드 직후에 CI에서 그걸 한다 (ADR-024).
 module.exports = {
   ci: {
     collect: {

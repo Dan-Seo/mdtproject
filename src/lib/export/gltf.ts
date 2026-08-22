@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import type { BarSize } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
+import { barDiameter } from '@/domain/rebar/girder-ends'
 import {
   buildingLayout,
   type ConcreteBox,
@@ -24,7 +25,7 @@ export interface RebarModelInput {
   rebars: Rebar[]
   /** 注記の言語。出典・改変表示は模型にも載る (PDL1.0)。 */
   locale: Locale
-  /** 배근을 전개하지 못한 부재. 콘크리트 외형만 남고 철근은 그리지 않는다. */
+  /** 配筋を展開できなかった部材。コンクリート外形だけ残し、鉄筋は描かない。 */
   unsupportedMemberIds?: ReadonlySet<string>
 }
 
@@ -32,15 +33,12 @@ export interface RebarModelInput {
  * 呼び名そのままの実半径 (m)。画面の rebarRadius は読みやすさのために
  * 最小 ⌀14・1.6倍に太らせた**表示値**で、渡す模型でそれを使うと D25 が
  * ⌀40 の棒として計られる。書き出しは実寸で出す。
+ *
+ * 呼び名の読み方そのものは domain の barDiameter に任せる — 書き写すと、
+ * 規則が変わったとき 3D の実寸だけが黙って古いままになる。
  */
 function trueRadiusMetres(size: BarSize): number {
-  const diameter = Number(size.replace(/^D/, ''))
-
-  if (!Number.isFinite(diameter) || diameter <= 0) {
-    throw new Error(`Invalid BarSize: ${size}`)
-  }
-
-  return (diameter / 2) * MILLIMETRES_TO_METRES
+  return (barDiameter(size) / 2) * MILLIMETRES_TO_METRES
 }
 
 function metres([x, y, z]: readonly number[]): THREE.Vector3 {

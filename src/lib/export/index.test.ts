@@ -240,6 +240,76 @@ describe('buildTakeoffWorkbook', () => {
     expect(totalRow?.cells[12].value).toBe(total.requiredKg)
   })
 
+  // 取り込んだ案件の階名は他人が決めた自由文字列だ。「=」で始まる名前が
+  // 数式として実行される (formula injection) という筋を疑うのは正しいが、
+  // exceljs は文字列を必ず共有文字列 (t="s") として書き、数式スロットには
+  // 入れない。だから頭文字を潰す守りは要らない — 入れると「-1F」(地下1階) の
+  // ような正当な階名に ' が付く方が実害だ。その前提が変わったら此処で落ちる。
+  it('writes a story name that begins with = as text, never as a formula', async () => {
+    const base = sampleInput()
+    const input = {
+      ...base,
+      lines: base.lines.map((line) => ({
+        ...line,
+        storyName: '=HYPERLINK("http://x","x")',
+      })),
+    }
+    let downloaded: Blob | undefined
+    const originalCreate = Object.getOwnPropertyDescriptor(
+      URL,
+      'createObjectURL',
+    )
+    const originalRevoke = Object.getOwnPropertyDescriptor(
+      URL,
+      'revokeObjectURL',
+    )
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn((blob: Blob) => {
+        downloaded = blob
+        return 'blob:kijun-test'
+      }),
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    })
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {})
+
+    try {
+      await exportTakeoffXlsx({ ...input, locale: 'ja' })
+    } finally {
+      click.mockRestore()
+      if (originalCreate) {
+        Object.defineProperty(URL, 'createObjectURL', originalCreate)
+      } else {
+        Reflect.deleteProperty(URL, 'createObjectURL')
+      }
+      if (originalRevoke) {
+        Object.defineProperty(URL, 'revokeObjectURL', originalRevoke)
+      } else {
+        Reflect.deleteProperty(URL, 'revokeObjectURL')
+      }
+    }
+
+    const { Workbook, ValueType } = await import('exceljs')
+    const workbook = new Workbook()
+    await workbook.xlsx.load(await downloaded!.arrayBuffer())
+    const worksheet = workbook.getWorksheet('数量内訳書')!
+    const subtotalRowNumber =
+      buildTakeoffWorkbook({ ...input, locale: 'ja' }).sheets[0].rows.findIndex(
+        ({ kind }) => kind === 'subtotal',
+      ) + 1
+    const subtotal = worksheet.getRow(subtotalRowNumber).getCell(1)
+
+    expect(subtotal.type).toBe(ValueType.String)
+    expect(subtotal.formula).toBeUndefined()
+    expect(String(subtotal.value)).toContain('=HYPERLINK')
+  }, 20000)
+
   it('materializes the spec as a browser-downloaded xlsx with its watermark intact', async () => {
     const input = sampleInput()
     let downloadedBlob: Blob | undefined

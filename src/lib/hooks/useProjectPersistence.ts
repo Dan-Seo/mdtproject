@@ -23,6 +23,7 @@ export function useProjectPersistence(): ProjectPersistence {
   useEffect(() => {
     let cancelled = false
     let unsubscribe: (() => void) | null = null
+    let flushOnLeave: (() => void) | null = null
 
     void loadStoredProject().then((stored) => {
       if (cancelled) return
@@ -45,12 +46,17 @@ export function useProjectPersistence(): ProjectPersistence {
       unsubscribe = useAppStore.subscribe(({ project }, previous) => {
         if (project !== previous.project) autosave(project)
       })
+      // 打ち終わって 500ms 以内に閉じられると待機中の書き込みが消える。
+      // pagehide は bfcache に入る時も来るので、unload より取りこぼしが少ない。
+      flushOnLeave = () => autosave.flush()
+      window.addEventListener('pagehide', flushOnLeave)
       setRestored(true)
     })
 
     return () => {
       cancelled = true
       unsubscribe?.()
+      if (flushOnLeave) window.removeEventListener('pagehide', flushOnLeave)
     }
   }, [])
 

@@ -89,6 +89,9 @@ jobs:
       - run: pip install --quiet pytest
       - run: python -m pytest scripts/test_review_verdict.py -q
       - run: npm run build
+      # three が `/` の遮断経路に戻っていないか (ADR-024 §5)。Lighthouse 予算は
+      # これを通してしまう — 転送量が動かないからだ。build 直後にしか見られない。
+      - run: node scripts/perf/blocking-graph.mjs
 
       # 브라우저 실측 회귀 게이트. PR CI(review.yml의 verify)에는 넣지 않는다 — PR은
       # 그대로 빠르게 두고, 회귀는 머지 후 여기서 잡아 oncall이 깨어나게 한다.

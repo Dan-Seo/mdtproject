@@ -138,6 +138,14 @@ const exportCopy: Record<
   },
 }
 
+/**
+ * 頭文字は潰さない。取り込んだ案件の階名や符号は他人が決めた自由文字列なので
+ * 「=」で始まる値が数式として動く筋 (formula injection) を疑うのは正しいが、
+ * exceljs は文字列を必ず共有文字列 (t="s") として書き、数式スロットには入れない。
+ * 潰す方が実害が大きい — 「-1F」(地下1階) のような正当な階名に ' が付き、
+ * Excel 以外の読み手にはそれが見える。前提が変わったら index.test.ts の
+ * 「writes a story name that begins with = as text」が落ちる。
+ */
 function cell(
   value: WorkbookCellValue,
   options: Omit<WorkbookCellSpec, 'value'> = {},

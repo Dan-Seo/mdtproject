@@ -97,6 +97,39 @@ describe('createAutosave', () => {
     expect(written.map(({ name }) => name)).toEqual(['abc'])
   })
 
+  it('flushes the pending write instead of losing it when the page goes away', async () => {
+    // 打ち終わって 500ms 以内に閉じられると、「前回の続き」を戻す
+    // 機能が最後の一打を落とす。
+    const written: Project[] = []
+    const autosave = createAutosave(async (project) => {
+      written.push(project)
+    })
+
+    autosave({ ...createSampleProject(), name: '最後の一打' })
+    expect(written).toEqual([])
+
+    autosave.flush()
+    await Promise.resolve()
+
+    expect(written.map(({ name }) => name)).toEqual(['最後の一打'])
+
+    // 流した後にタイマーがもう一度発火して二重に書かない。
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS)
+
+    expect(written).toHaveLength(1)
+  })
+
+  it('does nothing when flushed with no pending edit', () => {
+    const written: Project[] = []
+    const autosave = createAutosave(async (project) => {
+      written.push(project)
+    })
+
+    autosave.flush()
+
+    expect(written).toEqual([])
+  })
+
   it('keeps saving after the burst settles', async () => {
     const written: Project[] = []
     const autosave = createAutosave(async (project) => {

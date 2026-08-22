@@ -264,6 +264,9 @@ describe('exportRebarGlb', () => {
     ) as {
       extensionsUsed?: string[]
       nodes: { name?: string }[]
+      scenes: {
+        extras?: { sources?: string[]; modification?: string; warning?: string }
+      }[]
       asset: { generator?: string }
     }
 
@@ -272,5 +275,14 @@ describe('exportRebarGlb', () => {
     expect(json.extensionsUsed).toContain('EXT_mesh_gpu_instancing')
     expect(json.nodes.map(({ name }) => name)).toContain('鉄筋')
     expect(json.nodes.map(({ name }) => name)).toContain('コンクリート')
+
+    // 出典表示と改変表示は PDL1.0 の義務で、場面に載っているだけでは足りない —
+    // 書き出した file の中に residing していることを見る。GLTFExporter が
+    // userData を extras に落とすかどうかに懸かっているので、ここで固定する。
+    const extras = json.scenes[0].extras
+
+    expect(extras?.sources?.join(' ')).toContain('公共建築')
+    expect(extras?.modification).toContain('改変')
+    expect(extras?.warning).toContain('検収前の参考値')
   }, 30000)
 })

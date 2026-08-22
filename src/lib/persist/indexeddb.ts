@@ -89,25 +89,42 @@ export async function clearStoredProject(): Promise<void> {
   }
 }
 
+export interface Autosave {
+  (project: Project): void
+  /**
+   * 待っている書き込みを今すぐ出す。頁を離れる時に呼ぶ — 打ち終わって
+   * 500ms 以内に閉じられると、「前回の続き」を戻す機能が最後の一打を落とす。
+   */
+  flush(): void
+}
+
 export function createAutosave(
   write: (project: Project) => Promise<void> = saveProject,
-): (project: Project) => void {
+): Autosave {
   let timer: ReturnType<typeof setTimeout> | null = null
   let pending: Project | null = null
 
-  return (project) => {
+  const flush = () => {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+
+    const target = pending
+    pending = null
+    if (target === null) return
+
+    // 保存できないこと自体は作業を止める理由にならない — 計算はブラウザ内で
+    // 完結している。タイマーの中なので、投げても誰も捕まえられない。
+    void write(target).catch(() => {})
+  }
+
+  const autosave = (project: Project) => {
     pending = project
     if (timer !== null) clearTimeout(timer)
-
-    timer = setTimeout(() => {
-      timer = null
-      const target = pending
-      pending = null
-      if (target === null) return
-
-      // 保存できないこと自体は作業を止める理由にならない — 計算はブラウザ内で
-      // 完結している。タイマーの中なので、投げても誰も捕まえられない。
-      void write(target).catch(() => {})
-    }, AUTOSAVE_DEBOUNCE_MS)
+    timer = setTimeout(flush, AUTOSAVE_DEBOUNCE_MS)
   }
+
+  autosave.flush = flush
+  return autosave
 }

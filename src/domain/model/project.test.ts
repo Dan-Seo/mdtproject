@@ -462,8 +462,11 @@ describe('project serialization', () => {
     ['案件名が数', { name: 42 }],
     ['スパンに数でないものが混ざる', { grid: { xSpans: [6000, '6000'], ySpans: [6000] } }],
     ['grid が無い', { grid: undefined }],
-    ['断面の符号が数', { sections: [{ id: 'x', mark: 1, b: 800 }] }],
-    ['部材の階 id が無い', { members: [{ id: 'm', sectionId: 's' }] }],
+    ['断面の符号が数', { sections: [{ id: 'x', kind: '柱', mark: 1, b: 800 }] }],
+    // 判別子が union の外なら、形は通っても断面の枝分かれを選べない。
+    ['断面の kind が実在しない', { sections: [{ id: 'x', kind: '壁', mark: 'W1', b: 200 }] }],
+    ['部材の kind が無い', { members: [{ id: 'm', sectionId: 's', storyId: '1F' }] }],
+    ['部材の階 id が無い', { members: [{ id: 'm', kind: '柱', sectionId: 's' }] }],
     ['備考の値が文字列でない', { notes: { row: 3 } }],
     ['単位質量が数でない', { unitMass: { D13: '0.995' } }],
   ])('rejects a project whose shape is broken: %s', (_label, broken) => {

@@ -1,10 +1,12 @@
-import type {
-  BarSize,
-  ColumnSection,
-  ColumnPosition,
-  GirderPosition,
-  Member,
-  Section,
+import {
+  MEMBER_KINDS,
+  type BarSize,
+  type ColumnSection,
+  type ColumnPosition,
+  type GirderPosition,
+  type Member,
+  type MemberKind,
+  type Section,
 } from './member'
 import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
@@ -528,6 +530,9 @@ function hasShape(
 const isNumberArray = (value: unknown): boolean =>
   Array.isArray(value) && value.every(isFiniteNumber)
 
+const isMemberKind = (value: unknown): boolean =>
+  MEMBER_KINDS.includes(value as MemberKind)
+
 /**
  * 骨格だけを検める。取り込む案件は他人が作った文字列で、schemaVersion しか
  * 見ずに通すと形の違う JSON が Project として奥まで入る — 数量が NaN になるか
@@ -557,12 +562,20 @@ function isProjectShape(value: unknown): boolean {
     sections.every((section) =>
       // せい (柱 は d、大梁 は depth) は種別で鍵が違う。骨格の検査で union を
       // 開くと、断面の型が増えるたびにここも直す羽目になる — 共通の場所だけ見る。
-      hasShape(section, { id: isString, mark: isString, b: isFiniteNumber }),
+      hasShape(section, {
+        id: isString,
+        // 判別子は特別だ。ここが union の外の値だと、形は通ったまま
+        // 断面の枝分かれが選べず、算定の途中で落ちる。
+        kind: isMemberKind,
+        mark: isString,
+        b: isFiniteNumber,
+      }),
     ) &&
     Array.isArray(members) &&
     members.every((member) =>
       hasShape(member, {
         id: isString,
+        kind: isMemberKind,
         sectionId: isString,
         storyId: isString,
       }),
