@@ -1,6 +1,18 @@
 // UC-2: 平面에서 柱 선택 → 断面一覧 / 3D / 数量 연동
 const page = await browser.getPage("kijun");
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+// 自動保存 (M4) が前の筋書きの編集を復元する。どの筋書きもサンプル案件から
+// 始めたいので、最初の着地で記録を消してから読み直す。
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas"); // 하이드레이션 완료 신호
 

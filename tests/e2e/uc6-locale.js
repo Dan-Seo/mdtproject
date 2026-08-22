@@ -1,6 +1,18 @@
 // UC-6: 로케일 ja ↔ ko — UI만 번역, 도메인 용어는 일본어 원어 유지 (ADR-008)
 const page = await browser.getPage("kijun");
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+// 自動保存 (M4) が前の筋書きの編集を復元する。どの筋書きもサンプル案件から
+// 始めたいので、最初の着地で記録を消してから読み直す。
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("canvas");
 
 const probe = () =>
