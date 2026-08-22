@@ -1,9 +1,10 @@
-import type {
-  BarSize,
-  Member,
-  MemberKind,
-  Section,
-  SpliceMethod,
+import {
+  BAR_SIZES,
+  type BarSize,
+  type Member,
+  type MemberKind,
+  type Section,
+  type SpliceMethod,
 } from '../model/member'
 import {
   findSection,
@@ -94,6 +95,18 @@ export function spliceLines(lines: QuantityLine[]): SpliceQuantityLine[] {
 /** 単位質量が一つでも欠けたら小計・合計も出ない — 入った径だけの和は合計ではない。 */
 export interface StorySubtotal {
   storyName: string
+  designKg: number | null
+  requiredKg: number | null
+}
+
+/**
+ * 径別の質量。発注は径ごとに出すので、階も部材も跨いで一本にまとめる。
+ * 階小計と違って **径ごとに独立して** null になる — この表の用途は
+ * 「どの径がまだ発注できないか」を見せることなので、欠けた径が他の径まで
+ * 巻き込むと、その情報が消える。
+ */
+export interface SizeSubtotal {
+  size: BarSize
   designKg: number | null
   requiredKg: number | null
 }
@@ -428,6 +441,29 @@ export function storySubtotals(lines: QuantityLine[]): StorySubtotal[] {
   }
 
   return [...subtotals.values()]
+}
+
+export function sizeSubtotals(lines: QuantityLine[]): SizeSubtotal[] {
+  const subtotals = new Map<BarSize, SizeSubtotal>()
+
+  // 継手行は箇所なので入らない — 質量に足せない。
+  for (const line of massLines(lines)) {
+    const subtotal = subtotals.get(line.size) ?? {
+      size: line.size,
+      designKg: 0,
+      requiredKg: 0,
+    }
+
+    subtotal.designKg = addMass(subtotal.designKg, line.designKg)
+    subtotal.requiredKg = addMass(subtotal.requiredKg, line.requiredKg)
+    subtotals.set(line.size, subtotal)
+  }
+
+  // 出現順ではなく BAR_SIZES の並び順で返す。内訳書の径列は径の小さい順に
+  // 読むものだし、行の出現順は部材の並べ方というこの表と無関係な事情で変わる。
+  return BAR_SIZES.filter((size) => subtotals.has(size)).map(
+    (size) => subtotals.get(size)!,
+  )
 }
 
 export function grandTotal(lines: QuantityLine[]): QuantityTotal {

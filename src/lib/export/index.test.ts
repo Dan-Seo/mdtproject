@@ -14,7 +14,9 @@ import {
   aggregateQuantity,
   grandTotal,
   inferredRules,
+  sizeSubtotals,
   spliceTotals,
+  storySubtotals,
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
@@ -71,10 +73,10 @@ describe('buildTakeoffWorkbook', () => {
       ({ memberKind }) => memberKind === '大梁',
     )
     const spec = buildTakeoffWorkbook({ project, lines, locale: 'ja' })
-    const exportedGirderRows = spec.rows.filter(
+    const exportedGirderRows = spec.sheets[0].rows.filter(
       ({ kind, cells }) => kind === 'data' && cells[1].value === '大梁',
     )
-    const totalRow = spec.rows.find(({ kind }) => kind === 'total')
+    const totalRow = spec.sheets[0].rows.find(({ kind }) => kind === 'total')
     const total = grandTotal(lines)
 
     expect(girderLines.length).toBeGreaterThan(0)
@@ -89,11 +91,11 @@ describe('buildTakeoffWorkbook', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
 
-    expect(spec.rows.slice(0, 2).map(({ kind }) => kind)).toEqual([
+    expect(spec.sheets[0].rows.slice(0, 2).map(({ kind }) => kind)).toEqual([
       'watermark',
       'watermark',
     ])
-    expect(spec.rows[0].cells[0].value).toBe(
+    expect(spec.sheets[0].rows[0].cells[0].value).toBe(
       '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     )
   })
@@ -101,7 +103,7 @@ describe('buildTakeoffWorkbook', () => {
   it('lists every inferred contribution with its rule name and source location', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const watermark = String(spec.rows[1].cells[0].value)
+    const watermark = String(spec.sheets[0].rows[1].cells[0].value)
 
     for (const rule of inferredRules(input.lines)) {
       expect(watermark).toContain(rule.label)
@@ -124,7 +126,7 @@ describe('buildTakeoffWorkbook', () => {
       ),
     }
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const dataRows = spec.rows.filter(({ kind }) => kind === 'data')
+    const dataRows = spec.sheets[0].rows.filter(({ kind }) => kind === 'data')
     const marks = dataRows.map(({ cells }) =>
       String(cells[3].value).slice(0, 2),
     )
@@ -140,8 +142,8 @@ describe('buildTakeoffWorkbook', () => {
   it('emits the seventeen DESIGN §4.2 columns in order and preserves display precision', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const header = spec.rows.find(({ kind }) => kind === 'header')
-    const firstDataRow = spec.rows.find(({ kind }) => kind === 'data')
+    const header = spec.sheets[0].rows.find(({ kind }) => kind === 'header')
+    const firstDataRow = spec.sheets[0].rows.find(({ kind }) => kind === 'data')
 
     expect(header?.cells.map(({ value }) => value)).toEqual([
       '階',
@@ -173,7 +175,7 @@ describe('buildTakeoffWorkbook', () => {
   it('adds a 箇所 total row per 継手 method beside the kg total', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const totals = spec.rows.filter(({ kind }) => kind === 'total')
+    const totals = spec.sheets[0].rows.filter(({ kind }) => kind === 'total')
     const [kgTotal, spliceTotal] = totals
 
     // 継手は質量に足せないので行を分ける。分けた行が kg 合計と同じ列に
@@ -196,7 +198,7 @@ describe('buildTakeoffWorkbook', () => {
       project: { ...input.project, notes: { [lineId]: '要確認' } },
       locale: 'ja',
     })
-    const rows = spec.rows.filter(({ kind }) => kind === 'data')
+    const rows = spec.sheets[0].rows.filter(({ kind }) => kind === 'data')
     const noted = rows.find(({ id }) => id === lineId)
     const others = rows.filter(({ id }) => id !== lineId)
 
@@ -207,7 +209,7 @@ describe('buildTakeoffWorkbook', () => {
   it('includes source document names, editions, URLs, scope and modification notice', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const sourceText = spec.rows
+    const sourceText = spec.sheets[0].rows
       .filter(({ kind }) => kind === 'source' || kind === 'notice')
       .map(({ cells }) => cells[0].value)
       .join('\n')
@@ -231,7 +233,7 @@ describe('buildTakeoffWorkbook', () => {
   it('keeps the exported total equal to grandTotal without rounding the value', () => {
     const input = sampleInput()
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const totalRow = spec.rows.find(({ kind }) => kind === 'total')
+    const totalRow = spec.sheets[0].rows.find(({ kind }) => kind === 'total')
     const total = grandTotal(input.lines)
 
     expect(totalRow?.cells[11].value).toBe(total.designKg)
@@ -303,8 +305,8 @@ describe('buildTakeoffWorkbook', () => {
     // 網掛けは発注に使う 所要数量(M) に立てる。データ行と合計行で強調列が
     // 食い違うと同じシートの中で発注列が二つに見える。
     const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
-    const dataRowNumber = spec.rows.findIndex(({ kind }) => kind === 'data') + 1
-    const totalRowNumber = spec.rows.findIndex(({ kind }) => kind === 'total') + 1
+    const dataRowNumber = spec.sheets[0].rows.findIndex(({ kind }) => kind === 'data') + 1
+    const totalRowNumber = spec.sheets[0].rows.findIndex(({ kind }) => kind === 'total') + 1
     expect(worksheet?.getRow(dataRowNumber).getCell(13).fill).toMatchObject({
       pattern: 'solid',
     })
@@ -314,6 +316,138 @@ describe('buildTakeoffWorkbook', () => {
     expect(worksheet?.getRow(totalRowNumber).getCell(13).fill).toMatchObject({
       pattern: 'solid',
     })
+
+    // 径別集計はブックの中に実在しないと発注に使えない — spec だけ通って
+    // 書き出しから落ちる回帰をここで止める。
+    const summary = workbook.getWorksheet('径別集計')
+    expect(summary).toBeDefined()
+    expect(summary?.getCell('A3').value).toBe('径')
+    expect(summary?.getCell('D3').value).toBe('単位')
+    const summarySpec = spec.sheets[1]
+    const summaryTotalRow =
+      summarySpec.rows.findIndex(({ kind }) => kind === 'total') + 1
+    expect(summary?.getRow(summaryTotalRow).getCell(2).value).toBe(
+      grandTotal(input.lines).designKg,
+    )
     // exceljs の動的 import は npm ci 直後の初回だけ既定の5秒を超えることがある。
   }, 20000)
+})
+
+describe('階小計', () => {
+  it('closes each 階 with a 小計 row carrying that 階 の質量', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const sheet = spec.sheets[0]
+    const subtotals = storySubtotals(input.lines)
+    const subtotalRows = sheet.rows.filter(({ kind }) => kind === 'subtotal')
+
+    // 画面の内訳書は階ごとに小計を持つ。書き出しにそれが無いと、階ごとの
+    // 発注量を読み手が電卓で足し直すことになる。
+    expect(subtotals.length).toBeGreaterThan(1)
+    expect(
+      subtotalRows.map(({ cells }) => [
+        cells[0].value,
+        cells[11].value,
+        cells[12].value,
+      ]),
+    ).toEqual(
+      subtotals.map(({ storyName, designKg, requiredKg }) => [
+        `${storyName}　小計`,
+        designKg,
+        requiredKg,
+      ]),
+    )
+  })
+
+  it('places each 小計 directly after that 階 の data rows', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const body = spec.sheets[0].rows.filter(
+      ({ kind }) => kind === 'data' || kind === 'subtotal',
+    )
+
+    // 小計は「その上に並んだ行の和」だと読まれる。別の階の行を跨いだ位置に
+    // 出ると、読み手が足し合わせた範囲と数が一致しない。
+    let current: string | null = null
+    for (const row of body) {
+      if (row.kind === 'data') {
+        current = String(row.cells[0].value)
+        continue
+      }
+      expect(row.cells[0].value).toBe(`${current}　小計`)
+      current = null
+    }
+    expect(current).toBeNull()
+  })
+
+  it('keeps the 合計 row after every 小計', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const kinds = spec.sheets[0].rows.map(({ kind }) => kind)
+
+    expect(kinds.lastIndexOf('subtotal')).toBeLessThan(kinds.indexOf('total'))
+  })
+})
+
+describe('径別集計シート', () => {
+  it('adds a second sheet totalling 質量 by 径', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+
+    expect(spec.sheets.map(({ name }) => name)).toEqual([
+      '数量内訳書',
+      '径別集計',
+    ])
+
+    const sheet = spec.sheets[1]
+    const header = sheet.rows.find(({ kind }) => kind === 'header')
+    const data = sheet.rows.filter(({ kind }) => kind === 'data')
+
+    expect(header?.cells.map(({ value }) => value)).toEqual([
+      '径',
+      '設計数量',
+      '所要数量',
+      '単位',
+    ])
+    expect(
+      data.map(({ cells }) => [cells[0].value, cells[1].value, cells[2].value]),
+    ).toEqual(
+      sizeSubtotals(input.lines).map(({ size, designKg, requiredKg }) => [
+        size,
+        designKg,
+        requiredKg,
+      ]),
+    )
+    expect(data.every(({ cells }) => cells[3].value === 'kg')).toBe(true)
+    expect(data[0].cells[1].numberFormat).toBe('0.000')
+  })
+
+  it('closes the 径別集計 with the same 合計 as the 内訳書', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const total = spec.sheets[1].rows.find(({ kind }) => kind === 'total')
+    const expected = grandTotal(input.lines)
+
+    // 二枚のシートで合計が食い違えば、どちらを信じるかを読み手が決めることになる。
+    expect(total?.cells[1].value).toBe(expected.designKg)
+    expect(total?.cells[2].value).toBe(expected.requiredKg)
+  })
+
+  it('repeats the watermark and the 出典 notice on the 径別集計', () => {
+    const input = sampleInput()
+    const spec = buildTakeoffWorkbook({ ...input, locale: 'ja' })
+    const sheet = spec.sheets[1]
+    const text = sheet.rows
+      .filter(({ kind }) => kind === 'watermark' || kind === 'notice')
+      .map(({ cells }) => cells[0].value)
+      .join('\n')
+
+    // シートは単独でコピーされて発注に回る。持ち出された先で警告と出典が
+    // 消えていると、ADR-015 の警告も PDL1.0 の出典表示も成立しない。
+    expect(sheet.rows[0].kind).toBe('watermark')
+    expect(text).toContain('検収前の参考値')
+    expect(text).toContain('官庁施設')
+    expect(text).toContain('加工・改変')
+    expect(sheet.rows.some(({ kind }) => kind === 'source')).toBe(true)
+  })
 })

@@ -4,7 +4,9 @@ import {
   hasUnverified,
   inferredRules,
   isMassLine,
+  sizeSubtotals,
   spliceTotals,
+  storySubtotals,
   type QuantityLine,
 } from '@/domain/quantity'
 import type { RebarShape } from '@/domain/model/rebar'
@@ -24,6 +26,7 @@ export type WorkbookRowKind =
   | 'watermark'
   | 'header'
   | 'data'
+  | 'subtotal'
   | 'total'
   | 'spacer'
   | 'source-heading'
@@ -40,13 +43,21 @@ export interface WorkbookColumnSpec {
   width: number
 }
 
-export interface WorkbookSpec {
-  filename: 'kijun-takeoff.xlsx'
-  sheetName: string
-  title: string
+export interface WorkbookSheetSpec {
+  name: string
   columns: WorkbookColumnSpec[]
   rows: WorkbookRowSpec[]
   headerRowNumber: number
+  /** 所要数量の列 (1 起点) — 発注に使う数字がどれかを網掛けで示す。 */
+  requiredColumn: number
+  /** 折り返して高さを決める列 (1 起点)。無い列は行高を伸ばさない。 */
+  wrapColumns: number[]
+}
+
+export interface WorkbookSpec {
+  filename: 'kijun-takeoff.xlsx'
+  title: string
+  sheets: WorkbookSheetSpec[]
 }
 
 export interface TakeoffWorkbookInput {
@@ -64,6 +75,10 @@ const SPLICE_COUNT_FORMAT = 'General'
 const COLUMN_WIDTHS = [
   10, 12, 10, 12, 9, 13, 12, 10, 10, 15, 10, 16, 16, 8, 36, 18, 64,
 ]
+const SIZE_SUMMARY_COLUMN_WIDTHS = [10, 16, 16, 8]
+const SIZE_SUMMARY_COLUMN_COUNT = SIZE_SUMMARY_COLUMN_WIDTHS.length
+/** 所要数量の列番号 (1 起点)。シートごとに位置が違うので網掛けの基準に渡す。 */
+const SIZE_SUMMARY_REQUIRED_COLUMN = 3
 /** 列番号 (1 起点)。所要数量の網掛けと、出典・算出式の折り返しに使う。 */
 const REQUIRED_COLUMN = 13
 const SOURCE_COLUMN = 15
@@ -73,6 +88,7 @@ const exportCopy: Record<
   Locale,
   {
     sheetName: string
+    sizeSheetName: string
     sourceHeading: string
     scopeNotice: string
     modificationNotice: string
@@ -85,6 +101,7 @@ const exportCopy: Record<
 > = {
   ja: {
     sheetName: '数量内訳書',
+    sizeSheetName: '径別集計',
     sourceHeading: '算出根拠',
     scopeNotice:
       '適用範囲: 国土交通省の官庁施設向け基準であり、民間工事では異なる場合があります。',
@@ -98,6 +115,7 @@ const exportCopy: Record<
   },
   ko: {
     sheetName: '수량 내역서',
+    sizeSheetName: '경별 집계',
     sourceHeading: '산출 근거',
     scopeNotice:
       '적용 범위: 국토교통성의 관청시설 기준이며, 민간공사에서는 다를 수 있습니다.',
@@ -118,13 +136,14 @@ function cell(
   return { value, ...options }
 }
 
-function row(
+function rowWithin(
+  columnCount: number,
   kind: WorkbookRowKind,
   cells: WorkbookCellSpec[],
   id?: string,
 ): WorkbookRowSpec {
-  if (cells.length > COLUMN_COUNT) {
-    throw new Error(`Workbook row exceeds ${COLUMN_COUNT} columns`)
+  if (cells.length > columnCount) {
+    throw new Error(`Workbook row exceeds ${columnCount} columns`)
   }
 
   return {
@@ -132,9 +151,26 @@ function row(
     id,
     cells: [
       ...cells,
-      ...Array.from({ length: COLUMN_COUNT - cells.length }, () => cell(null)),
+      ...Array.from({ length: columnCount - cells.length }, () => cell(null)),
     ],
   }
+}
+
+function row(
+  kind: WorkbookRowKind,
+  cells: WorkbookCellSpec[],
+  id?: string,
+): WorkbookRowSpec {
+  return rowWithin(COLUMN_COUNT, kind, cells, id)
+}
+
+/** 径別集計は4列しかない — 内訳書の幅で埋めると空欄13列が結合幅に混ざる。 */
+function sizeRow(
+  kind: WorkbookRowKind,
+  cells: WorkbookCellSpec[],
+  id?: string,
+): WorkbookRowSpec {
+  return rowWithin(SIZE_SUMMARY_COLUMN_COUNT, kind, cells, id)
 }
 
 function shapeLabel(locale: Locale, shape: RebarShape): string {
@@ -270,48 +306,113 @@ function dataRow(
   )
 }
 
-export function buildTakeoffWorkbook(
-  input: TakeoffWorkbookInput,
-): WorkbookSpec {
-  const { project, lines, locale } = input
-  const copy = exportCopy[locale]
-  const rows: WorkbookRowSpec[] = []
+/**
+ * 「原文に値がない規準値を使った」警告と PDL1.0 の出典・改変表示。シートは
+ * 単独でコピーされて発注に回るので、質量が載るシートには両方付ける。
+ */
+function watermarkRows(
+  lines: QuantityLine[],
+  locale: Locale,
+): WorkbookRowSpec[] {
+  if (!hasUnverified(lines)) return []
 
-  if (hasUnverified(lines)) {
-    // 警告は2行のままにする（DESIGN §4.2 — ヘッダ行の位置が動くと読み手側の
-    // 参照が全部ずれる）。1行目でどちらの等級が混ざっているかを言い、2行目には
-    // **原文に値がない項目だけ**を挙げる — 独立検討待ちは今ほぼ全行に付くので
-    // 並べても読み手の作業リストにならない。
-    const inferred = inferredRules(lines)
-    rows.push(
-      row('watermark', [
-        cell('※ 独立検討が済んでいない規準値を含む — 検収前の参考値'),
+  // 警告は2行のままにする（DESIGN §4.2 — ヘッダ行の位置が動くと読み手側の
+  // 参照が全部ずれる）。1行目でどちらの等級が混ざっているかを言い、2行目には
+  // **原文に値がない項目だけ**を挙げる — 独立検討待ちは今ほぼ全行に付くので
+  // 並べても読み手の作業リストにならない。
+  const copy = exportCopy[locale]
+  const inferred = inferredRules(lines)
+
+  return [
+    row('watermark', [
+      cell('※ 独立検討が済んでいない規準値を含む — 検収前の参考値'),
+    ]),
+    row('watermark', [
+      cell(
+        inferred.length === 0
+          ? copy.transcribedOnly
+          : `${copy.inferredList}: ${inferred
+              .map((rule) => sourceLocation(rule, locale, true))
+              .join(' / ')}`,
+      ),
+    ]),
+  ]
+}
+
+function footerRows(
+  lines: QuantityLine[],
+  locale: Locale,
+): WorkbookRowSpec[] {
+  const copy = exportCopy[locale]
+
+  return [
+    row('spacer', []),
+    row('source-heading', [cell(copy.sourceHeading)]),
+    ...contributingSources(lines).map((source) =>
+      row('source', [
+        cell(sourceNotice(source, locale), {
+          hyperlink: source.url ?? undefined,
+        }),
       ]),
-      row('watermark', [
-        cell(
-          inferred.length === 0
-            ? copy.transcribedOnly
-            : `${copy.inferredList}: ${inferred
-                .map((rule) => sourceLocation(rule, locale, true))
-                .join(' / ')}`,
-        ),
-      ]),
-    )
+    ),
+    row('notice', [cell(copy.scopeNotice)]),
+    row('notice', [cell(copy.modificationNotice)]),
+  ]
+}
+
+/**
+ * 階ごとの行と、その階を締める小計。画面の内訳書と同じ区切りで読めるように
+ * する（docs/UX.md §4）。小計は **その上に並んだ行の和** として読まれるので、
+ * 階をまたいだ位置には置けない — 行を階ごとにまとめ直してから並べる。
+ */
+function storyBlocks(
+  input: TakeoffWorkbookInput,
+): WorkbookRowSpec[] {
+  const { project, lines, locale } = input
+  const byStory = new Map<string, QuantityLine[]>()
+
+  for (const line of lines) {
+    const stored = byStory.get(line.storyName)
+    if (stored) stored.push(line)
+    else byStory.set(line.storyName, [line])
   }
 
+  const subtotals = new Map(
+    storySubtotals(lines).map((subtotal) => [subtotal.storyName, subtotal]),
+  )
+
+  return [...byStory].flatMap(([storyName, storyLines]) => {
+    const subtotal = subtotals.get(storyName)
+    if (!subtotal) throw new Error(`Story subtotal not found: ${storyName}`)
+
+    return [
+      ...storyLines.map((line) =>
+        dataRow(line, locale, project.notes?.[line.id] ?? ''),
+      ),
+      row('subtotal', [
+        cell(`${storyName}　${t(locale, 'export.subtotal')}`),
+        ...Array.from({ length: 10 }, () => cell(null)),
+        cell(subtotal.designKg, { numberFormat: THREE_DECIMALS }),
+        cell(subtotal.requiredKg, { numberFormat: THREE_DECIMALS }),
+        cell('kg'),
+      ]),
+    ]
+  })
+}
+
+function takeoffSheet(input: TakeoffWorkbookInput): WorkbookSheetSpec {
+  const { lines, locale } = input
+  const copy = exportCopy[locale]
+  const rows: WorkbookRowSpec[] = watermarkRows(lines, locale)
   const headerRowNumber = rows.length + 1
+  const total = grandTotal(lines)
+
   rows.push(
     row(
       'header',
       workbookHeaders(locale).map((header) => cell(header)),
     ),
-    ...lines.map((line) =>
-      dataRow(line, locale, project.notes?.[line.id] ?? ''),
-    ),
-  )
-
-  const total = grandTotal(lines)
-  rows.push(
+    ...storyBlocks(input),
     row('total', [
       cell(t(locale, 'takeoff.total')),
       ...Array.from({ length: 10 }, () => cell(null)),
@@ -329,26 +430,84 @@ export function buildTakeoffWorkbook(
         cell('箇所'),
       ]),
     ),
-    row('spacer', []),
-    row('source-heading', [cell(copy.sourceHeading)]),
-    ...contributingSources(lines).map((source) =>
-      row('source', [
-        cell(sourceNotice(source, locale), {
-          hyperlink: source.url ?? undefined,
-        }),
-      ]),
-    ),
-    row('notice', [cell(copy.scopeNotice)]),
-    row('notice', [cell(copy.modificationNotice)]),
+    ...footerRows(lines, locale),
   )
 
   return {
-    filename: 'kijun-takeoff.xlsx',
-    sheetName: copy.sheetName,
-    title: `${project.name} — ${copy.sheetName}`,
+    name: copy.sheetName,
     columns: COLUMN_WIDTHS.map((width) => ({ width })),
     rows,
     headerRowNumber,
+    requiredColumn: REQUIRED_COLUMN,
+    wrapColumns: [SOURCE_COLUMN, FORMULA_COLUMN],
+  }
+}
+
+/**
+ * 発注は径ごとに出すので、階も部材も跨いだ径別の和を別シートに立てる。
+ * 内訳書シートを人が読んで足し直す作業がそのまま転記ミスになる。
+ */
+function sizeSummarySheet(input: TakeoffWorkbookInput): WorkbookSheetSpec {
+  const { lines, locale } = input
+  const copy = exportCopy[locale]
+  const rows: WorkbookRowSpec[] = watermarkRows(lines, locale).map(
+    ({ kind, cells }) => sizeRow(kind, [cells[0]]),
+  )
+  const headerRowNumber = rows.length + 1
+  const total = grandTotal(lines)
+
+  rows.push(
+    sizeRow(
+      'header',
+      [
+        t(locale, 'takeoff.diameter'),
+        t(locale, 'takeoff.designQuantity'),
+        t(locale, 'takeoff.requiredQuantity'),
+        t(locale, 'takeoff.unit'),
+      ].map((header) => cell(header)),
+    ),
+    ...sizeSubtotals(lines).map(({ size, designKg, requiredKg }) =>
+      sizeRow(
+        'data',
+        [
+          cell(size),
+          cell(designKg, { numberFormat: THREE_DECIMALS }),
+          cell(requiredKg, { numberFormat: THREE_DECIMALS }),
+          cell('kg'),
+        ],
+        size,
+      ),
+    ),
+    sizeRow('total', [
+      cell(t(locale, 'takeoff.total')),
+      cell(total.designKg, { numberFormat: THREE_DECIMALS }),
+      cell(total.requiredKg, { numberFormat: THREE_DECIMALS }),
+      cell('kg'),
+    ]),
+    ...footerRows(lines, locale).map(({ kind, cells }) =>
+      sizeRow(kind, cells[0].value === null ? [] : [cells[0]]),
+    ),
+  )
+
+  return {
+    name: copy.sizeSheetName,
+    columns: SIZE_SUMMARY_COLUMN_WIDTHS.map((width) => ({ width })),
+    rows,
+    headerRowNumber,
+    requiredColumn: SIZE_SUMMARY_REQUIRED_COLUMN,
+    wrapColumns: [],
+  }
+}
+
+export function buildTakeoffWorkbook(
+  input: TakeoffWorkbookInput,
+): WorkbookSpec {
+  const copy = exportCopy[input.locale]
+
+  return {
+    filename: 'kijun-takeoff.xlsx',
+    title: `${input.project.name} — ${copy.sheetName}`,
+    sheets: [takeoffSheet(input), sizeSummarySheet(input)],
   }
 }
 
@@ -362,16 +521,12 @@ const workbookColors = {
   white: 'FFFFFFFF',
 }
 
-export async function exportTakeoffXlsx(
-  input: TakeoffWorkbookInput,
-): Promise<void> {
-  const spec = buildTakeoffWorkbook(input)
-  const { Workbook } = await import('exceljs')
-  const workbook = new Workbook()
-  workbook.creator = 'Kijun'
-  workbook.title = spec.title
-
-  const worksheet = workbook.addWorksheet(spec.sheetName, {
+function writeSheet(
+  workbook: import('exceljs').Workbook,
+  sheet: WorkbookSheetSpec,
+): void {
+  const columnCount = sheet.columns.length
+  const worksheet = workbook.addWorksheet(sheet.name, {
     properties: { defaultRowHeight: 20 },
     pageSetup: {
       fitToPage: true,
@@ -382,15 +537,15 @@ export async function exportTakeoffXlsx(
     views: [
       {
         state: 'frozen',
-        ySplit: spec.headerRowNumber,
+        ySplit: sheet.headerRowNumber,
         showGridLines: false,
       },
     ],
   })
 
-  worksheet.columns = spec.columns.map(({ width }) => ({ width }))
+  worksheet.columns = sheet.columns.map(({ width }) => ({ width }))
 
-  for (const rowSpec of spec.rows) {
+  for (const rowSpec of sheet.rows) {
     const values = rowSpec.cells.map(({ value, hyperlink }) =>
       hyperlink && value !== null
         ? { text: String(value), hyperlink }
@@ -403,8 +558,7 @@ export async function exportTakeoffXlsx(
       if (cellSpec.numberFormat) worksheetCell.numFmt = cellSpec.numberFormat
       worksheetCell.alignment = {
         vertical: 'middle',
-        wrapText:
-          index === SOURCE_COLUMN - 1 || index === FORMULA_COLUMN - 1,
+        wrapText: sheet.wrapColumns.includes(index + 1),
       }
       if (cellSpec.hyperlink) {
         worksheetCell.font = {
@@ -424,7 +578,7 @@ export async function exportTakeoffXlsx(
         worksheetRow.number,
         1,
         worksheetRow.number,
-        COLUMN_COUNT,
+        columnCount,
       )
       worksheetRow.getCell(1).alignment = {
         vertical: 'middle',
@@ -433,7 +587,7 @@ export async function exportTakeoffXlsx(
     }
 
     if (rowSpec.kind === 'watermark') {
-      worksheetRow.height = rowSpec === spec.rows[0] ? 24 : 54
+      worksheetRow.height = rowSpec === sheet.rows[0] ? 24 : 54
       worksheetRow.getCell(1).font = {
         bold: true,
         color: { argb: workbookColors.error },
@@ -468,22 +622,35 @@ export async function exportTakeoffXlsx(
 
     if (rowSpec.kind === 'data') {
       const wrappedLineCount = Math.max(
-        String(rowSpec.cells[SOURCE_COLUMN - 1].value).split('\n').length,
-        String(rowSpec.cells[FORMULA_COLUMN - 1].value).split('\n').length,
+        1,
+        ...sheet.wrapColumns.map(
+          (column) => String(rowSpec.cells[column - 1].value).split('\n').length,
+        ),
       )
       worksheetRow.height = Math.max(32, (wrappedLineCount + 1) * 16)
-      worksheetRow.getCell(REQUIRED_COLUMN).fill = {
+      worksheetRow.getCell(sheet.requiredColumn).fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: workbookColors.canvasSoft },
       }
-      worksheetRow.getCell(REQUIRED_COLUMN).border = {
+      worksheetRow.getCell(sheet.requiredColumn).border = {
         left: { style: 'medium', color: { argb: workbookColors.ink } },
       }
-      if (String(rowSpec.cells[3].value).startsWith('⚠ ')) {
-        worksheetRow.getCell(4).font = {
-          color: { argb: workbookColors.error },
+    }
+
+    // 小計は「その階の締め」なので合計より弱く、けれど明細より強く見せる。
+    if (rowSpec.kind === 'subtotal') {
+      worksheetRow.height = 24
+      worksheetRow.font = { bold: true, color: { argb: workbookColors.ink } }
+      worksheetRow.eachCell((worksheetCell) => {
+        worksheetCell.border = {
+          top: { style: 'thin', color: { argb: workbookColors.hairline } },
         }
+      })
+      worksheetRow.getCell(sheet.requiredColumn).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: workbookColors.canvasSoft },
       }
     }
 
@@ -495,7 +662,7 @@ export async function exportTakeoffXlsx(
           top: { style: 'medium', color: { argb: workbookColors.ink } },
         }
       })
-      worksheetRow.getCell(REQUIRED_COLUMN).fill = {
+      worksheetRow.getCell(sheet.requiredColumn).fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: workbookColors.canvasSoft },
@@ -524,8 +691,22 @@ export async function exportTakeoffXlsx(
   }
 
   worksheet.autoFilter = {
-    from: { row: spec.headerRowNumber, column: 1 },
-    to: { row: spec.headerRowNumber, column: COLUMN_COUNT },
+    from: { row: sheet.headerRowNumber, column: 1 },
+    to: { row: sheet.headerRowNumber, column: columnCount },
+  }
+}
+
+export async function exportTakeoffXlsx(
+  input: TakeoffWorkbookInput,
+): Promise<void> {
+  const spec = buildTakeoffWorkbook(input)
+  const { Workbook } = await import('exceljs')
+  const workbook = new Workbook()
+  workbook.creator = 'Kijun'
+  workbook.title = spec.title
+
+  for (const sheet of spec.sheets) {
+    writeSheet(workbook, sheet)
   }
 
   const output = await workbook.xlsx.writeBuffer()
