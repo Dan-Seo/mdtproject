@@ -13,6 +13,13 @@ dev-browser --browser kijun --timeout 90 run tests/e2e/uc1-initial-load.js
 포트가 다르면 각 스크립트 상단의 `localhost:3000`을 고친다 (샌드박스에 `process.env`가 없어
 환경변수로 받을 수 없다).
 
+### 각 시나리오는 자기 記録을 지우고 시작한다
+
+M4의 자동저장(IndexedDB) 때문에 **앞 시나리오의 편집이 뒤 시나리오로 흘러든다.** 실제로
+`uc3`이 帯筋 피치를 바꾸면 `uc11`이 그 값을 물려받아 실패했다. 그래서 각 스크립트는 첫 착지
+직후 `indexedDB.deleteDatabase("kijun")` → `reload`로 샘플 案件에 되돌린다. **새 시나리오를
+쓸 때 이 네 줄을 빠뜨리면 순서에 따라 간헐적으로 깨진다.**
+
 전부 순서대로 돌리려면:
 
 ```bash
@@ -39,6 +46,32 @@ done
 | `uc12-section-import.js` | PDF 断面リスト 취입 — 후보 제시 · 부재 행 단위 反映/無視 |
 | `uc13-cutoff-splice.js` | カットオフ筋·継手方式 — 位置別 本数 입력 · 切り止め位置 · 3D 定着 미표시 고지 |
 | `uc14-m3c-details.js` | 幅止め筋·腹筋 — 断面一覧 입력(大梁만) · 「なし」 断面 미계상 · 산출식의 조문/입력 표시 |
+| `uc15-revisit.js` | 재방문 경로 — IndexedDB 자동저장→복원 · 案件 JSON 저장/불러오기 · 깨진 파일 거부 |
+| `uc16-model-and-print.js` | glb 내보내기(magic·version·`EXT_mesh_gpu_instancing`·노드명) · PDF 인쇄 시점의 DOM |
+| `uc17-stress-building.js` | **R4 계측 전용.** 5층 4×3 합성 案件의 建物 뷰 — draw call·삼각형·씬 재구축·편집 반영 |
+
+### uc17만 `next dev`가 필요하다
+
+계측 훅 `__kijunViewerRuntime`·`__kijunStore`는 `process.env.NODE_ENV !== 'production'`
+에서만 노출된다(도면 데이터가 든 전체 상태라 프로덕션에 내놓지 않는다). 나머지 시나리오는
+`next start`(프로덕션 빌드)로 돌린다.
+
+```bash
+npx tsx scripts/perf/stress-fixture.ts 5 > /tmp/stress5.json
+base64 -w0 /tmp/stress5.json > ~/.dev-browser/tmp/uc17-stress.json.b64
+npm run dev -- -p 3000
+dev-browser --browser kijun --timeout 300 run tests/e2e/uc17-stress-building.js
+```
+
+**dev 서버와 `next start`를 같은 트리에서 동시에 띄우지 말 것.** 같은 `.next`를 공유해
+dev가 프로덕션 청크를 덮어쓰고, 그러면 지연 로드되는 청크(exceljs)만 404가 나서
+`uc8`이 조용히 실패한다 — 초기 청크는 이미 받았으므로 다른 시나리오는 통과한다.
+uc17을 돌린 뒤에는 `rm -rf .next && npm run build`로 되돌린다.
+
+**uc17의 프레임 간격은 믿지 말 것.** 헤드리스 페이지는 `requestAnimationFrame`이 약 1Hz로
+묶여서, 프레임 간격도 rAF를 기다리는 계측도 전부 「약 1000ms」로 나온다. 실제로 그 수치를
+성능 문제로 오독했다가 draw call을 보고서야 원인을 알았다. 그래서 이 스크립트가 재는 것은
+**draw call · 삼각형 수 · 씬 재구축 시간 · rAF를 기다리지 않는 편집 반영 시간** 넷뿐이다.
 
 ## 왜 유닛테스트로 안 되는가
 
@@ -49,7 +82,9 @@ jsdom에서 재현되지 않는 것만 여기에 둔다.
 - **실제 히트 테스트** — SVG 부재의 클릭 가능 영역이 시각적 마커와 일치하는지.
 - **WebGL** — three.js 씬이 실제로 그려지는지. 환경맵(PMREM)·그림자·톤매핑은 유닛테스트에서
   `PMREMGenerator`/`WebGLRenderer`를 목으로 대체하므로, 실 GPU 동작은 여기(uc1·uc9)가 유일한 커버다.
-- **파일 다운로드** — exceljs가 만든 Blob의 크기·MIME·파일명.
+- **파일 다운로드** — exceljs가 만든 Blob의 크기·MIME·파일명, GLTFExporter가 만든 GLB의 헤더.
+- **IndexedDB** — jsdom에 없다. 자동저장·복원 경로(uc15)는 여기가 유일한 실커버다.
+- **인쇄** — `window.print()` 시점의 DOM. 화면에 남지 않는 복제라 이 순간에만 볼 수 있다.
 
 ## 알려진 함정
 

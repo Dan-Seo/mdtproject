@@ -45,7 +45,7 @@ import {
   buildingLayout,
   groupInstancesByLayerAndRadius,
   type BuildingLayout,
-} from './building'
+} from '@/lib/viewer/building'
 import {
   CAMERA_FOV_DEGREES,
   clipPlaneForMm,
@@ -61,7 +61,7 @@ import {
   type CameraFit,
   type ClipAxis,
   type Point3,
-} from './geometry'
+} from '@/lib/viewer/geometry'
 import { legendEntries } from './legend'
 import { REBAR_ZONE_COLORS } from './palette'
 import { ViewerLayerControls } from './ViewerTabs'

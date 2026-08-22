@@ -1,0 +1,56 @@
+.projectActions {
+  display: flex;
+  gap: var(--space-xxs);
+  align-items: center;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.actionButton:active {
+  background: var(--color-canvas-soft);
+}
+
+/*
+ * `~` は後ろの兄弟しか選べないが、DOM は label → input の順だった —
+ * 古い選択子は一度も当たっていなかった。鍵盤で「案件を読み込み」に到っても
+ * 何も出ない。label は input の直前なので :has() で逆に見る。
+ */
+.actionButton:focus-visible,
+.actionButton:has(+ .fileInput:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/*
+ * ファイル選択はネイティブの入力を label で包む。視覚的に隠すだけで、
+ * フォーカスと支援技術には残す — display: none にすると键盘だけで到達できない。
+ */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.failure {
+  color: var(--color-error);
+  font-size: var(--type-caption-size);
+}

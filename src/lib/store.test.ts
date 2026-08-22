@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { createStressProject } from '@/domain/model/stress-project'
 
 import { useAppStore } from './store'
 
@@ -101,5 +102,41 @@ describe('useAppStore', () => {
 
     expect(state).not.toHaveProperty('rebars')
     expect(state).not.toHaveProperty('quantityLines')
+  })
+})
+
+describe('loadProject', () => {
+  it('re-points the selection at the loaded 案件', () => {
+    // 取り込んだ案件に、前の案件で選ばれていた部材 id は無い。選択を
+    // そのままにすると3ペインが存在しない部材を指したままになる。
+    useAppStore.setState({
+      project: createSampleProject(),
+      sel: { group: 'stale-group', memberId: 'stale-member' },
+      activeStoryId: 'stale-story',
+    })
+    const loaded = createStressProject({
+      xSpanCount: 1,
+      ySpanCount: 1,
+      storyCount: 1,
+    })
+
+    useAppStore.getState().loadProject(loaded)
+
+    const { project, sel, activeStoryId } = useAppStore.getState()
+    expect(project).toBe(loaded)
+
+    const member = project.members.find(({ id }) => id === sel.memberId)
+    expect(member).toBeDefined()
+    expect(member?.kind).toBe('柱')
+    expect(sel.group).not.toBe('stale-group')
+    expect(activeStoryId).toBe(member?.storyId)
+  })
+
+  it('clears the hovered row, which belonged to the previous 案件', () => {
+    useAppStore.setState({ hoverRowId: '1階|C|C1|主筋' })
+
+    useAppStore.getState().loadProject(createSampleProject())
+
+    expect(useAppStore.getState().hoverRowId).toBeNull()
   })
 })

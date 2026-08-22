@@ -1,4 +1,4 @@
-import type { MemberKind } from '@/domain/model/member'
+import type { BarSize, MemberKind } from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
@@ -7,13 +7,15 @@ import {
   storyNotFound,
   type Project,
 } from '@/domain/model/project'
-import type { Rebar } from '@/domain/model/rebar'
+import type { Rebar, RebarRole } from '@/domain/model/rebar'
 
 import {
+  rebarRadius,
   rebarSegments,
   roleToLayer,
   type Bounds,
   type Point3,
+  type RadiusOf,
   type RebarLayer,
 } from './geometry'
 
@@ -30,7 +32,15 @@ export interface RebarInstance {
   memberId: string
   from: Point3
   to: Point3
+  /** buildingLayout に渡した radiusOf が出した半径 (mm)。既定は表示値だ。 */
   radius: number
+  /** 呼び名。書き出す模型は表示半径ではなく此処から実寸を出す。 */
+  size: BarSize
+  /**
+   * 役割そのまま (あばら筋・腹筋…)。layer は主筋/帯筋の2値に畳んだ表示区分で、
+   * 書き出す模型でそれを名前に使うと あばら筋 が「帯筋」として相手に渡る。
+   */
+  role: RebarRole
   layer: RebarLayer
 }
 
@@ -68,6 +78,7 @@ export function buildingLayout(
   project: Project,
   rebars: Rebar[],
   unsupportedMemberIds: ReadonlySet<string>,
+  radiusOf: RadiusOf = rebarRadius,
 ): BuildingLayout {
   const boxes: ConcreteBox[] = []
   const instances: RebarInstance[] = []
@@ -202,7 +213,7 @@ export function buildingLayout(
 
     const layer = roleToLayer(rebar.role)
 
-    for (const segment of rebarSegments(rebar, section)) {
+    for (const segment of rebarSegments(rebar, section, radiusOf)) {
       const from = worldPoint(segment.from)
       const to = worldPoint(segment.to)
       instances.push({
@@ -210,6 +221,8 @@ export function buildingLayout(
         from,
         to,
         radius: segment.radius,
+        size: rebar.size,
+        role: rebar.role,
         layer,
       })
       expandBounds(bounds, from, segment.radius)

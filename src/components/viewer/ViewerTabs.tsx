@@ -8,6 +8,7 @@ import {
 } from '@/lib/store'
 import { capture } from '@/lib/telemetry'
 
+import bar from './viewerBar.module.css'
 import styles from './ViewerTabs.module.css'
 
 const MODES: ViewerMode[] = ['member', 'building']
@@ -20,7 +21,7 @@ export function ViewerTabs() {
 
   return (
     <div
-      className={styles.viewerTabs}
+      className={bar.bar}
       role="tablist"
       aria-label={t(locale, 'viewer.tabs')}
     >
@@ -31,7 +32,7 @@ export function ViewerTabs() {
             key={mode}
             type="button"
             role="tab"
-            className={`${styles.viewerTab} ${
+            className={`${bar.button} ${
               selected ? styles.viewerTabActive : ''
             }`}
             aria-selected={selected}
@@ -58,14 +59,14 @@ export function ViewerLayerControls() {
   )
 
   return (
-    <div className={styles.viewerTabs} role="group">
+    <div className={bar.bar} role="group">
       {LAYERS.map((layer) => {
         const visible = viewerLayers[layer]
         return (
           <button
             key={layer}
             type="button"
-            className={`${styles.viewerTab} ${
+            className={`${bar.button} ${
               visible ? styles.viewerTabActive : ''
             }`}
             aria-pressed={visible}

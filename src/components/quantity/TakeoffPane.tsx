@@ -27,10 +27,11 @@ import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
-import { capture, captureException } from '@/lib/telemetry'
+import { capture, captureException, sizeBucket } from '@/lib/telemetry'
 import { jpMlitRulePack } from '@/rulepack'
 
 import styles from './TakeoffPane.module.css'
+import { TakeoffPrint } from './TakeoffPrint'
 
 export interface TakeoffTableProps {
   lines: QuantityLine[]
@@ -57,13 +58,6 @@ function formatMass(massKg: number | null): string {
 // 継手箇所数には （３）梁2) の 0.5か所がある — 整数に丸めると条文と違う数になる。
 function formatCount(count: number): string {
   return Number.isInteger(count) ? String(count) : count.toFixed(1)
-}
-
-/** 텔레메트리용 규모 버킷. 원값은 부재 수·철근 종류에서 파생된 도면 데이터다. */
-function sizeBucket(lineCount: number): 'small' | 'medium' | 'large' {
-  if (lineCount < 50) return 'small'
-  if (lineCount < 500) return 'medium'
-  return 'large'
 }
 
 /** 単位が違って値を持たないセル。空欄だと入力漏れに見える。 */
@@ -797,6 +791,7 @@ export function TakeoffActions() {
       >
         {t(locale, 'takeoff.export')}
       </button>
+      <TakeoffPrint />
     </div>
   )
 }

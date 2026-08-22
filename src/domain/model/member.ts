@@ -1,4 +1,7 @@
-export type MemberKind = '柱' | '大梁'
+/** BAR_SIZES と同じく、実行時に検められるよう配列から型を起こす。 */
+export const MEMBER_KINDS = ['柱', '大梁'] as const
+
+export type MemberKind = (typeof MEMBER_KINDS)[number]
 
 export type MemberClass = '躯体'
 

@@ -453,6 +453,206 @@ describe('project serialization', () => {
     expect(() => deserializeProject(incompatible)).toThrow()
   })
 
+  // 取り込む案件は他人が作った文字列だ。schemaVersion だけを見て通すと、
+  // 形の違う JSON が Project として奥まで入り、数量が NaN になるか画面が落ちる。
+  it.each([
+    ['stories が空', { stories: [] }],
+    ['stories が配列でない', { stories: null }],
+    ['階高が数でない', { stories: [{ id: '1F', name: '1階', height: '4200' }] }],
+    ['案件名が数', { name: 42 }],
+    ['スパンに数でないものが混ざる', { grid: { xSpans: [6000, '6000'], ySpans: [6000] } }],
+    ['grid が無い', { grid: undefined }],
+    ['断面の符号が数', { sections: [{ id: 'x', kind: '柱', mark: 1, b: 800 }] }],
+    // 判別子が union の外なら、形は通っても断面の枝分かれを選べない。
+    ['断面の kind が実在しない', { sections: [{ id: 'x', kind: '壁', mark: 'W1', b: 200 }] }],
+    // せい は種別で鍵が違う。共通の場所だけ見て通すと、帯筋の加工寸法が
+    // NaN になり、内訳書の行・階小計・径別集計・合計がそのまま NaN kg で出る。
+    ['柱断面にせい (d) が無い', { sections: [{ id: 'x', kind: '柱', mark: 'C1', b: 800 }] }],
+    [
+      '大梁断面のせい (depth) が文字列',
+      { sections: [{ id: 'x', kind: '大梁', mark: 'G1', b: 400, depth: '800' }] },
+    ],
+    // 鍵を取り違えた断面も通してはいけない — 柱 に depth だけあっても d は無い。
+    [
+      '柱断面が depth を持つ',
+      { sections: [{ id: 'x', kind: '柱', mark: 'C1', b: 800, depth: 800 }] },
+    ],
+    // 配筋の入力が欠ければ generateColumnRebar の中で TypeError になる —
+    // 何が足りないか言えないままペインが落ちる。
+    [
+      '柱断面に主筋が無い',
+      { sections: [{ id: 'x', kind: '柱', mark: 'C1', b: 800, d: 800 }] },
+    ],
+    [
+      '帯筋のピッチが文字列',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '柱',
+            mark: 'C1',
+            b: 800,
+            d: 800,
+            main: { size: 'D25', count: 12 },
+            hoop: { size: 'D13', pitch: '100', startOffsetMm: 50 },
+          },
+        ],
+      },
+    ],
+    [
+      '大梁断面にあばら筋が無い',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '大梁',
+            mark: 'G1',
+            b: 400,
+            depth: 800,
+            main: {
+              size: 'D25',
+              top: { endCount: 4, centerCount: 2 },
+              bottom: { endCount: 2, centerCount: 4 },
+              cutoffFromSupportFaceMm: 1000,
+            },
+          },
+        ],
+      },
+    ],
+    [
+      '大梁主筋の上端行が無い',
+      {
+        sections: [
+          {
+            id: 'x',
+            kind: '大梁',
+            mark: 'G1',
+            b: 400,
+            depth: 800,
+            main: { size: 'D25', cutoffFromSupportFaceMm: 1000 },
+            stirrup: { size: 'D13', pitch: 200, startOffsetMm: 50 },
+          },
+        ],
+      },
+    ],
+    // position が無ければ buildingLayout の `'axis' in member.position` が落ちる。
+    [
+      '部材に位置が無い',
+      { members: [{ id: 'm', kind: '柱', sectionId: 's', storyId: '1F' }] },
+    ],
+    // 軸を緩く取ると三項演算子で Y に落ち、図面に無い向きの大梁ができる。
+    [
+      '大梁の軸が X・Y でない',
+      {
+        members: [
+          {
+            id: 'm',
+            kind: '大梁',
+            sectionId: 's',
+            storyId: '1F',
+            position: { axis: 'Z', ix: 0, iy: 0 },
+          },
+        ],
+      },
+    ],
+    ['部材の kind が無い', { members: [{ id: 'm', sectionId: 's', storyId: '1F' }] }],
+    ['部材の階 id が無い', { members: [{ id: 'm', kind: '柱', sectionId: 's' }] }],
+    ['備考の値が文字列でない', { notes: { row: 3 } }],
+    ['単位質量が数でない', { unitMass: { D13: '0.995' } }],
+  ])('rejects a project whose shape is broken: %s', (_label, broken) => {
+    const project = createProject()
+
+    expect(() =>
+      deserializeProject(JSON.stringify({ ...project, ...broken })),
+    ).toThrow()
+  })
+
+  // 形だけ通って参照が切れている記録は、描画の途中で初めて落ちる —
+  // その頃にはもう store に入っているので、「サンプルに戻る」が効かない。
+  it.each([
+    ['部材が実在しない断面を指す', 'sectionId'],
+    ['部材が実在しない階を指す', 'storyId'],
+  ])('rejects a project whose references are broken: %s', (_label, field) => {
+    const project = createProject()
+    const broken = {
+      ...project,
+      members: project.members.map((member, index) =>
+        index === project.members.length - 1
+          ? { ...member, [field]: 'nowhere' }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
+  it.each([
+    ['柱がグリッドの外を指す', { ix: 99, iy: 0 }],
+    ['グリッド添字が整数でない', { ix: 0.5, iy: 0 }],
+    ['グリッド添字が負', { ix: -1, iy: 0 }],
+  ])('rejects a project whose grid index is out of range: %s', (_l, position) => {
+    // gridPoint は RangeError を投げ、全ペインが落ちる。しかもその案件を
+    // 自動保存が書くので、次の訪問でも同じ所で落ちる。
+    const project = createProject()
+    const broken = {
+      ...project,
+      members: project.members.map((member, index) =>
+        index === 0 ? { ...member, position } : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
+  it('rejects a 大梁 that starts on the last グリッド line of its axis', () => {
+    // 大梁は隣の交点まで伸びるので、その軸だけ一つ手前までだ。
+    const project = createSampleProject()
+    const girder = project.members.find(
+      (member) => member.kind === '大梁' && 'axis' in member.position,
+    )
+    expect(girder).toBeDefined()
+    const { nx } = gridPointCount(project.grid)
+
+    const broken = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === girder!.id
+          ? { ...member, position: { axis: 'X', ix: nx - 1, iy: 0 } }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
+  it('rejects a 大梁 that points at a 柱 断面', () => {
+    // 種別違いは buildingLayout が投げる — 形の検査で止める方が早い。
+    const project = createSampleProject()
+    const column = project.sections.find(({ kind }) => kind === '柱')
+    const girder = project.members.find(({ kind }) => kind === '大梁')
+    expect(column).toBeDefined()
+    expect(girder).toBeDefined()
+
+    const crossed = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === girder!.id
+          ? { ...member, sectionId: column!.id }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(crossed))).toThrow()
+  })
+
+  it('accepts a project without the optional 備考・単位質量', () => {
+    const project = createProject()
+
+    expect(() =>
+      deserializeProject(JSON.stringify(project)),
+    ).not.toThrow()
+  })
+
   it('round-trips 備考 notes', () => {
     const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
 

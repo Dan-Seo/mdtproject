@@ -43,6 +43,8 @@ PostHog 계측이다 (ADR-020) — `capture()`·`captureException()`은 룰팩 k
 
 **도메인은 UI를 모른다.** `src/domain/`은 React·DOM·three.js·Next.js를 import하지 않는다. Node에서 그대로 실행되고, 그래서 골든테스트가 브라우저 없이 돈다. 이 경계가 이 프로젝트에서 가장 중요한 규칙이다.
 
+**`src/lib/`는 `src/components/`를 import하지 않는다.** 화면 배치 계산(`buildingLayout`·`rebarSegments`)은 순수 TS인데 처음엔 소비자가 뷰어 하나뿐이라 `src/components/viewer/`에 있었다. M4에서 glTF 書き出し라는 두 번째 소비자가 생기면서 그 위치가 「배포물 생성기가 UI 계층을 끌어온다」는 역참조를 만들었으므로 `src/lib/viewer/`로 내렸다. 판정 기준은 폴더가 아니라 **의존 방향**이다 — 그 모듈이 React·DOM을 쓰지 않는다면 컴포넌트 폴더에 둘 이유는 「지금 소비자가 UI뿐」이라는 사정뿐이고, 그 사정은 바뀐다.
+
 **룰 로직은 코드, 룰 수치는 데이터.** 어느 표를 볼지 결정하고 길이를 조합하는 것은 평범한 TS 함수로 쓴다. 그 함수가 읽는 **수치**는 `.ts` 파일에 리터럴로 나타나면 안 되고 전부 `rulepack/`의 YAML에서 조회한다.
 
 이 분리는 취향이 아니다. 수치가 코드에 박히면 **항목 단위로 `confidence`를 붙일 수 없고** `inferred` 경고와 워터마크가 성립하지 않는다. 반대로 룰 DSL이나 평가기를 만들지도 않는다 — 로직은 함수로 충분하다.

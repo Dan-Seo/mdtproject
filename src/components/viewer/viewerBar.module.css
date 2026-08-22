@@ -1,0 +1,22 @@
+/*
+ * ビューアの見出しに並ぶ帯。タブも書き出し釦も同じ帯に立つので、
+ * 見た目の出所を一つにする — 写して持つと二つの定義がいずれ食い違うし、
+ * 隣の module.css を直に引くと向こうで改名したとき className が黙って undefined になる。
+ */
+.bar {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.button {
+  height: 100%;
+  padding: 0 var(--space-xs);
+  border: 0;
+  border-left: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
