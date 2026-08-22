@@ -23,6 +23,7 @@ export const CANDIDATE_ISSUES = [
   '主筋解釈不能',
   '主筋位置欠落',
   '主筋位置相違',
+  '主筋端部左右相違',
   '主筋上下径相違',
   '主筋折返し',
   '主筋ラベル行外',
@@ -48,8 +49,15 @@ export interface SectionCandidate {
   depth?: number
   girderMain?: {
     size: BarSize
+    /** 中央欄の本数。位置で分かれていない表では全断面の本数 */
     topCount: number
     bottomCount: number
+    /**
+     * 端部欄の本数。位置で本数を分けている表だけが持ち、両端が同値のときしか
+     * 埋めない — 左右で違う表はどちらが始端かを決められない (主筋端部左右相違)。
+     */
+    endTopCount?: number
+    endBottomCount?: number
   }
   stirrup?: { size: BarSize; pitchMm: number }
   /** 解釈できず空欄にした項目の原文。 */

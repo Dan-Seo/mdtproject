@@ -148,15 +148,20 @@ function applyParsedFields(
             main: {
               ...section.main,
               size: candidate.girderMain.size,
-              // girderMain が立つのは位置別行が同値だったときだけである
-              // (parse.ts) — 端部・中央に同じ本数を入れる。位置別の相異値の
-              // 取り込みはまだない (ADR-018)。
+              // 端部欄を持つ表だけが端部の本数を別に寄こす。持たない表は全長で
+              // 同じ本数なので中央の値をそのまま端部にも入れる。左右で端部が
+              // 違う表は取り込まない — parse.ts が 主筋端部左右相違 で空欄に
+              // 残す (ADR-021)。
               top: {
-                endCount: candidate.girderMain.topCount,
+                endCount:
+                  candidate.girderMain.endTopCount ??
+                  candidate.girderMain.topCount,
                 centerCount: candidate.girderMain.topCount,
               },
               bottom: {
-                endCount: candidate.girderMain.bottomCount,
+                endCount:
+                  candidate.girderMain.endBottomCount ??
+                  candidate.girderMain.bottomCount,
                 centerCount: candidate.girderMain.bottomCount,
               },
             },
@@ -251,9 +256,14 @@ function candidateFields(candidate: SectionCandidate): string[] {
     fields.push(`帯筋 ${candidate.hoop.size}@${candidate.hoop.pitchMm}`)
   }
   if (candidate.girderMain) {
-    fields.push(
-      `主筋 上${candidate.girderMain.topCount}・下${candidate.girderMain.bottomCount}-${candidate.girderMain.size}`,
-    )
+    const { topCount, bottomCount, size, endTopCount, endBottomCount } =
+      candidate.girderMain
+    fields.push(`主筋 上${topCount}・下${bottomCount}-${size}`)
+    if (endTopCount !== undefined || endBottomCount !== undefined) {
+      fields.push(
+        `端部 上${endTopCount ?? topCount}・下${endBottomCount ?? bottomCount}`,
+      )
+    }
   }
   if (candidate.stirrup) {
     fields.push(
