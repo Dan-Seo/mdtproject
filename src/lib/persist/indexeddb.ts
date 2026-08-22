@@ -116,9 +116,29 @@ export function createAutosave(
   let timer: ReturnType<typeof setTimeout> | null = null
   let pending: Project | null = null
   // 書き込みは呼び出しごとに接続を開き直すので、重なると commit の順が
-  // 入れ替わりうる — 遅れた古い案件が最後に残る。直前の書き込みに繋いで
-  // 順を保つ。失敗しても鎖は切らない (次の一打は書けるべきだ)。
-  let inFlight: Promise<void> = Promise.resolve()
+  // 入れ替わりうる — 遅れた古い案件が最後に残る。順に一つずつ出す。
+  //
+  // 待ち行列は一つきりだ。鎖に積むと、頁を離れる時の flush が積まれた分の
+  // 後ろに回り、open すら発行できないまま文書が壊される — flushOnLeave が
+  // 居るのはまさにその場合だ。案件は毎回まるごと書き直すので、待つ間に
+  // 追い越された古い版は落としてよい。
+  let inFlight: Promise<void> | null = null
+  let queued: Project | null = null
+
+  const drain = () => {
+    if (inFlight !== null || queued === null) return
+
+    const target = queued
+    queued = null
+    // 保存できないこと自体は作業を止める理由にならない — 計算はブラウザ内で
+    // 完結している。タイマーの中なので、投げても誰も捕まえられない。
+    inFlight = write(target)
+      .catch(() => {})
+      .then(() => {
+        inFlight = null
+        drain()
+      })
+  }
 
   const flush = () => {
     if (timer !== null) {
@@ -130,9 +150,8 @@ export function createAutosave(
     pending = null
     if (target === null) return
 
-    // 保存できないこと自体は作業を止める理由にならない — 計算はブラウザ内で
-    // 完結している。タイマーの中なので、投げても誰も捕まえられない。
-    inFlight = inFlight.then(() => write(target)).catch(() => {})
+    queued = target
+    drain()
   }
 
   const autosave = (project: Project) => {

@@ -185,13 +185,24 @@ describe('印刷経路の目印', () => {
     ...new Set([...source.matchAll(pattern)].map(([, name]) => name)),
   ]
 
+  const word = '[A-Za-z0-9_-]+'
+  // 走査は定数から組む。`kijun-` を直に書くと、その外へ正しく改名した時に
+  // 何も拾えず空になって、直っているのに落ちる。
+  const prefix = PRINT_ROOT_ID.split('-')[0]
+  // e2e は引用符の種類まで見る。一種類だけ数えると、書き方の違う出現が
+  // 数から漏れて改名の直し漏れをまた通してしまう。
+  const quotes = ['"', "'", '`'].join('')
+
   it('keeps globals.css and the e2e script on the exported names', () => {
     const css = readFileSync('src/app/globals.css', 'utf8')
-    expect(namesIn(css, /#(kijun-[\w-]+)/g)).toEqual([PRINT_ROOT_ID])
-    expect(namesIn(css, /body\.([\w-]+)/g)).toEqual([PRINTING_BODY_CLASS])
+    expect(namesIn(css, new RegExp(`#(${word})`, 'g'))).toEqual([PRINT_ROOT_ID])
+    expect(namesIn(css, new RegExp(`body[.](${word})`, 'g'))).toEqual([
+      PRINTING_BODY_CLASS,
+    ])
 
     const e2e = readFileSync('tests/e2e/uc16-model-and-print.js', 'utf8')
-    expect(namesIn(e2e, /"(kijun-[\w-]+)"/g).sort()).toEqual(
+    const quoted = new RegExp(`[${quotes}](${prefix}-${word})[${quotes}]`, 'g')
+    expect(namesIn(e2e, quoted).sort()).toEqual(
       [PRINTING_BODY_CLASS, PRINT_ROOT_ID].sort(),
     )
   })
