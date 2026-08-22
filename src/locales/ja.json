@@ -97,6 +97,8 @@
   "viewer.legend.title": "定着・継手凡例",
   "viewer.legend.terminal": "末端",
   "viewer.tooltip.role": "役割",
+  "viewer.export": "3D 書き出し",
+  "viewer.exportFailed": "書き出せませんでした。",
   "viewer.tooltip.diameter": "径",
   "viewer.tooltip.count": "設計本数",
   "viewer.tooltip.length": "設計長さ",

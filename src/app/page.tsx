@@ -10,6 +10,7 @@ import {
 } from '@/components/quantity/TakeoffPane'
 import { SectionTable } from '@/components/section/SectionTable'
 import { SectionImport } from '@/components/section/SectionImport'
+import { ViewerExportButton } from '@/components/viewer/ViewerExportButton'
 import { ViewerTabs } from '@/components/viewer/ViewerTabs'
 import { useProjectPersistence } from '@/lib/hooks/useProjectPersistence'
 
@@ -32,7 +33,12 @@ export default function Home() {
       section={<SectionTable />}
       sectionActions={<SectionImport />}
       viewer={<Viewer3D />}
-      viewerActions={<ViewerTabs />}
+      viewerActions={
+        <>
+          <ViewerTabs />
+          <ViewerExportButton />
+        </>
+      }
       takeoff={<TakeoffPane />}
       takeoffActions={<TakeoffActions />}
     />

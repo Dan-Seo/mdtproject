@@ -233,6 +233,7 @@ describe('buildingLayout', () => {
       from: expectedFrom,
       to: expectedTo,
       radius: local.radius,
+      size: 'D25',
       layer: 'main',
     })
   })
@@ -285,6 +286,7 @@ describe('buildingLayout', () => {
       from: expectedFrom,
       to: expectedTo,
       radius: local.radius,
+      size: 'D25',
       layer: 'main',
     })
   })
@@ -446,6 +448,7 @@ describe('groupInstancesByLayerAndRadius', () => {
         from: [0, 0, 0],
         to: [0, 1, 0],
         radius,
+        size: 'D25',
         layer: 'main',
       },
       {
@@ -453,6 +456,7 @@ describe('groupInstancesByLayerAndRadius', () => {
         from: [0, 0, 0],
         to: [1, 0, 0],
         radius,
+        size: 'D25',
         layer: 'hoop',
       },
     ]
@@ -463,5 +467,19 @@ describe('groupInstancesByLayerAndRadius', () => {
       `${radius}|main`,
       `${radius}|hoop`,
     ])
+  })
+})
+
+describe('RebarInstance.size', () => {
+  it('carries the 呼び名 so the exporter can use the real diameter', () => {
+    // 画面の radius は読みやすさのために太らせた表示値だ (rebarRadius)。
+    // 書き出す模型でそれを使うと D10 が ⌀22.4 の棒として渡ることになる。
+    const layout = buildingLayout(project, [main, hoop], noUnsupportedMembers)
+    const sizes = new Set(layout.rebar.map(({ size }) => size))
+
+    expect(sizes).toEqual(new Set(['D25', 'D13']))
+    expect(
+      layout.rebar.every(({ size, radius }) => radius === rebarRadius(size)),
+    ).toBe(true)
   })
 })

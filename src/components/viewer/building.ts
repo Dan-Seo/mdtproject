@@ -1,4 +1,4 @@
-import type { MemberKind } from '@/domain/model/member'
+import type { BarSize, MemberKind } from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
@@ -30,7 +30,10 @@ export interface RebarInstance {
   memberId: string
   from: Point3
   to: Point3
+  /** 画面用に太らせた表示半径 (rebarRadius)。実寸ではない。 */
   radius: number
+  /** 呼び名。書き出す模型は表示半径ではなく此処から実寸を出す。 */
+  size: BarSize
   layer: RebarLayer
 }
 
@@ -210,6 +213,7 @@ export function buildingLayout(
         from,
         to,
         radius: segment.radius,
+        size: rebar.size,
         layer,
       })
       expandBounds(bounds, from, segment.radius)

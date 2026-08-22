@@ -97,6 +97,8 @@
   "viewer.legend.title": "定着·継手 범례",
   "viewer.legend.terminal": "말단",
   "viewer.tooltip.role": "역할",
+  "viewer.export": "3D 내보내기",
+  "viewer.exportFailed": "내보낼 수 없습니다.",
   "viewer.tooltip.diameter": "경",
   "viewer.tooltip.count": "設計本数",
   "viewer.tooltip.length": "設計長さ",

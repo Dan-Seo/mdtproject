@@ -1,0 +1,224 @@
+import * as THREE from 'three'
+
+import type { BarSize } from '@/domain/model/member'
+import type { Project } from '@/domain/model/project'
+import type { Rebar } from '@/domain/model/rebar'
+import {
+  buildingLayout,
+  type ConcreteBox,
+  type RebarInstance,
+} from '@/components/viewer/building'
+import type { RebarLayer } from '@/components/viewer/geometry'
+
+import { projectFileName } from '@/lib/persist/file'
+
+/** glTF は m で測る規約。製品の座標は mm なので、書き出す境目で一度だけ割る。 */
+const MILLIMETRES_TO_METRES = 0.001
+/** 画面より粗い。1万本規模で面数がそのままファイル容量になる。 */
+const CYLINDER_RADIAL_SEGMENTS = 8
+const Y_AXIS = new THREE.Vector3(0, 1, 0)
+
+const LAYER_LABEL: Record<RebarLayer, string> = {
+  main: '主筋',
+  hoop: '帯筋',
+}
+
+export interface RebarModelInput {
+  project: Project
+  rebars: Rebar[]
+  /** 배근을 전개하지 못한 부재. 콘크리트 외형만 남고 철근은 그리지 않는다. */
+  unsupportedMemberIds?: ReadonlySet<string>
+}
+
+/**
+ * 呼び名そのままの実半径 (m)。画面の rebarRadius は読みやすさのために
+ * 最小 ⌀14・1.6倍に太らせた**表示値**で、渡す模型でそれを使うと D25 が
+ * ⌀40 の棒として計られる。書き出しは実寸で出す。
+ */
+function trueRadiusMetres(size: BarSize): number {
+  const diameter = Number(size.replace(/^D/, ''))
+
+  if (!Number.isFinite(diameter) || diameter <= 0) {
+    throw new Error(`Invalid BarSize: ${size}`)
+  }
+
+  return (diameter / 2) * MILLIMETRES_TO_METRES
+}
+
+function metres([x, y, z]: readonly number[]): THREE.Vector3 {
+  return new THREE.Vector3(x, y, z).multiplyScalar(MILLIMETRES_TO_METRES)
+}
+
+/**
+ * 1本ずつメッシュにすると、1万本規模で読めない大きさのファイルになる。
+ * 画面の建物ビューと同じく、円柱ひとつ＋変換行列で出す
+ * (glTF の EXT_mesh_gpu_instancing)。
+ */
+function instancedRebar(
+  key: string,
+  instances: RebarInstance[],
+  material: THREE.Material,
+): THREE.InstancedMesh {
+  const { size, layer } = instances[0]
+  const radius = trueRadiusMetres(size)
+  const geometry = new THREE.CylinderGeometry(
+    radius,
+    radius,
+    1,
+    CYLINDER_RADIAL_SEGMENTS,
+  )
+  const mesh = new THREE.InstancedMesh(geometry, material, instances.length)
+  mesh.name = `${LAYER_LABEL[layer]} ${size}`
+  mesh.userData.groupKey = key
+
+  instances.forEach((instance, index) => {
+    const from = metres(instance.from)
+    const to = metres(instance.to)
+    const direction = to.clone().sub(from)
+    const length = direction.length()
+    const matrix = new THREE.Matrix4()
+
+    if (length === 0) {
+      // 長さ0の区間は向きが決まらない。潰れた円柱を1本置くより出さない方が良い。
+      matrix.makeScale(0, 0, 0).setPosition(from)
+    } else {
+      matrix
+        .makeRotationFromQuaternion(
+          new THREE.Quaternion().setFromUnitVectors(
+            Y_AXIS,
+            direction.clone().normalize(),
+          ),
+        )
+        .scale(new THREE.Vector3(1, length, 1))
+        .setPosition(from.clone().add(to).multiplyScalar(0.5))
+    }
+
+    mesh.setMatrixAt(index, matrix)
+  })
+
+  mesh.instanceMatrix.needsUpdate = true
+  return mesh
+}
+
+function concreteMesh(box: ConcreteBox, material: THREE.Material): THREE.Mesh {
+  const [width, height, depth] = box.size
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      width * MILLIMETRES_TO_METRES,
+      height * MILLIMETRES_TO_METRES,
+      depth * MILLIMETRES_TO_METRES,
+    ),
+    material,
+  )
+  mesh.name = `${box.kind} ${box.memberId}`
+  mesh.position.copy(metres(box.center))
+  return mesh
+}
+
+/**
+ * 呼び名と実半径だけで分ける。役割 (主筋/帯筋) は同じ呼び名でも別の
+ * ノードにしたい — 受け取った側が主筋だけを表示できるようにするためだ。
+ */
+function groupForExport(
+  instances: RebarInstance[],
+): Map<string, RebarInstance[]> {
+  const groups = new Map<string, RebarInstance[]>()
+
+  for (const instance of instances) {
+    const key = `${instance.layer}|${instance.size}`
+    const group = groups.get(key)
+    if (group === undefined) groups.set(key, [instance])
+    else group.push(instance)
+  }
+
+  return groups
+}
+
+/**
+ * 案件まるごとの 3D 模型 (PRD §4)。画面のグリッド・地面・影は入れない —
+ * 見せるための道具であって模型の一部ではない。
+ */
+export function buildRebarScene(input: RebarModelInput): THREE.Scene {
+  const layout = buildingLayout(
+    input.project,
+    input.rebars,
+    input.unsupportedMemberIds ?? new Set<string>(),
+  )
+  const scene = new THREE.Scene()
+  scene.name = input.project.name
+
+  const rebarGroup = new THREE.Group()
+  rebarGroup.name = '鉄筋'
+  const rebarMaterial = new THREE.MeshStandardMaterial({
+    color: 0x9aa0a6,
+    metalness: 0.6,
+    roughness: 0.45,
+  })
+  rebarMaterial.name = '鉄筋'
+  for (const [key, instances] of groupForExport(layout.rebar)) {
+    rebarGroup.add(instancedRebar(key, instances, rebarMaterial))
+  }
+
+  const concreteGroup = new THREE.Group()
+  concreteGroup.name = 'コンクリート'
+  const concreteMaterial = new THREE.MeshStandardMaterial({
+    color: 0xd6d3cb,
+    transparent: true,
+    opacity: 0.25,
+    roughness: 0.9,
+  })
+  concreteMaterial.name = 'コンクリート'
+  for (const box of layout.boxes) {
+    concreteGroup.add(concreteMesh(box, concreteMaterial))
+  }
+
+  scene.add(rebarGroup, concreteGroup)
+  return scene
+}
+
+function disposeScene(scene: THREE.Scene): void {
+  const materials = new Set<THREE.Material>()
+
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh
+    if (!mesh.isMesh) return
+
+    mesh.geometry.dispose()
+    for (const material of [mesh.material].flat()) materials.add(material)
+    if ((object as THREE.InstancedMesh).isInstancedMesh) {
+      ;(object as THREE.InstancedMesh).dispose()
+    }
+  })
+
+  for (const material of materials) material.dispose()
+}
+
+export function rebarModelFileName(projectName: string): string {
+  return projectFileName(projectName).replace(/\.json$/, '.glb')
+}
+
+export async function exportRebarGlb(input: RebarModelInput): Promise<void> {
+  const scene = buildRebarScene(input)
+  const { GLTFExporter } = await import(
+    'three/examples/jsm/exporters/GLTFExporter.js'
+  )
+
+  try {
+    const output = await new GLTFExporter().parseAsync(scene, { binary: true })
+    const blob = new Blob([output as ArrayBuffer], {
+      type: 'model/gltf-binary',
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = rebarModelFileName(input.project.name)
+    anchor.style.display = 'none'
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  } finally {
+    // 1万本規模の円柱を GPU に残したままにしない。
+    disposeScene(scene)
+  }
+}
