@@ -8,7 +8,7 @@ import {
   findSection,
 } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
-import { UNVERIFIED_WARNING } from '@/lib/export'
+import { buildingLayout } from '@/lib/viewer/building'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -64,10 +64,11 @@ describe('buildRebarScene', () => {
     )
 
     expect(drawn).toBeGreaterThan(0)
+    // 画面の建物ビューと同じ展開数 — 書き出しだけ間引くと、渡した模型と
+    // 画面が食い違う。比べる先は画面側の産出 (buildingLayout) であって、
+    // 同じ場面をもう一度数えたものではない。
     expect(drawn).toBe(
-      // 画面の建物ビューと同じ展開数 — 書き出しだけ間引くと、渡した模型と
-      // 画面が食い違う。
-      instancedMeshes(scene).reduce((sum, mesh) => sum + mesh.count, 0),
+      buildingLayout(project, rebars, new Set<string>()).rebar.length,
     )
   })
 
@@ -150,15 +151,18 @@ describe('模型に載る注記', () => {
   it('carries the ADR-015 warning while any 規準値 is not independently reviewed', () => {
     const scene = buildRebarScene(sampleInput())
 
-    expect((scene.userData as { warning?: string }).warning).toBe(
-      UNVERIFIED_WARNING,
+    expect((scene.userData as { warning?: string }).warning).toContain(
+      '検収前の参考値',
     )
   })
 
-  it('follows the locale of the 案件 view', () => {
-    const scene = buildRebarScene({ ...sampleInput(), locale: 'ko' })
+  it('follows the locale of the 案件 view — warning included', () => {
+    const notices = buildRebarScene({ ...sampleInput(), locale: 'ko' })
+      .userData as { scope: string; warning?: string }
 
-    expect((scene.userData as { scope: string }).scope).toContain('민간공사')
+    expect(notices.scope).toContain('민간공사')
+    // 一つの書き出しに二言語が混ざらない。
+    expect(notices.warning).toContain('검수 전 참고값')
   })
 })
 

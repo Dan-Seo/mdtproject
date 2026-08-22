@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ColumnSection, Member } from '../model/member'
+import type { BarSize, ColumnSection, Member } from '../model/member'
 import {
   PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
@@ -663,6 +663,9 @@ describe('単位質量は利用者入力', () => {
   })
 })
 
+/** BAR_SIZES に無い呼び名。型では起きないが、取り込んだ JSON からは入る。 */
+const OUTSIDE_BAR_SIZES = 'D51' as BarSize
+
 describe('sizeSubtotals', () => {
   const stories: Story[] = [
     { id: '1F', name: '1階', height: 4200 },
@@ -688,6 +691,27 @@ describe('sizeSubtotals', () => {
     )
     expect(sumKnown(bySize.map(({ requiredKg }) => requiredKg))).toBe(
       grandTotal(lines).requiredKg,
+    )
+  })
+
+  it('keeps a 径 outside BAR_SIZES instead of dropping it from the table', () => {
+    // 取り込んだ案件は他人が作った JSON だ — 目録に無い径が入り得る。
+    // 黙って落とすと、この表の行の和が同じシートの下に出る合計と合わなくなる。
+    const project = projectWithStories([stories[0]])
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack).map(
+      (line, index) =>
+        index === 0 ? { ...line, size: OUTSIDE_BAR_SIZES } : line,
+    )
+
+    const bySize = sizeSubtotals(lines)
+
+    expect(bySize.map(({ size }) => size)).toContain(OUTSIDE_BAR_SIZES)
+    expect(sumKnown(bySize.map(({ designKg }) => designKg))).toBe(
+      grandTotal(lines).designKg,
     )
   })
 

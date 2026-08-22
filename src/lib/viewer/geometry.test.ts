@@ -776,6 +776,24 @@ describe('M3c の日本固有詳細を 3D に展開する', () => {
   })
 })
 
+describe('rebarSegments と 長さ 0', () => {
+  /**
+   * 書き出し (lib/export/gltf.ts) はこの不変に乗っている。長さ 0 の区間が
+   * 降りてくると scale 0 の行列になり、EXT_mesh_gpu_instancing の書き出しで
+   * Matrix4.decompose が 1/0 を掛けて回転を NaN にする — 但しそれは
+   * ここで切れている。切れていないなら向こうで防ぐ必要がある。
+   */
+  it('makes no segment out of a path whose points coincide', () => {
+    const stuck: Rebar = {
+      ...main,
+      id: 'stuck',
+      points: [main.points[0], main.points[0]],
+    }
+
+    expect(rebarSegments(stuck, section)).toHaveLength(0)
+  })
+})
+
 describe('roleToLayer', () => {
   it.each([
     ['主筋', 'main'],

@@ -101,6 +101,7 @@ const exportCopy: Record<
     unavailableEdition: string
     unavailableUrl: string
     unknownSection: string
+    unverifiedWarning: string
     inferredList: string
     transcribedOnly: string
   }
@@ -116,6 +117,7 @@ const exportCopy: Record<
     unavailableEdition: '版未確認',
     unavailableUrl: '原文URL未確保',
     unknownSection: '条項未確認',
+    unverifiedWarning: '※ 独立検討が済んでいない規準値を含む — 検収前の参考値',
     inferredList: '原文に値なし（推論）',
     transcribedOnly: '全て原文明示だが独立検討待ち（R6）',
   },
@@ -130,6 +132,7 @@ const exportCopy: Record<
     unavailableEdition: '판 미확인',
     unavailableUrl: '원문 URL 미확보',
     unknownSection: '조항 미확인',
+    unverifiedWarning: '※ 독립 검토가 끝나지 않은 규준값을 포함 — 검수 전 참고값',
     inferredList: '원문에 값 없음(추론)',
     transcribedOnly: '전부 원문 명시이나 독립 검토 대기(R6)',
   },
@@ -316,10 +319,6 @@ function dataRow(
  * 「原文に値がない規準値を使った」警告と PDL1.0 の出典・改変表示。シートは
  * 単独でコピーされて発注に回るので、質量が載るシートには両方付ける。
  */
-/** ADR-015 の警告。xlsx の透かし行と模型の注記が同じ言葉で出るようにする。 */
-export const UNVERIFIED_WARNING =
-  '※ 独立検討が済んでいない規準値を含む — 検収前の参考値'
-
 function watermarkRows(
   lines: QuantityLine[],
   locale: Locale,
@@ -334,7 +333,7 @@ function watermarkRows(
   const inferred = inferredRules(lines)
 
   return [
-    row('watermark', [cell(UNVERIFIED_WARNING)]),
+    row('watermark', [cell(copy.unverifiedWarning)]),
     row('watermark', [
       cell(
         inferred.length === 0
@@ -527,7 +526,7 @@ export function modelNotices(
 
   return {
     ...(rules.some(({ confidence }) => confidence !== 'stated')
-      ? { warning: UNVERIFIED_WARNING }
+      ? { warning: copy.unverifiedWarning }
       : {}),
     sources: contributingSources(rules).map((source) =>
       sourceNotice(source, locale),

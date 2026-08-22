@@ -461,9 +461,14 @@ export function sizeSubtotals(lines: QuantityLine[]): SizeSubtotal[] {
 
   // 出現順ではなく BAR_SIZES の並び順で返す。内訳書の径列は径の小さい順に
   // 読むものだし、行の出現順は部材の並べ方というこの表と無関係な事情で変わる。
-  return BAR_SIZES.filter((size) => subtotals.has(size)).map(
-    (size) => subtotals.get(size)!,
+  const ordered = BAR_SIZES.filter((size) => subtotals.has(size))
+  // 目録に無い径は後ろに付ける。落とすと、この表の行の和が同じシートの下に
+  // 出る合計と合わなくなる — 発注表としては、並び順より先にそこが壊れる。
+  const unlisted = [...subtotals.keys()].filter(
+    (size) => !ordered.includes(size),
   )
+
+  return [...ordered, ...unlisted].map((size) => subtotals.get(size)!)
 }
 
 export function grandTotal(lines: QuantityLine[]): QuantityTotal {

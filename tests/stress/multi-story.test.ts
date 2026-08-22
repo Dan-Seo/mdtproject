@@ -22,7 +22,7 @@ import {
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
-import { buildingLayout } from '@/components/viewer/building'
+import { buildingLayout } from '@/lib/viewer/building'
 import { buildTakeoffWorkbook } from '@/lib/export'
 import { buildRebarScene } from '@/lib/export/gltf'
 import { jpMlitRulePack } from '@/rulepack'

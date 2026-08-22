@@ -31,8 +31,14 @@ export function useProjectPersistence(): ProjectPersistence {
       // 利用者から見れば入力が消える。手つかずのときだけ差し替える。
       const untouched =
         useAppStore.getState().project === useAppStore.getInitialState().project
-      if (stored !== null && untouched) {
-        useAppStore.getState().loadProject(stored)
+      try {
+        if (stored !== null && untouched) {
+          useAppStore.getState().loadProject(stored)
+        }
+      } catch {
+        // 形は通ったが中身の参照が切れている記録 (部材が指す断面が無い等) は
+        // ここで初めて分かる。捨ててサンプルのまま進む — 復元の失敗が
+        // 自動保存を道連れにすると、以後の編集が黙って保存されなくなる。
       }
 
       const autosave = createAutosave()

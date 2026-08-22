@@ -7,7 +7,7 @@ import {
   buildingLayout,
   type ConcreteBox,
   type RebarInstance,
-} from '@/components/viewer/building'
+} from '@/lib/viewer/building'
 
 import { modelNotices } from '@/lib/export'
 import { projectFileName } from '@/lib/persist/file'
@@ -69,27 +69,25 @@ function instancedRebar(
   mesh.name = `${role} ${size}`
   mesh.userData.groupKey = key
 
+  // 長さ0の区間は来ない — pathRuns が同じ点の続きを区間にしないからだ
+  // (geometry.test.ts が固定している)。来れば潰れた円柱 (scale 0) になり、
+  // EXT_mesh_gpu_instancing の書き出しで Matrix4.decompose が 1/0 を掛けて
+  // 回転が NaN のまま file に載る。ここで畳んで隠すより、上流の不変を頼る。
   instances.forEach((instance, index) => {
     const from = metres(instance.from)
     const to = metres(instance.to)
     const direction = to.clone().sub(from)
-    const length = direction.length()
     const matrix = new THREE.Matrix4()
 
-    if (length === 0) {
-      // 長さ0の区間は向きが決まらない。潰れた円柱を1本置くより出さない方が良い。
-      matrix.makeScale(0, 0, 0).setPosition(from)
-    } else {
-      matrix
-        .makeRotationFromQuaternion(
-          new THREE.Quaternion().setFromUnitVectors(
-            Y_AXIS,
-            direction.clone().normalize(),
-          ),
-        )
-        .scale(new THREE.Vector3(1, length, 1))
-        .setPosition(from.clone().add(to).multiplyScalar(0.5))
-    }
+    matrix
+      .makeRotationFromQuaternion(
+        new THREE.Quaternion().setFromUnitVectors(
+          Y_AXIS,
+          direction.clone().normalize(),
+        ),
+      )
+      .scale(new THREE.Vector3(1, direction.length(), 1))
+      .setPosition(from.clone().add(to).multiplyScalar(0.5))
 
     mesh.setMatrixAt(index, matrix)
   })
