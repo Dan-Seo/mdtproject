@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 
 import {
   buildTakeoffWorkbook,
+  type WorkbookCellSpec,
   type WorkbookRowSpec,
   type WorkbookSheetSpec,
 } from '@/lib/export'
@@ -34,10 +35,16 @@ const BANNER_KINDS: WorkbookRowSpec['kind'][] = [
   'notice',
 ]
 
-function cellText(value: string | number | null): string {
+/**
+ * 桁は列ごとに違う。質量は小数第3位まで、設計本数と継手箇所はそのままだ —
+ * 数だからと一律に丸めると、紙だけ「12.000本」「0.500か所」になって画面とも
+ * xlsx とも食い違う。書式は既に WorkbookCellSpec が持っているので、それに従う。
+ */
+function cellText({ value, numberFormat }: WorkbookCellSpec): string {
   if (value === null) return ''
-  // 画面と書き出しの桁を合わせる (docs/UX.md §3)。
-  return typeof value === 'number' ? value.toFixed(3) : value
+  if (typeof value !== 'number') return value
+
+  return numberFormat === '0.000' ? value.toFixed(3) : String(value)
 }
 
 function PrintedSheet({ sheet }: { sheet: WorkbookSheetSpec }) {
@@ -56,7 +63,7 @@ function PrintedSheet({ sheet }: { sheet: WorkbookSheetSpec }) {
         .filter(({ kind }) => kind === 'watermark')
         .map((banner, index) => (
           <p key={`watermark-${index}`} className={styles.watermark}>
-            {cellText(banner.cells[0].value)}
+            {cellText(banner.cells[0])}
           </p>
         ))}
 
@@ -71,7 +78,7 @@ function PrintedSheet({ sheet }: { sheet: WorkbookSheetSpec }) {
           <tr>
             {printedColumns.map(({ index }) => (
               <th key={index} scope="col">
-                {cellText(header?.cells[index].value ?? null)}
+                {cellText(header?.cells[index] ?? { value: null })}
               </th>
             ))}
           </tr>
@@ -93,7 +100,7 @@ function PrintedSheet({ sheet }: { sheet: WorkbookSheetSpec }) {
                       : undefined
                   }
                 >
-                  {cellText(row.cells[index].value)}
+                  {cellText(row.cells[index])}
                 </td>
               ))}
             </tr>
@@ -112,7 +119,7 @@ function PrintedSheet({ sheet }: { sheet: WorkbookSheetSpec }) {
                 : styles.note
             }
           >
-            {cellText(banner.cells[0].value)}
+            {cellText(banner.cells[0])}
           </p>
         ))}
     </section>

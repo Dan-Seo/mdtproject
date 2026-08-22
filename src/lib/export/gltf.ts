@@ -8,9 +8,10 @@ import {
   type ConcreteBox,
   type RebarInstance,
 } from '@/components/viewer/building'
-import type { RebarLayer } from '@/components/viewer/geometry'
 
+import { modelNotices } from '@/lib/export'
 import { projectFileName } from '@/lib/persist/file'
+import type { Locale } from '@/lib/store'
 
 /** glTF は m で測る規約。製品の座標は mm なので、書き出す境目で一度だけ割る。 */
 const MILLIMETRES_TO_METRES = 0.001
@@ -18,14 +19,11 @@ const MILLIMETRES_TO_METRES = 0.001
 const CYLINDER_RADIAL_SEGMENTS = 8
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
-const LAYER_LABEL: Record<RebarLayer, string> = {
-  main: '主筋',
-  hoop: '帯筋',
-}
-
 export interface RebarModelInput {
   project: Project
   rebars: Rebar[]
+  /** 注記の言語。出典・改変表示は模型にも載る (PDL1.0)。 */
+  locale: Locale
   /** 배근을 전개하지 못한 부재. 콘크리트 외형만 남고 철근은 그리지 않는다. */
   unsupportedMemberIds?: ReadonlySet<string>
 }
@@ -59,7 +57,7 @@ function instancedRebar(
   instances: RebarInstance[],
   material: THREE.Material,
 ): THREE.InstancedMesh {
-  const { size, layer } = instances[0]
+  const { size, role } = instances[0]
   const radius = trueRadiusMetres(size)
   const geometry = new THREE.CylinderGeometry(
     radius,
@@ -68,7 +66,7 @@ function instancedRebar(
     CYLINDER_RADIAL_SEGMENTS,
   )
   const mesh = new THREE.InstancedMesh(geometry, material, instances.length)
-  mesh.name = `${LAYER_LABEL[layer]} ${size}`
+  mesh.name = `${role} ${size}`
   mesh.userData.groupKey = key
 
   instances.forEach((instance, index) => {
@@ -116,8 +114,8 @@ function concreteMesh(box: ConcreteBox, material: THREE.Material): THREE.Mesh {
 }
 
 /**
- * 呼び名と実半径だけで分ける。役割 (主筋/帯筋) は同じ呼び名でも別の
- * ノードにしたい — 受け取った側が主筋だけを表示できるようにするためだ。
+ * 役割と呼び名で分ける。同じ ⌀13 でも あばら筋 と 幅止め筋 は別のノードにする —
+ * 受け取った側が図面と同じ言葉で拾えるようにするためだ (ADR-008)。
  */
 function groupForExport(
   instances: RebarInstance[],
@@ -125,7 +123,7 @@ function groupForExport(
   const groups = new Map<string, RebarInstance[]>()
 
   for (const instance of instances) {
-    const key = `${instance.layer}|${instance.size}`
+    const key = `${instance.role}|${instance.size}`
     const group = groups.get(key)
     if (group === undefined) groups.set(key, [instance])
     else group.push(instance)
@@ -146,6 +144,13 @@ export function buildRebarScene(input: RebarModelInput): THREE.Scene {
   )
   const scene = new THREE.Scene()
   scene.name = input.project.name
+  // GLTFExporter は userData を extras として書き出す。glTF に表の行は無いので、
+  // xlsx の透かし行・算出根拠ブロックと同じ内容をここに置く — 出典表示と改変
+  // 表示は配布物に付く義務であって、書き出しの経路ごとに免れるものではない。
+  scene.userData = modelNotices(
+    input.rebars.flatMap(({ ruleHits }) => ruleHits),
+    input.locale,
+  )
 
   const rebarGroup = new THREE.Group()
   rebarGroup.name = '鉄筋'
@@ -199,11 +204,14 @@ export function rebarModelFileName(projectName: string): string {
 
 export async function exportRebarGlb(input: RebarModelInput): Promise<void> {
   const scene = buildRebarScene(input)
-  const { GLTFExporter } = await import(
-    'three/examples/jsm/exporters/GLTFExporter.js'
-  )
 
   try {
+    // 動的 import も try の中に置く。この釦が想定している失敗はまさに
+    // 「three の塊が取れない」ことで、外に置くと1万本ぶんの
+    // CylinderGeometry を掴んだまま捨てることになる。
+    const { GLTFExporter } = await import(
+      'three/examples/jsm/exporters/GLTFExporter.js'
+    )
     const output = await new GLTFExporter().parseAsync(scene, { binary: true })
     const blob = new Blob([output as ArrayBuffer], {
       type: 'model/gltf-binary',

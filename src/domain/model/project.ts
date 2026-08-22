@@ -506,6 +506,74 @@ export function serializeProject(project: Project): string {
   return JSON.stringify(project)
 }
 
+const isString = (value: unknown): boolean => typeof value === 'string'
+
+const isFiniteNumber = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isFinite(value)
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function hasShape(
+  value: unknown,
+  fields: Record<string, (field: unknown) => boolean>,
+): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(fields).every(([key, check]) => check(value[key]))
+  )
+}
+
+const isNumberArray = (value: unknown): boolean =>
+  Array.isArray(value) && value.every(isFiniteNumber)
+
+/**
+ * 骨格だけを検める。取り込む案件は他人が作った文字列で、schemaVersion しか
+ * 見ずに通すと形の違う JSON が Project として奥まで入る — 数量が NaN になるか
+ * 画面が落ちるかで、どちらも「読み込めなかった」より悪い。
+ *
+ * 検めるのは製品がすぐ添字を引く場所 (stories・members・sections・grid) と、
+ * 内訳書のセルにそのまま出る文字列だけだ。値の妥当性 (径が実在するか、
+ * 本数が正か) はここでは見ない — それは断面一覧の入力検査の持ち場で、
+ * ここで二重に持つと規準が二か所に分かれる。
+ */
+function isProjectShape(value: unknown): boolean {
+  if (!isRecord(value)) return false
+
+  const { stories, sections, members, notes, unitMass } = value
+
+  return (
+    isString(value.name) &&
+    hasShape(value.grid, { xSpans: isNumberArray, ySpans: isNumberArray }) &&
+    // 空の stories は「階が無い案件」ではなく壊れた記録だ。製品は至る所で
+    // stories[0] を既定値に使う。
+    Array.isArray(stories) &&
+    stories.length > 0 &&
+    stories.every((story) =>
+      hasShape(story, { id: isString, name: isString, height: isFiniteNumber }),
+    ) &&
+    Array.isArray(sections) &&
+    sections.every((section) =>
+      // せい (柱 は d、大梁 は depth) は種別で鍵が違う。骨格の検査で union を
+      // 開くと、断面の型が増えるたびにここも直す羽目になる — 共通の場所だけ見る。
+      hasShape(section, { id: isString, mark: isString, b: isFiniteNumber }),
+    ) &&
+    Array.isArray(members) &&
+    members.every((member) =>
+      hasShape(member, {
+        id: isString,
+        sectionId: isString,
+        storyId: isString,
+      }),
+    ) &&
+    (notes === undefined ||
+      (isRecord(notes) && Object.values(notes).every(isString))) &&
+    (unitMass === undefined ||
+      (isRecord(unitMass) && Object.values(unitMass).every(isFiniteNumber)))
+  )
+}
+
 export function deserializeProject(json: string): Project {
   const parsed: unknown = JSON.parse(json)
 
@@ -518,6 +586,10 @@ export function deserializeProject(json: string): Project {
     throw new Error(
       `Unsupported Project schemaVersion; expected ${PROJECT_SCHEMA_VERSION}`,
     )
+  }
+
+  if (!isProjectShape(parsed)) {
+    throw new Error('Project shape mismatch')
   }
 
   return parsed as Project

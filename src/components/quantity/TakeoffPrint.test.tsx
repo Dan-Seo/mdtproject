@@ -108,6 +108,23 @@ describe('TakeoffPrint', () => {
     expect(printed.current!.textContent).toContain('2階　小計')
   })
 
+  // 桁は列ごとに違う。数だからと一律に丸めると、紙だけ「12.000本」
+  // 「0.500か所」になって画面とも xlsx とも食い違う。
+  it('keeps 設計本数 and 継手箇所 unrounded while 質量 stays at 3 decimals', async () => {
+    const printed = capturePrintedDocument()
+    render(<TakeoffPrint />)
+
+    await print()
+
+    const cells = [...printed.current!.querySelectorAll('td')].map(
+      ({ textContent }) => textContent ?? '',
+    )
+
+    expect(cells).toContain('12')
+    expect(cells).not.toContain('12.000')
+    expect(cells.some((text) => /^[0-9]+[.][0-9]{3}$/.test(text))).toBe(true)
+  })
+
   it('hides the rest of the page only while printing', async () => {
     const seen: boolean[] = []
     vi.spyOn(window, 'print').mockImplementation(() => {

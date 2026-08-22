@@ -6,20 +6,20 @@ import {
   beamDepthAbove,
   columnEnds,
   findSection,
-  type Project,
 } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
-import type { Rebar } from '@/domain/model/rebar'
+import { UNVERIFIED_WARNING } from '@/lib/export'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { jpMlitRulePack } from '@/rulepack'
 
 import {
+  type RebarModelInput,
   buildRebarScene,
   exportRebarGlb,
   rebarModelFileName,
 } from './gltf'
 
-function sampleInput(): { project: Project; rebars: Rebar[] } {
+function sampleInput(): RebarModelInput {
   const project = createSampleProject()
   const rebars = project.members.flatMap((member) => {
     if (member.kind !== '柱') return []
@@ -40,7 +40,7 @@ function sampleInput(): { project: Project; rebars: Rebar[] } {
     )
   })
 
-  return { project, rebars }
+  return { project, rebars, locale: 'ja' }
 }
 
 function instancedMeshes(scene: THREE.Scene): THREE.InstancedMesh[] {
@@ -57,7 +57,7 @@ describe('buildRebarScene', () => {
   it('draws every 鉄筋 segment of the 案件, not just the selected 部材', () => {
     const { project, rebars } = sampleInput()
 
-    const scene = buildRebarScene({ project, rebars })
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
     const drawn = instancedMeshes(scene).reduce(
       (sum, mesh) => sum + mesh.count,
       0,
@@ -76,7 +76,7 @@ describe('buildRebarScene', () => {
     // 渡す模型でそれを使うと D25 が ⌀40 の棒として計られる。
     const { project, rebars } = sampleInput()
 
-    const scene = buildRebarScene({ project, rebars })
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
     const d25 = instancedMeshes(scene).find(({ name }) => name.includes('D25'))
     const geometry = d25?.geometry as THREE.CylinderGeometry
 
@@ -88,7 +88,7 @@ describe('buildRebarScene', () => {
   it('names each mesh by 役割 and 呼び名 so the file reads on its own', () => {
     const { project, rebars } = sampleInput()
 
-    const names = instancedMeshes(buildRebarScene({ project, rebars })).map(
+    const names = instancedMeshes(buildRebarScene({ project, rebars, locale: 'ja' })).map(
       ({ name }) => name,
     )
 
@@ -98,7 +98,7 @@ describe('buildRebarScene', () => {
 
   it('puts the コンクリート outline on its own node so it can be hidden', () => {
     const { project, rebars } = sampleInput()
-    const scene = buildRebarScene({ project, rebars })
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
 
     const concrete = scene.getObjectByName('コンクリート')
     const rebarGroup = scene.getObjectByName('鉄筋')
@@ -110,7 +110,7 @@ describe('buildRebarScene', () => {
 
   it('measures in metres, matching the glTF convention', () => {
     const { project, rebars } = sampleInput()
-    const scene = buildRebarScene({ project, rebars })
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
     const box = new THREE.Box3().setFromObject(scene)
     const size = box.getSize(new THREE.Vector3())
 
@@ -123,10 +123,85 @@ describe('buildRebarScene', () => {
   it('survives a 案件 with no generated 鉄筋', () => {
     const project = createSampleProject()
 
-    const scene = buildRebarScene({ project, rebars: [] })
+    const scene = buildRebarScene({ project, rebars: [], locale: 'ja' })
 
     expect(instancedMeshes(scene)).toEqual([])
     expect(scene.getObjectByName('コンクリート')).toBeDefined()
+  })
+})
+
+describe('模型に載る注記', () => {
+  // 出典表示と改変表示は PDL1.0 の義務だ。xlsx と印刷が負っていて glb だけが
+  // 負わない、という抜け道を作らない。
+  it('carries the 出典・改変・適用範囲 as scene extras', () => {
+    const scene = buildRebarScene(sampleInput())
+    const notices = scene.userData as {
+      sources: string[]
+      modification: string
+      scope: string
+    }
+
+    expect(notices.sources.length).toBeGreaterThan(0)
+    expect(notices.sources.join(' ')).toContain('公共建築')
+    expect(notices.modification).toContain('改変')
+    expect(notices.scope).toContain('民間工事')
+  })
+
+  it('carries the ADR-015 warning while any 規準値 is not independently reviewed', () => {
+    const scene = buildRebarScene(sampleInput())
+
+    expect((scene.userData as { warning?: string }).warning).toBe(
+      UNVERIFIED_WARNING,
+    )
+  })
+
+  it('follows the locale of the 案件 view', () => {
+    const scene = buildRebarScene({ ...sampleInput(), locale: 'ko' })
+
+    expect((scene.userData as { scope: string }).scope).toContain('민간공사')
+  })
+})
+
+describe('模型のノード名', () => {
+  const hoopSize = 'D13'
+
+  // 受け取った側は図面の言葉で拾う (ADR-008)。あばら筋 を「帯筋」と書いて
+  // 渡すと、表示区分という製品の都合が相手の語彙に化ける。
+  /**
+   * 表示区分 (roleToLayer) は あばら筋・幅止め筋 を 帯筋 に、腹筋・カットオフ筋を
+   * 主筋に畳む。この装置では同じ 呼び名・同じ表示区分で役割だけが違う2本を
+   * 並べて、名前と束ね方が畳んだ方ではなく役割から来ることを確かめる。
+   */
+  function withStirrup(): RebarModelInput {
+    const input = sampleInput()
+    const hoop = input.rebars.find(({ role }) => role === '帯筋')
+    if (!hoop) throw new Error('Expected a 帯筋 in the fixture')
+
+    return {
+      ...input,
+      rebars: [...input.rebars, { ...hoop, id: `${hoop.id}|stirrup`, role: 'あばら筋' }],
+    }
+  }
+
+  it('names nodes by 役割, not by the display layer', () => {
+    const names = instancedMeshes(buildRebarScene(withStirrup())).map(
+      ({ name }) => name,
+    )
+
+    expect(names).toContain(`あばら筋 ${hoopSize}`)
+    expect(names).toContain(`帯筋 ${hoopSize}`)
+  })
+
+  it('splits the same 呼び名 when the 役割 differs', () => {
+    const folded = instancedMeshes(buildRebarScene(sampleInput())).filter(
+      ({ name }) => name.endsWith(hoopSize),
+    )
+    const split = instancedMeshes(buildRebarScene(withStirrup())).filter(
+      ({ name }) => name.endsWith(hoopSize),
+    )
+
+    expect(folded).toHaveLength(1)
+    expect(split).toHaveLength(2)
   })
 })
 
@@ -162,7 +237,7 @@ describe('exportRebarGlb', () => {
       })
 
     try {
-      await exportRebarGlb({ project, rebars })
+      await exportRebarGlb({ project, rebars, locale: 'ja' })
     } finally {
       click.mockRestore()
       Reflect.deleteProperty(URL, 'createObjectURL')

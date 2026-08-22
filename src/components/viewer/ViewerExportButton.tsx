@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 
-import { exportRebarGlb } from '@/lib/export/gltf'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
@@ -21,25 +20,34 @@ export function ViewerExportButton() {
   const [failed, setFailed] = useState(false)
 
   const exportModel = () => {
+    // three は画面のビューアと同じ塊だ。ヘッダに常駐するこの釦が静的に引くと、
+    // page.tsx が dynamic() でハイドレーション経路から外した意味が消える —
+    // 押した時に取る。
+    //
     // 押した時点ではなく結果に事象を立てる — three のチャンク読み込みが
     // 落ちても、押した数だけ成功が積まれてしまう (TakeoffActions と同じ基準)。
-    exportRebarGlb({
-      project,
-      rebars,
-      unsupportedMemberIds: new Set(
-        unsupportedMembers.map(({ memberId }) => memberId),
-      ),
-    }).then(
-      () => {
-        setFailed(false)
-        capture('model_exported', { locale })
-      },
-      (error: unknown) => {
-        setFailed(true)
-        captureException(error, { stage: 'model_export' })
-        capture('model_export_failed', { locale })
-      },
-    )
+    import('@/lib/export/gltf')
+      .then(({ exportRebarGlb }) =>
+        exportRebarGlb({
+          project,
+          rebars,
+          locale,
+          unsupportedMemberIds: new Set(
+            unsupportedMembers.map(({ memberId }) => memberId),
+          ),
+        }),
+      )
+      .then(
+        () => {
+          setFailed(false)
+          capture('model_exported', { locale })
+        },
+        (error: unknown) => {
+          setFailed(true)
+          captureException(error, { stage: 'model_export' })
+          capture('model_export_failed', { locale })
+        },
+      )
   }
 
   return (

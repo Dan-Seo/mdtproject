@@ -453,6 +453,35 @@ describe('project serialization', () => {
     expect(() => deserializeProject(incompatible)).toThrow()
   })
 
+  // 取り込む案件は他人が作った文字列だ。schemaVersion だけを見て通すと、
+  // 形の違う JSON が Project として奥まで入り、数量が NaN になるか画面が落ちる。
+  it.each([
+    ['stories が空', { stories: [] }],
+    ['stories が配列でない', { stories: null }],
+    ['階高が数でない', { stories: [{ id: '1F', name: '1階', height: '4200' }] }],
+    ['案件名が数', { name: 42 }],
+    ['スパンに数でないものが混ざる', { grid: { xSpans: [6000, '6000'], ySpans: [6000] } }],
+    ['grid が無い', { grid: undefined }],
+    ['断面の符号が数', { sections: [{ id: 'x', mark: 1, b: 800 }] }],
+    ['部材の階 id が無い', { members: [{ id: 'm', sectionId: 's' }] }],
+    ['備考の値が文字列でない', { notes: { row: 3 } }],
+    ['単位質量が数でない', { unitMass: { D13: '0.995' } }],
+  ])('rejects a project whose shape is broken: %s', (_label, broken) => {
+    const project = createProject()
+
+    expect(() =>
+      deserializeProject(JSON.stringify({ ...project, ...broken })),
+    ).toThrow()
+  })
+
+  it('accepts a project without the optional 備考・単位質量', () => {
+    const project = createProject()
+
+    expect(() =>
+      deserializeProject(JSON.stringify(project)),
+    ).not.toThrow()
+  })
+
   it('round-trips 備考 notes', () => {
     const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
 

@@ -69,6 +69,14 @@
 // ProjectActions)와 인쇄 경로(TakeoffPrint)다. **exceljs·GLTFExporter는 초기 로드에
 // 없다** — 둘 다 동적 import라 요청 수가 12로 불변인 것이 그 증거다. 남은 여유는
 // script 6,516 B·total 9,539 B이므로, 다음에 초기 로드로 무엇을 끌어오든 여기서 걸린다.
+//
+// **이 예산이 못 잡는 회귀가 하나 있다.** M4 최초 판은 헤더에 상주하는 3D 書き出し
+// 釦이 `@/lib/export/gltf`를 정적으로 import해 three(212 kB 청크)를 `/`의 차단
+// 경로로 되돌렸는데, 위 수치는 **전부 예산 안이었다** — 뷰어가 마운트되면 three는
+// 어차피 받으므로 총량도 요청 수도 거의 그대로이고, 바뀐 것은 그것이 동기 그래프에
+// 들어가는지뿐이었다. `/`의 First Load JS만 167 kB → 226 kB로 움직였다. 차단 경로는
+// 예산이 아니라 `.next/app-build-manifest.json`의 `pages['/page']`에 three 청크가
+// 있는지로 본다 (ADR-024).
 module.exports = {
   ci: {
     collect: {

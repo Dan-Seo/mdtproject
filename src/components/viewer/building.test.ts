@@ -234,6 +234,7 @@ describe('buildingLayout', () => {
       to: expectedTo,
       radius: local.radius,
       size: 'D25',
+      role: top.role,
       layer: 'main',
     })
   })
@@ -287,6 +288,7 @@ describe('buildingLayout', () => {
       to: expectedTo,
       radius: local.radius,
       size: 'D25',
+      role: top.role,
       layer: 'main',
     })
   })
@@ -449,6 +451,7 @@ describe('groupInstancesByLayerAndRadius', () => {
         to: [0, 1, 0],
         radius,
         size: 'D25',
+        role: '主筋',
         layer: 'main',
       },
       {
@@ -457,6 +460,7 @@ describe('groupInstancesByLayerAndRadius', () => {
         to: [1, 0, 0],
         radius,
         size: 'D25',
+        role: '帯筋',
         layer: 'hoop',
       },
     ]

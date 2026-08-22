@@ -151,7 +151,7 @@ describe('多層・多スパンのストレス (R4)', () => {
     const scene = (() => {
       let built: ReturnType<typeof buildRebarScene> | null = null
       sceneMs = elapsed(() => {
-        built = buildRebarScene({ project, rebars })
+        built = buildRebarScene({ project, rebars, locale: 'ja' })
       })
       return built!
     })()
@@ -223,7 +223,7 @@ describe('多層・多スパンのストレス (R4)', () => {
   it('exports every 階 into the 3D model', () => {
     const project = stressProject(STRESS_STORIES)
     const rebars = generateAllRebar(project)
-    const scene = buildRebarScene({ project, rebars })
+    const scene = buildRebarScene({ project, rebars, locale: 'ja' })
 
     let instanced = 0
     scene.traverse((object) => {

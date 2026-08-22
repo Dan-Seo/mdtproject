@@ -211,10 +211,10 @@ function sourceIdentity(source: ResolvedSource): string {
   return [source.doc, source.edition, source.publisher, source.url].join('\0')
 }
 
-function contributingSources(lines: QuantityLine[]): ResolvedSource[] {
+function contributingSources(rules: RuleHit[]): ResolvedSource[] {
   const sources = new Map<string, ResolvedSource>()
 
-  for (const rule of lines.flatMap(({ rules }) => rules)) {
+  for (const rule of rules) {
     const identity = sourceIdentity(rule.source)
     if (!sources.has(identity)) sources.set(identity, rule.source)
   }
@@ -316,6 +316,10 @@ function dataRow(
  * 「原文に値がない規準値を使った」警告と PDL1.0 の出典・改変表示。シートは
  * 単独でコピーされて発注に回るので、質量が載るシートには両方付ける。
  */
+/** ADR-015 の警告。xlsx の透かし行と模型の注記が同じ言葉で出るようにする。 */
+export const UNVERIFIED_WARNING =
+  '※ 独立検討が済んでいない規準値を含む — 検収前の参考値'
+
 function watermarkRows(
   lines: QuantityLine[],
   locale: Locale,
@@ -330,9 +334,7 @@ function watermarkRows(
   const inferred = inferredRules(lines)
 
   return [
-    row('watermark', [
-      cell('※ 独立検討が済んでいない規準値を含む — 検収前の参考値'),
-    ]),
+    row('watermark', [cell(UNVERIFIED_WARNING)]),
     row('watermark', [
       cell(
         inferred.length === 0
@@ -354,7 +356,7 @@ function footerRows(
   return [
     row('spacer', []),
     row('source-heading', [cell(copy.sourceHeading)]),
-    ...contributingSources(lines).map((source) =>
+    ...contributingSources(lines.flatMap(({ rules }) => rules)).map((source) =>
       row('source', [
         cell(sourceNotice(source, locale), {
           hyperlink: source.url ?? undefined,
@@ -508,6 +510,30 @@ function sizeSummarySheet(input: TakeoffWorkbookInput): WorkbookSheetSpec {
     headerRowNumber,
     requiredColumn: SIZE_SUMMARY_REQUIRED_COLUMN,
     wrapColumns: [],
+  }
+}
+
+/**
+ * 書き出す模型 (glb) に載せる注記。glTF には表の行が無いので、xlsx の
+ * 透かし行と算出根拠ブロックと同じ内容を extras の値として渡す。出典表示と
+ * 改変表示は PDL1.0 の義務で、xlsx と印刷だけが負う訳にはいかない —
+ * glb も同じ資料から派生した配布物だ。
+ */
+export function modelNotices(
+  rules: RuleHit[],
+  locale: Locale,
+): Record<string, string | string[]> {
+  const copy = exportCopy[locale]
+
+  return {
+    ...(rules.some(({ confidence }) => confidence !== 'stated')
+      ? { warning: UNVERIFIED_WARNING }
+      : {}),
+    sources: contributingSources(rules).map((source) =>
+      sourceNotice(source, locale),
+    ),
+    modification: copy.modificationNotice,
+    scope: copy.scopeNotice,
   }
 }
 
