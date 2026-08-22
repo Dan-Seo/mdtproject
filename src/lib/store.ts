@@ -36,6 +36,7 @@ export interface AppState {
   setViewerMode(mode: ViewerMode): void
   toggleViewerLayer(layer: ViewerLayer): void
   updateProject(updater: (project: Project) => Project): void
+  loadProject(project: Project): void
 }
 
 function findMember(project: Project, memberId: string) {
@@ -62,14 +63,20 @@ function initialSelection(project: Project): Selection {
 
 const initialSel = initialSelection(initialProject)
 
+/** 選択が指す部材の階。指す部材が無ければ最初の階に戻す。 */
+function storyOf(project: Project, selection: Selection): string {
+  return (
+    project.members.find(({ id }) => id === selection.memberId)?.storyId ??
+    project.stories[0].id
+  )
+}
+
 export const useAppStore = create<AppState>((set) => ({
   project: initialProject,
   sel: initialSel,
   hoverRowId: null,
   locale: 'ja',
-  activeStoryId:
-    initialProject.members.find(({ id }) => id === initialSel.memberId)
-      ?.storyId ?? initialProject.stories[0].id,
+  activeStoryId: storyOf(initialProject, initialSel),
   viewerMode: 'member',
   viewerLayers: { main: true, hoop: true, concrete: true },
   selectMember(memberId) {
@@ -115,6 +122,21 @@ export const useAppStore = create<AppState>((set) => ({
   },
   updateProject(updater) {
     set(({ project }) => ({ project: updater(project) }))
+  },
+  /**
+   * 案件まるごとの差し替え（自動保存からの復元・JSON 取り込み）。
+   * updateProject と違って選択を持ち越せない — 取り込んだ案件に前の案件の
+   * 部材 id は無く、3ペインが存在しない部材を指したままになる。
+   */
+  loadProject(project) {
+    const sel = initialSelection(project)
+
+    set({
+      project,
+      sel,
+      hoverRowId: null,
+      activeStoryId: storyOf(project, sel),
+    })
   },
 }))
 
