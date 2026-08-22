@@ -154,6 +154,39 @@ describe('createAutosave', () => {
     expect(written).toHaveLength(1)
   })
 
+  it('keeps the order when a slow write overlaps the next one', async () => {
+    // 書き込みは呼び出しごとに接続を開き直すので、重なると commit の順が
+    // 入れ替わる — 遅れた古い案件が最後に残り、直前の一打が消えて見える。
+    const written: string[] = []
+    const gate: (() => void)[] = []
+    let calls = 0
+    const autosave = createAutosave(async (project) => {
+      calls += 1
+      if (calls === 1) {
+        await new Promise<void>((resolve) => gate.push(resolve))
+      }
+      written.push(project.name)
+    })
+    const project = createSampleProject()
+    const settle = async () => {
+      for (let tick = 0; tick < 10; tick += 1) await Promise.resolve()
+    }
+
+    autosave({ ...project, name: '先' })
+    autosave.flush()
+    autosave({ ...project, name: '後' })
+    autosave.flush()
+    await settle()
+
+    // 先が詰まっている間は後も出さない。追い越せば古い方が最後に残る。
+    expect(written).toEqual([])
+
+    gate[0]()
+    await settle()
+
+    expect(written).toEqual(['先', '後'])
+  })
+
   it('does nothing when flushed with no pending edit', () => {
     const written: Project[] = []
     const autosave = createAutosave(async (project) => {

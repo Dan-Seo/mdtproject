@@ -115,6 +115,10 @@ export function createAutosave(
 ): Autosave {
   let timer: ReturnType<typeof setTimeout> | null = null
   let pending: Project | null = null
+  // 書き込みは呼び出しごとに接続を開き直すので、重なると commit の順が
+  // 入れ替わりうる — 遅れた古い案件が最後に残る。直前の書き込みに繋いで
+  // 順を保つ。失敗しても鎖は切らない (次の一打は書けるべきだ)。
+  let inFlight: Promise<void> = Promise.resolve()
 
   const flush = () => {
     if (timer !== null) {
@@ -128,7 +132,7 @@ export function createAutosave(
 
     // 保存できないこと自体は作業を止める理由にならない — 計算はブラウザ内で
     // 完結している。タイマーの中なので、投げても誰も捕まえられない。
-    void write(target).catch(() => {})
+    inFlight = inFlight.then(() => write(target)).catch(() => {})
   }
 
   const autosave = (project: Project) => {

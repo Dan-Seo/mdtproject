@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -164,5 +166,28 @@ describe('TakeoffPrint', () => {
         size_bucket: expect.any(String) as string,
       }),
     )
+  })
+})
+
+
+/**
+ * 印刷経路の id・body クラスは、この二定数と `globals.css`・e2e の生文字列に
+ * 分かれて三箇所にある。片方を改名しても型検査は通ってしまい、印刷だけが
+ * 白紙や無装飾になる — 定数を唯一の出所として、残り二箇所を突き合わせる。
+ */
+describe('印刷経路の目印', () => {
+  // 選択子の終わりまで見る。`#kijun-print-root` だけを探すと、改名後の
+  // `#kijun-print-root-x` にも当たって検査が素通りする。
+  const usesSelector = (source: string, selector: string) =>
+    [' ', '{', ',', ')'].some((next) => source.includes(`${selector}${next}`))
+
+  it('keeps globals.css and the e2e script on the exported names', () => {
+    const css = readFileSync('src/app/globals.css', 'utf8')
+    expect(usesSelector(css, `#${PRINT_ROOT_ID}`)).toBe(true)
+    expect(usesSelector(css, `body.${PRINTING_BODY_CLASS}`)).toBe(true)
+
+    const e2e = readFileSync('tests/e2e/uc16-model-and-print.js', 'utf8')
+    expect(e2e).toContain(`"${PRINT_ROOT_ID}"`)
+    expect(e2e).toContain(`"${PRINTING_BODY_CLASS}"`)
   })
 })
