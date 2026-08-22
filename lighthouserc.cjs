@@ -77,6 +77,23 @@
 // 들어가는지뿐이었다. `/`의 First Load JS만 167 kB → 226 kB로 움직였다. 차단 경로는
 // 예산이 아니라 `.next/app-build-manifest.json`의 `pages['/page']`에 three 청크가
 // 있는지로 본다 — `scripts/perf/blocking-graph.mjs`가 빌드 직후에 CI에서 그걸 한다 (ADR-024).
+//
+// ── 2026-08-22 재산정 (script 337,000 → 365,000 / count 13 → 14 / total 448,000 → 484,000)
+// f33186e(부재 확장 4건 — 耐震壁·高強度せん断補強筋·円形柱·床板·開口部 — 를 M4 위에
+// 얹은 병합)가 main CI를 script·total 두 어서션에서 깼다. 로컬 next start + lighthouse
+// CLI(desktop), 3회 동일값(`npm run lighthouse`로 재현):
+//   script 330,484 B (12 요청) → 347,161 B (13)   total 438,461 B (19) → 460,740 B (20)
+//   font 80,372 B (2) 불변
+// `blocking-graph`는 안 걸렸다 — three는 이전부터 `pages['/page']`의 동기 그래프
+// 밖에 있고 이번 병합도 그 경계를 넘지 않았다(회귀는 그 경계를 넘는지 여부이지,
+// three 인접 청크의 크기 자체가 아니다 — Viewer3D는 처음부터 즉시 마운트라 three는
+// 항상 초기 로드에 있었다). 늘어난 요청 1개·16,677 B는 새 부재 4종의 3D 형상(耐震壁·
+// 床板 렌더링, 円形柱 24각형 작도, 開口部 `clipSegments`/`carveBox`)과 断面一覧
+// 입력 폼이 전부 이 SPA의 유일한 페이지에 들어가면서 three 인접 벤더 청크와
+// `app/page` 청크 양쪽이 커진 것이다 — 지연 로드로 미룰 수 있는 헤더 버튼류(ADR-024가
+// 잡은 종류)가 아니라 초기 렌더에 항상 필요한 폼·형상 코드라 이 병합만으로는 청크를
+// 쪼갤 여지가 없다. 새 값은 같은 방식(실측 + 약 5%)으로 잡았다. count는 비율이
+// 아니라 이전처럼 +1 여유를 뒀다.
 module.exports = {
   ci: {
     collect: {
@@ -108,11 +125,11 @@ module.exports = {
         'categories:seo': ['error', { minScore: 1 }],
 
         // 번들 래칫. 실측 + 약 5% 여유 — three.js를 무심코 초기 로드에 더 끌어오면 걸린다.
-        // 값의 근거와 2026-08-20 재산정·조이기 이력은 파일 상단에 있다.
-        'resource-summary:script:size': ['error', { maxNumericValue: 337000 }],
-        'resource-summary:script:count': ['error', { maxNumericValue: 13 }],
+        // 값의 근거와 2026-08-20 재산정·조이기, 2026-08-22 재산정 이력은 파일 상단에 있다.
+        'resource-summary:script:size': ['error', { maxNumericValue: 365000 }],
+        'resource-summary:script:count': ['error', { maxNumericValue: 14 }],
         'resource-summary:font:size': ['error', { maxNumericValue: 85000 }],
-        'resource-summary:total:size': ['error', { maxNumericValue: 448000 }],
+        'resource-summary:total:size': ['error', { maxNumericValue: 484000 }],
 
         // ── 러너 노이즈에 흔들림 → warn (리포트에만 남는다) ──────────────
         // 러너 실측 중앙값(0.69 / 15,840ms)에 여유를 준 값이다. 로컬 값(0.91 / 242ms)으로
