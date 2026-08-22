@@ -451,3 +451,30 @@ describe('径別集計シート', () => {
     expect(sheet.rows.some(({ kind }) => kind === 'source')).toBe(true)
   })
 })
+
+describe('印刷に載せる列', () => {
+  it('drops the two columns that cannot be read on paper', () => {
+    // 17列を A4 横に詰めると全部が読めなくなる。出典は行ごとではなく
+    // 算出根拠ブロックが受け持つので (PDL1.0 の義務はそちらで果たす)、
+    // 紙からは出典と算出式を落とす。
+    const spec = buildTakeoffWorkbook({ ...sampleInput(), locale: 'ja' })
+    const sheet = spec.sheets[0]
+    const header = sheet.rows.find(({ kind }) => kind === 'header')
+    const printed = sheet.columns
+      .map((column, index) => ({ column, index }))
+      .filter(({ column }) => column.printed)
+      .map(({ index }) => header?.cells[index].value)
+
+    expect(printed).not.toContain('出典')
+    expect(printed).not.toContain('算出式')
+    expect(printed).toContain('備考')
+    expect(printed).toContain('所要数量')
+    expect(printed).toHaveLength(15)
+  })
+
+  it('prints every column of the 径別集計 — it is four columns wide', () => {
+    const spec = buildTakeoffWorkbook({ ...sampleInput(), locale: 'ja' })
+
+    expect(spec.sheets[1].columns.every(({ printed }) => printed)).toBe(true)
+  })
+})

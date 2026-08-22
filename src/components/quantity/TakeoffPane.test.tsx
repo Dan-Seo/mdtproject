@@ -36,7 +36,11 @@ const { capture, captureException } = vi.hoisted(() => ({
   captureException: vi.fn(),
 }))
 
-vi.mock('@/lib/telemetry', () => ({ capture, captureException }))
+vi.mock('@/lib/telemetry', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/telemetry')>()),
+  capture,
+  captureException,
+}))
 
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())

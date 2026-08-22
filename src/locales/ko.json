@@ -62,6 +62,7 @@
   "takeoff.note": "비고",
   "takeoff.total": "합계",
   "takeoff.markup": "할증",
+  "takeoff.print": "PDF 내보내기",
   "takeoff.export": "내보내기",
   "takeoff.unsupported.title": "미지원 부재",
   "takeoff.unsupported.count": "건",

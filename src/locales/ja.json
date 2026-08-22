@@ -62,6 +62,7 @@
   "takeoff.note": "備考",
   "takeoff.total": "合計",
   "takeoff.markup": "割増",
+  "takeoff.print": "PDF 書き出し",
   "takeoff.export": "書き出し",
   "takeoff.unsupported.title": "未対応部材",
   "takeoff.unsupported.count": "件",

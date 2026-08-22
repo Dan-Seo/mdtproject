@@ -41,6 +41,12 @@ export interface WorkbookRowSpec {
 
 export interface WorkbookColumnSpec {
   width: number
+  /**
+   * 紙に載せるか。17列を A4 横に詰めると全部が読めなくなるので、出典と
+   * 算出式は落とす — 出典の義務 (PDL1.0) は行ではなく算出根拠ブロックが
+   * 果たすし、算出式は画面のディスクロージャで開ける。
+   */
+  printed: boolean
 }
 
 export interface WorkbookSheetSpec {
@@ -435,7 +441,10 @@ function takeoffSheet(input: TakeoffWorkbookInput): WorkbookSheetSpec {
 
   return {
     name: copy.sheetName,
-    columns: COLUMN_WIDTHS.map((width) => ({ width })),
+    columns: COLUMN_WIDTHS.map((width, index) => ({
+      width,
+      printed: index + 1 !== SOURCE_COLUMN && index + 1 !== FORMULA_COLUMN,
+    })),
     rows,
     headerRowNumber,
     requiredColumn: REQUIRED_COLUMN,
@@ -491,7 +500,10 @@ function sizeSummarySheet(input: TakeoffWorkbookInput): WorkbookSheetSpec {
 
   return {
     name: copy.sizeSheetName,
-    columns: SIZE_SUMMARY_COLUMN_WIDTHS.map((width) => ({ width })),
+    columns: SIZE_SUMMARY_COLUMN_WIDTHS.map((width) => ({
+      width,
+      printed: true,
+    })),
     rows,
     headerRowNumber,
     requiredColumn: SIZE_SUMMARY_REQUIRED_COLUMN,
