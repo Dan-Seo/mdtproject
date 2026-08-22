@@ -225,3 +225,117 @@ describe('generateSlabRebar — 数量積算基準 2（４）床板', () => {
     expect(bottom.splice?.formula).toContain('2（４）床板2)')
   })
 })
+
+describe('generateSlabRebar — 開口部の欠除 (数量積算基準 1通則8))', () => {
+  // 内法 5600×5600、ピッチ 200 で 29本。開口 1200×1200 を (2400, 2400) に置くと、
+  // どちらの向きも直交方向の (2400, 3600) の内側 5本が 1200 を欠く。
+  const opening = {
+    id: 'S1-op1',
+    xMm: 2400,
+    yMm: 2400,
+    widthMm: 1200,
+    heightMm: 1200,
+  }
+
+  function holed(openings = [opening], ix = 0, iy = 0): Project {
+    const target = slabAt(project, ix, iy)
+    return {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === target.id ? { ...member, openings } : member,
+      ),
+    }
+  }
+
+  function rows(axis: 'X' | 'Y', from: Project = holed()): Rebar[] {
+    return generateSlabRebar(
+      { run: slabRun(from, slabAt(from, 0, 0), axis), section: slabSection },
+      jpMlitRulePack,
+    )
+  }
+
+  it('は開口を横切る本だけを欠除し、欠除量ごとに行を分ける', () => {
+    const bottom = rows('X').filter(({ role }) => role === 'X方向下端筋')
+
+    expect(bottom.map(({ count }) => count)).toEqual([24, 5])
+    expect(bottom[0].length - bottom[1].length).toBe(1200)
+  })
+
+  it('は両方向に効く — 1通則8) は部材も向きも限っていない', () => {
+    const y = rows('Y').filter(({ role }) => role === 'Y方向下端筋')
+
+    expect(y.map(({ count }) => count)).toEqual([24, 5])
+  })
+
+  it('は単独床板の継手を欠除後の長さで数える — 1通則4)', () => {
+    const top = rows('X').filter(({ role }) => role === 'X方向上端筋')
+
+    // 5600 ＋ 定着 520×2 ＝ 6640 は 6.0m を越えるが、1200 を欠くと越えない。
+    expect(top[0].splice?.countPerBar).toBe(1)
+    expect(top[1].splice?.countPerBar).toBe(0)
+  })
+
+  it('は連続床板の継手箇所数を変えない — 区分表は「床板の長さ」で引く', () => {
+    // 壁の 2（５）壁1)② と違って、床板の 2（４）床板2) には開口の但書がない。
+    const y = rows('Y').filter(({ role }) => role === 'Y方向下端筋')
+
+    for (const rebar of y) {
+      expect(rebar.splice?.countPerBar).toBe(1.5)
+    }
+  })
+
+  it('はベイの開口をラン座標に直す — 2ベイ目の開口は始端から離れる', () => {
+    // 2ベイ目 (0,1) の開口は、ラン原点から 5600＋中間大梁 400 ＝ 6000 先にある。
+    const run = slabRun(holed([opening], 0, 1), slabAt(project, 0, 0), 'Y')
+
+    expect(run.openings).toEqual([{ ...opening, yMm: 2400 + 6000 }])
+  })
+
+  it('は 2ベイ目の開口でもX方向筋の並びは動かさない — 直交方向は共通である', () => {
+    const x = rows('X', holed([opening], 0, 1)).filter(
+      ({ role }) => role === 'X方向下端筋',
+    )
+
+    // X方向のランは (0,0) の1ベイだけなので、隣のベイの開口は効かない。
+    expect(x).toHaveLength(1)
+    expect(x[0].count).toBe(29)
+  })
+
+  it('は 0.5㎡以下の開口を欠除しない', () => {
+    const small = holed([{ ...opening, widthMm: 700, heightMm: 700 }])
+    const bottom = rows('X', small).filter(
+      ({ role }) => role === 'X方向下端筋',
+    )
+
+    expect(bottom).toHaveLength(1)
+    expect(bottom[0].count).toBe(29)
+    expect(bottom[0].formula).toContain('0.5㎡以下')
+  })
+
+  it('は行ごとに 3D の並び位置を分ける', () => {
+    const bottom = rows('X').filter(({ role }) => role === 'X方向下端筋')
+
+    expect(bottom[1].placement?.positionsMm).toEqual([
+      2600, 2800, 3000, 3200, 3400,
+    ])
+    expect(bottom[0].placement?.positionsMm).toHaveLength(24)
+  })
+
+  it('は開口がなければ並べ方も行数も変えない', () => {
+    const bottom = rows('X', project).filter(
+      ({ role }) => role === 'X方向下端筋',
+    )
+
+    expect(bottom).toHaveLength(1)
+    expect(bottom[0].placement?.positionsMm).toBeUndefined()
+  })
+
+  it('は欠除を算出式に書き、出典を行の根拠に載せる', () => {
+    const bottom = rows('X').filter(({ role }) => role === 'X方向下端筋')
+
+    expect(bottom[1].formula).toContain('1通則8)')
+    expect(bottom[1].ruleHits.map(({ key }) => key)).toContain(
+      'measure.opening.deduction.minimum.area',
+    )
+  })
+})

@@ -4,6 +4,7 @@ import type {
   GirderPosition,
   GirderSection,
   Member,
+  Opening,
   Section,
   ShearBarSize,
   SlabPosition,
@@ -49,7 +50,13 @@ import { coverConditions } from '../rules/lookup'
 //   「柱、梁等に接する水平材の内法部分」に対応する (ADR-027)。SlabSection が
 //   exposure を持たないのは表5.3.6 の「スラブ、耐力壁以外の壁」行に屋内・屋外の
 //   区別がないからで、省略ではなく原文の構造である。
-export const PROJECT_SCHEMA_VERSION = 10
+// v11 (2026-08-22): Member に任意フィールド openings を追加。数量積算基準 1通則8)
+//   「窓、出入口等の開口部による鉄筋の欠除は……建具類等開口部の内法寸法による」
+//   に対応する。断面ではなく部材に付くのは、同じ符号の壁が何枚も建つのに窓は
+//   その1枚に開いているからだ。未指定は「開口なし」で、それが v10 までの JSON の
+//   意味とも一致する — それでも版を上げるのは、開口を受け取れる版とそうでない版で
+//   同じ案件の数量が変わるからである (ADR-028・R14)。
+export const PROJECT_SCHEMA_VERSION = 11
 
 export interface Grid {
   xSpans: number[]
@@ -585,6 +592,14 @@ export interface SlabRun {
   startSupport: SlabEdgeSupport
   /** 終端で定着していく大梁 */
   endSupport: SlabEdgeSupport
+  /**
+   * ランに開いている開口部 (1通則8))、**ラン原点からの座標**に直したもの。
+   *
+   * 開口はベイ（＝部材）ごとに入力されるが、床板の鉄筋はランで測るので、
+   * 欠除も3Dの切り欠きもラン座標で見る。ここで一度だけ直しておかないと、
+   * 数量と表示が別々にベイのオフセットを足し直して食い違う (ADR-028)。
+   */
+  openings: Opening[]
 }
 
 export function slabRun(
@@ -670,6 +685,16 @@ export function slabRun(
   const first = bays[0]
   const last = bays[bays.length - 1]
 
+  // ベイ局所の開口をラン座標へ移す。走る向きにだけベイのオフセットが乗る —
+  // 直交方向の内法はラン内で共通なので（上でそれを検査している）そのままだ。
+  const openings = members.flatMap((candidate, index) =>
+    (candidate.openings ?? []).map((opening) => ({
+      ...opening,
+      xMm: opening.xMm + (axis === 'X' ? memberOffsetsMm[index] : 0),
+      yMm: opening.yMm + (axis === 'Y' ? memberOffsetsMm[index] : 0),
+    })),
+  )
+
   return {
     axis,
     members,
@@ -680,6 +705,7 @@ export function slabRun(
     distributionClearMm,
     startSupport: axis === 'X' ? first.supports.minX : first.supports.minY,
     endSupport: axis === 'X' ? last.supports.maxX : last.supports.maxY,
+    openings,
   }
 }
 

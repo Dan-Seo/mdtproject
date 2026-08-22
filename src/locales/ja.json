@@ -132,6 +132,17 @@
   "takeoff.unit": "単位",
   "takeoff.splice": "継手",
   "takeoff.splicePosition": "継手位置は標準仕様書 表5.3.3 が原文で画像のため未確定です — 箇所数と設計長さのみ計上し、3D には描いていません",
-  "takeoff.wallOpening": "耐震壁と床板は開口部を扱っていません — 数量積算基準 1通則8) の欠除（内法面積0.5㎡超の開口部）を計上していないので、開口のある壁・床板は過大計上になります",
-  "takeoff.cutoffAnchorage": "カットオフ筋の定着は 3D に描いていません — 端で向きが反転するため、設計長さにのみ算入しています（切り止め位置は数量積算基準 2（３）梁1) により設計図書によります）"
+  "takeoff.wallOpening": "開口部は入力された内法寸法だけ鉄筋を欠除します（数量積算基準 1通則8)・1か所当たり内法面積0.5㎡以下は欠除なし）。開口補強筋は同項が「設計図書により計測・計算する」と定めるため計上していません — 開口のある耐震壁・床板はその分だけ過小計上になります",
+  "takeoff.cutoffAnchorage": "カットオフ筋の定着は 3D に描いていません — 端で向きが反転するため、設計長さにのみ算入しています（切り止め位置は数量積算基準 2（３）梁1) により設計図書によります）",
+  "plan.openings.title": "開口部",
+  "plan.openings.hint": "選んだ耐震壁・床板の開口部です。寸法は建具類等開口部の内法寸法（数量積算基準 1通則8)）で、位置は部材の内法域の原点から測ります",
+  "plan.openings.empty": "開口部なし",
+  "plan.openings.add": "開口部を追加",
+  "plan.openings.remove": "削除",
+  "plan.openings.x": "位置 X",
+  "plan.openings.y": "位置 Y",
+  "plan.openings.width": "内法幅",
+  "plan.openings.height": "内法高さ",
+  "plan.openings.select": "耐震壁または床板を選ぶと開口部を入力できます",
+  "plan.openings.ignored": "内法面積 0.5㎡以下 — 欠除なし"
 }

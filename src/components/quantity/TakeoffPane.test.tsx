@@ -288,14 +288,16 @@ describe('TakeoffPane', () => {
     expect(notice).not.toHaveTextContent('未計上')
   })
 
-  it('always warns that 耐震壁・床板 openings are not deducted', () => {
-    // 開口部の欠除（1通則8)）は未実装なので、開口のある壁・床板は過大計上に
-    // なる。出しておいて黙っていると「빠진 것」ではなく「틀린 채로 완성된 것」だ。
+  it('always says how 開口部 are counted and what is still missing', () => {
+    // 欠除（1通則8)）は計上するが、開口補強筋は同項が設計図書に委任するので
+    // 製品が作らない — その分は過小計上だ。出しておいて黙っていると
+    // 「빠진 것」ではなく「틀린 채로 완성된 것」になる (R14)。
     render(<TakeoffPane />)
 
     const notice = screen.getByTestId('wall-opening-notice')
-    expect(notice).toHaveTextContent('開口')
     expect(notice).toHaveTextContent('1通則8)')
+    expect(notice).toHaveTextContent('0.5㎡')
+    expect(notice).toHaveTextContent('開口補強筋')
     expect(notice).toHaveTextContent('床板')
   })
 

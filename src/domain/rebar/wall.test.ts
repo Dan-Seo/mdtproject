@@ -197,3 +197,123 @@ describe('generateWallRebar', () => {
     expect(keys).toContain('anchorage.L1')
   })
 })
+
+describe('generateWallRebar — 開口部の欠除 (数量積算基準 1通則8))', () => {
+  // 内法 5200×3450、ピッチ 200。縦筋 27本・横筋 19本 (1通則7))。
+  // 開口 1800×1200 を (2000, 900) に置くと、縦筋は x (2000,3800) の内側 8本が
+  // 高さ 1200 を、横筋は y (900,2100) の内側 6本が 幅 1800 を欠く。
+  const opening = {
+    id: 'W1-op1',
+    xMm: 2000,
+    yMm: 900,
+    widthMm: 1800,
+    heightMm: 1200,
+  }
+  const holed = { ...member, openings: [opening] }
+
+  function rows(role: '縦筋' | '横筋', member_: Member = holed) {
+    return generateWallRebar(input({ member: member_ }), jpMlitRulePack).filter(
+      (rebar) => rebar.role === role,
+    )
+  }
+
+  it('は欠除量ごとに行を分ける — 前文「規格、形状、寸法等ごとに」', () => {
+    const vertical = rows('縦筋')
+
+    expect(vertical).toHaveLength(2)
+    // 27本のうち 8本が欠け、19本がそのまま。どちらもダブル配筋で ×2。
+    expect(vertical.map(({ count }) => count)).toEqual([19 * 2, 8 * 2])
+  })
+
+  it('は開口を横切る本だけを開口の内法寸法だけ短くする', () => {
+    const [full, cut] = rows('縦筋')
+
+    expect(full.length - cut.length).toBe(
+      // 欠除 1200 と、継手が 1か所から 0か所に落ちた分。
+      1200 + lap,
+    )
+    expect(cut.length).toBe(3450 - 1200 + 2 * anchorage)
+  })
+
+  it('は走る向きで欠く寸法を変える — 横筋は開口の幅を欠く', () => {
+    const [full, cut] = rows('横筋')
+
+    expect(full.count).toBe(13 * 2)
+    expect(cut.count).toBe(6 * 2)
+    expect(cut.length).toBe(
+      5200 - 1800 + 2 * anchorage + cut.splice!.lengthMm,
+    )
+  })
+
+  it('は開口で断たれた縦筋の継手を 0か所にする — 2（５）壁1)② 但書', () => {
+    const [full, cut] = rows('縦筋')
+
+    expect(full.splice?.countPerBar).toBe(1)
+    expect(full.splice?.rules.map(({ key }) => key)).toContain(
+      'measure.splice.wall.vertical',
+    )
+    expect(cut.splice?.countPerBar).toBe(0)
+    expect(cut.splice?.rules.map(({ key }) => key)).toContain(
+      'measure.splice.wall.opening',
+    )
+    expect(cut.splice?.formula).toContain('開口部腰壁、手すり壁等')
+  })
+
+  it('は横筋の継手を欠除後の長さで数える — 1通則4)「計測・計算した鉄筋の長さ」', () => {
+    const [full, cut] = rows('横筋')
+
+    // 5200＋定着 は 6.0m を越えるが、1800 を欠くと越えない。
+    expect(full.splice?.countPerBar).toBe(1)
+    expect(cut.splice?.countPerBar).toBe(0)
+  })
+
+  it('は 0.5㎡以下の開口で行を分けず、欠除しなかったことを算出式に書く', () => {
+    const small = {
+      ...member,
+      openings: [{ ...opening, widthMm: 700, heightMm: 700 }],
+    }
+    const vertical = rows('縦筋', small)
+
+    expect(vertical).toHaveLength(1)
+    expect(vertical[0].count).toBe(27 * 2)
+    expect(vertical[0].formula).toContain('700×700')
+    expect(vertical[0].formula).toContain('0.5㎡以下')
+  })
+
+  it('は行ごとに 3D の並び位置を分ける — 同じ場所に二度描かない', () => {
+    const [full, cut] = rows('縦筋')
+    const fullAt = full.placement?.positionsMm ?? []
+    const cutAt = cut.placement?.positionsMm ?? []
+
+    expect(cutAt).toEqual([2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600])
+    expect(fullAt).toHaveLength(19)
+    expect(new Set([...fullAt, ...cutAt]).size).toBe(27)
+    // positionCount は数量の本数ではなく描く本数だ (ADR-019)。
+    expect(full.placement?.positionCount).toBe(19)
+  })
+
+  it('は開口がなければ並べ方を変えない — 初期オフセットのままである', () => {
+    const vertical = rows('縦筋', member)
+
+    expect(vertical).toHaveLength(1)
+    expect(vertical[0].placement?.positionsMm).toBeUndefined()
+    expect(vertical[0].placement?.startOffsetMm).toBe(100)
+  })
+
+  it('は欠除の出典を行の根拠に載せる', () => {
+    const [, cut] = rows('縦筋')
+
+    expect(cut.ruleHits.map(({ key }) => key)).toContain(
+      'measure.opening.deduction.minimum.area',
+    )
+    expect(cut.formula).toContain('1通則8)')
+  })
+
+  it('は 3D 経路を欠かせない — 欠ける位置は本ごとに違う', () => {
+    const [, cut] = rows('縦筋')
+
+    // points は開口を知らない全長の経路で、表示部が Member.openings で切る。
+    expect(cut.points[0]).toEqual([0, -anchorage, expect.any(Number)])
+    expect(cut.points[1]).toEqual([0, 3450 + anchorage, expect.any(Number)])
+  })
+})

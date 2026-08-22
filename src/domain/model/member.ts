@@ -356,6 +356,32 @@ export type WallPosition = GirderPosition
  */
 export type SlabPosition = ColumnPosition
 
+/**
+ * 開口部 1か所 (数量積算基準 1通則8))。
+ *
+ * 断面ではなく **部材** に付く。同じ符号の壁が何枚も建つのに、窓はその1枚に
+ * 開いているからだ — 断面に持たせると図面にない開口を製品が他の壁にも作る
+ * ことになる (ADR-004)。
+ *
+ * 座標は部材の局所系で、原点は**内法域の原点**である。耐震壁なら始端の柱の
+ * 内側面・上部大梁の下面から測った下端、床板ならランの始端の大梁内側面。
+ * 局所 x・y の向きは配筋（`Rebar.points`）と同じなので、壁では x が壁の長さ、
+ * y が壁の高さ、床板では x・y がそれぞれ X通り・Y通り方向になる。
+ *
+ * 寸法は「建具類等開口部の**内法寸法**」— 同項がそう定める。
+ */
+export interface Opening {
+  id: string
+  /** 内法域の原点から開口までの局所 x (mm) */
+  xMm: number
+  /** 同じく局所 y (mm) */
+  yMm: number
+  /** 局所 x 方向の内法寸法 (mm) */
+  widthMm: number
+  /** 局所 y 方向の内法寸法 (mm) */
+  heightMm: number
+}
+
 export interface Member {
   id: string
   kind: MemberKind
@@ -363,4 +389,11 @@ export interface Member {
   sectionId: string
   storyId: string
   position: ColumnPosition | GirderPosition | WallPosition | SlabPosition
+  /**
+   * この部材に開いている開口部 (1通則8))。未指定は「開口なし」であって
+   * 「未入力」ではない — 製品は開口の有無を推定しないので、内訳書は開口補強筋を
+   * 計上していないことを常時告知する (R14)。柱・大梁は受け取らない：同項が
+   * 挙げるのは窓・出入口等で、それが開くのは壁と床板だからである。
+   */
+  openings?: Opening[]
 }

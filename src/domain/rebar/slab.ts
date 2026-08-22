@@ -12,6 +12,7 @@ import {
   spliceLengthMm,
   type SpliceBand,
 } from './measurement'
+import { openingDeduction } from './opening'
 import { resolveSlabEnd, type SlabEndDetail } from './slab-ends'
 import { stirrupPositions } from './stirrup-layout'
 
@@ -28,9 +29,12 @@ import { stirrupPositions } from './stirrup-layout'
  * ローカル座標は x ＝ X通り方向、y ＝ Y通り方向、z ＝ 鉛直（板の下端が 0）。
  * だから X方向の鉄筋は x に伸びて y へ並び、Y方向の鉄筋は y に伸びて x へ並ぶ。
  *
- * 開口部は扱わない。1通則8)（開口部による鉄筋の欠除・開口補強筋）は壁と同じく
- * tests/golden/fixtures/quantity-r5-ch3.json で deferred のまま残しており、
- * 開口のある床板は過大計上になる — 内訳書が常時告知する (R14)。
+ * 開口部は 1通則8) で欠除する。床板の開口は階段・設備のもので、窓と同じくこの項の
+ * 対象だ — 同項は部材を限っていない。開口はベイごとに入力されるが鉄筋はランで
+ * 測るので、`SlabRun.openings` がラン座標に直したものを見る。継手は壁と違って
+ * 但書がない — 2（４）床板2) の区分は「床板の長さ」で引くので、開口があっても
+ * 連続床板の箇所数は変わらない（単独床板は 1通則4) なので欠除後の長さで数える）。
+ * 開口補強筋は「設計図書により計測・計算する」ので製品は作らない (ADR-028・R14)。
  */
 export interface SlabRebarInput {
   run: SlabRun
@@ -125,8 +129,8 @@ export function generateSlabRebar(
 
   // 下端筋を先に出す。板の下から順に積む順序がそのまま内訳の並びになる。
   return [
-    buildSlabBar({ ...shared, face: '下端' }),
-    buildSlabBar({ ...shared, face: '上端' }),
+    ...buildSlabBars({ ...shared, face: '下端' }),
+    ...buildSlabBars({ ...shared, face: '上端' }),
   ]
 }
 
@@ -146,7 +150,7 @@ function roleOf(axis: 'X' | 'Y', face: '上端' | '下端'): RebarRole {
   return face === '上端' ? 'Y方向上端筋' : 'Y方向下端筋'
 }
 
-function buildSlabBar(input: SlabBarInput): Rebar {
+function buildSlabBars(input: SlabBarInput): Rebar[] {
   const {
     run,
     section,
@@ -186,6 +190,8 @@ function buildSlabBar(input: SlabBarInput): Rebar {
   )
 
   // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
+  // 開口の欠けもここには現れない — 欠ける位置は本ごとに違うので、表示部が
+  // `SlabRun.openings` で切る (ADR-028)。
   const drawnLengthMm = run.coreLengthMm + start.lengthMm + end.lengthMm
   const lapRule = lookupRule(pack, 'lap.L1', {
     fc: section.fc,
@@ -193,16 +199,6 @@ function buildSlabBar(input: SlabBarInput): Rebar {
     hook: false,
   })
   const lapLengthMm = millimetres(lapRule, diameter)
-  const splice = resolveSplice({
-    run,
-    section,
-    size: row.size,
-    drawnLengthMm,
-    lapRule,
-    lapLengthMm,
-    pack,
-  })
-  const lengthMm = drawnLengthMm + splice.lengthMm
 
   const count = distributionCount(
     run.distributionClearMm,
@@ -214,6 +210,29 @@ function buildSlabBar(input: SlabBarInput): Rebar {
     row.pitch,
     row.startOffsetMm,
   )
+
+  // 1通則8) — 開口を横切る本だけが開口の内法寸法だけ短くなる。X方向の鉄筋は
+  // x に走るので開口の x 寸法を欠き、Y方向はその逆である。
+  const deduction = openingDeduction(
+    {
+      openings: run.openings,
+      clearXMm:
+        run.axis === 'X' ? run.coreLengthMm : run.distributionClearMm,
+      clearYMm:
+        run.axis === 'X' ? run.distributionClearMm : run.coreLengthMm,
+      barAxis: run.axis === 'X' ? 'x' : 'y',
+      pitchMm: row.pitch,
+      totalCount: count,
+    },
+    pack,
+  )
+  const openingLayout = deduction.layout
+  const ignoredTerm =
+    deduction.ignored.length === 0
+      ? ''
+      : ` ／ 欠除しない開口 ${deduction.ignored
+          .map(({ widthMm, heightMm }) => `${widthMm}×${heightMm}`)
+          .join('・')}（1通則8) 但書 — 1か所当たり内法面積0.5㎡以下）`
 
   // 板厚のどこに立つか。下端筋は板の下から、上端筋は板の上から加工用かぶり。
   const barZ =
@@ -235,59 +254,100 @@ function buildSlabBar(input: SlabBarInput): Rebar {
   ]
 
   const bent = start.kind === '折曲げ定着' || end.kind === '折曲げ定着'
+  const points = slabPoints(run.axis, run.coreLengthMm, barZ, start, end)
+  const faceKey = face === '上端' ? 'top' : 'bottom'
 
-  return {
-    id: `${run.ownerId}|slab-${run.axis}-${face === '上端' ? 'top' : 'bottom'}`,
-    memberId: run.ownerId,
-    role: roleOf(run.axis, face),
-    size: row.size,
-    shape: bent ? 'hook90' : 'straight',
-    points: slabPoints(run.axis, run.coreLengthMm, barZ, start, end),
-    closed: false,
-    length: lengthMm,
-    count,
-    // X方向の鉄筋は x に伸びるので y へ並び、Y方向はその逆である。
-    placement: {
-      axis: run.axis === 'X' ? 'y' : 'x',
-      clearMm: run.distributionClearMm,
-      pitchMm: row.pitch,
-      startOffsetMm: row.startOffsetMm,
-      lastGapMm: layout.lastGapMm,
-      positionCount: layout.positionsMm.length,
-    },
-    splice: {
-      method: section.spliceMethod,
-      countPerBar: splice.countPerBar,
-      lengthMm: splice.lengthMm,
-      rules: splice.rules,
+  return deduction.groups.map(({ deductionMm, count: groupCount }) => {
+    // 1通則4) が継手箇所数を求める「計測・計算した鉄筋の長さ」は欠除後の長さだ。
+    // 連続床板の区分表は「床板の長さ」で引くので欠除の影響を受けない。
+    const measuredLengthMm = drawnLengthMm - deductionMm
+    const splice = resolveSplice({
+      run,
+      section,
+      size: row.size,
+      measuredLengthMm,
+      lapRule,
+      lapLengthMm,
+      pack,
+    })
+    const lengthMm = measuredLengthMm + splice.lengthMm
+    const positionsMm = openingLayout
+      ? openingLayout.positionsMm.filter(
+          (_, index) => openingLayout.deductionsMm[index] === deductionMm,
+        )
+      : null
+
+    const deductionTerm =
+      deductionMm === 0
+        ? ''
+        : ` − 開口部の欠除 ${deductionMm}（数量積算基準 1通則8) — 建具類等` +
+          `開口部の内法寸法による）`
+    const splitTerm =
+      deduction.groups.length === 1
+        ? ''
+        : ` のうち${
+            deductionMm === 0 ? '開口を横切らない' : `${deductionMm}を欠く`
+          } ${groupCount}本`
+
+    return {
+      id:
+        `${run.ownerId}|slab-${run.axis}-${faceKey}` +
+        `${deductionMm === 0 ? '' : `|欠除${deductionMm}`}`,
+      memberId: run.ownerId,
+      role: roleOf(run.axis, face),
+      size: row.size,
+      shape: (bent ? 'hook90' : 'straight') as Rebar['shape'],
+      points,
+      closed: false,
+      length: lengthMm,
+      count: groupCount,
+      // X方向の鉄筋は x に伸びるので y へ並び、Y方向はその逆である。
+      placement: {
+        axis: (run.axis === 'X' ? 'y' : 'x') as 'x' | 'y',
+        clearMm: run.distributionClearMm,
+        pitchMm: row.pitch,
+        startOffsetMm: row.startOffsetMm,
+        lastGapMm: layout.lastGapMm,
+        positionCount: positionsMm
+          ? positionsMm.length
+          : layout.positionsMm.length,
+        ...(positionsMm ? { positionsMm } : {}),
+      },
+      splice: {
+        method: section.spliceMethod,
+        countPerBar: splice.countPerBar,
+        lengthMm: splice.lengthMm,
+        rules: splice.rules,
+        formula:
+          `継手箇所数 ＝ ${face}筋1本あたり ${splice.countPerBar}か所` +
+          `（${splice.basis}） ／ 方式 ＝ ${section.spliceMethod} ／ ` +
+          `設計長さへの算入 ＝ ${spliceLengthTerm(splice, section, lapRule, lapLengthMm)} ／ ` +
+          `位置 ＝ 未確定（表5.3.3 が原文で画像 — 3D には描かない）`,
+      },
+      zones,
+      ruleHits: uniqueRuleHits([
+        coverRule,
+        fabricationCoverAdditionRule,
+        distributionAdditionRule,
+        ...start.usedRules,
+        ...end.usedRules,
+        ...deduction.rules,
+        ...splice.rules,
+      ]),
       formula:
-        `継手箇所数 ＝ ${face}筋1本あたり ${splice.countPerBar}か所` +
-        `（${splice.basis}） ／ 方式 ＝ ${section.spliceMethod} ／ ` +
-        `設計長さへの算入 ＝ ${spliceLengthTerm(splice, section, lapRule, lapLengthMm)} ／ ` +
-        `位置 ＝ 未確定（表5.3.3 が原文で画像 — 3D には描かない）`,
-    },
-    zones,
-    ruleHits: uniqueRuleHits([
-      coverRule,
-      fabricationCoverAdditionRule,
-      distributionAdditionRule,
-      ...start.usedRules,
-      ...end.usedRules,
-      ...splice.rules,
-    ]),
-    formula:
-      `設計長さ ＝ ${runCoreFormula(run)} ＋ ${endFormula('始端', start)} ` +
-      `＋ ${endFormula('終端', end)} ＋ 継手 ` +
-      `${spliceLengthTerm(splice, section, lapRule, lapLengthMm)} ＝ ${lengthMm} ／ ` +
-      `本数 ＝ ⌈割付方向の内法長さ ${run.distributionClearMm} ÷ ピッチ ` +
-      `${row.pitch}⌉ ＋ ${distributionAdditionRule.value}` +
-      `（数量積算基準 1通則7)）＝ ${count} ／ ` +
-      `配置基準 ＝ 加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ 加算 ` +
-      `${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}・` +
-      `表5.3.6「スラブ、耐力壁以外の壁」） ／ ` +
-      `3D 形状 ＝ 継手位置が未確定なので継手を描かない（描かれる加工長 ` +
-      `${drawnLengthMm} は設計長さと一致しない・数量には用いない）`,
-  }
+        `設計長さ ＝ ${runCoreFormula(run)}${deductionTerm} ＋ ${endFormula('始端', start)} ` +
+        `＋ ${endFormula('終端', end)} ＋ 継手 ` +
+        `${spliceLengthTerm(splice, section, lapRule, lapLengthMm)} ＝ ${lengthMm} ／ ` +
+        `本数 ＝ ⌈割付方向の内法長さ ${run.distributionClearMm} ÷ ピッチ ` +
+        `${row.pitch}⌉ ＋ ${distributionAdditionRule.value}` +
+        `（数量積算基準 1通則7)）＝ ${count}${splitTerm} ／ ` +
+        `配置基準 ＝ 加工用かぶり厚さ（最小かぶり ${coverRule.value} ＋ 加算 ` +
+        `${fabricationCoverAdditionRule.value} ＝ ${fabricationCoverMm}・` +
+        `表5.3.6「スラブ、耐力壁以外の壁」） ／ ` +
+        `3D 形状 ＝ 継手位置が未確定なので継手を描かない（描かれる加工長 ` +
+        `${drawnLengthMm} は設計長さと一致しない・数量には用いない）${ignoredTerm}`,
+    }
+  })
 }
 
 function runCoreFormula(run: SlabRun): string {
@@ -358,7 +418,8 @@ interface SlabSpliceInput {
   run: SlabRun
   section: SlabSection
   size: BarSize
-  drawnLengthMm: number
+  /** 1通則4) が言う「計測・計算した鉄筋の長さ」— 開口部の欠除を引いた後である */
+  measuredLengthMm: number
   lapRule: RuleHit
   lapLengthMm: number
   pack: RulePack
@@ -370,7 +431,8 @@ interface SlabSpliceInput {
  * 径ごとの長さの単位で数える。大梁の resolveSplice と同じ形だ。
  */
 function resolveSplice(input: SlabSpliceInput): SlabSplice {
-  const { run, section, size, drawnLengthMm, lapRule, lapLengthMm, pack } = input
+  const { run, section, size, measuredLengthMm, lapRule, lapLengthMm, pack } =
+    input
 
   let countRule: RuleHit
   let countPerBar: number
@@ -378,9 +440,9 @@ function resolveSplice(input: SlabSpliceInput): SlabSplice {
 
   if (run.members.length === 1) {
     countRule = lookupRule(pack, 'measure.splice.interval', { size })
-    countPerBar = intervalSpliceCount(drawnLengthMm, countRule)
+    countPerBar = intervalSpliceCount(measuredLengthMm, countRule)
     basis =
-      `単独床板 鉄筋の長さ ${drawnLengthMm} ÷ ${countRule.value}mm ごと` +
+      `単独床板 鉄筋の長さ ${measuredLengthMm} ÷ ${countRule.value}mm ごと` +
       `（数量積算基準 1通則4) — 2（４）床板2) ただし書き）`
   } else {
     countRule = bandedSpliceRule(run.coreLengthMm, continuousSlabBands(pack))

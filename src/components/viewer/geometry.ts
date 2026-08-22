@@ -3,13 +3,19 @@ import {
   type ColumnSection,
   type GirderMainRow,
   type GirderSection,
+  type Opening,
   type Section,
   type ShearBarSize,
   type SlabBarRow,
   type SlabSection,
   type WallSection,
 } from '@/domain/model/member'
-import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
+import type {
+  Rebar,
+  RebarPlacement,
+  RebarRole,
+  RebarZone,
+} from '@/domain/model/rebar'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 
 export type Point3 = [number, number, number]
@@ -362,6 +368,23 @@ function wallBarDepths(
 }
 
 /**
+ * 繰り返し配置の位置 (mm)。ふだんは断面一覧の初期オフセットから `stirrupPositions`
+ * が作るが、開口部のある壁・床板ではドメインが位置そのものを渡してくる —
+ * 欠除で1つの役割が複数の内訳行に分かれるので、行ごとに「どの位置の本か」を
+ * 決めておかないと同じ場所へ二度描くことになる (ADR-028)。
+ */
+function repeatPositions(placement: RebarPlacement): number[] {
+  return (
+    placement.positionsMm ??
+    stirrupPositions(
+      placement.clearMm,
+      placement.pitchMm,
+      placement.startOffsetMm,
+    ).positionsMm
+  )
+}
+
+/**
  * 耐震壁의 縦筋·横筋 전개. 되풀이 축은 도메인 `placement`가, 壁厚 방향은
  * `wallBarDepths`가 준다 — 표시부가 かぶり를 다시 조회하면 룰팩 조회가 두 곳에
  * 박히므로, 대표점의 z(＝かぶり면)만 받아서 거기서 유도한다.
@@ -375,11 +398,7 @@ function wallRebarPlacements(
     throw new Error(`${rebar.role} placement is missing: ${rebar.id}`)
   }
 
-  const positions = stirrupPositions(
-    placement.clearMm,
-    placement.pitchMm,
-    placement.startOffsetMm,
-  ).positionsMm
+  const positions = repeatPositions(placement)
 
   if (positions.length !== placement.positionCount) {
     throw new Error(
@@ -506,11 +525,7 @@ function slabRebarPlacements(rebar: Rebar, section: SlabSection): Point3[] {
     throw new Error(`${rebar.role} placement is missing: ${rebar.id}`)
   }
 
-  const positions = stirrupPositions(
-    placement.clearMm,
-    placement.pitchMm,
-    placement.startOffsetMm,
-  ).positionsMm
+  const positions = repeatPositions(placement)
 
   if (positions.length !== placement.positionCount) {
     throw new Error(
@@ -705,7 +720,195 @@ function pathRuns(rebar: Rebar): PathRun[] {
   return runs
 }
 
-function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
+export interface AxisAlignedBox {
+  center: Point3
+  size: Point3
+}
+
+/** 箱の2軸に写した開口部の矩形。軸の対応は呼ぶ側が決める（部材ごとに違う） */
+export interface BoxHole {
+  minA: number
+  maxA: number
+  minB: number
+  maxB: number
+}
+
+/**
+ * 開口部でコンクリートの箱をくり抜く (数量積算基準 1通則8))。
+ *
+ * 開口は部材の厚さを貫くので、見るのは `axes` が指す2軸だけだ。1つの開口は箱を
+ * 最大4つに割る（手前・奥・下・上）。複数あれば割った箱をさらに割る — 冗長な
+ * 分割が出ることはあるが、重なった開口でも欠けが正しく残る。
+ *
+ * くり抜きは表示だけの話である。数量の欠除は `openingDeduction` が鉄筋について
+ * 数えるもので、コンクリート・型枠の数量はそもそも製品が出さない (ADR-005)。
+ */
+export function carveBox<T extends AxisAlignedBox>(
+  box: T,
+  axes: [number, number],
+  holes: BoxHole[],
+): T[] {
+  return holes.reduce<T[]>(
+    (boxes, hole) => boxes.flatMap((one) => carveOne(one, axes, hole)),
+    [box],
+  )
+}
+
+function carveOne<T extends AxisAlignedBox>(
+  box: T,
+  [axisA, axisB]: [number, number],
+  hole: BoxHole,
+): T[] {
+  const minA = box.center[axisA] - box.size[axisA] / 2
+  const maxA = box.center[axisA] + box.size[axisA] / 2
+  const minB = box.center[axisB] - box.size[axisB] / 2
+  const maxB = box.center[axisB] + box.size[axisB] / 2
+
+  const cutMinA = Math.max(minA, hole.minA)
+  const cutMaxA = Math.min(maxA, hole.maxA)
+  const cutMinB = Math.max(minB, hole.minB)
+  const cutMaxB = Math.min(maxB, hole.maxB)
+
+  if (cutMinA >= cutMaxA || cutMinB >= cutMaxB) return [box]
+
+  const piece = (
+    fromA: number,
+    toA: number,
+    fromB: number,
+    toB: number,
+  ): T => {
+    const center = [...box.center] as Point3
+    const size = [...box.size] as Point3
+    center[axisA] = (fromA + toA) / 2
+    size[axisA] = toA - fromA
+    center[axisB] = (fromB + toB) / 2
+    size[axisB] = toB - fromB
+    return { ...box, center, size }
+  }
+
+  const pieces: T[] = []
+  if (minA < cutMinA) pieces.push(piece(minA, cutMinA, minB, maxB))
+  if (cutMaxA < maxA) pieces.push(piece(cutMaxA, maxA, minB, maxB))
+  if (minB < cutMinB) pieces.push(piece(cutMinA, cutMaxA, minB, cutMinB))
+  if (cutMaxB < maxB) pieces.push(piece(cutMinA, cutMaxA, cutMaxB, maxB))
+
+  return pieces
+}
+
+/** 部材局所の開口を、箱の2軸における絶対座標の矩形に写す。 */
+export function boxHoles(
+  openings: Opening[],
+  originA: number,
+  originB: number,
+): BoxHole[] {
+  return openings.map((opening) => ({
+    minA: originA + opening.xMm,
+    maxA: originA + opening.xMm + opening.widthMm,
+    minB: originB + opening.yMm,
+    maxB: originB + opening.yMm + opening.heightMm,
+  }))
+}
+
+/**
+ * 開口部が鉄筋を断つ区間 (数量積算基準 1通則8))。
+ *
+ * 開口は部材の厚さを貫くので、判定は局所 x・y の2軸だけで足りる。境界にちょうど
+ * 載る鉄筋は断たない — 数量側の欠除判定と同じ約束で、開口の外の鉄筋を欠かせない
+ * ためである (`openingDeduction`)。
+ *
+ * 数量が「何本が何mm欠けるか」を言うのに対し、ここが決めるのは「どこで切れて
+ * 見えるか」だ。欠ける位置は本ごとに違うので `Rebar.points` には入れられない —
+ * 代表1本の折れ線は開口を知らない全長の経路である (ADR-028)。
+ */
+function openingCut(
+  from: Point3,
+  to: Point3,
+  opening: Opening,
+): [number, number] | null {
+  let enter = 0
+  let leave = 1
+
+  for (const axis of [0, 1] as const) {
+    const minimum = axis === 0 ? opening.xMm : opening.yMm
+    const maximum =
+      minimum + (axis === 0 ? opening.widthMm : opening.heightMm)
+    const start = from[axis]
+    const delta = to[axis] - start
+
+    if (Math.abs(delta) < 1e-9) {
+      // この軸に動かない鉄筋は、開口の内側にいるか外にいるかのどちらかだ。
+      if (start <= minimum || start >= maximum) return null
+      continue
+    }
+
+    const first = (minimum - start) / delta
+    const second = (maximum - start) / delta
+    enter = Math.max(enter, Math.min(first, second))
+    leave = Math.min(leave, Math.max(first, second))
+  }
+
+  return leave > enter ? [enter, leave] : null
+}
+
+function lerpPoint(from: Point3, to: Point3, t: number): Point3 {
+  return [
+    from[0] + (to[0] - from[0]) * t,
+    from[1] + (to[1] - from[1]) * t,
+    from[2] + (to[2] - from[2]) * t,
+  ]
+}
+
+function clipSegment(segment: Segment, openings: Opening[]): Segment[] {
+  const cuts = openings
+    .map((opening) => openingCut(segment.from, segment.to, opening))
+    .filter((cut): cut is [number, number] => cut !== null)
+    .sort(([left], [right]) => left - right)
+
+  if (cuts.length === 0) return [segment]
+
+  const pieces: Segment[] = []
+  let walked = 0
+
+  for (const [enter, leave] of cuts) {
+    if (enter > walked) {
+      pieces.push({
+        from: lerpPoint(segment.from, segment.to, walked),
+        to: lerpPoint(segment.from, segment.to, enter),
+        radius: segment.radius,
+      })
+    }
+    walked = Math.max(walked, leave)
+  }
+
+  if (walked < 1) {
+    pieces.push({
+      from: lerpPoint(segment.from, segment.to, walked),
+      to: segment.to,
+      radius: segment.radius,
+    })
+  }
+
+  // 端が開口の縁にちょうど載ると長さ0の破片が出る。描いても見えないうえ、
+  // three.js の円柱ジオメトリが向きを決められない。
+  return pieces.filter(
+    ({ from, to }) =>
+      Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]) > 1e-6,
+  )
+}
+
+export function clipSegments(
+  segments: Segment[],
+  openings: Opening[],
+): Segment[] {
+  if (openings.length === 0) return segments
+  return segments.flatMap((segment) => clipSegment(segment, openings))
+}
+
+function rebarSegmentRuns(
+  rebar: Rebar,
+  section: Section,
+  openings: Opening[],
+): SegmentRun[] {
   // 壁と床板だけ表示半径が部材厚に縛られる。配置と描画で別々の半径を使うと、
   // 詰めたはずの層が描くときにまた太って食い込む。
   const radius =
@@ -726,18 +929,29 @@ function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
 
   return pathRuns(rebar).map(({ zone, segments }) => ({
     zone,
-    segments: placements.flatMap((offset) =>
-      segments.map(({ from, to }) => ({
-        from: translate(displayPoint(from), offset),
-        to: translate(displayPoint(to), offset),
-        radius,
-      })),
+    // 開口部は 3D でだけ鉄筋を断つ。数量は `Rebar.length` が別に持っている
+    // ので、ここで切っても本数・質量は動かない (ADR-028)。
+    segments: clipSegments(
+      placements.flatMap((offset) =>
+        segments.map(({ from, to }) => ({
+          from: translate(displayPoint(from), offset),
+          to: translate(displayPoint(to), offset),
+          radius,
+        })),
+      ),
+      openings,
     ),
   }))
 }
 
-export function rebarSegments(rebar: Rebar, section: Section): Segment[] {
-  return rebarSegmentRuns(rebar, section).flatMap(({ segments }) => segments)
+export function rebarSegments(
+  rebar: Rebar,
+  section: Section,
+  openings: Opening[] = [],
+): Segment[] {
+  return rebarSegmentRuns(rebar, section, openings).flatMap(
+    ({ segments }) => segments,
+  )
 }
 
 export interface RebarBatch {
@@ -763,26 +977,34 @@ function shiftAlongAxis(segments: Segment[], offsetMm: number): Segment[] {
 }
 
 export function rebarBatches(
-  entries: { rowId: string; rebar: Rebar; originOffsetMm?: number }[],
+  entries: {
+    rowId: string
+    rebar: Rebar
+    originOffsetMm?: number
+    /** この鉄筋の局所座標系に直した開口部 (1通則8))。3D だけがこれを見る */
+    openings?: Opening[]
+  }[],
   section: Section,
 ): RebarBatch[] {
   const batches = new Map<string, RebarBatch>()
 
-  for (const { rowId, rebar, originOffsetMm = 0 } of entries) {
+  for (const { rowId, rebar, originOffsetMm = 0, openings = [] } of entries) {
     const layer = roleToLayer(rebar.role)
 
-    rebarSegmentRuns(rebar, section).forEach(({ zone, segments }, runIndex) => {
+    rebarSegmentRuns(rebar, section, openings).forEach(
+      ({ zone, segments }, runIndex) => {
       // 같은 row의 대표 철근이 여러 개면 동일 경로 run끼리 합치되, 양단에 같은
       // kind의 zone이 있어도 서로 다른 연속 구간이므로 runIndex로 분리한다.
-      const key = JSON.stringify([rowId, layer, runIndex, zone])
-      // 오프셋은 **병합 전에** 건다. 連続スパン에서 두 스팬의 あばら筋은 길이·本数가
-      // 같아 같은 rowId로 합쳐지므로, 배치 단위로 옮기면 한쪽 오프셋이 사라진다.
-      const shifted = shiftAlongAxis(segments, originOffsetMm)
-      const batch = batches.get(key)
+        const key = JSON.stringify([rowId, layer, runIndex, zone])
+        // 오프셋은 **병합 전에** 건다. 連続スパン에서 두 스팬의 あばら筋은 길이·本数가
+        // 같아 같은 rowId로 합쳐지므로, 배치 단위로 옮기면 한쪽 오프셋이 사라진다.
+        const shifted = shiftAlongAxis(segments, originOffsetMm)
+        const batch = batches.get(key)
 
-      if (batch) batch.segments.push(...shifted)
-      else batches.set(key, { rowId, layer, zone, segments: shifted })
-    })
+        if (batch) batch.segments.push(...shifted)
+        else batches.set(key, { rowId, layer, zone, segments: shifted })
+      },
+    )
   }
 
   return [...batches.values()]

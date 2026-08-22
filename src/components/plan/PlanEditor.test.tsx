@@ -117,6 +117,163 @@ describe('PlanEditor', () => {
   })
 })
 
+describe('PlanEditor 開口部の入力 (数量積算基準 1通則8))', () => {
+  beforeEach(() => {
+    capture.mockClear()
+    useAppStore.setState({
+      project: createSampleProject(),
+      sel: { group: null, memberId: null },
+      activeStoryId: '1F',
+      locale: 'ja',
+    })
+  })
+
+  function selectWall() {
+    const wall = useAppStore
+      .getState()
+      .project.members.find(({ kind }) => kind === '耐震壁')!
+    act(() => {
+      useAppStore.getState().selectMember(wall.id)
+    })
+    return wall
+  }
+
+  it('tells the user to pick a 耐震壁 or 床板 first', () => {
+    render(<PlanEditor />)
+
+    expect(screen.getByTestId('opening-editor-hint')).toBeInTheDocument()
+    expect(screen.queryByTestId('opening-editor')).not.toBeInTheDocument()
+  })
+
+  it('does not offer openings for 柱 — 1通則8) names 窓・出入口', () => {
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'C1 1F-X2Y2' }))
+
+    expect(screen.queryByTestId('opening-editor')).not.toBeInTheDocument()
+  })
+
+  it('adds an opening that fits inside the 内法 of the selected wall', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+
+    const stored = useAppStore
+      .getState()
+      .project.members.find(({ id }) => id === wall.id)!.openings!
+    expect(stored).toHaveLength(1)
+    // 内法 5200×3450 の中央に 1/3 の大きさ — 置いた瞬間にはみ出さない。
+    const [opening] = stored
+    expect(opening.xMm).toBeGreaterThanOrEqual(0)
+    expect(opening.yMm).toBeGreaterThanOrEqual(0)
+    expect(opening.xMm + opening.widthMm).toBeLessThanOrEqual(5200)
+    expect(opening.yMm + opening.heightMm).toBeLessThanOrEqual(3450)
+    expect(capture).toHaveBeenCalledWith('opening_edited', {
+      memberKind: '耐震壁',
+    })
+  })
+
+  it('edits an opening dimension through updateProject', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+
+    const width = screen.getByLabelText(`W1 ${wall.id} 1 内法幅`)
+    fireEvent.change(width, { target: { value: '1800' } })
+
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.openings![0]
+        .widthMm,
+    ).toBe(1800)
+  })
+
+  it('marks an opening the clause does not deduct', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+
+    fireEvent.change(screen.getByLabelText(`W1 ${wall.id} 1 内法幅`), {
+      target: { value: '700' },
+    })
+    fireEvent.change(screen.getByLabelText(`W1 ${wall.id} 1 内法高さ`), {
+      target: { value: '700' },
+    })
+
+    // 0.49㎡ — 「1か所当たり内法面積0.5㎡以下」なので欠除しない。
+    expect(screen.getByText(/0\.5㎡以下/)).toBeInTheDocument()
+  })
+
+  it('warns when an opening leaves the 内法 instead of trimming it', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+
+    fireEvent.change(screen.getByLabelText(`W1 ${wall.id} 1 内法幅`), {
+      target: { value: '9000' },
+    })
+
+    // 切り詰めて受け取ると図面にない大きさの開口を製品が決めることになる。
+    expect(screen.getByTestId('opening-outside')).toBeInTheDocument()
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.openings![0]
+        .widthMm,
+    ).toBe(9000)
+  })
+
+  it('drops the key entirely when the last opening is removed', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: `W1 ${wall.id} 1 削除` }))
+
+    const stored = useAppStore
+      .getState()
+      .project.members.find(({ id }) => id === wall.id)!
+    expect(stored).not.toHaveProperty('openings')
+  })
+
+  it('draws a 床板 opening at its true position, not inside the drawn inset', () => {
+    const project = createSampleProject()
+    const slab = project.members.find(({ kind }) => kind === '床板')!
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...project,
+          members: project.members.map((member) =>
+            member.id === slab.id
+              ? {
+                  ...member,
+                  openings: [
+                    {
+                      id: 'op1',
+                      xMm: 2400,
+                      yMm: 2400,
+                      widthMm: 1200,
+                      heightMm: 1200,
+                    },
+                  ],
+                }
+              : member,
+          ),
+        },
+      })
+    })
+    const { container } = render(<PlanEditor />)
+
+    const rects = container.querySelectorAll('rect[class*="opening"]')
+    expect(rects).toHaveLength(1)
+    // 開口は正方形なので、平面でも幅と高さが等しく出る（実寸で写している証拠）。
+    const width = Number(rects[0].getAttribute('width'))
+    const height = Number(rects[0].getAttribute('height'))
+    expect(width).toBeCloseTo(height, 6)
+    expect(width).toBeGreaterThan(0)
+  })
+})
+
 describe('StoryTabs', () => {
   beforeEach(() => {
     capture.mockClear()

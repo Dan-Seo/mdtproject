@@ -11,6 +11,7 @@ import type {
   ColumnShape,
   GirderSection,
   Member,
+  Opening,
   SlabSection,
   WallSection,
 } from '@/domain/model/member'
@@ -62,6 +63,8 @@ import {
   fitCamera,
   flyInStartPose,
   lerpCameraFit,
+  boxHoles,
+  carveBox,
   rebarBatches,
   rebarSegments,
   type RebarBatch,
@@ -368,29 +371,51 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
     // Y方向のランからは選んだベイの分を除いて足す — 同じ板を二重に描かないため。
     const { section, bay, x, y } = view
     const thickness = section.thickness
-    const boxes: ConcreteBox[] = x.run.bays.map((runBay, index) => {
+    // 床板の箱は局所 x が軸0、局所 y が軸2 だ（軸1 は板厚）。開口はベイごとの
+    // 入力なので、そのベイの原点に足してくり抜く (1通則8))。
+    const carveBay = (
+      box: ConcreteBox,
+      member: Member,
+      fromX: number,
+      fromY: number,
+    ): ConcreteBox[] =>
+      carveBox(box, [0, 2], boxHoles(member.openings ?? [], fromX, fromY))
+
+    const boxes: ConcreteBox[] = x.run.bays.flatMap((runBay, index) => {
       const fromX = x.run.memberOffsetsMm[index] - x.offsetMm
-      return {
-        size: [runBay.clearXMm, thickness, runBay.clearYMm],
-        center: [
-          fromX + runBay.clearXMm / 2,
-          thickness / 2,
-          runBay.clearYMm / 2,
-        ],
-      }
+      return carveBay(
+        {
+          size: [runBay.clearXMm, thickness, runBay.clearYMm],
+          center: [
+            fromX + runBay.clearXMm / 2,
+            thickness / 2,
+            runBay.clearYMm / 2,
+          ],
+        },
+        x.run.members[index],
+        fromX,
+        0,
+      )
     })
 
     y.run.bays.forEach((runBay, index) => {
       const fromY = y.run.memberOffsetsMm[index] - y.offsetMm
       if (fromY === 0) return
-      boxes.push({
-        size: [bay.clearXMm, thickness, runBay.clearYMm],
-        center: [
-          bay.clearXMm / 2,
-          thickness / 2,
-          fromY + runBay.clearYMm / 2,
-        ],
-      })
+      boxes.push(
+        ...carveBay(
+          {
+            size: [bay.clearXMm, thickness, runBay.clearYMm],
+            center: [
+              bay.clearXMm / 2,
+              thickness / 2,
+              fromY + runBay.clearYMm / 2,
+            ],
+          },
+          y.run.members[index],
+          0,
+          fromY,
+        ),
+      )
     })
 
     return boxes
@@ -399,8 +424,9 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
   if (view.kind === '耐震壁') {
     // 壁は内法部分そのものだ（躯体の区分（５）壁）。柱・大梁のスタブを足すと
     // 二重に見えるので、パネル1枚だけを描く。
-    const { section, span } = view
-    return [
+    const { member, section, span } = view
+    // 壁の箱は局所 x が軸0、局所 y（高さ）が軸1 だ（軸2 は壁厚）。
+    return carveBox(
       {
         size: [span.clearLengthMm, span.clearHeightMm, section.thickness],
         center: [
@@ -409,7 +435,9 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
           section.thickness / 2,
         ],
       },
-    ]
+      [0, 1],
+      boxHoles(member.openings ?? [], 0, 0),
+    )
   }
 
   if (view.kind === '柱') {
@@ -1003,6 +1031,21 @@ function rebuildMemberScene(
     }
   }
 
+  // 開口部は鉄筋と同じ枠へ寄せる (1通則8))。壁は部材局所そのまま、床板は
+  // ラン座標から枠（選んだベイ）へ、toBayFrame と同じ分だけ戻す。
+  const openingsFor = (rebar: Rebar): Opening[] => {
+    if (view.kind === '耐震壁') return view.member.openings ?? []
+    if (view.kind !== '床板') return []
+
+    const alongX = rebar.role.startsWith('X方向')
+    const run = alongX ? view.x : view.y
+    return run.run.openings.map((opening) => ({
+      ...opening,
+      xMm: opening.xMm - (alongX ? view.x.offsetMm : 0),
+      yMm: opening.yMm - (alongX ? 0 : view.y.offsetMm),
+    }))
+  }
+
   const originOffsetOf = (memberId: string): number => {
     if (view.kind !== '大梁') return 0
     const index = view.run.members.findIndex(({ id }) => id === memberId)
@@ -1021,6 +1064,7 @@ function rebuildMemberScene(
       rowId,
       rebar: toBayFrame(rebar),
       originOffsetMm: originOffsetOf(rebar.memberId),
+      openings: openingsFor(rebar),
     }
   })
 

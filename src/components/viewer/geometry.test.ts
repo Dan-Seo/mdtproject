@@ -4,6 +4,7 @@ import type {
   ColumnSection,
   GirderSection,
   Member,
+  Opening,
   WallSection,
 } from '@/domain/model/member'
 import {
@@ -32,6 +33,8 @@ import {
   fitCamera,
   flyInStartPose,
   lerpCameraFit,
+  boxHoles,
+  carveBox,
   rebarBatches,
   rebarPlacements,
   rebarRadius,
@@ -1016,6 +1019,152 @@ describe('床板の3D — 2方向×2面が板厚に収まる (ADR-027)', () => {
     expect(rebarPlacements(bottom, slabSection).map(([, y]) => y)).toEqual(
       layout.positionsMm,
     )
+  })
+})
+
+describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く (ADR-028)', () => {
+  const opening: Opening = {
+    id: 'op1',
+    xMm: 2000,
+    yMm: 900,
+    widthMm: 1800,
+    heightMm: 1200,
+  }
+
+  // 内法 5200×3450、D13@200 ダブル。縦筋 27本のうち 8本が開口を横切る。
+  const span: WallSpan = {
+    axis: 'X',
+    clearLengthMm: 5200,
+    clearHeightMm: 3450,
+    startFaceOffsetMm: 400,
+    endFaceOffsetMm: 400,
+    girderDepthAboveMm: 750,
+  }
+  const holedWall: Member = {
+    id: '1F-W1-X1Y1-X',
+    kind: '耐震壁',
+    memberClass: '躯体',
+    sectionId: wallSection.id,
+    storyId: '1F',
+    position: { axis: 'X', ix: 0, iy: 0 },
+  }
+
+  function wallBars(openings: Opening[]) {
+    return generateWallRebar(
+      { member: { ...holedWall, openings }, section: wallSection, span },
+      jpMlitRulePack,
+    )
+  }
+
+  it('cuts every bar that runs through the opening', () => {
+    const cut = wallBars([opening]).find(
+      (rebar) => rebar.role === '縦筋' && rebar.length < 4000,
+    )!
+    const segments = rebarSegments(cut, wallSection, [opening])
+
+    // 縦筋は局所 y に走る。開口の中に入る点が1つも残っていない。
+    for (const { from, to } of segments) {
+      for (const [x, y] of [from, to]) {
+        const inside =
+          x > opening.xMm &&
+          x < opening.xMm + opening.widthMm &&
+          y > opening.yMm &&
+          y < opening.yMm + opening.heightMm
+        expect(inside).toBe(false)
+      }
+    }
+  })
+
+  it('splits a crossing bar in two instead of shortening it', () => {
+    const cut = wallBars([opening]).find(
+      (rebar) => rebar.role === '縦筋' && rebar.length < 4000,
+    )!
+    const whole = rebarSegments(cut, wallSection)
+    const clipped = rebarSegments(cut, wallSection, [opening])
+
+    // 断たれた本は開口の上下2本の破片になる。この行は8本 × ダブル配筋2層で
+    // 16本が描かれるので、破片が16だけ増える（定着の区間は開口の外なので割れない）。
+    expect(clipped).toHaveLength(whole.length + 16)
+  })
+
+  it('leaves bars that miss the opening untouched', () => {
+    const full = wallBars([opening]).find(
+      (rebar) => rebar.role === '縦筋' && rebar.length > 4000,
+    )!
+
+    expect(rebarSegments(full, wallSection, [opening])).toEqual(
+      rebarSegments(full, wallSection),
+    )
+  })
+
+  it('does not cut a bar that sits exactly on the opening edge', () => {
+    // 開口の縁 x ＝ 2000 にちょうど載る本は開口の外だ — 数量の欠除判定と同じ約束。
+    const edge: Opening = { ...opening, xMm: 2200, widthMm: 1400 }
+    const bar = wallBars([edge]).find(({ role }) => role === '縦筋')!
+    const atEdge = (openings: Opening[]) =>
+      rebarSegments(bar, wallSection, openings).filter(
+        ({ from }) => from[0] === 2200,
+      ).length
+
+    expect(atEdge([edge])).toBe(atEdge([]))
+    expect(atEdge([edge])).toBeGreaterThan(0)
+  })
+
+  it('keeps the drawn total shorter than the uncut one', () => {
+    const bars = wallBars([opening])
+    const length = (openings: Opening[]) =>
+      bars
+        .flatMap((rebar) => rebarSegments(rebar, wallSection, openings))
+        .reduce(
+          (sum, { from, to }) =>
+            sum + Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]),
+          0,
+        )
+
+    expect(length([opening])).toBeLessThan(length([]))
+  })
+
+  it('carves the concrete box into the pieces around the opening', () => {
+    const box = {
+      center: [2600, 1725, 100] as Point3,
+      size: [5200, 3450, 200] as Point3,
+    }
+    const pieces = carveBox(box, [0, 1], boxHoles([opening], 0, 0))
+
+    // 左・右・下・上の4枚。厚さ（軸2）は割らない — 開口は壁を貫くからだ。
+    expect(pieces).toHaveLength(4)
+    for (const piece of pieces) {
+      expect(piece.size[2]).toBe(200)
+    }
+    // 破片の面積の和 ＝ 元の面積 − 開口の面積
+    const area = pieces.reduce(
+      (sum, { size }) => sum + size[0] * size[1],
+      0,
+    )
+    expect(area).toBe(5200 * 3450 - 1800 * 1200)
+  })
+
+  it('carves nothing when the opening misses the box', () => {
+    const box = {
+      center: [2600, 1725, 100] as Point3,
+      size: [5200, 3450, 200] as Point3,
+    }
+
+    expect(
+      carveBox(box, [0, 1], boxHoles([opening], 20000, 0)),
+    ).toEqual([box])
+  })
+
+  it('carves both openings when they overlap in projection', () => {
+    const second: Opening = { ...opening, id: 'op2', yMm: 2400, heightMm: 600 }
+    const box = {
+      center: [2600, 1725, 100] as Point3,
+      size: [5200, 3450, 200] as Point3,
+    }
+    const pieces = carveBox(box, [0, 1], boxHoles([opening, second], 0, 0))
+    const area = pieces.reduce((sum, { size }) => sum + size[0] * size[1], 0)
+
+    expect(area).toBe(5200 * 3450 - 1800 * 1200 - 1800 * 600)
   })
 })
 

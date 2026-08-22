@@ -40,6 +40,8 @@ describe('jpMlitRulePack', () => {
         'measure.splice.slab.continuous',
         'measure.splice.slab.continuous.band.upper',
         'measure.splice.wall.vertical',
+        'measure.splice.wall.opening',
+        'measure.opening.deduction.minimum.area',
         'measure.splice.length.factor',
         'markup.rate',
       ]),

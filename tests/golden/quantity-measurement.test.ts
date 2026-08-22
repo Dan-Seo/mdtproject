@@ -19,7 +19,11 @@ import { aggregateQuantity, massLines } from '../../src/domain/quantity'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
 import { generateSlabRebar } from '../../src/domain/rebar/slab'
-import { intervalSpliceCount } from '../../src/domain/rebar/measurement'
+import {
+  distributionCount,
+  intervalSpliceCount,
+} from '../../src/domain/rebar/measurement'
+import { openingDeduction } from '../../src/domain/rebar/opening'
 import { lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity-r5-ch3.json'
@@ -948,5 +952,85 @@ describe('1通則6) 腹筋の余長 — JASS 5 未確保のため断面一覧の
     const { rebars } = girderRebarFor([6000], columnSection(), girderSection())
 
     expect(rebars.some(({ role }) => role === '腹筋')).toBe(false)
+  })
+})
+
+describe('1通則8) 開口部による鉄筋の欠除', () => {
+  const spec = fixture.cases.openingDeduction
+
+  it('reads the deduction threshold from the clause, not from the code', () => {
+    const rule = lookupRule(
+      jpMlitRulePack,
+      'measure.opening.deduction.minimum.area',
+      {},
+    )
+
+    expect(rule.unit).toBe('㎡')
+    for (const band of spec.threshold) {
+      // 面積そのものが閾値と一致する事例をゴールデンが持つので、行の値が
+      // 動けば「欠除する／しない」の期待とすぐ食い違う。
+      expect(band.widthMm * band.heightMm).toBe(band.areaM2 * 1_000_000)
+      expect(band.areaM2 > rule.value).toBe(band.deducts)
+    }
+  })
+
+  it.each(spec.cases.map((entry) => [entry.label, entry] as const))(
+    '%s',
+    (_label, entry) => {
+      for (const [barAxis, expected] of [
+        ['x', entry.expected.alongX],
+        ['y', entry.expected.alongY],
+      ] as const) {
+        const distributionClearMm =
+          barAxis === 'x' ? entry.clearYMm : entry.clearXMm
+
+        // 手で導いた本数が 1通則7) の割付と一致することをまず確かめる。
+        // ここがずれていれば欠除の期待も土台から違う。
+        expect(
+          distributionCount(
+            distributionClearMm,
+            entry.pitchMm,
+            lookupRule(jpMlitRulePack, 'measure.distribution.addition', {}),
+          ),
+        ).toBe(expected.totalCount)
+
+        const result = openingDeduction(
+          {
+            // id は製品の識別子であって規準の値ではない — 転写した寸法に
+            // ここで付ける（フィクスチャに書くと原文にない列が増える）。
+            openings: entry.openings.map((opening, index) => ({
+              ...opening,
+              id: `${entry.label}#${index + 1}`,
+            })),
+            clearXMm: entry.clearXMm,
+            clearYMm: entry.clearYMm,
+            barAxis,
+            pitchMm: entry.pitchMm,
+            totalCount: expected.totalCount,
+          },
+          jpMlitRulePack,
+        )
+
+        expect(result.groups).toEqual(expected.groups)
+        // 群の合計は割付本数そのもの — 欠除は本数を減らさず長さを減らす。
+        expect(result.groups.reduce((sum, { count }) => sum + count, 0)).toBe(
+          expected.totalCount,
+        )
+      }
+    },
+  )
+
+  it('leaves 開口補強筋 to 設計図書 — the clause delegates it', () => {
+    const clause = fixture.clauses.find(({ id }) => id === '1通則8)')
+
+    expect(clause?.quote).toContain('開口補強筋は設計図書により計測・計算する')
+    // 委任された鉄筋の値をルールパックが持っていたら、原文にない数字を
+    // 製品が作ったということだ。開口部について持ってよいのは「欠除しない
+    // 大きさ」の1行だけである。
+    expect(
+      jpMlitRulePack.entries.filter(({ key }) =>
+        key.startsWith('measure.opening'),
+      ),
+    ).toHaveLength(1)
   })
 })

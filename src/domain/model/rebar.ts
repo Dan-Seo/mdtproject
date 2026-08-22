@@ -69,6 +69,15 @@ export interface RebarPlacement {
    * 표시부가 같은 인자로 `stirrupPositions`를 다시 돌린 결과와 대조하는 값이다.
    */
   positionCount: number
+  /**
+   * 되풀이 위치를 도메인이 직접 준 경우의 위치 배열 (mm). 없으면 표시부가
+   * `stirrupPositions`를 같은 인자로 다시 돌려 만든다.
+   *
+   * 開口部가 있는 壁·床板만 이 값을 쓴다 — 欠除로 한 役割이 여러 内訳 행으로
+   * 갈릴 때, 행마다 「어느 위치의 본인지」를 주지 않으면 같은 자리에 두 번
+   * 그리게 된다. 이때 위치는 数量과 같은 積算 割付(1通則7))이다 (ADR-028).
+   */
+  positionsMm?: number[]
 }
 
 /**

@@ -1,9 +1,14 @@
-import type { ColumnShape, MemberKind } from '@/domain/model/member'
+import type {
+  ColumnShape,
+  MemberKind,
+  Opening,
+} from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
   gridPoint,
   slabBay,
+  slabRun,
   storyElevation,
   storyNotFound,
   wallSpan,
@@ -12,6 +17,8 @@ import {
 import type { Rebar } from '@/domain/model/rebar'
 
 import {
+  boxHoles,
+  carveBox,
   rebarSegments,
   roleToLayer,
   type Bounds,
@@ -89,6 +96,8 @@ export function buildingLayout(
     const section = findSection(project, member.sectionId)
 
     let box: ConcreteBox
+    // 開口部でくり抜いた破片。壁・床板だけが持つ (1通則8))
+    let pieces: ConcreteBox[] | null = null
     if (member.kind === '柱') {
       if (section.kind !== '柱' || 'axis' in member.position) {
         throw new Error(`柱 member references a non-柱 section: ${member.id}`)
@@ -147,16 +156,25 @@ export function buildingLayout(
       const bay = slabBay(project, member)
       // 板の上面は階の天井 — 大梁の上端と同じ高さで、そこから板厚だけ下がる。
       const topY = elevation + story.height
+      // 床板の局所 x は世界の x（軸0）、局所 y は世界の z（軸2）だ。開口部で
+      // くり抜く — 数量が欠除しているのに板が塞がっていては説明が付かない。
+      const slabOriginX = origin.x + bay.startFaceOffsetXMm
+      const slabOriginZ = origin.y + bay.startFaceOffsetYMm
       box = {
         memberId: member.id,
         kind: '床板',
         center: [
-          origin.x + bay.startFaceOffsetXMm + bay.clearXMm / 2,
+          slabOriginX + bay.clearXMm / 2,
           topY - section.thickness / 2,
-          origin.y + bay.startFaceOffsetYMm + bay.clearYMm / 2,
+          slabOriginZ + bay.clearYMm / 2,
         ],
         size: [bay.clearXMm, section.thickness, bay.clearYMm],
       }
+      pieces = carveBox(
+        box,
+        [0, 2],
+        boxHoles(member.openings ?? [], slabOriginX, slabOriginZ),
+      )
     } else {
       if (section.kind !== '耐震壁' || !('axis' in member.position)) {
         throw new Error(
@@ -172,6 +190,11 @@ export function buildingLayout(
       const alongCenter =
         span.startFaceOffsetMm + span.clearLengthMm / 2
       const centerY = elevation + span.clearHeightMm / 2
+      // 壁の局所 x は通り芯の向き（X通りなら世界の x ＝ 軸0、Y通りなら
+      // 世界の z ＝ 軸2）、局所 y は高さ ＝ 軸1 である。
+      const alongOrigin =
+        (position.axis === 'X' ? start.x : start.y) + span.startFaceOffsetMm
+      const holes = boxHoles(member.openings ?? [], alongOrigin, elevation)
       box =
         position.axis === 'X'
           ? {
@@ -186,9 +209,12 @@ export function buildingLayout(
               center: [start.x, centerY, start.y + alongCenter],
               size: [section.thickness, span.clearHeightMm, span.clearLengthMm],
             }
+      pieces = carveBox(box, position.axis === 'X' ? [0, 1] : [2, 1], holes)
     }
 
-    boxes.push(box)
+    // 描くのはくり抜いた破片だが、枠の広がりは元の箱で測る — 開口で外形が
+    // 変わるわけではないし、全面が開口の部材はドメインが先に落としている。
+    boxes.push(...(pieces ?? [box]))
     expandBounds(bounds, [
       box.center[0] - box.size[0] / 2,
       box.center[1] - box.size[1] / 2,
@@ -210,6 +236,9 @@ export function buildingLayout(
 
     const section = findSection(project, member.sectionId)
     let worldPoint: (point: Point3) => Point3
+    // 開口部は鉄筋の局所座標系で切る (1通則8))。壁は部材局所そのまま、床板は
+    // 鉄筋がランで測られているのでラン座標のものを使う。
+    let openings: Opening[] = []
 
     if (member.kind === '柱') {
       if (section.kind !== '柱' || 'axis' in member.position) {
@@ -273,6 +302,11 @@ export function buildingLayout(
         member.position.iy,
       )
       const bay = slabBay(project, member)
+      openings = slabRun(
+        project,
+        member,
+        rebar.role.startsWith('X方向') ? 'X' : 'Y',
+      ).openings
       // 床板のローカル原点は「内法域の X 最小・Y 最小の隅、板の下端」。鉄筋は
       // ランの持ち主に帰属するので、その持ち主のベイの内法原点がランの原点だ。
       const base =
@@ -297,6 +331,7 @@ export function buildingLayout(
         member.position.iy,
       )
       const span = wallSpan(project, member)
+      openings = member.openings ?? []
       // 壁のローカル原点は「始端の柱内側面・壁下端・厚さの手前面」。壁下端は
       // 階の床板上面＝階の基準標高そのものである（大梁と違い天井から下げない）。
       const base = storyElevation(project.stories, member.storyId)
@@ -317,7 +352,7 @@ export function buildingLayout(
 
     const layer = roleToLayer(rebar.role)
 
-    for (const segment of rebarSegments(rebar, section)) {
+    for (const segment of rebarSegments(rebar, section, openings)) {
       const from = worldPoint(segment.from)
       const to = worldPoint(segment.to)
       instances.push({

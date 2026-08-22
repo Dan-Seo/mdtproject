@@ -218,3 +218,69 @@
   fill: color-mix(in srgb, var(--color-primary) 12%, transparent);
   stroke: var(--color-primary);
 }
+
+/* 開口部の入力 (数量積算基準 1通則8))。断面ではなく部材ごとの実在物なので
+   平面ペインに置く — 断面一覧に置くと同じ符号の壁すべてに窓が開く。 */
+.openingFieldset {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 6px;
+}
+
+.openingHint {
+  margin: var(--space-xxs) 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.openingList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  margin: 0 0 var(--space-xs);
+  padding: 0;
+  list-style: none;
+}
+
+.openingItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-xxs);
+}
+
+.openingField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.openingFieldLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.openingNote,
+.openingWarning {
+  align-self: center;
+  font-size: 10px;
+}
+
+.openingNote {
+  color: var(--text-muted);
+}
+
+.openingWarning {
+  color: var(--color-caution);
+}
+
+/* 床板の開口部 (数量積算基準 1通則8))。塗りを抜いて縁だけ残す —
+   板が「そこにない」ことを示すので、床板の塗りより上に描く。 */
+.opening {
+  fill: var(--color-canvas);
+  stroke: var(--hairline-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}

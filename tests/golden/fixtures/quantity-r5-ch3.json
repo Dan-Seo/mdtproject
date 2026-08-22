@@ -37,7 +37,7 @@
       "printedPage": 11,
       "pdfPage": 16,
       "quote": "壁とは、柱、梁、床板等に接する垂直材の内法部分をいい、開口部を除く。ただし、壁式構造については、基礎上面から屋上床板上面までの垂直材をいい、開口部を除く。袖壁、下り壁、腰壁等もこれらに準ずる。",
-      "usedFor": "2（５）壁1)① の「壁の高さ又は長さ」と 1通則7) の「その部分の長さ」— 壁式構造以外の壁は内法部分なので、高さは階高から上部大梁せいを引いた内法高さ、長さは両側の柱面間の内法長さである。柱・大梁と二重計上しないのはこの定義による（大梁が内法長さなのと同じ形）。「開口部を除く」は 1通則8) の欠除規定に対応し、そちらは現状 deferred"
+      "usedFor": "2（５）壁1)① の「壁の高さ又は長さ」と 1通則7) の「その部分の長さ」— 壁式構造以外の壁は内法部分なので、高さは階高から上部大梁せいを引いた内法高さ、長さは両側の柱面間の内法長さである。柱・大梁と二重計上しないのはこの定義による（大梁が内法長さなのと同じ形）。「開口部を除く」は 1通則8) の欠除規定に対応する"
     }
   ],
 
@@ -111,8 +111,8 @@
       "printedPage": 15,
       "pdfPage": 20,
       "quote": "窓、出入口等の開口部による鉄筋の欠除は、原則として建具類等開口部の内法寸法による。ただし、１か所当たり内法面積０．５㎡以下の開口部による鉄筋の欠除は原則としてないものとする。なお、開口補強筋は設計図書により計測・計算する。",
-      "status": "deferred",
-      "reason": "条文は揃っているが開口の位置・寸法を受け取る入力がない。耐震壁 (ADR-024) と床板 (ADR-027) はこの条項を適用しないまま計上するので、開口のある壁・床板は過大計上になる — 内訳書に常時告知を立てて隠していない (R14)。開口補強筋は「設計図書により計測・計算する」なので、閉じるときも製品は値を作らず入力として受け取る"
+      "status": "covered",
+      "coveredBy": "欠除は開口部の内法寸法で計上する — 部材ごとに受け取った開口の内法寸法から、1通則7) の割付が置く鉄筋のうち開口を横切る本だけを、その開口の内法寸法だけ短くする（src/domain/rebar/opening.ts）。「1か所当たり内法面積0.5㎡以下」の境目はルールパック measure.opening.deduction.minimum.area が持つ。開口補強筋は「設計図書により計測・計算する」なので製品は作らない — 2（３）梁1)・2（４）床板1) の「補強筋等は設計図書による」と同じ扱いで、計上していないことを内訳書に常時告知する (R14・ADR-028)"
     },
     {
       "id": "1通則9)",
@@ -216,7 +216,7 @@
       "pdfPage": 22,
       "quote": "縦筋の継手は原則として各階に１か所あるものとし、開口部腰壁、手すり壁等の継手はないものとする。また、横筋の継手は、１通則４）による。",
       "status": "covered",
-      "coveredBy": "ルールパック measure.splice.wall.vertical ＝ 各階に1か所。柱の 2（２）柱2) と値は同じだが条文が別なので行を分ける — 片方が改定されたときに巻き添えで動かないためである。横筋は条文が明示的に 1通則4) へ戻すので measure.splice.interval（径ごとの 6.0m/7.0m）で数える。「開口部腰壁、手すり壁等」の但書は開口部を扱わない現状では対象がない — 1通則8) 側で deferred"
+      "coveredBy": "ルールパック measure.splice.wall.vertical ＝ 各階に1か所。柱の 2（２）柱2) と値は同じだが条文が別なので行を分ける — 片方が改定されたときに巻き添えで動かないためである。横筋は条文が明示的に 1通則4) へ戻すので measure.splice.interval（径ごとの 6.0m/7.0m）で数える。「開口部腰壁、手すり壁等の継手はないものとする」の但書は measure.splice.wall.opening（0か所）が持ち、開口を横切って断たれた縦筋に効く (ADR-028)"
     },
     {
       "id": "2（５）壁1)③",
@@ -271,7 +271,6 @@
         "note": "断面の設計寸法による周長 ＝ π×600 ＝ 1884.9556。条文は断面形状を矩形に限っていない — 「断面の設計寸法による周長」であって、円形断面ではそれが円周である。値は円周の定義から手で求めたもので、製品の出力からは導いていない (ADR-010)"
       }
     ],
-
     "distributionCount": [
       {
         "clause": "1通則7)",
@@ -302,7 +301,6 @@
         "expectedCount": 25
       }
     ],
-
     "widthTieDesignLength": [
       {
         "clause": "1通則3)",
@@ -319,7 +317,6 @@
         "expectedMm": 350
       }
     ],
-
     "widthTieCount": [
       {
         "clause": "2（３）梁3)",
@@ -336,7 +333,6 @@
         "expectedCount": 6
       }
     ],
-
     "spliceCount": {
       "interpretation": "「６．０ｍごとに継手があるものとして」を、長さを単位で割った整数部と読んだ。ちょうど倍数（12.0m など）で2か所か1か所かは原文から決まらないので、下の事例は端数を持つ長さだけを固定する — 倍数の扱いは実装の解釈であってゴールデンではない",
       "column": [
@@ -456,32 +452,338 @@
         }
       ]
     },
-
     "continuousGirderMain": {
       "clause": "2（３）梁1)",
       "label": "同一径の主筋が中間柱を通して連続する2スパン",
-      "clearLengthsMm": [5200, 5200],
-      "intermediateSupportLengthsMm": [800],
+      "clearLengthsMm": [
+        5200,
+        5200
+      ],
+      "intermediateSupportLengthsMm": [
+        800
+      ],
       "halfSupportWidthPerSideMm": 400,
       "expectedCoreLengthMm": 11200,
       "note": "梁の長さ(内法)の和 ＋ 中間柱の両側それぞれ柱幅の1/2 ＝ 5200＋5200＋400＋400。中間支点に定着は付かない"
     },
-
     "continuousSlabMain": {
       "clause": "2（４）床板1)",
       "label": "同一径の主筋が中間大梁を通して連続する2ベイ",
-      "clearLengthsMm": [5600, 5600],
-      "intermediateSupportLengthsMm": [400],
+      "clearLengthsMm": [
+        5600,
+        5600
+      ],
+      "intermediateSupportLengthsMm": [
+        400
+      ],
       "halfSupportWidthPerSideMm": 200,
       "expectedCoreLengthMm": 11600,
       "note": "床板の長さ(内法)の和 ＋ 中間大梁の両側それぞれ梁幅の1/2 ＝ 5600＋5600＋200＋200。中間支点に定着は付かない。内法は躯体の区分（４）「柱、梁等に接する水平材の内法部分」による — 通り芯間 6000 から両側の大梁幅 400 の半分ずつを引いて 5600"
     },
-
     "columnMain": {
       "clause": "2（２）柱1)",
       "label": "柱主筋の柱長さ項は各階床板上面間＝階高",
       "storyHeightMm": 4200,
       "note": "定着長さ・余長を除いた本体長が階高と一致すること。最上階の扱いは 1通則1) 側で deferred"
+    },
+    "openingDeduction": {
+      "clause": "1通則8)",
+      "note": "期待値は 1通則8)（欠除は開口部の内法寸法による・1か所当たり0.5㎡以下は欠除なし）と 1通則7)（割付本数 ＝ ⌈その部分の長さ ÷ 間隔⌉ ＋ 1）の二つだけから手で導いた。1通則8) は「どの本が欠けるか」を言わないので、製品は 1通則7) が数えた本数をその算式どおりに並べ（i 本目を min(i×間隔, その部分の長さ) に置き）、開口の内法寸法の**内側にある**本だけを欠けたものとする。境界にちょうど載る本は欠けない。この並べ方は 1通則7) の読み方であって原文が図で示すものではない (ADR-028)。断面一覧の初期オフセットは使わない — 積算基準はそれを関知しない",
+      "alongXMeaning": "局所 x 方向に走る鉄筋（耐震壁の横筋・床板のX方向筋）。割付は局所 y 方向の長さに対して行い、1本あたりの欠除は開口の x 方向の内法寸法である",
+      "alongYMeaning": "局所 y 方向に走る鉄筋（耐震壁の縦筋・床板のY方向筋）。割付は局所 x 方向の長さに対して行い、1本あたりの欠除は開口の y 方向の内法寸法である",
+      "threshold": [
+        {
+          "label": "700×700 ＝ 0.49㎡",
+          "widthMm": 700,
+          "heightMm": 700,
+          "areaM2": 0.49,
+          "deducts": false
+        },
+        {
+          "label": "1000×500 ＝ 0.50㎡（境目ちょうど — 「以下」なので欠除なし）",
+          "widthMm": 1000,
+          "heightMm": 500,
+          "areaM2": 0.5,
+          "deducts": false
+        },
+        {
+          "label": "800×700 ＝ 0.56㎡",
+          "widthMm": 800,
+          "heightMm": 700,
+          "areaM2": 0.56,
+          "deducts": true
+        }
+      ],
+      "cases": [
+        {
+          "label": "耐震壁 内法5200×2400 に 1800×1200 の開口1か所",
+          "memberKind": "耐震壁",
+          "clearXMm": 5200,
+          "clearYMm": 2400,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 2000,
+              "yMm": 600,
+              "widthMm": 1800,
+              "heightMm": 1200
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 13,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 8
+                },
+                {
+                  "deductionMm": 1800,
+                  "count": 5
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 27,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 19
+                },
+                {
+                  "deductionMm": 1200,
+                  "count": 8
+                }
+              ]
+            }
+          },
+          "handDerivation": "縦筋(alongY) 本数 ＝ ⌈5200÷200⌉＋1 ＝ 27、位置は 0・200・…・5200。開口の x 内法 (2000, 3800) の内側は 2200〜3600 の8本で、各々 開口高さ 1200 を欠く。横筋(alongX) 本数 ＝ ⌈2400÷200⌉＋1 ＝ 13、位置は 0・200・…・2400。開口の y 内法 (600, 1800) の内側は 800〜1600 の5本で、各々 開口幅 1800 を欠く"
+        },
+        {
+          "label": "耐震壁 縦に重なる開口2か所 — 同じ縦筋が両方を欠く",
+          "memberKind": "耐震壁",
+          "clearXMm": 5200,
+          "clearYMm": 2400,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 2000,
+              "yMm": 200,
+              "widthMm": 1000,
+              "heightMm": 600
+            },
+            {
+              "xMm": 2000,
+              "yMm": 1400,
+              "widthMm": 1000,
+              "heightMm": 600
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 13,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 9
+                },
+                {
+                  "deductionMm": 1000,
+                  "count": 4
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 27,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 23
+                },
+                {
+                  "deductionMm": 1200,
+                  "count": 4
+                }
+              ]
+            }
+          },
+          "handDerivation": "縦筋は x (2000, 3000) の内側 2200〜2800 の4本が両方の開口を通るので、1本あたり 600＋600 ＝ 1200 を欠く。横筋は上下の開口それぞれ2本ずつ計4本が各々 開口幅 1000 を欠く（欠除量が同じなので1つの群になる）"
+        },
+        {
+          "label": "耐震壁 横に並ぶ高さの違う開口2か所 — 欠除量の違う群に分かれる",
+          "memberKind": "耐震壁",
+          "clearXMm": 5200,
+          "clearYMm": 2400,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 1000,
+              "yMm": 200,
+              "widthMm": 1000,
+              "heightMm": 600
+            },
+            {
+              "xMm": 3000,
+              "yMm": 200,
+              "widthMm": 1000,
+              "heightMm": 800
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 13,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 10
+                },
+                {
+                  "deductionMm": 1000,
+                  "count": 1
+                },
+                {
+                  "deductionMm": 2000,
+                  "count": 2
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 27,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 19
+                },
+                {
+                  "deductionMm": 600,
+                  "count": 4
+                },
+                {
+                  "deductionMm": 800,
+                  "count": 4
+                }
+              ]
+            }
+          },
+          "handDerivation": "縦筋は x (1000,2000) の4本が 600 を、x (3000,4000) の4本が 800 を欠く。横筋は y (200,800) と y (200,1000) が重なるので、y ＝ 400・600 の2本が両方を通って 1000＋1000 ＝ 2000 を欠き、y ＝ 800 の1本だけが 1000 を欠く"
+        },
+        {
+          "label": "耐震壁 0.49㎡ の開口 — 1通則8) 但書で欠除しない",
+          "memberKind": "耐震壁",
+          "clearXMm": 5200,
+          "clearYMm": 2400,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 2000,
+              "yMm": 600,
+              "widthMm": 700,
+              "heightMm": 700
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 13,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 13
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 27,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 27
+                }
+              ]
+            }
+          },
+          "handDerivation": "700×700 ＝ 0.49㎡ は「1か所当たり内法面積0.5㎡以下」なので、開口があっても鉄筋は1本も欠けない"
+        },
+        {
+          "label": "耐震壁 ちょうど 0.50㎡ の開口 — 「以下」なので欠除しない",
+          "memberKind": "耐震壁",
+          "clearXMm": 5200,
+          "clearYMm": 2400,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 2000,
+              "yMm": 900,
+              "widthMm": 1000,
+              "heightMm": 500
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 13,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 13
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 27,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 27
+                }
+              ]
+            }
+          },
+          "handDerivation": "1000×500 ＝ 0.50㎡ は条文の「１か所当たり内法面積０．５㎡以下」にちょうど当たる。「以下」なので境目そのものは欠除しない — 開口を横切る位置に鉄筋があっても1本も欠けない"
+        },
+        {
+          "label": "床板 内法5600×5600 に 1200×1200 の開口1か所 — 壁と同じ条項",
+          "memberKind": "床板",
+          "clearXMm": 5600,
+          "clearYMm": 5600,
+          "pitchMm": 200,
+          "openings": [
+            {
+              "xMm": 2400,
+              "yMm": 2400,
+              "widthMm": 1200,
+              "heightMm": 1200
+            }
+          ],
+          "expected": {
+            "alongX": {
+              "totalCount": 29,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 24
+                },
+                {
+                  "deductionMm": 1200,
+                  "count": 5
+                }
+              ]
+            },
+            "alongY": {
+              "totalCount": 29,
+              "groups": [
+                {
+                  "deductionMm": 0,
+                  "count": 24
+                },
+                {
+                  "deductionMm": 1200,
+                  "count": 5
+                }
+              ]
+            }
+          },
+          "handDerivation": "1通則8) は部材を限らない。本数 ＝ ⌈5600÷200⌉＋1 ＝ 29、位置は 0・200・…・5600。X方向筋は開口の y 内法 (2400, 3600) の内側 2600〜3400 の5本が 開口の x 寸法 1200 を欠き、Y方向筋はその逆で同じ数になる（正方形の開口なので）"
+        }
+      ]
     }
   }
 }

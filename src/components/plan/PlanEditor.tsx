@@ -2,13 +2,17 @@
 
 import { useRef, type KeyboardEvent } from 'react'
 
-import type { Member } from '@/domain/model/member'
+import type { Member, Opening } from '@/domain/model/member'
 import {
   findSection,
   gridPoint,
+  slabBay,
   storyNotFound,
+  wallSpan,
   type Project,
 } from '@/domain/model/project'
+import { lookupRule } from '@/domain/rules/lookup'
+import { jpMlitRulePack } from '@/rulepack'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 import { capture } from '@/lib/telemetry'
@@ -195,6 +199,18 @@ function PlanMember({
           height={height}
           rx="3"
         />
+        {slabOpeningRects(project, member, transform).map(
+          ({ id, x, y, width: openingWidth, height: openingHeight }) => (
+            <rect
+              key={id}
+              className={styles.opening}
+              x={x}
+              y={y}
+              width={openingWidth}
+              height={openingHeight}
+            />
+          ),
+        )}
       </g>
     )
   }
@@ -324,6 +340,55 @@ function PlanMember({
   return null
 }
 
+/**
+ * 床板の開口部を平面の px に写す (数量積算基準 1通則8))。座標はベイ局所なので、
+ * 内法域の原点（受ける大梁の内側面）を通り芯からの実寸で足してから写す —
+ * 塗りの `slabEdgeInset` は大梁・壁を掴めるようにするための見た目の逃げであって
+ * 内法ではないので、それを基準にすると開口が実寸からずれる。
+ *
+ * 内法が決まらないベイ（受ける大梁が欠けている）では何も描かない。その部材は
+ * そもそも数量に出ていない。
+ */
+function slabOpeningRects(
+  project: Project,
+  member: Member,
+  transform: DrawingTransform,
+): { id: string; x: number; y: number; width: number; height: number }[] {
+  const openings = member.openings ?? []
+  if (openings.length === 0 || 'axis' in member.position) return []
+
+  let bay
+  try {
+    bay = slabBay(project, member)
+  } catch {
+    return []
+  }
+
+  const origin = gridPoint(
+    project.grid,
+    member.position.ix,
+    member.position.iy,
+  )
+  const originXMm = origin.x + bay.startFaceOffsetXMm
+  const originYMm = origin.y + bay.startFaceOffsetYMm
+
+  return openings.map((opening) => {
+    const left = transform.x(originXMm + opening.xMm)
+    const right = transform.x(originXMm + opening.xMm + opening.widthMm)
+    // y は上下が反転している（transform.y が下から上へ数える）。
+    const bottom = transform.y(originYMm + opening.yMm)
+    const top = transform.y(originYMm + opening.yMm + opening.heightMm)
+
+    return {
+      id: opening.id,
+      x: Math.min(left, right),
+      y: Math.min(top, bottom),
+      width: Math.abs(right - left),
+      height: Math.abs(bottom - top),
+    }
+  })
+}
+
 function SpanEditor({ axis }: { axis: SpanAxis }) {
   const project = useAppStore(({ project }) => project)
   const locale = useAppStore(({ locale }) => locale)
@@ -397,6 +462,201 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
   )
 }
 
+/**
+ * 部材の内法域の大きさ (mm)。開口部はこの中に収まらなければならない
+ * （数量積算基準 1通則8) の「内法寸法」は部材の内法の中の話だ）。
+ *
+ * 求められない部材は null を返す — 受ける大梁や柱が欠けていると内法が決まらず、
+ * その部材はそもそも数量に出ていない。開口を足せる場所ではない。
+ */
+function memberClearSize(
+  project: Project,
+  member: Member,
+): { xMm: number; yMm: number } | null {
+  try {
+    if (member.kind === '耐震壁') {
+      const span = wallSpan(project, member)
+      return { xMm: span.clearLengthMm, yMm: span.clearHeightMm }
+    }
+    if (member.kind === '床板') {
+      const bay = slabBay(project, member)
+      return { xMm: bay.clearXMm, yMm: bay.clearYMm }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+function replaceOpenings(
+  project: Project,
+  memberId: string,
+  openings: Opening[],
+): Project {
+  return {
+    ...project,
+    members: project.members.map((member) => {
+      if (member.id !== memberId) return member
+      // 空配列は「開口なし」— キーを残すと保存した JSON に意味のない配列が並ぶ。
+      if (openings.length === 0) {
+        const next = { ...member }
+        delete next.openings
+        return next
+      }
+      return { ...member, openings }
+    }),
+  }
+}
+
+const openingFields = [
+  { key: 'xMm', label: 'plan.openings.x' },
+  { key: 'yMm', label: 'plan.openings.y' },
+  { key: 'widthMm', label: 'plan.openings.width' },
+  { key: 'heightMm', label: 'plan.openings.height' },
+] as const
+
+/**
+ * 開口部の入力 (数量積算基準 1通則8))。断面一覧ではなく平面に置くのは、開口が
+ * 断面（符号）ではなく**その1枚の部材**に属するからだ — 同じ符号の壁が何枚も
+ * 建つのに窓はその1枚に開いている (ADR-004・ADR-028)。
+ */
+function OpeningEditor() {
+  const project = useAppStore(({ project }) => project)
+  const locale = useAppStore(({ locale }) => locale)
+  const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
+  const updateProject = useAppStore(({ updateProject }) => updateProject)
+  const editReported = useRef(false)
+
+  const member = project.members.find(({ id }) => id === selectedMemberId)
+  const clear = member === undefined ? null : memberClearSize(project, member)
+
+  if (!member || clear === null) {
+    return (
+      <p className={styles.openingHint} data-testid="opening-editor-hint">
+        {t(locale, 'plan.openings.select')}
+      </p>
+    )
+  }
+
+  const section = findSection(project, member.sectionId)
+  const openings = member.openings ?? []
+  const minimumAreaMm2 =
+    lookupRule(jpMlitRulePack, 'measure.opening.deduction.minimum.area', {})
+      .value * 1_000_000
+
+  const commit = (next: Opening[]) => {
+    updateProject((current) => replaceOpenings(current, member.id, next))
+    if (editReported.current) return
+    editReported.current = true
+    capture('opening_edited', { memberKind: member.kind })
+  }
+
+  const add = () => {
+    // 既定値は内法の中央に1/3の大きさ。どんな部材でも必ず収まる大きさから
+    // 始めれば、置いた瞬間に「内法をはみ出す」で部材ごと落ちることがない。
+    const widthMm = Math.max(1, Math.round(clear.xMm / 3))
+    const heightMm = Math.max(1, Math.round(clear.yMm / 3))
+    commit([
+      ...openings,
+      {
+        id: `${member.id}|op${openings.length + 1}`,
+        xMm: Math.round((clear.xMm - widthMm) / 2),
+        yMm: Math.round((clear.yMm - heightMm) / 2),
+        widthMm,
+        heightMm,
+      },
+    ])
+  }
+
+  return (
+    <fieldset className={styles.openingFieldset} data-testid="opening-editor">
+      <legend className={styles.spanLegend}>
+        {t(locale, 'plan.openings.title')} — {section.mark}（内法 {clear.xMm}×
+        {clear.yMm}）
+      </legend>
+      <p className={styles.openingHint}>{t(locale, 'plan.openings.hint')}</p>
+      {openings.length === 0 ? (
+        <p className={styles.openingHint}>{t(locale, 'plan.openings.empty')}</p>
+      ) : (
+        <ul className={styles.openingList}>
+          {openings.map((opening, index) => {
+            const outside =
+              opening.xMm < 0 ||
+              opening.yMm < 0 ||
+              opening.xMm + opening.widthMm > clear.xMm ||
+              opening.yMm + opening.heightMm > clear.yMm
+            const ignored =
+              opening.widthMm * opening.heightMm <= minimumAreaMm2
+
+            return (
+              <li className={styles.openingItem} key={opening.id}>
+                {openingFields.map(({ key, label }) => (
+                  <label className={styles.openingField} key={key}>
+                    <span className={styles.openingFieldLabel}>
+                      {t(locale, label)}
+                    </span>
+                    <input
+                      className={styles.spanInput}
+                      type="number"
+                      min="0"
+                      step="10"
+                      value={opening[key]}
+                      aria-label={`${section.mark} ${member.id} ${index + 1} ${t(
+                        locale,
+                        label,
+                      )}`}
+                      onChange={(event) => {
+                        const value = Number(event.currentTarget.value)
+                        if (!Number.isFinite(value) || value < 0) return
+                        commit(
+                          openings.map((current, position) =>
+                            position === index
+                              ? { ...current, [key]: value }
+                              : current,
+                          ),
+                        )
+                      }}
+                    />
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  className={styles.removeButton}
+                  aria-label={`${section.mark} ${member.id} ${index + 1} ${t(
+                    locale,
+                    'plan.openings.remove',
+                  )}`}
+                  onClick={() =>
+                    commit(openings.filter((_, position) => position !== index))
+                  }
+                >
+                  −
+                </button>
+                {ignored && (
+                  <span className={styles.openingNote}>
+                    {t(locale, 'plan.openings.ignored')}
+                  </span>
+                )}
+                {outside && (
+                  <span
+                    className={styles.openingWarning}
+                    data-testid="opening-outside"
+                  >
+                    ▲ 内法をはみ出しています
+                  </span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <button type="button" className={styles.addButton} onClick={add}>
+        {t(locale, 'plan.openings.add')}
+      </button>
+    </fieldset>
+  )
+}
+
 export function PlanEditor() {
   const project = useAppStore(({ project }) => project)
   const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
@@ -418,6 +678,7 @@ export function PlanEditor() {
         <SpanEditor axis="x" />
         <SpanEditor axis="y" />
       </div>
+      <OpeningEditor />
       <div className={styles.drawingFrame}>
         <svg
           className={styles.drawing}
