@@ -904,3 +904,22 @@ describe('rebarBatches', () => {
     )
   })
 })
+
+describe('位置別 追加主筋の段', () => {
+  it('draws a layerIndex 1 上端筋 one display diameter below the 通し筋', () => {
+    const through = rebarPlacements(girderTop, girderSection)
+    const addition = rebarPlacements(
+      { ...girderTop, layerIndex: 1 },
+      girderSection,
+    )
+    // 段の実寸は domain の points に入れられない（あきの出典がない）ので、
+    // ずれは表示空間だけで起きる。
+    const drop = through[0][1] - addition[0][1]
+
+    expect(drop).toBeGreaterThan(0)
+    expect(addition.map(([, , z]) => z)).toEqual(through.map(([, , z]) => z))
+    for (let index = 1; index < addition.length; index += 1) {
+      expect(through[index][1] - addition[index][1]).toBe(drop)
+    }
+  })
+})

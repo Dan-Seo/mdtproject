@@ -144,10 +144,15 @@ function girderMainPlacements(
   }
 
   const [, , insetZ] = rebar.points[0]
-  const inward =
-    2 * rebarRadius(section.stirrup.size) + rebarRadius(rebar.size)
+  const radius = rebarRadius(rebar.size)
+  const inward = 2 * rebarRadius(section.stirrup.size) + radius
   const width = Math.max(0, section.b - 2 * (insetZ + inward))
-  const y = rebar.role === '上端筋' ? -inward : inward
+  // 端部だけ・中央だけに入る追加主筋は通し筋と同じ高さの points を持つ —
+  // あきを定める行が出典にないので domain が段の実寸を持てないからだ。
+  // 重なって見えないように、表示空間でだけ段の分（表示径1本分）ずらす。
+  const layerOffset = (rebar.layerIndex ?? 0) * 2 * radius
+  const y =
+    rebar.role === '上端筋' ? -inward - layerOffset : inward + layerOffset
 
   return Array.from({ length: rebar.count }, (_, index): Point3 => {
     const z =

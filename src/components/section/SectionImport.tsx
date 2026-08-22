@@ -7,7 +7,11 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import { sectionMarkLabel, type Section } from '@/domain/model/member'
+import {
+  sectionMarkLabel,
+  type GirderSection,
+  type Section,
+} from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
@@ -111,6 +115,29 @@ function uniqueSectionId(project: Project, mark: string): string {
   return `${base}-${suffix}`
 }
 
+/**
+ * 端部欄は表がそう位置を分けている図面だけが持つ。読めなかった図面では
+ * `endCount` に触れない — 中央欄の値を書き写せば、図面にない断面を作る。
+ */
+function girderMainFrom(
+  main: GirderSection['main'],
+  parsed: NonNullable<SectionCandidate['girderMain']>,
+): GirderSection['main'] {
+  const { endTopCount, endBottomCount, ...center } = parsed
+  const endCount = Object.fromEntries(
+    Object.entries({
+      topCount: endTopCount,
+      bottomCount: endBottomCount,
+    }).filter(([, count]) => count !== undefined),
+  )
+
+  return {
+    ...main,
+    ...center,
+    ...(Object.keys(endCount).length === 0 ? {} : { endCount }),
+  }
+}
+
 function applyParsedFields(
   section: Section,
   candidate: SectionCandidate,
@@ -144,7 +171,7 @@ function applyParsedFields(
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
       ...(candidate.girderMain === undefined
         ? {}
-        : { main: { ...section.main, ...candidate.girderMain } }),
+        : { main: girderMainFrom(section.main, candidate.girderMain) }),
       ...(candidate.stirrup === undefined
         ? {}
         : {
@@ -233,9 +260,14 @@ function candidateFields(candidate: SectionCandidate): string[] {
     fields.push(`帯筋 ${candidate.hoop.size}@${candidate.hoop.pitchMm}`)
   }
   if (candidate.girderMain) {
-    fields.push(
-      `主筋 上${candidate.girderMain.topCount}・下${candidate.girderMain.bottomCount}-${candidate.girderMain.size}`,
-    )
+    const { topCount, bottomCount, size, endTopCount, endBottomCount } =
+      candidate.girderMain
+    fields.push(`主筋 上${topCount}・下${bottomCount}-${size}`)
+    if (endTopCount !== undefined || endBottomCount !== undefined) {
+      fields.push(
+        `端部 上${endTopCount ?? topCount}・下${endBottomCount ?? bottomCount}`,
+      )
+    }
   }
   if (candidate.stirrup) {
     fields.push(

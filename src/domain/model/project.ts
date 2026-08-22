@@ -23,7 +23,12 @@ import { coverConditions } from '../rules/lookup'
 // 위임한다. JIS는 유료 규격이라 확보하지 못했고, 읽지 않은 문헌을 룰팩의
 // 出典에 세울 수는 없으므로(ADR-003) 값을 입력으로 받는다. 미입력 径은 키가
 // 없고, 그 径의 kg은 산출하지 않는다.
-export const PROJECT_SCHEMA_VERSION = 6
+// v7 (2026-08-21): GirderSection.main に選択フィールド endCount・cutoffMm 追加。
+// 断面一覧が位置別（端部／中央）に主筋本数を分けている表を受けるため。長さは
+// 数量積算基準 2（３）梁1) が「トップ筋、ハンチ部分の主筋、補強筋等は設計図書に
+// よる」と委ねるので、止め位置を入力として受ける（ADR-012）。省略した断面は
+// 位置による差がない断面であり、v6 までの JSON はそのまま読める。
+export const PROJECT_SCHEMA_VERSION = 7
 
 export interface Grid {
   xSpans: number[]

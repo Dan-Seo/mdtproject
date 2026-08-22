@@ -100,8 +100,17 @@ export interface SpliceTotal {
 }
 
 type GroupedLine =
-  | { kind: 'kg'; line: MassQuantityLine; memberIds: Set<string>; markupRate: number }
-  | { kind: '箇所'; line: SpliceQuantityLine; memberIds: Set<string> }
+  | {
+      kind: 'kg'
+      line: MassQuantityLine
+      memberIds: Set<string>
+      markupRate: number
+    }
+  | {
+      kind: '箇所'
+      line: SpliceQuantityLine
+      memberIds: Set<string>
+    }
 
 function storyName(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
@@ -179,6 +188,34 @@ export function spliceLineId(groupId: string, rebar: Rebar): string {
   return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}|${rebar.length}`
 }
 
+function perMemberKey(memberId: string, key: string): string {
+  return `${memberId}\u0000${key}`
+}
+
+/**
+ * 一つの部材が一つの行キーに出す鉄筋の本数。ふつうは1本だが、位置別に本数が
+ * 分かれた大梁は始端と終端に同じ長さの追加筋を出すので2本になる。
+ *
+ * 行は「1部材あたりの本数 × 箇所数」で語るので、この本数が違う部材を同じ行に
+ * 束ねると片方が消える — 同じ符号でもスパン構成や端部条件が違えば実際に違う。
+ * だから本数を行キーに入れて、違う部材は別の行にする。
+ */
+function rebarsPerMemberLine(
+  keyed: Array<{ memberId: string; key: string }>,
+): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const { memberId, key } of keyed) {
+    const composite = perMemberKey(memberId, key)
+    counts.set(composite, (counts.get(composite) ?? 0) + 1)
+  }
+  return counts
+}
+
+/** 1本しか出さない行のキーは従来どおり — 内訳書の行 id を無用に動かさない。 */
+function withPerMemberCount(key: string, perMember: number): string {
+  return perMember === 1 ? key : `${key}|${perMember}本`
+}
+
 function recalculate(grouped: GroupedLine): void {
   const { line, memberIds } = grouped
   line.places = memberIds.size
@@ -213,6 +250,34 @@ export function aggregateQuantity(
 ): QuantityLine[] {
   const members = new Map(project.members.map((member) => [member.id, member]))
   const grouped = new Map<string, GroupedLine>()
+  const groupIds = new Map<string, string>()
+  const groupIdOf = (memberId: string): string => {
+    const cached = groupIds.get(memberId)
+    if (cached !== undefined) return cached
+
+    const member = members.get(memberId)
+    if (!member) {
+      throw new Error(`Member not found for Rebar: ${memberId}`)
+    }
+    const key = memberGroupKey(project, member)
+    groupIds.set(memberId, key)
+    return key
+  }
+
+  const massCounts = rebarsPerMemberLine(
+    rebars.map((rebar) => ({
+      memberId: rebar.memberId,
+      key: quantityLineId(groupIdOf(rebar.memberId), rebar),
+    })),
+  )
+  const spliceCounts = rebarsPerMemberLine(
+    rebars
+      .filter(({ splice }) => splice && splice.countPerBar > 0)
+      .map((rebar) => ({
+        memberId: rebar.memberId,
+        key: spliceLineId(groupIdOf(rebar.memberId), rebar),
+      })),
+  )
 
   for (const rebar of rebars) {
     const member = members.get(rebar.memberId)
@@ -228,8 +293,10 @@ export function aggregateQuantity(
       )
     }
 
-    const groupId = memberGroupKey(project, member)
-    const id = quantityLineId(groupId, rebar)
+    const groupId = groupIdOf(member.id)
+    const massKey = quantityLineId(groupId, rebar)
+    const perMember = massCounts.get(perMemberKey(member.id, massKey)) ?? 1
+    const id = withPerMemberCount(massKey, perMember)
     const contributions = contributingRules(pack, member, rebar)
     const existing = grouped.get(id)
     const common = {
@@ -272,7 +339,7 @@ export function aggregateQuantity(
           unit: 'kg',
           shape: rebar.shape,
           lengthMm: rebar.length,
-          countPerMember: rebar.count,
+          countPerMember: rebar.count * perMember,
           totalLengthMm: 0,
           // 径で引いて未入力なら null。同じ行に集まる鉄筋は径が同じなので
           // （上の size 検査）、行の中で値が食い違うことはない。
@@ -294,7 +361,10 @@ export function aggregateQuantity(
     const splice = rebar.splice
     if (!splice || splice.countPerBar === 0) continue
 
-    const spliceId = spliceLineId(groupId, rebar)
+    const spliceKey = spliceLineId(groupId, rebar)
+    const splicePerMember =
+      spliceCounts.get(perMemberKey(member.id, spliceKey)) ?? 1
+    const spliceId = withPerMemberCount(spliceKey, splicePerMember)
     const existingSplice = grouped.get(spliceId)
 
     if (existingSplice) {
@@ -317,7 +387,7 @@ export function aggregateQuantity(
         id: spliceId,
         unit: '箇所',
         method: splice.method,
-        countPerMember: splice.countPerBar * rebar.count,
+        countPerMember: splice.countPerBar * rebar.count * splicePerMember,
         totalCount: 0,
         rules: splice.rules,
         formula: splice.formula,

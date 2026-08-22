@@ -9,7 +9,18 @@
  * 룰팩 공백(`Rule not found`)이나 타입 위반 같은 실제 결함은 이 오류로 감싸지
  * 말 것 — 조용히 「미지원 부재」로 흡수되면 결함이 화면에서 사라진다.
  */
-export type UnsupportedReason = '定着不成立' | '寸法不成立'
+export const UNSUPPORTED_REASONS = [
+  '定着不成立',
+  '寸法不成立',
+  /**
+   * 位置によって主筋本数が違うのに、止め位置が断面一覧に入力されていない。
+   * 数量積算基準 2（３）梁1) が「設計図書による」と委ねた値なので製品が
+   * 既定値を置くことはできない — 置けば図面にない長さで質量を出す。
+   */
+  '止め位置未入力',
+] as const
+
+export type UnsupportedReason = (typeof UNSUPPORTED_REASONS)[number]
 
 export class MemberUnsupportedError extends Error {
   readonly reason: UnsupportedReason

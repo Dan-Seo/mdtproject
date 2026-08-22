@@ -1385,6 +1385,129 @@ describe('parseSectionLists (synthetic)', () => {
     expect(g1.issues).toContain('主筋上下径相違')
   })
 
+  it('reads 端部・中央 into a positional 主筋 candidate', () => {
+    const parsed = parseSectionLists({
+      widthPt: 480,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '端部', x: 90, y: 32, w: 20, h: 8 },
+        { str: '中央', x: 200, y: 32, w: 20, h: 8 },
+        { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '5-D25', x: 90, y: 56, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '4-D25', x: 90, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    // 位置で本数が違う表を「読めない」で返すのは、表がそう書いてある値を捨てること
+    expect(g1.girderMain).toEqual({
+      size: 'D25',
+      topCount: 4,
+      bottomCount: 4,
+      endTopCount: 5,
+      endBottomCount: 4,
+    })
+    expect(g1.issues).toEqual([])
+  })
+
+  it('reads a three-column table whose two ends carry the same 本数', () => {
+    const parsed = parseSectionLists({
+      widthPt: 480,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 200, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: 'Y3端', x: 90, y: 32, w: 24, h: 8 },
+        { str: '中央', x: 200, y: 32, w: 20, h: 8 },
+        { str: 'Y4端', x: 310, y: 32, w: 24, h: 8 },
+        { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '6-D25', x: 90, y: 56, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 56, w: 32, h: 8 },
+        { str: '6-D25', x: 310, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '4-D25', x: 90, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 310, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    expect(g1.girderMain).toEqual({
+      size: 'D25',
+      topCount: 4,
+      bottomCount: 4,
+      endTopCount: 6,
+      endBottomCount: 4,
+    })
+  })
+
+  it('refuses a three-column table whose two ends differ', () => {
+    const parsed = parseSectionLists({
+      widthPt: 480,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 200, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: 'Y3端', x: 90, y: 32, w: 24, h: 8 },
+        { str: '中央', x: 200, y: 32, w: 20, h: 8 },
+        { str: 'Y4端', x: 310, y: 32, w: 24, h: 8 },
+        { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '6-D25', x: 90, y: 56, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 56, w: 32, h: 8 },
+        { str: '5-D25', x: 310, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '4-D25', x: 90, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 310, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    // 製品の Grid は通り芯ラベルを持たない — どちらが始端かを決めれば、
+    // それは図面にない向きを製品が作ったことになる (ADR-004)
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.issues).toContain('主筋端部左右相違')
+    expect(g1.raw['上筋(Y3端)']).toBe('6-D25')
+    expect(g1.raw['上筋(Y4端)']).toBe('5-D25')
+  })
+
+  it('still refuses a positional table that has no 中央 column', () => {
+    const parsed = parseSectionLists({
+      widthPt: 480,
+      heightPt: 240,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+        { str: '外端', x: 90, y: 32, w: 20, h: 8 },
+        { str: '内端', x: 200, y: 32, w: 20, h: 8 },
+        { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+        { str: '5-D25', x: 90, y: 56, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 56, w: 32, h: 8 },
+        { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+        { str: '4-D25', x: 90, y: 70, w: 32, h: 8 },
+        { str: '4-D25', x: 200, y: 70, w: 32, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
+
+    // 中央欄がない表で片方を中央と読めば、図面にない断面を作る
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.issues).toContain('主筋端部左右相違')
+  })
+
   it('keeps a centered-title right table out of the left table band', () => {
     const parsed = parseSectionLists({
       widthPt: 1200,

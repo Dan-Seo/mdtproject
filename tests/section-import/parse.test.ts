@@ -179,10 +179,19 @@ describe('parseSectionLists', () => {
       '下筋(内端)': '11-D25',
     })
 
+    // 外端 8 ≠ 内端 13 — どちらが始端かを決められないので確定しない
+    expect(g51Roof.issues).toContain('主筋端部左右相違')
+
     const g51Second = candidate(girders, 'G51', '2階')
     expect(g51Second.stirrup).toEqual({ size: 'D13', pitchMm: 150 })
-    expect(g51Second.girderMain).toBeUndefined()
-    expect(g51Second.raw['上筋(中央)']).toBe('7-D25')
+    // 両端が同値の表は位置別に確定する — 上下とも中央 7・端部 11
+    expect(g51Second.girderMain).toEqual({
+      size: 'D25',
+      topCount: 7,
+      bottomCount: 7,
+      endTopCount: 11,
+      endBottomCount: 11,
+    })
 
     expect(candidate(girders, 'G54', 'R階').girderMain).toEqual({
       size: 'D25',
@@ -322,6 +331,14 @@ function sweepColumns(
   return counts
 }
 
+/**
+ * 転写キーの位置名。表は中央欄を一つしか持たないので、中央でなければ端部だ。
+ * 파서의 분류기를 쓰지 않고 테스트가 따로 판정한다 (ADR-010).
+ */
+function isCenterPosition(position: string): boolean {
+  return position.includes('中央')
+}
+
 function sweepGirders(
   pageFile: string,
   expectedFile: string,
@@ -353,15 +370,25 @@ function sweepGirders(
         counts.dimension += 1
       }
       if (c.girderMain) {
-        for (const text of Object.values(topCells)) {
-          expect(`${c.girderMain.topCount}-${c.girderMain.size}`, label).toBe(
+        // 位置別に確定した候補は、位置ごとに転写と突き合わせる — 端部の値を中央に
+        // 入れた候補は「確定した」ままここを通ってしまう
+        const { size, topCount, bottomCount, endTopCount, endBottomCount } =
+          c.girderMain
+        for (const [position, text] of Object.entries(topCells)) {
+          const count = isCenterPosition(position)
+            ? topCount
+            : (endTopCount ?? topCount)
+          expect(`${count}-${size}`, `${label} ${labels.top}(${position})`).toBe(
             text,
           )
         }
-        for (const text of Object.values(bottomCells)) {
+        for (const [position, text] of Object.entries(bottomCells)) {
+          const count = isCenterPosition(position)
+            ? bottomCount
+            : (endBottomCount ?? bottomCount)
           expect(
-            `${c.girderMain.bottomCount}-${c.girderMain.size}`,
-            label,
+            `${count}-${size}`,
+            `${label} ${labels.bottom}(${position})`,
           ).toBe(text)
         }
         counts.main += 1
@@ -424,8 +451,10 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         '大梁断面リスト',
         { top: '上筋', bottom: '下筋', stirrup: 'ST' },
       ),
-      // 位置별 상이 3칸(G51 R階·2階, G55 R階)은 主筋 미확정이 정답
-    ).toEqual({ main: 2, stirrup: 5, dimension: 5 })
+      // 端部가 좌우 동값인 1칸(G51 2階)은 位置別로 확정한다. 나머지 2칸
+      // (G51 R階 外端8/内端13, G55 R階)은 좌우가 달라 미확정이 정답 — 製品의
+      // Grid는 通り芯 라벨이 없어 어느 쪽이 始端인지 정할 수 없다
+    ).toEqual({ main: 3, stirrup: 5, dimension: 5 })
   })
 
   it('ojkk 大梁リスト — 32칸 (断面 라벨 행 없음·2F에만 G1A·G2A)', () => {
@@ -438,8 +467,9 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
       ),
       // 断面은 라벨 행이 없지만 스케치의 가로(端部 아래)·세로(中央 오른쪽) 치수를
       // 짝지어 전 칸 확정 — 정사각형이 아니라 가로→b·세로→depth 대응까지 대조된다.
-      // 主筋은 端部와 中央이 다른 17칸이 미확정인 것이 정답이다
-    ).toEqual({ main: 15, stirrup: 32, dimension: 32 })
+      // 主筋은 端部와 中央이 다른 17칸도 位置別로 확정해 전 칸이 찼다 —
+      // 표가 端部/中央 두 열만 쓰므로 좌우 방향을 정할 필요가 없다
+    ).toEqual({ main: 32, stirrup: 32, dimension: 32 })
   })
 
   it('kani 地中梁リスト — 전사 1칸 전부 확정', () => {

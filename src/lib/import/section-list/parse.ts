@@ -649,6 +649,83 @@ function setColumnMain(
   )
 }
 
+/**
+ * 位置欄のラベルが指す区間。「Y3端」「外端」のように通り芯名や向きが付く表もあるが、
+ * 末尾の「端」が端部を指すのは共通する。読めないラベルは undefined にして、
+ * 端部・中央に読み替えない — 読み替えれば図面にない断面を作る。
+ */
+function positionZone(label: string): '端部' | '中央' | undefined {
+  if (label.includes('中央')) return '中央'
+  if (label.includes('端')) return '端部'
+  return undefined
+}
+
+function uniqueCount(bars: ParsedBar[]): number | undefined {
+  const first = bars[0]
+  if (first === undefined) return undefined
+  return bars.every((bar) => bar.count === first.count)
+    ? first.count
+    : undefined
+}
+
+/**
+ * 位置で本数を分けている表を、端部欄と中央欄の対として読む。
+ *
+ * 「Y3端／Y4端」のように両端が違う表は取り込まない — 製品の Grid は通り芯ラベルを
+ * 持たないのでどちらが始端かを決められず、決めればそれは図面にない向きになる
+ * (ADR-004)。径は全欄で一つに揃っている表だけを確定する。
+ */
+function positionalGirderMain(
+  cells: Array<{ position: string }>,
+  top: ParsedBar[],
+  bottom: ParsedBar[],
+):
+  | { girderMain: NonNullable<SectionCandidate['girderMain']> }
+  | { issue: CandidateIssue }
+  | undefined {
+  const zones = cells.map(({ position }) => positionZone(position))
+  if (zones.some((zone) => zone === undefined)) return undefined
+
+  const pick = (bars: ParsedBar[], zone: '端部' | '中央') =>
+    bars.filter((_, index) => zones[index] === zone)
+  const endTop = pick(top, '端部')
+  const endBottom = pick(bottom, '端部')
+  const endTopCount = uniqueCount(endTop)
+  const endBottomCount = uniqueCount(endBottom)
+
+  if (
+    (endTop.length > 0 && endTopCount === undefined) ||
+    (endBottom.length > 0 && endBottomCount === undefined)
+  ) {
+    return { issue: '主筋端部左右相違' }
+  }
+
+  const centerTopCount = uniqueCount(pick(top, '中央'))
+  const centerBottomCount = uniqueCount(pick(bottom, '中央'))
+  if (
+    centerTopCount === undefined ||
+    centerBottomCount === undefined ||
+    endTopCount === undefined ||
+    endBottomCount === undefined
+  ) {
+    return undefined
+  }
+
+  const size = top[0]?.size
+  if (size === undefined) return undefined
+  if (![...top, ...bottom].every((bar) => bar.size === size)) return undefined
+
+  return {
+    girderMain: {
+      size,
+      topCount: centerTopCount,
+      bottomCount: centerBottomCount,
+      endTopCount,
+      endBottomCount,
+    },
+  }
+}
+
 function setGirderMain(
   candidate: SectionCandidate,
   topLabel: string,
@@ -671,6 +748,7 @@ function setGirderMain(
   // 位置는 균일한데 上下 径만 다른(실무에서 흔한) 셀을 「位置相違」로 몰면
   // 사용자가 원인을 오인한다 — 전용 사유 코드로 구분한다
   let sizeMismatch = false
+  let positionalIssue: CandidateIssue | undefined
   if (complete && allParsed) {
     const parsedTop = top as ParsedBar[]
     const parsedBottom = bottom as ParsedBar[]
@@ -699,6 +777,21 @@ function setGirderMain(
     }
     sizeMismatch =
       topUniform && bottomUniform && firstTop.size !== firstBottom.size
+
+    // 位置で本数が分かれた表。上下の位置欄が揃っている表だけを対として読む
+    const aligned =
+      topCells.length === bottomCells.length &&
+      topCells.every(
+        (cell, index) => cell.position === bottomCells[index].position,
+      )
+    const positional = aligned
+      ? positionalGirderMain(topCells, parsedTop, parsedBottom)
+      : undefined
+    if (positional && 'girderMain' in positional) {
+      candidate.girderMain = positional.girderMain
+      return
+    }
+    positionalIssue = positional?.issue
   }
 
   for (const cell of topCells) {
@@ -709,13 +802,14 @@ function setGirderMain(
   }
   addIssue(
     candidate,
-    sizeMismatch
-      ? '主筋上下径相違'
-      : allParsed && complete
-        ? '主筋位置相違'
-        : !allParsed
-          ? '主筋解釈不能'
-          : '主筋位置欠落',
+    positionalIssue ??
+      (sizeMismatch
+        ? '主筋上下径相違'
+        : allParsed && complete
+          ? '主筋位置相違'
+          : !allParsed
+            ? '主筋解釈不能'
+            : '主筋位置欠落'),
   )
 }
 

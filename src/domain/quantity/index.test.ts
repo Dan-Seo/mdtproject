@@ -271,6 +271,120 @@ describe('aggregateQuantity', () => {
     expect(topLines.map(({ places }) => places)).toEqual([1, 1])
   })
 
+  it('sums both ends when one 大梁 puts the same 追加主筋 at 始端 and 終端', () => {
+    const project = createSampleProject()
+    const member = project.members.find(({ id }) => id === '1F-G1-X1Y1-X')!
+    const girderSection = findSection(project, member.sectionId)
+    if (girderSection.kind !== '大梁') {
+      throw new Error('expected a 大梁 section')
+    }
+    // 端部だけ2本多い断面。始端と終端で同じ長さ・同じ本数になるので、行キーが
+    // 一致して1行に束ねられる — 束ねたときに片側が落ちないことを固定する。
+    const withEnds = {
+      ...girderSection,
+      main: {
+        ...girderSection.main,
+        endCount: {
+          topCount: girderSection.main.topCount + 2,
+          bottomCount: girderSection.main.bottomCount,
+        },
+        cutoffMm: 1000,
+      },
+    }
+    const rebars = generateGirderRebar(
+      { run: girderRun(project, member), section: withEnds },
+      jpMlitRulePack,
+    )
+    const partials = rebars.filter(({ layerIndex }) => layerIndex === 1)
+    const lines = massLines(
+      aggregateQuantity(project, rebars, jpMlitRulePack),
+    ).filter(({ mark, role }) => mark === 'G1' && role === '上端筋')
+
+    expect(partials).toHaveLength(2)
+    expect(lines).toHaveLength(2)
+    const [through, addition] = lines
+    expect(through.countPerMember).toBe(girderSection.main.topCount)
+    expect(addition.countPerMember).toBe(4)
+    expect(addition.places).toBe(1)
+    expect(addition.totalLengthMm).toBe(addition.lengthMm * 4)
+  })
+
+  it('keeps 大梁 of one 符号 apart when they put different 本数 on one line', () => {
+    // 行は「1部材あたりの本数 × 箇所数」で語る。同じ符号でもスパン構成や端部条件が
+    // 違えば1部材あたりの本数が違うので、束ねると片方が消える
+    const project = createSampleProject()
+    const seen = new Set<string>()
+    const rebars: Rebar[] = []
+
+    for (const member of project.members.filter(({ kind }) => kind === '大梁')) {
+      if (seen.has(member.id)) continue
+      const section = findSection(project, member.sectionId)
+      if (section.kind !== '大梁') throw new Error('expected a 大梁 section')
+
+      const run = girderRun(project, member)
+      for (const runMember of run.members) seen.add(runMember.id)
+      rebars.push(
+        ...generateGirderRebar(
+          {
+            run,
+            section:
+              section.mark === 'G1'
+                ? {
+                    ...section,
+                    main: {
+                      ...section.main,
+                      endCount: { topCount: section.main.topCount + 3 },
+                      cutoffMm: 1200,
+                    },
+                  }
+                : section,
+          },
+          jpMlitRulePack,
+        ),
+      )
+    }
+
+    const isAddition = (rebar: Rebar) =>
+      rebar.role === '上端筋' && rebar.length === 2000 && rebar.layerIndex === 1
+    const additionRebars = rebars.filter(isAddition)
+    // 一つの部材だけ片端を落として、部材ごとに本数が違う状態を作る
+    const dropped = additionRebars[additionRebars.length - 1]
+    const uneven = rebars.filter((rebar) => rebar !== dropped)
+
+    const memberStory = new Map(
+      project.members.map(({ id, storyId }) => [id, storyId]),
+    )
+    const storyId = memberStory.get(dropped.memberId)
+    const storyName = project.stories.find(({ id }) => id === storyId)?.name
+
+    const lines = massLines(
+      aggregateQuantity(project, uneven, jpMlitRulePack),
+    ).filter(
+      (line) =>
+        line.mark === 'G1' &&
+        line.role === '上端筋' &&
+        line.lengthMm === 2000 &&
+        line.storyName === storyName,
+    )
+
+    // 両端に出す部材(6本)と片端だけの部材(3本)は別の行になる
+    expect(lines.map(({ countPerMember }) => countPerMember).sort()).toEqual([
+      3, 6,
+    ])
+    for (const line of lines) {
+      expect(line.totalLengthMm).toBe(
+        line.lengthMm * line.countPerMember * line.places,
+      )
+    }
+    // 行が分かれても合計は保存される
+    expect(lines.reduce((total, line) => total + line.totalLengthMm, 0)).toBe(
+      uneven
+        .filter(isAddition)
+        .filter(({ memberId }) => memberStory.get(memberId) === storyId)
+        .reduce((total, rebar) => total + rebar.length * rebar.count, 0),
+    )
+  })
+
   it('merges 柱 of one 符号 even when the 大梁 above them differ in せい', () => {
     const sample = createSampleProject()
     const project: Project = {

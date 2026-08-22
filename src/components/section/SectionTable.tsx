@@ -77,6 +77,42 @@ function NumberInput({
   )
 }
 
+/**
+ * 断面一覧が値を持たないことがある項目。空欄は 0 ではなく「入力なし」で、
+ * 0 を書き込めば図面にない断面（端部に主筋がない・止め位置が柱面）になる。
+ */
+function OptionalNumberInput({
+  label,
+  value,
+  onChange,
+  minimum = 1,
+}: {
+  label: string
+  value: number | undefined
+  onChange(value: number | undefined): void
+  minimum?: number
+}) {
+  return (
+    <input
+      className={styles.numberInput}
+      type="number"
+      min={minimum}
+      step="1"
+      value={value ?? ''}
+      aria-label={label}
+      onChange={(event) => {
+        const raw = event.currentTarget.value
+        if (raw.trim() === '') {
+          onChange(undefined)
+          return
+        }
+        const next = boundedNumber(raw, minimum)
+        if (next !== null) onChange(next)
+      }}
+    />
+  )
+}
+
 function BarSizeSelect({
   label,
   value,
@@ -237,6 +273,24 @@ function ColumnMainField({
   )
 }
 
+/**
+ * 端部欄の本数を一つ差し替える。上下とも空になったら `endCount` ごと落とす —
+ * 空の器が残ると「位置別に分かれた表」に見える。
+ */
+function withEndCount(
+  main: GirderSection['main'],
+  key: 'topCount' | 'bottomCount',
+  value: number | undefined,
+): GirderSection['main'] {
+  const next = { ...main.endCount, [key]: value }
+  const kept = Object.fromEntries(
+    Object.entries(next).filter(([, count]) => count !== undefined),
+  )
+
+  if (Object.keys(kept).length === 0) return { ...main, endCount: undefined }
+  return { ...main, endCount: kept }
+}
+
 function GirderMainField({
   section,
   update,
@@ -244,44 +298,68 @@ function GirderMainField({
   section: GirderSection
   update(updater: (section: Section) => Section): void
 }) {
+  const updateMain = (
+    updater: (main: GirderSection['main']) => GirderSection['main'],
+  ) =>
+    update((current) => {
+      if (current.kind !== '大梁') return current
+      return { ...current, main: updater(current.main) }
+    })
+
   return (
-    <div className={styles.girderMainField}>
-      <span>上</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 上 本数`}
-        value={section.main.topCount}
-        onChange={(topCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return { ...current, main: { ...current.main, topCount } }
-          })
-        }
-      />
-      <span>−</span>
-      <BarSizeSelect
-        label={`${sectionMarkLabel(section)} 主筋 径`}
-        value={section.main.size}
-        onChange={(size) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return { ...current, main: { ...current.main, size } }
-          })
-        }
-      />
-      <span>下</span>
-      <NumberInput
-        label={`${sectionMarkLabel(section)} 主筋 下 本数`}
-        value={section.main.bottomCount}
-        onChange={(bottomCount) =>
-          update((current) => {
-            if (current.kind !== '大梁') return current
-            return {
-              ...current,
-              main: { ...current.main, bottomCount },
-            }
-          })
-        }
-      />
+    <div className={styles.girderMainCell}>
+      <div className={styles.girderMainField}>
+        <span>上</span>
+        <NumberInput
+          label={`${sectionMarkLabel(section)} 主筋 上 本数`}
+          value={section.main.topCount}
+          onChange={(topCount) =>
+            updateMain((main) => ({ ...main, topCount }))
+          }
+        />
+        <span>−</span>
+        <BarSizeSelect
+          label={`${sectionMarkLabel(section)} 主筋 径`}
+          value={section.main.size}
+          onChange={(size) => updateMain((main) => ({ ...main, size }))}
+        />
+        <span>下</span>
+        <NumberInput
+          label={`${sectionMarkLabel(section)} 主筋 下 本数`}
+          value={section.main.bottomCount}
+          onChange={(bottomCount) =>
+            updateMain((main) => ({ ...main, bottomCount }))
+          }
+        />
+      </div>
+      <div className={styles.girderSubField}>
+        <span>端部</span>
+        <span>上</span>
+        <OptionalNumberInput
+          label={`${sectionMarkLabel(section)} 端部 主筋 上 本数`}
+          value={section.main.endCount?.topCount}
+          onChange={(topCount) =>
+            updateMain((main) => withEndCount(main, 'topCount', topCount))
+          }
+        />
+        <span>下</span>
+        <OptionalNumberInput
+          label={`${sectionMarkLabel(section)} 端部 主筋 下 本数`}
+          value={section.main.endCount?.bottomCount}
+          onChange={(bottomCount) =>
+            updateMain((main) => withEndCount(main, 'bottomCount', bottomCount))
+          }
+        />
+      </div>
+      <div className={styles.girderSubField}>
+        <span>止め位置</span>
+        <OptionalNumberInput
+          label={`${sectionMarkLabel(section)} 主筋 止め位置`}
+          value={section.main.cutoffMm}
+          onChange={(cutoffMm) => updateMain((main) => ({ ...main, cutoffMm }))}
+        />
+        <span>mm</span>
+      </div>
     </div>
   )
 }

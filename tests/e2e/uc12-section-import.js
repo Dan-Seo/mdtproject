@@ -34,6 +34,7 @@ const before = await page.evaluate(() => {
   const outOfScope = document.querySelector("[data-testid='section-import-out-of-scope']");
   const b51 = outOfScope?.querySelector("[data-testid='section-import-candidate-B51-none']");
   const c51First = document.querySelector("[data-testid='section-import-candidate-C51-1階']");
+  const g51Roof = document.querySelector("[data-testid='section-import-candidate-G51-R階']");
   const c51FirstApply = c51First
     ? [...c51First.querySelectorAll("button")].find((button) => button.textContent.trim() === "反映")
     : null;
@@ -46,6 +47,10 @@ const before = await page.evaluate(() => {
     // 불완전 후보(帯筋 S13→빈칸)는 신규 符号로 반영 불가여야 한다
     c51FirstApplyDisabled: c51FirstApply ? c51FirstApply.disabled : null,
     c51FirstRawShown: c51First?.textContent.includes("S13-@100") ?? false,
+    // 端部가 좌우로 다른 大梁은 취입하지 않고 사유와 원문을 남긴다 (R13)
+    g51RoofRawShown: g51Roof?.textContent.includes("13-D25") ?? false,
+    g51RoofReasonShown:
+      g51Roof?.textContent.includes("どちらが始端かを決められない") ?? false,
   };
 });
 
@@ -88,6 +93,8 @@ const checks = {
   outOfScopeHasNoApply: before.b51HasApply === false,
   incompleteNewMarkBlocked: before.c51FirstApplyDisabled === true,
   incompleteRawShown: before.c51FirstRawShown === true,
+  asymmetricEndRawShown: before.g51RoofRawShown === true,
+  asymmetricEndReasonShown: before.g51RoofReasonShown === true,
   tabReachesIgnore: tabTarget === "無視",
   shiftTabReturnsToApply: shiftTabTarget === "反映",
   markKeepsStoryOut: after.markValue === "C51",

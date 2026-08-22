@@ -97,3 +97,17 @@
   display: grid;
   grid-template-columns: auto 52px auto 64px auto 52px;
 }
+
+/* 中央欄・端部欄・止め位置の三段。端部欄と止め位置は表がそう分けている図面だけが埋める */
+.girderMainCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+}
+
+.girderSubField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  color: var(--text-muted);
+}

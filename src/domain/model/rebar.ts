@@ -92,6 +92,15 @@ export interface Rebar {
   count: number
   /** 대표 1본을 실제 本数만큼 전개할 때 필요한 도메인 배치 입력. */
   placement?: RebarPlacement
+  /**
+   * 作図上の段。0（既定）が1段目、1が2段目である。
+   *
+   * **表示のためだけの値で、規準の「あき」は持たない。** 端部だけに入る追加主筋は
+   * 通し筋と同じ位置には入らないが、鉄筋のあきを定める行は確保した文献にない —
+   * 段の実寸を domain の `points` に書けば図面にない寸法を作ることになるので、
+   * points は通し筋と同じ高さのままにし、表示部が段だけずらす。
+   */
+  layerIndex?: number
   /** 継手を持たない鉄筋（フープ・スタラップ）にはない */
   splice?: RebarSplice
   zones?: RebarZone[]

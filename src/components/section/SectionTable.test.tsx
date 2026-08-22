@@ -119,6 +119,79 @@ describe('SectionTable', () => {
     expect(section.stirrup.startOffsetMm).toBe(0)
   })
 
+  it('keeps a user change to 大梁 端部 主筋 本数 in Project', () => {
+    // 端部欄は表がそう分けている表だけが持つ — 未入力は「位置による差がない」
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 端部 主筋 上 本数'), {
+      target: { value: '7' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.endCount).toEqual({ topCount: 7 })
+  })
+
+  it('drops 端部 主筋 本数 back to undefined when the field is emptied', () => {
+    // 空欄に 0 を書き込むと「端部に主筋がない」という図面にない断面になる
+    render(<SectionTable />)
+
+    const field = screen.getByLabelText('G1 端部 主筋 上 本数')
+    fireEvent.change(field, { target: { value: '7' } })
+    fireEvent.change(field, { target: { value: '' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.endCount).toBeUndefined()
+    expect(field).toHaveValue(null)
+  })
+
+  it('keeps 上端 alone as a 端部 difference without writing 下端', () => {
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 端部 主筋 上 本数'), {
+      target: { value: '7' },
+    })
+    fireEvent.change(screen.getByLabelText('G1 端部 主筋 下 本数'), {
+      target: { value: '5' },
+    })
+    fireEvent.change(screen.getByLabelText('G1 端部 主筋 下 本数'), {
+      target: { value: '' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.endCount).toEqual({ topCount: 7 })
+  })
+
+  it('keeps a user change to 大梁 止め位置 in Project', () => {
+    // 数量積算基準 2（３）梁1) が設計図書に委ねた値なので入力で受ける
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 主筋 止め位置'), {
+      target: { value: '1200' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.cutoffMm).toBe(1200)
+  })
+
+  it('does not offer 端部 or 止め位置 on a 柱 row', () => {
+    render(<SectionTable />)
+
+    expect(screen.queryByLabelText('C1 端部 主筋 上 本数')).toBeNull()
+    expect(screen.queryByLabelText('C1 主筋 止め位置')).toBeNull()
+  })
+
   it('selects a representative member when a section row is clicked', () => {
     render(<SectionTable />)
 

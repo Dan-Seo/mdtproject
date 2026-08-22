@@ -9,7 +9,6 @@
     "chapterShort": "第4編第3章第2節",
     "pageNote": "printedPage は紙面に印刷された頁番号、pdfPage は PDF の通し頁。この文書では pdfPage = printedPage + 5。ルールパックの source.page は printedPage で統一する。"
   },
-
   "definitions": [
     {
       "id": "第4編第1章第2節（２）柱",
@@ -26,7 +25,6 @@
       "usedFor": "1通則7) の「その部分の長さ」— 大梁は内法長さ"
     }
   ],
-
   "clauses": [
     {
       "id": "1通則 前文",
@@ -146,7 +144,7 @@
       "pdfPage": 22,
       "quote": "梁の全長にわたる主筋の長さは、梁の長さにその定着長さを加えたものとする。トップ筋、ハンチ部分の主筋、補強筋等は設計図書による。ただし、同一の径の主筋が柱又は梁を通して連続する場合は、定着長さにかえて柱又は梁の幅の１／２を加えるものとし、異なる径の主筋が連続する場合はそれぞれ定着するものとする。",
       "status": "covered",
-      "coveredBy": "通し筋のラン芯長（中間柱を挟む2スパンで柱せい相当＝両側の柱幅1/2の和）"
+      "coveredBy": "通し筋のラン芯長（中間柱を挟む2スパンで柱せい相当＝両側の柱幅1/2の和）。「トップ筋、ハンチ部分の主筋、補強筋等は設計図書による」の方は、断面一覧が位置別に本数を分けている大梁で全長にわたらない主筋として現れる — その長さを規準から引かず、止め位置を GirderSection.main.cutoffMm の入力として受け、未入力なら MemberUnsupportedError('止め位置未入力') で止める"
     },
     {
       "id": "2（３）梁2)",
@@ -165,7 +163,6 @@
       "coveredBy": "あばら筋の設計長さ・設計本数（各梁ごと＝内法長さで割り付ける根拠）。幅止筋・腹筋は 1通則3)・6) 側で deferred"
     }
   ],
-
   "cases": {
     "hoopDesignLength": [
       {
@@ -201,7 +198,6 @@
         "expectedMm": 2100
       }
     ],
-
     "distributionCount": [
       {
         "clause": "1通則7)",
@@ -232,7 +228,6 @@
         "expectedCount": 25
       }
     ],
-
     "spliceCount": {
       "interpretation": "「６．０ｍごとに継手があるものとして」を、長さを単位で割った整数部と読んだ。ちょうど倍数（12.0m など）で2か所か1か所かは原文から決まらないので、下の事例は端数を持つ長さだけを固定する — 倍数の扱いは実装の解釈であってゴールデンではない",
       "column": [
@@ -313,22 +308,49 @@
         }
       ]
     },
-
     "continuousGirderMain": {
       "clause": "2（３）梁1)",
       "label": "同一径の主筋が中間柱を通して連続する2スパン",
-      "clearLengthsMm": [5200, 5200],
-      "intermediateSupportLengthsMm": [800],
+      "clearLengthsMm": [
+        5200,
+        5200
+      ],
+      "intermediateSupportLengthsMm": [
+        800
+      ],
       "halfSupportWidthPerSideMm": 400,
       "expectedCoreLengthMm": 11200,
       "note": "梁の長さ(内法)の和 ＋ 中間柱の両側それぞれ柱幅の1/2 ＝ 5200＋5200＋400＋400。中間支点に定着は付かない"
     },
-
     "columnMain": {
       "clause": "2（２）柱1)",
       "label": "柱主筋の柱長さ項は各階床板上面間＝階高",
       "storyHeightMm": 4200,
       "note": "定着長さ・余長を除いた本体長が階高と一致すること。最上階の扱いは 1通則1) 側で deferred"
+    },
+    "partialGirderMain": {
+      "clause": "2（３）梁1)",
+      "label": "端部だけ本数が多い大梁 — 全長にわたらない主筋は設計図書による",
+      "clearLengthMm": 5200,
+      "centerCount": 4,
+      "endCount": 7,
+      "cutoffFromColumnFaceMm": 1200,
+      "expectedThroughCount": 4,
+      "expectedAdditionCountPerEnd": 3,
+      "expectedCenterAdditionCount": 0,
+      "note": "全長にわたる主筋は「どの位置にもある本数」＝端部欄と中央欄の小さい方の 4 本で、その長さだけが本条の前段（梁の長さ＋定着長さ）で決まる。超過する 3 本は全長にわたらないので後段の「設計図書による」に落ち、長さは規準ではなく入力（柱面からの止め位置 1200）で決まる。したがって追加筋の設計長さ − 定着長さ ＝ 1200 でなければならない — 差が 1200 でなければ製品が図面にない長さを足したということ。本数の読み方（小さい方が通る）は条文にない実務の読み方で R2 に属する"
+    },
+    "partialGirderMainCenter": {
+      "clause": "2（３）梁1)",
+      "label": "中央だけ本数が多い大梁 — 中央のみの補強筋",
+      "clearLengthMm": 5200,
+      "centerCount": 6,
+      "endCount": 4,
+      "cutoffFromColumnFaceMm": 1200,
+      "expectedThroughCount": 4,
+      "expectedCenterAdditionCount": 2,
+      "expectedCenterAdditionLengthMm": 2800,
+      "note": "下端筋で実際に多い形。中央の 2 本は柱に届かないので全長にわたらず、やはり後段に落ちる。止め位置は一端につき一つとするので長さは 5200 − 1200×2 ＝ 2800。定着は付かない — 付ければ図面にない定着を作ったことになる"
     }
   }
 }

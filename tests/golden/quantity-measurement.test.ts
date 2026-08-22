@@ -560,3 +560,99 @@ describe('2（３）梁1) 連続する主筋は定着にかえて柱幅の1/2', 
     expect(top.zones?.filter(({ kind }) => kind === '定着')).toHaveLength(2)
   })
 })
+
+describe('2（３）梁1) 全長にわたらない主筋は設計図書による', () => {
+  const endCase = fixture.cases.partialGirderMain
+  const centerCase = fixture.cases.partialGirderMainCenter
+
+  function girderFor(
+    main: Partial<GirderSection['main']>,
+    clearLengthMm: number,
+  ) {
+    const column = columnSection()
+    const girder = girderSection({
+      main: { size: 'D25', topCount: 4, bottomCount: 4, ...main },
+    })
+    return girderRebarFor([clearLengthMm + column.b], column, girder)
+  }
+
+  it('runs only the count that every 位置 has, and takes the rest out of the 通し筋', () => {
+    const { rebars } = girderFor(
+      {
+        topCount: endCase.centerCount,
+        endCount: { topCount: endCase.endCount, bottomCount: 4 },
+        cutoffMm: endCase.cutoffFromColumnFaceMm,
+      },
+      endCase.clearLengthMm,
+    )
+    const through = rebars.find(
+      ({ role, layerIndex }) => role === '上端筋' && layerIndex === undefined,
+    )!
+    const additions = rebars.filter(
+      ({ role, layerIndex }) => role === '上端筋' && layerIndex === 1,
+    )
+
+    expect(through.count).toBe(endCase.expectedThroughCount)
+    expect(additions).toHaveLength(2)
+    for (const addition of additions) {
+      expect(addition.count).toBe(endCase.expectedAdditionCountPerEnd)
+    }
+  })
+
+  it('adds exactly the 設計図書 の止め位置 to the 追加筋 — no rule may supply that length', () => {
+    const { rebars } = girderFor(
+      {
+        topCount: endCase.centerCount,
+        endCount: { topCount: endCase.endCount, bottomCount: 4 },
+        cutoffMm: endCase.cutoffFromColumnFaceMm,
+      },
+      endCase.clearLengthMm,
+    )
+    const through = rebars.find(
+      ({ role, layerIndex }) => role === '上端筋' && layerIndex === undefined,
+    )!
+    const addition = rebars.find(
+      ({ role, layerIndex }) => role === '上端筋' && layerIndex === 1,
+    )!
+    // 通し筋の設計長さ ＝ 内法 ＋ 定着×2 なので、定着1つ分は差から出せる。
+    // ルールパックを引いて定着長さを組み立て直さない (ADR-010)。
+    const oneAnchorageMm = (through.length - endCase.clearLengthMm) / 2
+
+    expect(addition.length - oneAnchorageMm).toBe(
+      endCase.cutoffFromColumnFaceMm,
+    )
+  })
+
+  it('puts the 中央だけの補強筋 between the two 止め位置 with no 定着', () => {
+    const { rebars } = girderFor(
+      {
+        bottomCount: centerCase.centerCount,
+        endCount: { topCount: 4, bottomCount: centerCase.endCount },
+        cutoffMm: centerCase.cutoffFromColumnFaceMm,
+      },
+      centerCase.clearLengthMm,
+    )
+    const additions = rebars.filter(
+      ({ role, layerIndex }) => role === '下端筋' && layerIndex === 1,
+    )
+
+    expect(additions).toHaveLength(1)
+    expect(additions[0].count).toBe(centerCase.expectedCenterAdditionCount)
+    expect(additions[0].length).toBe(centerCase.expectedCenterAdditionLengthMm)
+    expect(additions[0].zones).toEqual([])
+  })
+
+  it('refuses to invent the length when 設計図書 の止め位置 is missing', () => {
+    // 既定値を置いた瞬間、図面にない長さで質量が出る。条文が委ねた値は
+    // 入力が来るまで算定しない、が本条を守る唯一のやり方である。
+    expect(() =>
+      girderFor(
+        {
+          topCount: endCase.centerCount,
+          endCount: { topCount: endCase.endCount, bottomCount: 4 },
+        },
+        endCase.clearLengthMm,
+      ),
+    ).toThrow(/止め位置/)
+  })
+})

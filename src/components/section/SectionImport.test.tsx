@@ -327,6 +327,50 @@ describe('SectionImport', () => {
     ).toBeNull()
   })
 
+  it('applies 端部欄 as 位置別 主筋本数 onto the 大梁 section', () => {
+    render(
+      <SectionImport
+        initialPages={[
+          {
+            widthPt: 480,
+            heightPt: 240,
+            items: [
+              { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+              { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+              { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+              { str: '位置', x: 10, y: 32, w: 20, h: 8 },
+              { str: '端部', x: 90, y: 32, w: 20, h: 8 },
+              { str: '中央', x: 200, y: 32, w: 20, h: 8 },
+              { str: '上筋', x: 10, y: 56, w: 20, h: 8 },
+              { str: '5-D25', x: 90, y: 56, w: 32, h: 8 },
+              { str: '4-D25', x: 200, y: 56, w: 32, h: 8 },
+              { str: '下筋', x: 10, y: 70, w: 20, h: 8 },
+              { str: '4-D25', x: 90, y: 70, w: 32, h: 8 },
+              { str: '4-D25', x: 200, y: 70, w: 32, h: 8 },
+            ],
+          },
+        ]}
+      />,
+    )
+
+    const row = screen.getByTestId('section-import-candidate-G1-none')
+    expect(row).toHaveTextContent('端部 上5・下4')
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ mark }) => mark === 'G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main).toMatchObject({
+      size: 'D25',
+      topCount: 4,
+      bottomCount: 4,
+      endCount: { topCount: 5, bottomCount: 4 },
+    })
+    // 止め位置は断面一覧にない — 埋めれば図面にない長さで質量を出す
+    expect(section.main.cutoffMm).toBeUndefined()
+  })
+
   it('names the unreadable list even when another list produced candidates', () => {
     render(<SectionImport initialPages={[yokohamaPage, headerlessPage]} />)
 
