@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -163,6 +165,45 @@ describe('TakeoffPrint', () => {
         locale: 'ja',
         size_bucket: expect.any(String) as string,
       }),
+    )
+  })
+})
+
+
+/**
+ * 印刷経路の id・body クラスは、この二定数と `globals.css`・e2e の生文字列に
+ * 分かれて三箇所にある。片方を改名しても型検査は通ってしまい、印刷だけが
+ * 白紙や無装飾になる — 定数を唯一の出所として、残り二箇所を突き合わせる。
+ */
+describe('印刷経路の目印', () => {
+  // 「一度でも出れば通る」では足りない。目印は CSS に三度・e2e に五度出るので、
+  // 一箇所だけ改名しても残りが定数と一致してしまう — 直し漏れが
+  // `body.kijun-printing > *:not(#kijun-print-root)` なら複製ごと隠れて、
+  // この試験が止めるはずだった白紙印刷がそのまま出る。出現を全部数え上げ、
+  // 定数以外の名前が残っていないことを見る。
+  const namesIn = (source: string, pattern: RegExp) => [
+    ...new Set([...source.matchAll(pattern)].map(([, name]) => name)),
+  ]
+
+  const word = '[A-Za-z0-9_-]+'
+  // 走査は定数から組む。`kijun-` を直に書くと、その外へ正しく改名した時に
+  // 何も拾えず空になって、直っているのに落ちる。
+  const prefix = PRINT_ROOT_ID.split('-')[0]
+  // e2e は引用符の種類まで見る。一種類だけ数えると、書き方の違う出現が
+  // 数から漏れて改名の直し漏れをまた通してしまう。
+  const quotes = ['"', "'", '`'].join('')
+
+  it('keeps globals.css and the e2e script on the exported names', () => {
+    const css = readFileSync('src/app/globals.css', 'utf8')
+    expect(namesIn(css, new RegExp(`#(${word})`, 'g'))).toEqual([PRINT_ROOT_ID])
+    expect(namesIn(css, new RegExp(`body[.](${word})`, 'g'))).toEqual([
+      PRINTING_BODY_CLASS,
+    ])
+
+    const e2e = readFileSync('tests/e2e/uc16-model-and-print.js', 'utf8')
+    const quoted = new RegExp(`[${quotes}](${prefix}-${word})[${quotes}]`, 'g')
+    expect(namesIn(e2e, quoted).sort()).toEqual(
+      [PRINTING_BODY_CLASS, PRINT_ROOT_ID].sort(),
     )
   })
 })
