@@ -137,6 +137,9 @@ function applyParsedFields(
     return {
       ...section,
       mark: candidate.mark,
+      // 形状は寸法と一組で入る。「600φ」を b×d の枠に落とすと直径が辺長に
+      // なって周長が変わる — 片方だけ反映しない (ADR-026)
+      ...(candidate.shape === undefined ? {} : { shape: candidate.shape }),
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.d === undefined ? {} : { d: candidate.d }),
       ...(candidate.main === undefined
@@ -253,7 +256,9 @@ function applyCandidate(project: Project, candidate: SectionCandidate): Project 
 
 function sectionSummary(section: ImportableSection): string {
   if (section.kind === '柱') {
-    return `${sectionMarkLabel(section)} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
+    const dimension =
+      section.shape === '円形' ? `${section.b}φ` : `${section.b}×${section.d}`
+    return `${sectionMarkLabel(section)} / ${dimension} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
   }
   const { top, bottom } = section.main
 
@@ -262,7 +267,9 @@ function sectionSummary(section: ImportableSection): string {
 
 function candidateFields(candidate: SectionCandidate): string[] {
   const fields: string[] = []
-  if (candidate.b !== undefined && candidate.d !== undefined) {
+  if (candidate.shape === '円形' && candidate.b !== undefined) {
+    fields.push(`断面 ${candidate.b}φ`)
+  } else if (candidate.b !== undefined && candidate.d !== undefined) {
     fields.push(`断面 ${candidate.b}×${candidate.d}`)
   } else if (candidate.b !== undefined && candidate.depth !== undefined) {
     fields.push(`断面 ${candidate.b}×${candidate.depth}`)

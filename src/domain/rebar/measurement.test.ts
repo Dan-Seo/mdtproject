@@ -4,6 +4,7 @@ import type { RuleHit } from '../rules/types'
 import {
   bandedSpliceRule,
   distributionCount,
+  circularHoopDesignLengthMm,
   hoopDesignLengthMm,
   intervalSpliceCount,
   spliceCount,
@@ -63,6 +64,37 @@ describe('hoopDesignLengthMm', () => {
 
   it('refuses an addition rule that is not in mm', () => {
     expect(() => hoopDesignLengthMm(400, 750, rule(0, 'd'))).toThrow(/mm/)
+  })
+})
+
+describe('circularHoopDesignLengthMm', () => {
+  it('returns the circumference of the design diameter', () => {
+    // 円周の定義そのもの。1通則2) は断面形状を矩形に限っていない (ADR-026)。
+    expect(circularHoopDesignLengthMm(600, noAddition)).toBeCloseTo(1884.9556, 3)
+  })
+
+  it('does not round the fraction away', () => {
+    // 1通則6) の四捨五入はフック・定着・余長・重ね継手の長さについての定めで、
+    // 周長には及ばない。丸める根拠がないので端数を持ったまま出す。
+    expect(circularHoopDesignLengthMm(600, noAddition) % 1).not.toBe(0)
+  })
+
+  it('carries the addition the rule pack supplies', () => {
+    expect(circularHoopDesignLengthMm(600, rule(30, 'mm'))).toBeCloseTo(
+      1914.9556,
+      3,
+    )
+  })
+
+  it.each([
+    ['zero', 0],
+    ['negative', -600],
+    ['NaN', Number.NaN],
+    ['Infinity', Number.POSITIVE_INFINITY],
+  ])('throws for %s diameter', (_label, diameterMm) => {
+    expect(() => circularHoopDesignLengthMm(diameterMm, noAddition)).toThrow(
+      /断面の設計寸法/,
+    )
   })
 })
 

@@ -45,6 +45,7 @@ function columnSection(given: Case['given']): ColumnSection {
     id: 'section-C1',
     kind: '柱',
     mark: 'C1',
+    shape: '矩形',
     b: source.b,
     d: source.d,
     fc: source.fc,

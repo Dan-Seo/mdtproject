@@ -1,4 +1,4 @@
-import type { MemberKind } from '@/domain/model/member'
+import type { ColumnShape, MemberKind } from '@/domain/model/member'
 import {
   findSection,
   girderSpan,
@@ -25,6 +25,11 @@ export interface ConcreteBox {
   center: Point3
   /** 박스 크기 [x, y, z] (mm) */
   size: Point3
+  /**
+   * 円形柱だけ立体が変わる。size は外接寸法のままなので直径は size[0] であり、
+   * 大梁の内法も選択の当たり判定も外接寸法で決まったまま動く (ADR-026)。
+   */
+  shape?: ColumnShape
 }
 
 export interface RebarInstance {
@@ -97,6 +102,7 @@ export function buildingLayout(
         kind: '柱',
         center: [x, elevation + story.height / 2, y],
         size: [section.b, story.height, section.d],
+        shape: section.shape,
       }
     } else if (member.kind === '大梁') {
       if (section.kind !== '大梁' || !('axis' in member.position)) {

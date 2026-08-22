@@ -121,7 +121,12 @@ function storyName(project: Project, member: Member): string {
 }
 
 function sectionLabel(section: Section): string {
-  if (section.kind === '柱') return `${section.b}×${section.d}`
+  // 円形柱は図面と同じ「600φ」で書く。b×d と書くと図面にない矩形断面に見える。
+  if (section.kind === '柱') {
+    return section.shape === '円形'
+      ? `${section.b}φ`
+      : `${section.b}×${section.d}`
+  }
   if (section.kind === '大梁') return `${section.b}×${section.depth}`
 
   // 壁は断面が厚さ1つなので図面と同じ「t180」の書き方にする。

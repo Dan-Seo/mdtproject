@@ -130,10 +130,29 @@ function columnRebarPlacements(
     return columnHoopPlacements(rebar)
   }
 
-  // 主筋: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
   const [insetX, , insetZ] = rebar.points[0]
   const inward =
     2 * rebarRadius(section.hoop.size) + rebarRadius(rebar.size)
+
+  // 円形柱: 帯筋 안쪽 **원**을 등간격으로 돈다. 대표 배근이 시작 각도다.
+  if (section.shape === '円形') {
+    const centre = section.b / 2
+    const coverRadius = centre - insetX
+    const radius = Math.max(0, coverRadius - inward)
+    // 代表配筋は かぶり円の -X 側の点なので、そこを角度の基準にする。
+    const start = Math.PI
+
+    return Array.from({ length: rebar.count }, (_, index): Point3 => {
+      const angle = start + (2 * Math.PI * index) / rebar.count
+      return [
+        centre + radius * Math.cos(angle) - insetX,
+        0,
+        centre + radius * Math.sin(angle) - insetZ,
+      ]
+    })
+  }
+
+  // 矩形柱: 帯筋 안쪽 사각형 둘레를 등간격으로 돈다. 대표 배근이 시작 모서리다.
   const width = Math.max(0, section.b - 2 * (insetX + inward))
   const depth = Math.max(0, section.d - 2 * (insetZ + inward))
   const perimeter = 2 * (width + depth)
@@ -406,6 +425,17 @@ function hoopDisplayPoint(
   radius: number,
   section: Section,
 ): Point3 {
+  if (section.kind === '柱' && section.shape === '円形') {
+    // 円は辺ごとに詰められない — 中心からの距離を表示半径だけ縮める。
+    const centre = section.b / 2
+    const [x, y, z] = point
+    const distance = Math.hypot(x - centre, z - centre)
+    if (distance === 0) return point
+    const scale = Math.max(0, distance - radius) / distance
+
+    return [centre + (x - centre) * scale, y, centre + (z - centre) * scale]
+  }
+
   if (section.kind === '柱') {
     const xs = framePoints.map((candidate) => candidate[0])
     const zs = framePoints.map((candidate) => candidate[2])

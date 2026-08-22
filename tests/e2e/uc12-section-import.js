@@ -1,7 +1,9 @@
 // UC-12: 断面リスト PDF를 브라우저 로컬에서 추출하고, 행 단위 승인으로만 반영한다.
-// 반영 단위는 (符号, 階)다 — C51 2階는 완전 후보라 반영되고, C56은 断面이
-// 600φ(원형)라 빈칸이므로 신규 符号로는 반영이 막혀야 한다.
-// C51 1階의 帯筋 S13은 高強度せん断補強筋이라 이제 값으로 들어온다 (ADR-025).
+// 반영 단위는 (符号, 階)다 — C51 2階는 완전 후보라 반영되고, G51 R階는 端部
+// 主筋이 좌우로 달라(外端 8-D25／内端 13-D25) 빈칸이므로 신규 符号로는 반영이
+// 막혀야 한다 (R13).
+// C51 1階의 帯筋 S13은 高強度せん断補強筋이라 값으로 들어오고 (ADR-025),
+// C56의 断面 600φ도 円形柱로 들어온다 (ADR-026) — 둘 다 빈칸이 아니다.
 const pdfPath = ".cache/dwg-yokohama.pdf";
 const sandboxFixture = "uc12-dwg-yokohama.pdf.b64";
 let pdfBase64;
@@ -37,8 +39,8 @@ const before = await page.evaluate(() => {
   const c51First = document.querySelector("[data-testid='section-import-candidate-C51-1階']");
   const c56 = document.querySelector("[data-testid='section-import-candidate-C56-2階']");
   const g51Roof = document.querySelector("[data-testid='section-import-candidate-G51-R階']");
-  const c56Apply = c56
-    ? [...c56.querySelectorAll("button")].find((button) => button.textContent.trim() === "反映")
+  const g51Apply = g51Roof
+    ? [...g51Roof.querySelectorAll("button")].find((button) => button.textContent.trim() === "反映")
     : null;
   return {
     c51ExistsInTable: document.querySelector("[data-testid='section-row-section-C51-2階']") !== null,
@@ -46,12 +48,12 @@ const before = await page.evaluate(() => {
     b51HasApply: b51
       ? [...b51.querySelectorAll("button")].some((button) => button.textContent.trim() === "反映")
       : null,
-    // 불완전 후보(断面 600φ→빈칸)는 신규 符号로 반영 불가여야 한다
-    c56ApplyDisabled: c56Apply ? c56Apply.disabled : null,
-    c56RawShown: c56?.textContent.includes("600φ") ?? false,
-    // 高強度せん断補強筋은 빈칸이 아니라 값으로 들어온다 — 원문 표시가 없어야 한다
+    // 불완전 후보(端部 主筋 좌우 상이)는 신규 符号로 반영 불가여야 한다
+    g51ApplyDisabled: g51Apply ? g51Apply.disabled : null,
+    // 高強度せん断補強筋·円形柱는 빈칸이 아니라 값으로 들어온다
     highStrengthHoopParsed: c51First?.textContent.includes("帯筋 S13@100") ?? false,
     highStrengthRawGone: (c51First?.textContent.includes("S13-@100") ?? true) === false,
+    circularParsed: c56?.textContent.includes("断面 600φ") ?? false,
     // 端部가 좌우로 다른 大梁은 취입하지 않고 사유와 원문을 남긴다 (R13)
     g51RoofRawShown: g51Roof?.textContent.includes("13-D25") ?? false,
     g51RoofReasonShown:
@@ -96,10 +98,11 @@ const checks = {
   approvalWasRequired: before.c51ExistsInTable === false,
   outOfScopeListed: before.b51VisibleInOutOfScope === true,
   outOfScopeHasNoApply: before.b51HasApply === false,
-  incompleteNewMarkBlocked: before.c56ApplyDisabled === true,
-  incompleteRawShown: before.c56RawShown === true,
+  incompleteNewMarkBlocked: before.g51ApplyDisabled === true,
+  incompleteRawShown: before.g51RoofRawShown === true,
   highStrengthHoopParsed: before.highStrengthHoopParsed === true,
   highStrengthRawGone: before.highStrengthRawGone === true,
+  circularParsed: before.circularParsed === true,
   asymmetricEndRawShown: before.g51RoofRawShown === true,
   asymmetricEndReasonShown: before.g51RoofReasonShown === true,
   tabReachesIgnore: tabTarget === "無視",

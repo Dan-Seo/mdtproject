@@ -14,6 +14,7 @@ const supportColumnSection: ColumnSection = {
   id: 'section-C1',
   kind: '柱',
   mark: 'C1',
+  shape: '矩形',
   b: 800,
   d: 800,
   fc: 24,

@@ -81,6 +81,7 @@ describe('parseSectionLists', () => {
     expect(c1).toMatchObject({
       kind: '柱',
       mark: 'C1',
+      shape: '矩形',
       storyLabel: '6F',
       main: { count: 16, size: 'D25' },
       hoop: { size: 'D13', pitchMm: 100 },
@@ -142,12 +143,14 @@ describe('parseSectionLists', () => {
     expect(c51First.hoop).toEqual({ size: 'S13', pitchMm: 100 })
     expect(c51First.raw['HOOP']).toBeUndefined()
 
+    // 円形柱。直径記号があるので b×d ではなく直径ひとつとして確定する (ADR-026)
     const c56 = candidate(columns, 'C56', '2階')
     expect(c56.main).toEqual({ count: 12, size: 'D22' })
-    expect(c56.b).toBeUndefined()
-    expect(c56.d).toBeUndefined()
-    expect(c56.raw['断面']).toBe('600φ')
-    expect(c56.issues).not.toHaveLength(0)
+    expect(c56.shape).toBe('円形')
+    expect(c56.b).toBe(600)
+    expect(c56.d).toBe(600)
+    expect(c56.raw['断面']).toBeUndefined()
+    expect(c56.issues).toHaveLength(0)
     expect(candidate(columns, 'C58A', '1階').main).toEqual({
       count: 26,
       size: 'D25',
@@ -235,6 +238,8 @@ describe('parseSectionLists', () => {
 interface ExpectedColumnCell {
   b?: number
   d?: number
+  /** 円形断面の直径。b・d の代わりにこれを持つ (ADR-026) */
+  直径?: number
   断面raw?: string
   主筋: string | Record<string, string>
   帯筋?: string
@@ -290,8 +295,16 @@ function sweepColumns(
       const label = `${entry.mark}/${story}`
 
       if (c.b !== undefined) {
-        expect(c.b, label).toBe(cell.b)
-        expect(c.d, label).toBe(cell.d)
+        // 円形は b×d ではなく直径ひとつ。転写側も「600φ」を直径 600 と読む
+        if (cell.直径 !== undefined) {
+          expect(c.shape, label).toBe('円形')
+          expect(c.b, label).toBe(cell.直径)
+          expect(c.d, label).toBe(cell.直径)
+        } else {
+          expect(c.shape, label).toBe('矩形')
+          expect(c.b, label).toBe(cell.b)
+          expect(c.d, label).toBe(cell.d)
+        }
         counts.dimension += 1
       }
       if (cell.断面raw !== undefined && c.raw['断面'] !== undefined) {
@@ -434,15 +447,15 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
     ).toEqual({ main: 19, hoop: 19, dimension: 19 })
   })
 
-  it('yokohama 柱断面リスト — 15칸 (断面 라벨 행·位置 없음·S13·600φ 포함)', () => {
+  it('yokohama 柱断面リスト — 15칸 (断面 라벨 행·位置 없음·S13·600φ 전 칸 확정)', () => {
     expect(
       sweepColumns(
         'yokohama-p13.json',
         'yokohama-kanazawa-p13-columns.json',
         '柱断面リスト',
       ),
-      // S13 4칸이 ADR-025로 확정되어 帯筋은 전 칸. 断面은 600φ(C56) 1칸만 미확정
-    ).toEqual({ main: 15, hoop: 15, dimension: 14 })
+      // S13 4칸은 ADR-025로, 600φ(C56)는 ADR-026으로 확정되어 전 칸이 찼다
+    ).toEqual({ main: 15, hoop: 15, dimension: 15 })
   })
 
   it('yokohama 大梁断面リスト — 전사분 5칸 (位置별 상이 主筋 포함)', () => {

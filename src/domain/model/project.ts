@@ -37,7 +37,11 @@ import { coverConditions } from '../rules/lookup'
 //   WallSection が加わり、Member.position は大梁と同じ辺の位置を使う。数量積算基準
 //   2（５）壁1)（壁式構造以外）と、躯体の区分（５）壁「柱、梁、床板等に接する垂直材の
 //   内法部分」に対応する — 壁式構造の壁（2）は扱わない (ADR-024)。
-export const PROJECT_SCHEMA_VERSION = 8
+// v9 (2026-08-22): ColumnSection に必須フィールド shape を追加。円形柱は b・d を
+//   ともに直径にする。数量で形状を見るのは 1通則2)「断面の設計寸法による周長」
+//   だけで、円形断面ではそれが円周になる — 省略可能にすると「記載なし＝矩形」と
+//   いう黙った既定値になるので必須にする (ADR-026)。
+export const PROJECT_SCHEMA_VERSION = 9
 
 export interface Grid {
   xSpans: number[]

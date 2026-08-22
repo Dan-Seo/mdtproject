@@ -67,6 +67,21 @@ export type Exposure = '屋内' | '屋外'
 
 export type Finish = '仕上げあり' | '仕上げなし'
 
+/**
+ * 柱の断面形状。
+ *
+ * 円形柱は b・d をともに直径にする。大梁の内法長さも 3D の柱面も b・d から
+ * 決まるので、外接寸法として同じ値を置けば形状の追加が計測規則を揺らさない。
+ * 数量で形状を見るのは 1通則2)「断面の設計寸法による周長」ただ一箇所で、
+ * 円形断面ではその周長が円周になる — 製品が新しい値を作るわけではない (ADR-026)。
+ *
+ * スパイラル筋は扱わない。標準仕様書 5.3.4(6)(ｲ) が「スパイラル筋の継手及び定着は
+ * 図5.3.5 による」と図に委ねており、その図は原文で画像だ (表5.3.3 と同じ)。
+ * 断面リストが「HOOP D13@100」と書いていればそれはフープであって、製品が
+ * スパイラルと読み替えることはしない (ADR-012)。
+ */
+export type ColumnShape = '矩形' | '円形'
+
 export interface ColumnSection {
   id: string
   kind: '柱'
@@ -77,6 +92,8 @@ export interface ColumnSection {
    * 제품의 Story와는 아직 연결되지 않는다 — 표시·취입 매칭용이다.
    */
   storyLabel?: string
+  /** 断面形状。'円形' のとき b・d はともに直径である。 */
+  shape: ColumnShape
   b: number
   d: number
   fc: number

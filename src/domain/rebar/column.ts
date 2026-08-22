@@ -6,6 +6,7 @@ import { coverConditions, lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 import {
   distributionCount,
+  circularHoopDesignLengthMm,
   hoopDesignLengthMm,
   spliceCount,
   spliceLengthMm,
@@ -29,6 +30,30 @@ function barDiameter(size: BarSize): number {
   }
 
   return diameter
+}
+
+/**
+ * 円形フープの加工形状を折れ線で表す分割数。**作図規則であって規準値ではない** —
+ * 数量は 1通則2) の円周（π×直径）を使い、この折れ線の長さは使わない (ADR-019)。
+ * 24 は 600φ で 1 辺 78mm 程度、表示半径 22mm の管でつないで円に見える最小限だ。
+ */
+const CIRCULAR_HOOP_SEGMENTS = 24
+
+/** かぶり面に接する円を、閉じた折れ線で返す。中心は断面の中心である。 */
+function circularHoopPoints(
+  diameterMm: number,
+  fabricationCoverMm: number,
+): [number, number, number][] {
+  const centre = diameterMm / 2
+  const radius = centre - fabricationCoverMm
+
+  return Array.from(
+    { length: CIRCULAR_HOOP_SEGMENTS },
+    (_, index): [number, number, number] => {
+      const angle = (2 * Math.PI * index) / CIRCULAR_HOOP_SEGMENTS
+      return [centre + radius * Math.cos(angle), 0, centre + radius * Math.sin(angle)]
+    },
+  )
 }
 
 function millimetres(rule: RuleHit, diameter?: number): number {
@@ -182,11 +207,11 @@ export function generateColumnRebar(
 
   // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
   // かぶりを控除した上の hoopWidth·hoopDepth は 3D 形状 (points) 専用である。
-  const hoopLength = hoopDesignLengthMm(
-    section.b,
-    section.d,
-    hoopLengthAdditionRule,
-  )
+  // 円形柱では同じ条文の「周長」が円周になる (ADR-026)。
+  const circular = section.shape === '円形'
+  const hoopLength = circular
+    ? circularHoopDesignLengthMm(section.b, hoopLengthAdditionRule)
+    : hoopDesignLengthMm(section.b, section.d, hoopLengthAdditionRule)
 
   // 上部大梁せい가 階高 이상이면 3D 배치 구간이 사라진다. 数量만이라면
   // 階高로 계산되지만(1通則7)), 그런 부재는 梁이 층보다 높다는 뜻이라 형상이
@@ -234,14 +259,21 @@ export function generateColumnRebar(
     role: '主筋',
     size: section.main.size,
     shape: 'straight',
-    points: [
-      [fabricationCover, -bottomExtension, fabricationCover],
-      [
-        fabricationCover,
-        story.height + topExtension,
-        fabricationCover,
-      ],
-    ],
+    // 代表1本の位置。矩形は隅、円形はかぶり円上の一点で、表示部はここから
+    // 周を等間隔に歩いて実本数を描く (ADR-019 — 配置は作図規則である)。
+    points: circular
+      ? [
+          [fabricationCover, -bottomExtension, section.d / 2],
+          [fabricationCover, story.height + topExtension, section.d / 2],
+        ]
+      : [
+          [fabricationCover, -bottomExtension, fabricationCover],
+          [
+            fabricationCover,
+            story.height + topExtension,
+            fabricationCover,
+          ],
+        ],
     closed: false,
     length: mainLength,
     count: section.main.count,
@@ -274,16 +306,18 @@ export function generateColumnRebar(
     role: '帯筋',
     size: section.hoop.size,
     shape: 'hoop',
-    points: [
-      [fabricationCover, 0, fabricationCover],
-      [section.b - fabricationCover, 0, fabricationCover],
-      [
-        section.b - fabricationCover,
-        0,
-        section.d - fabricationCover,
-      ],
-      [fabricationCover, 0, section.d - fabricationCover],
-    ],
+    points: circular
+      ? circularHoopPoints(section.b, fabricationCover)
+      : [
+          [fabricationCover, 0, fabricationCover],
+          [section.b - fabricationCover, 0, fabricationCover],
+          [
+            section.b - fabricationCover,
+            0,
+            section.d - fabricationCover,
+          ],
+          [fabricationCover, 0, section.d - fabricationCover],
+        ],
     closed: true,
     length: hoopLength,
     count: hoopCount,
@@ -303,7 +337,9 @@ export function generateColumnRebar(
     // 束ねられた他の柱について事実でない根拠を表示することになる —
     // 数量を決めた項だけを載せ、配置は placement が持つ。
     formula:
-      `設計長さ ＝ 断面の設計寸法による周長 2×(${section.b}＋${section.d}) ` +
+      `設計長さ ＝ 断面の設計寸法による周長 ${
+        circular ? `π×${section.b}` : `2×(${section.b}＋${section.d})`
+      } ` +
       `＝ ${hoopLength}（数量積算基準 1通則2) — かぶりを控除せずフックも計上しない） ／ ` +
       `設計本数 ＝ ⌈階高 ${story.height} ÷ ピッチ ${section.hoop.pitch}⌉ ＋ 1 ` +
       `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと） ／ ` +

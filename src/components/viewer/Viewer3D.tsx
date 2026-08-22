@@ -8,6 +8,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 import type {
   ColumnSection,
+  ColumnShape,
   GirderSection,
   Member,
   WallSection,
@@ -302,6 +303,33 @@ function disposeContent(runtime: ViewerRuntime): void {
 interface ConcreteBox {
   size: Point3
   center: Point3
+  /** 円形柱だけ立体が変わる。size は外接寸法なので直径は size[0] である。 */
+  shape?: ColumnShape
+}
+
+/**
+ * 躯体の立体。円形柱は Y 軸まわりの円柱で、それ以外は直方体だ。三面図でなく
+ * 立体で見せる以上、断面形状が図面と違って見えてはいけない (ADR-026)。
+ */
+function concreteGeometry(box: {
+  size: Point3
+  shape?: ColumnShape
+}): THREE.BufferGeometry {
+  if (box.shape === '円形') {
+    const radius = (box.size[0] / 2) * MILLIMETRES_TO_SCENE
+    return new THREE.CylinderGeometry(
+      radius,
+      radius,
+      box.size[1] * MILLIMETRES_TO_SCENE,
+      CYLINDER_RADIAL_SEGMENTS,
+    )
+  }
+
+  return new THREE.BoxGeometry(
+    box.size[0] * MILLIMETRES_TO_SCENE,
+    box.size[1] * MILLIMETRES_TO_SCENE,
+    box.size[2] * MILLIMETRES_TO_SCENE,
+  )
 }
 
 function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
@@ -327,6 +355,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       {
         size: [section.b, story.height, section.d],
         center: [section.b / 2, story.height / 2, section.d / 2],
+        shape: section.shape,
       },
     ]
   }
@@ -458,11 +487,7 @@ function addMemberConcrete(
   )
 
   for (const box of concreteBoxes(view)) {
-    const geometry = new THREE.BoxGeometry(
-      box.size[0] * MILLIMETRES_TO_SCENE,
-      box.size[1] * MILLIMETRES_TO_SCENE,
-      box.size[2] * MILLIMETRES_TO_SCENE,
-    )
+    const geometry = concreteGeometry(box)
     const outline = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
       outlineMaterial,
@@ -998,11 +1023,7 @@ function rebuildBuildingScene(
   const pickableMeshes: THREE.Mesh[] = []
 
   for (const box of layout.boxes) {
-    const geometry = new THREE.BoxGeometry(
-      box.size[0] * MILLIMETRES_TO_SCENE,
-      box.size[1] * MILLIMETRES_TO_SCENE,
-      box.size[2] * MILLIMETRES_TO_SCENE,
-    )
+    const geometry = concreteGeometry(box)
     const mesh = new THREE.Mesh(geometry, concreteMaterial)
     mesh.position.copy(vector(box.center))
     mesh.receiveShadow = true

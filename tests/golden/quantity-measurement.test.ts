@@ -34,6 +34,7 @@ function columnSection(
     id: 'section-C1',
     kind: '柱',
     mark: 'C1',
+    shape: '矩形',
     b: 800,
     d: 800,
     fc: 24,
@@ -274,7 +275,10 @@ describe('計測規則の出典がルールパックに載っている', () => {
 
 describe('1通則2) フープ・スタラップの長さ ＝ 断面の設計寸法による周長', () => {
   const columnCases = fixture.cases.hoopDesignLength.filter(
-    ({ memberKind }) => memberKind === '柱',
+    ({ memberKind, diameterMm }) => memberKind === '柱' && diameterMm === undefined,
+  )
+  const circularCases = fixture.cases.hoopDesignLength.filter(
+    ({ diameterMm }) => diameterMm !== undefined,
   )
   const girderCases = fixture.cases.hoopDesignLength.filter(
     ({ memberKind }) => memberKind === '大梁',
@@ -292,6 +296,23 @@ describe('1通則2) フープ・スタラップの長さ ＝ 断面の設計寸�
     )
 
     expect(hoop.length).toBe(testCase.expectedMm)
+  })
+
+  // 条文は断面形状を矩形に限っていない。円形断面では「断面の設計寸法による
+  // 周長」がそのまま円周であり、製品が新しい値を作るわけではない (ADR-026)。
+  it.each(circularCases)('$label 帯筋 ＝ $expectedMm', (testCase) => {
+    const hoop = roleOf(
+      columnRebarFor(
+        columnSection({
+          shape: '円形',
+          b: testCase.diameterMm!,
+          d: testCase.diameterMm!,
+        }),
+      ),
+      '帯筋',
+    )
+
+    expect(hoop.length).toBeCloseTo(testCase.expectedMm, 3)
   })
 
   it.each(girderCases)('$label あばら筋 ＝ $expectedMm', (testCase) => {

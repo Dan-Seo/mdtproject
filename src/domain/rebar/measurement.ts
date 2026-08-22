@@ -48,6 +48,27 @@ export function hoopDesignLengthMm(
 }
 
 /**
+ * 1通則2) の円形断面。
+ *
+ * 条文は断面形状を矩形に限っていない — 定めているのは「断面の設計寸法による周長」
+ * であって、円形断面ではそれが円周 π×直径 である。矩形版と同じく加工用かぶりを
+ * 控除せず、フック余長も足さない。
+ *
+ * 端数は丸めない。1通則6) が四捨五入を定めるのはフック・定着・余長・重ね継手の
+ * 長さについてであって周長ではなく、丸めの根拠がない (ADR-026)。
+ */
+export function circularHoopDesignLengthMm(
+  diameterMm: number,
+  additionRule: RuleHit,
+): number {
+  if (!positiveFinite(diameterMm)) {
+    throw new Error(`断面の設計寸法 must be positive: ${diameterMm}φ`)
+  }
+
+  return Math.PI * diameterMm + additionMm(additionRule)
+}
+
+/**
  * 1通則3)（紙面 p.15）
  * 「幅止筋の長さは、基礎梁、梁、壁梁、壁のコンクリートの設計幅又は厚さとし、
  *   フックはないものとする。」

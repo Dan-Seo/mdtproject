@@ -551,6 +551,17 @@ function inDimensionRange(b: number, depth: number): boolean {
   return b >= 10 && b <= 9999 && depth >= 10 && depth <= 9999
 }
 
+/**
+ * 円形断面の「600φ」。φ・Φ・㎜表記のゆれだけを見る — 数値ひとつだけの
+ * セル（スケッチの寸法線）は円と読まない。直径記号があることが根拠である。
+ */
+function parseCircularDimension(value: string): { diameter: number } | undefined {
+  const match = normalized(value).match(/^(\d[\d,]*)\s*[φΦ]$|^[φΦ]\s*(\d[\d,]*)$/)
+  if (!match) return undefined
+  const diameter = Number((match[1] ?? match[2]).replace(/,/g, ''))
+  return inDimensionRange(diameter, diameter) ? { diameter } : undefined
+}
+
 function parseDimension(value: string): { b: number; depth: number } | undefined {
   // 이웃 셀이 붙은 「800×800 900×900」에서 첫 매치를 취하면 두 번째 그룹이
   // 공백 너머 숫자까지 삼켜 b=800·depth=800900이 된다 — 다중 매치는 거부한다
@@ -609,10 +620,20 @@ function setDimension(
     }
     return
   }
+  // 円形は柱にしかない。大梁の断面欄にφが来たらそれは読み違えなので確定しない。
+  const circular = column ? parseCircularDimension(value) : undefined
+  if (circular) {
+    candidate.shape = '円形'
+    candidate.b = circular.diameter
+    candidate.d = circular.diameter
+    return
+  }
+
   const parsed =
     parseDimension(value) ??
     (vertical !== undefined ? pairedDimension(value, vertical) : undefined)
   if (parsed) {
+    if (column) candidate.shape = '矩形'
     candidate.b = parsed.b
     if (column) candidate.d = parsed.depth
     else candidate.depth = parsed.depth

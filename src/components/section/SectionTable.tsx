@@ -9,6 +9,7 @@ import {
   sectionMarkLabel,
   type BarSize,
   type ColumnSection,
+  type ColumnShape,
   type Exposure,
   type Finish,
   type GirderSection,
@@ -27,6 +28,8 @@ import styles from './SectionTable.module.css'
 const barSizes: readonly BarSize[] = BAR_SIZES
 
 const shearBarSizes: readonly ShearBarSize[] = SHEAR_BAR_SIZES
+
+const columnShapes: readonly ColumnShape[] = ['矩形', '円形']
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
 
@@ -275,6 +278,40 @@ function CoverConditionField({
   )
 }
 
+/**
+ * 断面形状。円形へ移るとき d に b を入れるのは、円形柱が b・d をともに直径として
+ * 持つからだ — 大梁の内法も 3D の柱面も b・d から決まる (ADR-026)。
+ */
+function ColumnShapeSelect({
+  section,
+  update,
+}: {
+  section: ColumnSection
+  update(updater: (section: Section) => Section): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={section.shape}
+      aria-label={`${sectionMarkLabel(section)} 断面形状`}
+      onChange={(event) => {
+        const shape = event.currentTarget.value as ColumnShape
+        update((current) =>
+          current.kind === '柱'
+            ? { ...current, shape, ...(shape === '円形' ? { d: current.b } : {}) }
+            : current,
+        )
+      }}
+    >
+      {columnShapes.map((shape) => (
+        <option key={shape} value={shape}>
+          {shape}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function SectionDimension({
   section,
   update,
@@ -295,11 +332,36 @@ function SectionDimension({
     )
   }
 
+  if (section.kind === '柱' && section.shape === '円形') {
+    // 円形柱の寸法は直径ひとつだ。b・d を別々に出すと図面にない扁平断面を
+    // 作れてしまう — 1通則2) の周長が π×直径 でなくなる (ADR-026)。
+    return (
+      <div className={styles.compoundField}>
+        <ColumnShapeSelect section={section} update={update} />
+        <NumberInput
+          label={`${sectionMarkLabel(section)} 断面 直径`}
+          value={section.b}
+          onChange={(diameter) =>
+            update((current) =>
+              current.kind === '柱'
+                ? { ...current, b: diameter, d: diameter }
+                : current,
+            )
+          }
+        />
+        <span aria-hidden="true">φ</span>
+      </div>
+    )
+  }
+
   const secondValue = section.kind === '柱' ? section.d : section.depth
   const secondLabel = section.kind === '柱' ? 'd' : 'せい'
 
   return (
     <div className={styles.compoundField}>
+      {section.kind === '柱' ? (
+        <ColumnShapeSelect section={section} update={update} />
+      ) : null}
       <NumberInput
         label={`${sectionMarkLabel(section)} 断面 b`}
         value={section.b}

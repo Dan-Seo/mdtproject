@@ -6,11 +6,22 @@ import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
 import yokohamaFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p13.json'
+import yokohamaGirderFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p14.json'
 import { SectionImport } from './SectionImport'
 
 const yokohamaPage: TextPage = {
   ...yokohamaFixture.page,
   items: yokohamaFixture.items,
+}
+
+/**
+ * 大梁リストの頁。未解析の欄が残る候補がこちらにしかないので、その系統の
+ * テストはこの頁を読む — 柱リストは高強度せん断補強筋 (ADR-025) と円形柱
+ * (ADR-026) が入って全欄が埋まった。
+ */
+const yokohamaGirderPage: TextPage = {
+  ...yokohamaGirderFixture.page,
+  items: yokohamaGirderFixture.items,
 }
 
 /** 타이틀은 읽히고 符号 행만 인식되지 않는 표. */
@@ -132,6 +143,7 @@ describe('SectionImport', () => {
             id: 'section-C51-1F',
             kind: '柱',
             mark: 'C51',
+            shape: '矩形',
             storyLabel: '1階',
             b: 800,
             d: 800,
@@ -170,11 +182,12 @@ describe('SectionImport', () => {
 
   it('blocks approval for a new mark with unparsed fields', () => {
     const before = useAppStore.getState().project
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
-    // C56의 断面은 600φ(원형)라 b×d로 못 읽어 빈칸이다 — 신규 符号로는 반영 불가
-    const row = screen.getByTestId('section-import-candidate-C56-2階')
-    expect(row).toHaveTextContent('600φ')
+    // G51 R階는 端部 主筋이 좌우로 다르다(外端 8-D25 / 内端 13-D25) — 어느 쪽이
+    // 런의 始端인지 정할 수 없어 빈칸이므로 신규 符号로는 반영 불가다 (R13)
+    const row = screen.getByTestId('section-import-candidate-G51-R階')
+    expect(row).toHaveTextContent('13-D25')
     const apply = within(row).getByRole('button', { name: '反映' })
     expect(apply).toBeDisabled()
     expect(row).toHaveTextContent(
@@ -193,41 +206,50 @@ describe('SectionImport', () => {
         sections: [
           ...base.sections,
           {
-            id: 'section-C56-2F',
-            kind: '柱',
-            mark: 'C56',
-            storyLabel: '2階',
-            b: 750,
-            d: 750,
+            id: 'section-G51-RF',
+            kind: '大梁',
+            mark: 'G51',
+            storyLabel: 'R階',
+            b: 500,
+            depth: 700,
             fc: 24,
             grade: 'SD345',
             exposure: '屋内',
             finish: '仕上げあり',
             spliceMethod: '重ね継手',
-            main: { size: 'D22', count: 12 },
-            hoop: { size: 'D10', pitch: 150, startOffsetMm: 50 },
+            main: {
+              size: 'D22',
+              top: { endCount: 4, centerCount: 4 },
+              bottom: { endCount: 4, centerCount: 4 },
+              cutoffFromSupportFaceMm: 1500,
+            },
+            stirrup: { size: 'D10', pitch: 150, startOffsetMm: 50 },
           },
         ],
       },
     })
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
-    const row = screen.getByTestId('section-import-candidate-C56-2階')
+    const row = screen.getByTestId('section-import-candidate-G51-R階')
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
 
     const section = useAppStore
       .getState()
       .project.sections.find(
-        ({ mark, storyLabel }) => mark === 'C56' && storyLabel === '2階',
+        ({ mark, storyLabel }) => mark === 'G51' && storyLabel === 'R階',
       )
-    expect(section?.kind).toBe('柱')
-    if (section?.kind !== '柱') throw new Error('Expected existing 柱 section')
+    expect(section?.kind).toBe('大梁')
+    if (section?.kind !== '大梁') throw new Error('Expected existing 大梁 section')
     expect(section).toMatchObject({
-      // 断面 후보는 빈칸(600φ) — 기존 값을 덮지 않는다
-      b: 750,
-      d: 750,
-      main: { count: 12, size: 'D22' },
-      hoop: { size: 'D13', pitch: 100, startOffsetMm: 50 },
+      b: 650,
+      depth: 800,
+      // 主筋 후보는 빈칸(좌우 상이) — 기존 값을 덮지 않는다
+      main: {
+        size: 'D22',
+        top: { endCount: 4, centerCount: 4 },
+        bottom: { endCount: 4, centerCount: 4 },
+      },
+      stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     })
   })
 
@@ -274,11 +296,11 @@ describe('SectionImport', () => {
   it('renders parser issues through the locale layer', () => {
     // 파서는 이슈 코드만 싣는다 — ko 사용자에게 일본어 완성 문장이 노출되면 안 된다
     useAppStore.setState({ locale: 'ko' })
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
-    const row = screen.getByTestId('section-import-candidate-C56-2階')
+    const row = screen.getByTestId('section-import-candidate-G51-R階')
     expect(row).toHaveTextContent(
-      '断面을 직사각형 b×d로 해석할 수 없습니다.',
+      '양단의 主筋이 서로 달라 어느 쪽이 시작단인지 정할 수 없어 빈칸으로 두었습니다.',
     )
   })
 

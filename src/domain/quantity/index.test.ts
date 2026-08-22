@@ -34,6 +34,7 @@ const section: ColumnSection = {
   id: 'section-C1',
   kind: '柱',
   mark: 'C1',
+  shape: '矩形',
   b: 800,
   d: 800,
   fc: 24,
@@ -196,6 +197,21 @@ describe('aggregateQuantity', () => {
       places: 9,
       totalLengthMm: 108000,
     })
+  })
+
+  it('writes a circular column section as 直径, not b×d', () => {
+    // 円形柱を「600×600」と書くと図面にない矩形断面に見える。周長が π×600 で
+    // 出ている行の見出しが辺長を名乗ってはいけない (ADR-026)。
+    const base = projectWithStories([{ id: '1F', name: '1階', height: 4200 }])
+    const project: Project = {
+      ...base,
+      sections: [{ ...section, shape: '円形', b: 600, d: 600 }],
+    }
+    const rebars = project.members.map(({ id }) => mainRebar(id))
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+
+    expect(lines[0].sectionLabel).toBe('600φ')
   })
 
   it('splits one 符号 into separate rows when lengthMm differs', () => {

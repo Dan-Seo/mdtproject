@@ -9,6 +9,7 @@ import type {
 import { girderRun, type WallSpan } from '@/domain/model/project'
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
 import { createSampleProject, wallSection } from '@/domain/model/sample-project'
+import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import { generateWallRebar } from '@/domain/rebar/wall'
@@ -125,6 +126,7 @@ const section: ColumnSection = {
   id: 'section-C1',
   kind: '柱',
   mark: 'C1',
+  shape: '矩形',
   b: 800,
   d: 800,
   fc: 24,
@@ -1226,5 +1228,90 @@ describe('rebarBatches', () => {
     expect(batches[0].segments).toEqual(
       rebarSegments(girderBottom, girderSection),
     )
+  })
+})
+
+describe('円形柱の配筋を円周に沿って描く', () => {
+  // 数量は 1通則2) の周長で決まる (ADR-026)。ここが見るのは 3D の作図規則で、
+  // 矩形柱と同じ約束 — 帯筋の外面がかぶり面に、主筋の表面が帯筋の内面に接する。
+  const DIAMETER = 600
+  const circularSection: ColumnSection = {
+    ...section,
+    shape: '円形',
+    b: DIAMETER,
+    d: DIAMETER,
+  }
+  const centre = DIAMETER / 2
+
+  function radii(rebar: Rebar): number[] {
+    return rebarSegments(rebar, circularSection).flatMap(({ from, to }) =>
+      [from, to].map(([x, , z]) => Math.hypot(x - centre, z - centre)),
+    )
+  }
+
+  const generated = generateColumnRebar(
+    {
+      member: {
+        id: '1F-X1Y1',
+        kind: '柱',
+        memberClass: '躯体',
+        sectionId: circularSection.id,
+        storyId: '1F',
+        position: { ix: 0, iy: 0 },
+      },
+      section: circularSection,
+      story: { id: '1F', name: '1階', height: 4200 },
+      beamDepthAbove: 750,
+      ends: { bottom: 'なし', top: '先端' },
+    },
+    jpMlitRulePack,
+  )
+  const circularHoop = generated.find(({ role }) => role === '帯筋')!
+  const circularMain = generated.find(({ role }) => role === '主筋')!
+
+  // ドメインが置いたかぶり円の半径。円形フープの points[0] は角度0の点なので
+  // 中心からの距離で読む — x 座標そのものではない。
+  const coverRadius = Math.hypot(
+    circularHoop.points[0][0] - centre,
+    circularHoop.points[0][2] - centre,
+  )
+
+  it('keeps every 帯筋 point on one circle', () => {
+    // 표시 반경만큼 안쪽 — 矩形의 insetCoordinate와 같은 약속을 반지름으로 한다
+    for (const radius of radii(circularHoop)) {
+      expect(radius).toBeCloseTo(coverRadius - HOOP_DISPLAY_RADIUS, 6)
+    }
+  })
+
+  it('spreads 主筋 evenly around that circle, inside the 帯筋', () => {
+    const placements = rebarPlacements(circularMain, circularSection)
+    const [originX, , originZ] = circularMain.points[0]
+    const distances = placements.map(([dx, , dz]) =>
+      Math.hypot(originX + dx - centre, originZ + dz - centre),
+    )
+    const expected = coverRadius - MAIN_INWARD
+
+    expect(placements).toHaveLength(circularMain.count)
+    for (const distance of distances) expect(distance).toBeCloseTo(expected, 6)
+
+    // 等間隔であること — 隣り合う2本の中心間距離が全て同じ
+    const points = placements.map(([dx, , dz]): [number, number] => [
+      originX + dx,
+      originZ + dz,
+    ])
+    const gaps = points.map(([x, z], index) => {
+      const [nextX, nextZ] = points[(index + 1) % points.length]
+      return Math.hypot(nextX - x, nextZ - z)
+    })
+    for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0], 6)
+  })
+
+  it('never lets the drawn bars leave the concrete', () => {
+    for (const rebar of [circularHoop, circularMain]) {
+      const radius = rebarSegments(rebar, circularSection)[0].radius
+      for (const distance of radii(rebar)) {
+        expect(distance + radius).toBeLessThanOrEqual(centre + 1e-9)
+      }
+    }
   })
 })

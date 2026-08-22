@@ -1,4 +1,8 @@
-import type { BarSize, ShearBarSize } from '@/domain/model/member'
+import type {
+  BarSize,
+  ColumnShape,
+  ShearBarSize,
+} from '@/domain/model/member'
 
 export interface TextItem {
   str: string
@@ -42,6 +46,8 @@ export interface SectionCandidate {
   kind: '柱' | '大梁' | '対象外'
   mark: string
   storyLabel?: string
+  /** 柱の断面形状。'円形' のとき b・d はともに直径である (ADR-026)。 */
+  shape?: ColumnShape
   b?: number
   d?: number
   main?: { size: BarSize; count: number }
