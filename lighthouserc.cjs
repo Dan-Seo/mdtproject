@@ -77,6 +77,20 @@
 // 들어가는지뿐이었다. `/`의 First Load JS만 167 kB → 226 kB로 움직였다. 차단 경로는
 // 예산이 아니라 `.next/app-build-manifest.json`의 `pages['/page']`에 three 청크가
 // 있는지로 본다 — `scripts/perf/blocking-graph.mjs`가 빌드 직후에 CI에서 그걸 한다 (ADR-024).
+// ── 2026-08-22 재산정 (script 337,000 → 365,000 / count 13 → 14 / total 448,000 → 484,000)
+// 앞 판이 예고한 자리에서 걸렸다 — 「남은 여유는 script 6,516 B」라고 적어 둔 그 여유를
+// 耐震壁·床板·開口部가 넘겼다. 러너 CI가 script 347,161 B·total 460,736 B로 떨어졌다.
+// 로컬 next start + lighthouse CLI(desktop) 실측:
+//   script 347,369 B (13 요청)  font 80,372 B (2)  total 460,780 B (20 요청)
+// 러너와 200 B 안쪽에서 일치하므로 이번 판은 절대값으로 비교할 수 있다.
+// 앞 판(M4) 대비 script +16,885 B. 내용은 부재 3종의 도메인·3D·입력이다 —
+// wall.ts·slab.ts·slab-ends.ts·opening.ts와 平面의 開口 입력, 断面一覧의 壁/床板 칸.
+// 요청 수가 12 → 13으로 하나 늘었다(app/page 청크가 갈렸다). **three·exceljs는 여전히
+// 초기 로드에 없다** — blocking-graph.mjs가 그것을 따로 지킨다 (ADR-024).
+// 여유는 앞 판들과 같은 +5%다: script 365,000(+5.07%) · total 484,000(+5.04%).
+// count는 앞 판의 방식대로 실측 +1인 14다 — 청크가 또 갈리면 걸린다.
+// font는 그대로 85,000이다. 이 변경은 폰트를 건드리지 않는다(80,372 B 불변).
+//
 module.exports = {
   ci: {
     collect: {
@@ -109,10 +123,10 @@ module.exports = {
 
         // 번들 래칫. 실측 + 약 5% 여유 — three.js를 무심코 초기 로드에 더 끌어오면 걸린다.
         // 값의 근거와 2026-08-20 재산정·조이기 이력은 파일 상단에 있다.
-        'resource-summary:script:size': ['error', { maxNumericValue: 337000 }],
-        'resource-summary:script:count': ['error', { maxNumericValue: 13 }],
+        'resource-summary:script:size': ['error', { maxNumericValue: 365000 }],
+        'resource-summary:script:count': ['error', { maxNumericValue: 14 }],
         'resource-summary:font:size': ['error', { maxNumericValue: 85000 }],
-        'resource-summary:total:size': ['error', { maxNumericValue: 448000 }],
+        'resource-summary:total:size': ['error', { maxNumericValue: 484000 }],
 
         // ── 러너 노이즈에 흔들림 → warn (리포트에만 남는다) ──────────────
         // 러너 실측 중앙값(0.69 / 15,840ms)에 여유를 준 값이다. 로컬 값(0.91 / 242ms)으로
