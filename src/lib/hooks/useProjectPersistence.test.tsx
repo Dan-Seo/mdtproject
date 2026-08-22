@@ -75,6 +75,44 @@ describe('useProjectPersistence', () => {
     )
   })
 
+  it('writes the pending edit when the tab hides, not only on pagehide', async () => {
+    // flush は IndexedDB を開き直す。pagehide の後は頁が壊されて open が
+    // 終わらないので、まだ非同期が許される hidden で出す必要がある。
+    const { result } = renderHook(() => useProjectPersistence())
+    await waitFor(() => expect(result.current.restored).toBe(true))
+
+    const visibility = Object.getOwnPropertyDescriptor(
+      Document.prototype,
+      'visibilityState',
+    )
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    })
+    // 待機中の setTimeout を偽物にしたまま実時計へ戻すと、その予約は捨てられる
+    // — 書けたなら debounce の満了ではなく flush 経由だ、と言い切れる。
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      act(() => {
+        useAppStore
+          .getState()
+          .updateProject((project) => ({ ...project, name: '隠れる前' }))
+      })
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+    } finally {
+      vi.useRealTimers()
+      if (visibility) {
+        Object.defineProperty(document, 'visibilityState', visibility)
+      }
+    }
+
+    await waitFor(async () => {
+      expect((await loadStoredProject())?.name).toBe('隠れる前')
+    })
+  })
+
   it('stops saving once the pane unmounts', async () => {
     const { result, unmount } = renderHook(() => useProjectPersistence())
     await waitFor(() => expect(result.current.restored).toBe(true))

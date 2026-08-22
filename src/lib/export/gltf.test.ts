@@ -189,8 +189,10 @@ describe('模型に載る注記', () => {
       scope: string
     }
 
-    expect(notices.sources.length).toBeGreaterThan(0)
-    expect(notices.sources.join(' ')).toContain('公共建築')
+    // 形状の根拠は二つの文書に跨る。どちらも「公共建築」で始まるので、
+    // 片方が落ちても join('公共建築') は残る — 文書ごとに見る。
+    expect(notices.sources.join(' ')).toContain('標準仕様書')
+    expect(notices.sources.join(' ')).toContain('数量積算基準')
     expect(notices.modification).toContain('改変')
     expect(notices.scope).toContain('民間工事')
   })

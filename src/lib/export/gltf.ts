@@ -150,8 +150,14 @@ export function buildRebarScene(input: RebarModelInput): THREE.Scene {
   const scene = new THREE.Scene()
   scene.name = input.project.name
   // GLTFExporter は userData を extras として書き出す。glTF に表の行は無いので、
-  // xlsx の透かし行・算出根拠ブロックと同じ内容をここに置く — 出典表示と改変
+  // xlsx の透かし行・算出根拠ブロックに当たるものをここに置く — 出典表示と改変
   // 表示は配布物に付く義務であって、書き出しの経路ごとに免れるものではない。
+  //
+  // 渡すのは鉄筋の ruleHits だけだ。xlsx は QuantityLine.rules を見るので
+  // 割増率が一行増えるが、glb が運ぶのは形状であって数量ではない — その値を
+  // 含まない配布物の出典に、数量だけの根拠を立てない。文書としての出典は
+  // 実測で xlsx と同一だ (割増率の出典 `数量積算基準` は、測り方の根拠として
+  // 形状側にも既に載っている)。
   scene.userData = modelNotices(
     input.rebars.flatMap(({ ruleHits }) => ruleHits),
     input.locale,

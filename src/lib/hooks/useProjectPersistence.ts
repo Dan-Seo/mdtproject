@@ -24,6 +24,7 @@ export function useProjectPersistence(): ProjectPersistence {
     let cancelled = false
     let unsubscribe: (() => void) | null = null
     let flushOnLeave: (() => void) | null = null
+    let flushOnHide: (() => void) | null = null
 
     void loadStoredProject().then((stored) => {
       if (cancelled) return
@@ -51,9 +52,16 @@ export function useProjectPersistence(): ProjectPersistence {
       // 書かれないまま消える—購読は「変化」でしか発火しない。ここで拾う。
       if (!untouched) autosave(useAppStore.getState().project)
       // 打ち終わって 500ms 以内に閉じられると待機中の書き込みが消える。
-      // pagehide は bfcache に入る時も来るので、unload より取りこぼしが少ない。
+      // ただし flush は IndexedDB を開き直すので、pagehide まで待つと
+      // 頁が壊される経路では open も transaction も終わらない — まだ
+      // 非同期が許される visibilitychange(hidden) で先に出す。pagehide は
+      // bfcache に入る時も来るので、隠れた後の一打を拾う保険だ。
       flushOnLeave = () => autosave.flush()
+      flushOnHide = () => {
+        if (document.visibilityState === 'hidden') autosave.flush()
+      }
       window.addEventListener('pagehide', flushOnLeave)
+      document.addEventListener('visibilitychange', flushOnHide)
       setRestored(true)
     })
 
@@ -61,6 +69,9 @@ export function useProjectPersistence(): ProjectPersistence {
       cancelled = true
       unsubscribe?.()
       if (flushOnLeave) window.removeEventListener('pagehide', flushOnLeave)
+      if (flushOnHide) {
+        document.removeEventListener('visibilitychange', flushOnHide)
+      }
     }
   }, [])
 

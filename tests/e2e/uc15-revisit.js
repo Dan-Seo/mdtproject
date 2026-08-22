@@ -22,6 +22,10 @@ const readStored = () =>
     () =>
       new Promise((resolve) => {
         const open = indexedDB.open("kijun", 1);
+        // 計測側が先に DB を作ると object store の無い v1 が残り、
+        // openDatabase() は版 1 固定なので二度と upgrade されない —
+        // 以後の自動保存が恒久的に失敗する。まだ無いなら作らずに戻す。
+        open.onupgradeneeded = () => open.transaction.abort();
         open.onerror = () => resolve(null);
         open.onsuccess = () => {
           let transaction;
