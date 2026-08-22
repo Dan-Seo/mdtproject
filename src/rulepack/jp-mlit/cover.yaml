@@ -107,3 +107,58 @@
   source: { ref: spec, section: 5.3.5(2), page: 33 }
   confidence: transcribed
   note: 原文転写（転写者＝承認者・独立検討待ち R6）。「柱、梁等の鉄筋の加工に用いるかぶり厚さは、最小かぶり厚さに10mmを加えた数値を標準とする」
+
+# 表5.3.6 の「柱、梁、耐力壁」行 — 耐震壁は構造上の耐力壁なので柱・梁と同じ行を引く。
+# 同表はもう一方に「スラブ、耐力壁以外の壁」行（仕上げあり20・仕上げなし30）を持ち、
+# 分かれ目は壁が耐力壁かどうかである。雑壁を扱うようになったらそちらの行が要る —
+# 耐震壁の値で代用してはならない。
+
+- key: cover.minimum
+  label: 耐震壁の最小かぶり厚さ（屋内・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 耐震壁, soilContact: false, exposure: 屋内, finish: 仕上げあり }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「柱、梁、耐力壁」屋内・仕上げあり）
+
+- key: cover.minimum
+  label: 耐震壁の最小かぶり厚さ（屋内・仕上げなし）
+  expr: 30mm
+  conditions: { memberKind: 耐震壁, soilContact: false, exposure: 屋内, finish: 仕上げなし }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「柱、梁、耐力壁」屋内・仕上げなし）
+
+- key: cover.minimum
+  label: 耐震壁の最小かぶり厚さ（屋外・仕上げあり）
+  expr: 30mm
+  conditions: { memberKind: 耐震壁, soilContact: false, exposure: 屋外, finish: 仕上げあり }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「柱、梁、耐力壁」屋外・仕上げあり）
+
+- key: cover.minimum
+  label: 耐震壁の最小かぶり厚さ（屋外・仕上げなし）
+  expr: 40mm
+  conditions: { memberKind: 耐震壁, soilContact: false, exposure: 屋外, finish: 仕上げなし }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「柱、梁、耐力壁」屋外・仕上げなし）
+
+- key: cover.minimum
+  label: 耐震壁の最小かぶり厚さ（土に接する部分）
+  expr: 40mm
+  conditions: { memberKind: 耐震壁, soilContact: true }
+  value: 40
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6 土に接する部分「柱、梁、スラブ、壁」）。soilContact 入力が Section に入るまで消費者なし（ADR-005 — 地中部材はスコープ外）

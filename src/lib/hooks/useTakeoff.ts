@@ -9,6 +9,7 @@ import {
   findSection,
   girderRun,
   storyNotFound,
+  wallSpan,
   type GirderRun,
   type Project,
 } from '@/domain/model/project'
@@ -25,6 +26,7 @@ import {
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
+import { generateWallRebar } from '@/domain/rebar/wall'
 import type { RuleHit } from '@/domain/rules/types'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
@@ -106,6 +108,34 @@ function buildTakeoff(project: Project): TakeoffResult {
               beamDepthAbove: beamDepthAbove(project, member),
               ends: columnEnds(project, member),
             },
+            jpMlitRulePack,
+          ),
+        )
+      } catch (error) {
+        if (!(error instanceof MemberUnsupportedError)) throw error
+
+        unsupportedMembers.push({
+          memberId: member.id,
+          mark: section.mark,
+          storyName: story.name,
+          reason: error.reason,
+        })
+      }
+      continue
+    }
+
+    if (member.kind === '耐震壁') {
+      if (section.kind !== '耐震壁') {
+        throw new Error(
+          `耐震壁 member references a non-耐震壁 section: ${member.id}`,
+        )
+      }
+
+      // 柱・大梁と同じ扱い — 成立しない寸法はその壁だけ落として続ける。
+      try {
+        rebars.push(
+          ...generateWallRebar(
+            { member, section, span: wallSpan(project, member) },
             jpMlitRulePack,
           ),
         )

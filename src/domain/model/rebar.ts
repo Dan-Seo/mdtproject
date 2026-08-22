@@ -12,6 +12,10 @@ export type RebarRole =
   | 'あばら筋'
   | '幅止め筋'
   | '腹筋'
+  /** 耐震壁の縦筋 — 上下の梁・床板へ定着する (積算基準 2（５）壁1)①) */
+  | '縦筋'
+  /** 耐震壁の横筋 — 両側の柱へ定着する (同上) */
+  | '横筋'
 
 export type RebarShape = 'straight' | 'hook90' | 'hoop'
 

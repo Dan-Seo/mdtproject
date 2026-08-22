@@ -210,7 +210,7 @@ describe('かぶり厚さは条件が厳しいほど厚い', () => {
     return found.value
   }
 
-  it.each(['柱', '大梁'])('%s covers grow with exposure', (memberKind) => {
+  it.each(['柱', '大梁', '耐震壁'])('%s covers grow with exposure', (memberKind) => {
     const indoorFinished = cover(memberKind, false, '屋内', '仕上げあり')
     const outdoorFinished = cover(memberKind, false, '屋外', '仕上げあり')
     const outdoorBare = cover(memberKind, false, '屋外', '仕上げなし')

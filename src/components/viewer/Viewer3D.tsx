@@ -10,15 +10,18 @@ import type {
   ColumnSection,
   GirderSection,
   Member,
+  WallSection,
 } from '@/domain/model/member'
 import {
   findSection,
   girderRun,
   girderSupportSections,
   storyNotFound,
+  wallSpan,
   type GirderRun,
   type Project,
   type Story,
+  type WallSpan,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import type { UnsupportedReason } from '@/domain/model/unsupported'
@@ -54,7 +57,6 @@ import {
   flyInStartPose,
   lerpCameraFit,
   rebarBatches,
-  rebarRadius,
   rebarSegments,
   type RebarBatch,
   type Bounds,
@@ -138,7 +140,21 @@ interface SelectedGirderView {
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
 
-type SelectedSupportedMemberView = SelectedColumnView | SelectedGirderView
+interface SelectedWallView {
+  kind: '耐震壁'
+  member: Member
+  section: WallSection
+  story: Story
+  /** 内法寸法。壁は躯体の区分で内法部分なので、箱も配筋もこれで決まる。 */
+  span: WallSpan
+  rebars: Rebar[]
+  rowIds: Map<Rebar['id'], QuantityLine['id']>
+}
+
+type SelectedSupportedMemberView =
+  | SelectedColumnView
+  | SelectedGirderView
+  | SelectedWallView
 
 type SelectedMemberView =
   | { status: 'supported'; view: SelectedSupportedMemberView }
@@ -289,6 +305,22 @@ interface ConcreteBox {
 }
 
 function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
+  if (view.kind === '耐震壁') {
+    // 壁は内法部分そのものだ（躯体の区分（５）壁）。柱・大梁のスタブを足すと
+    // 二重に見えるので、パネル1枚だけを描く。
+    const { section, span } = view
+    return [
+      {
+        size: [span.clearLengthMm, span.clearHeightMm, section.thickness],
+        center: [
+          span.clearLengthMm / 2,
+          span.clearHeightMm / 2,
+          section.thickness / 2,
+        ],
+      },
+    ]
+  }
+
   if (view.kind === '柱') {
     const { section, story } = view
     return [
@@ -374,12 +406,18 @@ function memberBounds(view: SelectedSupportedMemberView): Bounds {
   }
 
   for (const rebar of view.rebars) {
-    const radius = rebarRadius(rebar.size)
+    // 半径はセグメントから読む。壁筋は壁厚に合わせて縮むので、径だけからは決まらない。
     for (const segment of rebarSegments(rebar, view.section)) {
       for (const point of [segment.from, segment.to]) {
         for (let axis = 0; axis < point.length; axis += 1) {
-          bounds.min[axis] = Math.min(bounds.min[axis], point[axis] - radius)
-          bounds.max[axis] = Math.max(bounds.max[axis], point[axis] + radius)
+          bounds.min[axis] = Math.min(
+            bounds.min[axis],
+            point[axis] - segment.radius,
+          )
+          bounds.max[axis] = Math.max(
+            bounds.max[axis],
+            point[axis] + segment.radius,
+          )
         }
       }
     }
@@ -1044,7 +1082,16 @@ function rebuildBuildingScene(
  */
 function geometryKey(view: SelectedSupportedMemberView): string {
   const sectionGeometry =
-    view.kind === '柱'
+    view.kind === '耐震壁'
+      ? [
+          view.section.thickness,
+          view.section.layers,
+          view.section.vertical,
+          view.section.horizontal,
+          view.span.clearLengthMm,
+          view.span.clearHeightMm,
+        ]
+      : view.kind === '柱'
       ? [view.section.b, view.section.d, view.section.hoop]
       : [
           view.section.b,
@@ -1168,6 +1215,25 @@ function selectedMemberView(
         member,
         section,
         story,
+        ...selectedRows(new Set([member.id]), selectedGroup, rebars, lines),
+      },
+    }
+  }
+
+  if (member.kind === '耐震壁') {
+    if (section.kind !== '耐震壁') {
+      throw new Error(
+        `耐震壁 member references a non-耐震壁 section: ${member.id}`,
+      )
+    }
+    return {
+      status: 'supported',
+      view: {
+        kind: '耐震壁',
+        member,
+        section,
+        story,
+        span: wallSpan(project, member),
         ...selectedRows(new Set([member.id]), selectedGroup, rebars, lines),
       },
     }
@@ -1619,7 +1685,13 @@ export function Viewer3D() {
   const spacing = (() => {
     if (selectedSupported === null) return null
 
-    const role = selectedSupported.kind === '柱' ? '帯筋' : 'あばら筋'
+    // 壁でせん断補強にあたるのは横筋だ（縦筋は主筋の側）。
+    const role =
+      selectedSupported.kind === '柱'
+        ? '帯筋'
+        : selectedSupported.kind === '耐震壁'
+          ? '横筋'
+          : 'あばら筋'
     const rebar = selectedSupported.rebars.find(
       (candidate) => candidate.role === role,
     )

@@ -33,7 +33,11 @@ import { coverConditions } from '../rules/lookup'
 //      없다」를 뜻하는 optional이다 — 있는지 없는지를 제품이 정하지 않는다.
 //      腹筋의 余長은 積算基準 1通則6)이 JASS 5에 위임하는데 그 규격이 미확보라
 //      룰팩 행이 아니라 입력으로 받는다 (R9②).
-export const PROJECT_SCHEMA_VERSION = 7
+// v8 (2026-08-22): 耐震壁を部材として受け取る。MemberKind に '耐震壁'、Section に
+//   WallSection が加わり、Member.position は大梁と同じ辺の位置を使う。数量積算基準
+//   2（５）壁1)（壁式構造以外）と、躯体の区分（５）壁「柱、梁、床板等に接する垂直材の
+//   内法部分」に対応する — 壁式構造の壁（2）は扱わない (ADR-024)。
+export const PROJECT_SCHEMA_VERSION = 8
 
 export interface Grid {
   xSpans: number[]
@@ -139,7 +143,8 @@ export function memberGroupKey(project: Project, member: Member): string {
     )
   }
 
-  const memberCode = member.kind === '柱' ? 'C' : 'G'
+  const memberCode =
+    member.kind === '柱' ? 'C' : member.kind === '大梁' ? 'G' : 'W'
   return `${story.name}|${memberCode}|${section.mark}`
 }
 
@@ -211,7 +216,7 @@ export function girderSupportSections(
 
 function supportColumnSection(
   project: Project,
-  girder: Member,
+  supported: Member,
   ix: number,
   iy: number,
   end: 'start' | 'end',
@@ -219,14 +224,16 @@ function supportColumnSection(
   const support = project.members.find(
     (candidate) =>
       candidate.kind === '柱' &&
-      candidate.storyId === girder.storyId &&
+      candidate.storyId === supported.storyId &&
       isColumnPosition(candidate.position) &&
       candidate.position.ix === ix &&
       candidate.position.iy === iy,
   )
 
   if (!support) {
-    throw new Error(`Missing ${end} support 柱 for 大梁: ${girder.id}`)
+    throw new Error(
+      `Missing ${end} support 柱 for ${supported.kind}: ${supported.id}`,
+    )
   }
 
   const section = findSection(project, support.sectionId)
@@ -278,6 +285,113 @@ export function girderSpan(project: Project, member: Member): GirderSpan {
     endSupportLengthAlongAxisMm,
     startSupportCover: coverConditions(startSection),
     endSupportCover: coverConditions(endSection),
+  }
+}
+
+/**
+ * 耐震壁の内法寸法。躯体の区分（第4編第1章第2節（５）壁）が壁を「柱、梁、床板等に
+ * 接する垂直材の内法部分」と定めるので、壁の高さも長さも中心間ではなく内法である。
+ * 柱・大梁と二重計上しないのはこの定義そのもので、大梁が内法長さなのと同じ形だ。
+ */
+export interface WallSpan {
+  axis: 'X' | 'Y'
+  /** 内法長さ (mm) — 両側の柱の内側面の間 */
+  clearLengthMm: number
+  /** 内法高さ (mm) — 階高 − 上部大梁せい */
+  clearHeightMm: number
+  /** 始端の柱中心 → 壁端（柱内側面）までのオフセット (mm) */
+  startFaceOffsetMm: number
+  /** 終端の柱中心 → 壁端（柱内側面）までのオフセット (mm) */
+  endFaceOffsetMm: number
+  /** 内法高さを決めた上部大梁のせい (mm) */
+  girderDepthAboveMm: number
+}
+
+/**
+ * 壁の上に載る大梁のせい。壁と同じ辺（同じ通り芯・同じスパン）の大梁を見る —
+ * 耐震壁は2本の柱の間に立ち、その上の大梁で頭を止められるからである。
+ *
+ * 見つからなければ入力の不整合なので黙って階高を使わない。大梁のない辺に壁を
+ * 置くと内法高さが決まらず、階高で代用すれば大梁と重なった壁を計上してしまう。
+ */
+function girderDepthAboveWall(project: Project, wall: Member): number {
+  const position = wall.position
+  if (!isGirderPosition(position)) {
+    throw new Error(`girderDepthAboveWall requires an edge position: ${wall.id}`)
+  }
+
+  const girder = project.members.find(
+    (candidate) =>
+      candidate.kind === '大梁' &&
+      candidate.storyId === wall.storyId &&
+      isGirderPosition(candidate.position) &&
+      candidate.position.axis === position.axis &&
+      candidate.position.ix === position.ix &&
+      candidate.position.iy === position.iy,
+  )
+
+  if (!girder) {
+    throw new Error(`Missing 大梁 above 耐震壁: ${wall.id}`)
+  }
+
+  const section = findSection(project, girder.sectionId)
+  if (section.kind !== '大梁') {
+    throw new Error(`大梁 member references a non-大梁 section: ${girder.id}`)
+  }
+
+  return section.depth
+}
+
+export function wallSpan(project: Project, member: Member): WallSpan {
+  if (member.kind !== '耐震壁' || !isGirderPosition(member.position)) {
+    throw new Error(`wallSpan requires a 耐震壁: ${member.id}`)
+  }
+
+  const story = project.stories.find(({ id }) => id === member.storyId)
+  if (!story) {
+    throw storyNotFound(member.storyId)
+  }
+
+  const { axis, ix, iy } = member.position
+  const endIx = axis === 'X' ? ix + 1 : ix
+  const endIy = axis === 'Y' ? iy + 1 : iy
+  const startPoint = gridPoint(project.grid, ix, iy)
+  const endPoint = gridPoint(project.grid, endIx, endIy)
+  const startSection = supportColumnSection(project, member, ix, iy, 'start')
+  const endSection = supportColumnSection(project, member, endIx, endIy, 'end')
+
+  const centerSpan =
+    axis === 'X' ? endPoint.x - startPoint.x : endPoint.y - startPoint.y
+  const startFaceOffsetMm =
+    (axis === 'X' ? startSection.b : startSection.d) / 2
+  const endFaceOffsetMm = (axis === 'X' ? endSection.b : endSection.d) / 2
+  const clearLengthMm = centerSpan - startFaceOffsetMm - endFaceOffsetMm
+
+  if (clearLengthMm <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `耐震壁 内法長さ must be positive: ${member.id} (${clearLengthMm} mm)`,
+    )
+  }
+
+  const girderDepthAboveMm = girderDepthAboveWall(project, member)
+  const clearHeightMm = story.height - girderDepthAboveMm
+
+  if (clearHeightMm <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `耐震壁 内法高さ must be positive: ${member.id} ` +
+        `(階高 ${story.height} − 上部大梁せい ${girderDepthAboveMm})`,
+    )
+  }
+
+  return {
+    axis,
+    clearLengthMm,
+    clearHeightMm,
+    startFaceOffsetMm,
+    endFaceOffsetMm,
+    girderDepthAboveMm,
   }
 }
 

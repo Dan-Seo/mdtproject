@@ -121,9 +121,11 @@ function storyName(project: Project, member: Member): string {
 }
 
 function sectionLabel(section: Section): string {
-  return section.kind === '柱'
-    ? `${section.b}×${section.d}`
-    : `${section.b}×${section.depth}`
+  if (section.kind === '柱') return `${section.b}×${section.d}`
+  if (section.kind === '大梁') return `${section.b}×${section.depth}`
+
+  // 壁は断面が厚さ1つなので図面と同じ「t180」の書き方にする。
+  return `t${section.thickness}`
 }
 
 function ruleIdentity(rule: RuleHit): string {

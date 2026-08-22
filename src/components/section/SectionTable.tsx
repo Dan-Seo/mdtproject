@@ -14,6 +14,7 @@ import {
   type Section,
   type SpliceMethod,
   type SteelGrade,
+  type WallSection,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
@@ -246,6 +247,19 @@ function SectionDimension({
   section: Section
   update(updater: (section: Section) => Section): void
 }) {
+  if (section.kind === '耐震壁') {
+    // 壁の断面は厚さ1つだ。b×D の枠に押し込むと図面にない寸法を作ってしまう。
+    return (
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 壁厚 t`}
+        value={section.thickness}
+        onChange={(thickness) =>
+          update((current) => ({ ...current, thickness }))
+        }
+      />
+    )
+  }
+
   const secondValue = section.kind === '柱' ? section.d : section.depth
   const secondLabel = section.kind === '柱' ? 'd' : 'せい'
 
@@ -399,6 +413,80 @@ function GirderMainField({
   )
 }
 
+/**
+ * 耐震壁の縦筋・横筋。どちらも「径 @ ピッチ ＋ 初期オフセット」で形が同じなので
+ * 1つのコンポーネントが両方を受け持つ。どちらの行かは `row` が決める。
+ */
+function WallBarField({
+  section,
+  update,
+  row,
+}: {
+  section: WallSection
+  update(updater: (section: Section) => Section): void
+  row: 'vertical' | 'horizontal'
+}) {
+  const label = row === 'vertical' ? '縦筋' : '横筋'
+  const bar = section[row]
+  const replace = (patch: Partial<WallSection['vertical']>) =>
+    update((current) =>
+      current.kind === '耐震壁'
+        ? { ...current, [row]: { ...current[row], ...patch } }
+        : current,
+    )
+
+  return (
+    <div className={styles.compoundField}>
+      <BarSizeSelect
+        label={`${sectionMarkLabel(section)} ${label} 径`}
+        value={bar.size}
+        onChange={(size) => replace({ size })}
+      />
+      <span aria-hidden="true">@</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} ${label} ピッチ`}
+        value={bar.pitch}
+        onChange={(pitch) => replace({ pitch })}
+      />
+      <NumberInput
+        label={`${sectionMarkLabel(section)} ${label} 初期オフセット`}
+        minimum={0}
+        value={bar.startOffsetMm}
+        onChange={(startOffsetMm) => replace({ startOffsetMm })}
+      />
+    </div>
+  )
+}
+
+/**
+ * 配筋層数（シングル／ダブル）。本数がそのまま倍違うのに規準に条文がなく、
+ * 壁リストの記載そのものである (ADR-012) — だから既定値を置かず選ばせる。
+ */
+function WallLayersField({
+  section,
+  update,
+}: {
+  section: WallSection
+  update(updater: (section: Section) => Section): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={String(section.layers)}
+      aria-label={`${sectionMarkLabel(section)} 配筋層数`}
+      onChange={(event) => {
+        const layers = Number(event.currentTarget.value) === 2 ? 2 : 1
+        update((current) =>
+          current.kind === '耐震壁' ? { ...current, layers } : current,
+        )
+      }}
+    >
+      <option value="1">シングル</option>
+      <option value="2">ダブル</option>
+    </select>
+  )
+}
+
 function ShearField({
   section,
   update,
@@ -406,6 +494,12 @@ function ShearField({
   section: Section
   update(updater: (section: Section) => Section): void
 }) {
+  // 壁のせん断補強にあたるのは横筋だ。ここから先は柱・大梁だけが通る —
+  // 下の update コールバックが耐震壁を素通しするのはそのためである。
+  if (section.kind === '耐震壁') {
+    return <WallBarField section={section} update={update} row="horizontal" />
+  }
+
   const reinforcement = section.kind === '柱' ? section.hoop : section.stirrup
   const label = section.kind === '柱' ? '帯筋' : 'あばら筋'
 
@@ -418,7 +512,9 @@ function ShearField({
           update((current) =>
             current.kind === '柱'
               ? { ...current, hoop: { ...current.hoop, size } }
-              : { ...current, stirrup: { ...current.stirrup, size } },
+              : current.kind === '大梁'
+                ? { ...current, stirrup: { ...current.stirrup, size } }
+                : current,
           )
         }
       />
@@ -430,10 +526,9 @@ function ShearField({
           update((current) =>
             current.kind === '柱'
               ? { ...current, hoop: { ...current.hoop, pitch } }
-              : {
-                  ...current,
-                  stirrup: { ...current.stirrup, pitch },
-                },
+              : current.kind === '大梁'
+                ? { ...current, stirrup: { ...current.stirrup, pitch } }
+                : current,
           )
         }
       />
@@ -445,10 +540,12 @@ function ShearField({
           update((current) =>
             current.kind === '柱'
               ? { ...current, hoop: { ...current.hoop, startOffsetMm } }
-              : {
-                  ...current,
-                  stirrup: { ...current.stirrup, startOffsetMm },
-                },
+              : current.kind === '大梁'
+                ? {
+                    ...current,
+                    stirrup: { ...current.stirrup, startOffsetMm },
+                  }
+                : current,
           )
         }
       />
@@ -674,6 +771,12 @@ export function SectionTable() {
                       section={section}
                       update={updateCurrent}
                     />
+                  ) : section.kind === '耐震壁' ? (
+                    <WallBarField
+                      section={section}
+                      update={updateCurrent}
+                      row="vertical"
+                    />
                   ) : (
                     <GirderMainField
                       section={section}
@@ -687,6 +790,11 @@ export function SectionTable() {
                 <td>
                   {section.kind === '大梁' ? (
                     <GirderDetailField
+                      section={section}
+                      update={updateCurrent}
+                    />
+                  ) : section.kind === '耐震壁' ? (
+                    <WallLayersField
                       section={section}
                       update={updateCurrent}
                     />

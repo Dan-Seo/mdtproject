@@ -1,4 +1,4 @@
-export type MemberKind = '柱' | '大梁'
+export type MemberKind = '柱' | '大梁' | '耐震壁'
 
 export type MemberClass = '躯体'
 
@@ -163,7 +163,58 @@ export interface GirderSection {
   }
 }
 
-export type Section = ColumnSection | GirderSection
+/**
+ * 耐震壁 — ラーメン構造の壁である。壁式構造の壁ではない。
+ *
+ * 数量積算基準 2（５）壁 は 1)「壁式構造以外」と 2)「壁式構造」を別条文で扱い、
+ * 後者は端部筋・縦筋・壁梁筋・横筋・補強筋の5区分に分かれて条文の量がまるで違う。
+ * ここが実装するのは 1) だけで、壁式構造は扱わない。
+ *
+ * 幅止筋を持たないのは意図的だ。1通則3) は長さ（＝壁厚）を壁にも与えるが、
+ * 本数を定める条文は 2（３）梁3) で梁しか名指しておらず、2（５）壁 に幅止筋の
+ * 記述は一切ない。本数を製品が作らないと計上できない — 作らない (ADR-022 の腹筋と同じ判断)。
+ */
+export interface WallSection {
+  id: string
+  kind: '耐震壁'
+  mark: string
+  /** ColumnSection.storyLabel と同じ。 */
+  storyLabel?: string
+  /** 壁厚 (mm) */
+  thickness: number
+  fc: number
+  grade: SteelGrade
+  exposure: Exposure
+  finish: Finish
+  /** 縦筋・横筋の継手方式。継手箇所数と設計長さへの算入を決める */
+  spliceMethod: SpliceMethod
+  /**
+   * 配筋の層数 — シングル(1) か ダブル(2) か。本数がそのまま倍違うが、
+   * これを決める条文は規準にない。壁リストの「D13@200 ダブル」という記載
+   * そのものであり、断面一覧の入力である (ADR-012)。
+   */
+  layers: 1 | 2
+  /** 縦筋 — 上下の梁・床板へ定着する */
+  vertical: {
+    size: BarSize
+    pitch: number
+    /**
+     * 内法端から第1・最終の縦筋をどれだけ離すか。柱の hoop・大梁の stirrup と
+     * 同じ理由で規準に値がなく、断面一覧の入力である (ADR-012)。1通則7) は
+     * 初期オフセットを見ないので数量には効かない — 3D 形状だけの値である。
+     */
+    startOffsetMm: number
+  }
+  /** 横筋 — 両側の柱へ定着する */
+  horizontal: {
+    size: BarSize
+    pitch: number
+    /** 縦筋の startOffsetMm と同じ。こちらは内法高さの下端からの距離である。 */
+    startOffsetMm: number
+  }
+}
+
+export type Section = ColumnSection | GirderSection | WallSection
 
 /**
  * 화면 표시·aria-label용 이름. 같은 符号이 階별로 여러 断面이 될 수 있으므로
@@ -186,11 +237,20 @@ export interface GirderPosition {
   iy: number
 }
 
+/**
+ * 耐震壁の位置。大梁と同じく通り芯の1スパン分の辺を占めるので形も同じである。
+ *
+ * TypeScript は構造的型付けなので、別名を作っても型としては GirderPosition と
+ * 区別されない — どちらであるかを決めるのは常に `Member.kind` の方だ。位置だけを
+ * 見て部材種別を判定するコードを書かないこと。
+ */
+export type WallPosition = GirderPosition
+
 export interface Member {
   id: string
   kind: MemberKind
   memberClass: MemberClass
   sectionId: string
   storyId: string
-  position: ColumnPosition | GirderPosition
+  position: ColumnPosition | GirderPosition | WallPosition
 }

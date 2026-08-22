@@ -195,3 +195,18 @@
   source: { ref: quantity, section: 第4編第3章第2節 1通則4)・5), page: 15 }
   confidence: inferred
   note: 1通則4)・5) は重ね継手とガス圧接継手だけを名指す。溶接継手は長さの変化がない点でガス圧接に準じ、箇所数も1通則4)に準じると解した — 明文はない (R2)
+
+# 2（５）壁1)② — 耐震壁の縦筋。値は 2（２）柱2) の「各階ごとに1か所」と同じだが、
+# 条文が別なので行を分ける。まとめると片方が改定されたときにもう片方が巻き添えで
+# 動く。横筋はここに行を持たない — 同じ条文が明示的に 1通則4) へ戻すので
+# measure.splice.interval（径ごとの 6.0m/7.0m）がそのまま効く。
+
+- key: measure.splice.wall.vertical
+  label: 耐震壁 縦筋の継手箇所数
+  expr: 各階に1か所
+  conditions: {}
+  value: 1
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（５）壁1)②, page: 17 }
+  confidence: transcribed
+  note: 「縦筋の継手は原則として各階に１か所あるものとし、開口部腰壁、手すり壁等の継手はないものとする」。但書の「開口部腰壁、手すり壁等」は開口部を扱わない現状では対象がない (1通則8) は deferred)

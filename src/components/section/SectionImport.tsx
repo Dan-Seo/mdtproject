@@ -7,7 +7,12 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import { sectionMarkLabel, type Section } from '@/domain/model/member'
+import {
+  sectionMarkLabel,
+  type ColumnSection,
+  type GirderSection,
+  type Section,
+} from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
@@ -47,27 +52,40 @@ function parsedCandidates(lists: ParsedSectionList[]): CandidateRow[] {
  * (符号, 部材, 階)다. 階를 符号에 붙이지는 않는다: 도면에 없는 符号이 内訳書에 그대로
  * 나가고, 内訳書는 이미 階별로 묶여 있어 階가 두 번 표시된다.
  */
+/**
+ * 断面リスト파서가 낼 수 있는 부재만. 壁リスト는 아직 파싱하지 않으므로
+ * 耐震壁은 여기 오지 않는다 — 취입 화면이 壁 Section을 복제원으로 집으면
+ * 없는 칸(main·stirrup)을 읽게 된다.
+ */
+type ImportableSection = ColumnSection | GirderSection
+
+function isImportableSection(section: Section): section is ImportableSection {
+  return section.kind === '柱' || section.kind === '大梁'
+}
+
 function matchingSection(
   project: Project,
   candidate: SectionCandidate,
-): Section | undefined {
+): ImportableSection | undefined {
   if (candidate.kind === '対象外') return undefined
-  return project.sections.find(
-    (section) =>
-      section.mark === candidate.mark &&
-      section.kind === candidate.kind &&
-      section.storyLabel === candidate.storyLabel,
-  )
+  return project.sections
+    .filter(isImportableSection)
+    .find(
+      (section) =>
+        section.mark === candidate.mark &&
+        section.kind === candidate.kind &&
+        section.storyLabel === candidate.storyLabel,
+    )
 }
 
 function cloneSource(
   project: Project,
   candidate: SectionCandidate,
-): Section | undefined {
+): ImportableSection | undefined {
   if (candidate.kind === '対象外') return undefined
-  const sameKind = project.sections.filter(
-    (section) => section.kind === candidate.kind,
-  )
+  const sameKind = project.sections
+    .filter(isImportableSection)
+    .filter((section) => section.kind === candidate.kind)
   // 같은 符号의 다른 階가 이미 있으면 그쪽이 복제원이다 — 파싱하지 않는
   // fc·강종·노출·仕上げ·初期オフセット은 무관한 부재보다 같은 符号 쪽이 맞다
   return (
@@ -216,7 +234,7 @@ function applyCandidate(project: Project, candidate: SectionCandidate): Project 
       ? `${candidate.mark}-${candidate.storyLabel}`
       : candidate.mark,
   )
-  const clonedSource: Section =
+  const clonedSource: ImportableSection =
     source.kind === '柱'
       ? { ...source, id, main: { ...source.main }, hoop: { ...source.hoop } }
       : {
@@ -233,7 +251,7 @@ function applyCandidate(project: Project, candidate: SectionCandidate): Project 
   return { ...project, sections: [...project.sections, cloned] }
 }
 
-function sectionSummary(section: Section): string {
+function sectionSummary(section: ImportableSection): string {
   if (section.kind === '柱') {
     return `${sectionMarkLabel(section)} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
   }

@@ -136,6 +136,21 @@
   vector-effect: non-scaling-stroke;
 }
 
+.wall {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+/* 面線は細いので、掴める幅は別に持たせる。大梁のヒット領域(片側9px)より
+   外側にあるぶんが実際に壁を選べる帯になる。 */
+.wallHitArea {
+  stroke: transparent;
+  stroke-width: 16;
+  vector-effect: non-scaling-stroke;
+}
+
 .girderHitArea {
   stroke: transparent;
   stroke-width: 18;
@@ -177,6 +192,11 @@
 
 .memberSelected .girder {
   stroke: var(--color-primary);
+}
+
+.memberSelected .wall {
+  stroke: var(--color-primary);
+  stroke-opacity: 0.45;
 }
 
 .memberSelected .column {

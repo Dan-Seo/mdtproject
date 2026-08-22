@@ -1554,7 +1554,8 @@
       "conditions": {
         "memberKinds": [
           "柱",
-          "大梁"
+          "大梁",
+          "耐震壁"
         ],
         "soilContact": false,
         "exposure": "屋内",
@@ -1572,7 +1573,8 @@
       "conditions": {
         "memberKinds": [
           "柱",
-          "大梁"
+          "大梁",
+          "耐震壁"
         ],
         "soilContact": false,
         "exposure": "屋内",
@@ -1590,7 +1592,8 @@
       "conditions": {
         "memberKinds": [
           "柱",
-          "大梁"
+          "大梁",
+          "耐震壁"
         ],
         "soilContact": false,
         "exposure": "屋外",
@@ -1608,7 +1611,8 @@
       "conditions": {
         "memberKinds": [
           "柱",
-          "大梁"
+          "大梁",
+          "耐震壁"
         ],
         "soilContact": false,
         "exposure": "屋外",
@@ -1626,12 +1630,23 @@
       "conditions": {
         "memberKinds": [
           "柱",
-          "大梁"
+          "大梁",
+          "耐震壁"
         ],
         "soilContact": true
       },
       "value": 40,
       "unit": "mm",
+      "imageRead": false
+    },
+    {
+      "table": "5.3.4(3)(ｱ)",
+      "pdfPage": 34,
+      "printedPage": 28,
+      "kind": "lap.wall.minimum",
+      "conditions": {},
+      "value": 40,
+      "unit": "d",
       "imageRead": false
     },
     {

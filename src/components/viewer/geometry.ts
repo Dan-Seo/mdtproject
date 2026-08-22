@@ -5,6 +5,7 @@ import {
   type GirderMainRow,
   type GirderSection,
   type Section,
+  type WallSection,
 } from '@/domain/model/member'
 import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
@@ -79,7 +80,12 @@ export function roleToLayer(role: RebarRole): RebarLayer {
       return 'hoop'
     // 腹筋은 스팬 방향으로 흐르는 세로근이라 主筋과 같은 레이어다.
     case '腹筋':
+    // 耐震壁의 縦筋은 부재축을 따라 흐르는 세로근이라 主筋과 같다.
+    case '縦筋':
       return 'main'
+    // 横筋은 그 세로근을 가로지르는 배력근이라 帯筋·あばら筋과 같은 레이어다.
+    case '横筋':
+      return 'hoop'
     default: {
       const unsupported: never = role
       throw new Error(`Unsupported RebarRole: ${unsupported}`)
@@ -273,9 +279,102 @@ function girderSideBarPlacements(
   })
 }
 
+/**
+ * 壁筋의 표시 반경. `rebarRadius`는 보이라고 실제 지름을 과장하므로, 얇은 벽에서는
+ * 縦筋·横筋 2겹이 壁厚에 들어가지 않는다 — 벽 밖으로 삐져나오든 층끼리 파고들든
+ * 둘 중 하나가 된다. 들어가는 크기까지 일률로 줄인다.
+ */
+function wallDisplayRadius(size: BarSize, section: WallSection): number {
+  const pair =
+    rebarRadius(section.vertical.size) + rebarRadius(section.horizontal.size)
+  // ダブル은 한 면당 縦筋＋横筋이라 壁厚의 1/4, シングル은 1조뿐이라 1/2에 담는다.
+  const limit = section.thickness / (section.layers === 1 ? 2 : 4)
+
+  return rebarRadius(size) * (pair > limit ? limit / pair : 1)
+}
+
+/**
+ * 壁厚 방향으로 그 役割이 서는 면 (mm). 도메인 `points`는 縦筋도 横筋도 かぶり면에
+ * 두지만(柱의 主筋·帯筋과 같다), 그대로 그리면 교차점마다 서로를 관통한다. 柱와
+ * 같은 약속으로 表示 반경만큼 안쪽으로 밀어 縦筋의 바깥면이 かぶり면에, 横筋이
+ * 그 안쪽면에 접하게 한다.
+ *
+ * 縦筋을 かぶり면 쪽에 두는 데에 근거는 없다 — **두 원문 어디에도 정함이 없다.**
+ * 標準仕様書 5章에는 「縦筋」·「横筋」이라는 말 자체가 없고(나오는 것은 組積工事
+ * 장이다), 数量積算基準 2（５）壁도 内外를 말하지 않는다. 数量에는 영향이 없으므로
+ * (ADR-019) 도면이 흔들리지 않게 作図規則으로 고정한다 — 腹筋의 段割り와 같다.
+ */
+function wallBarDepths(
+  role: RebarRole,
+  section: WallSection,
+  coverZ: number,
+): number[] {
+  const verticalRadius = wallDisplayRadius(section.vertical.size, section)
+  const horizontalRadius = wallDisplayRadius(section.horizontal.size, section)
+  const atFace = role === '縦筋'
+
+  if (section.layers === 1) {
+    // シングル은 かぶり면이 아니라 壁厚 중앙을 사이에 두고 등을 맞댄다.
+    return [
+      section.thickness / 2 + (atFace ? -horizontalRadius : verticalRadius),
+    ]
+  }
+
+  // 表示 반경만큼 두꺼워진 2층이 중앙에서 겹치지 않도록 かぶり를 죈다.
+  const cover = Math.min(
+    coverZ,
+    section.thickness / 2 - 2 * (verticalRadius + horizontalRadius),
+  )
+  const near =
+    cover + (atFace ? verticalRadius : 2 * verticalRadius + horizontalRadius)
+
+  return [near, section.thickness - near]
+}
+
+/**
+ * 耐震壁의 縦筋·横筋 전개. 되풀이 축은 도메인 `placement`가, 壁厚 방향은
+ * `wallBarDepths`가 준다 — 표시부가 かぶり를 다시 조회하면 룰팩 조회가 두 곳에
+ * 박히므로, 대표점의 z(＝かぶり면)만 받아서 거기서 유도한다.
+ */
+function wallRebarPlacements(
+  rebar: Rebar,
+  section: WallSection,
+): Point3[] {
+  const placement = rebar.placement
+  if (!placement) {
+    throw new Error(`${rebar.role} placement is missing: ${rebar.id}`)
+  }
+
+  const positions = stirrupPositions(
+    placement.clearMm,
+    placement.pitchMm,
+    placement.startOffsetMm,
+  ).positionsMm
+
+  if (positions.length !== placement.positionCount) {
+    throw new Error(
+      `${rebar.role} placement count mismatch: ${positions.length} !== ` +
+        `${placement.positionCount}`,
+    )
+  }
+
+  const coverZ = rebar.points[0][2]
+
+  return wallBarDepths(rebar.role, section, coverZ).flatMap((z) =>
+    positions.map((value): Point3 =>
+      placement.axis === 'x'
+        ? [value, 0, z - coverZ]
+        : [0, value, z - coverZ],
+    ),
+  )
+}
+
 export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
   if (section.kind === '柱') {
     return columnRebarPlacements(rebar, section)
+  }
+  if (section.kind === '耐震壁') {
+    return wallRebarPlacements(rebar, section)
   }
   if (rebar.role === 'あばら筋' || rebar.role === '幅止め筋') {
     return girderRepeatedPlacements(rebar)
@@ -435,7 +534,12 @@ function pathRuns(rebar: Rebar): PathRun[] {
 }
 
 function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
-  const radius = rebarRadius(rebar.size)
+  // 壁だけ表示半径が壁厚に縛られる。配置と描画で別々の半径を使うと、詰めたはずの
+  // 層が描くときにまた太って食い込む。
+  const radius =
+    section.kind === '耐震壁'
+      ? wallDisplayRadius(rebar.size, section)
+      : rebarRadius(rebar.size)
   const displayPoint = (point: Point3): Point3 =>
     rebar.shape === 'hoop'
       ? hoopDisplayPoint(point, rebar.points, radius, section)

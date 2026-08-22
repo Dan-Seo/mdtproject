@@ -1,4 +1,9 @@
-import type { ColumnSection, GirderSection, Member } from './member'
+import type {
+  ColumnSection,
+  GirderSection,
+  Member,
+  WallSection,
+} from './member'
 import {
   PROJECT_SCHEMA_VERSION,
   gridPointCount,
@@ -86,6 +91,43 @@ export const girderSections: GirderSection[] = [
   },
 ]
 
+// 耐震壁 (ADR-024)。ラーメン構造の壁なので数量積算基準 2（５）壁1)「壁式構造以外」
+// で測る。屋内・仕上げありにしてあるのは柱・大梁と別のかぶりセル（表5.3.6 の
+// 「柱、梁、耐力壁」行・屋内）を通すためで、壁だけ条件を変えられることの例でもある。
+export const wallSection: WallSection = {
+  id: 'section-W1',
+  kind: '耐震壁',
+  mark: 'W1',
+  thickness: 200,
+  fc: 24,
+  grade: 'SD345',
+  exposure: '屋内',
+  finish: '仕上げあり',
+  spliceMethod: '重ね継手',
+  // 壁リストの「D13@200 ダブル」そのもの — 層数は規準ではなく図面の記載である。
+  layers: 2,
+  vertical: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+  horizontal: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+}
+
+/**
+ * 耐震壁は Y1〜Y2 の X1 通りに1枚だけ立てる。全スパンに入れると 3D が壁で埋まって
+ * 中の配筋が見えなくなり、「入力したものが合っているか」を確かめるという
+ * ビューアの用途 (ADR-016) を潰してしまう。
+ */
+function createWalls(storyId: string): Member[] {
+  return [
+    {
+      id: `${storyId}-W1-X1Y1-Y`,
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: wallSection.id,
+      storyId,
+      position: { axis: 'Y', ix: 0, iy: 0 },
+    },
+  ]
+}
+
 function createColumns(storyId: string): Member[] {
   const { nx, ny } = gridPointCount(sampleGrid)
   const columns: Member[] = []
@@ -147,10 +189,11 @@ export function createSampleProject(): Project {
     name: 'サンプル案件 / RC 2階建て',
     grid: sampleGrid,
     stories: sampleStories,
-    sections: [columnSection, ...girderSections],
+    sections: [columnSection, ...girderSections, wallSection],
     members: sampleStories.flatMap(({ id }) => [
       ...createColumns(id),
       ...createGirders(id),
+      ...createWalls(id),
     ]),
   }
 }

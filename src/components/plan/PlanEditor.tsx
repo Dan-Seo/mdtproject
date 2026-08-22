@@ -16,6 +16,10 @@ import { capture } from '@/lib/telemetry'
 import { spanCoordinates, updateProjectSpans, type SpanAxis } from './grid'
 import styles from './PlanEditor.module.css'
 
+// 壁の面線を通り芯からどれだけ離すか (px)。大梁のヒット領域が片側 9px
+// (girderHitArea の stroke-width 18) なので、その外に出さないと壁を選べない。
+const wallFaceOffset = 12
+
 const viewWidth = 640
 const viewHeight = 420
 const plotLeft = 96
@@ -150,6 +154,77 @@ function PlanMember({
           {section.mark}
         </text>
       </>
+    )
+  }
+
+  if (member.kind === '耐震壁' && 'axis' in member.position) {
+    const { axis, ix, iy } = member.position
+    const start = gridPoint(project.grid, ix, iy)
+    const end = gridPoint(
+      project.grid,
+      axis === 'X' ? ix + 1 : ix,
+      axis === 'Y' ? iy + 1 : iy,
+    )
+    const x1 = transform.x(start.x)
+    const y1 = transform.y(start.y)
+    const x2 = transform.x(end.x)
+    const y2 = transform.y(end.y)
+
+    // 壁は大梁と同じ辺に立つ。通り芯の上に重ねて1本で描くと、大梁のヒット領域が
+    // 上に載って**壁を選べなくなる**（実ブラウザ検証で判明）。平面図の慣用どおり
+    // 両側の面線2本で描き、大梁の線の外側に出すことでどちらも選べるようにする。
+    // 通り芯に対して対称なので、壁が芯上にあるという事実も曲げていない。
+    const faceOffset = wallFaceOffset
+    const faces =
+      axis === 'X'
+        ? [
+            { x1, y1: y1 - faceOffset, x2, y2: y2 - faceOffset },
+            { x1, y1: y1 + faceOffset, x2, y2: y2 + faceOffset },
+          ]
+        : [
+            { x1: x1 - faceOffset, y1, x2: x2 - faceOffset, y2 },
+            { x1: x1 + faceOffset, y1, x2: x2 + faceOffset, y2 },
+          ]
+
+    return (
+      <g
+        className={`${styles.member} ${selected ? styles.memberSelected : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`${section.mark} ${member.id}`}
+        aria-pressed={selected}
+        onClick={select}
+        onKeyDown={(event) => activateMember(event, select)}
+      >
+        {faces.map((face, index) => (
+          <line
+            key={`hit-${index}`}
+            className={styles.wallHitArea}
+            x1={face.x1}
+            y1={face.y1}
+            x2={face.x2}
+            y2={face.y2}
+          />
+        ))}
+        {faces.map((face, index) => (
+          <line
+            key={`face-${index}`}
+            className={styles.wall}
+            x1={face.x1}
+            y1={face.y1}
+            x2={face.x2}
+            y2={face.y2}
+          />
+        ))}
+        <text
+          className={styles.memberLabel}
+          x={(x1 + x2) / 2 + (axis === 'Y' ? faceOffset + 12 : 0)}
+          y={(y1 + y2) / 2 + (axis === 'X' ? faceOffset + 14 : 0)}
+          textAnchor="middle"
+        >
+          {section.mark}
+        </text>
+      </g>
     )
   }
 
@@ -308,6 +383,16 @@ export function PlanEditor() {
           role="img"
           aria-label={`${story.name} 平面`}
         >
+          {members
+            .filter(({ kind }) => kind === '耐震壁')
+            .map((member) => (
+              <PlanMember
+                key={member.id}
+                member={member}
+                project={project}
+                transform={transform}
+              />
+            ))}
           {members
             .filter(({ kind }) => kind === '大梁')
             .map((member) => (

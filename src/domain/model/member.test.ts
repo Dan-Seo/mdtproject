@@ -14,8 +14,10 @@ import {
 } from './member'
 
 describe('member model', () => {
-  it('supports only 柱 and 大梁 as member kinds', () => {
-    expectTypeOf<MemberKind>().toEqualTypeOf<'柱' | '大梁'>()
+  it('supports 柱・大梁・耐震壁 as member kinds', () => {
+    // 耐震壁は ADR-024 で加わった。壁式構造の壁・スラブ・基礎・小梁は依然として
+    // 部材にしない — ここが増えるときは ADR を伴う (ADR-005 の後継)。
+    expectTypeOf<MemberKind>().toEqualTypeOf<'柱' | '大梁' | '耐震壁'>()
     expectTypeOf<MemberClass>().toEqualTypeOf<'躯体'>()
   })
 

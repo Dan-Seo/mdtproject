@@ -288,6 +288,30 @@ describe('TakeoffPane', () => {
     expect(notice).not.toHaveTextContent('未計上')
   })
 
+  it('always warns that 耐震壁 openings are not deducted', () => {
+    // 開口部の欠除（1通則8)）は未実装なので、開口のある壁は過大計上になる。
+    // 壁を出しておいて黙っていると「빠진 것」ではなく「틀린 채로 완성된 것」だ。
+    render(<TakeoffPane />)
+
+    const notice = screen.getByTestId('wall-opening-notice')
+    expect(notice).toHaveTextContent('開口')
+    expect(notice).toHaveTextContent('1通則8)')
+  })
+
+  it('does not show the 開口部 notice for a project without 耐震壁', () => {
+    const project = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...project,
+        members: project.members.filter(({ kind }) => kind !== '耐震壁'),
+      },
+    })
+
+    render(<TakeoffPane />)
+
+    expect(screen.queryByTestId('wall-opening-notice')).not.toBeInTheDocument()
+  })
+
   it('does not show the 継手位置 notice when nothing carries a 継手', () => {
     useAppStore.setState({
       project: { ...createSampleProject(), members: [] },
@@ -716,7 +740,10 @@ describe('TakeoffPane', () => {
     await waitFor(() =>
       expect(capture).toHaveBeenCalledWith(
         'takeoff_exported',
-        expect.objectContaining({ size_bucket: 'small' }),
+        // サンプル案件は耐震壁が入って内訳が50行になり、'small'(<50) の区分を
+        // 出た (ADR-024)。ここが見張っているのは区分を送ることと生の行数を
+        // 送らないことなので、区分の値自体は事実に合わせて更新する。
+        expect.objectContaining({ size_bucket: 'medium' }),
       ),
     )
     const [, properties] = capture.mock.calls.find(

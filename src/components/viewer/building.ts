@@ -5,6 +5,7 @@ import {
   gridPoint,
   storyElevation,
   storyNotFound,
+  wallSpan,
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
@@ -97,7 +98,7 @@ export function buildingLayout(
         center: [x, elevation + story.height / 2, y],
         size: [section.b, story.height, section.d],
       }
-    } else {
+    } else if (member.kind === '大梁') {
       if (section.kind !== '大梁' || !('axis' in member.position)) {
         throw new Error(
           `大梁 member references a non-大梁 section: ${member.id}`,
@@ -124,6 +125,35 @@ export function buildingLayout(
               kind: '大梁',
               center: [start.x, centerY, (start.y + end.y) / 2],
               size: [section.b, section.depth, end.y - start.y],
+            }
+    } else {
+      if (section.kind !== '耐震壁' || !('axis' in member.position)) {
+        throw new Error(
+          `耐震壁 member references a non-耐震壁 section: ${member.id}`,
+        )
+      }
+      // 壁は躯体の区分（第4編第1章第2節（５）壁）で「柱、梁、床板等に接する
+      // 垂直材の内法部分」なので、箱も内法で描く — 中心間で描くと柱・大梁と
+      // 重なった立体になり、数量（内法）と見た目が食い違う。
+      const position = member.position
+      const start = gridPoint(project.grid, position.ix, position.iy)
+      const span = wallSpan(project, member)
+      const alongCenter =
+        span.startFaceOffsetMm + span.clearLengthMm / 2
+      const centerY = elevation + span.clearHeightMm / 2
+      box =
+        position.axis === 'X'
+          ? {
+              memberId: member.id,
+              kind: '耐震壁',
+              center: [start.x + alongCenter, centerY, start.y],
+              size: [span.clearLengthMm, span.clearHeightMm, section.thickness],
+            }
+          : {
+              memberId: member.id,
+              kind: '耐震壁',
+              center: [start.x, centerY, start.y + alongCenter],
+              size: [section.thickness, span.clearHeightMm, span.clearLengthMm],
             }
     }
 
@@ -165,7 +195,7 @@ export function buildingLayout(
         y - section.d / 2,
       ]
       worldPoint = (point) => translate(point, offset)
-    } else {
+    } else if (member.kind === '大梁') {
       if (section.kind !== '大梁' || !('axis' in member.position)) {
         throw new Error(
           `大梁 member references a non-大梁 section: ${member.id}`,
@@ -195,6 +225,34 @@ export function buildingLayout(
             ]
           : ([x, y, z]) => [
               start.x - section.b / 2 + z,
+              base + y,
+              start.y + span.startFaceOffsetMm + x,
+            ]
+    } else {
+      if (section.kind !== '耐震壁' || !('axis' in member.position)) {
+        throw new Error(
+          `耐震壁 member references a non-耐震壁 section: ${member.id}`,
+        )
+      }
+      const start = gridPoint(
+        project.grid,
+        member.position.ix,
+        member.position.iy,
+      )
+      const span = wallSpan(project, member)
+      // 壁のローカル原点は「始端の柱内側面・壁下端・厚さの手前面」。壁下端は
+      // 階の床板上面＝階の基準標高そのものである（大梁と違い天井から下げない）。
+      const base = storyElevation(project.stories, member.storyId)
+
+      worldPoint =
+        member.position.axis === 'X'
+          ? ([x, y, z]) => [
+              start.x + span.startFaceOffsetMm + x,
+              base + y,
+              start.y - section.thickness / 2 + z,
+            ]
+          : ([x, y, z]) => [
+              start.x - section.thickness / 2 + z,
               base + y,
               start.y + span.startFaceOffsetMm + x,
             ]

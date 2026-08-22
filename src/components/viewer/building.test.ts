@@ -112,13 +112,21 @@ describe('buildingLayout', () => {
     const columnCount = nx * ny * project.stories.length
     const girderCount =
       ((nx - 1) * ny + nx * (ny - 1)) * project.stories.length
+    // 耐震壁はグリッドから導けない — サンプルが1階あたり1枚だけ置いているので
+    // (ADR-024)、実際に置かれた数を数える。
+    const wallCount = project.members.filter(
+      ({ kind }) => kind === '耐震壁',
+    ).length
 
-    expect(layout.boxes).toHaveLength(columnCount + girderCount)
+    expect(layout.boxes).toHaveLength(columnCount + girderCount + wallCount)
     expect(layout.boxes.filter(({ kind }) => kind === '柱')).toHaveLength(
       columnCount,
     )
     expect(layout.boxes.filter(({ kind }) => kind === '大梁')).toHaveLength(
       girderCount,
+    )
+    expect(layout.boxes.filter(({ kind }) => kind === '耐震壁')).toHaveLength(
+      wallCount,
     )
   })
 

@@ -177,6 +177,14 @@ if (!fabricationAdditionEntry) {
   throw new Error('Fixture is missing cover.fabrication.addition')
 }
 
+const wallLapMinimumEntry = (
+  fixture.entries as unknown as DirectEntry[]
+).find(({ kind }) => kind === 'lap.wall.minimum')
+
+if (!wallLapMinimumEntry) {
+  throw new Error('Fixture is missing lap.wall.minimum')
+}
+
 const bentConditionEntries = (
   fixture.entries as unknown as BentConditionEntry[]
 ).filter(({ kind }) =>
@@ -278,6 +286,19 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     },
   )
 
+  it('matches the 耐力壁 重ね継手 lower bound as its own rule', () => {
+    // 表5.3.2 の格子ではなく 5.3.4(3)(ｱ) の本文にある単独の下限だ。「大きい方を
+    // 取る」計算は TS 側にあり、ここが固定するのは 40d という値と出典である。
+    const entry = wallLapMinimumEntry
+    const hit = lookupRule(jpMlitRulePack, entry.kind, entry.conditions)
+
+    expect(hit.value).toBe(entry.value)
+    expect(hit.unit).toBe(entry.unit)
+    expect(hit.source.section).toBe(entry.table)
+    expect(hit.source.page).toBe(entry.printedPage)
+    expect(hit.confidence).toBe('transcribed')
+  })
+
   it('matches the 加工用かぶり addition as its own rule', () => {
     const entry = fabricationAdditionEntry
     const hit = lookupRule(jpMlitRulePack, entry.kind, entry.conditions)
@@ -303,6 +324,7 @@ describe('픽스처 대조 완전성', () => {
     'bend.hook-tome',
     'cover.minimum',
     'cover.fabrication.addition',
+    'lap.wall.minimum',
     'anchorage.bent.tail.minimum',
     'anchorage.bent.projection.minimum',
   ])
@@ -344,6 +366,13 @@ describe('픽스처 대조 완전성', () => {
         jpMlitRulePack,
         fabricationAdditionEntry.kind,
         fabricationAdditionEntry.conditions,
+      ),
+    )
+    hit.add(
+      lookupRule(
+        jpMlitRulePack,
+        wallLapMinimumEntry.kind,
+        wallLapMinimumEntry.conditions,
       ),
     )
     for (const entry of bentConditionEntries) {

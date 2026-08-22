@@ -677,6 +677,12 @@ export function TakeoffPane() {
     ({ role }) =>
       role === '上端カットオフ筋' || role === '下端カットオフ筋',
   )
+  // 開口部の欠除（1通則8)）は未実装だ。壁を出しておいて黙っていると、
+  // 「빠진 것」ではなく「틀린 채로 완성된 것」になる — 壁の行が1つでもあれば
+  // 常に見せる (ADR-024)。
+  const hasWall = lines.some(
+    ({ role }) => role === '縦筋' || role === '横筋',
+  )
 
   return (
     <>
@@ -696,6 +702,15 @@ export function TakeoffPane() {
           data-testid="cutoff-anchorage-notice"
         >
           ▲ {t(locale, 'takeoff.cutoffAnchorage')}
+        </p>
+      )}
+      {hasWall && (
+        <p
+          className={styles.splicePositionNotice}
+          role="note"
+          data-testid="wall-opening-notice"
+        >
+          ▲ {t(locale, 'takeoff.wallOpening')}
         </p>
       )}
       {unsupportedMembers.length > 0 && (

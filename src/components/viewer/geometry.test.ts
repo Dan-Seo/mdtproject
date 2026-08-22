@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ColumnSection, GirderSection } from '@/domain/model/member'
-import { girderRun } from '@/domain/model/project'
+import type {
+  ColumnSection,
+  GirderSection,
+  Member,
+  WallSection,
+} from '@/domain/model/member'
+import { girderRun, type WallSpan } from '@/domain/model/project'
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
-import { createSampleProject } from '@/domain/model/sample-project'
+import { createSampleProject, wallSection } from '@/domain/model/sample-project'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
+import { generateWallRebar } from '@/domain/rebar/wall'
 import { jpMlitRulePack } from '@/rulepack'
 
 import {
@@ -773,6 +779,142 @@ describe('M3c の日本固有詳細を 3D に展開する', () => {
       expect(y).toBeGreaterThan(cover - mid)
       expect(y).toBeLessThan(girderSection.depth - cover - mid)
     }
+  })
+})
+
+describe('耐震壁の縦筋・横筋を壁厚方向に分ける', () => {
+  const span: WallSpan = {
+    axis: 'Y',
+    clearLengthMm: 5200,
+    clearHeightMm: 3450,
+    startFaceOffsetMm: 400,
+    endFaceOffsetMm: 400,
+    girderDepthAboveMm: 750,
+  }
+  const wallMember: Member = {
+    id: '1F-W1-X1Y1-Y',
+    kind: '耐震壁',
+    memberClass: '躯体',
+    sectionId: wallSection.id,
+    storyId: '1F',
+    position: { axis: 'Y', ix: 0, iy: 0 },
+  }
+
+  /** 壁厚方向に立つ面を、実際に描かれる半径つきで手前から並べる。 */
+  function barPlanes(
+    section: WallSection,
+  ): { z: number; radius: number; role: RebarRole }[] {
+    return generateWallRebar(
+      { member: wallMember, section, span },
+      jpMlitRulePack,
+    )
+      .flatMap((rebar) => {
+        const planes = new Map<number, number>()
+        for (const segment of rebarSegments(rebar, section)) {
+          planes.set(segment.from[2], segment.radius)
+        }
+
+        return [...planes].map(([z, radius]) => ({
+          z,
+          radius,
+          role: rebar.role,
+        }))
+      })
+      .sort((left, right) => left.z - right.z)
+  }
+
+  /**
+   * 隣り合う鉄筋が食い込まず、どれも壁の中に収まっていること。ちょうど接する配置を
+   * 狙っているので、丸め誤差ぶんだけ緩めて比べる。
+   */
+  const TOLERANCE_MM = 1e-9
+  function expectNoOverlap(
+    planes: { z: number; radius: number }[],
+    thickness: number,
+  ): void {
+    const last = planes[planes.length - 1]
+
+    expect(planes[0].z - planes[0].radius).toBeGreaterThanOrEqual(-TOLERANCE_MM)
+    expect(last.z + last.radius).toBeLessThanOrEqual(thickness + TOLERANCE_MM)
+
+    for (let index = 1; index < planes.length; index += 1) {
+      const near = planes[index - 1]
+      const far = planes[index]
+
+      expect(far.z - near.z).toBeGreaterThanOrEqual(
+        near.radius + far.radius - TOLERANCE_MM,
+      )
+    }
+  }
+
+  it('never draws 縦筋 and 横筋 at the same depth', () => {
+    // ドメインの points は縦筋も横筋もかぶり面に置く（柱の主筋・帯筋と同じだ）。
+    // 表示半径は誇張されているので、そのまま描くと交差点ごとに互いを貫く。
+    const planes = barPlanes(wallSection)
+
+    expect(planes.map(({ role }) => role)).toEqual([
+      '縦筋',
+      '横筋',
+      '横筋',
+      '縦筋',
+    ])
+    expectNoOverlap(planes, wallSection.thickness)
+  })
+
+  it('folds the two layers about the mid-plane without letting them meet', () => {
+    const planes = barPlanes(wallSection)
+    const mid = wallSection.thickness / 2
+    const offsets = planes.map(({ z }) => z - mid)
+
+    // ダブルは両面ぶん — 中央面をはさんで鏡像になる。
+    expect(offsets[0]).toBeCloseTo(-offsets[3], 9)
+    expect(offsets[1]).toBeCloseTo(-offsets[2], 9)
+    // 手前の2本はどちらも中央面より手前だ（層が入れ替わっていない）。
+    expect(offsets[0]).toBeLessThan(offsets[1])
+    expect(offsets[1]).toBeLessThan(0)
+  })
+
+  it('backs the pair onto the mid-plane for a single layer', () => {
+    const single: WallSection = { ...wallSection, layers: 1 }
+    const planes = barPlanes(single)
+
+    expect(planes).toHaveLength(2)
+    expect(planes.map(({ role }) => role)).toEqual(['縦筋', '横筋'])
+    // 1層なのでかぶり面ではなく壁厚の中央をはさんで背中合わせに立つ。
+    expect((planes[0].z + planes[1].z) / 2).toBe(single.thickness / 2)
+    expectNoOverlap(planes, single.thickness)
+  })
+
+  it('shrinks the display radius until the layers fit a thin wall', () => {
+    // 誇張した表示半径のままだと D13 ダブルは 150mm の壁に入らない。壁からはみ出す
+    // か層どうしが食い込むかの二択になるので、入る大きさまで一律に縮める。
+    const thin: WallSection = { ...wallSection, thickness: 150 }
+    const planes = barPlanes(thin)
+
+    expect(planes).toHaveLength(4)
+    for (const { radius } of planes) {
+      expect(radius).toBeLessThan(rebarRadius(wallSection.vertical.size))
+    }
+    expectNoOverlap(planes, thin.thickness)
+  })
+
+  it('leaves the in-plane distribution to the domain layout', () => {
+    const [vertical] = generateWallRebar(
+      { member: wallMember, section: wallSection, span },
+      jpMlitRulePack,
+    )
+    const layout = stirrupPositions(
+      span.clearLengthMm,
+      wallSection.vertical.pitch,
+      wallSection.vertical.startOffsetMm,
+    )
+    const placements = rebarPlacements(vertical, wallSection)
+
+    // 厚さ方向を分けても割付は動かない — 出所はドメインの layout だけである。
+    expect(placements.map(([x]) => x)).toEqual([
+      ...layout.positionsMm,
+      ...layout.positionsMm,
+    ])
   })
 })
 
