@@ -17,6 +17,8 @@ import {
   type ShearBarSize,
   type SpliceMethod,
   type SteelGrade,
+  type SlabBarRow,
+  type SlabSection,
   type WallSection,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
@@ -244,6 +246,9 @@ function CoverConditionField({
 }) {
   return (
     <div className={styles.compoundField}>
+      {/* 表5.3.6 の「スラブ、耐力壁以外の壁」行は仕上げの有無だけで分かれ、
+          屋内・屋外の区別を持たない — 効かないつまみを置かない (ADR-027)。 */}
+      {section.kind === '床板' ? null : (
       <select
         className={styles.select}
         value={section.exposure}
@@ -259,6 +264,7 @@ function CoverConditionField({
           </option>
         ))}
       </select>
+      )}
       <select
         className={styles.select}
         value={section.finish}
@@ -319,6 +325,20 @@ function SectionDimension({
   section: Section
   update(updater: (section: Section) => Section): void
 }) {
+  if (section.kind === '床板') {
+    // 床板の断面も板厚1つだ。長さは通り芯と大梁幅から決まる内法なので、
+    // 断面一覧では持たない（躯体の区分（４））。
+    return (
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 板厚 t`}
+        value={section.thickness}
+        onChange={(thickness) =>
+          update((current) => ({ ...current, thickness }))
+        }
+      />
+    )
+  }
+
   if (section.kind === '耐震壁') {
     // 壁の断面は厚さ1つだ。b×D の枠に押し込むと図面にない寸法を作ってしまう。
     return (
@@ -556,6 +576,67 @@ function WallBarField({
 }
 
 /**
+ * 床板の主筋 — 1方向ぶんの上端筋・下端筋。X方向とY方向で別々に受け取る。
+ * 径もピッチも断面リストの入力であって規準に本数の条文はない (ADR-012)。
+ */
+function SlabBarField({
+  section,
+  update,
+  axis,
+}: {
+  section: SlabSection
+  update(updater: (section: Section) => Section): void
+  axis: 'x' | 'y'
+}) {
+  const replace = (
+    face: 'top' | 'bottom',
+    patch: Partial<SlabBarRow>,
+  ): void =>
+    update((current) =>
+      current.kind === '床板'
+        ? {
+            ...current,
+            [axis]: {
+              ...current[axis],
+              [face]: { ...current[axis][face], ...patch },
+            },
+          }
+        : current,
+    )
+
+  return (
+    <div className={styles.slabBarField}>
+      {(['top', 'bottom'] as const).map((face) => {
+        const bar = section[axis][face]
+        const label = `${axis.toUpperCase()}方向${face === 'top' ? '上端筋' : '下端筋'}`
+
+        return (
+          <div key={face} className={styles.compoundField}>
+            <BarSizeSelect
+              label={`${sectionMarkLabel(section)} ${label} 径`}
+              value={bar.size}
+              onChange={(size) => replace(face, { size })}
+            />
+            <span aria-hidden="true">@</span>
+            <NumberInput
+              label={`${sectionMarkLabel(section)} ${label} ピッチ`}
+              value={bar.pitch}
+              onChange={(pitch) => replace(face, { pitch })}
+            />
+            <NumberInput
+              label={`${sectionMarkLabel(section)} ${label} 初期オフセット`}
+              minimum={0}
+              value={bar.startOffsetMm}
+              onChange={(startOffsetMm) => replace(face, { startOffsetMm })}
+            />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
  * 配筋層数（シングル／ダブル）。本数がそのまま倍違うのに規準に条文がなく、
  * 壁リストの記載そのものである (ADR-012) — だから既定値を置かず選ばせる。
  */
@@ -595,6 +676,12 @@ function ShearField({
   // 下の update コールバックが耐震壁を素通しするのはそのためである。
   if (section.kind === '耐震壁') {
     return <WallBarField section={section} update={update} row="horizontal" />
+  }
+
+  // 床板にせん断補強筋はない。この列にはもう一方の向きの主筋を置く —
+  // 空欄にすると2方向のうち片方しか入力できない表になる。
+  if (section.kind === '床板') {
+    return <SlabBarField section={section} update={update} axis="y" />
   }
 
   const reinforcement = section.kind === '柱' ? section.hoop : section.stirrup
@@ -873,6 +960,12 @@ export function SectionTable() {
                       section={section}
                       update={updateCurrent}
                       row="vertical"
+                    />
+                  ) : section.kind === '床板' ? (
+                    <SlabBarField
+                      section={section}
+                      update={updateCurrent}
+                      axis="x"
                     />
                   ) : (
                     <GirderMainField

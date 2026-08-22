@@ -54,6 +54,7 @@ const GRID_KEYS = [
   'anchorage.L1h',
   'anchorage.L2h',
   'anchorage.La',
+  'anchorage.Lb',
   'lap.L1',
   'lap.L1h',
 ] as const
@@ -149,17 +150,49 @@ describe('割裂破壊のおそれのない箇所は短くてよい', () => {
 })
 
 describe('投影定着長さは直線定着より短い', () => {
-  // La は仕口面から鉄筋外面までの投影分でしかなく全長ではない
+  // La・Lb は仕口面から鉄筋外面までの投影分でしかなく全長ではない
   // (5.3.4(5)(ｲ)(c)・図5.3.3)。L1 を上回るなら列を取り違えている。
-  it('La < L1 at every cell', () => {
+  it.each(['anchorage.La', 'anchorage.Lb'])('%s < L1 at every cell', (key) => {
     for (const grade of GRADES) {
       for (const fc of FC_BANDS) {
-        const la = valueAt('anchorage.La', grade, fc)
+        const projection = valueAt(key, grade, fc)
         const l1 = valueAt('anchorage.L1', grade, fc)
-        if (la === null || l1 === null) continue
-        expect(la, `${grade} Fc${fc}`).toBeLessThan(l1)
+        if (projection === null || l1 === null) continue
+        expect(projection, `${grade} Fc${fc}`).toBeLessThan(l1)
       }
     }
+  })
+})
+
+describe('スラブ下端筋の定着は一般値より短い', () => {
+  // 表5.3.4 注1・注3 — L3 は「小梁及びスラブの下端筋」限定の緩和で、注2〜4 に
+  // 当たらない一般値 L1 より短い。L2 が L1 より短いのと同じ構造である。
+  // L3 は縦結合セルなので Fc・鉄筋の種類の格子を持たない — その一つの値が
+  // 表のどのマスの L1 よりも小さいことを見る。逆転していたら列を取り違えている。
+  it('L3 < L1 at every cell of 表5.3.4', () => {
+    const l3 = rows('anchorage.L3')
+
+    expect(l3).toHaveLength(1)
+    expect(l3[0].unit).toBe('d')
+
+    for (const grade of GRADES) {
+      for (const fc of FC_BANDS) {
+        const l1 = valueAt('anchorage.L1', grade, fc)
+        if (l1 === null) continue
+        expect(l3[0].value, `${grade} Fc${fc}`).toBeLessThan(l1)
+      }
+    }
+  })
+
+  it('L3 の下限 150mm は D13 を上回る — 下限が効かないなら行が要らない', () => {
+    // 「10d かつ 150mm 以上」の 150mm は、細い径でこそ効く下限だ。10d を
+    // 下回る値を書いてしまうと行があっても一度も効かず、転写ミスに気づけない。
+    const floor = rows('anchorage.L3.minimum')
+    const perDiameter = rows('anchorage.L3')
+
+    expect(floor).toHaveLength(1)
+    expect(floor[0].unit).toBe('mm')
+    expect(floor[0].value).toBeGreaterThan(perDiameter[0].value * 13)
   })
 })
 
@@ -222,6 +255,34 @@ describe('かぶり厚さは条件が厳しいほど厚い', () => {
     expect(
       cover(memberKind, false, '屋内', '仕上げなし'),
     ).toBeGreaterThanOrEqual(indoorFinished)
+  })
+
+  it('床板は仕上げの有無だけで分かれ、仕上げなしの方が厚い', () => {
+    // 表5.3.6 の「スラブ、耐力壁以外の壁」行は**屋内・屋外の区別を持たない** —
+    // 「柱、梁、耐力壁」行と構造が違う。exposure 条件を持つ行が混ざっていたら
+    // 隣の行から写している。
+    const slab = rows('cover.minimum').filter(
+      ({ conditions }) => conditions.memberKind === '床板',
+    )
+
+    expect(slab).toHaveLength(2)
+    for (const entry of slab) {
+      expect(entry.conditions).not.toHaveProperty('exposure')
+      expect(entry.conditions.soilContact).toBe(false)
+    }
+
+    const finished = slab.find(
+      ({ conditions }) => conditions.finish === '仕上げあり',
+    )!
+    const bare = slab.find(
+      ({ conditions }) => conditions.finish === '仕上げなし',
+    )!
+
+    expect(bare.value).toBeGreaterThan(finished.value)
+    // 同じ表の「柱、梁、耐力壁」より薄い側の行だ — 取り違えていたら等しくなる。
+    expect(finished.value).toBeLessThan(
+      cover('大梁', false, '屋内', '仕上げあり'),
+    )
   })
 
   it('加工用かぶりは最小かぶりに上乗せする正の量である', () => {

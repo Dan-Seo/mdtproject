@@ -1,4 +1,4 @@
-export type MemberKind = '柱' | '大梁' | '耐震壁'
+export type MemberKind = '柱' | '大梁' | '耐震壁' | '床板'
 
 export type MemberClass = '躯体'
 
@@ -259,7 +259,62 @@ export interface WallSection {
   }
 }
 
-export type Section = ColumnSection | GirderSection | WallSection
+/**
+ * 床板（スラブ）の1方向・1面の主筋。
+ *
+ * 径もピッチも断面リストの入力である。数量積算基準 2（４）床板1) が「トップ筋、
+ * ハンチ部分の主筋、補強筋等は設計図書による」と委ね、規準側に本数を定める
+ * 条文がない (ADR-012)。ここが規準から引くのは定着長さだけだ。
+ */
+export interface SlabBarRow {
+  size: BarSize
+  pitch: number
+  /**
+   * 内法端から第1・最終の鉄筋をどれだけ離すか。柱の帯筋・大梁のあばら筋と
+   * 同じ理由で規準に値がなく、断面一覧の入力である (ADR-012)。1通則7) は
+   * 初期オフセットを見ないので数量には効かない — 3D 形状だけの値である。
+   */
+  startOffsetMm: number
+}
+
+/**
+ * 床板（スラブ）— 数量積算基準 2（４）床板 で測る。
+ *
+ * 測る対象は内法だ。躯体の区分（第4編第1章第2節（４））が床板を「柱、梁等に
+ * 接する水平材の内法部分」と定めるので、長さは通り芯間ではなく両側の大梁の
+ * 内側面の間である。柱・大梁と二重に計上しないのはこの定義による (ADR-027)。
+ *
+ * `exposure` を持たないのは表5.3.6 の構造そのものだ。同表の「スラブ、耐力壁
+ * 以外の壁」行は仕上げの有無だけで分かれ、屋内・屋外の区別を**持たない** —
+ * 「柱、梁、耐力壁」行と違う。入力に置くと画面に効かないつまみが並ぶ。
+ *
+ * 幅止筋を持たないのは耐震壁と同じ理由である。1通則3) が長さを与える部材の
+ * 列挙は「基礎梁、梁、壁梁、壁」で床板がなく、本数を定める条文もない。
+ */
+export interface SlabSection {
+  id: string
+  kind: '床板'
+  mark: string
+  /** ColumnSection.storyLabel と同じ。 */
+  storyLabel?: string
+  /** 板厚 (mm) */
+  thickness: number
+  fc: number
+  grade: SteelGrade
+  finish: Finish
+  /** 主筋の継手方式。継手箇所数と設計長さへの算入を決める */
+  spliceMethod: SpliceMethod
+  /** X通り方向（X軸に沿って伸びる）の主筋 */
+  x: { top: SlabBarRow; bottom: SlabBarRow }
+  /** Y通り方向の主筋 */
+  y: { top: SlabBarRow; bottom: SlabBarRow }
+}
+
+export type Section =
+  | ColumnSection
+  | GirderSection
+  | WallSection
+  | SlabSection
 
 /**
  * 화면 표시·aria-label용 이름. 같은 符号이 階별로 여러 断面이 될 수 있으므로
@@ -291,11 +346,21 @@ export interface GirderPosition {
  */
 export type WallPosition = GirderPosition
 
+/**
+ * 床板の位置 — 通り芯で囲まれた1ベイを占める。(ix, iy) はそのベイの原点側
+ * （X・Y とも小さい側）の格子点で、ベイは (ix, iy)〜(ix+1, iy+1) である。
+ *
+ * 柱の ColumnPosition と形は同じだが指すものが違う（格子点かベイか）。
+ * TypeScript は構造的型付けなので型では区別されない — どちらであるかを
+ * 決めるのは常に `Member.kind` の方だ。
+ */
+export type SlabPosition = ColumnPosition
+
 export interface Member {
   id: string
   kind: MemberKind
   memberClass: MemberClass
   sectionId: string
   storyId: string
-  position: ColumnPosition | GirderPosition | WallPosition
+  position: ColumnPosition | GirderPosition | WallPosition | SlabPosition
 }

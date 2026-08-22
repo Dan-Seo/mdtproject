@@ -2,6 +2,7 @@ import type {
   ColumnSection,
   GirderSection,
   Member,
+  SlabSection,
   WallSection,
 } from './member'
 import {
@@ -129,6 +130,59 @@ function createWalls(storyId: string): Member[] {
   ]
 }
 
+/**
+ * 床板（スラブ）(ADR-027)。数量積算基準 2（４）床板 で測る。屋内・屋外の入力を
+ * 持たないのは表5.3.6 の「スラブ、耐力壁以外の壁」行に区別がないからで、
+ * 仕上げありの 20mm がこの断面の最小かぶりになる — 柱・大梁の 30/40mm より薄い。
+ * X方向とY方向で別々に径・ピッチを受け取る。スラブリストの「D13@200 タテヨコ」
+ * という記載そのものであって、規準側に本数を定める条文はない (ADR-012)。
+ */
+export const slabSection: SlabSection = {
+  id: 'section-S1',
+  kind: '床板',
+  mark: 'S1',
+  thickness: 200,
+  fc: 24,
+  grade: 'SD345',
+  finish: '仕上げあり',
+  spliceMethod: '重ね継手',
+  x: {
+    top: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+    bottom: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+  },
+  y: {
+    top: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+    bottom: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+  },
+}
+
+/**
+ * 床板は通り芯で囲まれた全ベイに置く。壁と違って全部置くのは、床板が階の
+ * 天井面にしかなく下の配筋を隠さないからだ（壁は立ち上がって中を覆う）。
+ * Y方向に2ベイ並ぶので、同じサンプルの中に「連続する床板」（Y方向・2ベイ）と
+ * 「単独床板」（X方向・1ベイ）の両方が出る — 継手の条文が切り替わる境目を
+ * 画面で確かめられる。
+ */
+function createSlabs(storyId: string): Member[] {
+  const { nx, ny } = gridPointCount(sampleGrid)
+  const slabs: Member[] = []
+
+  for (let iy = 0; iy < ny - 1; iy += 1) {
+    for (let ix = 0; ix < nx - 1; ix += 1) {
+      slabs.push({
+        id: `${storyId}-S1-X${ix + 1}Y${iy + 1}`,
+        kind: '床板',
+        memberClass: '躯体',
+        sectionId: slabSection.id,
+        storyId,
+        position: { ix, iy },
+      })
+    }
+  }
+
+  return slabs
+}
+
 function createColumns(storyId: string): Member[] {
   const { nx, ny } = gridPointCount(sampleGrid)
   const columns: Member[] = []
@@ -190,11 +244,12 @@ export function createSampleProject(): Project {
     name: 'サンプル案件 / RC 2階建て',
     grid: sampleGrid,
     stories: sampleStories,
-    sections: [columnSection, ...girderSections, wallSection],
+    sections: [columnSection, ...girderSections, wallSection, slabSection],
     members: sampleStories.flatMap(({ id }) => [
       ...createColumns(id),
       ...createGirders(id),
       ...createWalls(id),
+      ...createSlabs(id),
     ]),
   }
 }

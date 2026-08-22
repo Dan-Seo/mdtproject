@@ -5,6 +5,8 @@ import {
   type GirderSection,
   type Section,
   type ShearBarSize,
+  type SlabBarRow,
+  type SlabSection,
   type WallSection,
 } from '@/domain/model/member'
 import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
@@ -86,6 +88,13 @@ export function roleToLayer(role: RebarRole): RebarLayer {
     // 横筋은 그 세로근을 가로지르는 배력근이라 帯筋·あばら筋과 같은 레이어다.
     case '横筋':
       return 'hoop'
+    // 床板は主筋が2方向に走るだけでどれも主筋だ — 上下の面をレイヤーで
+    // 分けない。分けると「主筋／帯筋」というトグルの意味が部材ごとに変わる。
+    case 'X方向上端筋':
+    case 'X方向下端筋':
+    case 'Y方向上端筋':
+    case 'Y方向下端筋':
+      return 'main'
     default: {
       const unsupported: never = role
       throw new Error(`Unsupported RebarRole: ${unsupported}`)
@@ -390,12 +399,143 @@ function wallRebarPlacements(
   )
 }
 
+/**
+ * この鉄筋のかぶり面の高さ (mm)。折れ曲がった上端筋は下へ落ちる点も持つので、
+ * 直線部（最も高い点）で代表させる。下端筋は折れないので全点が同じ高さである。
+ */
+function slabCoverZ(rebar: Rebar): number {
+  return Math.max(...rebar.points.map(([, , z]) => z))
+}
+
+/**
+ * 床板筋の表示半径。`rebarRadius` は見せるために実際の径を誇張するので、板厚
+ * 200・かぶり 30 の普通のスラブでも 2方向×2面の4層が入らない — 板の外へ
+ * 突き出すか層どうしが食い込む。入る大きさまで一律に縮める（壁の
+ * `wallDisplayRadius` と同じ扱い）。
+ *
+ * かぶりの内側に残る `厚さ − かぶり×2` を4層で分けるので、縦横1組の半径の和が
+ * その1/4に収まればよい。
+ */
+function slabDisplayRadius(
+  size: ShearBarSize,
+  section: SlabSection,
+  coverMm: number,
+): number {
+  const pair =
+    rebarRadius(slabRowFor(section, 'X', '下端').size) +
+    rebarRadius(slabRowFor(section, 'Y', '下端').size)
+  const limit = Math.max(0, (section.thickness - 2 * coverMm) / 4)
+
+  return rebarRadius(size) * (pair > limit ? limit / pair : 1)
+}
+
+/** かぶり面から測ったかぶり厚さ — 上端筋は板の上から測る。 */
+function slabCoverMm(coverZ: number, section: SlabSection): number {
+  return Math.min(coverZ, section.thickness - coverZ)
+}
+
+function slabRowFor(
+  section: SlabSection,
+  axis: 'X' | 'Y',
+  face: '上端' | '下端',
+): SlabBarRow {
+  return (axis === 'X' ? section.x : section.y)[
+    face === '上端' ? 'top' : 'bottom'
+  ]
+}
+
+function slabRoleParts(role: RebarRole): {
+  axis: 'X' | 'Y'
+  face: '上端' | '下端'
+} {
+  switch (role) {
+    case 'X方向上端筋':
+      return { axis: 'X', face: '上端' }
+    case 'X方向下端筋':
+      return { axis: 'X', face: '下端' }
+    case 'Y方向上端筋':
+      return { axis: 'Y', face: '上端' }
+    case 'Y方向下端筋':
+      return { axis: 'Y', face: '下端' }
+    default:
+      throw new Error(`Unsupported 床板 role: ${role}`)
+  }
+}
+
+/**
+ * 床板筋が板厚のどこに立つか (mm)。ドメインの `points` は上端筋も下端筋も
+ * かぶり面に置く（柱の主筋・帯筋と同じ）が、そのまま描くと交点ごとに 2方向が
+ * 互いを貫通する。表示半径のぶんだけ内側へ押し、X方向の外面がかぶり面に、
+ * Y方向がその内側面に接するようにする。
+ *
+ * X方向をかぶり面側に置くことに根拠はない — **両原文のどこにも定めがない。**
+ * 数量積算基準 2（４）床板 は方向を区別せず「主筋」と呼ぶだけで、標準仕様書5章
+ * にも上下の重なり順の記述はない。数量には影響しないので (ADR-019)、図面が
+ * 揺れないように作図規則として固定する — 壁の縦筋・横筋と同じ判断である。
+ */
+function slabBarDepthMm(
+  role: RebarRole,
+  section: SlabSection,
+  coverZ: number,
+): number {
+  const { axis, face } = slabRoleParts(role)
+  const coverMm = slabCoverMm(coverZ, section)
+  const outer = slabDisplayRadius(
+    slabRowFor(section, 'X', face).size,
+    section,
+    coverMm,
+  )
+  const inner = slabDisplayRadius(
+    slabRowFor(section, 'Y', face).size,
+    section,
+    coverMm,
+  )
+  const depth = axis === 'X' ? outer : 2 * outer + inner
+
+  return face === '上端' ? coverZ - depth : coverZ + depth
+}
+
+/**
+ * 床板筋の展開。面内の繰り返し軸はドメインの `placement` が、板厚方向は
+ * `slabBarDepthMm` が与える。X方向の鉄筋は局所 x に伸びて y へ、Y方向は
+ * その逆に並ぶ。
+ */
+function slabRebarPlacements(rebar: Rebar, section: SlabSection): Point3[] {
+  const placement = rebar.placement
+  if (!placement) {
+    throw new Error(`${rebar.role} placement is missing: ${rebar.id}`)
+  }
+
+  const positions = stirrupPositions(
+    placement.clearMm,
+    placement.pitchMm,
+    placement.startOffsetMm,
+  ).positionsMm
+
+  if (positions.length !== placement.positionCount) {
+    throw new Error(
+      `${rebar.role} placement count mismatch: ${positions.length} !== ` +
+        `${placement.positionCount}`,
+    )
+  }
+
+  const coverZ = slabCoverZ(rebar)
+  const shiftZ = slabBarDepthMm(rebar.role, section, coverZ) - coverZ
+
+  return positions.map((value): Point3 =>
+    placement.axis === 'x' ? [value, 0, shiftZ] : [0, value, shiftZ],
+  )
+}
+
 export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
   if (section.kind === '柱') {
     return columnRebarPlacements(rebar, section)
   }
   if (section.kind === '耐震壁') {
     return wallRebarPlacements(rebar, section)
+  }
+  if (section.kind === '床板') {
+    return slabRebarPlacements(rebar, section)
   }
   if (rebar.role === 'あばら筋' || rebar.role === '幅止め筋') {
     return girderRepeatedPlacements(rebar)
@@ -566,12 +706,18 @@ function pathRuns(rebar: Rebar): PathRun[] {
 }
 
 function rebarSegmentRuns(rebar: Rebar, section: Section): SegmentRun[] {
-  // 壁だけ表示半径が壁厚に縛られる。配置と描画で別々の半径を使うと、詰めたはずの
-  // 層が描くときにまた太って食い込む。
+  // 壁と床板だけ表示半径が部材厚に縛られる。配置と描画で別々の半径を使うと、
+  // 詰めたはずの層が描くときにまた太って食い込む。
   const radius =
     section.kind === '耐震壁'
       ? wallDisplayRadius(rebar.size, section)
-      : rebarRadius(rebar.size)
+      : section.kind === '床板'
+        ? slabDisplayRadius(
+            rebar.size,
+            section,
+            slabCoverMm(slabCoverZ(rebar), section),
+          )
+        : rebarRadius(rebar.size)
   const displayPoint = (point: Point3): Point3 =>
     rebar.shape === 'hoop'
       ? hoopDisplayPoint(point, rebar.points, radius, section)

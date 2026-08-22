@@ -31,6 +31,7 @@ describe('t', () => {
       定着不成立: true,
       寸法不成立: true,
       カットオフ位置不成立: true,
+      継手箇所数不明: true,
     }
 
     for (const reason of Object.keys(reasons)) {

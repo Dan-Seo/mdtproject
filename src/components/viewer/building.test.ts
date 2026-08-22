@@ -112,13 +112,20 @@ describe('buildingLayout', () => {
     const columnCount = nx * ny * project.stories.length
     const girderCount =
       ((nx - 1) * ny + nx * (ny - 1)) * project.stories.length
+    // 床板は通り芯で囲まれたベイの数だけある (ADR-027)。
+    const slabCount = (nx - 1) * (ny - 1) * project.stories.length
     // 耐震壁はグリッドから導けない — サンプルが1階あたり1枚だけ置いているので
     // (ADR-024)、実際に置かれた数を数える。
     const wallCount = project.members.filter(
       ({ kind }) => kind === '耐震壁',
     ).length
 
-    expect(layout.boxes).toHaveLength(columnCount + girderCount + wallCount)
+    expect(layout.boxes).toHaveLength(
+      columnCount + girderCount + wallCount + slabCount,
+    )
+    expect(layout.boxes.filter(({ kind }) => kind === '床板')).toHaveLength(
+      slabCount,
+    )
     expect(layout.boxes.filter(({ kind }) => kind === '柱')).toHaveLength(
       columnCount,
     )
@@ -246,10 +253,12 @@ describe('buildingLayout', () => {
   })
 
   it('maps a supported Y-axis 大梁 上端筋 with span along world Z', () => {
+    // 大梁を1本抜くと、その大梁で受けていた床板の内法が決まらなくなる —
+    // 床板も一緒に外す。壁と同じく、四辺の大梁が欠けた床板は入力の不整合だ。
     const supportedYProject: Project = {
       ...project,
       members: project.members.filter(
-        ({ id }) => id !== '1F-G1-X1Y2-Y',
+        ({ id, kind }) => id !== '1F-G1-X1Y2-Y' && kind !== '床板',
       ),
     }
     const fixture = girderFixture(

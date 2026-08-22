@@ -2,9 +2,11 @@ import type {
   ColumnSection,
   ColumnPosition,
   GirderPosition,
+  GirderSection,
   Member,
   Section,
   ShearBarSize,
+  SlabPosition,
 } from './member'
 import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
@@ -41,7 +43,13 @@ import { coverConditions } from '../rules/lookup'
 //   ともに直径にする。数量で形状を見るのは 1通則2)「断面の設計寸法による周長」
 //   だけで、円形断面ではそれが円周になる — 省略可能にすると「記載なし＝矩形」と
 //   いう黙った既定値になるので必須にする (ADR-026)。
-export const PROJECT_SCHEMA_VERSION = 9
+// v10 (2026-08-22): 床板（スラブ）を部材として受け取る。MemberKind に '床板'、
+//   Section に SlabSection が加わり、Member.position はベイ（通り芯で囲まれた
+//   1区画）の原点側格子点を指す。数量積算基準 2（４）床板 と、躯体の区分（４）
+//   「柱、梁等に接する水平材の内法部分」に対応する (ADR-027)。SlabSection が
+//   exposure を持たないのは表5.3.6 の「スラブ、耐力壁以外の壁」行に屋内・屋外の
+//   区別がないからで、省略ではなく原文の構造である。
+export const PROJECT_SCHEMA_VERSION = 10
 
 export interface Grid {
   xSpans: number[]
@@ -147,9 +155,16 @@ export function memberGroupKey(project: Project, member: Member): string {
     )
   }
 
-  const memberCode =
-    member.kind === '柱' ? 'C' : member.kind === '大梁' ? 'G' : 'W'
+  const memberCode = MEMBER_GROUP_CODE[member.kind]
   return `${story.name}|${memberCode}|${section.mark}`
+}
+
+/** 内訳書のグループ鍵に使う部材コード。符号(mark)と階の間に挟まる一文字。 */
+const MEMBER_GROUP_CODE: Record<Member['kind'], string> = {
+  柱: 'C',
+  大梁: 'G',
+  耐震壁: 'W',
+  床板: 'S',
 }
 
 function isColumnPosition(
@@ -396,6 +411,275 @@ export function wallSpan(project: Project, member: Member): WallSpan {
     startFaceOffsetMm,
     endFaceOffsetMm,
     girderDepthAboveMm,
+  }
+}
+
+/**
+ * 床板（スラブ）1ベイの内法寸法と、四辺で受ける大梁。
+ *
+ * 躯体の区分（第4編第1章第2節（４））が床板を「柱、梁等に接する水平材の内法部分」
+ * と定めるので、測るのは通り芯間ではなく大梁の内側面の間である。柱・大梁と
+ * 二重計上しないのはこの定義そのもので、大梁が内法長さ・壁が内法部分なのと同じ形だ。
+ */
+export interface SlabBay {
+  /** 通り芯間スパン (mm) */
+  centerSpanXMm: number
+  centerSpanYMm: number
+  /** 内法長さ (mm) — X方向は両側の Y通り大梁の内側面の間 */
+  clearXMm: number
+  clearYMm: number
+  /** ベイ原点の格子点から内法域の原点までの距離 (mm) ＝ 受ける大梁幅の1/2 */
+  startFaceOffsetXMm: number
+  startFaceOffsetYMm: number
+  /** 四辺で受ける大梁。X方向の内法を決めるのは minX・maxX（Y通り大梁）である */
+  supports: {
+    minX: SlabEdgeSupport
+    maxX: SlabEdgeSupport
+    minY: SlabEdgeSupport
+    maxY: SlabEdgeSupport
+  }
+}
+
+/** 床板筋が定着していく先の大梁1本。 */
+export interface SlabEdgeSupport {
+  memberId: string
+  /** 大梁の幅 b (mm) — 床板筋はこの中へ定着する */
+  widthMm: number
+  /** 定着が納まるかの判定は支点（大梁）のかぶりで行う — 床板のものではない */
+  cover: Record<string, string | boolean>
+}
+
+function isSlabPosition(
+  position: ColumnPosition | GirderPosition,
+): position is SlabPosition {
+  return !('axis' in position)
+}
+
+function girderSectionAt(
+  project: Project,
+  storyId: string,
+  axis: 'X' | 'Y',
+  ix: number,
+  iy: number,
+  requestedBy: Member,
+): { member: Member; section: GirderSection } {
+  const girder = project.members.find(
+    (candidate) =>
+      candidate.kind === '大梁' &&
+      candidate.storyId === storyId &&
+      isGirderPosition(candidate.position) &&
+      candidate.position.axis === axis &&
+      candidate.position.ix === ix &&
+      candidate.position.iy === iy,
+  )
+
+  // 四辺のどれかが欠けると内法が決まらない。通り芯間で代用すれば大梁と重なった
+  // 床板を計上してしまうので、黙って埋めない — 壁の上部大梁と同じ扱いである。
+  if (!girder) {
+    throw new Error(
+      `Missing ${axis}通り大梁 beside 床板: ${requestedBy.id} (${ix}, ${iy})`,
+    )
+  }
+
+  const section = findSection(project, girder.sectionId)
+  if (section.kind !== '大梁') {
+    throw new Error(`大梁 member references a non-大梁 section: ${girder.id}`)
+  }
+
+  return { member: girder, section }
+}
+
+export function slabBay(project: Project, member: Member): SlabBay {
+  if (member.kind !== '床板' || !isSlabPosition(member.position)) {
+    throw new Error(`slabBay requires a 床板: ${member.id}`)
+  }
+
+  const { ix, iy } = member.position
+  const origin = gridPoint(project.grid, ix, iy)
+  const far = gridPoint(project.grid, ix + 1, iy + 1)
+
+  const edge = (
+    axis: 'X' | 'Y',
+    edgeIx: number,
+    edgeIy: number,
+  ): SlabEdgeSupport => {
+    const { member: girder, section } = girderSectionAt(
+      project,
+      member.storyId,
+      axis,
+      edgeIx,
+      edgeIy,
+      member,
+    )
+    return {
+      memberId: girder.id,
+      widthMm: section.b,
+      cover: coverConditions(section),
+    }
+  }
+
+  // X方向の内法を決めるのは Y通り（縦に走る）大梁の幅である — 走る向きと
+  // 幅を測る向きが直交するので、ここを取り違えると内法が入れ替わる。
+  const supports = {
+    minX: edge('Y', ix, iy),
+    maxX: edge('Y', ix + 1, iy),
+    minY: edge('X', ix, iy),
+    maxY: edge('X', ix, iy + 1),
+  }
+
+  const centerSpanXMm = far.x - origin.x
+  const centerSpanYMm = far.y - origin.y
+  const startFaceOffsetXMm = supports.minX.widthMm / 2
+  const startFaceOffsetYMm = supports.minY.widthMm / 2
+  const clearXMm =
+    centerSpanXMm - startFaceOffsetXMm - supports.maxX.widthMm / 2
+  const clearYMm =
+    centerSpanYMm - startFaceOffsetYMm - supports.maxY.widthMm / 2
+
+  if (clearXMm <= 0 || clearYMm <= 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `床板 内法長さ must be positive: ${member.id} ` +
+        `(X ${clearXMm} mm, Y ${clearYMm} mm)`,
+    )
+  }
+
+  return {
+    centerSpanXMm,
+    centerSpanYMm,
+    clearXMm,
+    clearYMm,
+    startFaceOffsetXMm,
+    startFaceOffsetYMm,
+    supports,
+  }
+}
+
+/**
+ * 同一断面の床板が大梁を通して連なる範囲 — 数量積算基準 2（４）床板1) の
+ * 「同一の径の主筋が梁、壁等を通して連続する場合」がこれである。
+ *
+ * 大梁のラン (girderRun) と同じ形だ。1ベイなら長さ1のランで「単独床板」、
+ * 2ベイ以上なら「連続する床板」になり、継手箇所数の条文が 2（４）床板2) に
+ * 切り替わる。X方向とY方向で別のランを持つ — 床板は2方向に主筋が走るからだ。
+ */
+export interface SlabRun {
+  axis: 'X' | 'Y'
+  /** 軸方向の昇順。単独床板なら長さ1 */
+  members: Member[]
+  /** 通し筋を帰属させる部材 ＝ members[0].id */
+  ownerId: string
+  /** members と同じ順序 */
+  bays: SlabBay[]
+  /**
+   * ラン原点（始端の大梁の内側面）から各ベイの内法域の始まりまでの距離 (mm)。
+   * bays と同じ順序で [0] は 0 である。3D がランを1つの枠に描くとき、
+   * 各ベイの箱をここに置く — 描画側で足し直すと配筋とずれる。
+   */
+  memberOffsetsMm: number[]
+  /** ラン芯長 (mm) ＝ Σ内法長さ ＋ Σ中間大梁の幅 */
+  coreLengthMm: number
+  /** 割付方向（主筋と直交する向き）の内法長さ (mm) — ラン内で共通である */
+  distributionClearMm: number
+  /** 始端で定着していく大梁 */
+  startSupport: SlabEdgeSupport
+  /** 終端で定着していく大梁 */
+  endSupport: SlabEdgeSupport
+}
+
+export function slabRun(
+  project: Project,
+  member: Member,
+  axis: 'X' | 'Y',
+): SlabRun {
+  if (member.kind !== '床板' || !isSlabPosition(member.position)) {
+    throw new Error(`slabRun requires a 床板: ${member.id}`)
+  }
+
+  const { ix, iy } = member.position
+  const slabAt = (
+    candidateIx: number,
+    candidateIy: number,
+  ): Member | undefined =>
+    project.members.find(
+      (candidate) =>
+        candidate.kind === '床板' &&
+        candidate.storyId === member.storyId &&
+        // 同一断面であることを連続の条件にする。条文は「同一の径の主筋が」と
+        // 言うが、径が同じでもピッチが違えば全部の鉄筋が通るわけではない —
+        // 断面が同じことはその十分条件であって、図面にない連続を作らない。
+        candidate.sectionId === member.sectionId &&
+        isSlabPosition(candidate.position) &&
+        candidate.position.ix === candidateIx &&
+        candidate.position.iy === candidateIy,
+    )
+
+  const step = (offset: number): [number, number] =>
+    axis === 'X' ? [ix + offset, iy] : [ix, iy + offset]
+
+  const members: Member[] = [member]
+  for (let offset = -1; ; offset -= 1) {
+    const previous = slabAt(...step(offset))
+    if (!previous) break
+    members.unshift(previous)
+  }
+  for (let offset = 1; ; offset += 1) {
+    const next = slabAt(...step(offset))
+    if (!next) break
+    members.push(next)
+  }
+
+  const bays = members.map((candidate) => slabBay(project, candidate))
+  const clearAlong = (bay: SlabBay): number =>
+    axis === 'X' ? bay.clearXMm : bay.clearYMm
+  const clearAcross = (bay: SlabBay): number =>
+    axis === 'X' ? bay.clearYMm : bay.clearXMm
+
+  // 割付本数は 1通則7) が「その部分の長さ」を鉄筋の間隔で除して求める1つの数だ。
+  // ランの途中で直交方向の内法が変われば、その1つの数がどちらのベイでも正しく
+  // ならない — 一部だけ通る鉄筋を製品が表現できないので、作らずに落とす。
+  const distributionClearMm = clearAcross(bays[0])
+  const uneven = bays.findIndex(
+    (bay) => clearAcross(bay) !== distributionClearMm,
+  )
+  if (uneven > 0) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `床板ラン内で割付方向の内法長さが揃わない: ${members[0].id} ` +
+        `(${distributionClearMm} mm) と ${members[uneven].id} ` +
+        `(${clearAcross(bays[uneven])} mm)`,
+    )
+  }
+
+  // 中間大梁の幅は「幅の1/2」が両側から来て1本分になる — 2（４）床板1) の
+  // 但書がそう定める。大梁のラン芯長が中間柱せいを足すのと同じ形だ。
+  // ベイの始まりを一度だけ累積し、最後のベイの始まり ＋ その内法を芯長とする —
+  // 二つを別々に数えるとすぐ食い違う（大梁のランと同じ約束）。
+  const memberOffsetsMm: number[] = []
+  let offsetMm = 0
+  for (const bay of bays) {
+    memberOffsetsMm.push(offsetMm)
+    offsetMm +=
+      clearAlong(bay) +
+      (axis === 'X' ? bay.supports.maxX : bay.supports.maxY).widthMm
+  }
+  const coreLengthMm =
+    memberOffsetsMm[memberOffsetsMm.length - 1] +
+    clearAlong(bays[bays.length - 1])
+
+  const first = bays[0]
+  const last = bays[bays.length - 1]
+
+  return {
+    axis,
+    members,
+    ownerId: members[0].id,
+    bays,
+    memberOffsetsMm,
+    coreLengthMm,
+    distributionClearMm,
+    startSupport: axis === 'X' ? first.supports.minX : first.supports.minY,
+    endSupport: axis === 'X' ? last.supports.maxX : last.supports.maxY,
   }
 }
 

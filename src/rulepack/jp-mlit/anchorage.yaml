@@ -1017,3 +1017,235 @@
   source: { ref: spec, section: 表5.3.5, page: 31 }
   confidence: transcribed
   note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+# 表5.3.4 の L3 列（スラブ欄）— 注3「L3：小梁及びスラブの下端筋の直線定着の長さ。
+# ただし、基礎耐圧スラブ及びこれを受ける小梁は除く。」。原文では縦に結合されたセルで、
+# 鉄筋の種類にも Fc にも依らない一つの値である。「10d かつ 150mm 以上」の 150mm は
+# 別行に分ける — 大きい方を取る計算は TS 側だ (ADR-002、lap.wall.minimum と同じ形)。
+# 同じ欄の「（片持スラブの場合は25d）」は片持床板を作らないので載せない。
+# L3h のスラブ欄は原文が「─」であって値がない — フックありの定着長さは無い。
+
+- key: anchorage.L3
+  label: スラブ下端筋の直線定着長さ L3（注3）
+  expr: 10d
+  conditions: { member: スラブ }
+  value: 10
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.4 L3 スラブ欄「10d かつ150mm以上」— 縦結合セルなので鉄筋の種類・Fc に依らない）
+
+- key: anchorage.L3.minimum
+  label: スラブ下端筋の直線定着長さ L3 の下限
+  expr: 150mm
+  conditions: { member: スラブ }
+  value: 150
+  unit: mm
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.4 L3 スラブ欄「10d かつ150mm以上」の 150mm）
+
+# 表5.3.5 の Lb 列 — 注2「Lb：小梁及びスラブの上端筋の梁内折曲げ定着の投影定着長さ
+# （片持小梁及び片持スラブを除く。）」。La（梁主筋の柱内定着）と同じ帯構造の別の列で、
+# 床板の上端筋が大梁の中で折れ曲がるときの投影長さを決める。La の但書「柱せいの3/4
+# 倍以上」はこちらに掛からない — 5.3.4(5)(ｲ)(c) がその下限を梁主筋の柱内定着に限る。
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 18, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc18帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 21, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc21帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 24, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 27, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 30, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 33, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 36, grade: SD295 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 20d
+  conditions: { fc: 18, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc18帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 20d
+  conditions: { fc: 21, grade: SD345 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc21帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 24, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 27, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 30, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 33, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 36, grade: SD345 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 20d
+  conditions: { fc: 21, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc21帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 20d
+  conditions: { fc: 24, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 20d
+  conditions: { fc: 27, grade: SD390 }
+  value: 20
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc24-27帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 30, grade: SD390 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 33, grade: SD390 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）
+
+- key: anchorage.Lb
+  label: 投影定着長さ Lb（小梁・スラブの上端筋）
+  expr: 15d
+  conditions: { fc: 36, grade: SD390 }
+  value: 15
+  unit: d
+  source: { ref: spec, section: 表5.3.5, page: 31 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.5 Fc30-36帯）

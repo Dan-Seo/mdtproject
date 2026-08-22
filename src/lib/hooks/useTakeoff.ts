@@ -8,10 +8,12 @@ import {
   columnEnds,
   findSection,
   girderRun,
+  slabRun,
   storyNotFound,
   wallSpan,
   type GirderRun,
   type Project,
+  type SlabRun,
 } from '@/domain/model/project'
 import {
   MemberUnsupportedError,
@@ -26,6 +28,7 @@ import {
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
+import { generateSlabRebar } from '@/domain/rebar/slab'
 import { generateWallRebar } from '@/domain/rebar/wall'
 import type { RuleHit } from '@/domain/rules/types'
 import { useAppStore } from '@/lib/store'
@@ -77,6 +80,8 @@ function buildTakeoff(project: Project): TakeoffResult {
   const rebars: Rebar[] = []
   const unsupportedMembers: UnsupportedMember[] = []
   const processedGirderMemberIds = new Set<string>()
+  // 床板は方向ごとに別のランを持つ — X で処理済みでも Y はこれからだ。
+  const processedSlabRunKeys = new Set<string>()
 
   for (const member of project.members) {
     if (
@@ -120,6 +125,43 @@ function buildTakeoff(project: Project): TakeoffResult {
           storyName: story.name,
           reason: error.reason,
         })
+      }
+      continue
+    }
+
+    if (member.kind === '床板') {
+      if (section.kind !== '床板') {
+        throw new Error(`床板 member references a non-床板 section: ${member.id}`)
+      }
+
+      // 床板は X方向・Y方向で別々のランになる。大梁と同じくランごとに1回だけ
+      // 生成し、成立しない寸法・定着はそのラン全体を落として続ける。
+      for (const axis of ['X', 'Y'] as const) {
+        if (processedSlabRunKeys.has(`${axis}|${member.id}`)) continue
+
+        let run: SlabRun | undefined
+        try {
+          run = slabRun(project, member, axis)
+          for (const runMember of run.members) {
+            processedSlabRunKeys.add(`${axis}|${runMember.id}`)
+          }
+
+          rebars.push(
+            ...generateSlabRebar({ run, section }, jpMlitRulePack),
+          )
+        } catch (error) {
+          if (!(error instanceof MemberUnsupportedError)) throw error
+
+          for (const runMember of run?.members ?? [member]) {
+            processedSlabRunKeys.add(`${axis}|${runMember.id}`)
+            unsupportedMembers.push({
+              memberId: runMember.id,
+              mark: section.mark,
+              storyName: story.name,
+              reason: error.reason,
+            })
+          }
+        }
       }
       continue
     }

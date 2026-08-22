@@ -107,3 +107,11 @@
   display: grid;
   grid-template-columns: auto 52px auto 64px auto 52px;
 }
+
+/* 床板は同じ向きに上端筋・下端筋の2段が並ぶので、縦に積む。
+   横一列に押し込むと表が横に伸びて符号が見えなくなる。 */
+.slabBarField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+}

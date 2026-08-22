@@ -20,6 +20,11 @@ import styles from './PlanEditor.module.css'
 // (girderHitArea の stroke-width 18) なので、その外に出さないと壁を選べない。
 const wallFaceOffset = 12
 
+// 床板の塗りを通り芯からどれだけ引っ込めるか (px)。壁の面線のヒット領域が
+// 通り芯から片側 12＋8 ＝ 20px まで届くので、その外から塗り始めないと
+// 床板が上に載って大梁も壁も選べなくなる。
+const slabEdgeInset = 22
+
 const viewWidth = 640
 const viewHeight = 420
 const plotLeft = 96
@@ -154,6 +159,43 @@ function PlanMember({
           {section.mark}
         </text>
       </>
+    )
+  }
+
+  if (member.kind === '床板' && !('axis' in member.position)) {
+    const { ix, iy } = member.position
+    const origin = gridPoint(project.grid, ix, iy)
+    const far = gridPoint(project.grid, ix + 1, iy + 1)
+    const left = Math.min(transform.x(origin.x), transform.x(far.x))
+    const right = Math.max(transform.x(origin.x), transform.x(far.x))
+    const top = Math.min(transform.y(origin.y), transform.y(far.y))
+    const bottom = Math.max(transform.y(origin.y), transform.y(far.y))
+    const width = right - left - 2 * slabEdgeInset
+    const height = bottom - top - 2 * slabEdgeInset
+
+    // ベイが小さすぎて塗る場所が残らないなら描かない。潰れた矩形を置くと
+    // 見えないヒット領域だけが残る。
+    if (width <= 0 || height <= 0) return null
+
+    return (
+      <g
+        className={`${styles.member} ${selected ? styles.memberSelected : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`${section.mark} ${member.id}`}
+        aria-pressed={selected}
+        onClick={select}
+        onKeyDown={(event) => activateMember(event, select)}
+      >
+        <rect
+          className={styles.slab}
+          x={left + slabEdgeInset}
+          y={top + slabEdgeInset}
+          width={width}
+          height={height}
+          rx="3"
+        />
+      </g>
     )
   }
 
@@ -383,6 +425,16 @@ export function PlanEditor() {
           role="img"
           aria-label={`${story.name} 平面`}
         >
+          {members
+            .filter(({ kind }) => kind === '床板')
+            .map((member) => (
+              <PlanMember
+                key={member.id}
+                member={member}
+                project={project}
+                transform={transform}
+              />
+            ))}
           {members
             .filter(({ kind }) => kind === '耐震壁')
             .map((member) => (

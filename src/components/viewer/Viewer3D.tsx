@@ -11,16 +11,21 @@ import type {
   ColumnShape,
   GirderSection,
   Member,
+  SlabSection,
   WallSection,
 } from '@/domain/model/member'
 import {
   findSection,
   girderRun,
   girderSupportSections,
+  slabBay,
+  slabRun,
   storyNotFound,
   wallSpan,
   type GirderRun,
   type Project,
+  type SlabBay,
+  type SlabRun,
   type Story,
   type WallSpan,
 } from '@/domain/model/project'
@@ -152,10 +157,35 @@ interface SelectedWallView {
   rowIds: Map<Rebar['id'], QuantityLine['id']>
 }
 
+/**
+ * 床板は2方向に主筋が走り、方向ごとに別のランを持つ。部材ビューは選んだベイの
+ * 内法原点を枠の原点にして、そのベイが属する X方向・Y方向2つのランを一緒に描く。
+ * `offsetMm` は枠の原点からラン原点までの距離で、鉄筋も箱もこれで揃える。
+ */
+interface SelectedSlabRun {
+  run: SlabRun
+  /** ラン原点から選んだベイの内法原点までの距離 (mm) */
+  offsetMm: number
+}
+
+interface SelectedSlabView {
+  kind: '床板'
+  /** 選ばれたベイそのもの。ランの持ち主とは限らない */
+  member: Member
+  section: SlabSection
+  story: Story
+  bay: SlabBay
+  x: SelectedSlabRun
+  y: SelectedSlabRun
+  rebars: Rebar[]
+  rowIds: Map<Rebar['id'], QuantityLine['id']>
+}
+
 type SelectedSupportedMemberView =
   | SelectedColumnView
   | SelectedGirderView
   | SelectedWallView
+  | SelectedSlabView
 
 type SelectedMemberView =
   | { status: 'supported'; view: SelectedSupportedMemberView }
@@ -333,6 +363,39 @@ function concreteGeometry(box: {
 }
 
 function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
+  if (view.kind === '床板') {
+    // 床板も内法部分そのものだ（躯体の区分（４））。X方向のランの各ベイを描き、
+    // Y方向のランからは選んだベイの分を除いて足す — 同じ板を二重に描かないため。
+    const { section, bay, x, y } = view
+    const thickness = section.thickness
+    const boxes: ConcreteBox[] = x.run.bays.map((runBay, index) => {
+      const fromX = x.run.memberOffsetsMm[index] - x.offsetMm
+      return {
+        size: [runBay.clearXMm, thickness, runBay.clearYMm],
+        center: [
+          fromX + runBay.clearXMm / 2,
+          thickness / 2,
+          runBay.clearYMm / 2,
+        ],
+      }
+    })
+
+    y.run.bays.forEach((runBay, index) => {
+      const fromY = y.run.memberOffsetsMm[index] - y.offsetMm
+      if (fromY === 0) return
+      boxes.push({
+        size: [bay.clearXMm, thickness, runBay.clearYMm],
+        center: [
+          bay.clearXMm / 2,
+          thickness / 2,
+          fromY + runBay.clearYMm / 2,
+        ],
+      })
+    })
+
+    return boxes
+  }
+
   if (view.kind === '耐震壁') {
     // 壁は内法部分そのものだ（躯体の区分（５）壁）。柱・大梁のスタブを足すと
     // 二重に見えるので、パネル1枚だけを描く。
@@ -919,6 +982,27 @@ function rebuildMemberScene(
   // 通し筋은 런 원점 기준, あばら筋은 자기 스팬 원점 기준으로 만들어진다. 런을 한
   // 프레임에 그리므로 부재별 오프셋을 걸어 맞춘다 — 通し筋의 memberId는 런 대표
   // 부재라 오프셋 0이 되어 같은 조회로 함께 처리된다.
+  // 床板はランの原点が選んだベイと違うので、鉄筋そのものを枠へ寄せる。
+  // 大梁の originOffsetMm は局所 x しか動かせず、床板は x・y の2方向が要る。
+  const toBayFrame = (rebar: Rebar): Rebar => {
+    if (view.kind !== '床板') return rebar
+
+    const shiftX = rebar.role.startsWith('X方向') ? view.x.offsetMm : 0
+    const shiftY = rebar.role.startsWith('Y方向') ? view.y.offsetMm : 0
+    if (shiftX === 0 && shiftY === 0) return rebar
+
+    return {
+      ...rebar,
+      points: rebar.points.map(
+        ([pointX, pointY, pointZ]): Point3 => [
+          pointX - shiftX,
+          pointY - shiftY,
+          pointZ,
+        ],
+      ),
+    }
+  }
+
   const originOffsetOf = (memberId: string): number => {
     if (view.kind !== '大梁') return 0
     const index = view.run.members.findIndex(({ id }) => id === memberId)
@@ -935,7 +1019,7 @@ function rebuildMemberScene(
     }
     return {
       rowId,
-      rebar,
+      rebar: toBayFrame(rebar),
       originOffsetMm: originOffsetOf(rebar.memberId),
     }
   })
@@ -1103,7 +1187,21 @@ function rebuildBuildingScene(
  */
 function geometryKey(view: SelectedSupportedMemberView): string {
   const sectionGeometry =
-    view.kind === '耐震壁'
+    view.kind === '床板'
+      ? [
+          view.section.thickness,
+          view.section.x,
+          view.section.y,
+          view.x.run.coreLengthMm,
+          view.x.offsetMm,
+          view.x.run.members.map(({ id }) => id),
+          view.y.run.coreLengthMm,
+          view.y.offsetMm,
+          view.y.run.members.map(({ id }) => id),
+          view.bay.clearXMm,
+          view.bay.clearYMm,
+        ]
+      : view.kind === '耐震壁'
       ? [
           view.section.thickness,
           view.section.layers,
@@ -1166,9 +1264,22 @@ function selectedRows(
   rebars: Rebar[],
   lines: QuantityLine[],
 ): Pick<SelectedSupportedMemberView, 'rebars' | 'rowIds'> {
-  const selectedRebars = rebars.filter((rebar) =>
-    memberIds.has(rebar.memberId),
+  return rowsFor(
+    rebars.filter((rebar) => memberIds.has(rebar.memberId)),
+    selectedGroup,
+    lines,
   )
+}
+
+/**
+ * 部材 id では絞れない選び方のための共通部分。床板は同じ持ち主が2方向ぶんの
+ * 鉄筋を持つので、どの鉄筋かを呼び出し側が決める。
+ */
+function rowsFor(
+  selectedRebars: Rebar[],
+  selectedGroup: string,
+  lines: QuantityLine[],
+): Pick<SelectedSupportedMemberView, 'rebars' | 'rowIds'> {
   const selectedLineIds = new Set(
     lines.filter(({ groupId }) => groupId === selectedGroup).map(({ id }) => id),
   )
@@ -1237,6 +1348,43 @@ function selectedMemberView(
         section,
         story,
         ...selectedRows(new Set([member.id]), selectedGroup, rebars, lines),
+      },
+    }
+  }
+
+  if (member.kind === '床板') {
+    if (section.kind !== '床板') {
+      throw new Error(`床板 member references a non-床板 section: ${member.id}`)
+    }
+
+    const xRun = slabRun(project, member, 'X')
+    const yRun = slabRun(project, member, 'Y')
+    const indexIn = (run: SlabRun): number => {
+      const index = run.members.findIndex(({ id }) => id === member.id)
+      if (index === -1) {
+        throw new Error(`床板 is outside its own run: ${member.id}`)
+      }
+      return index
+    }
+    // ランの持ち主が持つ鉄筋のうち、この向きのものだけを取る。持ち主は反対向きの
+    // ランの持ち主でもあり得るので、部材 id だけで絞ると余分な鉄筋が入る。
+    const slabRebars = rebars.filter(
+      (rebar) =>
+        (rebar.memberId === xRun.ownerId && rebar.role.startsWith('X方向')) ||
+        (rebar.memberId === yRun.ownerId && rebar.role.startsWith('Y方向')),
+    )
+
+    return {
+      status: 'supported',
+      view: {
+        kind: '床板',
+        member,
+        section,
+        story,
+        bay: slabBay(project, member),
+        x: { run: xRun, offsetMm: xRun.memberOffsetsMm[indexIn(xRun)] },
+        y: { run: yRun, offsetMm: yRun.memberOffsetsMm[indexIn(yRun)] },
+        ...rowsFor(slabRebars, selectedGroup, lines),
       },
     }
   }
@@ -1712,7 +1860,9 @@ export function Viewer3D() {
         ? '帯筋'
         : selectedSupported.kind === '耐震壁'
           ? '横筋'
-          : 'あばら筋'
+          : selectedSupported.kind === '床板'
+            ? 'X方向下端筋'
+            : 'あばら筋'
     const rebar = selectedSupported.rebars.find(
       (candidate) => candidate.role === role,
     )

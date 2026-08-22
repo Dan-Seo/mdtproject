@@ -681,11 +681,12 @@ export function TakeoffPane() {
     ({ role }) =>
       role === '上端カットオフ筋' || role === '下端カットオフ筋',
   )
-  // 開口部の欠除（1通則8)）は未実装だ。壁を出しておいて黙っていると、
-  // 「빠진 것」ではなく「틀린 채로 완성된 것」になる — 壁の行が1つでもあれば
-  // 常に見せる (ADR-024)。
-  const hasWall = lines.some(
-    ({ role }) => role === '縦筋' || role === '横筋',
+  // 開口部の欠除（1通則8)）は未実装だ。壁や床板を出しておいて黙っていると、
+  // 「빠진 것」ではなく「틀린 채로 완성된 것」になる — その行が1つでもあれば
+  // 常に見せる (ADR-024・ADR-027)。1通則8) は窓・出入口だけでなく床板の
+  // 開口（階段・設備）にも同じように掛かる。
+  const hasOpeningRisk = lines.some(({ memberKind }) =>
+    ['耐震壁', '床板'].includes(memberKind),
   )
 
   return (
@@ -708,7 +709,7 @@ export function TakeoffPane() {
           ▲ {t(locale, 'takeoff.cutoffAnchorage')}
         </p>
       )}
-      {hasWall && (
+      {hasOpeningRisk && (
         <p
           className={styles.splicePositionNotice}
           role="note"

@@ -89,6 +89,7 @@ const supportedKinds = new Set([
   'anchorage.L1h',
   'anchorage.L2h',
   'anchorage.La',
+  'anchorage.Lb',
 ])
 
 // 표의 Fc 帯·呼び径 대역은 끝점이 아니라 대역 내 전값으로 전개해 대조한다 —
@@ -194,6 +195,12 @@ const bentConditionEntries = (
   ].includes(kind),
 )
 
+// 表5.3.4 の L3（スラブ欄）は縦に結合されたセルで、鉄筋の種類・Fc の格子を
+// 持たない。Fc 帯を展開する経路に流すと fcValues が無くて落ちるので別に扱う。
+const slabAnchorageEntries = (
+  fixture.entries as unknown as BentConditionEntry[]
+).filter(({ kind }) => ['anchorage.L3', 'anchorage.L3.minimum'].includes(kind))
+
 describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 tables', () => {
   it.each(expandedCases)(
     '$entry.kind Fc$conditions.fc $entry.conditions.grade matches $entry.table',
@@ -286,6 +293,36 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     },
   )
 
+  it.each(slabAnchorageEntries)(
+    '$kind matches the merged スラブ cell in $table',
+    (entry) => {
+      const hit = lookupRule(jpMlitRulePack, entry.kind, entry.conditions)
+
+      expect(hit.value).toBe(entry.value)
+      expect(hit.unit).toBe(entry.unit)
+      expect(hit.source.section).toBe(entry.table)
+      expect(hit.source.page).toBe(entry.printedPage)
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
+    },
+  )
+
+  it('reads L3 as 10d かつ150mm以上 — two rows, not one blended number', () => {
+    // 「10d かつ 150mm 以上」を一つの値に丸めると、D13 では 150mm・D16 では 160mm
+    // という径依存が消える。大きい方を取る計算は TS 側にあり (ADR-002)、
+    // ここが固定するのは 10d と 150mm という二つの原文値である。
+    const perDiameter = lookupRule(jpMlitRulePack, 'anchorage.L3', {
+      member: 'スラブ',
+    })
+    const floor = lookupRule(jpMlitRulePack, 'anchorage.L3.minimum', {
+      member: 'スラブ',
+    })
+
+    expect(perDiameter.unit).toBe('d')
+    expect(floor.unit).toBe('mm')
+    expect(perDiameter.source.section).toBe(floor.source.section)
+  })
+
   it('matches the 耐力壁 重ね継手 lower bound as its own rule', () => {
     // 表5.3.2 の格子ではなく 5.3.4(3)(ｱ) の本文にある単独の下限だ。「大きい方を
     // 取る」計算は TS 側にあり、ここが固定するのは 40d という値と出典である。
@@ -327,6 +364,8 @@ describe('픽스처 대조 완전성', () => {
     'lap.wall.minimum',
     'anchorage.bent.tail.minimum',
     'anchorage.bent.projection.minimum',
+    'anchorage.L3',
+    'anchorage.L3.minimum',
   ])
   // 룰팩 미수록 — 경량 콘크리트 가산은 아직 소비자가 없다.
   // 룰팩에 수록하는 시점에 covered로 옮겨 대조를 시작할 것.
@@ -376,6 +415,9 @@ describe('픽스처 대조 완전성', () => {
       ),
     )
     for (const entry of bentConditionEntries) {
+      hit.add(lookupRule(jpMlitRulePack, entry.kind, entry.conditions))
+    }
+    for (const entry of slabAnchorageEntries) {
       hit.add(lookupRule(jpMlitRulePack, entry.kind, entry.conditions))
     }
 

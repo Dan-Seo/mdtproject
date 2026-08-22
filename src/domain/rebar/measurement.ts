@@ -11,6 +11,7 @@
  * `Rebar.points`・`Rebar.placement` が別に持つ (ADR-019)。
  */
 
+import { MemberUnsupportedError } from '../model/unsupported'
 import type { RuleHit } from '../rules/types'
 
 function positiveFinite(value: number): boolean {
@@ -137,9 +138,15 @@ export interface SpliceBand {
  * 「連続する梁の全長にわたる主筋の継手については、１通則４）の規定にかかわらず、
  *   梁の長さが、５．０ｍ未満は０．５か所、５．０ｍ以上１０．０ｍ未満は１か所、
  *   １０．０ｍ以上は２か所あるものとする。」
+ * 2（４）床板2)（同頁）は同じ形で、区分が 4.5m/9.0m/13.5m である。
  *
- * 区分の境目（5.0m・10.0m）は規準の数値なのでルールパックが持つ。ここが持つのは
- * 「上限未満ならその区分」という読み方だけである。
+ * 区分の境目は規準の数値なのでルールパックが持つ。ここが持つのは「上限未満なら
+ * その区分」という読み方だけである。
+ *
+ * **表が上で閉じていることがある。** 梁の表は「１０．０ｍ以上は２か所」で上が
+ * 開いているが、床板の表は「９．０ｍ以上１３．５ｍ未満は１．５か所」で終わり、
+ * 13.5m 以上を定めていない。上限なしの区分を必須にすると床板の表を梁に合わせて
+ * 捏造することになるので、閉じた表を受け入れ、外れた長さは部材ごと落とす。
  *
  * bands は上限の昇順で渡す。昇順でない区分表はここでは検査しない —
  * ルールパックはビルド時に固まるチェックイン済みの YAML で、順序は
@@ -150,15 +157,19 @@ export function bandedSpliceRule(
   bands: SpliceBand[],
 ): RuleHit {
   if (!positiveFinite(lengthMm)) {
-    throw new Error(`梁の長さ must be positive: ${lengthMm}`)
+    throw new Error(`継手箇所数を求める長さ must be positive: ${lengthMm}`)
+  }
+  if (bands.length === 0) {
+    throw new Error('継手箇所数の区分表が空である')
   }
 
-  const openEnded = bands.findIndex(({ upperBoundRule }) => upperBoundRule === null)
-  if (openEnded !== bands.length - 1) {
-    // 上限なしの区分が最後にちょうど1つないと、長い梁が表から落ちて箇所数が
-    // 0 になるか、短い梁が上限なしの区分に吸われる。黙って数字を返さない。
+  const openEnded = bands.findIndex(
+    ({ upperBoundRule }) => upperBoundRule === null,
+  )
+  if (openEnded >= 0 && openEnded !== bands.length - 1) {
+    // 上限なしの区分が途中にあると、それより後ろの区分に届かない。
     throw new Error(
-      '継手箇所数の区分表は上限なしの区分を最後に1つだけ持たなければならない',
+      '継手箇所数の区分表で上限なしの区分は最後になければならない',
     )
   }
 
@@ -167,7 +178,12 @@ export function bandedSpliceRule(
     if (lengthMm < additionMm(upperBoundRule)) return countRule
   }
 
-  throw new Error(`継手箇所数の区分が見つからない: ${lengthMm}`)
+  const lastBound = bands[bands.length - 1].upperBoundRule
+  throw new MemberUnsupportedError(
+    '継手箇所数不明',
+    `継手箇所数の区分が原文にない長さ: ${lengthMm} mm ` +
+      `(表の上限 ${lastBound === null ? '-' : additionMm(lastBound)} mm)`,
+  )
 }
 
 /**

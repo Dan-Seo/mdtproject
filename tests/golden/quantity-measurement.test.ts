@@ -4,17 +4,21 @@ import type {
   ColumnSection,
   GirderSection,
   Member,
+  SlabSection,
 } from '../../src/domain/model/member'
 import {
   columnEnds,
   PROJECT_SCHEMA_VERSION,
   girderRun,
+  slabRun,
   type Project,
   type Story,
 } from '../../src/domain/model/project'
+import { MemberUnsupportedError } from '../../src/domain/model/unsupported'
 import { aggregateQuantity, massLines } from '../../src/domain/quantity'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
+import { generateSlabRebar } from '../../src/domain/rebar/slab'
 import { intervalSpliceCount } from '../../src/domain/rebar/measurement'
 import { lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
@@ -69,6 +73,28 @@ function girderSection(
       cutoffFromSupportFaceMm: 0,
     },
     stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
+    ...overrides,
+  }
+}
+
+function slabSection(overrides: Partial<SlabSection> = {}): SlabSection {
+  return {
+    id: 'section-S1',
+    kind: '床板',
+    mark: 'S1',
+    thickness: 200,
+    fc: 24,
+    grade: 'SD345',
+    finish: '仕上げあり',
+    spliceMethod: '重ね継手',
+    x: {
+      top: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+      bottom: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+    },
+    y: {
+      top: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+      bottom: { size: 'D13', pitch: 200, startOffsetMm: 100 },
+    },
     ...overrides,
   }
 }
@@ -585,6 +611,188 @@ describe('2（３）梁1) 連続する主筋は定着にかえて柱幅の1/2', 
 
     // 中間支点に定着が付いたら二重計上に戻ったということ (R7②)。
     expect(top.zones?.filter(({ kind }) => kind === '定着')).toHaveLength(2)
+  })
+})
+
+/**
+ * Y通りに床板が連なるプロジェクト。X は1スパンだけなので、Y方向のランが
+ * `centerSpansMm.length` ベイ、X方向のランは常に1ベイ（単独床板）になる。
+ * ラン芯長 ＝ Σ内法 ＋ Σ中間大梁幅 ＝ Σ通り芯間 − 大梁幅1本分である。
+ */
+function slabProject(
+  centerSpansMm: number[],
+  column: ColumnSection,
+  girder: GirderSection,
+  slab: SlabSection,
+  story: Story = STORY,
+): Project {
+  const members: Member[] = []
+  const bays = centerSpansMm.length
+
+  for (let iy = 0; iy <= bays; iy += 1) {
+    for (let ix = 0; ix <= 1; ix += 1) {
+      members.push({
+        id: `1F-C-X${ix}Y${iy}`,
+        kind: '柱',
+        memberClass: '躯体',
+        sectionId: column.id,
+        storyId: story.id,
+        position: { ix, iy },
+      })
+    }
+    members.push({
+      id: `1F-GX-Y${iy}`,
+      kind: '大梁',
+      memberClass: '躯体',
+      sectionId: girder.id,
+      storyId: story.id,
+      position: { axis: 'X', ix: 0, iy },
+    })
+  }
+
+  for (let iy = 0; iy < bays; iy += 1) {
+    for (let ix = 0; ix <= 1; ix += 1) {
+      members.push({
+        id: `1F-GY-X${ix}Y${iy}`,
+        kind: '大梁',
+        memberClass: '躯体',
+        sectionId: girder.id,
+        storyId: story.id,
+        position: { axis: 'Y', ix, iy },
+      })
+    }
+    members.push({
+      id: `1F-S-Y${iy}`,
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: slab.id,
+      storyId: story.id,
+      position: { ix: 0, iy },
+    })
+  }
+
+  return {
+    schemaVersion: PROJECT_SCHEMA_VERSION,
+    name: '数量積算基準ゴールデンテスト（床板）',
+    grid: { xSpans: [6000], ySpans: centerSpansMm },
+    stories: [story],
+    sections: [column, girder, slab],
+    members,
+  }
+}
+
+function slabRunFor(
+  centerSpansMm: number[],
+  axis: 'X' | 'Y' = 'Y',
+  slab: SlabSection = slabSection(),
+) {
+  const project = slabProject(
+    centerSpansMm,
+    columnSection(),
+    girderSection(),
+    slab,
+  )
+  const owner = project.members.find(({ kind }) => kind === '床板')!
+
+  return { project, run: slabRun(project, owner, axis), slab }
+}
+
+describe('2（４）床板2) 連続する床板の継手箇所数', () => {
+  it.each(fixture.cases.spliceCount.continuousSlab)(
+    '$label ＝ $expectedPerBar か所',
+    (testCase) => {
+      // ラン芯長 ＝ Σ通り芯間 − 大梁幅1本分。2ベイに割り付けて狙った長さを作る。
+      const centerSpan = (testCase.slabLengthMm + girderSection().b) / 2
+      const { run, slab } = slabRunFor([centerSpan, centerSpan])
+
+      expect(run.coreLengthMm).toBe(testCase.slabLengthMm)
+
+      if (testCase.expectedPerBar === null) {
+        // 13.5m 以上は条文に区分がない。0.5 でも 2 でもなく、計上しない。
+        expect(() =>
+          generateSlabRebar({ run, section: slab }, jpMlitRulePack),
+        ).toThrow(MemberUnsupportedError)
+        return
+      }
+
+      const rebars = generateSlabRebar({ run, section: slab }, jpMlitRulePack)
+      expect(roleOf(rebars, 'Y方向下端筋').splice?.countPerBar).toBe(
+        testCase.expectedPerBar,
+      )
+    },
+  )
+
+  it('sends a single-bay run to 1通則4) and a continuous run to 2（４）床板2)', () => {
+    // 「連続する床板」かどうかで条項が入れ替わる。取り違えると 4.5m 前後の
+    // 単独床板が 0.5か所になり、長い連続床板が長さ割りで数えられる。
+    const single = slabRunFor([6000], 'X')
+    const continuous = slabRunFor([6000, 6000], 'Y')
+
+    expect(
+      roleOf(
+        generateSlabRebar(
+          { run: single.run, section: single.slab },
+          jpMlitRulePack,
+        ),
+        'X方向下端筋',
+      ).splice?.rules.map(({ key }) => key),
+    ).toContain('measure.splice.interval')
+    expect(
+      roleOf(
+        generateSlabRebar(
+          { run: continuous.run, section: continuous.slab },
+          jpMlitRulePack,
+        ),
+        'Y方向下端筋',
+      ).splice?.rules.map(({ key }) => key),
+    ).toContain('measure.splice.slab.continuous')
+  })
+})
+
+describe('2（４）床板1) 連続する主筋は定着にかえて梁幅の1/2', () => {
+  const expected = fixture.cases.continuousSlabMain
+
+  it('adds half the intermediate girder width from each side, not an anchorage', () => {
+    const girder = girderSection()
+    const centerSpans = expected.clearLengthsMm.map((clear) => clear + girder.b)
+    const { run } = slabRunFor(centerSpans)
+
+    expect(run.bays).toHaveLength(expected.clearLengthsMm.length)
+    expect(run.bays.map(({ clearYMm }) => clearYMm)).toEqual(
+      expected.clearLengthsMm,
+    )
+    expect(run.coreLengthMm).toBe(expected.expectedCoreLengthMm)
+    expect(run.coreLengthMm).toBe(
+      expected.clearLengthsMm.reduce((total, clear) => total + clear, 0) +
+        expected.intermediateSupportLengthsMm.length *
+          expected.halfSupportWidthPerSideMm *
+          2,
+    )
+  })
+
+  it('anchors the through bar only at the two ends of the run', () => {
+    const girder = girderSection()
+    const centerSpans = expected.clearLengthsMm.map((clear) => clear + girder.b)
+    const { run, slab } = slabRunFor(centerSpans)
+    const bottom = roleOf(
+      generateSlabRebar({ run, section: slab }, jpMlitRulePack),
+      'Y方向下端筋',
+    )
+
+    // 中間支点に定着が付いたら二重計上だ — 梁の R7② と同じ形である。
+    expect(bottom.zones?.filter(({ kind }) => kind === '定着')).toHaveLength(2)
+  })
+
+  it('measures the bay 内法 by 躯体の区分（４）— 通り芯間ではない', () => {
+    const definition = fixture.definitions.find(
+      ({ id }) => id === '第4編第1章第2節（４）床板（スラブ）',
+    )!
+    const { run } = slabRunFor([6000, 6000])
+
+    expect(definition.quote).toContain('内法部分')
+    // 通り芯間 6000 から両側の大梁幅 400 の半分ずつを引いて 5600
+    expect(run.bays[0].clearYMm).toBe(6000 - 400)
+    expect(run.bays[0].centerSpanYMm).toBe(6000)
   })
 })
 

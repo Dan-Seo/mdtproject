@@ -3,6 +3,7 @@ import {
   findSection,
   girderSpan,
   gridPoint,
+  slabBay,
   storyElevation,
   storyNotFound,
   wallSpan,
@@ -132,6 +133,30 @@ export function buildingLayout(
               center: [start.x, centerY, (start.y + end.y) / 2],
               size: [section.b, section.depth, end.y - start.y],
             }
+    } else if (member.kind === '床板') {
+      if (section.kind !== '床板' || 'axis' in member.position) {
+        throw new Error(`床板 member references a non-床板 section: ${member.id}`)
+      }
+      // 床板も内法部分そのものだ（躯体の区分（４）「柱、梁等に接する水平材の
+      // 内法部分」）。通り芯間で描くと大梁と重なった板になる。
+      const origin = gridPoint(
+        project.grid,
+        member.position.ix,
+        member.position.iy,
+      )
+      const bay = slabBay(project, member)
+      // 板の上面は階の天井 — 大梁の上端と同じ高さで、そこから板厚だけ下がる。
+      const topY = elevation + story.height
+      box = {
+        memberId: member.id,
+        kind: '床板',
+        center: [
+          origin.x + bay.startFaceOffsetXMm + bay.clearXMm / 2,
+          topY - section.thickness / 2,
+          origin.y + bay.startFaceOffsetYMm + bay.clearYMm / 2,
+        ],
+        size: [bay.clearXMm, section.thickness, bay.clearYMm],
+      }
     } else {
       if (section.kind !== '耐震壁' || !('axis' in member.position)) {
         throw new Error(
@@ -234,6 +259,32 @@ export function buildingLayout(
               base + y,
               start.y + span.startFaceOffsetMm + x,
             ]
+    } else if (member.kind === '床板') {
+      if (section.kind !== '床板' || 'axis' in member.position) {
+        throw new Error(`床板 member references a non-床板 section: ${member.id}`)
+      }
+      const slabStory = project.stories.find(({ id }) => id === member.storyId)
+      if (!slabStory) {
+        throw storyNotFound(member.storyId)
+      }
+      const origin = gridPoint(
+        project.grid,
+        member.position.ix,
+        member.position.iy,
+      )
+      const bay = slabBay(project, member)
+      // 床板のローカル原点は「内法域の X 最小・Y 最小の隅、板の下端」。鉄筋は
+      // ランの持ち主に帰属するので、その持ち主のベイの内法原点がランの原点だ。
+      const base =
+        storyElevation(project.stories, member.storyId) +
+        slabStory.height -
+        section.thickness
+
+      worldPoint = ([x, y, z]) => [
+        origin.x + bay.startFaceOffsetXMm + x,
+        base + z,
+        origin.y + bay.startFaceOffsetYMm + y,
+      ]
     } else {
       if (section.kind !== '耐震壁' || !('axis' in member.position)) {
         throw new Error(

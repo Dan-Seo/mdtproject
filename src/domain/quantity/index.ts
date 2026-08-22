@@ -129,7 +129,8 @@ function sectionLabel(section: Section): string {
   }
   if (section.kind === '大梁') return `${section.b}×${section.depth}`
 
-  // 壁は断面が厚さ1つなので図面と同じ「t180」の書き方にする。
+  // 壁も床板も断面が厚さ1つなので図面と同じ「t180」の書き方にする。
+  // どちらの部材かはグループ見出しの部材種別が言う。
   return `t${section.thickness}`
 }
 

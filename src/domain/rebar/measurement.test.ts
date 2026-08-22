@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { MemberUnsupportedError } from '../model/unsupported'
 import type { RuleHit } from '../rules/types'
 import {
   bandedSpliceRule,
@@ -203,15 +204,31 @@ describe('bandedSpliceRule', () => {
     ['negative length', -5000],
     ['NaN length', Number.NaN],
   ])('throws for %s', (_label, lengthMm) => {
-    expect(() => bandedSpliceRule(lengthMm, bands)).toThrow(/梁の長さ/)
+    expect(() => bandedSpliceRule(lengthMm, bands)).toThrow(/継手箇所数を求める長さ/)
   })
 
-  it('throws when no band is open-ended — a長い梁 would fall through', () => {
-    expect(() =>
-      bandedSpliceRule(20000, [
-        { countRule: rule(1, '箇所'), upperBoundRule: rule(5000, 'mm') },
-      ]),
-    ).toThrow(/区分/)
+  it('accepts a fully bounded table — 床板の区分表は上が開いていない', () => {
+    // 2（４）床板2) は「９．０ｍ以上１３．５ｍ未満は１．５か所」で終わる。
+    // 上限なしの区分を必須にすると、この表を梁の表に合わせて捏造することになる。
+    const closed = [
+      { countRule: rule(0.5, '箇所'), upperBoundRule: rule(4500, 'mm') },
+      { countRule: rule(1, '箇所'), upperBoundRule: rule(9000, 'mm') },
+      { countRule: rule(1.5, '箇所'), upperBoundRule: rule(13500, 'mm') },
+    ]
+
+    expect(spliceCount(bandedSpliceRule(13499, closed))).toBe(1.5)
+  })
+
+  it('refuses a length past the last bound of a closed table', () => {
+    // 原文に区分がない長さで箇所数を作らない。部材ごと落ちて未対応一覧に出る。
+    const closed = [
+      { countRule: rule(1.5, '箇所'), upperBoundRule: rule(13500, 'mm') },
+    ]
+
+    expect(() => bandedSpliceRule(13500, closed)).toThrow(
+      MemberUnsupportedError,
+    )
+    expect(() => bandedSpliceRule(13500, closed)).toThrow(/継手箇所数/)
   })
 
   it('throws when an open-ended band is not the last one', () => {

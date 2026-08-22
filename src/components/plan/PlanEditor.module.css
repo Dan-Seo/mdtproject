@@ -203,3 +203,18 @@
   fill: color-mix(in srgb, var(--color-primary) 10%, transparent);
   stroke: var(--color-primary);
 }
+
+/* 床板はベイを塗りつぶす。通り芯の上に載る大梁・壁のヒット領域より内側に
+   引っ込めてあるので、床板を置いても大梁と壁は選べたままである。 */
+.slab {
+  fill: color-mix(in srgb, var(--text-muted) 8%, transparent);
+  stroke: var(--text-muted-soft);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.memberSelected .slab {
+  fill: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  stroke: var(--color-primary);
+}

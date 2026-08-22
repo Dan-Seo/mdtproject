@@ -210,3 +210,67 @@
   source: { ref: quantity, section: 第4編第3章第2節 2（５）壁1)②, page: 17 }
   confidence: transcribed
   note: 「縦筋の継手は原則として各階に１か所あるものとし、開口部腰壁、手すり壁等の継手はないものとする」。但書の「開口部腰壁、手すり壁等」は開口部を扱わない現状では対象がない (1通則8) は deferred)
+
+# 2（４）床板2) — 連続する床板の全長にわたる主筋。梁の （３）梁2) と同じ形だが
+# 区分の切れ目が違い、そして**上限のない区分がない**。原文は 13.5m 以上を定めて
+# いないので、その長さの床板は箇所数を作らずに落とす — 梁の表を流用してはならない。
+
+- key: measure.splice.slab.continuous
+  label: 連続する床板の全長にわたる主筋の継手箇所数（4.5m未満）
+  expr: 0.5か所
+  conditions: { band: 1 }
+  value: 0.5
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 「床板の長さ４．５ｍ未満は０．５か所、４．５ｍ以上９．０ｍ未満は１か所、９．０ｍ以上１３．５ｍ未満は１．５か所あるものとする」
+
+- key: measure.splice.slab.continuous
+  label: 連続する床板の全長にわたる主筋の継手箇所数（4.5m以上9.0m未満）
+  expr: 1か所
+  conditions: { band: 2 }
+  value: 1
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 「床板の長さ４．５ｍ未満は０．５か所、４．５ｍ以上９．０ｍ未満は１か所、９．０ｍ以上１３．５ｍ未満は１．５か所あるものとする」
+
+- key: measure.splice.slab.continuous
+  label: 連続する床板の全長にわたる主筋の継手箇所数（9.0m以上13.5m未満）
+  expr: 1.5か所
+  conditions: { band: 3 }
+  value: 1.5
+  unit: 箇所
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 「床板の長さ４．５ｍ未満は０．５か所、４．５ｍ以上９．０ｍ未満は１か所、９．０ｍ以上１３．５ｍ未満は１．５か所あるものとする」
+
+- key: measure.splice.slab.continuous.band.upper
+  label: 連続床板 継手箇所数の区分上限（4.5m未満）
+  expr: 4.5m
+  conditions: { band: 1 }
+  value: 4500
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 区分の境目そのもの。「４．５ｍ未満は０．５か所」の 4.5m
+
+- key: measure.splice.slab.continuous.band.upper
+  label: 連続床板 継手箇所数の区分上限（4.5m以上9.0m未満）
+  expr: 9.0m
+  conditions: { band: 2 }
+  value: 9000
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 区分の境目そのもの。「４．５ｍ以上９．０ｍ未満は１か所」の 9.0m
+
+- key: measure.splice.slab.continuous.band.upper
+  label: 連続床板 継手箇所数の区分上限（9.0m以上13.5m未満）
+  expr: 13.5m
+  conditions: { band: 3 }
+  value: 13500
+  unit: mm
+  source: { ref: quantity, section: 第4編第3章第2節 2（４）床板2), page: 17 }
+  confidence: transcribed
+  note: 区分の境目そのもの。「９．０ｍ以上１３．５ｍ未満は１．５か所」の 13.5m — 梁の表と違いここで表が終わる。これ以上の床板の箇所数は条文にない

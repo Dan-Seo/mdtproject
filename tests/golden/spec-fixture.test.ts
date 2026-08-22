@@ -63,6 +63,22 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     expect(entriesFor('anchorage.La')).toHaveLength(11)
   })
 
+  it('contains all 11 小梁・スラブ上端筋 投影定着 Lb cells', () => {
+    // La と同じ帯構造の別の列だ。数が合わないなら列を跨いで読んでいる。
+    expect(entriesFor('anchorage.Lb')).toHaveLength(11)
+  })
+
+  it('takes L3 as one merged スラブ cell, not a per-Fc grid', () => {
+    // 表5.3.4 の L3 は縦に結合されたセルで、鉄筋の種類にも Fc にも依らない。
+    // 11マスに展開して転写していたら、原文にない格子を作ったことになる。
+    const l3 = entriesFor('anchorage.L3', 'anchorage.L3.minimum')
+
+    expect(l3).toHaveLength(2)
+    for (const entry of l3) {
+      expect(entry.conditions).toEqual({ member: 'スラブ' })
+    }
+  })
+
   it('carries explicit expansion values for every band', () => {
     // 帯 표기(fcBand·barSizeBand)만 있고 전개값이 없으면 골든테스트가 전개
     // 근거를 .ts 상수로 되가져가게 된다 — 전개값은 픽스처의 전사 데이터다.
@@ -118,15 +134,16 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     // どこにも書いていないと、後で「表を全部写していない」と読まれる。
     const excludedColumns = fixture.excluded.flatMap(({ columns }) => columns)
 
-    expect(excludedColumns).toEqual(['L3', 'L3h', 'Lb'])
+    // 床板が範囲に入った時点で L3 のスラブ欄と Lb は除外から entries へ移った
+    // (ADR-027)。残る除外は小梁の列と、原文が「─」の L3h だけである。
+    expect(excludedColumns).toEqual(['L3(小梁)', 'L3h'])
     for (const entry of fixture.excluded) {
       expect(entry.reason).toContain('ADR-005')
       expect(entry.quote).not.toBe('')
     }
-    // 除外した列が entries に紛れ込んでいない。
-    expect(
-      fixture.entries.some(({ kind }) => /\.L3h?$|\.Lb$/.test(kind)),
-    ).toBe(false)
+    // 除外した列が entries に紛れ込んでいない。L3h はスラブ欄が「─」で値が
+    // ないので、どの経路でも entries に現れてはならない。
+    expect(fixture.entries.some(({ kind }) => /\.L3h$/.test(kind))).toBe(false)
   })
 
   it('names the rules that are transcribed but not yet reachable', () => {

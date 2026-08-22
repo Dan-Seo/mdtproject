@@ -6,12 +6,21 @@ import type {
   Member,
   WallSection,
 } from '@/domain/model/member'
-import { girderRun, type WallSpan } from '@/domain/model/project'
+import {
+  girderRun,
+  slabRun,
+  type WallSpan,
+} from '@/domain/model/project'
 import type { Rebar, RebarRole } from '@/domain/model/rebar'
-import { createSampleProject, wallSection } from '@/domain/model/sample-project'
+import {
+  createSampleProject,
+  slabSection,
+  wallSection,
+} from '@/domain/model/sample-project'
 import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
+import { generateSlabRebar } from '@/domain/rebar/slab'
 import { generateWallRebar } from '@/domain/rebar/wall'
 import { jpMlitRulePack } from '@/rulepack'
 
@@ -920,6 +929,96 @@ describe('耐震壁の縦筋・横筋を壁厚方向に分ける', () => {
   })
 })
 
+describe('床板の3D — 2方向×2面が板厚に収まる (ADR-027)', () => {
+  const project = createSampleProject()
+  const slabMember = project.members.find(({ kind }) => kind === '床板')!
+
+  function slabRebars(section = slabSection): Rebar[] {
+    return (['X', 'Y'] as const).flatMap((axis) =>
+      generateSlabRebar(
+        { run: slabRun(project, slabMember, axis), section },
+        jpMlitRulePack,
+      ),
+    )
+  }
+
+  /** 板厚方向に立つ面を、実際に描かれる半径つきで下から並べる。 */
+  function barPlanes(
+    section = slabSection,
+  ): { z: number; radius: number; role: RebarRole }[] {
+    return slabRebars(section)
+      .map((rebar) => {
+        // 直線部の高さで代表させる — 上端筋は折れ曲がって下へ落ちる点も持つ。
+        const segments = rebarSegments(rebar, section)
+        const z = Math.max(...segments.flatMap(({ from, to }) => [from[2], to[2]]))
+        return { z, radius: segments[0].radius, role: rebar.role }
+      })
+      .sort((left, right) => left.z - right.z)
+  }
+
+  it('stacks 下端の2方向・上端の2方向 without letting them intersect', () => {
+    const planes = barPlanes()
+
+    expect(planes.map(({ role }) => role)).toEqual([
+      'X方向下端筋',
+      'Y方向下端筋',
+      'Y方向上端筋',
+      'X方向上端筋',
+    ])
+
+    // かぶり面に接するのは X方向 — 作図規則であって規準値ではない (ADR-019)。
+    // 隣り合う鉄筋どうしが食い込まないことだけを見る。
+    for (let index = 1; index < planes.length; index += 1) {
+      const gap = planes[index].z - planes[index - 1].z
+      expect(gap + 1e-6).toBeGreaterThanOrEqual(
+        planes[index].radius + planes[index - 1].radius,
+      )
+    }
+  })
+
+  it('keeps every bar inside the slab thickness', () => {
+    for (const { z, radius } of barPlanes()) {
+      expect(z - radius).toBeGreaterThanOrEqual(-1e-6)
+      expect(z + radius).toBeLessThanOrEqual(slabSection.thickness + 1e-6)
+    }
+  })
+
+  it('shrinks the display radius when the slab is too thin for 4 layers', () => {
+    // 表示半径は見せるために誇張してあるので、薄い板では 4層が板厚に入らない。
+    // 板の外へ突き出すか層どうしが食い込むかのどちらかになるので、入る大きさまで
+    // 一律に縮める — 壁でやっているのと同じ扱いである。
+    const thin = { ...slabSection, thickness: 120 }
+    const planes = barPlanes(thin)
+
+    expect(planes).toHaveLength(4)
+    for (const { radius } of planes) {
+      expect(radius).toBeLessThan(rebarRadius(slabSection.x.bottom.size))
+      expect(radius).toBeGreaterThan(0)
+    }
+    for (const { z, radius } of planes) {
+      expect(z - radius).toBeGreaterThanOrEqual(-1e-6)
+      expect(z + radius).toBeLessThanOrEqual(thin.thickness + 1e-6)
+    }
+  })
+
+  it('leaves the in-plane distribution to the domain layout', () => {
+    const [bottom] = generateSlabRebar(
+      { run: slabRun(project, slabMember, 'X'), section: slabSection },
+      jpMlitRulePack,
+    )
+    const layout = stirrupPositions(
+      bottom.placement!.clearMm,
+      bottom.placement!.pitchMm,
+      bottom.placement!.startOffsetMm,
+    )
+
+    // X方向の鉄筋は y へ並ぶ。厚さ方向を分けても割付は動かない。
+    expect(rebarPlacements(bottom, slabSection).map(([, y]) => y)).toEqual(
+      layout.positionsMm,
+    )
+  })
+})
+
 describe('roleToLayer', () => {
   it.each([
     ['主筋', 'main'],
@@ -931,6 +1030,10 @@ describe('roleToLayer', () => {
     ['あばら筋', 'hoop'],
     ['幅止め筋', 'hoop'],
     ['腹筋', 'main'],
+    ['X方向上端筋', 'main'],
+    ['X方向下端筋', 'main'],
+    ['Y方向上端筋', 'main'],
+    ['Y方向下端筋', 'main'],
   ] satisfies [RebarRole, 'main' | 'hoop'][])(
     'maps %s to %s',
     (role, expected) => {

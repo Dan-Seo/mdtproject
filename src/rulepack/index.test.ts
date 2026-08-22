@@ -15,6 +15,9 @@ describe('jpMlitRulePack', () => {
         'anchorage.L1h',
         'anchorage.L2h',
         'anchorage.La',
+        'anchorage.Lb',
+        'anchorage.L3',
+        'anchorage.L3.minimum',
         'anchorage.bent.tail.minimum',
         'anchorage.bent.projection.minimum',
         'lap.L1',
@@ -34,6 +37,8 @@ describe('jpMlitRulePack', () => {
         'measure.splice.column',
         'measure.splice.girder.continuous',
         'measure.splice.girder.continuous.band.upper',
+        'measure.splice.slab.continuous',
+        'measure.splice.slab.continuous.band.upper',
         'measure.splice.wall.vertical',
         'measure.splice.length.factor',
         'markup.rate',
@@ -100,13 +105,16 @@ describe('jpMlitRulePack', () => {
     // 実行時に検査せずここで値として固定する — ルールパックはチェックイン済みの
     // YAML で、破れるのは実行時ではなく編集時だからである。
     // 境目の値そのものは tests/golden が押さえるのでここでは書かない。
-    const uppers = lookupRuleSeries(
-      jpMlitRulePack,
+    for (const key of [
       'measure.splice.girder.continuous.band.upper',
-      'band',
-    ).map(({ value }) => value)
+      'measure.splice.slab.continuous.band.upper',
+    ]) {
+      const uppers = lookupRuleSeries(jpMlitRulePack, key, 'band').map(
+        ({ value }) => value,
+      )
 
-    expect(uppers).toEqual([...uppers].sort((left, right) => left - right))
-    expect(new Set(uppers).size).toBe(uppers.length)
+      expect(uppers, key).toEqual([...uppers].sort((left, right) => left - right))
+      expect(new Set(uppers).size, key).toBe(uppers.length)
+    }
   })
 })

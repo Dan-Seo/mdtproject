@@ -14,6 +14,12 @@ export type UnsupportedReason =
   | '寸法不成立'
   /** カットオフ位置が未入力、または内法に納まらない (ADR-021) */
   | 'カットオフ位置不成立'
+  /**
+   * 継手箇所数の区分表にその長さの行がない。床板の区分表 (2（４）床板2)) は
+   * 「９．０ｍ以上１３．５ｍ未満は１．５か所」で終わり、梁の表と違って上が
+   * 開いていない — 13.5m 以上の連続床板の箇所数は原文にない (ADR-027)。
+   */
+  | '継手箇所数不明'
 
 export class MemberUnsupportedError extends Error {
   readonly reason: UnsupportedReason

@@ -9,12 +9,18 @@ import type { RuleHit, RulePack } from './types'
 export function coverConditions(
   section: Section,
 ): Record<string, string | boolean> {
-  return {
+  const cell = {
     memberKind: section.kind,
     soilContact: false,
-    exposure: section.exposure,
     finish: section.finish,
   }
+
+  // 表5.3.6 の「スラブ、耐力壁以外の壁」行は仕上げの有無だけで分かれ、屋内・
+  // 屋外の区別を持たない — 同じ表の「柱、梁、耐力壁」行と構造が違う。だから
+  // 床板は exposure を入力に持たず、ここでも渡さない (ADR-027)。
+  return section.kind === '床板'
+    ? cell
+    : { ...cell, exposure: section.exposure }
 }
 
 function matches(
