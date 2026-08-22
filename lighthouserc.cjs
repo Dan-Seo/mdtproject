@@ -60,6 +60,15 @@
 // 여유는 앞 판과 같은 비율로 뒀다: font +5.8%, total +5.0%.
 // 이 예산이 지키는 것 — JetBrains Mono에 굵기 하나를 더 얹으면 9,140 B가 도로
 // 늘어 font 예산을 넘는다. 즉 wght 목록이 조용히 넓어지는 것을 이 줄이 잡는다.
+//
+// ── 2026-08-22 M4 실측 (예산은 그대로 — 안에 들어왔다)
+// 로컬 next start + lighthouse CLI(desktop). 러너가 아니므로 절대값은 러너 이력과
+// 직접 비교하지 않고, 넘었는지만 본다:
+//   script 330,484 B (12 요청)  font 80,372 B (2)  total 438,461 B (19)
+// 앞 판 대비 script +9,519 B. 내용은 재방문 경로(persist·useProjectPersistence·
+// ProjectActions)와 인쇄 경로(TakeoffPrint)다. **exceljs·GLTFExporter는 초기 로드에
+// 없다** — 둘 다 동적 import라 요청 수가 12로 불변인 것이 그 증거다. 남은 여유는
+// script 6,516 B·total 9,539 B이므로, 다음에 초기 로드로 무엇을 끌어오든 여기서 걸린다.
 module.exports = {
   ci: {
     collect: {
