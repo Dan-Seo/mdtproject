@@ -27,6 +27,7 @@
 - CRITICAL: 새 기능 구현 시 반드시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성할 것 (TDD)
 - CRITICAL: 규준 관련 기능은 **골든테스트 먼저**. `標準仕様書`·`수량적산기준`의 표 값을 `tests/golden/`에 픽스처로 박고, 엔진 출력이 한 칸이라도 다르면 실패하게 한다. 픽스처에는 출처 쪽·표를 함께 적을 것 — 사후 대조의 유일한 단서다.
 - 마일스톤 순서를 건너뛰지 말 것. M0(스파이크) → M1(워킹 스켈레톤) → M2(룰팩) → M3a(단일 스팬 大梁·뷰어) → M3b(다스팬·継手) → M3c(고유 상세) → M4(확장) → M5(UX 리뷰). 도면 인식(로컬)은 M3a 이후 병행 가능한 별도 트랙 — 입력 파이프라인이라 산정 로직 마일스톤과 코드 영역이 겹치지 않는다 (ADR-018)
+- 마일스톤 현황·열린 리스크의 **수치는 손으로 갱신하므로 코드보다 뒤처진다.** 인용하기 전에 코드로 대조할 것 — 여러 세션·worktree 가 같은 main 을 밀고 있어 컨텍스트에 들어온 사본이 디스크보다 오래된 경우도 있다(`git log --oneline -3` 로 실제 HEAD 확인)
 - 커밋 메시지는 conventional commits 형식을 따를 것 (feat:, fix:, docs:, refactor:)
 - CRITICAL: `scripts/execute.py`를 백그라운드로 띄우고 `TaskOutput`으로 기다릴 때 **`timeout`을 90~120초보다 길게 잡지 말 것.** 그리고 출력이 비어 있어도 매 사이클 `phases/{phase}/index.json`의 step status를 읽어 진행을 한 줄 보고할 것. 이유: execute.py는 codex 출력을 `capture_output=True`로 삼키고(`scripts/execute.py:256`), 진행 표시는 `\n` 없는 `\r` 스피너로 stderr에만 나가며(`:46`), 스텝 완료 `print`도 flush되지 않는다(`:342`). 따라서 **하네스가 정상 동작 중이어도 stdout은 오래 비어 있는 게 정상**이다. 10분 블로킹으로 기다리면 화면이 통째로 멎어 사용자가 죽은 세션과 구별할 수 없다 — 2026-08-12 phase 4에서 76분간 `<retrieval_status>timeout</retrieval_status>`만 8회 반복되고 그 사이 하네스는 7스텝을 정상 커밋하고 있었다. 진짜 진행 신호는 stdout이 아니라 index.json이다.
 - index.json의 step status가 `blocked`·`error`인데 프로세스가 아직 살아 있으면 그건 진행이 아니다. execute.py는 codex가 스스로 멈춘 것을 모르고 1800초 타임아웃까지 기다린 뒤 재시도로 넘어간다 — 30분이 통째로 버려진다. status를 읽는 즉시 `TaskStop`으로 끊고 직접 인계받을 것 (2026-08-12 phase 5 step 2에서 실제로 발생)
