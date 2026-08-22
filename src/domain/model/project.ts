@@ -595,19 +595,44 @@ const isMemberKind = (value: unknown): boolean =>
  * catch は loadProject が触った所 (最初の柱) しか見ないので、大梁の断面が
  * 欠けている記録はそこを素通りして PaneBoundary に出る。
  */
+interface ReferencedPosition {
+  axis?: 'X' | 'Y'
+  ix: number
+  iy: number
+}
+
 function hasIntactReferences(
+  grid: Grid,
   sections: { id: string; kind: MemberKind }[],
   stories: { id: string }[],
-  members: { kind: MemberKind; sectionId: string; storyId: string }[],
+  members: {
+    kind: MemberKind
+    sectionId: string
+    storyId: string
+    position: ReferencedPosition
+  }[],
 ): boolean {
   const sectionKinds = new Map(sections.map(({ id, kind }) => [id, kind]))
   const storyIds = new Set(stories.map(({ id }) => id))
+  const { nx, ny } = gridPointCount(grid)
+
+  // 大梁は隣の交点まで伸びるので、その軸だけ一つ手前までだ。
+  const inGrid = ({ axis, ix, iy }: ReferencedPosition): boolean =>
+    Number.isInteger(ix) &&
+    Number.isInteger(iy) &&
+    ix >= 0 &&
+    iy >= 0 &&
+    ix < nx - (axis === 'X' ? 1 : 0) &&
+    iy < ny - (axis === 'Y' ? 1 : 0)
 
   return members.every(
     (member) =>
       // 種別違いも切る。大梁が柱の断面を指すと buildingLayout が投げる。
       sectionKinds.get(member.sectionId) === member.kind &&
-      storyIds.has(member.storyId),
+      storyIds.has(member.storyId) &&
+      // グリッドの外を指す位置は gridPoint が RangeError で投げ、全ペインが落ちる。
+      // その案件を自動保存が書くので、次の訪問でも同じ所で落ちる。
+      inGrid(member.position),
   )
 }
 
@@ -678,9 +703,15 @@ function isProjectShape(value: unknown): boolean {
       (isRecord(unitMass) && Object.values(unitMass).every(isFiniteNumber))) &&
     // ここまでで 3 つの配列は形が済んでいる。残るのは互いの指し合いだ。
     hasIntactReferences(
+      value.grid as Grid,
       sections as { id: string; kind: MemberKind }[],
       stories as { id: string }[],
-      members as { kind: MemberKind; sectionId: string; storyId: string }[],
+      members as {
+        kind: MemberKind
+        sectionId: string
+        storyId: string
+        position: ReferencedPosition
+      }[],
     )
   )
 }

@@ -21,6 +21,7 @@ import {
   aggregateQuantity,
   grandTotal,
   hasUnverified,
+  hasUnverifiedRules,
   unverifiedRules,
   weakestConfidence,
   inferredRules,
@@ -344,6 +345,16 @@ describe('aggregateQuantity', () => {
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
     expect(line.confidence).toBe('transcribed')
     expect(hasUnverified([line])).toBe(true)
+  })
+
+  it('counts a transcribed rule as unverified, the same as inferred', () => {
+    // glTF は行を持たず ruleHits を直に持つので、内訳書・印刷と glb は
+    // この関数を共に引く。判定は「stated でない」だ — 「原文に値が無い」
+    // (inferred) だけを数えると、検討待ち分が黙って通る (ADR-015・ADR-023)。
+    expect(hasUnverifiedRules([{ confidence: 'transcribed' }])).toBe(true)
+    expect(hasUnverifiedRules([{ confidence: 'inferred' }])).toBe(true)
+    expect(hasUnverifiedRules([{ confidence: 'stated' }])).toBe(false)
+    expect(hasUnverifiedRules([])).toBe(false)
   })
 
   it('takes the weakest confidence of the row, never the strongest', () => {

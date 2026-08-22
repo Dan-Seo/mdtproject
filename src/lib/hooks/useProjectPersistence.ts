@@ -47,6 +47,9 @@ export function useProjectPersistence(): ProjectPersistence {
       unsubscribe = useAppStore.subscribe(({ project }, previous) => {
         if (project !== previous.project) autosave(project)
       })
+      // 読み込みを待つ間に打たれた編集は購読より前なので、一度だけなら
+      // 書かれないまま消える—購読は「変化」でしか発火しない。ここで拾う。
+      if (!untouched) autosave(useAppStore.getState().project)
       // 打ち終わって 500ms 以内に閉じられると待機中の書き込みが消える。
       // pagehide は bfcache に入る時も来るので、unload より取りこぼしが少ない。
       flushOnLeave = () => autosave.flush()

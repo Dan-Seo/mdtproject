@@ -66,6 +66,32 @@ describe('ViewerExportButton', () => {
     })
   })
 
+  it('does not start a second export while one is running', async () => {
+    // 書き出しは案件まるごとだ — 5万インスタンス規模では数秒かかる。
+    // 二重に走れば場面構築が二度起き、model_exported も二回立つ。
+    let finish: () => void = () => {}
+    exportRebarGlb.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    render(<ViewerExportButton />)
+    const button = screen.getByRole('button', { name: '3D 書き出し' })
+
+    // 釦は動的 import を挙げるので、実際の呼び出しは一拍遅れて来る。
+    fireEvent.click(button)
+    await waitFor(() => expect(exportRebarGlb).toHaveBeenCalledTimes(1))
+    expect(button).toBeDisabled()
+
+    fireEvent.click(button)
+    expect(exportRebarGlb).toHaveBeenCalledTimes(1)
+
+    finish()
+    await waitFor(() => expect(button).not.toBeDisabled())
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
   it('leaves the 未対応 部材 out of the model the same way the viewer does', async () => {
     render(<ViewerExportButton />)
 

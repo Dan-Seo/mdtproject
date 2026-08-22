@@ -586,6 +586,45 @@ describe('project serialization', () => {
     expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
   })
 
+  it.each([
+    ['柱がグリッドの外を指す', { ix: 99, iy: 0 }],
+    ['グリッド添字が整数でない', { ix: 0.5, iy: 0 }],
+    ['グリッド添字が負', { ix: -1, iy: 0 }],
+  ])('rejects a project whose grid index is out of range: %s', (_l, position) => {
+    // gridPoint は RangeError を投げ、全ペインが落ちる。しかもその案件を
+    // 自動保存が書くので、次の訪問でも同じ所で落ちる。
+    const project = createProject()
+    const broken = {
+      ...project,
+      members: project.members.map((member, index) =>
+        index === 0 ? { ...member, position } : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
+  it('rejects a 大梁 that starts on the last グリッド line of its axis', () => {
+    // 大梁は隣の交点まで伸びるので、その軸だけ一つ手前までだ。
+    const project = createSampleProject()
+    const girder = project.members.find(
+      (member) => member.kind === '大梁' && 'axis' in member.position,
+    )
+    expect(girder).toBeDefined()
+    const { nx } = gridPointCount(project.grid)
+
+    const broken = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === girder!.id
+          ? { ...member, position: { axis: 'X', ix: nx - 1, iy: 0 } }
+          : member,
+      ),
+    }
+
+    expect(() => deserializeProject(JSON.stringify(broken))).toThrow()
+  })
+
   it('rejects a 大梁 that points at a 柱 断面', () => {
     // 種別違いは buildingLayout が投げる — 形の検査で止める方が早い。
     const project = createSampleProject()
