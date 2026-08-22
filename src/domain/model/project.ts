@@ -1,10 +1,10 @@
 import type {
-  BarSize,
   ColumnSection,
   ColumnPosition,
   GirderPosition,
   Member,
   Section,
+  ShearBarSize,
 } from './member'
 import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
@@ -63,7 +63,7 @@ export interface Project {
    * 径별 単位質量 (kg/m) — 利用者入力. 미입력 径은 키가 없다.
    * 규준이 JIS에 위임한 값이라 룰팩이 아니라 프로젝트가 들고 있다.
    */
-  unitMass?: Partial<Record<BarSize, number>>
+  unitMass?: Partial<Record<ShearBarSize, number>>
 }
 
 export function gridPointCount(grid: Grid): { nx: number; ny: number } {
@@ -605,7 +605,7 @@ export function setNote(
 /** 빈 입력은 키를 지운다 — 0 kg/m는 입력이 아니라 없는 값이다. */
 export function setUnitMass(
   project: Project,
-  size: BarSize,
+  size: ShearBarSize,
   value: number | null,
 ): Project {
   const unitMass = { ...project.unitMass }

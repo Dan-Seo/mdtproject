@@ -1,4 +1,9 @@
-import { BAR_SIZES, type BarSize } from '@/domain/model/member'
+import {
+  BAR_SIZES,
+  SHEAR_BAR_SIZES,
+  type BarSize,
+  type ShearBarSize,
+} from '@/domain/model/member'
 
 import type {
   CandidateIssue,
@@ -60,6 +65,9 @@ interface VerticalRun {
 }
 
 const barSizes = new Set<BarSize>(BAR_SIZES)
+// 帯筋・あばら筋だけが高強度せん断補強筋 (K13・S13) を取れる。主筋の barSizes と
+// 分けているのは、主筋に入ると表5.3.4・表5.3.2 にない径を引くからだ (ADR-025)。
+const shearBarSizes = new Set<ShearBarSize>(SHEAR_BAR_SIZES)
 
 const TITLE_PATTERN =
   /(柱断面リスト|大梁断面リスト|小梁断面リスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
@@ -523,13 +531,15 @@ function parseBar(value: string): ParsedBar | undefined {
 
 function parsePitch(
   value: string,
-): { size: BarSize; pitchMm: number } | undefined {
+): { size: ShearBarSize; pitchMm: number } | undefined {
   // 셀 전체가 단일 「径@ピッチ」일 때만 채택한다 — 부분 매치를 허용하면
-  // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다
-  const match = stripDecoration(value).match(/^(D\d+)-?@(\d+)$/i)
+  // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다.
+  // 呼び名의 접두 영문자를 D로 한정하지 않는 것은 高強度せん断補強筋 때문이고,
+  // 목록에 없는 呼び名은 아래 집합 검사에서 빈칸+원문으로 떨어진다 (R10)
+  const match = stripDecoration(value).match(/^([A-Z]\d+(?:\.\d+)?)-?@(\d+)$/i)
   if (!match) return undefined
-  const size = match[1].toUpperCase() as BarSize
-  if (!barSizes.has(size)) return undefined
+  const size = match[1].toUpperCase() as ShearBarSize
+  if (!shearBarSizes.has(size)) return undefined
   const pitchMm = Number(match[2])
   // 4자리 피치는 인접 세그먼트가 붙은 잔재다(「D13@100」+「2」) — 확정하지 않는다
   return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }

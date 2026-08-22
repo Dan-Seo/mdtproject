@@ -1,16 +1,22 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
 import {
+  BAR_SIZES,
+  HIGH_STRENGTH_SHEAR_BAR_SIZES,
+  SHEAR_BAR_SIZES,
   sectionMarkLabel,
   splitGirderMainRow,
   type BarSize,
   type ColumnSection,
   type GirderSection,
+  type HighStrengthShearBarSize,
   type Member,
   type MemberClass,
   type MemberKind,
   type Section,
+  type ShearBarSize,
   type SteelGrade,
+  type WallSection,
 } from './member'
 
 describe('member model', () => {
@@ -133,5 +139,33 @@ describe('splitGirderMainRow', () => {
       throughCount: 4,
       cutoffCount: 0,
     })
+  })
+})
+
+describe('高強度せん断補強筋 (大臣認定品)', () => {
+  it('はせん断補強筋にだけ許され、主筋・壁筋には型として入らない', () => {
+    // 主筋・壁筋の径は表5.3.2(重ね継手)・表5.3.4(定着)を引く。その表に
+    // 高強度せん断補強筋の行はないので、入れれば規準にない値を引くことになる。
+    // フープ・スタラップだけが 1通則2) の断面周長で決まり径を引かない。
+    expectTypeOf<HighStrengthShearBarSize>().toEqualTypeOf<'K13' | 'S13'>()
+    expectTypeOf<ShearBarSize>().toEqualTypeOf<BarSize | HighStrengthShearBarSize>()
+    expectTypeOf<ColumnSection['main']['size']>().toEqualTypeOf<BarSize>()
+    expectTypeOf<ColumnSection['hoop']['size']>().toEqualTypeOf<ShearBarSize>()
+    expectTypeOf<GirderSection['stirrup']['size']>().toEqualTypeOf<ShearBarSize>()
+    expectTypeOf<WallSection['vertical']['size']>().toEqualTypeOf<BarSize>()
+    expectTypeOf<WallSection['horizontal']['size']>().toEqualTypeOf<BarSize>()
+  })
+
+  it('は呼び名がそのまま呼び径である — 新しい数値を持たない', () => {
+    // D13 の 13 と同じ規約だ。両原文に高強度せん断補強筋の記述は一度もなく
+    // (ADR-025)、製品が持てるのは図面が書いた呼び名だけである。
+    expect(SHEAR_BAR_SIZES).toEqual([
+      ...BAR_SIZES,
+      ...HIGH_STRENGTH_SHEAR_BAR_SIZES,
+    ])
+    for (const size of HIGH_STRENGTH_SHEAR_BAR_SIZES) {
+      expect(size).toMatch(/^[A-Z]\d+(\.\d+)?$/)
+      expect(BAR_SIZES).not.toContain(size)
+    }
   })
 })

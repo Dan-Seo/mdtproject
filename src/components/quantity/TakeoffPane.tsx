@@ -9,7 +9,7 @@ import {
   type MouseEvent,
 } from 'react'
 
-import type { BarSize } from '@/domain/model/member'
+import type { ShearBarSize } from '@/domain/model/member'
 import type { RebarShape } from '@/domain/model/rebar'
 import { memberGroupKey, setNote, setUnitMass } from '@/domain/model/project'
 import {
@@ -240,7 +240,7 @@ function NoteInput({ lineId }: { lineId: string }) {
  * 単位質量は積算基準 1通則 前文が JIS G 3112 に委ねた値で、その JIS は有償
  * 規格だ。製品が値を持てないので利用者に聞く — 入るまで質量は算出しない。
  */
-function UnitMassField({ size }: { size: BarSize }) {
+function UnitMassField({ size }: { size: ShearBarSize }) {
   const stored = useAppStore(({ project }) => project.unitMass?.[size])
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   // 打鍵の途中（"0" → "0.9"）で欄が消えないよう、表示は打った文字列のまま持つ。
@@ -281,8 +281,12 @@ export function UnitMassInput({ lines }: TakeoffTableProps) {
   const locale = useAppStore(({ locale }) => locale)
   const sizes = useMemo(
     () =>
+      // 呼び径で並べ、同径は呼び名で決める — D13 と高強度の K13・S13 が
+      // 同じ 13 になるので、ここを径だけにすると並びが入力順で揺れる。
       [...new Set(massLines(lines).map(({ size }) => size))].sort(
-        (left, right) => Number(left.slice(1)) - Number(right.slice(1)),
+        (left, right) =>
+          Number(left.slice(1)) - Number(right.slice(1)) ||
+          left.localeCompare(right),
       ),
     [lines],
   )

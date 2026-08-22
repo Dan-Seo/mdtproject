@@ -4,6 +4,7 @@ import { useRef, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
+  SHEAR_BAR_SIZES,
   SPLICE_METHODS,
   sectionMarkLabel,
   type BarSize,
@@ -12,6 +13,7 @@ import {
   type Finish,
   type GirderSection,
   type Section,
+  type ShearBarSize,
   type SpliceMethod,
   type SteelGrade,
   type WallSection,
@@ -23,6 +25,8 @@ import { capture } from '@/lib/telemetry'
 import styles from './SectionTable.module.css'
 
 const barSizes: readonly BarSize[] = BAR_SIZES
+
+const shearBarSizes: readonly ShearBarSize[] = SHEAR_BAR_SIZES
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
 
@@ -104,6 +108,37 @@ function BarSizeSelect({
       onChange={(event) => onChange(event.currentTarget.value as BarSize)}
     >
       {barSizes.map((size) => (
+        <option key={size} value={size}>
+          {size}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+/**
+ * せん断補強筋 (帯筋・あばら筋) の径。主筋の選択肢と分かれているのは、
+ * 高強度せん断補強筋 (K13・S13) を主筋に入れられないからだ — 主筋は定着・
+ * 重ね継手を表5.3.4・表5.3.2 から径で引くが、その表に高強度せん断補強筋の
+ * 行がない (ADR-025)。
+ */
+function ShearBarSizeSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: ShearBarSize
+  onChange(value: ShearBarSize): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value}
+      aria-label={label}
+      onChange={(event) => onChange(event.currentTarget.value as ShearBarSize)}
+    >
+      {shearBarSizes.map((size) => (
         <option key={size} value={size}>
           {size}
         </option>
@@ -505,7 +540,7 @@ function ShearField({
 
   return (
     <div className={styles.compoundField}>
-      <BarSizeSelect
+      <ShearBarSizeSelect
         label={`${sectionMarkLabel(section)} ${label} 径`}
         value={reinforcement.size}
         onChange={(size) =>

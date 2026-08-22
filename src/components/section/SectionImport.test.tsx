@@ -172,9 +172,9 @@ describe('SectionImport', () => {
     const before = useAppStore.getState().project
     render(<SectionImport initialPages={[yokohamaPage]} />)
 
-    // C51 1階의 帯筋은 S13(고강도)라 빈칸이다 — 신규 符号로는 반영 불가
-    const row = screen.getByTestId('section-import-candidate-C51-1階')
-    expect(row).toHaveTextContent('S13-@100')
+    // C56의 断面은 600φ(원형)라 b×d로 못 읽어 빈칸이다 — 신규 符号로는 반영 불가
+    const row = screen.getByTestId('section-import-candidate-C56-2階')
+    expect(row).toHaveTextContent('600φ')
     const apply = within(row).getByRole('button', { name: '反映' })
     expect(apply).toBeDisabled()
     expect(row).toHaveTextContent(
@@ -193,10 +193,10 @@ describe('SectionImport', () => {
         sections: [
           ...base.sections,
           {
-            id: 'section-C51-1F',
+            id: 'section-C56-2F',
             kind: '柱',
-            mark: 'C51',
-            storyLabel: '1階',
+            mark: 'C56',
+            storyLabel: '2階',
             b: 750,
             d: 750,
             fc: 24,
@@ -212,22 +212,22 @@ describe('SectionImport', () => {
     })
     render(<SectionImport initialPages={[yokohamaPage]} />)
 
-    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    const row = screen.getByTestId('section-import-candidate-C56-2階')
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
 
     const section = useAppStore
       .getState()
       .project.sections.find(
-        ({ mark, storyLabel }) => mark === 'C51' && storyLabel === '1階',
+        ({ mark, storyLabel }) => mark === 'C56' && storyLabel === '2階',
       )
     expect(section?.kind).toBe('柱')
     if (section?.kind !== '柱') throw new Error('Expected existing 柱 section')
     expect(section).toMatchObject({
-      b: 800,
-      d: 800,
-      main: { count: 22, size: 'D25' },
-      // 帯筋 후보는 빈칸(S13) — 기존 값을 덮지 않는다
-      hoop: { size: 'D10', pitch: 150, startOffsetMm: 50 },
+      // 断面 후보는 빈칸(600φ) — 기존 값을 덮지 않는다
+      b: 750,
+      d: 750,
+      main: { count: 12, size: 'D22' },
+      hoop: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     })
   })
 
@@ -276,9 +276,9 @@ describe('SectionImport', () => {
     useAppStore.setState({ locale: 'ko' })
     render(<SectionImport initialPages={[yokohamaPage]} />)
 
-    const row = screen.getByTestId('section-import-candidate-C51-1階')
+    const row = screen.getByTestId('section-import-candidate-C56-2階')
     expect(row).toHaveTextContent(
-      '帯筋/あばら筋을 대응하는 철근 径으로 해석할 수 없습니다.',
+      '断面을 직사각형 b×d로 해석할 수 없습니다.',
     )
   })
 

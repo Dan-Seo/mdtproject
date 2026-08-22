@@ -470,3 +470,43 @@ describe('generateColumnRebar', () => {
     },
   )
 })
+
+describe('高強度せん断補強筋の帯筋', () => {
+  // 高強度せん断補強筋は両原文に一度も現れない大臣認定品だ。それでも扱えるのは
+  // 1通則2) がフープの長さを断面周長と定め、径で引くルールパック行が帯筋に
+  // 一つもないからである。この2つのテストがその前提を固定する — 前提が崩れた
+  // 瞬間に「規準にない値を引く」ことになる (ADR-025)。
+  const highStrength: ColumnSection = {
+    ...section,
+    hoop: { ...section.hoop, size: 'K13' },
+  }
+
+  it('は D13 と同じ設計長さ・本数になる — 断面周長は径を見ない', () => {
+    const plain = byRole(generateColumnRebar(input(), jpMlitRulePack), '帯筋')
+    const generated = byRole(
+      generateColumnRebar(input({ section: highStrength }), jpMlitRulePack),
+      '帯筋',
+    )
+
+    expect(generated.size).toBe('K13')
+    expect(generated.length).toBe(plain.length)
+    expect(generated.count).toBe(plain.count)
+    expect(generated.points).toEqual(plain.points)
+  })
+
+  it('は径で引くルールを一つも使わない', () => {
+    const generated = byRole(
+      generateColumnRebar(input({ section: highStrength }), jpMlitRulePack),
+      '帯筋',
+    )
+
+    expect(generated.ruleHits.length).toBeGreaterThan(0)
+    for (const hit of generated.ruleHits) {
+      expect(hit.unit, `${hit.key} は径倍率で効いている`).not.toBe('d')
+      expect(
+        Object.keys(hit.conditions ?? {}),
+        `${hit.key} は径で場合分けしている`,
+      ).not.toContain('size')
+    }
+  })
+})

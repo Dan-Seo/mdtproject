@@ -16,6 +16,34 @@ export const BAR_SIZES = [
 
 export type BarSize = (typeof BAR_SIZES)[number]
 
+/**
+ * 高強度せん断補強筋の呼び名。フープ・スタラップ専用である。
+ *
+ * 両原文に一度も現れない — 「高強度」「大臣認定」ともに標準仕様書 R7 全330頁・
+ * 数量積算基準 全54頁で 0 件だ。規準が定める鉄筋ではなく大臣認定品だからである。
+ * それでも数量を出せるのは、フープ・スタラップの設計長さを 1通則2) が断面周長と
+ * 定めていて、径で引くルールパック行が一つもないからだ (ADR-025)。
+ *
+ * 主筋には使えない。主筋は定着 (表5.3.4)・重ね継手 (表5.3.2) を径と鉄筋の種類で
+ * 引くが、その表に高強度せん断補強筋の行はない — 型がそれを禁じる。
+ *
+ * 一覧は収集した実図面が書いた呼び名そのものであって、製品カタログの網羅では
+ * ない。K13 は沖縄県住宅供給公社、S13 は横浜市の図面にある (どちらも KSS785)。
+ * 未知の呼び名は値を作らず空欄に落ちる — 断面リスト파서と同じ扱いだ (R10)。
+ */
+export const HIGH_STRENGTH_SHEAR_BAR_SIZES = ['K13', 'S13'] as const
+
+export type HighStrengthShearBarSize =
+  (typeof HIGH_STRENGTH_SHEAR_BAR_SIZES)[number]
+
+/** せん断補強筋 (帯筋・あばら筋) に入れられる呼び名の全体。 */
+export const SHEAR_BAR_SIZES = [
+  ...BAR_SIZES,
+  ...HIGH_STRENGTH_SHEAR_BAR_SIZES,
+] as const
+
+export type ShearBarSize = BarSize | HighStrengthShearBarSize
+
 export type SteelGrade = 'SD295' | 'SD345' | 'SD390'
 
 /**
@@ -62,7 +90,7 @@ export interface ColumnSection {
     count: number
   }
   hoop: {
-    size: BarSize
+    size: ShearBarSize
     pitch: number
     /**
      * 配置区間의 양 끝면에서 第1·最終帯筋을 얼마나 띄우는지. 規準에 값이 없고
@@ -132,7 +160,7 @@ export interface GirderSection {
     cutoffFromSupportFaceMm: number
   }
   stirrup: {
-    size: BarSize
+    size: ShearBarSize
     pitch: number
     /** 両端の柱面から第1・最終あばら筋をどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
     startOffsetMm: number

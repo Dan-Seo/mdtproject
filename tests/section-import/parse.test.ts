@@ -92,15 +92,16 @@ describe('parseSectionLists', () => {
       main: { count: 20, size: 'D29' },
     })
 
+    // 高強度せん断補強筋 K13。フープの数量は断面周長だけで決まるので
+    // 規準にない値を引かずに取り込める (ADR-025)
     const c2aFirst = candidate(columns, 'C2A', '1F')
     expect(c2aFirst.main).toEqual({ count: 22, size: 'D32' })
-    expect(c2aFirst.hoop).toBeUndefined()
-    expect(c2aFirst.raw['帯筋']).toBe('K13-@100')
-    expect(c2aFirst.issues).not.toHaveLength(0)
+    expect(c2aFirst.hoop).toEqual({ size: 'K13', pitchMm: 100 })
+    expect(c2aFirst.raw['帯筋']).toBeUndefined()
+    expect(c2aFirst.issues).toHaveLength(0)
 
     const c2First = candidate(columns, 'C2', '1F')
-    expect(c2First.hoop).toBeUndefined()
-    expect(c2First.raw['帯筋']).toBe('K13-@100')
+    expect(c2First.hoop).toEqual({ size: 'K13', pitchMm: 100 })
     expect(candidate(columns, 'FC1', '1F').kind).toBe('対象外')
   })
 
@@ -138,8 +139,8 @@ describe('parseSectionLists', () => {
 
     const c51First = candidate(columns, 'C51', '1階')
     expect(c51First.main).toEqual({ count: 22, size: 'D25' })
-    expect(c51First.hoop).toBeUndefined()
-    expect(c51First.raw['HOOP']).toBe('S13-@100')
+    expect(c51First.hoop).toEqual({ size: 'S13', pitchMm: 100 })
+    expect(c51First.raw['HOOP']).toBeUndefined()
 
     const c56 = candidate(columns, 'C56', '2階')
     expect(c56.main).toEqual({ count: 12, size: 'D22' })
@@ -424,12 +425,13 @@ function sweepGirders(
 }
 
 describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
-  it('ojkk 柱リスト — 19칸 (位置 2행·帯筋에 고강도 K13 포함)', () => {
+  it('ojkk 柱リスト — 19칸 (位置 2행·帯筋의 고강도 K13 포함 전 칸 확정)', () => {
     expect(
       sweepColumns('ojkk-p2.json', 'ojkk-akamichi-p2-columns.json', '柱リスト'),
-      // K13 3칸(C2 1F·C2A 2F·C2A 1F)만 미확정. 断面은 라벨 행이 없지만 스케치의
-      // 가로·세로 치수를 짝지어 전 칸 확정 — 값은 전사(700×700·FC1 600×600)와 대조된다
-    ).toEqual({ main: 19, hoop: 16, dimension: 19 })
+      // K13 3칸(C2 1F·C2A 2F·C2A 1F)이 ADR-025로 확정되어 帯筋도 전 칸 찼다.
+      // 断面은 라벨 행이 없지만 스케치의 가로·세로 치수를 짝지어 전 칸 확정 —
+      // 값은 전사(700×700·FC1 600×600)와 대조된다
+    ).toEqual({ main: 19, hoop: 19, dimension: 19 })
   })
 
   it('yokohama 柱断面リスト — 15칸 (断面 라벨 행·位置 없음·S13·600φ 포함)', () => {
@@ -439,8 +441,8 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         'yokohama-kanazawa-p13-columns.json',
         '柱断面リスト',
       ),
-      // S13 4칸만 帯筋 미확정, 断面은 600φ(C56) 1칸만 미확정
-    ).toEqual({ main: 15, hoop: 11, dimension: 14 })
+      // S13 4칸이 ADR-025로 확정되어 帯筋은 전 칸. 断面은 600φ(C56) 1칸만 미확정
+    ).toEqual({ main: 15, hoop: 15, dimension: 14 })
   })
 
   it('yokohama 大梁断面リスト — 전사분 5칸 (位置별 상이 主筋 포함)', () => {

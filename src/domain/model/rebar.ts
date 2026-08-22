@@ -1,4 +1,4 @@
-import type { BarSize, SpliceMethod } from './member'
+import type { ShearBarSize, SpliceMethod } from './member'
 import type { RuleHit } from '../rules/types'
 
 export type RebarRole =
@@ -83,7 +83,8 @@ export interface Rebar {
   id: string
   memberId: string
   role: RebarRole
-  size: BarSize
+  /** せん断補強筋には高強度せん断補強筋 (K13・S13) が入る (ADR-025) */
+  size: ShearBarSize
   shape: RebarShape
   /** 加工形状. 3D 표시의 유일한 출처이며 `length`와 일치하지 않을 수 있다. */
   points: [number, number, number][]

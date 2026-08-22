@@ -1,8 +1,8 @@
 import type {
-  BarSize,
   Member,
   MemberKind,
   Section,
+  ShearBarSize,
   SpliceMethod,
 } from '../model/member'
 import {
@@ -35,7 +35,7 @@ interface QuantityLineBase {
   mark: string
   sectionLabel: string
   role: RebarRole
-  size: BarSize
+  size: ShearBarSize
   /** この行が束ねた部材の数 */
   places: number
   rules: RuleHit[]

@@ -1,4 +1,4 @@
-import type { BarSize } from '@/domain/model/member'
+import type { BarSize, ShearBarSize } from '@/domain/model/member'
 
 export interface TextItem {
   str: string
@@ -45,7 +45,7 @@ export interface SectionCandidate {
   b?: number
   d?: number
   main?: { size: BarSize; count: number }
-  hoop?: { size: BarSize; pitchMm: number }
+  hoop?: { size: ShearBarSize; pitchMm: number }
   depth?: number
   girderMain?: {
     size: BarSize
@@ -59,7 +59,7 @@ export interface SectionCandidate {
     endTopCount?: number
     endBottomCount?: number
   }
-  stirrup?: { size: BarSize; pitchMm: number }
+  stirrup?: { size: ShearBarSize; pitchMm: number }
   /** 解釈できず空欄にした項目の原文。 */
   raw: Record<string, string>
   issues: CandidateIssue[]

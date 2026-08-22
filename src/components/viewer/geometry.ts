@@ -1,10 +1,10 @@
 import {
   splitGirderMainRow,
-  type BarSize,
   type ColumnSection,
   type GirderMainRow,
   type GirderSection,
   type Section,
+  type ShearBarSize,
   type WallSection,
 } from '@/domain/model/member'
 import type { Rebar, RebarRole, RebarZone } from '@/domain/model/rebar'
@@ -93,17 +93,19 @@ export function roleToLayer(role: RebarRole): RebarLayer {
   }
 }
 
-function barDiameter(size: BarSize): number {
-  const diameter = Number(size.replace(/^D/, ''))
+// 呼び名の英字を落とすと呼び径が残る — D13 も高強度せん断補強筋の K13・S13 も
+// 同じ規約であって、ここに新しい数値は増えない (ADR-025)。
+function barDiameter(size: ShearBarSize): number {
+  const diameter = Number(size.replace(/^[A-Z]+/, ''))
 
   if (!Number.isFinite(diameter) || diameter <= 0) {
-    throw new Error(`Invalid BarSize: ${size}`)
+    throw new Error(`Invalid bar size: ${size}`)
   }
 
   return diameter
 }
 
-export function rebarRadius(size: BarSize): number {
+export function rebarRadius(size: ShearBarSize): number {
   return (
     Math.max(barDiameter(size), MINIMUM_DISPLAY_DIAMETER) *
     DISPLAY_DIAMETER_SCALE
@@ -284,7 +286,7 @@ function girderSideBarPlacements(
  * 縦筋·横筋 2겹이 壁厚에 들어가지 않는다 — 벽 밖으로 삐져나오든 층끼리 파고들든
  * 둘 중 하나가 된다. 들어가는 크기까지 일률로 줄인다.
  */
-function wallDisplayRadius(size: BarSize, section: WallSection): number {
+function wallDisplayRadius(size: ShearBarSize, section: WallSection): number {
   const pair =
     rebarRadius(section.vertical.size) + rebarRadius(section.horizontal.size)
   // ダブル은 한 면당 縦筋＋横筋이라 壁厚의 1/4, シングル은 1조뿐이라 1/2에 담는다.
