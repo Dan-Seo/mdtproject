@@ -176,18 +176,23 @@ describe('TakeoffPrint', () => {
  * 白紙や無装飾になる — 定数を唯一の出所として、残り二箇所を突き合わせる。
  */
 describe('印刷経路の目印', () => {
-  // 選択子の終わりまで見る。`#kijun-print-root` だけを探すと、改名後の
-  // `#kijun-print-root-x` にも当たって検査が素通りする。
-  const usesSelector = (source: string, selector: string) =>
-    [' ', '{', ',', ')'].some((next) => source.includes(`${selector}${next}`))
+  // 「一度でも出れば通る」では足りない。目印は CSS に三度・e2e に五度出るので、
+  // 一箇所だけ改名しても残りが定数と一致してしまう — 直し漏れが
+  // `body.kijun-printing > *:not(#kijun-print-root)` なら複製ごと隠れて、
+  // この試験が止めるはずだった白紙印刷がそのまま出る。出現を全部数え上げ、
+  // 定数以外の名前が残っていないことを見る。
+  const namesIn = (source: string, pattern: RegExp) => [
+    ...new Set([...source.matchAll(pattern)].map(([, name]) => name)),
+  ]
 
   it('keeps globals.css and the e2e script on the exported names', () => {
     const css = readFileSync('src/app/globals.css', 'utf8')
-    expect(usesSelector(css, `#${PRINT_ROOT_ID}`)).toBe(true)
-    expect(usesSelector(css, `body.${PRINTING_BODY_CLASS}`)).toBe(true)
+    expect(namesIn(css, /#(kijun-[\w-]+)/g)).toEqual([PRINT_ROOT_ID])
+    expect(namesIn(css, /body\.([\w-]+)/g)).toEqual([PRINTING_BODY_CLASS])
 
     const e2e = readFileSync('tests/e2e/uc16-model-and-print.js', 'utf8')
-    expect(e2e).toContain(`"${PRINT_ROOT_ID}"`)
-    expect(e2e).toContain(`"${PRINTING_BODY_CLASS}"`)
+    expect(namesIn(e2e, /"(kijun-[\w-]+)"/g).sort()).toEqual(
+      [PRINTING_BODY_CLASS, PRINT_ROOT_ID].sort(),
+    )
   })
 })
