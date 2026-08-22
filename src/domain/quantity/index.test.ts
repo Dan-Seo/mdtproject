@@ -20,7 +20,9 @@ import { jpMlitRulePack } from '../../rulepack'
 import {
   aggregateQuantity,
   grandTotal,
-  hasInferred,
+  hasUnverified,
+  unverifiedRules,
+  weakestConfidence,
   inferredRules,
   massLines,
   spliceLines,
@@ -182,7 +184,7 @@ describe('aggregateQuantity', () => {
 
     expect(lines).toHaveLength(1)
     expect(lines[0]).toMatchObject({
-      id: '1階|C|C1|主筋|1000|12',
+      id: '1階|C|C1|主筋|1000|12|形状0,0,0;0,1000,0',
       groupId: '1階|C|C1',
       storyName: '1階',
       memberKind: '柱',
@@ -271,120 +273,6 @@ describe('aggregateQuantity', () => {
     expect(topLines.map(({ places }) => places)).toEqual([1, 1])
   })
 
-  it('sums both ends when one 大梁 puts the same 追加主筋 at 始端 and 終端', () => {
-    const project = createSampleProject()
-    const member = project.members.find(({ id }) => id === '1F-G1-X1Y1-X')!
-    const girderSection = findSection(project, member.sectionId)
-    if (girderSection.kind !== '大梁') {
-      throw new Error('expected a 大梁 section')
-    }
-    // 端部だけ2本多い断面。始端と終端で同じ長さ・同じ本数になるので、行キーが
-    // 一致して1行に束ねられる — 束ねたときに片側が落ちないことを固定する。
-    const withEnds = {
-      ...girderSection,
-      main: {
-        ...girderSection.main,
-        endCount: {
-          topCount: girderSection.main.topCount + 2,
-          bottomCount: girderSection.main.bottomCount,
-        },
-        cutoffMm: 1000,
-      },
-    }
-    const rebars = generateGirderRebar(
-      { run: girderRun(project, member), section: withEnds },
-      jpMlitRulePack,
-    )
-    const partials = rebars.filter(({ layerIndex }) => layerIndex === 1)
-    const lines = massLines(
-      aggregateQuantity(project, rebars, jpMlitRulePack),
-    ).filter(({ mark, role }) => mark === 'G1' && role === '上端筋')
-
-    expect(partials).toHaveLength(2)
-    expect(lines).toHaveLength(2)
-    const [through, addition] = lines
-    expect(through.countPerMember).toBe(girderSection.main.topCount)
-    expect(addition.countPerMember).toBe(4)
-    expect(addition.places).toBe(1)
-    expect(addition.totalLengthMm).toBe(addition.lengthMm * 4)
-  })
-
-  it('keeps 大梁 of one 符号 apart when they put different 本数 on one line', () => {
-    // 行は「1部材あたりの本数 × 箇所数」で語る。同じ符号でもスパン構成や端部条件が
-    // 違えば1部材あたりの本数が違うので、束ねると片方が消える
-    const project = createSampleProject()
-    const seen = new Set<string>()
-    const rebars: Rebar[] = []
-
-    for (const member of project.members.filter(({ kind }) => kind === '大梁')) {
-      if (seen.has(member.id)) continue
-      const section = findSection(project, member.sectionId)
-      if (section.kind !== '大梁') throw new Error('expected a 大梁 section')
-
-      const run = girderRun(project, member)
-      for (const runMember of run.members) seen.add(runMember.id)
-      rebars.push(
-        ...generateGirderRebar(
-          {
-            run,
-            section:
-              section.mark === 'G1'
-                ? {
-                    ...section,
-                    main: {
-                      ...section.main,
-                      endCount: { topCount: section.main.topCount + 3 },
-                      cutoffMm: 1200,
-                    },
-                  }
-                : section,
-          },
-          jpMlitRulePack,
-        ),
-      )
-    }
-
-    const isAddition = (rebar: Rebar) =>
-      rebar.role === '上端筋' && rebar.length === 2000 && rebar.layerIndex === 1
-    const additionRebars = rebars.filter(isAddition)
-    // 一つの部材だけ片端を落として、部材ごとに本数が違う状態を作る
-    const dropped = additionRebars[additionRebars.length - 1]
-    const uneven = rebars.filter((rebar) => rebar !== dropped)
-
-    const memberStory = new Map(
-      project.members.map(({ id, storyId }) => [id, storyId]),
-    )
-    const storyId = memberStory.get(dropped.memberId)
-    const storyName = project.stories.find(({ id }) => id === storyId)?.name
-
-    const lines = massLines(
-      aggregateQuantity(project, uneven, jpMlitRulePack),
-    ).filter(
-      (line) =>
-        line.mark === 'G1' &&
-        line.role === '上端筋' &&
-        line.lengthMm === 2000 &&
-        line.storyName === storyName,
-    )
-
-    // 両端に出す部材(6本)と片端だけの部材(3本)は別の行になる
-    expect(lines.map(({ countPerMember }) => countPerMember).sort()).toEqual([
-      3, 6,
-    ])
-    for (const line of lines) {
-      expect(line.totalLengthMm).toBe(
-        line.lengthMm * line.countPerMember * line.places,
-      )
-    }
-    // 行が分かれても合計は保存される
-    expect(lines.reduce((total, line) => total + line.totalLengthMm, 0)).toBe(
-      uneven
-        .filter(isAddition)
-        .filter(({ memberId }) => memberStory.get(memberId) === storyId)
-        .reduce((total, rebar) => total + rebar.length * rebar.count, 0),
-    )
-  })
-
   it('merges 柱 of one 符号 even when the 大梁 above them differ in せい', () => {
     const sample = createSampleProject()
     const project: Project = {
@@ -435,7 +323,7 @@ describe('aggregateQuantity', () => {
     expect(hoops[0].groupId).toBe('1階|C|C1')
   })
 
-  it('propagates an inferred contributing rule to the whole row', () => {
+  it('propagates the weakest contributing rule grade to the whole row', () => {
     const project = projectWithStories([
       { id: '1F', name: '1階', height: 4200 },
     ])
@@ -445,12 +333,52 @@ describe('aggregateQuantity', () => {
       jpMlitRulePack,
     )[0]
 
-    expect(line.rules.some(({ confidence }) => confidence === 'inferred')).toBe(
-      true,
-    )
+    // 실룰팩에 inferred 행은 더 이상 없다 — 유일한 예였던 JIS 単位質量이
+    // 프로젝트 입력으로 빠졌기 때문이다. 실제 최약 등급인 transcribed 가 행
+    // 전체로 번지는지를 본다. 등급 순서 자체는 weakestConfidence 쪽이 합성
+    // 룰로 따로 고정하므로 여기서 중복해서 보지 않는다.
+    expect(
+      line.rules.some(({ confidence }) => confidence === 'transcribed'),
+    ).toBe(true)
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
-    expect(line.inferred).toBe(true)
-    expect(hasInferred([line])).toBe(true)
+    expect(line.confidence).toBe('transcribed')
+    expect(hasUnverified([line])).toBe(true)
+  })
+
+  it('takes the weakest confidence of the row, never the strongest', () => {
+    // 한 행이라도 약한 근거를 쓰면 그 행 전체가 그만큼만 확실하다.
+    // 강한 쪽으로 반올림하면 「전사 대기」가 「검토 완료」로 보인다.
+    const rule = (confidence: 'stated' | 'transcribed' | 'inferred') => ({
+      key: `probe.${confidence}`,
+      label: confidence,
+      expr: '',
+      conditions: {},
+      value: 1,
+      unit: 'mm',
+      source: {
+        short: 'probe',
+        doc: 'probe',
+        edition: null,
+        publisher: 'probe',
+        url: null,
+        section: null,
+        page: 1,
+      },
+      confidence,
+      note: '',
+    })
+
+    expect(weakestConfidence([])).toBe('stated')
+    expect(weakestConfidence([rule('stated')])).toBe('stated')
+    expect(weakestConfidence([rule('stated'), rule('transcribed')])).toBe(
+      'transcribed',
+    )
+    expect(
+      weakestConfidence([rule('stated'), rule('transcribed'), rule('inferred')]),
+    ).toBe('inferred')
+    expect(weakestConfidence([rule('inferred'), rule('stated')])).toBe(
+      'inferred',
+    )
   })
 
   it('returns every inferred contribution once without collapsing variants', () => {
@@ -488,17 +416,27 @@ describe('aggregateQuantity', () => {
       jpMlitRulePack,
     )
 
+    const unverified = unverifiedRules(lines)
     const inferred = inferredRules(lines)
-    const identities = inferred.map(ruleIdentity)
 
-    expect(inferred).toHaveLength(7)
-    expect(new Set(identities).size).toBe(inferred.length)
+    // 조회 조건이 다른 같은 key 는 서로 다른 행이다 — 하나로 접으면 D25 와 D13
+    // 折曲げ内法直径 중 하나가 근거 목록에서 사라진다.
+    // 조회 조건이 다른 같은 key 는 서로 다른 행이다 — 하나로 접으면 D25 와 D13
+    // 折曲げ内法直径 중 하나가 근거 목록에서 사라진다.
+    expect(unverified).toHaveLength(8)
+    expect(new Set(unverified.map(ruleIdentity)).size).toBe(unverified.length)
     expect(
-      inferred.filter(({ key }) => key === 'bend.inside-diameter'),
+      unverified.filter(({ key }) => key === 'bend.inside-diameter'),
     ).toHaveLength(2)
-    expect(inferred.every(({ confidence }) => confidence === 'inferred')).toBe(
+    expect(unverified.every(({ confidence }) => confidence !== 'stated')).toBe(
       true,
     )
+
+    // 「원문에 값이 아예 없는」 행은 이제 없다. ADR-023 은 그 유일한 예로 JIS
+    // 単位質量을 들었는데, 같은 이유로 単位質量이 룰팩에서 빠지고 프로젝트
+    // 입력이 됐기 때문이다(schema v6). 남은 8행은 전부 標準仕様書·積算基準에
+    // 명시된 값이라 transcribed 다 — 즉 kg 행도 ▲가 아니라 △다.
+    expect(inferred).toEqual([])
   })
 
   it('emits a 箇所 line beside the kg line and never mixes the two units', () => {
@@ -679,6 +617,31 @@ describe('単位質量は利用者入力', () => {
     expect(line.unitMassKgPerM).toBe(4)
     expect(line.designKg).toBe(432)
     expect(line.requiredKg).toBeCloseTo(449.28, 6)
+  })
+
+  // カットオフ筋は同じ部材から設計長さも本数も同じで折れ線だけ違う鉄筋を出す
+  // ことがある。places は部材数で数えるので、1行に束ねると片方の本数がまるごと
+  // 消えて過少計上になる — 黙って消えないことを固定する。
+  it('keeps 加工形状 apart even when 設計長さ and 本数 match', () => {
+    const project = projectWithStories(stories)
+    const [member] = project.members
+    const rebars = [
+      mainRebar(member.id),
+      mainRebar(member.id, {
+        id: `${member.id}|main-bent`,
+        points: [
+          [0, 0, 0],
+          [1000, 0, 0],
+        ],
+      }),
+    ]
+
+    const lines = massLines(aggregateQuantity(project, rebars, jpMlitRulePack))
+
+    expect(lines).toHaveLength(2)
+    expect(lines.map(({ totalLengthMm }) => totalLengthMm)).toEqual([
+      12000, 12000,
+    ])
   })
 
   it('keeps the subtotal unknown while any 径 is still missing', () => {

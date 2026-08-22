@@ -13,7 +13,12 @@ import {
 } from '../model/project'
 import type { Rebar, RebarRole, RebarShape } from '../model/rebar'
 import { lookupMarkup } from '../rules/lookup'
-import type { RuleHit, RulePack } from '../rules/types'
+import {
+  CONFIDENCE_ORDER,
+  type RuleConfidence,
+  type RuleHit,
+  type RulePack,
+} from '../rules/types'
 
 /**
  * 内訳書の単位。鉄筋そのものは質量で、継手は箇所で数える — 数量積算基準が
@@ -34,7 +39,11 @@ interface QuantityLineBase {
   /** この行が束ねた部材の数 */
   places: number
   rules: RuleHit[]
-  inferred: boolean
+  /**
+   * 이 행이 기댄 근거 중 **가장 약한** 등급. 한 행이라도 약한 근거를 쓰면
+   * 그 행 전체가 그만큼만 확실하다 — 강한 쪽으로 반올림하지 않는다.
+   */
+  confidence: RuleConfidence
   formula: string
 }
 
@@ -100,17 +109,8 @@ export interface SpliceTotal {
 }
 
 type GroupedLine =
-  | {
-      kind: 'kg'
-      line: MassQuantityLine
-      memberIds: Set<string>
-      markupRate: number
-    }
-  | {
-      kind: '箇所'
-      line: SpliceQuantityLine
-      memberIds: Set<string>
-    }
+  | { kind: 'kg'; line: MassQuantityLine; memberIds: Set<string>; markupRate: number }
+  | { kind: '箇所'; line: SpliceQuantityLine; memberIds: Set<string> }
 
 function storyName(project: Project, member: Member): string {
   const story = project.stories.find(({ id }) => id === member.storyId)
@@ -171,8 +171,13 @@ function contributingRules(
 // 併合された行の算出式・出典が片方についてしか事実でなくなる。
 export function quantityLineId(groupId: string, rebar: Rebar): string {
   const spliceKey = rebar.splice ? `|継手${rebar.splice.countPerBar}` : ''
+  // 前文は「規格、形状、寸法等ごとに」なので、寸法(設計長さ)だけでなく加工形状も
+  // 鍵に入れる — 設計長さが同じでも折れ線が違えば別の鉄筋だ (ADR-019)。同じ行に
+  // 落とすと places は部材数で数えるため、同じ部材から来た片方の本数がまるごと
+  // 数量から消える（カットオフ筋で実際に起こる — girder.ts の束ね鍵を見よ）。
+  const shapeKey = rebar.points.map((point) => point.join(',')).join(';')
 
-  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}`
+  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}|形状${shapeKey}`
 }
 
 /**
@@ -188,40 +193,10 @@ export function spliceLineId(groupId: string, rebar: Rebar): string {
   return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}|${rebar.length}`
 }
 
-function perMemberKey(memberId: string, key: string): string {
-  return `${memberId}\u0000${key}`
-}
-
-/**
- * 一つの部材が一つの行キーに出す鉄筋の本数。ふつうは1本だが、位置別に本数が
- * 分かれた大梁は始端と終端に同じ長さの追加筋を出すので2本になる。
- *
- * 行は「1部材あたりの本数 × 箇所数」で語るので、この本数が違う部材を同じ行に
- * 束ねると片方が消える — 同じ符号でもスパン構成や端部条件が違えば実際に違う。
- * だから本数を行キーに入れて、違う部材は別の行にする。
- */
-function rebarsPerMemberLine(
-  keyed: Array<{ memberId: string; key: string }>,
-): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const { memberId, key } of keyed) {
-    const composite = perMemberKey(memberId, key)
-    counts.set(composite, (counts.get(composite) ?? 0) + 1)
-  }
-  return counts
-}
-
-/** 1本しか出さない行のキーは従来どおり — 内訳書の行 id を無用に動かさない。 */
-function withPerMemberCount(key: string, perMember: number): string {
-  return perMember === 1 ? key : `${key}|${perMember}本`
-}
-
 function recalculate(grouped: GroupedLine): void {
   const { line, memberIds } = grouped
   line.places = memberIds.size
-  line.inferred = line.rules.some(
-    ({ confidence }) => confidence === 'inferred',
-  )
+  line.confidence = weakestConfidence(line.rules)
 
   if (grouped.kind === '箇所') {
     grouped.line.totalCount =
@@ -250,34 +225,6 @@ export function aggregateQuantity(
 ): QuantityLine[] {
   const members = new Map(project.members.map((member) => [member.id, member]))
   const grouped = new Map<string, GroupedLine>()
-  const groupIds = new Map<string, string>()
-  const groupIdOf = (memberId: string): string => {
-    const cached = groupIds.get(memberId)
-    if (cached !== undefined) return cached
-
-    const member = members.get(memberId)
-    if (!member) {
-      throw new Error(`Member not found for Rebar: ${memberId}`)
-    }
-    const key = memberGroupKey(project, member)
-    groupIds.set(memberId, key)
-    return key
-  }
-
-  const massCounts = rebarsPerMemberLine(
-    rebars.map((rebar) => ({
-      memberId: rebar.memberId,
-      key: quantityLineId(groupIdOf(rebar.memberId), rebar),
-    })),
-  )
-  const spliceCounts = rebarsPerMemberLine(
-    rebars
-      .filter(({ splice }) => splice && splice.countPerBar > 0)
-      .map((rebar) => ({
-        memberId: rebar.memberId,
-        key: spliceLineId(groupIdOf(rebar.memberId), rebar),
-      })),
-  )
 
   for (const rebar of rebars) {
     const member = members.get(rebar.memberId)
@@ -293,10 +240,8 @@ export function aggregateQuantity(
       )
     }
 
-    const groupId = groupIdOf(member.id)
-    const massKey = quantityLineId(groupId, rebar)
-    const perMember = massCounts.get(perMemberKey(member.id, massKey)) ?? 1
-    const id = withPerMemberCount(massKey, perMember)
+    const groupId = memberGroupKey(project, member)
+    const id = quantityLineId(groupId, rebar)
     const contributions = contributingRules(pack, member, rebar)
     const existing = grouped.get(id)
     const common = {
@@ -308,7 +253,8 @@ export function aggregateQuantity(
       role: rebar.role,
       size: rebar.size,
       places: 0,
-      inferred: false,
+      // recalculate() 가 행의 근거 전부를 보고 다시 정한다 — 여기 값은 자리표다.
+      confidence: 'stated' as RuleConfidence,
     }
 
     if (existing) {
@@ -339,7 +285,7 @@ export function aggregateQuantity(
           unit: 'kg',
           shape: rebar.shape,
           lengthMm: rebar.length,
-          countPerMember: rebar.count * perMember,
+          countPerMember: rebar.count,
           totalLengthMm: 0,
           // 径で引いて未入力なら null。同じ行に集まる鉄筋は径が同じなので
           // （上の size 検査）、行の中で値が食い違うことはない。
@@ -361,10 +307,7 @@ export function aggregateQuantity(
     const splice = rebar.splice
     if (!splice || splice.countPerBar === 0) continue
 
-    const spliceKey = spliceLineId(groupId, rebar)
-    const splicePerMember =
-      spliceCounts.get(perMemberKey(member.id, spliceKey)) ?? 1
-    const spliceId = withPerMemberCount(spliceKey, splicePerMember)
+    const spliceId = spliceLineId(groupId, rebar)
     const existingSplice = grouped.get(spliceId)
 
     if (existingSplice) {
@@ -387,7 +330,7 @@ export function aggregateQuantity(
         id: spliceId,
         unit: '箇所',
         method: splice.method,
-        countPerMember: splice.countPerBar * rebar.count * splicePerMember,
+        countPerMember: splice.countPerBar * rebar.count,
         totalCount: 0,
         rules: splice.rules,
         formula: splice.formula,
@@ -421,10 +364,35 @@ export function spliceTotals(lines: QuantityLine[]): SpliceTotal[] {
   return [...totals.values()]
 }
 
-export function hasInferred(lines: QuantityLine[]): boolean {
-  return lines.some(({ inferred }) => inferred)
+/** 여러 근거를 묶을 때의 대표 등급 — 가장 약한 것. 근거가 없으면 `stated`. */
+export function weakestConfidence(rules: RuleHit[]): RuleConfidence {
+  return rules.reduce<RuleConfidence>(
+    (weakest, { confidence }) =>
+      CONFIDENCE_ORDER.indexOf(confidence) < CONFIDENCE_ORDER.indexOf(weakest)
+        ? confidence
+        : weakest,
+    'stated',
+  )
 }
 
+/**
+ * 独立検討가 끝나지 않은 근거가 하나라도 있는가 — 즉 `stated` 가 아닌 행이 있는가.
+ * `transcribed`(원문 명시·검토 대기)도 여기 들어간다. 경고를 내릴지 판단하는 값이므로
+ * 「원문에 값이 없다」(inferred)만 세면 검토 대기분이 조용히 통과한다 (ADR-015).
+ */
+export function hasUnverified(lines: QuantityLine[]): boolean {
+  return lines.some(({ confidence }) => confidence !== 'stated')
+}
+
+export function unverifiedRules(lines: QuantityLine[]): RuleHit[] {
+  return uniqueRules(
+    lines.flatMap(({ rules }) =>
+      rules.filter(({ confidence }) => confidence !== 'stated'),
+    ),
+  )
+}
+
+/** 원문에 값이 아예 없는 근거만. 텔레메트리의 `inferred_rules` 가 이것이다. */
 export function inferredRules(lines: QuantityLine[]): RuleHit[] {
   return uniqueRules(
     lines.flatMap(({ rules }) =>

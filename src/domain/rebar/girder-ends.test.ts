@@ -83,7 +83,9 @@ function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) 
   const projectionMm = Math.max(laMm, projectionMinimumMm)
   const l1hMm = millimetres(bent, diameter)
   const tailMinimumMm = projectionMm + millimetres(tailMinimum, diameter)
-  const bentLengthMm = Math.max(l1hMm, tailMinimumMm)
+  // 5.3.4(5)(ｲ)(a)「全長は、表5.3.4 の直線定着の長さ以上」— 下限は L1 であって
+  // L1h ではない。L1h は同条の適用条件にすぎない。
+  const bentLengthMm = Math.max(straightLengthMm, tailMinimumMm)
 
   return {
     fabricationCoverMm,
@@ -98,9 +100,9 @@ function expectedRules(pack: RulePack, supportLengthMm = input.supportLengthMm) 
     // 판정에 실제로 쓴 행들 — 지점 柱의 かぶり는 大梁 조건으로 되짚을 수 없어
     // 판정 결과에 실려 나와야 근거 표시에서 살아남는다.
     straightUsedRules: [straight, minimumCover, fabricationAddition],
+    // L1h 는 어떤 값도 정하지 않으므로 出典에 실리지 않는다 (5.3.4(5)(ｲ)(a))
     bentUsedRules: [
       straight,
-      bent,
       projection,
       tailMinimum,
       projectionMinimum,
@@ -120,15 +122,15 @@ describe('resolveGirderEnd', () => {
     expect(resolveGirderEnd(input, jpMlitRulePack)).toEqual({
       kind: '折曲げ定着',
       lengthRule:
-        expected.l1hMm >= expected.tailMinimumMm
-          ? 'anchorage.L1h'
+        expected.straightLengthMm >= expected.tailMinimumMm
+          ? 'anchorage.L1'
           : 'anchorage.bent.tail.minimum',
       projectionRule:
         expected.laMm >= expected.projectionMinimumMm
           ? 'anchorage.La'
           : 'anchorage.bent.projection.minimum',
       lengthMm: expected.bentLengthMm,
-      l1hMm: expected.l1hMm,
+      straightMinimumMm: expected.straightLengthMm,
       tailMinimumMm: expected.tailMinimumMm,
       projectionMm: expected.projectionMm,
       laMm: expected.laMm,
@@ -139,15 +141,17 @@ describe('resolveGirderEnd', () => {
   })
 
   it('attributes the 折曲げ length to the term that actually governs', () => {
-    // 余長下限이 지배할 때 그 길이는 表5.3.4에 없는 값이다 — L1h로 제시하면
-    // 근거 표시가 거짓이 된다. 샘플 D25/柱800이 바로 그 경우다.
+    // 全長의 하한은 (a) L1 과 (b) 投影＋余長下限 둘이고, 이긴 항이 근거가 된다.
+    // 샘플 D25/柱800 은 (a) 가 이긴다 — L1 1000 > 投影 600 ＋ 余長 200.
     const expected = expectedRules(jpMlitRulePack)
     const detail = resolveGirderEnd(input, jpMlitRulePack)
 
-    expect(expected.tailMinimumMm).toBeGreaterThan(expected.l1hMm)
+    expect(expected.straightLengthMm).toBeGreaterThan(expected.tailMinimumMm)
     expect(detail.kind).toBe('折曲げ定着')
-    expect(detail.lengthRule).toBe('anchorage.bent.tail.minimum')
-    expect(detail.lengthMm).toBe(expected.tailMinimumMm)
+    expect(detail.lengthRule).toBe('anchorage.L1')
+    expect(detail.lengthMm).toBe(expected.straightLengthMm)
+    // L1h 를 하한으로 쓰던 시절에는 800 이 나왔다 — 조문보다 200mm 짧다.
+    expect(detail.lengthMm).toBeGreaterThan(expected.l1hMm)
   })
 
   it('attributes the 投影長 to the term that actually governs', () => {

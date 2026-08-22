@@ -18,8 +18,9 @@ import {
 } from '@/domain/model/unsupported'
 import {
   aggregateQuantity,
-  hasInferred as getHasInferred,
+  hasUnverified as getHasUnverified,
   inferredRules as getInferredRules,
+  unverifiedRules as getUnverifiedRules,
   type QuantityLine,
 } from '@/domain/quantity'
 import { generateColumnRebar } from '@/domain/rebar/column'
@@ -31,7 +32,11 @@ import { jpMlitRulePack } from '@/rulepack'
 export interface TakeoffResult {
   rebars: Rebar[]
   lines: QuantityLine[]
-  hasInferred: boolean
+  /** `stated` 가 아닌 근거가 하나라도 있는가 — 워터마크·경고의 스위치 (ADR-015) */
+  hasUnverified: boolean
+  /** 独立検討 대기분까지 포함한 전부 */
+  unverifiedRules: RuleHit[]
+  /** 그중 원문에 값이 아예 없는 것만 — 텔레메트리가 쓰는 좁은 목록 */
   inferredRules: RuleHit[]
   unsupportedMembers: UnsupportedMember[]
 }
@@ -172,7 +177,8 @@ function buildTakeoff(project: Project): TakeoffResult {
   return {
     rebars,
     lines,
-    hasInferred: getHasInferred(lines),
+    hasUnverified: getHasUnverified(lines),
+    unverifiedRules: getUnverifiedRules(lines),
     inferredRules: getInferredRules(lines),
     unsupportedMembers,
   }

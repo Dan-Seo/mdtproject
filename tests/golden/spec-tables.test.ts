@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { resolveGirderEnd } from '../../src/domain/rebar/girder-ends'
 import { lookupRule } from '../../src/domain/rules/lookup'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/spec-r7-ch5.json'
@@ -195,8 +196,10 @@ describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -221,8 +224,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -235,8 +240,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -250,7 +257,7 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
+      expect(hit.confidence).toBe('transcribed')
       expect(hit.note).toContain('画像')
     },
   )
@@ -264,8 +271,10 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
       expect(hit.unit).toBe(entry.unit)
       expect(hit.source.section).toBe(entry.table)
       expect(hit.source.page).toBe(entry.printedPage)
-      expect(hit.confidence).toBe('inferred')
-      expect(hit.note).toContain('LLM転写 — 独立検討待ち')
+      // 原文の表に明記された値なので推論(inferred)ではない。転写者＝承認者で
+      // 独立検討が済んでいないという意味の transcribed である (R6・ADR-023)。
+      expect(hit.confidence).toBe('transcribed')
+      expect(hit.note).toContain('原文転写（転写者＝承認者・独立検討待ち R6）')
     },
   )
 
@@ -277,7 +286,7 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     expect(hit.unit).toBe(entry.unit)
     expect(hit.source.section).toBe(entry.table)
     expect(hit.source.page).toBe(entry.printedPage)
-    expect(hit.confidence).toBe('inferred')
+    expect(hit.confidence).toBe('transcribed')
     expect(hit.key).toBe(entry.kind)
   })
 })
@@ -348,5 +357,65 @@ describe('픽스처 대조 완전성', () => {
     expect(
       uncompared.map(({ key, conditions }) => ({ key, conditions })),
     ).toEqual([])
+  })
+})
+
+describe('5.3.4(5)(ｲ) 折曲げ定着は (a)(b)(c) を全て満たす', () => {
+  // 사이즈·강도·지점 치수를 하나로 고정해 세 조건을 절대값으로 박는다.
+  // 상대식(`length === clear + start + end`)만 두면 하한을 어느 항으로 잡든
+  // 통과한다 — 실제로 (a)에 L1 대신 L1h가 들어가 있어도 초록이었다.
+  const D25 = 25
+  const supportLengthMm = 800 // 柱 800×800
+  const fabricationCoverMm = 50 // 最小かぶり 40 ＋ 加工用 10（屋外・仕上げなし）
+
+  const end = resolveGirderEnd(
+    {
+      supportLengthMm,
+      supportCover: {
+        memberKind: '柱',
+        soilContact: false,
+        exposure: '屋外',
+        finish: '仕上げなし',
+      },
+      barSize: 'D25',
+      fc: 24,
+      grade: 'SD345',
+      bendDirection: '下',
+    },
+    jpMlitRulePack,
+  )
+
+  it('falls to 折曲げ定着 because 直線定着 does not fit the support', () => {
+    // L1 40d ＝ 1000 > 使用可能 800 − 50 ＝ 750
+    expect(end.kind).toBe('折曲げ定着')
+  })
+
+  it('(c) 投影 ＝ max(表5.3.5 La, 柱せいの3/4)', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    expect(end.laMm).toBe(20 * D25) // 表5.3.5 SD345 Fc24 ＝ 20d
+    expect(end.projectionMinimumMm).toBe(supportLengthMm * 0.75)
+    expect(end.projectionMm).toBe(600) // max(500, 600)
+    expect(end.projectionMm).toBeLessThanOrEqual(
+      supportLengthMm - fabricationCoverMm,
+    )
+  })
+
+  it('(b) 余長 ＝ 全長 − 投影 は 8d 以上', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    expect(end.lengthMm - end.projectionMm).toBeGreaterThanOrEqual(8 * D25)
+  })
+
+  it('(a) 全長は 表5.3.4 の直線定着の長さ(L1)以上 — フックあり(L1h)ではない', () => {
+    if (end.kind !== '折曲げ定着') throw new Error('折曲げ定着 expected')
+
+    const l1Mm = 40 * D25 // 表5.3.4 SD345 Fc24 直線 ＝ 40d
+    const l1hMm = 30 * D25 // 同 フックあり ＝ 30d
+
+    // 下限に L1h を使うと max(750, 600＋200) ＝ 800 になり、条文より 200mm 短い。
+    expect(end.lengthMm).toBeGreaterThanOrEqual(l1Mm)
+    expect(end.lengthMm).toBe(1000)
+    expect(end.lengthMm).toBeGreaterThan(l1hMm)
   })
 })

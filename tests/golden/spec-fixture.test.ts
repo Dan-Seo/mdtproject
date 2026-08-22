@@ -1,4 +1,8 @@
+import { readdirSync, readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
+
+import { jpMlitRulePack } from '../../src/rulepack'
 
 import fixture from './fixtures/spec-r7-ch5.json'
 
@@ -82,7 +86,7 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
   it('keeps non-numeric 조문 as constraints, separate from rule-shaped entries', () => {
     // 수치가 아닌 제약(D35以上 重ね継手 금지)은 룰팩 스키마로 표현할 수 없다 —
     // entries에 섞으면 value must be a finite number 검사와 충돌하는 죽은 데이터가 된다.
-    expect(fixture.constraints).toHaveLength(1)
+    expect(fixture.constraints).toHaveLength(2)
     expect(fixture.constraints[0]).toMatchObject({
       table: '5.3.4(1)',
       kind: 'lap.prohibited.minimum-bar-size',
@@ -92,5 +96,99 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     expect(
       fixture.entries.some(({ kind }) => kind.startsWith('lap.prohibited')),
     ).toBe(false)
+  })
+
+  it('records who re-read the original, how, and what it proved', () => {
+    // 「独立検討済み(stated)」に上げてよいかを判断する材料は、値そのものでは
+    // なく**誰がどうやって確かめたか**だ。ここが空のまま等級だけ上がるのを防ぐ。
+    const [verification] = fixture.source.verifications
+
+    expect(fixture.source.verifications.length).toBeGreaterThan(0)
+    expect(verification.date).not.toBe('')
+    expect(verification.method).not.toBe('')
+    expect(verification.tables.length).toBeGreaterThan(0)
+    expect(verification.cells).toBeGreaterThan(0)
+    // 2回目の読みが転写者と同じ人格なら、それは独立検討ではない。
+    // その事実を書き残していないと、後から「検証済み」とだけ読まれる。
+    expect(verification.note).toContain('独立検討ではない')
+  })
+
+  it('separates 意図した除外 from 転写漏れ', () => {
+    // 表5.3.4 の L3・L3h と表5.3.5 の Lb は小梁・スラブ専用で ADR-005 の対象外だ。
+    // どこにも書いていないと、後で「表を全部写していない」と読まれる。
+    const excludedColumns = fixture.excluded.flatMap(({ columns }) => columns)
+
+    expect(excludedColumns).toEqual(['L3', 'L3h', 'Lb'])
+    for (const entry of fixture.excluded) {
+      expect(entry.reason).toContain('ADR-005')
+      expect(entry.quote).not.toBe('')
+    }
+    // 除外した列が entries に紛れ込んでいない。
+    expect(
+      fixture.entries.some(({ kind }) => /\.L3h?$|\.Lb$/.test(kind)),
+    ).toBe(false)
+  })
+
+  it('names the rules that are transcribed but not yet reachable', () => {
+    // 軽量コンクリートの 5d 加算は原文の注を写してあるが、製品が軽量かどうかを
+    // 入力に持たないので今はどの照会にも当たらない。値が誤っているのではなく
+    // 使い道がまだない — 「死んだ行」と「間違った行」を取り違えないための記録。
+    const [unused] = fixture.unused
+
+    expect(unused.kinds).toContain('anchorage.lightweight.addition')
+    expect(unused.reason).toContain('入力として受け取らない')
+
+    // 折曲げ定着の全長下限が L1h から L1 に直った時点で L1h はどの値も決めなく
+    // なった。台帳に載せないと「死んだ行」が「まだ書いていない行」に見える。
+    const kinds = fixture.unused.flatMap(({ kinds: list }) => list)
+    expect(kinds).toContain('anchorage.L1h')
+    expect(kinds).toContain('anchorage.L2')
+    for (const entry of fixture.unused) {
+      expect(entry.quote, entry.kinds.join(',')).not.toBe('')
+      expect(entry.reason, entry.kinds.join(',')).not.toBe('')
+    }
+  })
+
+  /**
+   * 台帳が実態から外れたら落ちる。ルールパックのキーのうち、ドメインコードが
+   * 文字列リテラルで引いていないものは全部ここに名前が載っていなければならない
+   * — でなければこの台帳は作られた日にしか正しくない。
+   */
+  it('lists every rulepack key the product never looks up', () => {
+    const roots = ['src/domain', 'src/lib', 'src/components']
+    const sources = roots.flatMap((root) => {
+      const dir = new URL(`../../${root}/`, import.meta.url)
+      return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+        .filter((name) => /\.tsx?$/.test(name) && !name.includes('.test.'))
+        .map((name) => readFileSync(new URL(name, dir), 'utf8'))
+    })
+    const looked = new Set(
+      sources
+        .join(' ')
+        .match(/'[a-z][a-zA-Z0-9]*(?:\.[a-zA-Z0-9-]+)+'/g)
+        ?.map((quoted) => quoted.slice(1, -1)) ?? [],
+    )
+    const ledger = new Set(fixture.unused.flatMap(({ kinds }) => kinds))
+    const orphans = [
+      ...new Set(jpMlitRulePack.entries.map(({ key }) => key)),
+    ].filter((key) => !looked.has(key) && !ledger.has(key))
+
+    expect(orphans, '台帳に無い未照会キー').toEqual([])
+  })
+
+  it('carries 折曲げ定着 の全長下限 as a reference to 直線定着, not a number', () => {
+    // この条項が fixture に無かったせいで resolveGirderEnd が下限に L1h を使い、
+    // 全長が条文より短く出ていた。参照先の kind をここで名指ししておく。
+    const total = fixture.constraints.find(
+      ({ kind }) => kind === 'anchorage.bent.total-length.minimum',
+    )!
+
+    expect(total).toBeDefined()
+    expect(total.table).toBe('5.3.4(5)(ｲ)(a)')
+    expect(total.printedPage).toBe(31)
+    expect(total.quote).toBe('全長は、表5.3.4 の直線定着の長さ以上とする。')
+    // 「フックありの定着の長さ」ではない — L1h は (ｲ) の適用条件であって下限ではない。
+    expect(total.referencesKind).toBe('anchorage.L1')
+    expect(total.quote).not.toContain('フックあり')
   })
 })

@@ -3,7 +3,22 @@
     "doc": "公共建築工事標準仕様書（建築工事編）",
     "edition": "令和7年版",
     "sha256": "8fd3c83ca92b01a26e53071efdb3e871e4b5672583f8473ba062cbcc45759acc",
-    "url": "https://www.mlit.go.jp/gobuild/content/001888816.pdf"
+    "url": "https://www.mlit.go.jp/gobuild/content/001888816.pdf",
+    "verifications": [
+      {
+        "date": "2026-08-21",
+        "by": "agent",
+        "method": "原本PDFを SHA-256 照合のうえ PyMuPDF の get_text() で該当頁を再抽出し、結合セルで乱れた読み順を手で組み直して全マスをルールパックの値と突き合わせた",
+        "tables": [
+          "表5.3.2",
+          "表5.3.4",
+          "表5.3.5"
+        ],
+        "cells": 77,
+        "result": "全マス一致（表5.3.2 の L1・L1h 22、表5.3.4 の L1・L2・L1h・L2h 44、表5.3.5 の La 11）",
+        "note": "転写と同じ人格による2回目の読みであって、人による独立検討ではない — したがって confidence は transcribed のままで、stated には上げない (R6・ADR-023)"
+      }
+    ]
   },
   "entries": [
     {
@@ -1630,6 +1645,65 @@
       "imageRead": false
     }
   ],
+  "excluded": [
+    {
+      "table": "表5.3.4",
+      "printedPage": 30,
+      "columns": [
+        "L3",
+        "L3h"
+      ],
+      "quote": "L3：小梁及びスラブの下端筋の直線定着の長さ。ただし、基礎耐圧スラブ及びこれを受ける小梁は除く。／ L3h：小梁の下端筋のフックありの定着の長さ",
+      "reason": "小梁・スラブは対象外 (ADR-005 — 柱と大梁だけを扱う)。転写漏れではなく意図した除外であることを、この項目が示す"
+    },
+    {
+      "table": "表5.3.5",
+      "printedPage": 31,
+      "columns": [
+        "Lb"
+      ],
+      "quote": "Lb：小梁及びスラブの上端筋の梁内折曲げ定着の投影定着長さ（片持小梁及び片持スラブを除く。）",
+      "reason": "同上 — 小梁・スラブ専用の列なので取らない (ADR-005)"
+    }
+  ],
+  "unused": [
+    {
+      "kinds": [
+        "anchorage.lightweight.addition",
+        "anchorage.La.lightweight.addition",
+        "lap.lightweight.addition"
+      ],
+      "quote": "軽量コンクリートの場合は、表の値に5d を加えたものとする。（表5.3.2 注3・表5.3.4 注6・表5.3.5 注3）",
+      "reason": "原文の注を転写してルールパックに載せてあるが、製品は軽量コンクリートかどうかを入力として受け取らないので、現状どの照会にも当たらない。値が間違っているのではなく使い道がまだない — 軽量の入力を足す時にそのまま効く"
+    },
+    {
+      "kinds": [
+        "anchorage.L1h",
+        "lap.L1h"
+      ],
+      "quote": "フック付き定着とする場合は、表の値からフック部分を除いた長さとする。（表5.3.4 注1・表5.3.2 注1）",
+      "reason": "5.3.4(5)(ｲ) で L1h は折曲げ定着の**適用条件**（「フックありの定着の長さを確保できない場合」）であって全長の下限ではない — 下限は (a) の直線定着 L1 だ。製品は直線 L1 が納まるかどうかだけで直線↔折曲げを分けるので、L1h はどの値も決めない。転写は残す（原文にある値だから）が、照会は当たらない"
+    },
+    {
+      "kinds": [
+        "anchorage.L2",
+        "anchorage.L2h"
+      ],
+      "quote": "割裂破壊のおそれのない箇所に定着する場合は、表5.3.4 の L2・L2h による。（表5.3.4 注2）",
+      "reason": "注2 が L2/L2h を「割裂破壊のおそれのない箇所」に限定するのに、その判定材料（横補強筋量・かぶり比など）を製品が入力として持たない。だから定着キーは一般値 L1/L1h 側に固定されている (R7)"
+    },
+    {
+      "kinds": [
+        "bend.inside-diameter",
+        "bend.hook90",
+        "bend.hook135",
+        "bend.hook180",
+        "bend.hook-tome"
+      ],
+      "quote": "鉄筋の折曲げ形状及び寸法は、表5.3.1 による。（5.3.4(1)・表5.3.1 折曲げ図）",
+      "reason": "数量には効かない — 1通則2) が「フックはないものとする」と定めるので設計長さは断面周長だ。効くのは 3D の加工形状だが、column.ts・girder.ts が描く points はかぶりを控除した矩形のままで、折曲げ内法直径もフック余長も反映していない。転写は残す（描く判断をした日にそのまま効く）が、今はどの照会にも当たらない (R12)"
+    }
+  ],
   "constraints": [
     {
       "table": "5.3.4(1)",
@@ -1641,6 +1715,17 @@
       },
       "prohibited": true,
       "imageRead": false
+    },
+    {
+      "table": "5.3.4(5)(ｲ)(a)",
+      "pdfPage": 37,
+      "printedPage": 31,
+      "kind": "anchorage.bent.total-length.minimum",
+      "conditions": {},
+      "quote": "全長は、表5.3.4 の直線定着の長さ以上とする。",
+      "referencesKind": "anchorage.L1",
+      "imageRead": false,
+      "note": "折曲げ定着の全長の下限は他の行への参照であって数値ではない — ルールパックに置ける形をしていないので constraints に入れ、組み立ては resolveGirderEnd が行う (ADR-002)。同じ条の (b) 余長8d と (c) 投影 La は数値なので entries 側にある"
     }
   ]
 }

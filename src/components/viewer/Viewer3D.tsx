@@ -105,7 +105,7 @@ type HoverTooltip =
         | 'size'
         | 'countPerMember'
         | 'lengthMm'
-        | 'inferred'
+        | 'confidence'
         | 'rules'
       >
     }
@@ -1720,14 +1720,22 @@ export function Viewer3D() {
                   aria-hidden="true"
                 />
                 {`${entry.kind} ${entry.ruleKey} ${entry.lengthMm}`}
-                {entry.rule.confidence === 'inferred' && (
+                {entry.rule.confidence !== 'stated' && (
                   <span
-                    className={styles.inferredMark}
+                    className={
+                      entry.rule.confidence === 'inferred'
+                        ? styles.inferredMark
+                        : styles.transcribedMark
+                    }
                     role="img"
-                    aria-label="未確認の規準値"
+                    aria-label={
+                      entry.rule.confidence === 'inferred'
+                        ? '原文に値のない規準値'
+                        : '独立検討待ちの規準値'
+                    }
                     title={entry.rule.label}
                   >
-                    ▲
+                    {entry.rule.confidence === 'inferred' ? '▲' : '△'}
                   </span>
                 )}
                 <SourceLink rule={entry.rule} />
@@ -1760,18 +1768,30 @@ export function Viewer3D() {
             <dt>{t(locale, 'viewer.tooltip.length')}</dt>
             <dd>
               {tooltip.line.lengthMm} mm
-              {/* 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 미확인 표시를 단다. */}
-              {tooltip.line.inferred && (
+              {/* 設計長さ에는 룰 유래 수치가 섞인다 — 内訳 행과 같은 등급 표시를 단다. */}
+              {tooltip.line.confidence !== 'stated' && (
                 <span
-                  className={styles.inferredMark}
+                  className={
+                    tooltip.line.confidence === 'inferred'
+                      ? styles.inferredMark
+                      : styles.transcribedMark
+                  }
                   role="img"
-                  aria-label="未確認の規準値"
+                  aria-label={
+                    tooltip.line.confidence === 'inferred'
+                      ? '原文に値のない規準値'
+                      : '独立検討待ちの規準値'
+                  }
                   title={tooltip.line.rules
-                    .filter(({ confidence }) => confidence === 'inferred')
+                    .filter(({ confidence }) =>
+                      tooltip.line.confidence === 'inferred'
+                        ? confidence === 'inferred'
+                        : confidence !== 'stated',
+                    )
                     .map(({ label }) => label)
                     .join('、')}
                 >
-                  ▲
+                  {tooltip.line.confidence === 'inferred' ? '▲' : '△'}
                 </span>
               )}
             </dd>

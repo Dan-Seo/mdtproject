@@ -182,6 +182,23 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
     expect([...new Set(referenced)].filter((id) => !known.has(id))).toEqual([])
   })
 
+  /**
+   * 반대 방향도 본다 — 어느 케이스도 구속하지 않는 항이 terms 에 남아 있으면
+   * 그 항은 전사돼 있을 뿐 아무것도 지키지 못한다. 실제로 L1h 가 그랬다:
+   * 折曲げ定着 全長의 하한이 L1h 에서 L1 로 바뀌자(5.3.4(5)(ｲ)(a)) L1h 는
+   * 어떤 값도 정하지 않게 됐고, 그대로 두면 出典이 거짓이 된다.
+   */
+  it('terms 에 어느 케이스도 쓰지 않는 항이 남아 있지 않다', () => {
+    const used = new Set(
+      fixture.cases.flatMap((testCase) => [
+        ...testCase.uses,
+        ...(testCase.deviation ? [testCase.deviation.term] : []),
+      ]),
+    )
+
+    expect(fixture.terms.filter((term) => !used.has(term.id))).toEqual([])
+  })
+
   it('각 用語는 出典 문서를 하나씩 가리킨다', () => {
     const known = new Set(fixture.sources.map((source) => source.id))
 

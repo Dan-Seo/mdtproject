@@ -37,6 +37,117 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('C1 主筋 本数')).toHaveValue(10)
   })
 
+  it('keeps a user change to 継手方式 in Project', () => {
+    render(<SectionTable />)
+
+    fireEvent.change(screen.getByLabelText('G1 継手方式'), {
+      target: { value: 'ガス圧接' },
+    })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    expect(section?.spliceMethod).toBe('ガス圧接')
+    expect(screen.getByLabelText('G1 継手方式')).toHaveValue('ガス圧接')
+  })
+
+  // 幅止め筋·腹筋은 断面一覧에 없으면 그 배근이 없다는 뜻이라 optional 이다
+  // (ADR-012). 그래서 「なし → 径을 고름」과 「이미 있는 径을 바꿈」이 서로 다른
+  // 경로를 타는데, 후자가 빠져 있었다 — 径을 두 번째로 고르면 값이 버려졌다.
+  it('keeps a second 腹筋 径 change, not just the first', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('G1 腹筋 径')
+    fireEvent.change(select, { target: { value: 'D10' } })
+    fireEvent.change(screen.getByLabelText('G1 腹筋 本数'), {
+      target: { value: '4' },
+    })
+    fireEvent.change(select, { target: { value: 'D13' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.sideBar?.size).toBe('D13')
+    // 径을 바꿨다고 이미 입력한 本数가 씨앗값으로 되돌아가면 안 된다
+    expect(section.sideBar?.count).toBe(4)
+    expect(select).toHaveValue('D13')
+  })
+
+  it('keeps a second 幅止め筋 径 change and holds the pitch', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('G1 幅止め筋 径')
+    fireEvent.change(select, { target: { value: 'D10' } })
+    fireEvent.change(screen.getByLabelText('G1 幅止め筋 ピッチ'), {
+      target: { value: '600' },
+    })
+    fireEvent.change(select, { target: { value: 'D13' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.widthTie?.size).toBe('D13')
+    expect(section.widthTie?.pitch).toBe(600)
+    expect(select).toHaveValue('D13')
+  })
+
+  // ADR-012 — 断面一覧の値は入力だ。あばら筋のピッチを種に借りると、利用者が
+  // 幅止め筋について一度も入れていない数字が 1通則7) の割付本数を決めてしまう。
+  it('does not borrow the あばら筋 pitch when 幅止め筋 is switched back on', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('G1 幅止め筋 径')
+    fireEvent.change(select, { target: { value: '' } })
+    fireEvent.change(select, { target: { value: 'D13' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.widthTie?.pitch).toBe(0)
+    expect(section.widthTie?.pitch).not.toBe(section.stirrup.pitch)
+  })
+
+  it('drops the field entirely when 腹筋 is set back to なし', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('G1 腹筋 径')
+    fireEvent.change(select, { target: { value: 'D10' } })
+    fireEvent.change(select, { target: { value: '' } })
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    // undefined 로 두는 게 아니라 키 자체가 없어야 한다 — 直列化했을 때
+    // 「배근 없음」과 「입력 안 함」이 같은 모양이 된다 (ADR-012)
+    expect('sideBar' in section).toBe(false)
+  })
+
+  it('locks the 腹筋 number inputs while the field is なし', () => {
+    render(<SectionTable />)
+
+    // 「なし」인 동안 열어 두면 updater 가 current 를 그대로 돌려주므로 입력이
+    // 아무 흔적 없이 사라진다. 조용한 no-op 대신 막는다.
+    // 샘플 断面은 腹筋을 가지므로 처음엔 열려 있다.
+    expect(screen.getByLabelText('G1 腹筋 本数')).toBeEnabled()
+
+    fireEvent.change(screen.getByLabelText('G1 腹筋 径'), {
+      target: { value: '' },
+    })
+
+    expect(screen.getByLabelText('G1 腹筋 本数')).toBeDisabled()
+    expect(screen.getByLabelText('G1 腹筋 余長')).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('G1 腹筋 径'), {
+      target: { value: 'D13' },
+    })
+
+    expect(screen.getByLabelText('G1 腹筋 本数')).toBeEnabled()
+  })
+
   it('keeps a user change to かぶり条件 in Project', () => {
     render(<SectionTable />)
 
@@ -117,79 +228,6 @@ describe('SectionTable', () => {
       .project.sections.find(({ id }) => id === 'section-G1')
     if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
     expect(section.stirrup.startOffsetMm).toBe(0)
-  })
-
-  it('keeps a user change to 大梁 端部 主筋 本数 in Project', () => {
-    // 端部欄は表がそう分けている表だけが持つ — 未入力は「位置による差がない」
-    render(<SectionTable />)
-
-    fireEvent.change(screen.getByLabelText('G1 端部 主筋 上 本数'), {
-      target: { value: '7' },
-    })
-
-    const section = useAppStore
-      .getState()
-      .project.sections.find(({ id }) => id === 'section-G1')
-    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
-    expect(section.main.endCount).toEqual({ topCount: 7 })
-  })
-
-  it('drops 端部 主筋 本数 back to undefined when the field is emptied', () => {
-    // 空欄に 0 を書き込むと「端部に主筋がない」という図面にない断面になる
-    render(<SectionTable />)
-
-    const field = screen.getByLabelText('G1 端部 主筋 上 本数')
-    fireEvent.change(field, { target: { value: '7' } })
-    fireEvent.change(field, { target: { value: '' } })
-
-    const section = useAppStore
-      .getState()
-      .project.sections.find(({ id }) => id === 'section-G1')
-    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
-    expect(section.main.endCount).toBeUndefined()
-    expect(field).toHaveValue(null)
-  })
-
-  it('keeps 上端 alone as a 端部 difference without writing 下端', () => {
-    render(<SectionTable />)
-
-    fireEvent.change(screen.getByLabelText('G1 端部 主筋 上 本数'), {
-      target: { value: '7' },
-    })
-    fireEvent.change(screen.getByLabelText('G1 端部 主筋 下 本数'), {
-      target: { value: '5' },
-    })
-    fireEvent.change(screen.getByLabelText('G1 端部 主筋 下 本数'), {
-      target: { value: '' },
-    })
-
-    const section = useAppStore
-      .getState()
-      .project.sections.find(({ id }) => id === 'section-G1')
-    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
-    expect(section.main.endCount).toEqual({ topCount: 7 })
-  })
-
-  it('keeps a user change to 大梁 止め位置 in Project', () => {
-    // 数量積算基準 2（３）梁1) が設計図書に委ねた値なので入力で受ける
-    render(<SectionTable />)
-
-    fireEvent.change(screen.getByLabelText('G1 主筋 止め位置'), {
-      target: { value: '1200' },
-    })
-
-    const section = useAppStore
-      .getState()
-      .project.sections.find(({ id }) => id === 'section-G1')
-    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
-    expect(section.main.cutoffMm).toBe(1200)
-  })
-
-  it('does not offer 端部 or 止め位置 on a 柱 row', () => {
-    render(<SectionTable />)
-
-    expect(screen.queryByLabelText('C1 端部 主筋 上 本数')).toBeNull()
-    expect(screen.queryByLabelText('C1 主筋 止め位置')).toBeNull()
   })
 
   it('selects a representative member when a section row is clicked', () => {

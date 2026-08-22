@@ -45,7 +45,7 @@ const ALLOWED_PROPERTY_KEYS: ReadonlySet<string> = new Set([
   '$exception_level',
   '$exception_handled',
   // 명시 capture 호출부가 싣는 속성. 전부 enum(locale·source·axis·mode·stage·
-  // pane)·버킷(size_bucket)·불리언(has_inferred)·룰팩 key 배열(inferred_rules)
+  // pane)·버킷(size_bucket)·불리언(has_inferred·has_unverified)·룰팩 key 배열(inferred_rules)
   // 이라 호출부에서 이미 도면 값이 실릴 자리가 없다.
   'locale',
   'source',
@@ -55,6 +55,7 @@ const ALLOWED_PROPERTY_KEYS: ReadonlySet<string> = new Set([
   'pane',
   'size_bucket',
   'has_inferred',
+  'has_unverified',
   'inferred_rules',
 ])
 

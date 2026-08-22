@@ -353,6 +353,12 @@ describe('SectionImport', () => {
       />,
     )
 
+    const before = useAppStore
+      .getState()
+      .project.sections.find(({ mark }) => mark === 'G1')
+    if (before?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    const cutoffBefore = before.main.cutoffFromSupportFaceMm
+
     const row = screen.getByTestId('section-import-candidate-G1-none')
     expect(row).toHaveTextContent('端部 上5・下4')
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
@@ -363,12 +369,12 @@ describe('SectionImport', () => {
     if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
     expect(section.main).toMatchObject({
       size: 'D25',
-      topCount: 4,
-      bottomCount: 4,
-      endCount: { topCount: 5, bottomCount: 4 },
+      top: { endCount: 5, centerCount: 4 },
+      bottom: { endCount: 4, centerCount: 4 },
     })
-    // 止め位置は断面一覧にない — 埋めれば図面にない長さで質量を出す
-    expect(section.main.cutoffMm).toBeUndefined()
+    // カットオフ位置は断面リストから読まない — 反映が元の入力を
+    // 動かさないことを見る。埋めれば図面にない長さで質量を出す。
+    expect(section.main.cutoffFromSupportFaceMm).toBe(cutoffBefore)
   })
 
   it('names the unreadable list even when another list produced candidates', () => {

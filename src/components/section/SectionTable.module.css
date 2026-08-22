@@ -87,27 +87,23 @@
 }
 
 .compoundField,
-.girderMainField {
+.girderMainField,
+.girderDetailField {
   display: flex;
   align-items: center;
   gap: var(--space-xxs);
+}
+
+/* 幅止·腹筋은 항목이 둘이라 한 줄에 다 넣으면 표가 가로로 터진다. */
+.girderDetailField {
+  flex-wrap: wrap;
+}
+
+.notApplicable {
+  color: var(--text-muted);
 }
 
 .girderMainField {
   display: grid;
   grid-template-columns: auto 52px auto 64px auto 52px;
-}
-
-/* 中央欄・端部欄・止め位置の三段。端部欄と止め位置は表がそう分けている図面だけが埋める */
-.girderMainCell {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xxs);
-}
-
-.girderSubField {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xxs);
-  color: var(--text-muted);
 }

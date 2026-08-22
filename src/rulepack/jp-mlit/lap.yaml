@@ -5,8 +5,8 @@
   value: 45
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc18帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc18帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -15,8 +15,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc18帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc18帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -25,8 +25,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -35,8 +35,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -45,8 +45,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -55,8 +55,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -65,8 +65,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -75,8 +75,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -85,8 +85,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -95,8 +95,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -105,8 +105,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -115,8 +115,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -125,8 +125,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -135,8 +135,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -145,8 +145,8 @@
   value: 50
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc18帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc18帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -155,8 +155,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc18帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc18帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -165,8 +165,8 @@
   value: 45
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -175,8 +175,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -185,8 +185,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -195,8 +195,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -205,8 +205,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -215,8 +215,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -225,8 +225,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -235,8 +235,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -245,8 +245,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -255,8 +255,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -265,8 +265,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -275,8 +275,8 @@
   value: 25
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -285,8 +285,8 @@
   value: 50
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -295,8 +295,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc21帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc21帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -305,8 +305,8 @@
   value: 45
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -315,8 +315,8 @@
   value: 45
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -325,8 +325,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -335,8 +335,8 @@
   value: 35
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc24-27帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc24-27帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -345,8 +345,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -355,8 +355,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1
   label: 重ね継手長さ L1（フックなし）
@@ -365,8 +365,8 @@
   value: 40
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -375,8 +375,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -385,8 +385,8 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）
 
 - key: lap.L1h
   label: 重ね継手長さ L1h（フックあり）
@@ -395,5 +395,5 @@
   value: 30
   unit: d
   source: { ref: spec, section: 表5.3.2, page: 28 }
-  confidence: inferred
-  note: LLM転写 — 独立検討待ち（表5.3.2 Fc30-36帯）
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.2 Fc30-36帯）

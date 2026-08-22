@@ -72,6 +72,36 @@ export interface ColumnSection {
   }
 }
 
+/** 大梁 主筋 1段（上端または下端）の位置別本数。断面リストの端部・中央行に対応する。 */
+export interface GirderMainRow {
+  /** 端部（支点側）の本数 */
+  endCount: number
+  /** 中央の本数 */
+  centerCount: number
+}
+
+/**
+ * 位置別本数を「梁の全長にわたる主筋」と「そうでない主筋」に分けた結果。
+ *
+ * 数量積算基準 2（３）梁1) が長さを定めるのは全長にわたる主筋だけで、トップ筋・
+ * 補強筋等は設計図書に委ねられる。両位置に共通して立つ本数（少ない方）が通し筋、
+ * 差がカットオフ筋である。
+ */
+export interface GirderMainSplit {
+  throughCount: number
+  cutoffCount: number
+  /** カットオフ筋が立つ側。cutoffCount が 0 なら意味を持たない */
+  cutoffAt: '端部' | '中央'
+}
+
+export function splitGirderMainRow(row: GirderMainRow): GirderMainSplit {
+  return {
+    throughCount: Math.min(row.endCount, row.centerCount),
+    cutoffCount: Math.abs(row.endCount - row.centerCount),
+    cutoffAt: row.endCount >= row.centerCount ? '端部' : '中央',
+  }
+}
+
 export interface GirderSection {
   id: string
   kind: '大梁'
@@ -88,43 +118,48 @@ export interface GirderSection {
   spliceMethod: SpliceMethod
   main: {
     size: BarSize
-    /** 中央欄の上端主筋本数 */
-    topCount: number
-    /** 中央欄の下端主筋本数 */
-    bottomCount: number
+    /** 上端筋の位置別本数 — 断面リストの端部・中央行がそのまま入る */
+    top: GirderMainRow
+    /** 下端筋の位置別本数 */
+    bottom: GirderMainRow
     /**
-     * 端部欄の主筋本数。断面一覧が位置別に本数を分けている表だけが持つ —
-     * 省略は「位置による差がない」であって 0 ではない。
+     * カットオフ筋を柱面から梁の内側へ何 mm で切り止めるか。
      *
-     * 両端同値しか持たない。「Y3端／Y4端」のように左右で異なる表は、製品の
-     * Grid が通り芯ラベルを持たないのでどちらが始端かを決められない — 決めれば
-     * それは図面にない向きを製品が作ったことになる (ADR-004)。
-     *
-     * 上下も別々に省略できる。端部欄が上端だけ本数を増やす表は珍しくなく、
-     * その表で下端に中央欄の値を書き写すと「図面がそう言った」ことになる。
+     * 数量積算基準 2（３）梁1) が「トップ筋、ハンチ部分の主筋、補強筋等は設計図書
+     * による」と委ねるので規準側に値がない — 断面一覧の入力である (ADR-012)。
+     * 端部と中央が同数（カットオフ筋がない）断面では使われない。
      */
-    endCount?: {
-      topCount?: number
-      bottomCount?: number
-    }
-    /**
-     * 柱面から主筋の止め位置（カットオフ）まで (mm)。
-     *
-     * 数量積算基準 2（３）梁1) は「梁の全長にわたる主筋」の長さだけを定め、
-     * 「トップ筋、ハンチ部分の主筋、補強筋等は設計図書による」と委ねる。
-     * つまり全長にわたらない主筋の長さは規準が持たない値なので、単位質量
-     * (JIS 委任) や初期オフセットと同じく断面一覧の入力である (ADR-012)。
-     *
-     * 一端につき止め位置は一つとする — 端部筋がここで止まり、中央筋がここから
-     * 始まる。位置による本数差があるのに未入力なら、その大梁は算定しない。
-     */
-    cutoffMm?: number
+    cutoffFromSupportFaceMm: number
   }
   stirrup: {
     size: BarSize
     pitch: number
     /** 両端の柱面から第1・最終あばら筋をどれだけ離すか。規準に値はない — 断面一覧の入力である (ADR-012) */
     startOffsetMm: number
+  }
+  /**
+   * 幅止め筋。断面一覧に記載のない梁には無い配筋なので任意項目とし、
+   * `undefined` は「配筋なし」を意味する — 製品が勝手に足さない (ADR-012)。
+   * 設計長さは数量積算基準 1通則3) が断面の設計幅と定めるので入力は径とピッチだけ。
+   */
+  widthTie?: {
+    size: BarSize
+    pitch: number
+  }
+  /**
+   * 腹筋。`undefined` は「配筋なし」。本数は図面が「2-D10」と記載する数そのもの
+   * なので 1通則7) の割付ではない。
+   */
+  sideBar?: {
+    size: BarSize
+    count: number
+    /**
+     * 梁の両端で内法を越えて伸びる余長 (mm)。数量積算基準 2（３）梁3) は
+     * これを 1通則6) に委ね、同項は設計図書に記載がなければ JASS 5 準用と
+     * する。JASS 5 は有料規格で未確保、標準仕様書5章には腹筋の記述が一切
+     * ないため規準値を取れない — 設計図書の値を入力として受け取る (R9②)。
+     */
+    extraLengthMm: number
   }
 }
 

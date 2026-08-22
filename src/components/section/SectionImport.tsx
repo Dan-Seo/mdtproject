@@ -7,11 +7,7 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import {
-  sectionMarkLabel,
-  type GirderSection,
-  type Section,
-} from '@/domain/model/member'
+import { sectionMarkLabel, type Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
@@ -115,29 +111,6 @@ function uniqueSectionId(project: Project, mark: string): string {
   return `${base}-${suffix}`
 }
 
-/**
- * 端部欄は表がそう位置を分けている図面だけが持つ。読めなかった図面では
- * `endCount` に触れない — 中央欄の値を書き写せば、図面にない断面を作る。
- */
-function girderMainFrom(
-  main: GirderSection['main'],
-  parsed: NonNullable<SectionCandidate['girderMain']>,
-): GirderSection['main'] {
-  const { endTopCount, endBottomCount, ...center } = parsed
-  const endCount = Object.fromEntries(
-    Object.entries({
-      topCount: endTopCount,
-      bottomCount: endBottomCount,
-    }).filter(([, count]) => count !== undefined),
-  )
-
-  return {
-    ...main,
-    ...center,
-    ...(Object.keys(endCount).length === 0 ? {} : { endCount }),
-  }
-}
-
 function applyParsedFields(
   section: Section,
   candidate: SectionCandidate,
@@ -171,7 +144,28 @@ function applyParsedFields(
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
       ...(candidate.girderMain === undefined
         ? {}
-        : { main: girderMainFrom(section.main, candidate.girderMain) }),
+        : {
+            main: {
+              ...section.main,
+              size: candidate.girderMain.size,
+              // 端部欄を持つ表だけが端部の本数を別に寄こす。持たない表は全長で
+              // 同じ本数なので中央の値をそのまま端部にも入れる。左右で端部が
+              // 違う表は取り込まない — parse.ts が 主筋端部左右相違 で空欄に
+              // 残す (ADR-021)。
+              top: {
+                endCount:
+                  candidate.girderMain.endTopCount ??
+                  candidate.girderMain.topCount,
+                centerCount: candidate.girderMain.topCount,
+              },
+              bottom: {
+                endCount:
+                  candidate.girderMain.endBottomCount ??
+                  candidate.girderMain.bottomCount,
+                centerCount: candidate.girderMain.bottomCount,
+              },
+            },
+          }),
       ...(candidate.stirrup === undefined
         ? {}
         : {
@@ -243,7 +237,9 @@ function sectionSummary(section: Section): string {
   if (section.kind === '柱') {
     return `${sectionMarkLabel(section)} / ${section.b}×${section.d} / ${section.main.count}-${section.main.size} / ${section.hoop.size}@${section.hoop.pitch}`
   }
-  return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${section.main.topCount}・下${section.main.bottomCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
+  const { top, bottom } = section.main
+
+  return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${top.endCount}／${top.centerCount}・下${bottom.endCount}／${bottom.centerCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
 }
 
 function candidateFields(candidate: SectionCandidate): string[] {

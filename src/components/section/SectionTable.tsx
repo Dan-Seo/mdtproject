@@ -4,6 +4,7 @@ import { useRef, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
+  SPLICE_METHODS,
   sectionMarkLabel,
   type BarSize,
   type ColumnSection,
@@ -11,6 +12,7 @@ import {
   type Finish,
   type GirderSection,
   type Section,
+  type SpliceMethod,
   type SteelGrade,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
@@ -22,6 +24,8 @@ import styles from './SectionTable.module.css'
 const barSizes: readonly BarSize[] = BAR_SIZES
 
 const steelGrades: SteelGrade[] = ['SD295', 'SD345', 'SD390']
+
+const spliceMethods: readonly SpliceMethod[] = SPLICE_METHODS
 
 const exposures: Exposure[] = ['屋内', '屋外']
 
@@ -55,11 +59,15 @@ function NumberInput({
   onChange,
   // 치수·ピッチ·本数는 0이 성립하지 않지만 初期オフセット은 0이 정상값이다.
   minimum = 1,
+  // 幅止め筋·腹筋처럼 「なし」가 성립하는 항목은 그 배근이 없을 때 입력을 막는다.
+  // 열어 두면 updater 가 current 를 그대로 돌려줘 입력이 흔적 없이 사라진다.
+  disabled = false,
 }: {
   label: string
   value: number
   onChange(value: number): void
   minimum?: number
+  disabled?: boolean
 }) {
   return (
     <input
@@ -68,45 +76,10 @@ function NumberInput({
       min={minimum}
       step="1"
       value={value}
+      disabled={disabled}
       aria-label={label}
       onChange={(event) => {
         const next = boundedNumber(event.currentTarget.value, minimum)
-        if (next !== null) onChange(next)
-      }}
-    />
-  )
-}
-
-/**
- * 断面一覧が値を持たないことがある項目。空欄は 0 ではなく「入力なし」で、
- * 0 を書き込めば図面にない断面（端部に主筋がない・止め位置が柱面）になる。
- */
-function OptionalNumberInput({
-  label,
-  value,
-  onChange,
-  minimum = 1,
-}: {
-  label: string
-  value: number | undefined
-  onChange(value: number | undefined): void
-  minimum?: number
-}) {
-  return (
-    <input
-      className={styles.numberInput}
-      type="number"
-      min={minimum}
-      step="1"
-      value={value ?? ''}
-      aria-label={label}
-      onChange={(event) => {
-        const raw = event.currentTarget.value
-        if (raw.trim() === '') {
-          onChange(undefined)
-          return
-        }
-        const next = boundedNumber(raw, minimum)
         if (next !== null) onChange(next)
       }}
     />
@@ -138,6 +111,39 @@ function BarSizeSelect({
   )
 }
 
+/**
+ * 幅止め筋·腹筋은 断面一覧에 없으면 그 배근이 없는 것이다 — 「なし」를 고르면
+ * 필드 자체를 지운다. 제품이 있는 셈 치고 계상하지 않는다 (ADR-012).
+ */
+function OptionalBarSizeSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: BarSize | null
+  onChange(value: BarSize | null): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value ?? ''}
+      aria-label={label}
+      onChange={(event) => {
+        const next = event.currentTarget.value
+        onChange(next === '' ? null : (next as BarSize))
+      }}
+    >
+      <option value="">なし</option>
+      {barSizes.map((size) => (
+        <option key={size} value={size}>
+          {size}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function GradeSelect({
   label,
   value,
@@ -157,6 +163,33 @@ function GradeSelect({
       {steelGrades.map((grade) => (
         <option key={grade} value={grade}>
           {grade}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+function SpliceMethodSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: SpliceMethod
+  onChange(value: SpliceMethod): void
+}) {
+  return (
+    <select
+      className={styles.select}
+      value={value}
+      aria-label={label}
+      onChange={(event) =>
+        onChange(event.currentTarget.value as SpliceMethod)
+      }
+    >
+      {spliceMethods.map((method) => (
+        <option key={method} value={method}>
+          {method}
         </option>
       ))}
     </select>
@@ -273,22 +306,39 @@ function ColumnMainField({
   )
 }
 
-/**
- * 端部欄の本数を一つ差し替える。上下とも空になったら `endCount` ごと落とす —
- * 空の器が残ると「位置別に分かれた表」に見える。
- */
-function withEndCount(
-  main: GirderSection['main'],
-  key: 'topCount' | 'bottomCount',
-  value: number | undefined,
-): GirderSection['main'] {
-  const next = { ...main.endCount, [key]: value }
-  const kept = Object.fromEntries(
-    Object.entries(next).filter(([, count]) => count !== undefined),
-  )
+function GirderMainCountInput({
+  section,
+  row,
+  place,
+  update,
+}: {
+  section: GirderSection
+  row: 'top' | 'bottom'
+  place: '端部' | '中央'
+  update(updater: (section: Section) => Section): void
+}) {
+  const key = place === '端部' ? 'endCount' : 'centerCount'
 
-  if (Object.keys(kept).length === 0) return { ...main, endCount: undefined }
-  return { ...main, endCount: kept }
+  return (
+    <NumberInput
+      label={`${sectionMarkLabel(section)} 主筋 ${
+        row === 'top' ? '上' : '下'
+      } ${place} 本数`}
+      value={section.main[row][key]}
+      onChange={(count) =>
+        update((current) => {
+          if (current.kind !== '大梁') return current
+          return {
+            ...current,
+            main: {
+              ...current.main,
+              [row]: { ...current.main[row], [key]: count },
+            },
+          }
+        })
+      }
+    />
+  )
 }
 
 function GirderMainField({
@@ -298,67 +348,52 @@ function GirderMainField({
   section: GirderSection
   update(updater: (section: Section) => Section): void
 }) {
-  const updateMain = (
-    updater: (main: GirderSection['main']) => GirderSection['main'],
-  ) =>
-    update((current) => {
-      if (current.kind !== '大梁') return current
-      return { ...current, main: updater(current.main) }
-    })
-
   return (
-    <div className={styles.girderMainCell}>
-      <div className={styles.girderMainField}>
-        <span>上</span>
+    <div className={styles.girderMainField}>
+      {(['top', 'bottom'] as const).map((row) => (
+        <div key={row} className={styles.compoundField}>
+          <span>{row === 'top' ? '上' : '下'}</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="端部"
+            update={update}
+          />
+          <span aria-hidden="true">／</span>
+          <GirderMainCountInput
+            section={section}
+            row={row}
+            place="中央"
+            update={update}
+          />
+        </div>
+      ))}
+      <BarSizeSelect
+        label={`${sectionMarkLabel(section)} 主筋 径`}
+        value={section.main.size}
+        onChange={(size) =>
+          update((current) => {
+            if (current.kind !== '大梁') return current
+            return { ...current, main: { ...current.main, size } }
+          })
+        }
+      />
+      <div className={styles.compoundField}>
+        <span>カットオフ</span>
         <NumberInput
-          label={`${sectionMarkLabel(section)} 主筋 上 本数`}
-          value={section.main.topCount}
-          onChange={(topCount) =>
-            updateMain((main) => ({ ...main, topCount }))
+          label={`${sectionMarkLabel(section)} カットオフ位置`}
+          minimum={0}
+          value={section.main.cutoffFromSupportFaceMm}
+          onChange={(cutoffFromSupportFaceMm) =>
+            update((current) => {
+              if (current.kind !== '大梁') return current
+              return {
+                ...current,
+                main: { ...current.main, cutoffFromSupportFaceMm },
+              }
+            })
           }
         />
-        <span>−</span>
-        <BarSizeSelect
-          label={`${sectionMarkLabel(section)} 主筋 径`}
-          value={section.main.size}
-          onChange={(size) => updateMain((main) => ({ ...main, size }))}
-        />
-        <span>下</span>
-        <NumberInput
-          label={`${sectionMarkLabel(section)} 主筋 下 本数`}
-          value={section.main.bottomCount}
-          onChange={(bottomCount) =>
-            updateMain((main) => ({ ...main, bottomCount }))
-          }
-        />
-      </div>
-      <div className={styles.girderSubField}>
-        <span>端部</span>
-        <span>上</span>
-        <OptionalNumberInput
-          label={`${sectionMarkLabel(section)} 端部 主筋 上 本数`}
-          value={section.main.endCount?.topCount}
-          onChange={(topCount) =>
-            updateMain((main) => withEndCount(main, 'topCount', topCount))
-          }
-        />
-        <span>下</span>
-        <OptionalNumberInput
-          label={`${sectionMarkLabel(section)} 端部 主筋 下 本数`}
-          value={section.main.endCount?.bottomCount}
-          onChange={(bottomCount) =>
-            updateMain((main) => withEndCount(main, 'bottomCount', bottomCount))
-          }
-        />
-      </div>
-      <div className={styles.girderSubField}>
-        <span>止め位置</span>
-        <OptionalNumberInput
-          label={`${sectionMarkLabel(section)} 主筋 止め位置`}
-          value={section.main.cutoffMm}
-          onChange={(cutoffMm) => updateMain((main) => ({ ...main, cutoffMm }))}
-        />
-        <span>mm</span>
       </div>
     </div>
   )
@@ -413,6 +448,118 @@ function ShearField({
               : {
                   ...current,
                   stirrup: { ...current.stirrup, startOffsetMm },
+                },
+          )
+        }
+      />
+    </div>
+  )
+}
+
+/**
+ * M3c の日本固有詳細 — 幅止め筋と腹筋。どちらも大梁だけに置く。
+ * 幅止め筋を挙げる数量積算基準 1通則3) の部材は基礎梁・梁・壁梁・壁で柱を含まず、
+ * 腹筋を扱う 2（３）梁3) も梁の条項だからである。
+ */
+function GirderDetailField({
+  section,
+  update,
+}: {
+  section: GirderSection
+  update(updater: (section: Section) => Section): void
+}) {
+  const { widthTie, sideBar } = section
+
+  return (
+    <div className={styles.girderDetailField}>
+      <span>幅止</span>
+      <OptionalBarSizeSelect
+        label={`${sectionMarkLabel(section)} 幅止め筋 径`}
+        value={widthTie?.size ?? null}
+        onChange={(size) =>
+          update((current) => {
+            if (current.kind !== '大梁') return current
+            if (size === null) {
+              const next = { ...current }
+              delete next.widthTie
+              return next
+            }
+            return {
+              ...current,
+              // ピッチは断面一覧の入力だ (ADR-012)。規準に幅止め筋のピッチはなく、
+              // あばら筋の値を借りれば利用者が入れていない数字が 1通則7) の
+              // 割付本数に入ってしまう。0 ＝ 未入力としてカットオフ位置と同じく
+              // 道具側に判定させる (ADR-021 ④)。
+              widthTie: { size, pitch: current.widthTie?.pitch ?? 0 },
+            }
+          })
+        }
+      />
+      <span aria-hidden="true">@</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 幅止め筋 ピッチ`}
+        disabled={widthTie === undefined}
+        minimum={0}
+        value={widthTie?.pitch ?? 0}
+        onChange={(pitch) =>
+          update((current) =>
+            current.kind !== '大梁' || current.widthTie === undefined
+              ? current
+              : { ...current, widthTie: { ...current.widthTie, pitch } },
+          )
+        }
+      />
+      <span>腹筋</span>
+      <OptionalBarSizeSelect
+        label={`${sectionMarkLabel(section)} 腹筋 径`}
+        value={sideBar?.size ?? null}
+        onChange={(size) =>
+          update((current) => {
+            if (current.kind !== '大梁') return current
+            if (size === null) {
+              const next = { ...current }
+              delete next.sideBar
+              return next
+            }
+            return {
+              ...current,
+              sideBar: {
+                size,
+                // 本数の種は両側面に1本ずつの2本。余長は 0 —
+                // JASS 5 が未確保で規準値がないので、入れないかぎり計上しない (R9②)。
+                count: current.sideBar?.count ?? 2,
+                extraLengthMm: current.sideBar?.extraLengthMm ?? 0,
+              },
+            }
+          })
+        }
+      />
+      <span aria-hidden="true">×</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 腹筋 本数`}
+        disabled={sideBar === undefined}
+        value={sideBar?.count ?? 2}
+        onChange={(count) =>
+          update((current) =>
+            current.kind !== '大梁' || current.sideBar === undefined
+              ? current
+              : { ...current, sideBar: { ...current.sideBar, count } },
+          )
+        }
+      />
+      <span>余長</span>
+      <NumberInput
+        label={`${sectionMarkLabel(section)} 腹筋 余長`}
+        disabled={sideBar === undefined}
+        minimum={0}
+        value={sideBar?.extraLengthMm ?? 0}
+        onChange={(extraLengthMm) =>
+          update((current) =>
+            current.kind !== '大梁' || current.sideBar === undefined
+              ? current
+              : {
+                  ...current,
+                  sideBar: { ...current.sideBar, extraLengthMm },
                 },
           )
         }
@@ -479,8 +626,10 @@ export function SectionTable() {
             <th scope="col">断面</th>
             <th scope="col">主筋</th>
             <th scope="col">帯筋 / あばら筋</th>
+            <th scope="col">幅止め筋 / 腹筋</th>
             <th scope="col">Fc</th>
             <th scope="col">grade</th>
+            <th scope="col">継手方式</th>
             <th scope="col">かぶり条件</th>
           </tr>
         </thead>
@@ -536,6 +685,17 @@ export function SectionTable() {
                   <ShearField section={section} update={updateCurrent} />
                 </td>
                 <td>
+                  {section.kind === '大梁' ? (
+                    <GirderDetailField
+                      section={section}
+                      update={updateCurrent}
+                    />
+                  ) : (
+                    // 柱には置かない配筋なので、空欄ではなく「対象外」と示す。
+                    <span className={styles.notApplicable}>—</span>
+                  )}
+                </td>
+                <td>
                   <NumberInput
                     label={`${sectionMarkLabel(section)} Fc`}
                     value={section.fc}
@@ -550,6 +710,18 @@ export function SectionTable() {
                     value={section.grade}
                     onChange={(grade) =>
                       updateCurrent((current) => ({ ...current, grade }))
+                    }
+                  />
+                </td>
+                <td>
+                  <SpliceMethodSelect
+                    label={`${sectionMarkLabel(section)} 継手方式`}
+                    value={section.spliceMethod}
+                    onChange={(spliceMethod) =>
+                      updateCurrent((current) => ({
+                        ...current,
+                        spliceMethod,
+                      }))
                     }
                   />
                 </td>
