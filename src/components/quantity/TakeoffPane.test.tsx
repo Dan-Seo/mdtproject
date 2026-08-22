@@ -36,7 +36,11 @@ const { capture, captureException } = vi.hoisted(() => ({
   captureException: vi.fn(),
 }))
 
-vi.mock('@/lib/telemetry', () => ({ capture, captureException }))
+vi.mock('@/lib/telemetry', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/telemetry')>()),
+  capture,
+  captureException,
+}))
 
 function takeoffLines() {
   const { result } = renderHook(() => useTakeoff())
@@ -746,7 +750,7 @@ describe('TakeoffPane', () => {
       expect(capture).toHaveBeenCalledWith(
         'takeoff_exported',
         // サンプル案件は耐震壁が入って内訳が50行になり、'small'(<50) の区分を
-        // 出た (ADR-024)。ここが見張っているのは区分を送ることと生の行数を
+        // 出た (ADR-025)。ここが見張っているのは区分を送ることと生の行数を
         // 送らないことなので、区分の値自体は事実に合わせて更新する。
         expect.objectContaining({ size_bucket: 'medium' }),
       ),

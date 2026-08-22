@@ -1,6 +1,30 @@
 // UC-3: 断面一覧 수정 → 数量 재계산 (파생 상태가 저장되지 않고 재계산되는지)
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+// 自動保存 (M4) が前の筋書きの編集を復元する。どの筋書きもサンプル案件から
+// 始めたいので、最初の着地で記録を消してから読み直す。
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
 

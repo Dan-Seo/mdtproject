@@ -138,7 +138,7 @@ function applyParsedFields(
       ...section,
       mark: candidate.mark,
       // 形状は寸法と一組で入る。「600φ」を b×d の枠に落とすと直径が辺長に
-      // なって周長が変わる — 片方だけ反映しない (ADR-026)
+      // なって周長が変わる — 片方だけ反映しない (ADR-027)
       ...(candidate.shape === undefined ? {} : { shape: candidate.shape }),
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.d === undefined ? {} : { d: candidate.d }),

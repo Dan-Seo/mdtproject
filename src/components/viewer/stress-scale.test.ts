@@ -15,7 +15,7 @@ import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { jpMlitRulePack } from '@/rulepack'
 
-import { buildingLayout } from './building'
+import { buildingLayout } from '@/lib/viewer/building'
 
 /**
  * useTakeoff.ts의 buildTakeoff와 같은 부재 순회다. 부하 시험 픽스처는 항상

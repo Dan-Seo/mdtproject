@@ -1,13 +1,15 @@
-import type {
-  ColumnSection,
-  ColumnPosition,
-  GirderPosition,
-  GirderSection,
-  Member,
-  Opening,
-  Section,
-  ShearBarSize,
-  SlabPosition,
+import {
+  MEMBER_KINDS,
+  type ColumnSection,
+  type ColumnPosition,
+  type GirderPosition,
+  type GirderSection,
+  type Member,
+  type MemberKind,
+  type Opening,
+  type Section,
+  type ShearBarSize,
+  type SlabPosition,
 } from './member'
 import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
@@ -39,15 +41,15 @@ import { coverConditions } from '../rules/lookup'
 // v8 (2026-08-22): 耐震壁を部材として受け取る。MemberKind に '耐震壁'、Section に
 //   WallSection が加わり、Member.position は大梁と同じ辺の位置を使う。数量積算基準
 //   2（５）壁1)（壁式構造以外）と、躯体の区分（５）壁「柱、梁、床板等に接する垂直材の
-//   内法部分」に対応する — 壁式構造の壁（2）は扱わない (ADR-024)。
+//   内法部分」に対応する — 壁式構造の壁（2）は扱わない (ADR-025)。
 // v9 (2026-08-22): ColumnSection に必須フィールド shape を追加。円形柱は b・d を
 //   ともに直径にする。数量で形状を見るのは 1通則2)「断面の設計寸法による周長」
 //   だけで、円形断面ではそれが円周になる — 省略可能にすると「記載なし＝矩形」と
-//   いう黙った既定値になるので必須にする (ADR-026)。
+//   いう黙った既定値になるので必須にする (ADR-027)。
 // v10 (2026-08-22): 床板（スラブ）を部材として受け取る。MemberKind に '床板'、
 //   Section に SlabSection が加わり、Member.position はベイ（通り芯で囲まれた
 //   1区画）の原点側格子点を指す。数量積算基準 2（４）床板 と、躯体の区分（４）
-//   「柱、梁等に接する水平材の内法部分」に対応する (ADR-027)。SlabSection が
+//   「柱、梁等に接する水平材の内法部分」に対応する (ADR-028)。SlabSection が
 //   exposure を持たないのは表5.3.6 の「スラブ、耐力壁以外の壁」行に屋内・屋外の
 //   区別がないからで、省略ではなく原文の構造である。
 // v11 (2026-08-22): Member に任意フィールド openings を追加。数量積算基準 1通則8)
@@ -55,7 +57,7 @@ import { coverConditions } from '../rules/lookup'
 //   に対応する。断面ではなく部材に付くのは、同じ符号の壁が何枚も建つのに窓は
 //   その1枚に開いているからだ。未指定は「開口なし」で、それが v10 までの JSON の
 //   意味とも一致する — それでも版を上げるのは、開口を受け取れる版とそうでない版で
-//   同じ案件の数量が変わるからである (ADR-028・R14)。
+//   同じ案件の数量が変わるからである (ADR-029・R14)。
 export const PROJECT_SCHEMA_VERSION = 11
 
 export interface Grid {
@@ -597,7 +599,7 @@ export interface SlabRun {
    *
    * 開口はベイ（＝部材）ごとに入力されるが、床板の鉄筋はランで測るので、
    * 欠除も3Dの切り欠きもラン座標で見る。ここで一度だけ直しておかないと、
-   * 数量と表示が別々にベイのオフセットを足し直して食い違う (ADR-028)。
+   * 数量と表示が別々にベイのオフセットを足し直して食い違う (ADR-029)。
    */
   openings: Opening[]
 }
@@ -934,6 +936,260 @@ export function serializeProject(project: Project): string {
   return JSON.stringify(project)
 }
 
+const isString = (value: unknown): boolean => typeof value === 'string'
+
+const isFiniteNumber = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isFinite(value)
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function hasShape(
+  value: unknown,
+  fields: Record<string, (field: unknown) => boolean>,
+): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(fields).every(([key, check]) => check(value[key]))
+  )
+}
+
+const isNumberArray = (value: unknown): boolean =>
+  Array.isArray(value) && value.every(isFiniteNumber)
+
+/** 呼び名＋本数のような小さな組を検める。 */
+const shapedAs =
+  (fields: Record<string, (field: unknown) => boolean>) =>
+  (value: unknown): boolean =>
+    hasShape(value, fields)
+
+const isMainRow = shapedAs({
+  endCount: isFiniteNumber,
+  centerCount: isFiniteNumber,
+})
+
+const isAxis = (value: unknown): boolean => value === 'X' || value === 'Y'
+
+/**
+ * 種別ごとに、**取り込んだ直後の計算が見守りなしに参照する**場だけを並べる。
+ *
+ * ここに無い場 (fc・grade・exposure・spliceMethod など) は、欠けてもルールパック
+ * 引きが名前のある例外で止める — どこで何が足りないかが画面に出る。
+ * 選んであるのは TypeError になる場 — それだけが「何が起きたか言えない落ち方」をする。
+ */
+const isBarRow = shapedAs({
+  size: isString,
+  pitch: isFiniteNumber,
+  startOffsetMm: isFiniteNumber,
+})
+
+/**
+ * 寸法の鍵は種別で違う。柱・大梁は b とせいだが、耐震壁・床板は thickness 一つ
+ * だ — 躯体の区分が壁を「内法部分」、床板を「内法部分」と定めるので、長さは
+ * 位置と隣の部材から出て断面には無い (ADR-025・ADR-028)。共通の場所で b を
+ * 求めると、正しい壁の記録が形違いとして弾かれる。
+ */
+const SECTION_FIELDS: Record<
+  MemberKind,
+  Record<string, (field: unknown) => boolean>
+> = {
+  柱: {
+    b: isFiniteNumber,
+    d: isFiniteNumber,
+    main: shapedAs({ size: isString, count: isFiniteNumber }),
+    hoop: isBarRow,
+  },
+  大梁: {
+    b: isFiniteNumber,
+    depth: isFiniteNumber,
+    main: shapedAs({
+      size: isString,
+      top: isMainRow,
+      bottom: isMainRow,
+      cutoffFromSupportFaceMm: isFiniteNumber,
+    }),
+    stirrup: isBarRow,
+  },
+  耐震壁: {
+    thickness: isFiniteNumber,
+    // 層数はそのまま本数の倍率だ。欠けると縦筋・横筋の本数が NaN になる。
+    layers: isFiniteNumber,
+    vertical: isBarRow,
+    horizontal: isBarRow,
+  },
+  床板: {
+    thickness: isFiniteNumber,
+    x: shapedAs({ top: isBarRow, bottom: isBarRow }),
+    y: shapedAs({ top: isBarRow, bottom: isBarRow }),
+  },
+}
+
+/**
+ * 位置の形も種別で違う。床板は格子点ではなく**ベイ**を指すので (ix, iy) と
+ * (ix+1, iy+1) の両方を引く — 形は柱と同じでも意味が違う。
+ */
+const POSITION_FIELDS: Record<
+  MemberKind,
+  Record<string, (field: unknown) => boolean>
+> = {
+  柱: { ix: isFiniteNumber, iy: isFiniteNumber },
+  大梁: { axis: isAxis, ix: isFiniteNumber, iy: isFiniteNumber },
+  耐震壁: { axis: isAxis, ix: isFiniteNumber, iy: isFiniteNumber },
+  床板: { ix: isFiniteNumber, iy: isFiniteNumber },
+}
+
+const isOpening = shapedAs({
+  id: isString,
+  xMm: isFiniteNumber,
+  yMm: isFiniteNumber,
+  widthMm: isFiniteNumber,
+  heightMm: isFiniteNumber,
+})
+
+const isMemberKind = (value: unknown): boolean =>
+  MEMBER_KINDS.includes(value as MemberKind)
+
+/**
+ * 骨格だけを検める。取り込む案件は他人が作った文字列で、schemaVersion しか
+ * 見ずに通すと形の違う JSON が Project として奥まで入る — 数量が NaN になるか
+ * 画面が落ちるかで、どちらも「読み込めなかった」より悪い。
+ *
+ * 検めるのは製品がすぐ添字を引く場所 (stories・members・sections・grid) と、
+ * 内訳書のセルにそのまま出る文字列だけだ。値の妥当性 (径が実在するか、
+ * 本数が正か) はここでは見ない — それは断面一覧の入力検査の持ち場で、
+ * ここで二重に持つと規準が二か所に分かれる。
+ */
+/**
+ * 形だけ通って中身の参照が切れている記録を切る。
+ *
+ * ここで見ないと、後から描画の途中で落ちる — useProjectPersistence の
+ * catch は loadProject が触った所 (最初の柱) しか見ないので、大梁の断面が
+ * 欠けている記録はそこを素通りして PaneBoundary に出る。
+ */
+interface ReferencedPosition {
+  axis?: 'X' | 'Y'
+  ix: number
+  iy: number
+}
+
+function hasIntactReferences(
+  grid: Grid,
+  sections: { id: string; kind: MemberKind }[],
+  stories: { id: string }[],
+  members: {
+    kind: MemberKind
+    sectionId: string
+    storyId: string
+    position: ReferencedPosition
+  }[],
+): boolean {
+  const sectionKinds = new Map(sections.map(({ id, kind }) => [id, kind]))
+  const storyIds = new Set(stories.map(({ id }) => id))
+  const { nx, ny } = gridPointCount(grid)
+
+  // 大梁・耐震壁は隣の交点まで伸びるので、その軸だけ一つ手前までだ。床板は
+  // ベイなので両軸とも一つ手前 — slabBay が (ix+1, iy+1) を引く。
+  const inGrid = (
+    kind: MemberKind,
+    { axis, ix, iy }: ReferencedPosition,
+  ): boolean => {
+    const spansX = kind === '床板' || axis === 'X'
+    const spansY = kind === '床板' || axis === 'Y'
+
+    return (
+      Number.isInteger(ix) &&
+      Number.isInteger(iy) &&
+      ix >= 0 &&
+      iy >= 0 &&
+      ix < nx - (spansX ? 1 : 0) &&
+      iy < ny - (spansY ? 1 : 0)
+    )
+  }
+
+  return members.every(
+    (member) =>
+      // 種別違いも切る。大梁が柱の断面を指すと buildingLayout が投げる。
+      sectionKinds.get(member.sectionId) === member.kind &&
+      storyIds.has(member.storyId) &&
+      // グリッドの外を指す位置は gridPoint が RangeError で投げ、全ペインが落ちる。
+      // その案件を自動保存が書くので、次の訪問でも同じ所で落ちる。
+      inGrid(member.kind, member.position),
+  )
+}
+
+function isProjectShape(value: unknown): boolean {
+  if (!isRecord(value)) return false
+
+  const { stories, sections, members, notes, unitMass } = value
+
+  return (
+    isString(value.name) &&
+    hasShape(value.grid, { xSpans: isNumberArray, ySpans: isNumberArray }) &&
+    // 空の stories は「階が無い案件」ではなく壊れた記録だ。製品は至る所で
+    // stories[0] を既定値に使う。
+    Array.isArray(stories) &&
+    stories.length > 0 &&
+    stories.every((story) =>
+      hasShape(story, { id: isString, name: isString, height: isFiniteNumber }),
+    ) &&
+    Array.isArray(sections) &&
+    sections.every(
+      (section) =>
+        hasShape(section, {
+          id: isString,
+          // 判別子は特別だ。ここが union の外の値だと、形は通ったまま
+          // 断面の枝分かれが選べず、算定の途中で落ちる。
+          kind: isMemberKind,
+          mark: isString,
+        }) &&
+        // せいも配筋の入力も種別で鍵が違う。共通の場所だけで済ませると、
+        // せい の欠けた断面が通って帯筋の加工寸法が NaN のまま内訳書の合計まで
+        // 流れ、main/hoop/stirrup の欠けた断面は generateColumnRebar の中で
+        // TypeError になる—どちらもこの関数が止めたかった結果そのものだ。
+        // 枝を選べるのは上で判別子を検めてあるからだ。
+        hasShape(section, SECTION_FIELDS[(section as Section).kind]),
+    ) &&
+    Array.isArray(members) &&
+    members.every(
+      (member) =>
+        hasShape(member, {
+          id: isString,
+          kind: isMemberKind,
+          sectionId: isString,
+          storyId: isString,
+        }) &&
+        // position が無ければ buildingLayout の `'axis' in member.position` が
+        // その場で TypeError になる。軸は 'X'/'Y' 以外を通さない —
+        // 三項演算子で Y に落ちて、図面に無い向きの大梁を黙って作る。
+        hasShape(member, {
+          position: shapedAs(POSITION_FIELDS[(member as Member).kind]),
+        }) &&
+        // 開口は無くてよい (「開口なし」の意) が、有るなら配列でなければ
+        // ならない — openingDeduction が中を読んで欠除量を出すからだ。
+        ((member as { openings?: unknown }).openings === undefined ||
+          (Array.isArray((member as { openings?: unknown }).openings) &&
+            ((member as { openings: unknown[] }).openings).every(isOpening))),
+    ) &&
+    (notes === undefined ||
+      (isRecord(notes) && Object.values(notes).every(isString))) &&
+    (unitMass === undefined ||
+      (isRecord(unitMass) && Object.values(unitMass).every(isFiniteNumber))) &&
+    // ここまでで 3 つの配列は形が済んでいる。残るのは互いの指し合いだ。
+    hasIntactReferences(
+      value.grid as Grid,
+      sections as { id: string; kind: MemberKind }[],
+      stories as { id: string }[],
+      members as {
+        kind: MemberKind
+        sectionId: string
+        storyId: string
+        position: ReferencedPosition
+      }[],
+    )
+  )
+}
+
 export function deserializeProject(json: string): Project {
   const parsed: unknown = JSON.parse(json)
 
@@ -946,6 +1202,10 @@ export function deserializeProject(json: string): Project {
     throw new Error(
       `Unsupported Project schemaVersion; expected ${PROJECT_SCHEMA_VERSION}`,
     )
+  }
+
+  if (!isProjectShape(parsed)) {
+    throw new Error('Project shape mismatch')
   }
 
   return parsed as Project

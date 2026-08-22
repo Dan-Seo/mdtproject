@@ -184,6 +184,9 @@ jobs:
       - run: pip install --quiet pytest
       - run: python -m pytest scripts/test_review_verdict.py -q
       - run: npm run build
+      # three が `/` の遮断経路に戻っていないか (ADR-024 §5)。Lighthouse 予算は
+      # これを通してしまう — 転送量が動かないからだ。build 直後にしか見られない。
+      - run: node scripts/perf/blocking-graph.mjs
 
   # 리뷰가 남긴 게이트 마커로 승인·머지를 결정한다.
   # 리뷰 잡과 분리한 이유는 권한이다 — 머지 권한(contents: write)을 LLM 잡에 주지 않는다.

@@ -17,7 +17,7 @@ import { resolveSlabEnd, type SlabEndDetail } from './slab-ends'
 import { stirrupPositions } from './stirrup-layout'
 
 /**
- * 床板（スラブ）の配筋。数量積算基準 2（４）床板 で測る (ADR-027)。
+ * 床板（スラブ）の配筋。数量積算基準 2（４）床板 で測る (ADR-028)。
  *
  * 測る対象は内法だ。躯体の区分（第4編第1章第2節（４））が床板を「柱、梁等に接する
  * 水平材の内法部分」と定めるので、長さは通り芯間ではなく両側の大梁の内側面の間に
@@ -34,7 +34,7 @@ import { stirrupPositions } from './stirrup-layout'
  * 測るので、`SlabRun.openings` がラン座標に直したものを見る。継手は壁と違って
  * 但書がない — 2（４）床板2) の区分は「床板の長さ」で引くので、開口があっても
  * 連続床板の箇所数は変わらない（単独床板は 1通則4) なので欠除後の長さで数える）。
- * 開口補強筋は「設計図書により計測・計算する」ので製品は作らない (ADR-028・R14)。
+ * 開口補強筋は「設計図書により計測・計算する」ので製品は作らない (ADR-029・R14)。
  */
 export interface SlabRebarInput {
   run: SlabRun
@@ -191,7 +191,7 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
 
   // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
   // 開口の欠けもここには現れない — 欠ける位置は本ごとに違うので、表示部が
-  // `SlabRun.openings` で切る (ADR-028)。
+  // `SlabRun.openings` で切る (ADR-029)。
   const drawnLengthMm = run.coreLengthMm + start.lengthMm + end.lengthMm
   const lapRule = lookupRule(pack, 'lap.L1', {
     fc: section.fc,

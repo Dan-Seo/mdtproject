@@ -932,7 +932,7 @@ describe('耐震壁の縦筋・横筋を壁厚方向に分ける', () => {
   })
 })
 
-describe('床板の3D — 2方向×2面が板厚に収まる (ADR-027)', () => {
+describe('床板の3D — 2方向×2面が板厚に収まる (ADR-028)', () => {
   const project = createSampleProject()
   const slabMember = project.members.find(({ kind }) => kind === '床板')!
 
@@ -1022,7 +1022,7 @@ describe('床板の3D — 2方向×2面が板厚に収まる (ADR-027)', () => {
   })
 })
 
-describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く (ADR-028)', () => {
+describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く (ADR-029)', () => {
   const opening: Opening = {
     id: 'op1',
     xMm: 2000,
@@ -1060,7 +1060,7 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
     const cut = wallBars([opening]).find(
       (rebar) => rebar.role === '縦筋' && rebar.length < 4000,
     )!
-    const segments = rebarSegments(cut, wallSection, [opening])
+    const segments = rebarSegments(cut, wallSection, rebarRadius, [opening])
 
     // 縦筋は局所 y に走る。開口の中に入る点が1つも残っていない。
     for (const { from, to } of segments) {
@@ -1080,7 +1080,7 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
       (rebar) => rebar.role === '縦筋' && rebar.length < 4000,
     )!
     const whole = rebarSegments(cut, wallSection)
-    const clipped = rebarSegments(cut, wallSection, [opening])
+    const clipped = rebarSegments(cut, wallSection, rebarRadius, [opening])
 
     // 断たれた本は開口の上下2本の破片になる。この行は8本 × ダブル配筋2層で
     // 16本が描かれるので、破片が16だけ増える（定着の区間は開口の外なので割れない）。
@@ -1092,7 +1092,7 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
       (rebar) => rebar.role === '縦筋' && rebar.length > 4000,
     )!
 
-    expect(rebarSegments(full, wallSection, [opening])).toEqual(
+    expect(rebarSegments(full, wallSection, rebarRadius, [opening])).toEqual(
       rebarSegments(full, wallSection),
     )
   })
@@ -1102,7 +1102,7 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
     const edge: Opening = { ...opening, xMm: 2200, widthMm: 1400 }
     const bar = wallBars([edge]).find(({ role }) => role === '縦筋')!
     const atEdge = (openings: Opening[]) =>
-      rebarSegments(bar, wallSection, openings).filter(
+      rebarSegments(bar, wallSection, rebarRadius, openings).filter(
         ({ from }) => from[0] === 2200,
       ).length
 
@@ -1114,7 +1114,9 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
     const bars = wallBars([opening])
     const length = (openings: Opening[]) =>
       bars
-        .flatMap((rebar) => rebarSegments(rebar, wallSection, openings))
+        .flatMap((rebar) =>
+          rebarSegments(rebar, wallSection, rebarRadius, openings),
+        )
         .reduce(
           (sum, { from, to }) =>
             sum + Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]),
@@ -1165,6 +1167,24 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
     const area = pieces.reduce((sum, { size }) => sum + size[0] * size[1], 0)
 
     expect(area).toBe(5200 * 3450 - 1800 * 1200 - 1800 * 600)
+  })
+})
+
+describe('rebarSegments と 長さ 0', () => {
+  /**
+   * 書き出し (lib/export/gltf.ts) はこの不変に乗っている。長さ 0 の区間が
+   * 降りてくると scale 0 の行列になり、EXT_mesh_gpu_instancing の書き出しで
+   * Matrix4.decompose が 1/0 を掛けて回転を NaN にする — 但しそれは
+   * ここで切れている。切れていないなら向こうで防ぐ必要がある。
+   */
+  it('makes no segment out of a path whose points coincide', () => {
+    const stuck: Rebar = {
+      ...main,
+      id: 'stuck',
+      points: [main.points[0], main.points[0]],
+    }
+
+    expect(rebarSegments(stuck, section)).toHaveLength(0)
   })
 })
 
@@ -1484,7 +1504,7 @@ describe('rebarBatches', () => {
 })
 
 describe('円形柱の配筋を円周に沿って描く', () => {
-  // 数量は 1通則2) の周長で決まる (ADR-026)。ここが見るのは 3D の作図規則で、
+  // 数量は 1通則2) の周長で決まる (ADR-027)。ここが見るのは 3D の作図規則で、
   // 矩形柱と同じ約束 — 帯筋の外面がかぶり面に、主筋の表面が帯筋の内面に接する。
   const DIAMETER = 600
   const circularSection: ColumnSection = {

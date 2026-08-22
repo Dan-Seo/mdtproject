@@ -1,7 +1,19 @@
-// UC-16: 日本固有の形態・製品 — 高強度せん断補強筋 (ADR-025) と 円形柱 (ADR-026)。
+// UC-19: 日本固有の形態・製品 — 高強度せん断補強筋 (ADR-026) と 円形柱 (ADR-027)。
 // どちらも「規準に行を足さずに扱える」ことが要点なので、ここが見るのは
 // 断面一覧の入力 → 内訳の数量 → 3D の3つが実ブラウザで通ることである。
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
@@ -140,7 +152,7 @@ console.log(
 );
 console.log(
   "SHOT " +
-    (await saveScreenshot(await page.screenshot(), "uc16-japan-specific.png")),
+    (await saveScreenshot(await page.screenshot(), "uc19-japan-specific.png")),
 );
 
 const failed = Object.entries(checks)

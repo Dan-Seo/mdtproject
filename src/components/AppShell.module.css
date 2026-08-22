@@ -32,9 +32,15 @@
   white-space: nowrap;
 }
 
+.headerActions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  justify-self: end;
+}
+
 .localeToggle {
   display: flex;
-  justify-self: end;
   border: var(--border-hairline);
   border-radius: var(--radius-sm);
   overflow: hidden;

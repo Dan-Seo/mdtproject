@@ -55,7 +55,7 @@ import {
   buildingLayout,
   groupInstancesByLayerAndRadius,
   type BuildingLayout,
-} from './building'
+} from '@/lib/viewer/building'
 import {
   CAMERA_FOV_DEGREES,
   clipPlaneForMm,
@@ -72,7 +72,7 @@ import {
   type CameraFit,
   type ClipAxis,
   type Point3,
-} from './geometry'
+} from '@/lib/viewer/geometry'
 import { legendEntries } from './legend'
 import { REBAR_ZONE_COLORS } from './palette'
 import { ViewerLayerControls } from './ViewerTabs'
@@ -342,7 +342,7 @@ interface ConcreteBox {
 
 /**
  * 躯体の立体。円形柱は Y 軸まわりの円柱で、それ以外は直方体だ。三面図でなく
- * 立体で見せる以上、断面形状が図面と違って見えてはいけない (ADR-026)。
+ * 立体で見せる以上、断面形状が図面と違って見えてはいけない (ADR-027)。
  */
 function concreteGeometry(box: {
   size: Point3

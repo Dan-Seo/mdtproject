@@ -24,7 +24,7 @@ import { stirrupPositions } from './stirrup-layout'
  * 開口部は 1通則8) で欠除する — `Member.openings` が受け取った内法寸法だけ、
  * その開口を横切る本を短くし、欠除量ごとに内訳の行を分ける。開口を横切った
  * 縦筋の継手は同じ 2（５）壁1)② の但書で 0か所になる。開口補強筋は同項が
- * 「設計図書により計測・計算する」と委任するので製品は作らない (ADR-028・R14)。
+ * 「設計図書により計測・計算する」と委任するので製品は作らない (ADR-029・R14)。
  */
 export interface WallRebarInput {
   member: Member
@@ -253,7 +253,7 @@ function buildWallBars(input: WallBarInput): Rebar[] {
 
   // 3D に描かれる経路。継手は位置が決まらないので描かない（表5.3.3 が原文で画像）。
   // 開口の欠けもここには現れない — 欠ける位置は本ごとに違うので、表示部が
-  // `Member.openings` で切る (ADR-028)。
+  // `Member.openings` で切る (ADR-029)。
   const pathLengthMm = bodyLengthMm + 2 * anchorageMm
 
   const anchorageTarget = role === '縦筋' ? '上下の大梁・床板' : '両側の柱'

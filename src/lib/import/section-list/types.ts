@@ -46,7 +46,7 @@ export interface SectionCandidate {
   kind: '柱' | '大梁' | '対象外'
   mark: string
   storyLabel?: string
-  /** 柱の断面形状。'円形' のとき b・d はともに直径である (ADR-026)。 */
+  /** 柱の断面形状。'円形' のとき b・d はともに直径である (ADR-027)。 */
   shape?: ColumnShape
   b?: number
   d?: number

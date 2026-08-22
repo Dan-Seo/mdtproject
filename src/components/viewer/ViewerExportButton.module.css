@@ -1,0 +1,11 @@
+/*
+ * 釦そのものの見た目は ViewerTabs のものを借りる — 同じ帯に並ぶので、
+ * 写して持つと二つの定義がいずれ食い違う。此処に置くのは、この部品しか
+ * 使わない類だけだ。
+ */
+.exportFailure {
+  align-self: center;
+  padding-left: var(--space-xxs);
+  color: var(--color-error);
+  font-size: var(--type-caption-size);
+}

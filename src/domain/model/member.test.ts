@@ -21,7 +21,7 @@ import {
 
 describe('member model', () => {
   it('supports 柱・大梁・耐震壁・床板 as member kinds', () => {
-    // 耐震壁は ADR-024、床板は ADR-027 で加わった。壁式構造の壁・基礎・小梁・
+    // 耐震壁は ADR-025、床板は ADR-028 で加わった。壁式構造の壁・基礎・小梁・
     // 雑壁は依然として部材にしない — ここが増えるときは ADR を伴う。
     expectTypeOf<MemberKind>().toEqualTypeOf<
       '柱' | '大梁' | '耐震壁' | '床板'
@@ -162,7 +162,7 @@ describe('高強度せん断補強筋 (大臣認定品)', () => {
 
   it('は呼び名がそのまま呼び径である — 新しい数値を持たない', () => {
     // D13 の 13 と同じ規約だ。両原文に高強度せん断補強筋の記述は一度もなく
-    // (ADR-025)、製品が持てるのは図面が書いた呼び名だけである。
+    // (ADR-026)、製品が持てるのは図面が書いた呼び名だけである。
     expect(SHEAR_BAR_SIZES).toEqual([
       ...BAR_SIZES,
       ...HIGH_STRENGTH_SHEAR_BAR_SIZES,

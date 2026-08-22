@@ -94,7 +94,7 @@ describe('parseSectionLists', () => {
     })
 
     // 高強度せん断補強筋 K13。フープの数量は断面周長だけで決まるので
-    // 規準にない値を引かずに取り込める (ADR-025)
+    // 規準にない値を引かずに取り込める (ADR-026)
     const c2aFirst = candidate(columns, 'C2A', '1F')
     expect(c2aFirst.main).toEqual({ count: 22, size: 'D32' })
     expect(c2aFirst.hoop).toEqual({ size: 'K13', pitchMm: 100 })
@@ -143,7 +143,7 @@ describe('parseSectionLists', () => {
     expect(c51First.hoop).toEqual({ size: 'S13', pitchMm: 100 })
     expect(c51First.raw['HOOP']).toBeUndefined()
 
-    // 円形柱。直径記号があるので b×d ではなく直径ひとつとして確定する (ADR-026)
+    // 円形柱。直径記号があるので b×d ではなく直径ひとつとして確定する (ADR-027)
     const c56 = candidate(columns, 'C56', '2階')
     expect(c56.main).toEqual({ count: 12, size: 'D22' })
     expect(c56.shape).toBe('円形')
@@ -238,7 +238,7 @@ describe('parseSectionLists', () => {
 interface ExpectedColumnCell {
   b?: number
   d?: number
-  /** 円形断面の直径。b・d の代わりにこれを持つ (ADR-026) */
+  /** 円形断面の直径。b・d の代わりにこれを持つ (ADR-027) */
   直径?: number
   断面raw?: string
   主筋: string | Record<string, string>
@@ -441,7 +441,7 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
   it('ojkk 柱リスト — 19칸 (位置 2행·帯筋의 고강도 K13 포함 전 칸 확정)', () => {
     expect(
       sweepColumns('ojkk-p2.json', 'ojkk-akamichi-p2-columns.json', '柱リスト'),
-      // K13 3칸(C2 1F·C2A 2F·C2A 1F)이 ADR-025로 확정되어 帯筋도 전 칸 찼다.
+      // K13 3칸(C2 1F·C2A 2F·C2A 1F)이 ADR-026로 확정되어 帯筋도 전 칸 찼다.
       // 断面은 라벨 행이 없지만 스케치의 가로·세로 치수를 짝지어 전 칸 확정 —
       // 값은 전사(700×700·FC1 600×600)와 대조된다
     ).toEqual({ main: 19, hoop: 19, dimension: 19 })
@@ -454,7 +454,7 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         'yokohama-kanazawa-p13-columns.json',
         '柱断面リスト',
       ),
-      // S13 4칸은 ADR-025로, 600φ(C56)는 ADR-026으로 확정되어 전 칸이 찼다
+      // S13 4칸은 ADR-026로, 600φ(C56)는 ADR-027으로 확정되어 전 칸이 찼다
     ).toEqual({ main: 15, hoop: 15, dimension: 15 })
   })
 

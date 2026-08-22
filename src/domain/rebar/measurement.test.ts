@@ -70,7 +70,7 @@ describe('hoopDesignLengthMm', () => {
 
 describe('circularHoopDesignLengthMm', () => {
   it('returns the circumference of the design diameter', () => {
-    // 円周の定義そのもの。1通則2) は断面形状を矩形に限っていない (ADR-026)。
+    // 円周の定義そのもの。1通則2) は断面形状を矩形に限っていない (ADR-027)。
     expect(circularHoopDesignLengthMm(600, noAddition)).toBeCloseTo(1884.9556, 3)
   })
 

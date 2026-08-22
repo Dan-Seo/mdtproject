@@ -28,5 +28,8 @@ describe('Home', () => {
     expect(screen.getByRole('tab', { name: '部材' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '建物' })).toBeInTheDocument()
     expect(await screen.findByTestId('viewer3d')).toBeInTheDocument()
-  })
+    // 全ペインを jsdom で組み立てるので、73 ファイル並列の下では既定の 5 秒に
+    // 収まらないことがある (実測 4.9 秒)。遅いのは描画であって待ち合わせでは
+    // ないため、待つ時間だけを広げる。
+  }, 20_000)
 })

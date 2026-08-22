@@ -3,3 +3,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * 印刷用の複製 (components/quantity/TakeoffPrint.tsx)。画面のシェルは
+ * height:100vh・overflow:hidden の格子なので、その中で印刷すると1ページ目で
+ * 切られる。複製を body 直下に出し、印刷中だけ他を隠す。
+ *
+ * body の印が条件に入っているのが要だ。印を付けずに Ctrl+P を押した人には
+ * 画面をそのまま印刷させる — 複製が居ないのに他を全部隠すと白紙が出る。
+ */
+#kijun-print-root {
+  display: none;
+}
+
+@media print {
+  body.kijun-printing > *:not(#kijun-print-root) {
+    display: none !important;
+  }
+
+  body.kijun-printing #kijun-print-root {
+    display: block;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}

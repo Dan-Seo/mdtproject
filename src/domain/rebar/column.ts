@@ -207,7 +207,7 @@ export function generateColumnRebar(
 
   // 数量は積算基準 1通則2) — 断面の設計寸法による周長、フックは計上しない。
   // かぶりを控除した上の hoopWidth·hoopDepth は 3D 形状 (points) 専用である。
-  // 円形柱では同じ条文の「周長」が円周になる (ADR-026)。
+  // 円形柱では同じ条文の「周長」が円周になる (ADR-027)。
   const circular = section.shape === '円形'
   const hoopLength = circular
     ? circularHoopDesignLengthMm(section.b, hoopLengthAdditionRule)

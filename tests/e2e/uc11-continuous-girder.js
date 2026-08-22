@@ -3,7 +3,31 @@
 // 에서만 드러나는 것 — 연속 스팬이 미지원으로 빠지지 않고 실제로 배근·内訳에
 // 나오는가, 산출식이 런 구성과 継手 계상 근거를 밝히는가 — 만 본다.
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+// 自動保存 (M4) が前の筋書きの編集を復元する。どの筋書きもサンプル案件から
+// 始めたいので、最初の着地で記録を消してから読み直す。
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
 
@@ -20,8 +44,11 @@ checks.noContinuousSpanNotice = notice.mentionsContinuous === false;
 checks.noUnsupportedPlan = notice.unsupportedPlan === null;
 
 // ── ② Y방향(연속) 大梁을 고른다 ──────────────────────────────────
+// 大梁だけを見る。耐震壁も通り芯の1スパンを占めるので id の接尾辞は同じ -Y で、
+// 名前だけで選ぶと平面で先に描かれる壁を掴む (ADR-025)。当たり判定の種別で分ける。
 const labels = await page.evaluate(() =>
   [...document.querySelectorAll("svg g[role='button']")]
+    .filter((el) => el.querySelector("line[class*='girderHitArea']"))
     .map((el) => el.getAttribute("aria-label"))
     .filter(Boolean),
 );

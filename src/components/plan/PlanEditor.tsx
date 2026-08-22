@@ -518,7 +518,7 @@ const openingFields = [
 /**
  * 開口部の入力 (数量積算基準 1通則8))。断面一覧ではなく平面に置くのは、開口が
  * 断面（符号）ではなく**その1枚の部材**に属するからだ — 同じ符号の壁が何枚も
- * 建つのに窓はその1枚に開いている (ADR-004・ADR-028)。
+ * 建つのに窓はその1枚に開いている (ADR-004・ADR-029)。
  */
 function OpeningEditor() {
   const project = useAppStore(({ project }) => project)

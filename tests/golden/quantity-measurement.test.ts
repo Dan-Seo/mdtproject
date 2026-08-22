@@ -329,7 +329,7 @@ describe('1通則2) フープ・スタラップの長さ ＝ 断面の設計寸�
   })
 
   // 条文は断面形状を矩形に限っていない。円形断面では「断面の設計寸法による
-  // 周長」がそのまま円周であり、製品が新しい値を作るわけではない (ADR-026)。
+  // 周長」がそのまま円周であり、製品が新しい値を作るわけではない (ADR-027)。
   it.each(circularCases)('$label 帯筋 ＝ $expectedMm', (testCase) => {
     const hoop = roleOf(
       columnRebarFor(

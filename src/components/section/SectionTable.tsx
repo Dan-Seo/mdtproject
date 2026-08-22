@@ -125,7 +125,7 @@ function BarSizeSelect({
  * せん断補強筋 (帯筋・あばら筋) の径。主筋の選択肢と分かれているのは、
  * 高強度せん断補強筋 (K13・S13) を主筋に入れられないからだ — 主筋は定着・
  * 重ね継手を表5.3.4・表5.3.2 から径で引くが、その表に高強度せん断補強筋の
- * 行がない (ADR-025)。
+ * 行がない (ADR-026)。
  */
 function ShearBarSizeSelect({
   label,
@@ -247,7 +247,7 @@ function CoverConditionField({
   return (
     <div className={styles.compoundField}>
       {/* 表5.3.6 の「スラブ、耐力壁以外の壁」行は仕上げの有無だけで分かれ、
-          屋内・屋外の区別を持たない — 効かないつまみを置かない (ADR-027)。 */}
+          屋内・屋外の区別を持たない — 効かないつまみを置かない (ADR-028)。 */}
       {section.kind === '床板' ? null : (
       <select
         className={styles.select}
@@ -286,7 +286,7 @@ function CoverConditionField({
 
 /**
  * 断面形状。円形へ移るとき d に b を入れるのは、円形柱が b・d をともに直径として
- * 持つからだ — 大梁の内法も 3D の柱面も b・d から決まる (ADR-026)。
+ * 持つからだ — 大梁の内法も 3D の柱面も b・d から決まる (ADR-027)。
  */
 function ColumnShapeSelect({
   section,
@@ -354,7 +354,7 @@ function SectionDimension({
 
   if (section.kind === '柱' && section.shape === '円形') {
     // 円形柱の寸法は直径ひとつだ。b・d を別々に出すと図面にない扁平断面を
-    // 作れてしまう — 1通則2) の周長が π×直径 でなくなる (ADR-026)。
+    // 作れてしまう — 1通則2) の周長が π×直径 でなくなる (ADR-027)。
     return (
       <div className={styles.compoundField}>
         <ColumnShapeSelect section={section} update={update} />

@@ -66,7 +66,7 @@ interface VerticalRun {
 
 const barSizes = new Set<BarSize>(BAR_SIZES)
 // 帯筋・あばら筋だけが高強度せん断補強筋 (K13・S13) を取れる。主筋の barSizes と
-// 分けているのは、主筋に入ると表5.3.4・表5.3.2 にない径を引くからだ (ADR-025)。
+// 分けているのは、主筋に入ると表5.3.4・表5.3.2 にない径を引くからだ (ADR-026)。
 const shearBarSizes = new Set<ShearBarSize>(SHEAR_BAR_SIZES)
 
 const TITLE_PATTERN =

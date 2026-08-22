@@ -109,8 +109,8 @@ export function roleToLayer(role: RebarRole): RebarLayer {
 }
 
 // 呼び名の英字を落とすと呼び径が残る — D13 も高強度せん断補強筋の K13・S13 も
-// 同じ規約であって、ここに新しい数値は増えない (ADR-025)。
-function barDiameter(size: ShearBarSize): number {
+// 同じ規約であって、ここに新しい数値は増えない (ADR-026)。
+export function barDiameter(size: ShearBarSize): number {
   const diameter = Number(size.replace(/^[A-Z]+/, ''))
 
   if (!Number.isFinite(diameter) || diameter <= 0) {
@@ -128,6 +128,17 @@ export function rebarRadius(size: ShearBarSize): number {
 }
 
 /**
+ * 呼び名から半径 (mm) を出す。画面は読みやすさのための表示値
+ * (`rebarRadius`)を、書き出す模型は実寸を渡す。
+ *
+ * 半径は太さだけでなく**位置**を決める — 帯筋をすり抜けないよう
+ * 主筋を内側へ入れる分がこれだ。実寸の模型に表示値を使うと、
+ * D13 帯筋・D25 主筋で 84.8mm 入る—実際は 25.5mm だ — 主筋が設計より
+ * 深く埋まった模型を渡すことになる。
+ */
+export type RadiusOf = (size: ShearBarSize) => number
+
+/**
  * `Rebar`는 「대표 1본 + 本数」로 모델링된다 — 수량은 그것으로 충분하지만
  * 3D는 실제 本数만큼 그려야 한다. 배치는 규準値가 아니라 작도 규칙이므로
  * 룰팩을 타지 않고 단면 치수와 대표 배근 위치에서만 유도한다.
@@ -140,14 +151,14 @@ export function rebarRadius(size: ShearBarSize): number {
 function columnRebarPlacements(
   rebar: Rebar,
   section: ColumnSection,
+  radiusOf: RadiusOf,
 ): Point3[] {
   if (rebar.shape === 'hoop') {
     return columnHoopPlacements(rebar)
   }
 
   const [insetX, , insetZ] = rebar.points[0]
-  const inward =
-    2 * rebarRadius(section.hoop.size) + rebarRadius(rebar.size)
+  const inward = 2 * radiusOf(section.hoop.size) + radiusOf(rebar.size)
 
   // 円形柱: 帯筋 안쪽 **원**을 등간격으로 돈다. 대표 배근이 시작 각도다.
   if (section.shape === '円形') {
@@ -208,6 +219,7 @@ function girderMainRowOf(
 function girderMainPlacements(
   rebar: Rebar,
   section: GirderSection,
+  radiusOf: RadiusOf,
 ): Point3[] {
   const { row, upper, cutoff } = girderMainRowOf(rebar.role, section)
   const split = splitGirderMainRow(row)
@@ -215,8 +227,7 @@ function girderMainPlacements(
   // 残りの枠を取る — 行ごとに全幅へ広げると同じ枠に二重に描かれる。
   const slots = split.throughCount + split.cutoffCount
   const [, , insetZ] = rebar.points[0]
-  const inward =
-    2 * rebarRadius(section.stirrup.size) + rebarRadius(rebar.size)
+  const inward = 2 * radiusOf(section.stirrup.size) + radiusOf(rebar.size)
   const width = Math.max(0, section.b - 2 * (insetZ + inward))
   const y = upper ? -inward : inward
   // 数量の count は「1か所あたり本数 × 位置数」なので、枠の数は位置で割る。
@@ -320,13 +331,17 @@ function girderSideBarPlacements(
  * 縦筋·横筋 2겹이 壁厚에 들어가지 않는다 — 벽 밖으로 삐져나오든 층끼리 파고들든
  * 둘 중 하나가 된다. 들어가는 크기까지 일률로 줄인다.
  */
-function wallDisplayRadius(size: ShearBarSize, section: WallSection): number {
+function wallDisplayRadius(
+  size: ShearBarSize,
+  section: WallSection,
+  radiusOf: RadiusOf,
+): number {
   const pair =
-    rebarRadius(section.vertical.size) + rebarRadius(section.horizontal.size)
+    radiusOf(section.vertical.size) + radiusOf(section.horizontal.size)
   // ダブル은 한 면당 縦筋＋横筋이라 壁厚의 1/4, シングル은 1조뿐이라 1/2에 담는다.
   const limit = section.thickness / (section.layers === 1 ? 2 : 4)
 
-  return rebarRadius(size) * (pair > limit ? limit / pair : 1)
+  return radiusOf(size) * (pair > limit ? limit / pair : 1)
 }
 
 /**
@@ -344,9 +359,18 @@ function wallBarDepths(
   role: RebarRole,
   section: WallSection,
   coverZ: number,
+  radiusOf: RadiusOf,
 ): number[] {
-  const verticalRadius = wallDisplayRadius(section.vertical.size, section)
-  const horizontalRadius = wallDisplayRadius(section.horizontal.size, section)
+  const verticalRadius = wallDisplayRadius(
+    section.vertical.size,
+    section,
+    radiusOf,
+  )
+  const horizontalRadius = wallDisplayRadius(
+    section.horizontal.size,
+    section,
+    radiusOf,
+  )
   const atFace = role === '縦筋'
 
   if (section.layers === 1) {
@@ -371,7 +395,7 @@ function wallBarDepths(
  * 繰り返し配置の位置 (mm)。ふだんは断面一覧の初期オフセットから `stirrupPositions`
  * が作るが、開口部のある壁・床板ではドメインが位置そのものを渡してくる —
  * 欠除で1つの役割が複数の内訳行に分かれるので、行ごとに「どの位置の本か」を
- * 決めておかないと同じ場所へ二度描くことになる (ADR-028)。
+ * 決めておかないと同じ場所へ二度描くことになる (ADR-029)。
  */
 function repeatPositions(placement: RebarPlacement): number[] {
   return (
@@ -392,6 +416,7 @@ function repeatPositions(placement: RebarPlacement): number[] {
 function wallRebarPlacements(
   rebar: Rebar,
   section: WallSection,
+  radiusOf: RadiusOf,
 ): Point3[] {
   const placement = rebar.placement
   if (!placement) {
@@ -409,7 +434,7 @@ function wallRebarPlacements(
 
   const coverZ = rebar.points[0][2]
 
-  return wallBarDepths(rebar.role, section, coverZ).flatMap((z) =>
+  return wallBarDepths(rebar.role, section, coverZ, radiusOf).flatMap((z) =>
     positions.map((value): Point3 =>
       placement.axis === 'x'
         ? [value, 0, z - coverZ]
@@ -439,13 +464,14 @@ function slabDisplayRadius(
   size: ShearBarSize,
   section: SlabSection,
   coverMm: number,
+  radiusOf: RadiusOf,
 ): number {
   const pair =
-    rebarRadius(slabRowFor(section, 'X', '下端').size) +
-    rebarRadius(slabRowFor(section, 'Y', '下端').size)
+    radiusOf(slabRowFor(section, 'X', '下端').size) +
+    radiusOf(slabRowFor(section, 'Y', '下端').size)
   const limit = Math.max(0, (section.thickness - 2 * coverMm) / 4)
 
-  return rebarRadius(size) * (pair > limit ? limit / pair : 1)
+  return radiusOf(size) * (pair > limit ? limit / pair : 1)
 }
 
 /** かぶり面から測ったかぶり厚さ — 上端筋は板の上から測る。 */
@@ -496,6 +522,7 @@ function slabBarDepthMm(
   role: RebarRole,
   section: SlabSection,
   coverZ: number,
+  radiusOf: RadiusOf,
 ): number {
   const { axis, face } = slabRoleParts(role)
   const coverMm = slabCoverMm(coverZ, section)
@@ -503,11 +530,13 @@ function slabBarDepthMm(
     slabRowFor(section, 'X', face).size,
     section,
     coverMm,
+    radiusOf,
   )
   const inner = slabDisplayRadius(
     slabRowFor(section, 'Y', face).size,
     section,
     coverMm,
+    radiusOf,
   )
   const depth = axis === 'X' ? outer : 2 * outer + inner
 
@@ -519,7 +548,11 @@ function slabBarDepthMm(
  * `slabBarDepthMm` が与える。X方向の鉄筋は局所 x に伸びて y へ、Y方向は
  * その逆に並ぶ。
  */
-function slabRebarPlacements(rebar: Rebar, section: SlabSection): Point3[] {
+function slabRebarPlacements(
+  rebar: Rebar,
+  section: SlabSection,
+  radiusOf: RadiusOf,
+): Point3[] {
   const placement = rebar.placement
   if (!placement) {
     throw new Error(`${rebar.role} placement is missing: ${rebar.id}`)
@@ -535,22 +568,26 @@ function slabRebarPlacements(rebar: Rebar, section: SlabSection): Point3[] {
   }
 
   const coverZ = slabCoverZ(rebar)
-  const shiftZ = slabBarDepthMm(rebar.role, section, coverZ) - coverZ
+  const shiftZ = slabBarDepthMm(rebar.role, section, coverZ, radiusOf) - coverZ
 
   return positions.map((value): Point3 =>
     placement.axis === 'x' ? [value, 0, shiftZ] : [0, value, shiftZ],
   )
 }
 
-export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
+export function rebarPlacements(
+  rebar: Rebar,
+  section: Section,
+  radiusOf: RadiusOf = rebarRadius,
+): Point3[] {
   if (section.kind === '柱') {
-    return columnRebarPlacements(rebar, section)
+    return columnRebarPlacements(rebar, section, radiusOf)
   }
   if (section.kind === '耐震壁') {
-    return wallRebarPlacements(rebar, section)
+    return wallRebarPlacements(rebar, section, radiusOf)
   }
   if (section.kind === '床板') {
-    return slabRebarPlacements(rebar, section)
+    return slabRebarPlacements(rebar, section, radiusOf)
   }
   if (rebar.role === 'あばら筋' || rebar.role === '幅止め筋') {
     return girderRepeatedPlacements(rebar)
@@ -559,7 +596,7 @@ export function rebarPlacements(rebar: Rebar, section: Section): Point3[] {
     return girderSideBarPlacements(rebar, section)
   }
 
-  return girderMainPlacements(rebar, section)
+  return girderMainPlacements(rebar, section, radiusOf)
 }
 
 function insetCoordinate(
@@ -818,7 +855,7 @@ export function boxHoles(
  *
  * 数量が「何本が何mm欠けるか」を言うのに対し、ここが決めるのは「どこで切れて
  * 見えるか」だ。欠ける位置は本ごとに違うので `Rebar.points` には入れられない —
- * 代表1本の折れ線は開口を知らない全長の経路である (ADR-028)。
+ * 代表1本の折れ線は開口を知らない全長の経路である (ADR-029)。
  */
 function openingCut(
   from: Point3,
@@ -907,30 +944,32 @@ export function clipSegments(
 function rebarSegmentRuns(
   rebar: Rebar,
   section: Section,
-  openings: Opening[],
+  radiusOf: RadiusOf = rebarRadius,
+  openings: Opening[] = [],
 ): SegmentRun[] {
   // 壁と床板だけ表示半径が部材厚に縛られる。配置と描画で別々の半径を使うと、
   // 詰めたはずの層が描くときにまた太って食い込む。
   const radius =
     section.kind === '耐震壁'
-      ? wallDisplayRadius(rebar.size, section)
+      ? wallDisplayRadius(rebar.size, section, radiusOf)
       : section.kind === '床板'
         ? slabDisplayRadius(
             rebar.size,
             section,
             slabCoverMm(slabCoverZ(rebar), section),
+            radiusOf,
           )
-        : rebarRadius(rebar.size)
+        : radiusOf(rebar.size)
   const displayPoint = (point: Point3): Point3 =>
     rebar.shape === 'hoop'
       ? hoopDisplayPoint(point, rebar.points, radius, section)
       : point
-  const placements = rebarPlacements(rebar, section)
+  const placements = rebarPlacements(rebar, section, radiusOf)
 
   return pathRuns(rebar).map(({ zone, segments }) => ({
     zone,
     // 開口部は 3D でだけ鉄筋を断つ。数量は `Rebar.length` が別に持っている
-    // ので、ここで切っても本数・質量は動かない (ADR-028)。
+    // ので、ここで切っても本数・質量は動かない (ADR-029)。
     segments: clipSegments(
       placements.flatMap((offset) =>
         segments.map(({ from, to }) => ({
@@ -947,9 +986,10 @@ function rebarSegmentRuns(
 export function rebarSegments(
   rebar: Rebar,
   section: Section,
+  radiusOf: RadiusOf = rebarRadius,
   openings: Opening[] = [],
 ): Segment[] {
-  return rebarSegmentRuns(rebar, section, openings).flatMap(
+  return rebarSegmentRuns(rebar, section, radiusOf, openings).flatMap(
     ({ segments }) => segments,
   )
 }
@@ -991,7 +1031,7 @@ export function rebarBatches(
   for (const { rowId, rebar, originOffsetMm = 0, openings = [] } of entries) {
     const layer = roleToLayer(rebar.role)
 
-    rebarSegmentRuns(rebar, section, openings).forEach(
+    rebarSegmentRuns(rebar, section, rebarRadius, openings).forEach(
       ({ zone, segments }, runIndex) => {
       // 같은 row의 대표 철근이 여러 개면 동일 경로 run끼리 합치되, 양단에 같은
       // kind의 zone이 있어도 서로 다른 연속 구간이므로 runIndex로 분리한다.

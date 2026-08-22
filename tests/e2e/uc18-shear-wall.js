@@ -1,8 +1,20 @@
-// UC-15: 耐震壁 (ADR-024)
+// UC-18: 耐震壁 (ADR-025)
 // 設計長さ・本数の条文対照はゴールデンテストが見る。ここが見るのは実ブラウザでしか
 // 出ないもの — 断面一覧で壁を入力できるか、内訳に縦筋・横筋の行が立つか、
 // 開口部未計上の告知が常に出ているか、平面と 3D が壁を描いて選べるか。
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
@@ -22,7 +34,7 @@ const table = await page.evaluate(() => {
     layers: label("W1 配筋層数")?.value ?? null,
     // 壁は b×D を持たない — 柱・大梁の枠を流用していないことの裏取り。
     hasGirderDepthInput: label("W1 断面 せい") !== null,
-    // 幅止め筋は本数の条文が梁しか名指さないので壁には置かない (ADR-024)。
+    // 幅止め筋は本数の条文が梁しか名指さないので壁には置かない (ADR-025)。
     hasWidthTieInput: label("W1 幅止め筋 径") !== null,
   };
 });
@@ -146,7 +158,7 @@ console.log(
   ),
 );
 console.log(
-  "SHOT " + (await saveScreenshot(await page.screenshot(), "uc15-shear-wall.png")),
+  "SHOT " + (await saveScreenshot(await page.screenshot(), "uc18-shear-wall.png")),
 );
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);

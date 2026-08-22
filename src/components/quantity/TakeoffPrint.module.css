@@ -1,0 +1,116 @@
+.printButton {
+  min-height: 26px;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.printButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.printButton:active {
+  background: var(--color-canvas-soft);
+}
+
+/*
+ * 紙面。画面に出す複製ではないので、色は白地・黒字に固定する — 画面用の
+ * トークンは背景を敷く前提の値で、白地の紙では薄すぎる。
+ */
+.printRoot {
+  padding: 8mm;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 7pt;
+  line-height: 1.35;
+}
+
+.title {
+  margin: 0 0 4mm;
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+.sheet {
+  margin-bottom: 8mm;
+  /* 二枚目の表は次の紙から始める — 内訳書の途中に径別集計が挟まると読めない。 */
+  break-before: page;
+}
+
+.sheet:first-of-type {
+  break-before: auto;
+}
+
+.caption {
+  margin-bottom: 2mm;
+  font-size: 9pt;
+  font-weight: 600;
+  text-align: left;
+}
+
+.watermark {
+  margin: 0 0 2mm;
+  padding: 1.5mm 2mm;
+  border: 0.3mm solid #000;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  padding: 0.8mm 1mm;
+  border-bottom: 0.15mm solid #999;
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  border-bottom: 0.3mm solid #000;
+  font-weight: 600;
+  /* 数十行で改ページする表なので、見出しは紙ごとに繰り返す。 */
+}
+
+.table thead {
+  display: table-header-group;
+}
+
+.dataRow,
+.summaryRow {
+  /* 1行が紙の切れ目にまたがると数字が半分になる。 */
+  break-inside: avoid;
+}
+
+.summaryRow {
+  font-weight: 600;
+}
+
+.summaryRow td {
+  border-top: 0.3mm solid #000;
+}
+
+/* 発注に使う数字がどれか — 画面・xlsx と同じ位置に罫を立てる。 */
+.requiredCell {
+  border-left: 0.3mm solid #000;
+}
+
+.sourceHeading {
+  margin: 3mm 0 1mm;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0 0 1mm;
+}

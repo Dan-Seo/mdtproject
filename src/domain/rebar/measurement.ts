@@ -56,7 +56,7 @@ export function hoopDesignLengthMm(
  * 控除せず、フック余長も足さない。
  *
  * 端数は丸めない。1通則6) が四捨五入を定めるのはフック・定着・余長・重ね継手の
- * 長さについてであって周長ではなく、丸めの根拠がない (ADR-026)。
+ * 長さについてであって周長ではなく、丸めの根拠がない (ADR-027)。
  */
 export function circularHoopDesignLengthMm(
   diameterMm: number,

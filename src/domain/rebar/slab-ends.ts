@@ -4,7 +4,7 @@ import { lookupRule } from '../rules/lookup'
 import type { RuleHit, RulePack } from '../rules/types'
 
 /**
- * 床板主筋が大梁の中でどう定着するか (ADR-027)。
+ * 床板主筋が大梁の中でどう定着するか (ADR-028)。
  *
  * 大梁の `resolveGirderEnd` と同じ形だが、引く列が違う。
  *   下端筋 … 表5.3.4 の **L3（スラブ欄）**「10d かつ150mm以上」(注3)

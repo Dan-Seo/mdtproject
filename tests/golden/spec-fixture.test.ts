@@ -135,7 +135,7 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     const excludedColumns = fixture.excluded.flatMap(({ columns }) => columns)
 
     // 床板が範囲に入った時点で L3 のスラブ欄と Lb は除外から entries へ移った
-    // (ADR-027)。残る除外は小梁の列と、原文が「─」の L3h だけである。
+    // (ADR-028)。残る除外は小梁の列と、原文が「─」の L3h だけである。
     expect(excludedColumns).toEqual(['L3(小梁)', 'L3h'])
     for (const entry of fixture.excluded) {
       expect(entry.reason).toContain('ADR-005')

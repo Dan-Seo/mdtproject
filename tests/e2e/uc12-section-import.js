@@ -2,8 +2,8 @@
 // 반영 단위는 (符号, 階)다 — C51 2階는 완전 후보라 반영되고, G51 R階는 端部
 // 主筋이 좌우로 달라(外端 8-D25／内端 13-D25) 빈칸이므로 신규 符号로는 반영이
 // 막혀야 한다 (R13).
-// C51 1階의 帯筋 S13은 高強度せん断補強筋이라 값으로 들어오고 (ADR-025),
-// C56의 断面 600φ도 円形柱로 들어온다 (ADR-026) — 둘 다 빈칸이 아니다.
+// C51 1階의 帯筋 S13은 高強度せん断補強筋이라 값으로 들어오고 (ADR-026),
+// C56의 断面 600φ도 円形柱로 들어온다 (ADR-027) — 둘 다 빈칸이 아니다.
 const pdfPath = ".cache/dwg-yokohama.pdf";
 const sandboxFixture = "uc12-dwg-yokohama.pdf.b64";
 let pdfBase64;
@@ -20,7 +20,31 @@ try {
 }
 
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+// 自動保存 (M4) が前の筋書きの編集を復元する。どの筋書きもサンプル案件から
+// 始めたいので、最初の着地で記録を消してから読み直す。
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
 

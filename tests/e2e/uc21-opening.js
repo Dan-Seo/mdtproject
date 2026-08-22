@@ -1,9 +1,21 @@
-// UC-18: 開口部（数量積算基準 1通則8)）(ADR-028)
+// UC-21: 開口部（数量積算基準 1通則8)）(ADR-029)
 // 欠除の算術はゴールデンテストが見る。ここが見るのは実ブラウザでしか出ないもの —
 // 平面で壁・床板を選ぶと開口部の入力が出るか、開口を足すと内訳の行が欠除量ごとに
 // 割れるか、開口を横切った縦筋の継手が 2（５）壁1)② 但書で 0か所になるか、
 // 床板の開口が平面に実寸で描かれるか、部材ビューと建物ビューが落ちずに描くか。
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
@@ -216,7 +228,7 @@ console.log(
   ),
 );
 console.log(
-  "SHOT " + (await saveScreenshot(await page.screenshot(), "uc18-opening.png")),
+  "SHOT " + (await saveScreenshot(await page.screenshot(), "uc21-opening.png")),
 );
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);

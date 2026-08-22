@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ColumnSection, Member } from '../model/member'
+import type { BarSize, ColumnSection, Member } from '../model/member'
 import {
   PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
@@ -21,11 +21,13 @@ import {
   aggregateQuantity,
   grandTotal,
   hasUnverified,
+  hasUnverifiedRules,
   unverifiedRules,
   weakestConfidence,
   inferredRules,
   massLines,
   spliceLines,
+  sizeSubtotals,
   spliceTotals,
   storySubtotals,
 } from './index'
@@ -201,7 +203,7 @@ describe('aggregateQuantity', () => {
 
   it('writes a circular column section as 直径, not b×d', () => {
     // 円形柱を「600×600」と書くと図面にない矩形断面に見える。周長が π×600 で
-    // 出ている行の見出しが辺長を名乗ってはいけない (ADR-026)。
+    // 出ている行の見出しが辺長を名乗ってはいけない (ADR-027)。
     const base = projectWithStories([{ id: '1F', name: '1階', height: 4200 }])
     const project: Project = {
       ...base,
@@ -359,6 +361,16 @@ describe('aggregateQuantity', () => {
     expect(line.rules.map(({ key }) => key)).toContain('markup.rate')
     expect(line.confidence).toBe('transcribed')
     expect(hasUnverified([line])).toBe(true)
+  })
+
+  it('counts a transcribed rule as unverified, the same as inferred', () => {
+    // glTF は行を持たず ruleHits を直に持つので、内訳書・印刷と glb は
+    // この関数を共に引く。判定は「stated でない」だ — 「原文に値が無い」
+    // (inferred) だけを数えると、検討待ち分が黙って通る (ADR-015・ADR-023)。
+    expect(hasUnverifiedRules([{ confidence: 'transcribed' }])).toBe(true)
+    expect(hasUnverifiedRules([{ confidence: 'inferred' }])).toBe(true)
+    expect(hasUnverifiedRules([{ confidence: 'stated' }])).toBe(false)
+    expect(hasUnverifiedRules([])).toBe(false)
   })
 
   it('takes the weakest confidence of the row, never the strongest', () => {
@@ -675,5 +687,92 @@ describe('単位質量は利用者入力', () => {
     expect(byRole.get('帯筋')?.designKg).toBeNull()
     expect(storySubtotals(lines)[0].designKg).toBeNull()
     expect(grandTotal(lines).designKg).toBeNull()
+  })
+})
+
+/** BAR_SIZES に無い呼び名。型では起きないが、取り込んだ JSON からは入る。 */
+const OUTSIDE_BAR_SIZES = 'D51' as BarSize
+
+describe('sizeSubtotals', () => {
+  const stories: Story[] = [
+    { id: '1F', name: '1階', height: 4200 },
+    { id: '2F', name: '2階', height: 3800 },
+  ]
+
+  it('sums 質量 by 径 across every 階 and 部材', () => {
+    const project = projectWithStories(stories)
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const bySize = sizeSubtotals(lines)
+
+    // 発注は径ごとに出すので、階も部材も跨いだ和が要る。行の出現順は
+    // D25(主筋)→D13(帯筋) だが、表は BAR_SIZES の並び順で出る — 内訳書の
+    // 径列は径の小さい順に読むものだからだ。
+    expect(bySize.map(({ size }) => size)).toEqual(['D13', 'D25'])
+    expect(sumKnown(bySize.map(({ designKg }) => designKg))).toBe(
+      grandTotal(lines).designKg,
+    )
+    expect(sumKnown(bySize.map(({ requiredKg }) => requiredKg))).toBe(
+      grandTotal(lines).requiredKg,
+    )
+  })
+
+  it('keeps a 径 outside BAR_SIZES instead of dropping it from the table', () => {
+    // 取り込んだ案件は他人が作った JSON だ — 目録に無い径が入り得る。
+    // 黙って落とすと、この表の行の和が同じシートの下に出る合計と合わなくなる。
+    const project = projectWithStories([stories[0]])
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack).map(
+      (line, index) =>
+        index === 0 ? { ...line, size: OUTSIDE_BAR_SIZES } : line,
+    )
+
+    const bySize = sizeSubtotals(lines)
+
+    expect(bySize.map(({ size }) => size)).toContain(OUTSIDE_BAR_SIZES)
+    expect(sumKnown(bySize.map(({ designKg }) => designKg))).toBe(
+      grandTotal(lines).designKg,
+    )
+  })
+
+  it('keeps a 径 unknown while its 単位質量 is missing, without infecting the others', () => {
+    // 径別集計は「どの径が発注できないか」を見せる表だ。D13 が欠けたせいで
+    // D25 まで null になると、その情報が消える。
+    const project = projectWithStories([stories[0]], { D25: 4 })
+    const rebars = project.members.flatMap(({ id }) => [
+      mainRebar(id),
+      hoopRebar(id),
+    ])
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const bySize = new Map(
+      sizeSubtotals(lines).map((subtotal) => [subtotal.size, subtotal]),
+    )
+
+    expect(bySize.get('D25')?.designKg).toBe(432)
+    expect(bySize.get('D13')?.designKg).toBeNull()
+  })
+
+  it('leaves 継手 out — 箇所 は kg に足せない', () => {
+    const project = projectWithStories([stories[0]])
+    const rebars = project.members.map(({ id }) =>
+      mainRebar(id, { splice: splice() }),
+    )
+
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+
+    const bySize = sizeSubtotals(lines)
+
+    expect(bySize).toHaveLength(1)
+    expect(bySize[0].size).toBe('D25')
+    expect(bySize[0].designKg).toBe(432)
+    expect(bySize[0].requiredKg).toBeCloseTo(449.28, 6)
   })
 })

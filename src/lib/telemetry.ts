@@ -337,3 +337,10 @@ export function captureException(
     posthog?.captureException(error, properties),
   )
 }
+
+/** 텔레메트리용 규모 버킷. 원값은 부재 수·철근 종류에서 파생된 도면 데이터다. */
+export function sizeBucket(lineCount: number): 'small' | 'medium' | 'large' {
+  if (lineCount < 50) return 'small'
+  if (lineCount < 500) return 'medium'
+  return 'large'
+}

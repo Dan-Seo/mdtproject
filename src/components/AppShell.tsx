@@ -8,6 +8,7 @@ import { capture } from '@/lib/telemetry'
 
 import styles from './AppShell.module.css'
 import { PaneBoundary } from './PaneBoundary'
+import { ProjectActions } from './ProjectActions'
 
 export interface AppShellProps {
   plan?: ReactNode
@@ -83,25 +84,35 @@ export function AppShell({
       <header className={styles.appHeader}>
         <div className={styles.wordmark}>{t(locale, 'app.wordmark')}</div>
         <div className={`${styles.projectName} t-body-sm`}>{projectName}</div>
-        <div className={styles.localeToggle} aria-label="Language">
-          {(['ja', 'ko'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={`${styles.localeButton} ${
-                locale === option ? styles.localeButtonActive : ''
-              }`}
-              aria-pressed={locale === option}
-              onClick={() => {
-                setLocale(option)
-                // member_selected·viewer_mode_changed와 같은 기준 — 이미
-                // 활성인 언어를 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
-                if (locale !== option) capture('locale_changed', { locale: option })
-              }}
-            >
-              {t(locale, `locale.${option}`)}
-            </button>
-          ))}
+        <div className={styles.headerActions}>
+          {/* 案件の保存・読み込みは失敗しても他のペインを巻き込まない。 */}
+          <PaneBoundary
+            label={t(locale, 'pane.failure')}
+            pane="project-actions"
+            resetKey={locale}
+          >
+            <ProjectActions />
+          </PaneBoundary>
+          <div className={styles.localeToggle} aria-label="Language">
+            {(['ja', 'ko'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={`${styles.localeButton} ${
+                  locale === option ? styles.localeButtonActive : ''
+                }`}
+                aria-pressed={locale === option}
+                onClick={() => {
+                  setLocale(option)
+                  // member_selected·viewer_mode_changed와 같은 기준 — 이미
+                  // 활성인 언어를 다시 눌러도 전환이 아니다 (10차 리뷰 minor).
+                  if (locale !== option) capture('locale_changed', { locale: option })
+                }}
+              >
+                {t(locale, `locale.${option}`)}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 

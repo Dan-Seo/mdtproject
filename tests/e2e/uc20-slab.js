@@ -1,9 +1,21 @@
-// UC-17: 床板（スラブ） (ADR-027)
+// UC-20: 床板（スラブ） (ADR-028)
 // 設計長さ・本数・継手箇所数の条文対照はゴールデンテストが見る。ここが見るのは
 // 実ブラウザでしか出ないもの — 断面一覧で2方向×2面を入力できるか、内訳に4行が
 // 立つか、単独床板と連続床板で継手の条文が入れ替わるか、平面で床板を選んでも
 // 大梁・壁が選べたままか、部材ビューと建物ビューが落ちずに描くか。
 const page = await browser.getPage("kijun");
+// 自動保存 (IndexedDB) は前の走行を持ち越す。消してから始めないと、この筋書きは
+// 「一度目だけ通る」ものになる — 再訪経路そのものを見る uc15 だけは自分で管理する。
+await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
@@ -22,7 +34,7 @@ const table = await page.evaluate(() => {
     yTop: [value("S1 Y方向上端筋 径"), value("S1 Y方向上端筋 ピッチ")],
     yBottom: [value("S1 Y方向下端筋 径"), value("S1 Y方向下端筋 ピッチ")],
     finish: value("S1 仕上げ"),
-    // 表5.3.6 の「スラブ、耐力壁以外の壁」行に屋内・屋外の区別はない (ADR-027)。
+    // 表5.3.6 の「スラブ、耐力壁以外の壁」行に屋内・屋外の区別はない (ADR-028)。
     hasExposure: label("S1 屋内外") !== null,
     // 床板は断面が板厚1つ。b×D の枠に押し込んでいないことの裏取り。
     hasSectionB: label("S1 断面 b") !== null,
@@ -198,7 +210,7 @@ console.log(
     2,
   ),
 );
-console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc17-slab.png")));
+console.log("SHOT " + (await saveScreenshot(await page.screenshot(), "uc20-slab.png")));
 
 for (const [name, ok] of Object.entries(checks)) if (!ok) failed.push(name);
 if (failed.length) throw new Error("FAILED CHECKS: " + failed.join(", "));

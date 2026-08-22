@@ -112,10 +112,10 @@ describe('buildingLayout', () => {
     const columnCount = nx * ny * project.stories.length
     const girderCount =
       ((nx - 1) * ny + nx * (ny - 1)) * project.stories.length
-    // 床板は通り芯で囲まれたベイの数だけある (ADR-027)。
+    // 床板は通り芯で囲まれたベイの数だけある (ADR-028)。
     const slabCount = (nx - 1) * (ny - 1) * project.stories.length
     // 耐震壁はグリッドから導けない — サンプルが1階あたり1枚だけ置いているので
-    // (ADR-024)、実際に置かれた数を数える。
+    // (ADR-025)、実際に置かれた数を数える。
     const wallCount = project.members.filter(
       ({ kind }) => kind === '耐震壁',
     ).length
@@ -248,6 +248,8 @@ describe('buildingLayout', () => {
       from: expectedFrom,
       to: expectedTo,
       radius: local.radius,
+      size: 'D25',
+      role: top.role,
       layer: 'main',
     })
   })
@@ -302,6 +304,8 @@ describe('buildingLayout', () => {
       from: expectedFrom,
       to: expectedTo,
       radius: local.radius,
+      size: 'D25',
+      role: top.role,
       layer: 'main',
     })
   })
@@ -463,6 +467,8 @@ describe('groupInstancesByLayerAndRadius', () => {
         from: [0, 0, 0],
         to: [0, 1, 0],
         radius,
+        size: 'D25',
+        role: '主筋',
         layer: 'main',
       },
       {
@@ -470,6 +476,8 @@ describe('groupInstancesByLayerAndRadius', () => {
         from: [0, 0, 0],
         to: [1, 0, 0],
         radius,
+        size: 'D25',
+        role: '帯筋',
         layer: 'hoop',
       },
     ]
@@ -480,5 +488,19 @@ describe('groupInstancesByLayerAndRadius', () => {
       `${radius}|main`,
       `${radius}|hoop`,
     ])
+  })
+})
+
+describe('RebarInstance.size', () => {
+  it('carries the 呼び名 so the exporter can use the real diameter', () => {
+    // 画面の radius は読みやすさのために太らせた表示値だ (rebarRadius)。
+    // 書き出す模型でそれを使うと D10 が ⌀22.4 の棒として渡ることになる。
+    const layout = buildingLayout(project, [main, hoop], noUnsupportedMembers)
+    const sizes = new Set(layout.rebar.map(({ size }) => size))
+
+    expect(sizes).toEqual(new Set(['D25', 'D13']))
+    expect(
+      layout.rebar.every(({ size, radius }) => radius === rebarRadius(size)),
+    ).toBe(true)
   })
 })

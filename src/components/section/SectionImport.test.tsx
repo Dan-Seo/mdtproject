@@ -16,8 +16,8 @@ const yokohamaPage: TextPage = {
 
 /**
  * 大梁リストの頁。未解析の欄が残る候補がこちらにしかないので、その系統の
- * テストはこの頁を読む — 柱リストは高強度せん断補強筋 (ADR-025) と円形柱
- * (ADR-026) が入って全欄が埋まった。
+ * テストはこの頁を読む — 柱リストは高強度せん断補強筋 (ADR-026) と円形柱
+ * (ADR-027) が入って全欄が埋まった。
  */
 const yokohamaGirderPage: TextPage = {
   ...yokohamaGirderFixture.page,
