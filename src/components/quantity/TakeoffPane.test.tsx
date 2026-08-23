@@ -700,6 +700,22 @@ describe('TakeoffPane', () => {
     )
   })
 
+  // 部材が一本もない案件でも画面は立つ。割増は「部材ごとの区分で引く」値なので
+  // (ADR-014)、部材がなければ引く対象がない — それは誤りではなく空である。
+  // 図面取り込みで通り芯を置き換えると、符号が一つも合わないときにこの状態になる。
+  it('shows no markup when the project has no members — and does not fail the pane', () => {
+    act(() => {
+      useAppStore.setState({
+        project: { ...useAppStore.getState().project, members: [] },
+      })
+    })
+
+    render(<TakeoffActions />)
+
+    expect(screen.queryByText(/割増/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '書き出し' })).toBeInTheDocument()
+  })
+
   it('shows the rulepack markup and exports the current project as xlsx', async () => {
     render(<TakeoffActions />)
 

@@ -30,6 +30,8 @@ function threeLevels(): TextItem[] {
     h('3FL', 80, 100),
     h('2FL', 80, 200),
     h('1FL', 80, 300),
+    // 계열은 軸組図에 속한다 — 제목이 없으면 무엇의 높이인지 말할 수 없다
+    h('bY1通り軸組図1/100', 300, 400),
   ]
 }
 
@@ -45,7 +47,7 @@ describe('parseFrameElevations', () => {
     expect(parsed.issues).toEqual([])
     expect(parsed.elevations).toEqual([
       {
-        titles: [],
+        titles: ['bY1通り軸組図1/100'],
         levels: [
           { labels: ['3FL'], positionPt: 100 },
           { labels: ['2FL'], positionPt: 200 },
@@ -86,18 +88,24 @@ describe('parseFrameElevations', () => {
     ])
   })
 
-  it('軸組図 제목을 가장 가까운 계열에 원문 그대로 붙인다', () => {
+  it('한 계열이 여러 通り의 軸組図에 공통으로 걸린다', () => {
     const parsed = parseFrameElevations(
-      page([
-        ...threeLevels(),
-        h('bY1通り軸組図1/100', 300, 400),
-        h('bY2通り軸組図1/100', 600, 400),
-      ]),
+      page([...threeLevels(), h('bY2通り軸組図1/100', 600, 400)]),
     )
     expect(parsed.elevations[0]?.titles).toEqual([
       'bY1通り軸組図1/100',
       'bY2通り軸組図1/100',
     ])
+  })
+
+  it('제목이 없는 치수 열은 계열로 보지 않는다', () => {
+    // 실물 yokohama 전 18쪽을 통과시키면 **地質柱状図**가 걸린다 — 깊이 숫자가
+    // 열을 이루고 옆에 라벨이 서서 여기까지의 조건을 전부 만족한다
+    const parsed = parseFrameElevations(
+      page(threeLevels().filter((item) => !item.str.includes('軸組'))),
+    )
+    expect(parsed.elevations).toEqual([])
+    expect(parsed.issues).toEqual(['寸法列未検出'])
   })
 
   it('레벨 라벨은 치수 열 근처의 것만 본다 — 도면 안의 부재 부호가 섞이지 않는다', () => {

@@ -238,20 +238,15 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
     }
   }
 
-  const resolved = withoutOverlaps(elevations)
-
-  if (resolved.length === 0) {
-    return { elevations: [], issues: ['寸法列未検出'] }
-  }
-
-  resolved.sort((a, b) => a.levels[0].positionPt - b.levels[0].positionPt)
+  const overlapFree = withoutOverlaps(elevations)
+  overlapFree.sort((a, b) => a.levels[0].positionPt - b.levels[0].positionPt)
 
   // 제목은 가장 가까운 계열에 붙인다 — 한 계열이 여러 通り의 軸組図에 공통으로
   // 걸리므로(실물 p8은 좌단 치수 열 하나에 bY1·bY2·bY3 세 장) 1:1이 아니다
   for (const title of titles) {
     let nearest: ElevationCandidate | undefined
     let nearestDistance = Number.POSITIVE_INFINITY
-    for (const elevation of resolved) {
+    for (const elevation of overlapFree) {
       const top = elevation.levels[0].positionPt
       const bottom = elevation.levels[elevation.levels.length - 1].positionPt
       const distance =
@@ -262,6 +257,16 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
       }
     }
     nearest?.titles.push(title.text)
+  }
+
+  // 軸組図의 높이 계열은 軸組図에 속한다 — 제목이 붙지 않은 치수 열은 그것이
+  // 무엇의 높이인지 말할 수 없다. 실물 yokohama 전 18쪽을 통과시키면 **地質柱状図**가
+  // 걸린다(깊이 숫자가 열을 이루고 옆에 라벨이 선다) — 그것을 階高로 내면
+  // 사용자에게 있지도 않은 층이 보인다
+  const resolved = overlapFree.filter((elevation) => elevation.titles.length > 0)
+
+  if (resolved.length === 0) {
+    return { elevations: [], issues: ['寸法列未検出'] }
   }
 
   const issues: ElevationIssue[] = []

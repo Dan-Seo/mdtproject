@@ -763,16 +763,21 @@ export function TakeoffActions() {
       ),
     ]
 
-    if (rates.length !== 1) {
+    // 部材が一本もなければ引く対象がない — 誤りではなく空である。区分ごとに
+    // 率が割れているときだけが誤りで、それは黙って一方を選べない (ADR-014)
+    if (rates.length > 1) {
       throw new Error('Takeoff header requires exactly one markup rate')
     }
 
     return rates[0]
   }, [project])
-  const formattedMarkup = new Intl.NumberFormat(
-    locale === 'ja' ? 'ja-JP' : 'ko-KR',
-    { style: 'percent', maximumFractionDigits: 2 },
-  ).format(markupRate)
+  const formattedMarkup =
+    markupRate === undefined
+      ? undefined
+      : new Intl.NumberFormat(locale === 'ja' ? 'ja-JP' : 'ko-KR', {
+          style: 'percent',
+          maximumFractionDigits: 2,
+        }).format(markupRate)
 
   const exportWorkbook = () => {
     // 클릭이 아니라 결과에 이벤트를 건다 — 내보내기는 이 제품의 산출물이고,
@@ -801,9 +806,11 @@ export function TakeoffActions() {
 
   return (
     <div className={styles.takeoffActions}>
-      <span className={styles.markupBadge}>
-        {t(locale, 'takeoff.markup')} {formattedMarkup}
-      </span>
+      {formattedMarkup === undefined ? null : (
+        <span className={styles.markupBadge}>
+          {t(locale, 'takeoff.markup')} {formattedMarkup}
+        </span>
+      )}
       <button
         type="button"
         className={styles.exportButton}
