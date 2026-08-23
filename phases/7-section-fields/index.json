@@ -7,7 +7,8 @@
       "name": "sidebar",
       "status": "completed",
       "started_at": "2026-08-23T20:23:17+0900",
-      "summary": "断面リストの腹筋を既存の主筋文法で sideBar 候補に読み込み、空欄・横線と解釈不能を区別した"
+      "summary": "断面リストの腹筋を既存の主筋文法で sideBar 候補に読み込み、空欄・横線と解釈不能を区別した",
+      "completed_at": "2026-08-23T20:31:03+0900"
     },
     {
       "step": 1,
