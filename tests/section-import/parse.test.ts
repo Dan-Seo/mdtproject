@@ -209,6 +209,15 @@ describe('parseSectionLists', () => {
     expect(g51Roof.issues).toContain('主筋端部左右相違')
     expect(g51Roof.sideBar).toEqual({ size: 'D10', count: 2 })
 
+    const cutoffEntries = girders.candidates.flatMap(({ raw }) =>
+      Object.entries(raw).filter(([key]) => key.startsWith('カットオフ')),
+    )
+    expect(g51Roof.raw['カットオフ(内端)']?.normalize('NFKC')).toBe('[2500]')
+    expect(cutoffEntries).toHaveLength(6)
+    expect(
+      cutoffEntries.map(([, value]) => value.normalize('NFKC')).sort(),
+    ).toEqual(['[2500]', '[2700]', '[2700]', '[2700]', '[2700]', '[3000]'])
+
     expect(candidate(girders, 'G52', 'R階').sideBar).toEqual({
       size: 'D10',
       count: 4,
@@ -243,6 +252,46 @@ describe('parseSectionLists', () => {
       girderMain: { size: 'D22', topCount: 5, bottomCount: 4 },
     })
     expect(candidate(girders, 'G55', 'R階').girderMain).toBeUndefined()
+  })
+
+  it('keeps a half-width cutoff raw without a position instead of inventing a candidate field', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        {
+          str: '大梁リスト特記[]内はカットオフの柱面からの寸法を示す。',
+          x: 10,
+          y: 5,
+          w: 220,
+          h: 8,
+        },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '[1500]', x: 120, y: 40, w: 40, h: 8 },
+        { str: '断面', x: 10, y: 60, w: 20, h: 8 },
+        { str: '400×600', x: 120, y: 60, w: 50, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.raw['カットオフ']).toBe('[1500]')
+    expect('cutoff' in g1).toBe(false)
+  })
+
+  it.each([
+    ['ojkk-p3.json', '大梁リスト'],
+    ['kani-p38.json', '地中梁リスト'],
+  ])('%s has no カットオフ raw values', (fixture, listKind) => {
+    const parsedList = list(parseSectionLists(readPage(fixture)), listKind)
+
+    for (const parsedCandidate of parsedList.candidates) {
+      expect(
+        Object.keys(parsedCandidate.raw).some((key) =>
+          key.startsWith('カットオフ'),
+        ),
+      ).toBe(false)
+    }
   })
 
   it('parses the vertical kani 地中梁リスト and tolerates an empty 腹筋 cell', () => {

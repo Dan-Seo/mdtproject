@@ -1289,6 +1289,50 @@ function cellsForMark(
     )
 }
 
+function cutoffCellsByMark(
+  rows: TextRow[],
+  positions: PositionColumn[],
+  marks: MarkColumn[],
+): Map<string, Array<{ position?: string; raw: string }>> {
+  const result = new Map<
+    string,
+    Array<{ position?: string; raw: string }>
+  >()
+  const positionTargets = positions.map((position, index) => ({
+    id: String(index),
+    centerX: position.centerX,
+  }))
+  const markTargets = marks.map(({ mark, centerX }) => ({
+    id: mark,
+    centerX,
+  }))
+
+  for (const segment of rows.flatMap((row) => row.segments)) {
+    // NFKC로 全角 ［］를 半角 []에 접되, raw에는 원문 글자를 그대로 남긴다.
+    // 안이 빈 表題의 「［］内は…」는 숫자 조건을 통과하지 않는다.
+    if (!/^\[\d+\]$/.test(compact(segment.text))) continue
+
+    const positionIndex = valuesAtTargets(
+      [segment],
+      positionTargets,
+    ).keys().next().value as string | undefined
+    const position =
+      positionIndex === undefined ? undefined : positions[Number(positionIndex)]
+    const mark =
+      position?.mark ??
+      (valuesAtTargets([segment], markTargets).keys().next().value as
+        | string
+        | undefined)
+    if (mark === undefined) continue
+
+    const cells = result.get(mark) ?? []
+    cells.push({ position: position?.label, raw: segment.text })
+    result.set(mark, cells)
+  }
+
+  return result
+}
+
 function parseGirderBlock(
   rows: TextRow[],
   headerIndex: number,
@@ -1358,6 +1402,7 @@ function parseGirderBlock(
       ...position,
       index,
     }))
+    const cutoffCells = cutoffCellsByMark(dataRows, positions, marks)
     const dimensionLabel = dimensionRow
       ? exactLabel(dimensionRow, ['断面', 'b×D'])?.compact
       : undefined
@@ -1465,6 +1510,7 @@ function parseGirderBlock(
         bottomCells.length === 0 &&
         !stirrup &&
         sideBar === undefined &&
+        !cutoffCells.has(mark) &&
         !topContinuations.has(mark) &&
         !bottomContinuations.has(mark) &&
         !stirrupContinuations.has(mark)
@@ -1537,6 +1583,12 @@ function parseGirderBlock(
         )
       }
       setSideBar(result, sideBar)
+      for (const cell of cutoffCells.get(mark) ?? []) {
+        const key = cell.position
+          ? `カットオフ(${cell.position})`
+          : 'カットオフ'
+        result.raw[key] = cell.raw
+      }
       candidates.push(result)
     }
   }
