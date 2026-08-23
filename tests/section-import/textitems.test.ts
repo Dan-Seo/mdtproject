@@ -55,6 +55,14 @@ const fixtures = [
     needles: [['大梁断面リスト'], ['G51'], ['13-D25'], ['650']],
   },
   {
+    file: 'yokohama-p7.json',
+    cacheFile: 'dwg-yokohama.pdf',
+    sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
+    page: 7,
+    // 伏図 픽스처 — 断面リスト가 아니라 형상(通り芯·부재 배치)의 근거다 (ADR-030)
+    needles: [['2階床伏図'], ['bX1'], ['bY6'], ['8700'], ['G51']],
+  },
+  {
     file: 'kani-p38.json',
     cacheFile: 'dwg-kani-kids.pdf',
     sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',

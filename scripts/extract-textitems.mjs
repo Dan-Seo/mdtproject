@@ -44,6 +44,7 @@ const targets = [
   { cacheFile: 'dwg-ojkk-zumen6.pdf', page: 3, output: 'ojkk-p3.json' },
   { cacheFile: 'dwg-yokohama.pdf', page: 13, output: 'yokohama-p13.json' },
   { cacheFile: 'dwg-yokohama.pdf', page: 14, output: 'yokohama-p14.json' },
+  { cacheFile: 'dwg-yokohama.pdf', page: 7, output: 'yokohama-p7.json' },
   { cacheFile: 'dwg-kani-kids.pdf', page: 38, output: 'kani-p38.json' },
 ]
 
