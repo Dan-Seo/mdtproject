@@ -448,6 +448,16 @@ function placementFor(
   return { mark, role: 'ベイ', ix: x.index, iy: y.index }
 }
 
+function gridCandidate(sequence: ValidatedSequence): PlanGridCandidate {
+  return {
+    direction: sequence.direction,
+    axes: sequence.axes,
+    spansMm: sequence.spansMm,
+    scalePtPerMm: sequence.scalePtPerMm,
+    totalConfirmed: sequence.totalConfirmed,
+  }
+}
+
 /**
  * 블록을 짓는다 — X 열 하나와 **가장 가까운** Y 열 하나를 짝짓는다.
  *
@@ -483,8 +493,10 @@ function buildBlocks(
     }
     if (!paired) continue
 
-    const xAxes = xSequence.axes
-    const yAxes = paired.axes
+    const xGrid = gridCandidate(xSequence)
+    const yGrid = gridCandidate(paired)
+    const xAxes = xGrid.axes
+    const yAxes = yGrid.axes
     const key = [xAxes, yAxes]
       .map((axes) =>
         axes
@@ -533,6 +545,8 @@ function buildBlocks(
 
     blocks.push({
       ...(title === undefined ? {} : { title }),
+      xGrid,
+      yGrid,
       xAxes,
       yAxes,
       placements,
@@ -572,13 +586,7 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
   const grids: PlanGridCandidate[] = []
   const seen = new Set<string>()
   for (const sequence of validated) {
-    const candidate: PlanGridCandidate = {
-      direction: sequence.direction,
-      axes: sequence.axes,
-      spansMm: sequence.spansMm,
-      scalePtPerMm: sequence.scalePtPerMm,
-      totalConfirmed: sequence.totalConfirmed,
-    }
+    const candidate = gridCandidate(sequence)
     const key = [
       candidate.direction,
       candidate.axes.map((axis) => axis.label).join(','),

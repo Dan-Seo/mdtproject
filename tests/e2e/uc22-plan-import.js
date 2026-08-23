@@ -54,7 +54,7 @@ await page.setInputFiles("[data-testid='plan-import-file']", {
   mimeType: "application/pdf",
   buffer: Buffer.from(pdfBase64, "base64"),
 });
-await page.waitForSelector("[data-testid='plan-import-grid-X']", {
+await page.waitForSelector("[data-testid='plan-import-grid-X-0']", {
   timeout: 120000,
 });
 
@@ -63,8 +63,8 @@ const read = await page.evaluate(() => {
     document.querySelector(`[data-testid='${testId}']`)?.textContent ?? "";
   return {
     // 通り芯: 라벨과 스팬이 도면 그대로
-    gridX: text("plan-import-grid-X"),
-    gridY: text("plan-import-grid-Y"),
+    gridX: text("plan-import-grid-X-0"),
+    gridY: text("plan-import-grid-Y-0"),
     // 軸組図: 階高와 레벨 라벨 (같은 높이의 둘은 둘 다 남는다)
     elevation: text("plan-import-elevation-0"),
     // 伏図 한 장마다 블록 — 이 PDF는 5장이다(杭·基礎·1階床·2階床·R階床)

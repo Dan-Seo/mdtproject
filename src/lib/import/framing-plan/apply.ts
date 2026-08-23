@@ -7,7 +7,6 @@ import type {
   PlanApplyRefusal,
   PlanApplySkip,
   PlanBlock,
-  PlanGridCandidate,
   PlanPlacementRole,
   MemberPlacement,
 } from './types'
@@ -28,8 +27,6 @@ const ROLE_FOR_KIND: Record<MemberKind, PlanPlacementRole> = {
 }
 
 export interface PlanApplyOptions {
-  xGrid: PlanGridCandidate
-  yGrid: PlanGridCandidate
   block: PlanBlock
   storyId: string
   /**
@@ -50,10 +47,8 @@ export interface PlanApplyResult {
   refusal?: PlanApplyRefusal
 }
 
-function gridOf(
-  xGrid: PlanGridCandidate,
-  yGrid: PlanGridCandidate,
-): Grid {
+function gridOf(block: PlanBlock): Grid {
+  const { xGrid, yGrid } = block
   return {
     xSpans: [...xGrid.spansMm],
     ySpans: [...yGrid.spansMm],
@@ -109,13 +104,13 @@ function withinGrid(placement: MemberPlacement, grid: Grid): boolean {
 
 export function applyFramingPlan(
   project: Project,
-  { xGrid, yGrid, block, storyId, discardOtherStories = false }: PlanApplyOptions,
+  { block, storyId, discardOtherStories = false }: PlanApplyOptions,
 ): PlanApplyResult {
   if (!project.stories.some((story) => story.id === storyId)) {
     return { project, applied: 0, skipped: [], refusal: '階未指定' }
   }
 
-  const grid = gridOf(xGrid, yGrid)
+  const grid = gridOf(block)
   const changesGrid = !sameGrid(project.grid, grid)
   const otherStoryMembers = project.members.some(
     (member) => member.storyId !== storyId,
@@ -157,13 +152,13 @@ export function applyFramingPlan(
     members.push({
       // id는 사람이 읽는 값이 아니라 충돌만 피하면 된다. 같은 자리에 같은 符号을
       // 두 번 반영해도 하나로 접히도록 자리를 id에 넣는다
-      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}`,
+      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}${placement.axis ? `-${placement.axis}` : ''}`,
       kind: section.kind,
       memberClass: '躯体',
       sectionId: section.id,
       storyId,
       position: positionOf(placement),
-    } as Member)
+    })
   }
 
   const deduped = new Map<string, Member>()

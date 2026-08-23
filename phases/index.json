@@ -46,7 +46,8 @@
     },
     {
       "dir": "10-plan-import-fixes",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-24T01:48:29+0900"
     }
   ]
 }

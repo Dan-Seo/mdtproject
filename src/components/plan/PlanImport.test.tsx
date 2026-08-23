@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
-import type { TextPage } from '@/lib/import/section-list/types'
+import type { TextItem, TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
 import planFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p7.json'
@@ -14,6 +14,29 @@ const planPage: TextPage = { ...planFixture.page, items: planFixture.items }
 const elevationPage: TextPage = {
   ...elevationFixture.page,
   items: elevationFixture.items,
+}
+
+function h(str: string, x: number, y: number): TextItem {
+  return { str, x, y, w: 0, h: 8 }
+}
+
+function v(str: string, x: number, y: number): TextItem {
+  return { str, x, y, w: 8, h: 0, rot: -90 }
+}
+
+function framingPage(spanMm: number): TextPage {
+  return {
+    widthPt: 1000,
+    heightPt: 1000,
+    items: [
+      h('X1', 0, -40),
+      h('X2', 200, -40),
+      h(String(spanMm), 100, -20),
+      h('Y1', -40, 0),
+      h('Y2', -40, 200),
+      v(String(spanMm), -20, 100),
+    ],
+  }
 }
 
 beforeEach(() => {
@@ -30,13 +53,36 @@ describe('PlanImport', () => {
   it('伏図에서 읽은 通り芯을 라벨과 스팬으로 보여준다', () => {
     open([planPage])
 
-    const grid = screen.getByTestId('plan-import-grid-X')
+    const grid = screen.getByTestId('plan-import-grid-X-0')
     expect(grid.textContent).toContain('bX1')
     expect(grid.textContent).toContain('cX1')
     expect(grid.textContent).toContain('8700')
-    expect(screen.getByTestId('plan-import-grid-Y').textContent).toContain(
+    expect(screen.getByTestId('plan-import-grid-Y-0').textContent).toContain(
       '10000',
     )
+  })
+
+  it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', () => {
+    open([framingPage(6000), framingPage(8000)])
+
+    expect(screen.getByTestId('plan-import-grid-X-0').textContent).toContain(
+      '6000',
+    )
+    expect(screen.getByTestId('plan-import-grid-X-1').textContent).toContain(
+      '8000',
+    )
+    expect(screen.getByTestId('plan-import-grid-Y-0').textContent).toContain(
+      '6000',
+    )
+    expect(screen.getByTestId('plan-import-grid-Y-1').textContent).toContain(
+      '8000',
+    )
+    expect(
+      screen.getByTestId('plan-import-block-grid-0').textContent,
+    ).toContain('6000')
+    expect(
+      screen.getByTestId('plan-import-block-grid-1').textContent,
+    ).toContain('8000')
   })
 
   it('伏図 한 장마다 블록을 제목과 함께 보여준다', () => {

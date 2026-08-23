@@ -2,8 +2,23 @@
   "project": "Kijun",
   "phase": "10-plan-import-fixes",
   "steps": [
-    { "step": 0, "name": "block-owns-grid", "status": "pending" },
-    { "step": 1, "name": "girder-axis-id", "status": "pending" }
+    {
+      "step": 0,
+      "name": "block-owns-grid",
+      "status": "completed",
+      "started_at": "2026-08-24T01:32:28+0900",
+      "summary": "PlanBlock이 짝지어진 X·Y 通り芯을 소유하고 취입·후보 UI가 블록별 그리드만 사용하도록 고쳐 다중 伏図 오취입을 차단했다.",
+      "completed_at": "2026-08-24T01:42:50+0900"
+    },
+    {
+      "step": 1,
+      "name": "girder-axis-id",
+      "status": "completed",
+      "started_at": "2026-08-24T01:42:51+0900",
+      "summary": "大梁 Member.id에 axis suffix를 포함해 같은 격자점의 X·Y 배치를 모두 보존하고, 동일 방향 중복 배치는 하나로 접히도록 고정했다.",
+      "completed_at": "2026-08-24T01:48:28+0900"
+    }
   ],
-  "created_at": "2026-08-24T01:45:00+0900"
+  "created_at": "2026-08-24T01:45:00+0900",
+  "completed_at": "2026-08-24T01:48:29+0900"
 }
