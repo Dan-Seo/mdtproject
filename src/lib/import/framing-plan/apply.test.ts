@@ -217,6 +217,41 @@ describe('applyFramingPlan', () => {
     expect(once.applied).toBe(1)
   })
 
+  it('같은 격자점에서 X·Y 방향으로 뻗는 같은 符号의 大梁을 모두 남긴다', () => {
+    const result = applyFramingPlan(project({ sections: [girderSection('G1')] }), {
+      block: block({
+        placements: [
+          { mark: 'G1', role: '辺', ix: 0, iy: 0, axis: 'X' },
+          { mark: 'G1', role: '辺', ix: 0, iy: 0, axis: 'Y' },
+        ],
+      }),
+      storyId: 'story-1',
+    })
+
+    expect(result.applied).toBe(2)
+    expect(result.project.members.map((member) => member.position)).toEqual([
+      { axis: 'X', ix: 0, iy: 0 },
+      { axis: 'Y', ix: 0, iy: 0 },
+    ])
+  })
+
+  it('같은 방향의 같은 大梁 배치가 블록에 두 번 들어오면 하나로 접는다', () => {
+    const placement = {
+      mark: 'G1',
+      role: '辺' as const,
+      ix: 0,
+      iy: 0,
+      axis: 'X' as const,
+    }
+    const result = applyFramingPlan(project({ sections: [girderSection('G1')] }), {
+      block: block({ placements: [placement, placement] }),
+      storyId: 'story-1',
+    })
+
+    expect(result.applied).toBe(1)
+    expect(result.project.members).toHaveLength(1)
+  })
+
   it('格子点의 柱를 ColumnPosition으로 넣는다', () => {
     const result = applyFramingPlan(project({ sections: [columnSection('C1')] }), {
       block: block({

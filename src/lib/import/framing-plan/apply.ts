@@ -152,13 +152,13 @@ export function applyFramingPlan(
     members.push({
       // id는 사람이 읽는 값이 아니라 충돌만 피하면 된다. 같은 자리에 같은 符号을
       // 두 번 반영해도 하나로 접히도록 자리를 id에 넣는다
-      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}`,
+      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}${placement.axis ? `-${placement.axis}` : ''}`,
       kind: section.kind,
       memberClass: '躯体',
       sectionId: section.id,
       storyId,
       position: positionOf(placement),
-    } as Member)
+    })
   }
 
   const deduped = new Map<string, Member>()
