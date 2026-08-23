@@ -4,6 +4,7 @@ import ja from '@/locales/ja.json'
 import ko from '@/locales/ko.json'
 
 import {
+  ELEVATION_ISSUES,
   PLAN_GRID_ISSUES,
   PLAN_PLACEMENT_ROLES,
   type MemberPlacement,
@@ -34,6 +35,18 @@ describe('ParsedFramingPlan', () => {
     // 역할은 취입 화면에서 「이 부호를 어디에 놓는가」로 그대로 보인다
     const missing = PLAN_PLACEMENT_ROLES.flatMap((role) => {
       const key = `planImport.role.${role}`
+      return [
+        ...(key in ja ? [] : [`ja:${key}`]),
+        ...(key in ko ? [] : [`ko:${key}`]),
+      ]
+    })
+
+    expect(missing).toEqual([])
+  })
+
+  it('has a ja·ko message for every elevation issue code', () => {
+    const missing = ELEVATION_ISSUES.flatMap((issue) => {
+      const key = `planImport.issue.${issue}`
       return [
         ...(key in ja ? [] : [`ja:${key}`]),
         ...(key in ko ? [] : [`ko:${key}`]),

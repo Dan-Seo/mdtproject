@@ -159,5 +159,6 @@
   "planImport.issue.ラベル文字混在": "한 열에 X와 Y 라벨이 섞여 있습니다",
   "planImport.role.格子点": "격자점",
   "planImport.role.辺": "변",
-  "planImport.role.ベイ": "베이"
+  "planImport.role.ベイ": "베이",
+  "planImport.issue.寸法列未検出": "높이 방향 치수 열을 읽지 못했습니다"
 }

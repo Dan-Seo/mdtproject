@@ -159,5 +159,6 @@
   "planImport.issue.ラベル文字混在": "一つの並びに X と Y のラベルが混じっています",
   "planImport.role.格子点": "格子点",
   "planImport.role.辺": "辺",
-  "planImport.role.ベイ": "ベイ"
+  "planImport.role.ベイ": "ベイ",
+  "planImport.issue.寸法列未検出": "高さ方向の寸法列が読めませんでした"
 }

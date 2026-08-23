@@ -76,3 +76,38 @@ export interface ParsedFramingPlan {
   /** 후보를 못 낸 사유 — 첫 등장 순, 중복 없음 */
   issues: PlanGridIssue[]
 }
+
+/** 軸組図에서 계열을 못 낸 사유. 파서는 코드만 싣고 표시부가 번역한다 */
+export const ELEVATION_ISSUES = ['寸法列未検出'] as const
+
+export type ElevationIssue = (typeof ELEVATION_ISSUES)[number]
+
+export interface ElevationLevel {
+  /** 그 높이에 적힌 라벨 원문 전부. 없으면 빈 배열 — 지어내지 않는다 */
+  labels: string[]
+  positionPt: number
+}
+
+/**
+ * 軸組図 한 계열의 높이 방향 읽기. 「어느 레벨이 Story의 경계인가」는 정하지
+ * 않는다 — 원문에는 FL·GL·基礎下端·RCL이 섞여 있고, 그중 무엇이 階인지는
+ * 조문이 아니라 설계 의도라 사람이 읽을 일이다 (ADR-030).
+ *
+ * 通り芯과 달리 라벨의 좌우 정렬이 일정하지 않아(실물 p8의 좌단 x는 108~198로
+ * 흩어진다) 라벨 밴드를 앵커로 쓸 수 없다. 앵커는 **치수 열**이고, 치수가 자기
+ * 구간의 중점에 놓인다는 관계로 축척과 레벨 위치를 함께 푼다.
+ */
+export interface ElevationCandidate {
+  /** 이 계열이 걸리는 軸組図 제목들(원문). 한 계열이 여러 通り에 공통으로 걸린다 */
+  titles: string[]
+  /** 도면 좌표 순 — 위에서 아래로 */
+  levels: ElevationLevel[]
+  /** 인접 레벨 사이 치수(mm). 길이는 levels.length - 1 */
+  heightsMm: number[]
+  scalePtPerMm: number
+}
+
+export interface ParsedFrameElevations {
+  elevations: ElevationCandidate[]
+  issues: ElevationIssue[]
+}
