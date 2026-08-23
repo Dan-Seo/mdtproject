@@ -3,18 +3,21 @@ import type { TextItem, TextPage } from '../section-list/types'
 
 import type {
   AxisCandidate,
-  ParsedPlanGrids,
+  MemberPlacement,
+  ParsedFramingPlan,
+  PlanBlock,
   PlanGridCandidate,
   PlanGridIssue,
 } from './types'
 
 /**
- * 伏図의 通り芯 그리드를 텍스트 레이어만으로 복원한다 (ADR-030).
+ * 伏図의 通り芯 그리드와 부재 배치를 텍스트 레이어만으로 복원한다 (ADR-030).
  *
  * 실측(2026-08-23 스파이크, yokohama p5–p7·kani p38)이 준 구조:
  * 축 라벨은 한 밴드(같은 x 또는 같은 y)에 늘어서고, 스팬 치수 문자열은
  * 인접 라벨 좌표의 **중점**에 놓인다(실측 오차 ≤8pt). 전체 치수가 있으면
- * 첫-끝 중점에 놓여 합계 검증식이 된다. 벡터 선분은 쓰지 않는다 —
+ * 첫-끝 중점에 놓여 합계 검증식이 된다. 부재 부호는 격자점(柱)·변의 중점
+ * (大梁)·칸 중앙(床板) 중 하나에 놓인다. 벡터 선분은 쓰지 않는다 —
  * 一点鎖線이 짧은 조각으로 분해돼 있고 텍스트만으로 복원이 완결된다.
  */
 
@@ -28,6 +31,13 @@ import type {
 const AXIS_LABEL_PATTERN = /[a-z]?[XY]\d+/y
 /** 치수 문자열 — 쉼표 구분(6,000)과 무구분(8700) 둘 다 실물에 있다 */
 const DIMENSION_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d{2,})$/
+/**
+ * 부재 부호. 断面リスト의 것(section-list의 MARK_PATTERN)에 S(床板)를 더했다 —
+ * 伏図에는 스ラブ 부호가 나오고 리스트 표에는 나오지 않는다.
+ */
+const MARK_PATTERN = /^(?:C|G|FC|FG|B|CB|S|W)\d+[A-Z]?$/
+/** 블록 제목. 「2階床伏図1/100」처럼 축척이 붙어 오므로 부분 일치로 본다 */
+const BLOCK_TITLE_PATTERN = /伏図/
 
 // 실측 기반 허용오차. 근거는 스파이크 실측값이고 ADR-030에 적었다.
 /** 라벨을 같은 밴드로 보는 고정 좌표 허용오차. 실측 편차는 1pt 미만이다 */
@@ -39,10 +49,27 @@ const DIMENSION_WINDOW_PT = 60
 const MIDPOINT_TOLERANCE_PT = 15
 /** 스팬별 실측 축척(pt/mm)의 중앙값 대비 허용 편차. 실측 최대 0.5% */
 const SCALE_TOLERANCE_RATIO = 0.03
+/**
+ * 부호를 격자점·중점에 붙이는 허용 거리 ＝ 그 방향 **중앙값 스팬**의 이 비율.
+ *
+ * 인접 스팬을 쓰지 않는 이유가 있다: 실물 yokohama p7의 bX3–cX1은 1200mm(34pt)
+ * 짜리 좁은 띠라, 인접 스팬 기준이면 허용이 8pt로 좁아져 引出線으로 20pt쯤
+ * 비켜 적힌 柱 부호가 통째로 떨어진다. 중앙값은 그 좁은 띠 하나에 흔들리지 않는다.
+ *
+ * 1/4을 넘길 수는 없다 — 격자점과 중점이 반 스팬 간격이므로 1/4이 「어느 쪽에도
+ * 붙일 수 있다」의 경계다. 그보다 크게 잡으면 어느 쪽인지 제품이 고르게 된다.
+ */
+const SNAP_RATIO = 0.25
 
 interface LabelToken {
   label: string
   letter: 'X' | 'Y'
+  x: number
+  y: number
+}
+
+interface PositionedToken {
+  text: string
   x: number
   y: number
 }
@@ -60,6 +87,14 @@ interface AxisSequence {
   /** 밴드의 고정 좌표(평균) — 치수 창의 기준 */
   across: number
   axes: AxisCandidate[]
+}
+
+/** 치수·축척까지 확인이 끝난 축 열. 그리드 정의와 블록이 둘 다 여기서 나온다 */
+interface ValidatedSequence extends AxisSequence {
+  direction: 'X' | 'Y'
+  spansMm: number[]
+  scalePtPerMm: number
+  totalConfirmed: boolean
 }
 
 /**
@@ -108,7 +143,7 @@ function splitAxisLabels(segment: TextSegment, y: number): LabelToken[] {
 
     tokens.push({
       label: match[0],
-      letter: (match[0].includes('X') ? 'X' : 'Y') as 'X' | 'Y',
+      letter: match[0].includes('X') ? 'X' : 'Y',
       x: (minX + maxX) / 2,
       y,
     })
@@ -120,34 +155,43 @@ function splitAxisLabels(segment: TextSegment, y: number): LabelToken[] {
 interface CollectedTokens {
   labels: LabelToken[]
   dimensions: DimensionToken[]
+  marks: PositionedToken[]
+  titles: PositionedToken[]
 }
 
 function collectTokens(page: TextPage): CollectedTokens {
   const labels: LabelToken[] = []
   const dimensions: DimensionToken[] = []
+  const marks: PositionedToken[] = []
+  const titles: PositionedToken[] = []
 
-  const push = (text: string, x: number, y: number) => {
+  const classify = (text: string, x: number, y: number) => {
     if (DIMENSION_PATTERN.test(text)) {
       dimensions.push({
         valueMm: Number.parseInt(text.replaceAll(',', ''), 10),
         x,
         y,
       })
+      return
     }
+    if (MARK_PATTERN.test(text)) {
+      marks.push({ text, x, y })
+      return
+    }
+    if (BLOCK_TITLE_PATTERN.test(text)) titles.push({ text, x, y })
   }
 
   for (const row of recoverRows(page.items)) {
     for (const segment of row.segments) {
       labels.push(...splitAxisLabels(segment, row.y))
-      push(segment.compact, segment.centerX, row.y)
+      classify(segment.compact, segment.centerX, row.y)
     }
   }
 
   // 세로쓰기는 문자 좌표가 세로로 흐르므로 되가르기를 걸지 않는다 — 실측 코퍼스의
   // 세로 런은 치수뿐이고, 세로 라벨이 붙어 나오는 도면은 빈 후보로 실패한다 (R10)
   for (const run of verticalRuns(page.items)) {
-    const match = /^[a-z]?[XY]\d+$/.exec(run.text)
-    if (match) {
+    if (/^[a-z]?[XY]\d+$/.test(run.text)) {
       labels.push({
         label: run.text,
         letter: run.text.includes('X') ? 'X' : 'Y',
@@ -156,10 +200,10 @@ function collectTokens(page: TextPage): CollectedTokens {
       })
       continue
     }
-    push(run.text, run.x, run.y)
+    classify(run.text, run.x, run.y)
   }
 
-  return { labels, dimensions }
+  return { labels, dimensions, marks, titles }
 }
 
 /**
@@ -178,7 +222,11 @@ function axisSequences(
   for (const token of sorted) {
     const band = bands.at(-1)
     const previous = band?.at(-1)
-    if (band && previous && token[across] - previous[across] <= BAND_TOLERANCE_PT) {
+    if (
+      band &&
+      previous &&
+      token[across] - previous[across] <= BAND_TOLERANCE_PT
+    ) {
       band.push(token)
     } else {
       bands.push([token])
@@ -244,8 +292,263 @@ function dimensionAt(
   return best
 }
 
-export function parseFramingPlanGrids(page: TextPage): ParsedPlanGrids {
-  const { labels, dimensions } = collectTokens(page)
+function median(values: number[]): number {
+  return [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]
+}
+
+function validateSequence(
+  sequence: AxisSequence,
+  dimensions: DimensionToken[],
+  issue: (code: PlanGridIssue) => void,
+): ValidatedSequence | undefined {
+  if (sequence.letters.size > 1) {
+    issue('ラベル文字混在')
+    return undefined
+  }
+  const alongKey = sequence.alongKey
+  const acrossKey: 'x' | 'y' = alongKey === 'y' ? 'x' : 'y'
+
+  const used = new Set<DimensionToken>()
+  const spans: DimensionToken[] = []
+  for (let i = 0; i + 1 < sequence.axes.length; i++) {
+    const midpoint =
+      (sequence.axes[i].positionPt + sequence.axes[i + 1].positionPt) / 2
+    const dimension = dimensionAt(
+      dimensions,
+      used,
+      alongKey,
+      acrossKey,
+      midpoint,
+      sequence.across,
+    )
+    if (!dimension) break
+    used.add(dimension)
+    spans.push(dimension)
+  }
+  if (spans.length < sequence.axes.length - 1) {
+    issue('寸法欠落')
+    return undefined
+  }
+
+  // 스팬별 실측 축척이 갈리면 치수 오배정이다 — 조용한 그리드를 내느니 실패한다
+  const scales = spans.map(
+    (span, i) =>
+      (sequence.axes[i + 1].positionPt - sequence.axes[i].positionPt) /
+      span.valueMm,
+  )
+  const medianScale = median(scales)
+  if (
+    scales.some(
+      (scale) => Math.abs(scale / medianScale - 1) > SCALE_TOLERANCE_RATIO,
+    )
+  ) {
+    issue('縮尺不整合')
+    return undefined
+  }
+
+  // 전체 치수(첫-끝 중점)가 있으면 합계 검증식으로 쓴다 — 불일치는 오독 신호다
+  const spanSum = spans.reduce((sum, span) => sum + span.valueMm, 0)
+  const first = sequence.axes[0].positionPt
+  const last = sequence.axes.at(-1)?.positionPt ?? first
+  const total = dimensionAt(
+    dimensions,
+    used,
+    alongKey,
+    acrossKey,
+    (first + last) / 2,
+    sequence.across,
+  )
+  if (total && total.valueMm !== spanSum) {
+    issue('合計不一致')
+    return undefined
+  }
+
+  return {
+    ...sequence,
+    direction: [...sequence.letters][0],
+    spansMm: spans.map((span) => span.valueMm),
+    scalePtPerMm: medianScale,
+    totalConfirmed: total !== undefined,
+  }
+}
+
+function extent(axes: AxisCandidate[]): { min: number; max: number } {
+  return {
+    min: axes[0].positionPt,
+    max: axes[axes.length - 1].positionPt,
+  }
+}
+
+/** 점에서 구간까지의 거리. 구간 안이면 0 */
+function distanceToRange(value: number, min: number, max: number): number {
+  if (value < min) return min - value
+  if (value > max) return value - max
+  return 0
+}
+
+/**
+ * 부호가 붙는 자리를 만든다 — 격자점과 그 사이 중점이 번갈아 놓인 눈금이다.
+ * 짝수 index가 격자점(index/2), 홀수가 중점(사이 (index-1)/2).
+ */
+function snapTargets(axes: AxisCandidate[]): number[] {
+  const targets: number[] = []
+  for (let i = 0; i < axes.length; i++) {
+    targets.push(axes[i].positionPt)
+    if (i + 1 < axes.length) {
+      targets.push((axes[i].positionPt + axes[i + 1].positionPt) / 2)
+    }
+  }
+  return targets
+}
+
+function spanLengths(axes: AxisCandidate[]): number[] {
+  return axes
+    .slice(1)
+    .map((axis, i) => axis.positionPt - axes[i].positionPt)
+}
+
+interface Snap {
+  index: number
+  onNode: boolean
+}
+
+function snap(
+  value: number,
+  axes: AxisCandidate[],
+  limit: number,
+): Snap | undefined {
+  const targets = snapTargets(axes)
+  let best = -1
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (let i = 0; i < targets.length; i++) {
+    const distance = Math.abs(targets[i] - value)
+    if (distance < bestDistance) {
+      best = i
+      bestDistance = distance
+    }
+  }
+  if (best < 0 || bestDistance > limit) return undefined
+  return { index: best >> 1, onNode: best % 2 === 0 }
+}
+
+function placementFor(
+  mark: string,
+  x: Snap,
+  y: Snap,
+): MemberPlacement | undefined {
+  if (x.onNode && y.onNode) {
+    return { mark, role: '格子点', ix: x.index, iy: y.index }
+  }
+  if (!x.onNode && y.onNode) {
+    return { mark, role: '辺', ix: x.index, iy: y.index, axis: 'X' }
+  }
+  if (x.onNode && !y.onNode) {
+    return { mark, role: '辺', ix: x.index, iy: y.index, axis: 'Y' }
+  }
+  return { mark, role: 'ベイ', ix: x.index, iy: y.index }
+}
+
+/**
+ * 블록을 짓는다 — X 열 하나와 **가장 가까운** Y 열 하나를 짝짓는다.
+ *
+ * 고정 여백으로 「포함」을 판정하지 않는 이유: 라벨은 도면 바깥에 놓이므로
+ * 여백이 필요한데(실물 156pt), 그 여백을 넓히면 옆 블록의 열까지 삼킨다.
+ * 최근접은 그 사이를 재지 않고도 옳은 짝을 고른다.
+ *
+ * 같은 블록의 위·아래 라벨 띠는 축 위치가 같으므로 그 자리에서 하나로 접힌다.
+ */
+function buildBlocks(
+  xSequences: ValidatedSequence[],
+  ySequences: ValidatedSequence[],
+  marks: PositionedToken[],
+  titles: PositionedToken[],
+): PlanBlock[] {
+  const blocks: PlanBlock[] = []
+  const seen = new Set<string>()
+
+  for (const xSequence of xSequences) {
+    const xExtent = extent(xSequence.axes)
+    let paired: ValidatedSequence | undefined
+    let pairedDistance = Number.POSITIVE_INFINITY
+    for (const ySequence of ySequences) {
+      const distance = distanceToRange(
+        ySequence.across,
+        xExtent.min,
+        xExtent.max,
+      )
+      if (distance < pairedDistance) {
+        paired = ySequence
+        pairedDistance = distance
+      }
+    }
+    if (!paired) continue
+
+    const xAxes = xSequence.axes
+    const yAxes = paired.axes
+    const key = [xAxes, yAxes]
+      .map((axes) =>
+        axes
+          .map((axis) => `${axis.label}@${Math.round(axis.positionPt)}`)
+          .join(','),
+      )
+      .join('|')
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const xLimit = median(spanLengths(xAxes)) * SNAP_RATIO
+    const yLimit = median(spanLengths(yAxes)) * SNAP_RATIO
+    const yExtent = extent(yAxes)
+
+    const placements: MemberPlacement[] = []
+    const unplacedMarks: string[] = []
+    for (const mark of marks) {
+      // 블록 밖의 부호는 아예 보지 않는다 — 같은 페이지의 断面リスト가 섞인다.
+      // 판정 여백을 스냅 허용과 같게 두어, 「블록 안인데 못 붙였다」와
+      // 「블록 밖이다」가 같은 자로 갈리게 한다
+      if (distanceToRange(mark.x, xExtent.min, xExtent.max) > xLimit) continue
+      if (distanceToRange(mark.y, yExtent.min, yExtent.max) > yLimit) continue
+
+      const x = snap(mark.x, xAxes, xLimit)
+      const y = snap(mark.y, yAxes, yLimit)
+      if (!x || !y) {
+        if (!unplacedMarks.includes(mark.text)) unplacedMarks.push(mark.text)
+        continue
+      }
+      const placement = placementFor(mark.text, x, y)
+      if (placement) placements.push(placement)
+    }
+
+    // 제목은 블록의 가로 범위 안에 있는 것만 본다 — 나란히 선 두 伏図에서
+    // 세로 거리만으로 고르면 옆 블록의 제목이 붙는다
+    let title: string | undefined
+    let titleDistance = Number.POSITIVE_INFINITY
+    for (const candidate of titles) {
+      if (distanceToRange(candidate.x, xExtent.min, xExtent.max) > 0) continue
+      const distance = distanceToRange(candidate.y, yExtent.min, yExtent.max)
+      if (distance < titleDistance) {
+        title = candidate.text
+        titleDistance = distance
+      }
+    }
+
+    blocks.push({
+      ...(title === undefined ? {} : { title }),
+      xAxes,
+      yAxes,
+      placements,
+      unplacedMarks,
+    })
+  }
+
+  return blocks.sort(
+    (a, b) =>
+      a.xAxes[0].positionPt - b.xAxes[0].positionPt ||
+      a.yAxes[0].positionPt - b.yAxes[0].positionPt,
+  )
+}
+
+export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
+  const { labels, dimensions, marks, titles } = collectTokens(page)
 
   const issues: PlanGridIssue[] = []
   const issue = (code: PlanGridIssue) => {
@@ -253,89 +556,28 @@ export function parseFramingPlanGrids(page: TextPage): ParsedPlanGrids {
   }
 
   if (labels.length === 0) {
-    return { candidates: [], issues: ['通り芯ラベル未検出'] }
+    return { grids: [], blocks: [], issues: ['通り芯ラベル未検出'] }
   }
 
   // 라벨 문자열이 가로로 놓여도 밴드(축의 늘어선 방향)는 세로일 수 있다 —
   // 두 방향 다 묶어 보고, 검증(중점 치수·축척)이 가짜 밴드를 걸러낸다.
-  const sequences = [
+  const validated = [
     ...axisSequences(labels, 'x'),
     ...axisSequences(labels, 'y'),
-  ]
+  ].flatMap((sequence) => {
+    const result = validateSequence(sequence, dimensions, issue)
+    return result ? [result] : []
+  })
 
-  const candidates: PlanGridCandidate[] = []
+  const grids: PlanGridCandidate[] = []
   const seen = new Set<string>()
-
-  for (const sequence of sequences) {
-    if (sequence.letters.size > 1) {
-      issue('ラベル文字混在')
-      continue
-    }
-    const alongKey = sequence.alongKey
-    const acrossKey: 'x' | 'y' = alongKey === 'y' ? 'x' : 'y'
-
-    const used = new Set<DimensionToken>()
-    const spans: DimensionToken[] = []
-    for (let i = 0; i + 1 < sequence.axes.length; i++) {
-      const midpoint =
-        (sequence.axes[i].positionPt + sequence.axes[i + 1].positionPt) / 2
-      const dimension = dimensionAt(
-        dimensions,
-        used,
-        alongKey,
-        acrossKey,
-        midpoint,
-        sequence.across,
-      )
-      if (!dimension) break
-      used.add(dimension)
-      spans.push(dimension)
-    }
-    if (spans.length < sequence.axes.length - 1) {
-      issue('寸法欠落')
-      continue
-    }
-
-    // 스팬별 실측 축척이 갈리면 치수 오배정이다 — 조용한 그리드를 내느니 실패한다
-    const scales = spans.map(
-      (span, i) =>
-        (sequence.axes[i + 1].positionPt - sequence.axes[i].positionPt) /
-        span.valueMm,
-    )
-    const sortedScales = [...scales].sort((a, b) => a - b)
-    const medianScale = sortedScales[Math.floor(sortedScales.length / 2)]
-    if (
-      scales.some(
-        (scale) => Math.abs(scale / medianScale - 1) > SCALE_TOLERANCE_RATIO,
-      )
-    ) {
-      issue('縮尺不整合')
-      continue
-    }
-
-    // 전체 치수(첫-끝 중점)가 있으면 합계 검증식으로 쓴다 — 불일치는 오독 신호다
-    const spanSum = spans.reduce((total, span) => total + span.valueMm, 0)
-    const first = sequence.axes[0].positionPt
-    const last = sequence.axes.at(-1)?.positionPt ?? first
-    const total = dimensionAt(
-      dimensions,
-      used,
-      alongKey,
-      acrossKey,
-      (first + last) / 2,
-      sequence.across,
-    )
-    if (total && total.valueMm !== spanSum) {
-      issue('合計不一致')
-      continue
-    }
-
+  for (const sequence of validated) {
     const candidate: PlanGridCandidate = {
-      direction: [...sequence.letters][0],
+      direction: sequence.direction,
       axes: sequence.axes,
-      spansMm: spans.map((span) => span.valueMm),
-      scalePtPerMm: medianScale,
-      totalConfirmed: total !== undefined,
+      spansMm: sequence.spansMm,
+      scalePtPerMm: sequence.scalePtPerMm,
+      totalConfirmed: sequence.totalConfirmed,
     }
     const key = [
       candidate.direction,
@@ -344,14 +586,20 @@ export function parseFramingPlanGrids(page: TextPage): ParsedPlanGrids {
     ].join('|')
     if (seen.has(key)) continue
     seen.add(key)
-    candidates.push(candidate)
+    grids.push(candidate)
   }
-
-  candidates.sort(
+  grids.sort(
     (a, b) =>
       a.direction.localeCompare(b.direction) ||
       a.axes[0].positionPt - b.axes[0].positionPt,
   )
 
-  return { candidates, issues }
+  const blocks = buildBlocks(
+    validated.filter((sequence) => sequence.direction === 'X'),
+    validated.filter((sequence) => sequence.direction === 'Y'),
+    marks,
+    titles,
+  )
+
+  return { grids, blocks, issues }
 }

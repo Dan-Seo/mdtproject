@@ -151,5 +151,13 @@
   "plan.openings.width": "内法 폭",
   "plan.openings.height": "内法 높이",
   "plan.openings.select": "耐震壁 또는 床板을 선택하면 개구부를 입력할 수 있습니다",
-  "plan.openings.ignored": "内法面積 0.5㎡ 이하 — 欠除 없음"
+  "plan.openings.ignored": "内法面積 0.5㎡ 이하 — 欠除 없음",
+  "planImport.issue.通り芯ラベル未検出": "通り芯(기준선) 라벨을 읽지 못했습니다",
+  "planImport.issue.寸法欠落": "通り芯 사이 치수를 읽지 못했습니다",
+  "planImport.issue.縮尺不整合": "스팬별 실측 축척이 어긋납니다",
+  "planImport.issue.合計不一致": "전체 치수가 스팬 합과 맞지 않습니다",
+  "planImport.issue.ラベル文字混在": "한 열에 X와 Y 라벨이 섞여 있습니다",
+  "planImport.role.格子点": "격자점",
+  "planImport.role.辺": "변",
+  "planImport.role.ベイ": "베이"
 }

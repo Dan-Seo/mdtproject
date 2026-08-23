@@ -151,5 +151,13 @@
   "plan.openings.width": "内法幅",
   "plan.openings.height": "内法高さ",
   "plan.openings.select": "耐震壁または床板を選ぶと開口部を入力できます",
-  "plan.openings.ignored": "内法面積 0.5㎡以下 — 欠除なし"
+  "plan.openings.ignored": "内法面積 0.5㎡以下 — 欠除なし",
+  "planImport.issue.通り芯ラベル未検出": "通り芯のラベルが読めませんでした",
+  "planImport.issue.寸法欠落": "通り芯の間の寸法が読めませんでした",
+  "planImport.issue.縮尺不整合": "スパンごとの実測縮尺が食い違います",
+  "planImport.issue.合計不一致": "全体寸法がスパンの合計と一致しません",
+  "planImport.issue.ラベル文字混在": "一つの並びに X と Y のラベルが混じっています",
+  "planImport.role.格子点": "格子点",
+  "planImport.role.辺": "辺",
+  "planImport.role.ベイ": "ベイ"
 }
