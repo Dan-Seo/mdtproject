@@ -375,7 +375,6 @@ function parseBar(value: string): ParsedBar | undefined {
 
 function parsePitch(
   value: string,
-  allowFourDigitPitch = false,
 ): { size: ShearBarSize; pitchMm: number } | undefined {
   // 셀 전체가 단일 「径@ピッチ」일 때만 채택한다 — 부분 매치를 허용하면
   // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다.
@@ -387,30 +386,67 @@ function parsePitch(
   if (!shearBarSizes.has(size)) return undefined
   const pitchMm = Number(match[2])
   // 4자리 피치는 인접 세그먼트가 붙은 잔재다(「D13@100」+「2」) — 확정하지 않는다
-  // 다만 리스트 표제의 幅止め筋은 실제로 @1000이므로 그 호출부에서만 4자리를 허용한다.
-  const maxPitchDigits = allowFourDigitPitch ? 4 : 3
-  return match[2].length > maxPitchDigits || pitchMm <= 0
-    ? undefined
-    : { size, pitchMm }
+  return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
+}
+
+/**
+ * compact된 特記를 「1.」부터 순차인 번호열로 먼저 가른다. 숫자가 피치에 붙어
+ * 「@5002.」가 되어도 다음 번호가 2라는 사실이 오른쪽 경계를 증명한다.
+ * 번호열이 없으면 표제 전체가 한 항목이며, 빈 항목은 번호열의 증명이 아니므로
+ * 분리하지 않는다.
+ */
+function sequentialTitleItems(titleText: string): string[] {
+  const text = compact(titleText)
+  const firstMarker = text.indexOf('1.')
+  if (firstMarker < 0) return [text]
+
+  const items: string[] = []
+  let itemStart = firstMarker + '1.'.length
+  let nextNumber = 2
+
+  while (true) {
+    const marker = `${nextNumber}.`
+    const boundary = text.indexOf(marker, itemStart)
+    if (boundary < 0) {
+      const lastItem = text.slice(itemStart)
+      return lastItem.length > 0 ? [...items, lastItem] : [text]
+    }
+
+    const item = text.slice(itemStart, boundary)
+    const nextStart = boundary + marker.length
+    if (item.length === 0 || nextStart >= text.length) return [text]
+
+    items.push(item)
+    itemStart = nextStart
+    nextNumber += 1
+  }
 }
 
 function widthTieFromTitle(
   titleText: string,
 ): { value?: SectionCandidate['widthTie']; raw?: string } | undefined {
-  const label = titleText.match(/(?:幅|巾)止(?:め)?筋/)
+  const item = sequentialTitleItems(titleText).find((candidate) =>
+    /(?:幅|巾)止(?:め)?筋/.test(candidate),
+  )
+  if (!item) return undefined
+
+  const label = item.match(/(?:幅|巾)止(?:め)?筋/)
   if (!label || label.index === undefined) return undefined
 
-  const raw = titleText.slice(label.index)
-  // compact된 yokohama 표제는 「@1000」과 다음 항목 번호 「2.」가 붙어 @10002가 된다.
-  // 幅止め筋 표제에서 허용하는 4자리까지만 첫 토큰으로 잘라 기존 피치 파서에 맡긴다.
-  const token = raw
-    .slice(label[0].length)
-    .match(/[A-Z]\d+(?:\.\d+)?-?@\d{1,4}/i)?.[0]
-  const parsed = token ? parsePitch(token, true) : undefined
-  if (!parsed || !barSizes.has(parsed.size as BarSize)) return { raw }
+  const raw = item.slice(label.index)
+  // 항목 경계를 증명한 뒤에는 자릿수로 피치 끝을 추측하지 않는다. 幅止め筋 항목
+  // 전체가 이 문법일 때만 확정하고, 뒤에 다른 特記가 붙으면 raw 경로로 보낸다.
+  const match = raw.match(
+    /^(?:幅|巾)止(?:め)?筋(?:は)?([A-Z]\d+(?:\.\d+)?)-?@(\d+)(?:とする)?[。.]*$/i,
+  )
+  if (!match) return { raw }
+
+  const size = match[1].toUpperCase() as BarSize
+  const pitchMm = Number(match[2])
+  if (!barSizes.has(size) || pitchMm <= 0) return { raw }
 
   return {
-    value: { size: parsed.size as BarSize, pitchMm: parsed.pitchMm },
+    value: { size, pitchMm },
   }
 }
 
@@ -1676,7 +1712,10 @@ function parseTableRegion(
     for (const candidate of candidates) {
       if (candidate.kind !== '大梁') continue
       if (widthTie.value) candidate.widthTie = { ...widthTie.value }
-      else if (widthTie.raw) candidate.raw['幅止筋'] = widthTie.raw
+      else if (widthTie.raw) {
+        candidate.raw['幅止筋'] = widthTie.raw
+        addIssue(candidate, '幅止め筋解釈不能')
+      }
     }
   }
 

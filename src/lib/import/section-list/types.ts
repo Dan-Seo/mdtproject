@@ -36,6 +36,7 @@ export const CANDIDATE_ISSUES = [
   '帯筋折返し',
   '帯筋ラベル行外',
   '腹筋解釈不能',
+  '幅止め筋解釈不能',
   '階不明',
   '項目行重複',
 ] as const

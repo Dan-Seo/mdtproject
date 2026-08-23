@@ -69,6 +69,20 @@ function expectMarksInclude(
   for (const mark of expectedMarks) expect(parsedMarks.has(mark), mark).toBe(true)
 }
 
+function titlePage(title: string, mark: string): TextPage {
+  return {
+    widthPt: 300,
+    heightPt: 180,
+    items: [
+      { str: title, x: 10, y: 5, w: 260, h: 8 },
+      { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+      { str: mark, x: 140, y: 20, w: 12, h: 8 },
+      { str: '断面', x: 10, y: 50, w: 20, h: 8 },
+      { str: '400×600', x: 120, y: 50, w: 50, h: 8 },
+    ],
+  }
+}
+
 describe('parseSectionLists', () => {
   it('parses the horizontal ojkk 柱リスト without inventing unsupported hoop sizes', () => {
     const parsed = parseSectionLists(readPage('ojkk-p2.json'))
@@ -333,27 +347,106 @@ describe('parseSectionLists', () => {
     expect(g1.issues).toContain('腹筋解釈不能')
   })
 
-  it('uses only the first 径 + ピッチ after 幅止 in a title 特記', () => {
+  it('separates a three-digit 幅止め筋 pitch from the next numbered title item', () => {
+    const parsed = parseSectionLists(
+      titlePage(
+        '大梁リスト特記なき限り1.巾止筋D10-@5002.中吊り筋受け筋D10-@1000',
+        'G1',
+      ),
+    )
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.widthTie).toEqual({ size: 'D10', pitchMm: 500 })
+  })
+
+  it.each([
+    {
+      fixture: 'ojkk-p3',
+      title: '大梁リスト※幅止筋はD10@1000とする',
+      listKind: '大梁リスト',
+      mark: 'G1',
+      expected: { size: 'D10', pitchMm: 1000 },
+    },
+    {
+      fixture: 'yokohama-p14',
+      title:
+        '大梁断面リスト特記なき限り1.巾止筋D10-@10002.中吊り筋受け筋D10-@10003.［］内はｶｯﾄｵﾌの柱面からの寸法を示す。',
+      listKind: '大梁断面リスト',
+      mark: 'G1',
+      expected: { size: 'D10', pitchMm: 1000 },
+    },
+    {
+      fixture: 'yokohama-p13 柱',
+      title:
+        '柱断面リスト1/30特記なき限り1.巾止筋D10-@5002.S13はKSS785を示す。3.HOOPの…',
+      listKind: '柱断面リスト',
+      mark: 'C1',
+      expected: undefined,
+    },
+    {
+      fixture: 'yokohama-p13 小梁',
+      title:
+        '小梁断面リスト1/30特記なき限り1.巾止筋D10-@10002.中吊り筋受け筋D10-@1000',
+      listKind: '小梁断面リスト',
+      mark: 'B1',
+      expected: undefined,
+    },
+  ])('reads the restored $fixture title without crossing item boundaries', ({
+    title,
+    listKind,
+    mark,
+    expected,
+  }) => {
+    const parsedCandidate = candidate(
+      list(parseSectionLists(titlePage(title, mark)), listKind),
+      mark,
+    )
+
+    expect(parsedCandidate.widthTie).toEqual(expected)
+  })
+
+  it('recognizes a two-digit next item number only after splitting sequential items', () => {
+    const title =
+      '大梁リスト特記なき限り1.a2.b3.c4.d5.e6.f7.g8.h9.巾止筋D10-@50010.中吊り筋'
+    const g1 = candidate(
+      list(parseSectionLists(titlePage(title, 'G1')), '大梁リスト'),
+      'G1',
+    )
+
+    expect(g1.widthTie).toEqual({ size: 'D10', pitchMm: 500 })
+  })
+
+  it('keeps an unbounded 幅止め筋 title item raw with an issue', () => {
+    const parsed = parseSectionLists(
+      titlePage(
+        '大梁リスト特記幅止め筋D10-@1000中吊り筋受け筋D13-@200',
+        'G1',
+      ),
+    )
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.widthTie).toBeUndefined()
+    expect(g1.raw['幅止筋']).toBe(
+      '幅止め筋D10-@1000中吊り筋受け筋D13-@200',
+    )
+    expect(g1.issues).toContain('幅止め筋解釈不能')
+  })
+
+  it('keeps the pre-phase-7 numeric pitch limit for table cells', () => {
     const parsed = parseSectionLists({
       widthPt: 300,
       heightPt: 180,
       items: [
-        {
-          str: '大梁リスト特記幅止め筋D10-@1000中吊り筋受け筋D13-@200',
-          x: 10,
-          y: 5,
-          w: 240,
-          h: 8,
-        },
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
         { str: '符号', x: 10, y: 20, w: 20, h: 8 },
         { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
-        { str: '断面', x: 10, y: 50, w: 20, h: 8 },
-        { str: '400×600', x: 120, y: 50, w: 50, h: 8 },
+        { str: 'ST', x: 10, y: 40, w: 20, h: 8 },
+        { str: 'D13@0100', x: 120, y: 40, w: 50, h: 8 },
       ],
     })
     const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
 
-    expect(g1.widthTie).toEqual({ size: 'D10', pitchMm: 1000 })
+    expect(g1.stirrup).toEqual({ size: 'D13', pitchMm: 100 })
   })
 
 })

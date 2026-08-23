@@ -41,6 +41,7 @@
   "sectionImport.issue.帯筋折返し": "帯筋・あばら筋セルが複数行に折り返されているため、値を確定しませんでした。",
   "sectionImport.issue.帯筋ラベル行外": "帯筋・あばら筋の値がその行ではなく直下の無ラベル行にあるため、値を確定しませんでした。",
   "sectionImport.issue.腹筋解釈不能": "腹筋を対応する鉄筋径・本数として解釈できません。",
+  "sectionImport.issue.幅止め筋解釈不能": "幅止め筋を対応する鉄筋径・ピッチとして一意に解釈できないため、候補を空欄にしました。",
   "sectionImport.outOfScope": "対象外（柱・大梁以外）",
   "plan.storyTabs": "階選択",
   "plan.addSpan": "スパンを追加",
