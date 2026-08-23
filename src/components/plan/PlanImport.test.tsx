@@ -1,0 +1,130 @@
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createSampleProject } from '@/domain/model/sample-project'
+import type { TextPage } from '@/lib/import/section-list/types'
+import { useAppStore } from '@/lib/store'
+
+import planFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p7.json'
+import elevationFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p8.json'
+
+import { PlanImport } from './PlanImport'
+
+const planPage: TextPage = { ...planFixture.page, items: planFixture.items }
+const elevationPage: TextPage = {
+  ...elevationFixture.page,
+  items: elevationFixture.items,
+}
+
+beforeEach(() => {
+  act(() => {
+    useAppStore.setState({ project: createSampleProject() })
+  })
+})
+
+function open(pages: TextPage[]) {
+  render(<PlanImport initialPages={pages} />)
+}
+
+describe('PlanImport', () => {
+  it('伏図에서 읽은 通り芯을 라벨과 스팬으로 보여준다', () => {
+    open([planPage])
+
+    const grid = screen.getByTestId('plan-import-grid-X')
+    expect(grid.textContent).toContain('bX1')
+    expect(grid.textContent).toContain('cX1')
+    expect(grid.textContent).toContain('8700')
+    expect(screen.getByTestId('plan-import-grid-Y').textContent).toContain(
+      '10000',
+    )
+  })
+
+  it('伏図 한 장마다 블록을 제목과 함께 보여준다', () => {
+    open([planPage])
+
+    expect(screen.getByText('2階床伏図1/100')).toBeTruthy()
+    expect(screen.getByText('R階床伏図1/100')).toBeTruthy()
+  })
+
+  it('軸組図의 階高를 라벨과 함께 보여준다', () => {
+    open([elevationPage])
+
+    const elevation = screen.getByTestId('plan-import-elevation-0')
+    expect(elevation.textContent).toContain('4480')
+    expect(elevation.textContent).toContain('2FL')
+    // 같은 높이의 라벨 둘은 둘 다 보인다 — 어느 쪽이 階인지 제품이 고르지 않는다
+    expect(elevation.textContent).toContain('中央棟1FL')
+    expect(elevation.textContent).toContain('基準GL')
+  })
+
+  it('読めなかった도면은 사유를 말한다 — 빈 화면으로 두지 않는다', () => {
+    open([{ widthPt: 100, heightPt: 100, items: [] }])
+
+    expect(screen.getByTestId('plan-import-issues').textContent).toBeTruthy()
+  })
+
+  it('다른 층에 부재가 있으면 通り芯을 말없이 바꾸지 않는다', async () => {
+    // 샘플 案件에는 이미 여러 층의 부재가 있다. 격자 index는 스팬 배열에 매여
+    // 있어서, 스팬을 바꾸면 손대지 않은 층이 조용히 다른 자리로 옮겨간다
+    const before = useAppStore.getState().project
+    open([planPage])
+
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-import-result').textContent).toBeTruthy()
+    })
+    expect(useAppStore.getState().project.grid).toEqual(before.grid)
+    // 동의를 묻는 칸은 거부를 본 뒤에 나온다
+    expect(screen.getByTestId('plan-import-discard')).toBeTruthy()
+  })
+
+  it('동의하면 通り芯과 부재가 案件에 들어간다', async () => {
+    open([planPage])
+
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+    await waitFor(() => screen.getByTestId('plan-import-discard'))
+    fireEvent.click(screen.getByTestId('plan-import-discard'))
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      const { project } = useAppStore.getState()
+      expect(project.grid.xSpans).toEqual([8700, 8700, 1200])
+      expect(project.grid.ySpans).toEqual([5000, 6000, 10000, 6000, 5000])
+    })
+  })
+
+  it('取入 결과를 넣지 못한 符号과 사유로 보고한다', async () => {
+    open([planPage])
+
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+    await waitFor(() => screen.getByTestId('plan-import-discard'))
+    fireEvent.click(screen.getByTestId('plan-import-discard'))
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      // 샘플 案件의 断面一覧에는 이 도면의 符号이 없다 — 지어내지 않고 사유를 말한다
+      expect(screen.getByTestId('plan-import-result').textContent).toContain(
+        'C51',
+      )
+    })
+  })
+
+  it('PDF 읽기에 실패하면 案件을 건드리지 않고 말한다', async () => {
+    const before = useAppStore.getState().project
+    render(
+      <PlanImport
+        extractPages={vi.fn().mockRejectedValue(new Error('broken'))}
+      />,
+    )
+
+    fireEvent.change(screen.getByTestId('plan-import-file'), {
+      target: { files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy()
+    })
+    expect(useAppStore.getState().project).toBe(before)
+  })
+})

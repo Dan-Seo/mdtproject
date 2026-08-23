@@ -5,6 +5,8 @@ import ko from '@/locales/ko.json'
 
 import {
   ELEVATION_ISSUES,
+  PLAN_APPLY_REFUSALS,
+  PLAN_APPLY_SKIPS,
   PLAN_GRID_ISSUES,
   PLAN_PLACEMENT_ROLES,
   type MemberPlacement,
@@ -52,6 +54,20 @@ describe('ParsedFramingPlan', () => {
         ...(key in ko ? [] : [`ko:${key}`]),
       ]
     })
+
+    expect(missing).toEqual([])
+  })
+
+  it('has a ja·ko message for every apply refusal and skip code', () => {
+    const missing = [
+      ...PLAN_APPLY_REFUSALS.map(
+        (code) => [`planImport.refusal.${code}`] as const,
+      ),
+      ...PLAN_APPLY_SKIPS.map((code) => [`planImport.skip.${code}`] as const),
+    ].flatMap(([key]) => [
+      ...(key in ja ? [] : [`ja:${key}`]),
+      ...(key in ko ? [] : [`ko:${key}`]),
+    ])
 
     expect(missing).toEqual([])
   })

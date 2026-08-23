@@ -111,3 +111,20 @@ export interface ParsedFrameElevations {
   elevations: ElevationCandidate[]
   issues: ElevationIssue[]
 }
+
+/** 취입을 통째로 거부한 사유. 이때 案件은 손대지 않은 원본 그대로다 */
+export const PLAN_APPLY_REFUSALS = [
+  '階未指定',
+  '他階部材あり通り芯変更不可',
+] as const
+
+export type PlanApplyRefusal = (typeof PLAN_APPLY_REFUSALS)[number]
+
+/** 부호 하나를 넣지 못한 사유. 지어내는 대신 이 코드로 남긴다 */
+export const PLAN_APPLY_SKIPS = [
+  '断面未登録',
+  '部材種別相違',
+  '格子外',
+] as const
+
+export type PlanApplySkip = (typeof PLAN_APPLY_SKIPS)[number]

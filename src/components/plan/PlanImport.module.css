@@ -1,0 +1,120 @@
+.control {
+  display: inline-flex;
+}
+
+.fileInput {
+  display: none;
+}
+
+.openButton,
+.chooseButton,
+.closeButton,
+.applyButton {
+  min-height: 28px;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-body);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.panel {
+  position: absolute;
+  z-index: 20;
+  right: var(--space-sm);
+  width: min(560px, calc(100vw - 2 * var(--space-sm)));
+  max-height: 70vh;
+  overflow-y: auto;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-panel, 0 8px 24px rgb(0 0 0 / 18%));
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--border-hairline);
+}
+
+.panelActions {
+  display: inline-flex;
+  gap: var(--space-2xs, 4px);
+}
+
+.panelBody {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  font-size: var(--type-caption-size);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2xs, 4px);
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs, 4px);
+  align-items: baseline;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.axis {
+  font-weight: 600;
+}
+
+.span {
+  color: var(--text-muted);
+}
+
+.block,
+.elevation {
+  display: grid;
+  gap: var(--space-2xs, 4px);
+  padding: var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+}
+
+.blockHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.issues {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-warning, var(--text-muted));
+}
+
+.storyPicker {
+  display: inline-flex;
+  gap: var(--space-2xs, 4px);
+  align-items: center;
+}
