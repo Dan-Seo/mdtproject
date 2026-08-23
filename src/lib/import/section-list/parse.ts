@@ -717,12 +717,31 @@ function setPitch(
   addIssue(candidate, '帯筋解釈不能')
 }
 
+function setSideBar(
+  candidate: SectionCandidate,
+  raw: string | undefined,
+): void {
+  if (raw === undefined) return
+  const value = compact(raw)
+  // 空欄・横線は「その配筋がない」という正常な図面値であり、読取失敗ではない。
+  if (value === '' || /^[-―]+$/.test(value)) return
+
+  // 主筋と同じ 本数-径 文法を使う。腹筋は高強度せん断補強筋を取らない。
+  const parsed = parseBar(raw)
+  if (parsed) {
+    candidate.sideBar = parsed
+    return
+  }
+
+  candidate.raw['腹筋'] = cleanedRebarRaw(raw)
+  addIssue(candidate, '腹筋解釈不能')
+}
+
 function rowsBetween(rows: TextRow[], startY: number, endY: number): TextRow[] {
   return rows.filter((row) => row.y > startY && row.y < endY)
 }
 
 // 柱·大梁 블록의 알려진 라벨 행 전부 — 접힘 감지의 「다음 라벨 행」 판정에 쓴다.
-// 腹筋은 파싱 대상이 아니지만 라벨 행이 맞으므로 접힘으로 오인하지 않게 넣는다
 const ROW_LABELS = [
   '主筋',
   '帯筋',
@@ -1293,16 +1312,19 @@ function parseGirderBlock(
     const stirrupRows = dataRows.filter((row) =>
       exactLabel(row, ['ST', 'STP', 'あばら筋']),
     )
+    const sideBarRows = dataRows.filter((row) => exactLabel(row, ['腹筋']))
     // 柱 블록과 같은 방어 — 라벨 행이 겹이면 여러 층 블록이 합쳐진 것이다
     const storyAmbiguous =
       topRows.length > 1 ||
       bottomRows.length > 1 ||
       stirrupRows.length > 1 ||
+      sideBarRows.length > 1 ||
       dimensionRows.length > 1
     const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
     const topRow = storyAmbiguous ? undefined : topRows[0]
     const bottomRow = storyAmbiguous ? undefined : bottomRows[0]
     const stirrupRow = storyAmbiguous ? undefined : stirrupRows[0]
+    const sideBarRow = storyAmbiguous ? undefined : sideBarRows[0]
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
@@ -1362,6 +1384,9 @@ function parseGirderBlock(
       stirrupRow && stirrupLabel
         ? valuesByMark(stirrupRow, [stirrupLabel], marks)
         : new Map<string, string>()
+    const sideBarValues = sideBarRow
+      ? valuesByMark(sideBarRow, ['腹筋'], marks)
+      : new Map<string, string>()
     // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋/あばら筋에도 건다
     const topContinuations = topRow
       ? barContinuationByMark(dataRows, topRow, slice.endY, marks, BAR_TOKEN)
@@ -1407,12 +1432,14 @@ function parseGirderBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const stirrup = stirrupValues.get(mark)
+      const sideBar = sideBarValues.get(mark)
       // 柱 블록과 같은 이유 — 접힘도 「읽은 것이 있다」에 넣는다
       if (
         !dimension &&
         topCells.length === 0 &&
         bottomCells.length === 0 &&
         !stirrup &&
+        sideBar === undefined &&
         !topContinuations.has(mark) &&
         !bottomContinuations.has(mark) &&
         !stirrupContinuations.has(mark)
@@ -1484,6 +1511,7 @@ function parseGirderBlock(
           stirrupContinuations.get(mark),
         )
       }
+      setSideBar(result, sideBar)
       candidates.push(result)
     }
   }

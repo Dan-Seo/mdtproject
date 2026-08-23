@@ -2,10 +2,28 @@
   "project": "Kijun",
   "phase": "7-section-fields",
   "steps": [
-    { "step": 0, "name": "sidebar", "status": "pending" },
-    { "step": 1, "name": "width-tie", "status": "pending" },
-    { "step": 2, "name": "cutoff-raw", "status": "pending" },
-    { "step": 3, "name": "apply", "status": "pending" }
+    {
+      "step": 0,
+      "name": "sidebar",
+      "status": "completed",
+      "started_at": "2026-08-23T20:23:17+0900",
+      "summary": "断面リストの腹筋を既存の主筋文法で sideBar 候補に読み込み、空欄・横線と解釈不能を区別した"
+    },
+    {
+      "step": 1,
+      "name": "width-tie",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "cutoff-raw",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "apply",
+      "status": "pending"
+    }
   ],
   "created_at": "2026-08-23T18:00:00+0900"
 }

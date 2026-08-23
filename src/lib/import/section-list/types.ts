@@ -35,6 +35,7 @@ export const CANDIDATE_ISSUES = [
   '帯筋解釈不能',
   '帯筋折返し',
   '帯筋ラベル行外',
+  '腹筋解釈不能',
   '階不明',
   '項目行重複',
 ] as const
@@ -66,6 +67,12 @@ export interface SectionCandidate {
     endBottomCount?: number
   }
   stirrup?: { size: ShearBarSize; pitchMm: number }
+  /**
+   * 腹筋。図面が「2-D10」と書く数そのもの — 1通則7) の割付ではない。
+   * 未定義は「その配筋がない」を意味する (ADR-012)。
+   * 余長 (extraLengthMm) は図面に無い — 取り込み側が決める (R9②)。
+   */
+  sideBar?: { size: BarSize; count: number }
   /** 解釈できず空欄にした項目の原文。 */
   raw: Record<string, string>
   issues: CandidateIssue[]

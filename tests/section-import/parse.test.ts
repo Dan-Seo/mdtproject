@@ -112,6 +112,10 @@ describe('parseSectionLists', () => {
 
     expectMarksInclude(girders, ['G1', 'G2', 'G3', 'G4', 'G5'])
     expect(candidate(girders, 'G1', 'RF').kind).toBe('大梁')
+    expect(candidate(girders, 'G1', 'RF').sideBar).toEqual({
+      size: 'D10',
+      count: 2,
+    })
   })
 
   it('parses yokohama 柱 and 小梁 tables on the same page', () => {
@@ -158,6 +162,11 @@ describe('parseSectionLists', () => {
 
     expectMarksInclude(smallGirders, ['B51'])
     expect(candidate(smallGirders, 'B51').kind).toBe('対象外')
+
+    // 「―」は読取失敗ではなく、その欄に配筋がないという図面の値である。
+    const b55 = candidate(smallGirders, 'B55')
+    expect(b55.sideBar).toBeUndefined()
+    expect(b55.issues).not.toContain('腹筋解釈不能')
   })
 
   it('leaves position-dependent 大梁 main bars blank and maps uniform sections', () => {
@@ -185,6 +194,12 @@ describe('parseSectionLists', () => {
 
     // 外端 8 ≠ 内端 13 — どちらが始端かを決められないので確定しない
     expect(g51Roof.issues).toContain('主筋端部左右相違')
+    expect(g51Roof.sideBar).toEqual({ size: 'D10', count: 2 })
+
+    expect(candidate(girders, 'G52', 'R階').sideBar).toEqual({
+      size: 'D10',
+      count: 4,
+    })
 
     const g51Second = candidate(girders, 'G51', '2階')
     expect(g51Second.stirrup).toEqual({ size: 'D13', pitchMm: 150 })
@@ -224,7 +239,28 @@ describe('parseSectionLists', () => {
       girderMain: { size: 'D19', topCount: 3, bottomCount: 3 },
       stirrup: { size: 'D10', pitchMm: 200 },
     })
+    expect(fg1.sideBar).toBeUndefined()
+    expect(fg1.issues).not.toContain('腹筋解釈不能')
     expect(fg1.raw['腹筋']).toBeUndefined()
+  })
+
+  it('keeps an unexpected 腹筋 cell raw instead of inventing a value', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '腹筋', x: 10, y: 50, w: 20, h: 8 },
+        { str: '2-K13', x: 125, y: 50, w: 36, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.sideBar).toBeUndefined()
+    expect(g1.raw['腹筋']).toBe('2-K13')
+    expect(g1.issues).toContain('腹筋解釈不能')
   })
 
 })
