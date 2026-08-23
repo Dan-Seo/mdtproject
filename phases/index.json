@@ -43,6 +43,10 @@
       "dir": "9-review-refutation",
       "status": "completed",
       "completed_at": "2026-08-24T01:24:24+0900"
+    },
+    {
+      "dir": "10-plan-import-fixes",
+      "status": "pending"
     }
   ]
 }
