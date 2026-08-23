@@ -36,7 +36,8 @@
     },
     {
       "dir": "8-title-boundary",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-23T21:38:12+0900"
     }
   ]
 }
