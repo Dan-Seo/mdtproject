@@ -35,15 +35,16 @@ await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector("[data-testid='grand-total']");
 await page.waitForSelector("canvas");
 
-// 案件의 通り芯은 DOM에서 읽는다 — 스팬 입력칸의 aria-label이 「Xスパン 1」이다.
-// 테스트만을 위한 전역 훅을 제품에 심지 않는다 (다른 UC와 같은 규약).
+// 案件의 通り芯은 DOM에서 읽는다 — 테스트만을 위한 전역 훅을 제품에 심지
+// 않는다 (다른 UC와 같은 규약). 이름이 아니라 data-testid로 집는 이유가 있다:
+// 도면에서 通り芯 이름을 읽어오면 aria-label이 「bX1-bX2」로 바뀐다.
 const readSpans = () =>
   page.evaluate(() => {
     const spans = (axis) =>
-      [...document.querySelectorAll(`input[aria-label^='${axis}スパン ']`)]
+      [...document.querySelectorAll(`input[data-testid^='span-${axis}-']`)]
         .map((input) => input.value)
         .join(",");
-    return { x: spans("X"), y: spans("Y") };
+    return { x: spans("x"), y: spans("y") };
   });
 
 const beforeGrid = await readSpans();
@@ -115,6 +116,12 @@ const appliedPanel = await page.evaluate(() => ({
   ),
 }));
 const applied = { ...appliedPanel, spans: await readSpans() };
+// 通り芯의 이름이 案件에 들어갔는가 — R13의 선결 조건이다
+const spanNames = await page.evaluate(() =>
+  [...document.querySelectorAll("input[data-testid^='span-x-']")].map((input) =>
+    input.getAttribute("aria-label"),
+  ),
+);
 
 // 4) 階高를 案件의 階로 넣는다 — 어느 레벨이 階인지는 사람이 고른다.
 // 中央棟1FL(index 3)에서 中央棟RCL(index 1)까지 → 1階 4480·2階 4100.
@@ -169,6 +176,7 @@ const checks = {
   // 部材가 0본이 되어도 화면은 선다 — 割増는 引く 대상이 없을 뿐 오류가 아니다
   takeoffStillRenders: applied.grandTotal !== null,
   noPaneFailure: applied.paneFailures.length === 0,
+  gridLabelsApplied: spanNames.join(",") === "bX1-bX2,bX2-bX3,bX3-cX1",
   // 階高: 고른 범위(1FL→RCL)의 두 칸만 階가 된다. パラペット·基礎는 범위 밖이다.
   // 이 시점에는 앞의 通り芯 반영이 이미 부재를 비웠으므로 거부가 나지 않는다 —
   // 부재가 남아 있을 때의 거부는 단위 테스트가 고정한다
@@ -179,7 +187,7 @@ const checks = {
     stories.includes("中央棟1FL／基準GL") && stories.includes("2FL"),
 };
 
-console.log(JSON.stringify({ read, refused, applied, storyRefused, stories, checks }, null, 2));
+console.log(JSON.stringify({ read, refused, applied, spanNames, storyRefused, stories, checks }, null, 2));
 console.log(
   "SHOT " + (await saveScreenshot(await page.screenshot(), "uc22-plan-import.png")),
 );

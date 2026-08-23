@@ -63,6 +63,28 @@ export const PROJECT_SCHEMA_VERSION = 11
 export interface Grid {
   xSpans: number[]
   ySpans: number[]
+  /**
+   * 通り芯의 이름 (「bX1」「Y3」). 伏図에서 읽은 원문 그대로이고 길이는
+   * spans.length + 1이다. 미지정은 「도면에서 읽은 이름이 없다」는 뜻이며,
+   * 제품이 index로 이름을 지어내지 않는다 (ADR-004·ADR-030).
+   *
+   * schemaVersion을 올리지 않는다 — 이 필드는 数量을 바꾸지 않는다. 版을
+   * 올리는 기준은 「같은 案件의 数量이 달라지는가」다 (v11 주석 참조).
+   */
+  xLabels?: string[]
+  yLabels?: string[]
+}
+
+/** 라벨 배열이 스팬 수와 맞는가. 어긋나면 어느 축의 이름인지 알 수 없다 */
+export function isGridLabels(
+  labels: unknown,
+  spanCount: number,
+): labels is string[] {
+  return (
+    Array.isArray(labels) &&
+    labels.length === spanCount + 1 &&
+    labels.every((label) => typeof label === 'string')
+  )
 }
 
 export interface Story {
@@ -1118,6 +1140,17 @@ function hasIntactReferences(
   )
 }
 
+function hasGridLabels(grid: unknown): boolean {
+  if (!isRecord(grid)) return false
+  const { xSpans, ySpans, xLabels, yLabels } = grid
+  if (!Array.isArray(xSpans) || !Array.isArray(ySpans)) return false
+
+  return (
+    (xLabels === undefined || isGridLabels(xLabels, xSpans.length)) &&
+    (yLabels === undefined || isGridLabels(yLabels, ySpans.length))
+  )
+}
+
 function isProjectShape(value: unknown): boolean {
   if (!isRecord(value)) return false
 
@@ -1126,6 +1159,10 @@ function isProjectShape(value: unknown): boolean {
   return (
     isString(value.name) &&
     hasShape(value.grid, { xSpans: isNumberArray, ySpans: isNumberArray }) &&
+    // 라벨은 없어도 되지만, 있으면 축의 본수와 맞아야 한다 — 어긋난 배열은
+    // 「어느 通り芯의 이름인가」를 잃은 기록이고, 그대로 두면 화면이 엉뚱한
+    // 축에 이름을 붙인다
+    hasGridLabels(value.grid) &&
     // 空の stories は「階が無い案件」ではなく壊れた記録だ。製品は至る所で
     // stories[0] を既定値に使う。
     Array.isArray(stories) &&

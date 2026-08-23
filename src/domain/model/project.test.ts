@@ -444,6 +444,24 @@ describe('project serialization', () => {
     expect(deserializeProject(serializeProject(project))).toEqual(project)
   })
 
+  // 通り芯の名前は図面から読んだ原文で、数量を変えない。だから schemaVersion は
+  // 上げない — 版を上げる基準は「同じ案件の数量が変わるか」だ (v11 の注記)。
+  // 名前の無い旧記録がそのまま読めることが、その判断の裏付けになる。
+  it('round-trips 通り芯 labels, and still reads records without them', () => {
+    const project = createProject()
+    const labelled = {
+      ...project,
+      grid: {
+        ...project.grid,
+        xLabels: project.grid.xSpans.map((_, index) => `bX${index + 1}`).concat('cX1'),
+        yLabels: project.grid.ySpans.map((_, index) => `Y${index + 1}`).concat('Y9'),
+      },
+    }
+
+    expect(deserializeProject(serializeProject(labelled))).toEqual(labelled)
+    expect(deserializeProject(serializeProject(project)).grid.xLabels).toBeUndefined()
+  })
+
   it('throws when schemaVersion does not match', () => {
     const project = createProject()
     const incompatible = JSON.stringify({
@@ -462,6 +480,15 @@ describe('project serialization', () => {
     ['階高が数でない', { stories: [{ id: '1F', name: '1階', height: '4200' }] }],
     ['案件名が数', { name: 42 }],
     ['スパンに数でないものが混ざる', { grid: { xSpans: [6000, '6000'], ySpans: [6000] } }],
+    // 通り芯の名前は本数と合っていなければ「どの通りの名前か」を失う
+    [
+      '通り芯ラベルの本数が合わない',
+      { grid: { xSpans: [6000, 6000], ySpans: [6000], xLabels: ['X1', 'X2'] } },
+    ],
+    [
+      '通り芯ラベルに文字列でないものが混ざる',
+      { grid: { xSpans: [6000], ySpans: [6000], yLabels: ['Y1', 2] } },
+    ],
     ['grid が無い', { grid: undefined }],
     ['断面の符号が数', { sections: [{ id: 'x', kind: '柱', mark: 1, b: 800 }] }],
     // 判別子が union の外なら、形は通っても断面の枝分かれを選べない。

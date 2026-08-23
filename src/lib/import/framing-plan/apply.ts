@@ -54,9 +54,20 @@ function gridOf(
   xGrid: PlanGridCandidate,
   yGrid: PlanGridCandidate,
 ): Grid {
-  return { xSpans: [...xGrid.spansMm], ySpans: [...yGrid.spansMm] }
+  return {
+    xSpans: [...xGrid.spansMm],
+    ySpans: [...yGrid.spansMm],
+    // 通り芯의 이름은 도면에 있는 것이고, 이것이 있어야 「Y3端／Y4端」처럼
+    // 좌우가 다른 断面リスト를 런의 실제 방향과 맞출 수 있다 (R13의 선결 조건)
+    xLabels: xGrid.axes.map((axis) => axis.label),
+    yLabels: yGrid.axes.map((axis) => axis.label),
+  }
 }
 
+/**
+ * 스팬만 본다 — 라벨은 数量도 격자 index도 바꾸지 않으므로, 이름만 달라진
+ * 그리드를 「바뀌었다」로 보면 다른 층의 부재를 버리라는 물음이 이유 없이 뜬다.
+ */
 function sameGrid(left: Grid, right: Grid): boolean {
   return (
     left.xSpans.length === right.xSpans.length &&

@@ -12,6 +12,36 @@ const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 vi.mock('@/lib/telemetry', () => ({ capture }))
 
 describe('PlanEditor', () => {
+
+  // 通り芯의 이름은 도면에 있는 것이다. 없을 때 index로 지어내지 않고,
+  // 있을 때 그것을 쓰는 것이 図面と製品を突き合わせる唯一の手がかりになる。
+  it('通り芯 이름이 있으면 스팬을 그 이름으로 부른다', () => {
+    act(() => {
+      const { project } = useAppStore.getState()
+      useAppStore.setState({
+        project: {
+          ...project,
+          grid: {
+            ...project.grid,
+            xLabels: Array.from(
+              { length: project.grid.xSpans.length + 1 },
+              (_, index) => `bX${index + 1}`,
+            ),
+          },
+        },
+      })
+    })
+
+    render(<PlanEditor />)
+
+    expect(screen.getByLabelText('bX1-bX2')).toBeInTheDocument()
+  })
+
+  it('이름이 없으면 축과 순번으로 부른다 — index로 이름을 지어내지 않는다', () => {
+    render(<PlanEditor />)
+
+    expect(screen.getByLabelText('Xスパン 1')).toBeInTheDocument()
+  })
   beforeEach(() => {
     capture.mockClear()
     useAppStore.setState({

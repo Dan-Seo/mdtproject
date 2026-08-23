@@ -394,6 +394,13 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
   const locale = useAppStore(({ locale }) => locale)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const spans = axis === 'x' ? project.grid.xSpans : project.grid.ySpans
+  // 도면에서 읽은 通り芯 이름. 없으면 이름 없이 번호만 보인다 — index로
+  // 이름을 지어내지 않는다 (ADR-030)
+  const labels = axis === 'x' ? project.grid.xLabels : project.grid.yLabels
+  const spanName = (index: number) =>
+    labels === undefined
+      ? `${axisLabel}スパン ${index + 1}`
+      : `${labels[index]}-${labels[index + 1]}`
   const axisLabel = axis.toUpperCase()
   const editReported = useRef(false)
 
@@ -421,7 +428,10 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
               min="1"
               step="1"
               value={span}
-              aria-label={`${axisLabel}スパン ${index + 1}`}
+              // 이름은 도면에서 오면 바뀐다 — 자동 검증이 값을 집는 자리는
+              // 이름이 아니라 축과 순번이어야 한다
+              data-testid={`span-${axis}-${index}`}
+              aria-label={spanName(index)}
               onChange={(event) => {
                 const value = Number(event.currentTarget.value)
                 if (!Number.isFinite(value) || value <= 0) return
@@ -436,7 +446,7 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
             <button
               type="button"
               className={styles.removeButton}
-              aria-label={`${axisLabel}スパン ${index + 1}${t(
+              aria-label={`${spanName(index)}${t(
                 locale,
                 'plan.removeSpan',
               )}`}

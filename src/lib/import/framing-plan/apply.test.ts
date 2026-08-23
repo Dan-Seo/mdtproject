@@ -80,8 +80,56 @@ describe('applyFramingPlan', () => {
     expect(result.project.grid).toEqual({
       xSpans: [7000, 7000],
       ySpans: [5000],
+      xLabels: ['X1', 'X2', 'X3'],
+      yLabels: ['Y1', 'Y2'],
     })
     expect(result.refusal).toBeUndefined()
+  })
+
+  it('通り芯의 이름을 도면에서 읽은 원문 그대로 싣는다', () => {
+    // 이것이 R13(端部 좌우 비대칭)의 선결 조건이다 — 이름이 있어야 도면의
+    // 「Y3端／Y4端」을 런의 실제 방향과 맞출 수 있다
+    const result = applyFramingPlan(project(), {
+      xGrid,
+      yGrid,
+      block: block(),
+      storyId: 'story-1',
+    })
+    expect(result.project.grid.xLabels).toEqual(['X1', 'X2', 'X3'])
+    expect(result.project.grid.yLabels).toEqual(['Y1', 'Y2'])
+  })
+
+  it('이름만 다른 그리드는 「바뀌었다」로 보지 않는다', () => {
+    // 라벨은 数量도 격자 index도 바꾸지 않는다 — 이름 때문에 다른 층을 버리라는
+    // 물음이 뜨면 사용자는 이유를 알 수 없다
+    const base = project({
+      grid: { xSpans: [7000, 7000], ySpans: [5000] },
+      sections: [columnSection('C1')],
+      members: [
+        {
+          id: 'm1',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: 'sec-C1',
+          storyId: 'story-2',
+          position: { ix: 1, iy: 1 },
+        },
+      ],
+      stories: [
+        { id: 'story-1', name: '1F', height: 4000 },
+        { id: 'story-2', name: '2F', height: 4000 },
+      ],
+    })
+
+    const result = applyFramingPlan(base, {
+      xGrid,
+      yGrid,
+      block: block(),
+      storyId: 'story-1',
+    })
+    expect(result.refusal).toBeUndefined()
+    expect(result.project.grid.xLabels).toEqual(['X1', 'X2', 'X3'])
+    expect(result.project.members).toHaveLength(1)
   })
 
   it('다른 층에 부재가 있는데 通り芯이 바뀌면 통째로 거부한다', () => {
