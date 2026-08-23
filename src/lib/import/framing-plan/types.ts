@@ -61,6 +61,9 @@ export interface MemberPlacement {
 export interface PlanBlock {
   /** 블록 제목 원문(「2階床伏図1/100」). 어느 Story인지는 사람이 정한다 */
   title?: string
+  /** 이 블록과 짝지어진 X·Y 通り芯 정의. 취입은 반드시 이 둘을 쓴다 */
+  xGrid: PlanGridCandidate
+  yGrid: PlanGridCandidate
   /** 이 블록에서의 通り芯 실위치(pt). 라벨과 순서는 그리드 후보와 같다 */
   xAxes: AxisCandidate[]
   yAxes: AxisCandidate[]

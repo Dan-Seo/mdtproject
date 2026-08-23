@@ -4,7 +4,10 @@ import type { Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
 
+import type { TextItem, TextPage } from '../section-list/types'
+
 import { applyElevation, applyFramingPlan } from './apply'
+import { parseFramingPlan } from './parse'
 import type {
   ElevationCandidate,
   PlanBlock,
@@ -23,6 +26,29 @@ function sectionOf(kind: Section['kind'], mark: string): Section {
 
 const columnSection = (mark: string) => sectionOf('柱', mark)
 const girderSection = (mark: string) => sectionOf('大梁', mark)
+
+function h(str: string, x: number, y: number): TextItem {
+  return { str, x, y, w: 0, h: 8 }
+}
+
+function v(str: string, x: number, y: number): TextItem {
+  return { str, x, y, w: 8, h: 0, rot: -90 }
+}
+
+function framingPage(spanMm: number): TextPage {
+  return {
+    widthPt: 1000,
+    heightPt: 1000,
+    items: [
+      h('X1', 0, -40),
+      h('X2', 200, -40),
+      h(String(spanMm), 100, -20),
+      h('Y1', -40, 0),
+      h('Y2', -40, 200),
+      v(String(spanMm), -20, 100),
+    ],
+  }
+}
 
 function project(overrides: Partial<Project> = {}): Project {
   return {
@@ -61,6 +87,8 @@ const yGrid: PlanGridCandidate = {
 
 function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
   return {
+    xGrid,
+    yGrid,
     xAxes: xGrid.axes,
     yAxes: yGrid.axes,
     placements: [],
@@ -70,10 +98,26 @@ function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
 }
 
 describe('applyFramingPlan', () => {
+  it('여러 伏図 중 두 번째 블록은 두 번째 도면의 通り芯을 취입한다', () => {
+    const plans = [framingPage(6000), framingPage(8000)].map(parseFramingPlan)
+    const blocks = plans.flatMap((plan) => plan.blocks)
+    if (!blocks[1]) {
+      throw new Error('synthetic framing plans were not parsed')
+    }
+
+    const result = applyFramingPlan(project(), {
+      block: blocks[1],
+      storyId: 'story-1',
+    })
+
+    expect(result.project.grid.xSpans).toEqual([8000])
+    expect(result.project.grid.ySpans).toEqual([8000])
+    expect(result.refusal).toBeUndefined()
+    expect(result.skipped).toEqual([])
+  })
+
   it('通り芯을 도면의 스팬으로 바꾼다', () => {
     const result = applyFramingPlan(project(), {
-      xGrid,
-      yGrid,
       block: block(),
       storyId: 'story-1',
     })
@@ -90,8 +134,6 @@ describe('applyFramingPlan', () => {
     // 이것이 R13(端部 좌우 비대칭)의 선결 조건이다 — 이름이 있어야 도면의
     // 「Y3端／Y4端」을 런의 실제 방향과 맞출 수 있다
     const result = applyFramingPlan(project(), {
-      xGrid,
-      yGrid,
       block: block(),
       storyId: 'story-1',
     })
@@ -122,8 +164,6 @@ describe('applyFramingPlan', () => {
     })
 
     const result = applyFramingPlan(base, {
-      xGrid,
-      yGrid,
       block: block(),
       storyId: 'story-1',
     })
@@ -154,8 +194,6 @@ describe('applyFramingPlan', () => {
     })
 
     const result = applyFramingPlan(existing, {
-      xGrid,
-      yGrid,
       block: block(),
       storyId: 'story-1',
     })
@@ -166,8 +204,6 @@ describe('applyFramingPlan', () => {
   it('취입하는 층의 부재는 갈아 끼운다 — 두 번 눌러도 겹치지 않는다', () => {
     const base = project({ sections: [columnSection('C1')] })
     const options = {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C1', role: '格子点' as const, ix: 1, iy: 1 }],
       }),
@@ -183,8 +219,6 @@ describe('applyFramingPlan', () => {
 
   it('格子点의 柱를 ColumnPosition으로 넣는다', () => {
     const result = applyFramingPlan(project({ sections: [columnSection('C1')] }), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C1', role: '格子点', ix: 2, iy: 1 }],
       }),
@@ -204,8 +238,6 @@ describe('applyFramingPlan', () => {
 
   it('辺의 大梁를 GirderPosition으로 넣는다 — axis를 그대로 옮긴다', () => {
     const result = applyFramingPlan(project({ sections: [girderSection('G1')] }), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'G1', role: '辺', ix: 0, iy: 1, axis: 'X' }],
       }),
@@ -220,8 +252,6 @@ describe('applyFramingPlan', () => {
 
   it('断面一覧에 없는 符号은 넣지 않고 사유와 함께 남긴다', () => {
     const result = applyFramingPlan(project(), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C9', role: '格子点', ix: 0, iy: 0 }],
       }),
@@ -233,8 +263,6 @@ describe('applyFramingPlan', () => {
 
   it('種別과 자리가 어긋나면 넣지 않는다 — 柱를 辺에 놓지 않는다', () => {
     const result = applyFramingPlan(project({ sections: [columnSection('C1')] }), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C1', role: '辺', ix: 0, iy: 0, axis: 'X' }],
       }),
@@ -247,8 +275,6 @@ describe('applyFramingPlan', () => {
   it('격자 밖을 가리키는 배치는 넣지 않는다', () => {
     // 도면의 通り芯 수와 취입하는 그리드가 어긋난 경우 — 지어내지 않는다
     const result = applyFramingPlan(project({ sections: [columnSection('C1')] }), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C1', role: '格子点', ix: 3, iy: 0 }],
       }),
@@ -261,8 +287,6 @@ describe('applyFramingPlan', () => {
   it('없는 층을 가리키면 통째로 거부한다', () => {
     const base = project()
     const result = applyFramingPlan(base, {
-      xGrid,
-      yGrid,
       block: block(),
       storyId: 'story-9',
     })
@@ -293,8 +317,6 @@ describe('applyFramingPlan — 다른 층을 버리는 동의', () => {
 
   it('동의하면 다른 층 부재를 남기지 않고 통째로 버린다', () => {
     const result = applyFramingPlan(existing(), {
-      xGrid,
-      yGrid,
       block: block({
         placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
       }),
@@ -311,9 +333,10 @@ describe('applyFramingPlan — 다른 층을 버리는 동의', () => {
   it('通り芯이 그대로면 동의 없이도 다른 층을 건드리지 않는다', () => {
     const base = existing()
     const result = applyFramingPlan(base, {
-      xGrid: { ...xGrid, spansMm: base.grid.xSpans },
-      yGrid: { ...yGrid, spansMm: base.grid.ySpans },
-      block: block(),
+      block: block({
+        xGrid: { ...xGrid, spansMm: base.grid.xSpans },
+        yGrid: { ...yGrid, spansMm: base.grid.ySpans },
+      }),
       storyId: 'story-1',
     })
     expect(result.refusal).toBeUndefined()

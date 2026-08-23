@@ -7,7 +7,6 @@ import type {
   PlanApplyRefusal,
   PlanApplySkip,
   PlanBlock,
-  PlanGridCandidate,
   PlanPlacementRole,
   MemberPlacement,
 } from './types'
@@ -28,8 +27,6 @@ const ROLE_FOR_KIND: Record<MemberKind, PlanPlacementRole> = {
 }
 
 export interface PlanApplyOptions {
-  xGrid: PlanGridCandidate
-  yGrid: PlanGridCandidate
   block: PlanBlock
   storyId: string
   /**
@@ -50,10 +47,8 @@ export interface PlanApplyResult {
   refusal?: PlanApplyRefusal
 }
 
-function gridOf(
-  xGrid: PlanGridCandidate,
-  yGrid: PlanGridCandidate,
-): Grid {
+function gridOf(block: PlanBlock): Grid {
+  const { xGrid, yGrid } = block
   return {
     xSpans: [...xGrid.spansMm],
     ySpans: [...yGrid.spansMm],
@@ -109,13 +104,13 @@ function withinGrid(placement: MemberPlacement, grid: Grid): boolean {
 
 export function applyFramingPlan(
   project: Project,
-  { xGrid, yGrid, block, storyId, discardOtherStories = false }: PlanApplyOptions,
+  { block, storyId, discardOtherStories = false }: PlanApplyOptions,
 ): PlanApplyResult {
   if (!project.stories.some((story) => story.id === storyId)) {
     return { project, applied: 0, skipped: [], refusal: '階未指定' }
   }
 
-  const grid = gridOf(xGrid, yGrid)
+  const grid = gridOf(block)
   const changesGrid = !sameGrid(project.grid, grid)
   const otherStoryMembers = project.members.some(
     (member) => member.storyId !== storyId,

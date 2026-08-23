@@ -40,12 +40,14 @@ interface PlanImportProps {
 function Axes({
   candidate,
   label,
+  testId,
 }: {
   candidate: PlanGridCandidate
   label: string
+  testId?: string
 }) {
   return (
-    <div className={styles.group} data-testid={`plan-import-grid-${candidate.direction}`}>
+    <div className={styles.group} data-testid={testId}>
       <h4 className={styles.groupTitle}>{label}</h4>
       <p className={styles.axes}>
         {candidate.axes.map((axis, index) => (
@@ -213,8 +215,11 @@ export function PlanImport({
     [pages],
   )
   const grids = plans.flatMap((plan) => plan.grids)
-  const xGrid = grids.find((grid) => grid.direction === 'X')
-  const yGrid = grids.find((grid) => grid.direction === 'Y')
+  const gridIndexes = { X: 0, Y: 0 }
+  const displayedGrids = grids.map((candidate) => ({
+    candidate,
+    index: gridIndexes[candidate.direction]++,
+  }))
   const blocks: PlanBlock[] = plans.flatMap((plan) => plan.blocks)
   // 사유는 페이지마다 나오므로 접는다 — 같은 말이 페이지 수만큼 늘어서면 읽히지 않는다
   const issues = [...new Set(plans.flatMap((plan) => plan.issues))]
@@ -245,12 +250,9 @@ export function PlanImport({
   }
 
   const apply = (block: PlanBlock) => {
-    if (!xGrid || !yGrid) return
     let applied: PlanApplyResult | undefined
     updateProject((project) => {
       applied = applyFramingPlan(project, {
-        xGrid,
-        yGrid,
         block,
         storyId,
         discardOtherStories,
@@ -346,12 +348,19 @@ export function PlanImport({
                   </ul>
                 ) : null}
 
-                {xGrid ? (
-                  <Axes candidate={xGrid} label={t(locale, 'planImport.gridX')} />
-                ) : null}
-                {yGrid ? (
-                  <Axes candidate={yGrid} label={t(locale, 'planImport.gridY')} />
-                ) : null}
+                {displayedGrids.map(({ candidate, index }) => (
+                  <Axes
+                    key={`${candidate.direction}-${index}`}
+                    candidate={candidate}
+                    label={t(
+                      locale,
+                      candidate.direction === 'X'
+                        ? 'planImport.gridX'
+                        : 'planImport.gridY',
+                    )}
+                    testId={`plan-import-grid-${candidate.direction}-${index}`}
+                  />
+                ))}
 
                 {blocks.length > 0 ? (
                   <label className={styles.storyPicker}>
@@ -394,6 +403,16 @@ export function PlanImport({
                         ? ` / ${t(locale, 'planImport.unplaced')}: ${block.unplacedMarks.join('・')}`
                         : ''}
                     </p>
+                    <div data-testid={`plan-import-block-grid-${index}`}>
+                      <Axes
+                        candidate={block.xGrid}
+                        label={t(locale, 'planImport.gridX')}
+                      />
+                      <Axes
+                        candidate={block.yGrid}
+                        label={t(locale, 'planImport.gridY')}
+                      />
+                    </div>
                   </div>
                 ))}
 
