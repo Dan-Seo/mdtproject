@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "guardrail-drift-guard",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-23T21:24:39+0900",
+      "summary": "AGENTS.md가 CLAUDE.md의 제목 제외 본문으로 끝나는지 개행 정규화 후 고정하고, CLAUDE.md 임시 행 추가 시 실패·복원 후 통과하는 감도를 확인했다",
+      "completed_at": "2026-08-23T21:30:37+0900"
     },
     {
       "step": 2,
