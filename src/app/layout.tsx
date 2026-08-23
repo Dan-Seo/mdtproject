@@ -1,26 +1,38 @@
 'use client'
 
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 
 import './globals.css'
 
-// weight를 적으면 Google Fonts가 wght 축을 그 범위로 좁힌 가변 폰트를 준다 —
-// JetBrains Mono latin이 40,480 → 31,340 B로 줄었다(Inter는 48,432 B로 동일).
-// 목록은 CSS가 실제로 쓰는 값 전부다: 토큰이 400·600을 쓰고, th·strong의
-// 브라우저 기본값이 700이다. 700을 빼면 그 자리가 600으로 주저앉으므로 지우지 말 것
-// (파일 크기는 700을 넣어도 그대로다 — 실측으로 확인했다).
-// 여기 없는 굵기(500·800 등)를 CSS에 새로 쓸 때는 이 목록에도 함께 더할 것.
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
+// 자기 호스팅하는 **문자 서브셋** 가변 폰트다. 근거와 재현 절차·수록 문자·OFL은
+// `src/app/fonts/README.md`에 있다. 요약: Google이 주는 latin 서브셋에는 이 제품이
+// 절대 그리지 않는 라틴 확장 자형이 들어 있어 Inter 48,732 B·JetBrains Mono 31,640 B를
+// 냈다. `text=` 서브셋으로 36,856 B·28,268 B가 됐다(실측, −15,248 B).
+//
+// `weight: '400 700'`은 가변 축 범위다 — 400·600·700을 그대로 쓴다. 토큰이 400·600을
+// 쓰고 th·strong의 브라우저 기본값이 700이므로 범위를 좁히지 말 것.
+// 새 굵기를 CSS에 쓸 때는 이 범위 안인지만 보면 된다(파일은 그대로다).
+const inter = localFont({
+  src: './fonts/inter-latin-subset.woff2',
+  weight: '400 700',
+  style: 'normal',
+  display: 'swap',
   variable: '--font-inter',
+  // 서브셋에 없는 글자(악센트 라틴 등)와 日本語·한국어는 여기로 떨어진다 —
+  // next/font/google이 붙여 주던 폴백 메트릭을 자기 호스팅에서도 유지한다.
+  adjustFontFallback: 'Arial',
+  fallback: ['system-ui', 'sans-serif'],
 })
 
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
+const jetBrainsMono = localFont({
+  src: './fonts/jetbrains-mono-latin-subset.woff2',
+  weight: '400 700',
+  style: 'normal',
+  display: 'swap',
   variable: '--font-jetbrains-mono',
+  adjustFontFallback: 'Arial',
+  fallback: ['ui-monospace', 'monospace'],
 })
 
 // lang은 초기값만 두고 AppShell이 로케일에 맞춰 갱신한다 —

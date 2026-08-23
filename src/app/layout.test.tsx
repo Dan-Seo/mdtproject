@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useAppStore } from '@/lib/store'
 
-vi.mock('next/font/google', () => ({
-  Inter: () => ({ variable: '--font-inter' }),
-  JetBrains_Mono: () => ({ variable: '--font-jetbrains-mono' }),
+// 폰트는 자기 호스팅 서브셋이라 next/font/local이다 (src/app/fonts/README.md).
+// 로더는 Next 컴파일러 전용이므로 vitest에서는 변수명만 돌려주는 더미로 바꾼다.
+vi.mock('next/font/local', () => ({
+  default: ({ variable }: { variable: string }) => ({ variable }),
 }))
 
 import RootLayout from './layout'
