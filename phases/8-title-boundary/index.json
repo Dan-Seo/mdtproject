@@ -1,0 +1,32 @@
+{
+  "project": "Kijun",
+  "phase": "8-title-boundary",
+  "steps": [
+    {
+      "step": 0,
+      "name": "title-pitch-boundary",
+      "status": "completed",
+      "started_at": "2026-08-23T21:12:46+0900",
+      "summary": "特記を1から順次の番号項目に分割して幅止め筋のピッチ境界を確定し、未確定時は raw と issue に残した",
+      "completed_at": "2026-08-23T21:24:38+0900"
+    },
+    {
+      "step": 1,
+      "name": "guardrail-drift-guard",
+      "status": "completed",
+      "started_at": "2026-08-23T21:24:39+0900",
+      "summary": "AGENTS.md가 CLAUDE.md의 제목 제외 본문으로 끝나는지 개행 정규화 후 고정하고, CLAUDE.md 임시 행 추가 시 실패·복원 후 통과하는 감도를 확인했다",
+      "completed_at": "2026-08-23T21:32:18+0900"
+    },
+    {
+      "step": 2,
+      "name": "refute-guardrail-sync",
+      "status": "completed",
+      "started_at": "2026-08-23T21:32:19+0900",
+      "summary": "동기화 손실·가드레일 주입·phase 7과 next build 주장 세 건을 반증했으며 불일치 없이 AC 5종이 통과했다",
+      "completed_at": "2026-08-23T21:38:11+0900"
+    }
+  ],
+  "created_at": "2026-08-23T21:10:00+0900",
+  "completed_at": "2026-08-23T21:38:12+0900"
+}

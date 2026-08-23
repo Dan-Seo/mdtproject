@@ -31,7 +31,13 @@
     },
     {
       "dir": "7-section-fields",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-23T20:59:42+0900"
+    },
+    {
+      "dir": "8-title-boundary",
+      "status": "completed",
+      "completed_at": "2026-08-23T21:38:12+0900"
     }
   ]
 }

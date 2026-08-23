@@ -2,10 +2,39 @@
   "project": "Kijun",
   "phase": "7-section-fields",
   "steps": [
-    { "step": 0, "name": "sidebar", "status": "pending" },
-    { "step": 1, "name": "width-tie", "status": "pending" },
-    { "step": 2, "name": "cutoff-raw", "status": "pending" },
-    { "step": 3, "name": "apply", "status": "pending" }
+    {
+      "step": 0,
+      "name": "sidebar",
+      "status": "completed",
+      "started_at": "2026-08-23T20:23:17+0900",
+      "summary": "断面リストの腹筋を既存の主筋文法で sideBar 候補に読み込み、空欄・横線と解釈不能を区別した",
+      "completed_at": "2026-08-23T20:31:03+0900"
+    },
+    {
+      "step": 1,
+      "name": "width-tie",
+      "status": "completed",
+      "started_at": "2026-08-23T20:31:04+0900",
+      "summary": "リスト表題の特記から幅止め筋を読み、大梁候補だけに同じ size・pitch を載せた",
+      "completed_at": "2026-08-23T20:38:08+0900"
+    },
+    {
+      "step": 2,
+      "name": "cutoff-raw",
+      "status": "completed",
+      "started_at": "2026-08-23T20:38:08+0900",
+      "summary": "［］内のカットオフ寸法を既存の位置列アンカーで割り当て、候補値にせず raw 原文として保存した",
+      "completed_at": "2026-08-23T20:44:33+0900"
+    },
+    {
+      "step": 3,
+      "name": "apply",
+      "status": "completed",
+      "started_at": "2026-08-23T20:44:34+0900",
+      "summary": "読んだ腹筋・幅止め筋を既存値保持の規約で大梁断面に反映し、数量・3Dまで通した",
+      "completed_at": "2026-08-23T20:59:41+0900"
+    }
   ],
-  "created_at": "2026-08-23T18:00:00+0900"
+  "created_at": "2026-08-23T18:00:00+0900",
+  "completed_at": "2026-08-23T20:59:42+0900"
 }

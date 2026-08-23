@@ -72,18 +72,45 @@ npx dev-browser --browser kijun --timeout 90 run tests/e2e/uc12-section-import.j
 
 ## Acceptance Criteria
 
+**순서를 지켜라. dev 서버와 `npm run build`는 같은 `.next`를 쓴다** (아래 함정 참조):
+
 ```bash
+# 1) dev 서버가 떠 있으면 먼저 죽인다
 npm run lint
 npm run typecheck
 npm test
 npm run test:golden
 npm run build
+
+# 2) 빌드가 끝난 뒤에 dev 서버를 띄운다
+npm run dev -- -p 3000 &
+
+# 3) e2e
 npx dev-browser --browser kijun --timeout 90 run tests/e2e/uc12-section-import.js
 ```
 
+### 함정 — `npm run build`를 dev 서버가 뜬 채로 돌리지 마라
+
+`next dev`와 `next build`가 같은 `.next`를 공유한다. dev 서버가 떠 있는데 빌드를 돌리면
+`.next`가 덮여 **dev 서버가 자기 청크를 잃는다.** 증상은 e2e의 「페이지가 안 뜬다」인데
+**`curl`은 200을 반환하므로 진단이 어긋난다** — HTML 껍데기는 나오고 청크만 404다.
+
+이 상태에 빠졌으면 고치는 법은 하나다:
+
+```bash
+# dev 서버를 죽이고
+rm -rf .next
+npm run build
+npm run dev -- -p 3000 &
+```
+
+빌드를 다시 돌려야 할 일이 생기면 **그때마다 dev 서버를 먼저 내려라.**
+`tests/e2e/README.md`의 「알려진 함정」에 같은 항이 있다.
+
 ## 검증 절차
 
-1. 위 AC 커맨드를 전부 실행한다. dev-browser는 CLI다 — 사람 확인이 필요 없다.
+1. 위 AC 커맨드를 **적힌 순서대로** 실행한다. dev-browser는 CLI다 — 사람 확인이 필요 없다.
+   e2e가 「페이지가 안 뜬다」로 실패하면 코드를 의심하기 전에 위 함정부터 확인하라.
 2. 아키텍처 체크리스트:
    - 후보의 `undefined`가 기존값을 지우지 않는가? (테스트로 고정돼 있는가)
    - 규준 수치 리터럴이 안 들어갔는가? (`extraLengthMm: 0`은 규준값이 아니라 미입력이다 — 주석이 그렇게 말하는가)
@@ -102,3 +129,4 @@ npx dev-browser --browser kijun --timeout 90 run tests/e2e/uc12-section-import.j
 - **`extraLengthMm`에 0 이외의 값을 지어내지 마라.** 이유: 근거가 없다 (R9②). 8d 같은 관행값도 금지다 —
   룰팩에 없는 수치를 `.ts`에 쓰는 것이다.
 - **`小梁`을 반영 대상으로 만들지 마라.** 이유: ADR-005.
+- **dev 서버가 뜬 채로 `npm run build`를 돌리지 마라.** 이유: 같은 `.next`를 덮어 dev 서버가 청크를 잃고, e2e가 「페이지가 안 뜬다」로 실패한다. `curl`이 200을 주므로 코드 쪽을 의심하다 시간을 버린다.

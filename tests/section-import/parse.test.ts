@@ -69,6 +69,20 @@ function expectMarksInclude(
   for (const mark of expectedMarks) expect(parsedMarks.has(mark), mark).toBe(true)
 }
 
+function titlePage(title: string, mark: string): TextPage {
+  return {
+    widthPt: 300,
+    heightPt: 180,
+    items: [
+      { str: title, x: 10, y: 5, w: 260, h: 8 },
+      { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+      { str: mark, x: 140, y: 20, w: 12, h: 8 },
+      { str: '断面', x: 10, y: 50, w: 20, h: 8 },
+      { str: '400×600', x: 120, y: 50, w: 50, h: 8 },
+    ],
+  }
+}
+
 describe('parseSectionLists', () => {
   it('parses the horizontal ojkk 柱リスト without inventing unsupported hoop sizes', () => {
     const parsed = parseSectionLists(readPage('ojkk-p2.json'))
@@ -112,6 +126,17 @@ describe('parseSectionLists', () => {
 
     expectMarksInclude(girders, ['G1', 'G2', 'G3', 'G4', 'G5'])
     expect(candidate(girders, 'G1', 'RF').kind).toBe('大梁')
+    expect(candidate(girders, 'G1', 'RF').sideBar).toEqual({
+      size: 'D10',
+      count: 2,
+    })
+    expect(girders.candidates).not.toHaveLength(0)
+    for (const parsedCandidate of girders.candidates) {
+      expect(parsedCandidate.widthTie).toEqual({
+        size: 'D10',
+        pitchMm: 1000,
+      })
+    }
   })
 
   it('parses yokohama 柱 and 小梁 tables on the same page', () => {
@@ -142,6 +167,9 @@ describe('parseSectionLists', () => {
     expect(c51First.main).toEqual({ count: 22, size: 'D25' })
     expect(c51First.hoop).toEqual({ size: 'S13', pitchMm: 100 })
     expect(c51First.raw['HOOP']).toBeUndefined()
+    for (const parsedCandidate of columns.candidates) {
+      expect(parsedCandidate.widthTie).toBeUndefined()
+    }
 
     // 円形柱。直径記号があるので b×d ではなく直径ひとつとして確定する (ADR-027)
     const c56 = candidate(columns, 'C56', '2階')
@@ -158,6 +186,14 @@ describe('parseSectionLists', () => {
 
     expectMarksInclude(smallGirders, ['B51'])
     expect(candidate(smallGirders, 'B51').kind).toBe('対象外')
+
+    // 「―」は読取失敗ではなく、その欄に配筋がないという図面の値である。
+    const b55 = candidate(smallGirders, 'B55')
+    expect(b55.sideBar).toBeUndefined()
+    expect(b55.issues).not.toContain('腹筋解釈不能')
+    for (const parsedCandidate of smallGirders.candidates) {
+      expect(parsedCandidate.widthTie).toBeUndefined()
+    }
   })
 
   it('leaves position-dependent 大梁 main bars blank and maps uniform sections', () => {
@@ -185,6 +221,28 @@ describe('parseSectionLists', () => {
 
     // 外端 8 ≠ 内端 13 — どちらが始端かを決められないので確定しない
     expect(g51Roof.issues).toContain('主筋端部左右相違')
+    expect(g51Roof.sideBar).toEqual({ size: 'D10', count: 2 })
+
+    const cutoffEntries = girders.candidates.flatMap(({ raw }) =>
+      Object.entries(raw).filter(([key]) => key.startsWith('カットオフ')),
+    )
+    expect(g51Roof.raw['カットオフ(内端)']?.normalize('NFKC')).toBe('[2500]')
+    expect(cutoffEntries).toHaveLength(6)
+    expect(
+      cutoffEntries.map(([, value]) => value.normalize('NFKC')).sort(),
+    ).toEqual(['[2500]', '[2700]', '[2700]', '[2700]', '[2700]', '[3000]'])
+
+    expect(candidate(girders, 'G52', 'R階').sideBar).toEqual({
+      size: 'D10',
+      count: 4,
+    })
+    expect(girders.candidates).not.toHaveLength(0)
+    for (const parsedCandidate of girders.candidates) {
+      expect(parsedCandidate.widthTie).toEqual({
+        size: 'D10',
+        pitchMm: 1000,
+      })
+    }
 
     const g51Second = candidate(girders, 'G51', '2階')
     expect(g51Second.stirrup).toEqual({ size: 'D13', pitchMm: 150 })
@@ -210,6 +268,46 @@ describe('parseSectionLists', () => {
     expect(candidate(girders, 'G55', 'R階').girderMain).toBeUndefined()
   })
 
+  it('keeps a half-width cutoff raw without a position instead of inventing a candidate field', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        {
+          str: '大梁リスト特記[]内はカットオフの柱面からの寸法を示す。',
+          x: 10,
+          y: 5,
+          w: 220,
+          h: 8,
+        },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '[1500]', x: 120, y: 40, w: 40, h: 8 },
+        { str: '断面', x: 10, y: 60, w: 20, h: 8 },
+        { str: '400×600', x: 120, y: 60, w: 50, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.raw['カットオフ']).toBe('[1500]')
+    expect('cutoff' in g1).toBe(false)
+  })
+
+  it.each([
+    ['ojkk-p3.json', '大梁リスト'],
+    ['kani-p38.json', '地中梁リスト'],
+  ])('%s has no カットオフ raw values', (fixture, listKind) => {
+    const parsedList = list(parseSectionLists(readPage(fixture)), listKind)
+
+    for (const parsedCandidate of parsedList.candidates) {
+      expect(
+        Object.keys(parsedCandidate.raw).some((key) =>
+          key.startsWith('カットオフ'),
+        ),
+      ).toBe(false)
+    }
+  })
+
   it('parses the vertical kani 地中梁リスト and tolerates an empty 腹筋 cell', () => {
     const parsed = parseSectionLists(readPage('kani-p38.json'))
     const foundationGirders = list(parsed, '地中梁リスト')
@@ -224,7 +322,131 @@ describe('parseSectionLists', () => {
       girderMain: { size: 'D19', topCount: 3, bottomCount: 3 },
       stirrup: { size: 'D10', pitchMm: 200 },
     })
+    expect(fg1.sideBar).toBeUndefined()
+    expect(fg1.widthTie).toBeUndefined()
+    expect(fg1.issues).not.toContain('腹筋解釈不能')
     expect(fg1.raw['腹筋']).toBeUndefined()
+  })
+
+  it('keeps an unexpected 腹筋 cell raw instead of inventing a value', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: '腹筋', x: 10, y: 50, w: 20, h: 8 },
+        { str: '2-K13', x: 125, y: 50, w: 36, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.sideBar).toBeUndefined()
+    expect(g1.raw['腹筋']).toBe('2-K13')
+    expect(g1.issues).toContain('腹筋解釈不能')
+  })
+
+  it('separates a three-digit 幅止め筋 pitch from the next numbered title item', () => {
+    const parsed = parseSectionLists(
+      titlePage(
+        '大梁リスト特記なき限り1.巾止筋D10-@5002.中吊り筋受け筋D10-@1000',
+        'G1',
+      ),
+    )
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.widthTie).toEqual({ size: 'D10', pitchMm: 500 })
+  })
+
+  it.each([
+    {
+      fixture: 'ojkk-p3',
+      title: '大梁リスト※幅止筋はD10@1000とする',
+      listKind: '大梁リスト',
+      mark: 'G1',
+      expected: { size: 'D10', pitchMm: 1000 },
+    },
+    {
+      fixture: 'yokohama-p14',
+      title:
+        '大梁断面リスト特記なき限り1.巾止筋D10-@10002.中吊り筋受け筋D10-@10003.［］内はｶｯﾄｵﾌの柱面からの寸法を示す。',
+      listKind: '大梁断面リスト',
+      mark: 'G1',
+      expected: { size: 'D10', pitchMm: 1000 },
+    },
+    {
+      fixture: 'yokohama-p13 柱',
+      title:
+        '柱断面リスト1/30特記なき限り1.巾止筋D10-@5002.S13はKSS785を示す。3.HOOPの…',
+      listKind: '柱断面リスト',
+      mark: 'C1',
+      expected: undefined,
+    },
+    {
+      fixture: 'yokohama-p13 小梁',
+      title:
+        '小梁断面リスト1/30特記なき限り1.巾止筋D10-@10002.中吊り筋受け筋D10-@1000',
+      listKind: '小梁断面リスト',
+      mark: 'B1',
+      expected: undefined,
+    },
+  ])('reads the restored $fixture title without crossing item boundaries', ({
+    title,
+    listKind,
+    mark,
+    expected,
+  }) => {
+    const parsedCandidate = candidate(
+      list(parseSectionLists(titlePage(title, mark)), listKind),
+      mark,
+    )
+
+    expect(parsedCandidate.widthTie).toEqual(expected)
+  })
+
+  it('recognizes a two-digit next item number only after splitting sequential items', () => {
+    const title =
+      '大梁リスト特記なき限り1.a2.b3.c4.d5.e6.f7.g8.h9.巾止筋D10-@50010.中吊り筋'
+    const g1 = candidate(
+      list(parseSectionLists(titlePage(title, 'G1')), '大梁リスト'),
+      'G1',
+    )
+
+    expect(g1.widthTie).toEqual({ size: 'D10', pitchMm: 500 })
+  })
+
+  it('keeps an unbounded 幅止め筋 title item raw with an issue', () => {
+    const parsed = parseSectionLists(
+      titlePage(
+        '大梁リスト特記幅止め筋D10-@1000中吊り筋受け筋D13-@200',
+        'G1',
+      ),
+    )
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.widthTie).toBeUndefined()
+    expect(g1.raw['幅止筋']).toBe(
+      '幅止め筋D10-@1000中吊り筋受け筋D13-@200',
+    )
+    expect(g1.issues).toContain('幅止め筋解釈不能')
+  })
+
+  it('keeps the pre-phase-7 numeric pitch limit for table cells', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'G1', x: 140, y: 20, w: 12, h: 8 },
+        { str: 'ST', x: 10, y: 40, w: 20, h: 8 },
+        { str: 'D13@0100', x: 120, y: 40, w: 50, h: 8 },
+      ],
+    })
+    const g1 = candidate(list(parsed, '大梁リスト'), 'G1')
+
+    expect(g1.stirrup).toEqual({ size: 'D13', pitchMm: 100 })
   })
 
 })

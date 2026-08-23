@@ -5,9 +5,15 @@ import { createSampleProject } from '@/domain/model/sample-project'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
+import ojkkGirderFixture from '../../../tests/fixtures/section-import/textitems/ojkk-p3.json'
 import yokohamaFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p13.json'
 import yokohamaGirderFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p14.json'
 import { SectionImport } from './SectionImport'
+
+const ojkkGirderPage: TextPage = {
+  ...ojkkGirderFixture.page,
+  items: ojkkGirderFixture.items,
+}
 
 const yokohamaPage: TextPage = {
   ...yokohamaFixture.page,
@@ -253,6 +259,79 @@ describe('SectionImport', () => {
     })
   })
 
+  it('applies ojkk 腹筋 and 幅止め筋 onto an existing 大梁 section', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        sections: base.sections.map((section) => {
+          if (section.kind !== '大梁' || section.mark !== 'G1') return section
+          const next = { ...section, storyLabel: 'RF' }
+          delete next.sideBar
+          delete next.widthTie
+          return next
+        }),
+      },
+    })
+    render(<SectionImport initialPages={[ojkkGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G1-RF')
+    expect(row).toHaveTextContent('腹筋 2-D10')
+    expect(row).toHaveTextContent('幅止め筋 D10@1000')
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G1' && storyLabel === 'RF',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.sideBar).toEqual({
+      size: 'D10',
+      count: 2,
+      extraLengthMm: 0,
+    })
+    expect(section.widthTie).toEqual({ size: 'D10', pitch: 1000 })
+  })
+
+  it('keeps the entered 腹筋 余長 while updating parsed size and count', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        sections: base.sections.map((section) =>
+          section.kind === '大梁' && section.mark === 'G1'
+            ? {
+                ...section,
+                storyLabel: 'RF',
+                sideBar: {
+                  size: 'D13',
+                  count: 4,
+                  extraLengthMm: 120,
+                },
+              }
+            : section,
+        ),
+      },
+    })
+    render(<SectionImport initialPages={[ojkkGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G1-RF')
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G1' && storyLabel === 'RF',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.sideBar).toEqual({
+      size: 'D10',
+      count: 2,
+      extraLengthMm: 120,
+    })
+  })
+
   it('ignores a stale extraction that resolves after a newer file', async () => {
     let resolveSlow!: (pages: TextPage[]) => void
     const slow = new Promise<TextPage[]>((resolve) => {
@@ -380,6 +459,8 @@ describe('SectionImport', () => {
       .project.sections.find(({ mark }) => mark === 'G1')
     if (before?.kind !== '大梁') throw new Error('Expected 大梁 section')
     const cutoffBefore = before.main.cutoffFromSupportFaceMm
+    const sideBarBefore = before.sideBar
+    const widthTieBefore = before.widthTie
 
     const row = screen.getByTestId('section-import-candidate-G1-none')
     expect(row).toHaveTextContent('端部 上5・下4')
@@ -397,6 +478,10 @@ describe('SectionImport', () => {
     // カットオフ位置は断面リストから読まない — 反映が元の入力を
     // 動かさないことを見る。埋めれば図面にない長さで質量を出す。
     expect(section.main.cutoffFromSupportFaceMm).toBe(cutoffBefore)
+    // 후보의 undefined는 「없음」과 「못 읽음」을 구분하지 못하므로 기존 수기 입력을
+    // 지우지 않는다. phase 6의 「빈칸은 기존값 유지」 규약이다.
+    expect(section.sideBar).toEqual(sideBarBefore)
+    expect(section.widthTie).toEqual(widthTieBefore)
   })
 
   it('names the unreadable list even when another list produced candidates', () => {

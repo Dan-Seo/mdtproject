@@ -1,0 +1,25 @@
+# Step 2 반증 기록
+
+- ① 비교 범위 — `git diff --unified=0 e44e2e0^:AGENTS.md HEAD:AGENTS.md`로 동기화 직전판의 삭제 행을 전부 열거하고 현재 `AGENTS.md`·`CLAUDE.md`에서 사실·수치·규칙의 존속 여부를 대조했다.
+- ① 사본 고지 — 직전판의 `한쪽을 고치면 반대쪽도 같이 고칠 것.`은 현재 고지의 첫 문장에 그대로 남고 CI 가드 설명만 뒤에 붙었으므로 뜻의 손실이 없다.
+- ① 부재 범위 — 삭제된 `부재는 柱와 大梁만`은 동기화 전에 이미 존재하던 ADR-025·ADR-028·ADR-029 및 `wall.ts`·`slab.ts` 구현과 모순된 낡은 금지였고, 현재 문장은 네 부재와 여전히 금지된 `基礎`·`小梁`·`雑壁`을 구분하므로 유효 규칙의 손실이 아니다.
+- ① M3c — 삭제 행의 `measure.width-tie.length.addition(stated)`는 동기화 직전 `src/rulepack/index.test.ts`가 `stated` 0행을 고정한 사실과 모순되며 현재 `transcribed`로 교정됐고, 나머지 幅止め筋·腹筋 범위와 금지사항은 현재 M3c 문장에 남아 있다.
+- ① 도면 인식 — 삭제 행의 `断面リスト 값만 파싱하고 형상은 계속 수동 입력한다(ADR-004 유지)`는 동기화 전에 이미 존재하던 ADR-030과 `src/lib/import/framing-plan/` 구현 때문에 낡았고, 현재 문장은 수동 입력을 유지하면서 형상 후보 파싱 결과를 함께 기록하므로 유효 사실의 손실이 아니다.
+- ① M4·R4 — 삭제된 `M4 — ... glTF export` 미완료 행과 `1만 개 규모 검증은 M4에서 계속` 행은 동기화 전에 이미 존재하던 M4 커밋·`tests/stress/multi-story.test.ts`·`tests/e2e/uc17-stress-building.js`에 의해 폐기된 현황이고, 현재 완료 내역과 실측값으로 대체돼 손실이 아니다.
+- ① R6 — 삭제 행의 `197행 transcribed, 11행 inferred`와 `JIS 単位質量 8행`은 동기화 직전 테스트가 JIS 행 제거와 inferred key를 `measure.splice.length.factor` 하나로 고정한 상태보다 낡았고, 현재 `198행 transcribed, 3행 inferred`가 그 코드를 반영하므로 손실이 아니다.
+- ① 현재 사본 — `tests/docs/guardrail-sync.test.ts`가 개행을 정규화한 뒤 `AGENTS.md`가 자체 인용 헤더 뒤에서 `CLAUDE.md`의 제목 제외 본문 전체로 끝나는지 검사했고, 이번 `npm test`에서 통과했으므로 현재 두 파일 사이에도 누락이 없다.
+- ① 결론 — 동기화 직전판에서 현재 두 파일 모두에 사라진 유효한 사실·수치·규칙은 발견되지 않았다.
+- ② 주입 대상 — `scripts/execute.py`의 `_load_guardrails()`는 루트 `AGENTS.md`와 `docs_dir.glob("*.md")`로 얻은 직하 `docs/*.md`만 읽으며 `CLAUDE.md`, 하위 디렉터리 문서, `tests/e2e/README.md`는 읽지 않는다.
+- ② 호출 시점 — `Harness.run()`은 `_load_guardrails()`를 기동 시 한 번 호출한 반환값을 `_execute_all_steps()`로 넘기고, 각 step·재시도는 그 동일 문자열로 preamble을 다시 만들므로 규칙의 `기동 시 1회` 설명과 일치한다.
+- ② 문맥 구분 — step 사양과 이전 step summary도 프롬프트에 붙지만 `_load_guardrails()`의 주입 대상은 아니므로 `AGENTS.md`와 `docs/*.md`뿐이라는 문장과 모순되지 않는다.
+- ③ phase 7 AC — `phases/7-section-fields/step0-output.json`부터 `step3-output.json`까지 각 최종 보고가 lint·typecheck·전체 테스트·골든테스트·production build 통과를 기록하고, `index.json`은 네 step 모두 `completed`이며 마지막 전체 테스트는 1,394건이었다.
+- ③ 지어낸 경로 — phase 7 커밋 `c91faf5`의 `widthTieFromTitle()`은 표제에서 `@\d{1,4}`를 첫 토큰으로 잘라 4자리 피치를 허용했고, 같은 정규식을 `巾止筋D10-@5002.中吊り筋`에 적용한 반례가 `{ token: "D10-@5002", pitchMm: 5002 }`를 냈으므로 AC 통과 상태에서도 값 생성 경로가 실제로 있었다.
+- ③ 테스트의 빈틈 — phase 7 테스트는 번호 경계 없는 `幅止め筋D10-@1000中吊り筋...`과 실물의 `@1000` 표제만 고정해 `@500` 뒤의 다음 항목 번호 `2.`를 반증하지 못했고, phase 8 step 0이 그 반례를 먼저 추가해 경계를 항목 단위로 고쳤다.
+- ③ README 함정 — `tests/e2e/README.md:78-81`은 dev와 `next start`가 같은 `.next`를 덮어 지연 청크가 404가 된다고 쓰고, `:105-106`은 `next dev` 중 `npm run build`가 프리렌더를 깨뜨린다고 다시 명시하므로 새 규칙의 핵심 사실과 일치한다.
+- ③ 주입 모순 여부 — ②에서 `tests/e2e/README.md`가 `_load_guardrails()` 대상이 아님을 확인했으므로 README에 경고가 있어도 하네스 Codex가 가드레일로 받지 못한다는 설명과 모순되지 않는다.
+- AC lint — `npm run lint`는 exit 0이며 `src/app/api/oncall/alert/route.test.ts:161`의 기존 미사용 변수 경고 1건과 오류 0건이었다.
+- AC typecheck — `npm run typecheck`는 exit 0이었다.
+- AC test — `npm test`는 81파일 1,402건 전부 통과했다.
+- AC golden — `npm run test:golden`은 7파일 362건 전부 통과했다.
+- AC build — 실행 전 `next dev` 프로세스가 없음을 확인했고 `npm run build`는 Next.js 15.5.23 production build를 exit 0으로 완료했다.
+- 최종 판정 — 주장 ①②③과 AC에서 어긋남을 발견하지 못했으므로 Step 2는 `completed`다.

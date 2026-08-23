@@ -23,7 +23,7 @@ import type {
   TextPage,
 } from '@/lib/import/section-list/types'
 import { t } from '@/lib/i18n'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, type Locale } from '@/lib/store'
 
 import styles from './SectionImport.module.css'
 
@@ -196,6 +196,27 @@ function applyParsedFields(
               pitch: candidate.stirrup.pitchMm,
             },
           }),
+      ...(candidate.sideBar === undefined
+        ? {}
+        : {
+            sideBar: {
+              size: candidate.sideBar.size,
+              count: candidate.sideBar.count,
+              // 腹筋の余長は図面にも標準仕様書5章にもなく、1通則6) が委ねる
+              // JASS 5 も有料・未確保である。0 は規準値ではなく未入力状態で、
+              // 既存値があれば利用者の入力として保つ (R9②)。SectionTable の
+              // extraLengthMm ?? 0 と同じ扱いである。
+              extraLengthMm: section.sideBar?.extraLengthMm ?? 0,
+            },
+          }),
+      ...(candidate.widthTie === undefined
+        ? {}
+        : {
+            widthTie: {
+              size: candidate.widthTie.size,
+              pitch: candidate.widthTie.pitchMm,
+            },
+          }),
     }
   }
 
@@ -265,7 +286,7 @@ function sectionSummary(section: ImportableSection): string {
   return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${top.endCount}／${top.centerCount}・下${bottom.endCount}／${bottom.centerCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
 }
 
-function candidateFields(candidate: SectionCandidate): string[] {
+function candidateFields(candidate: SectionCandidate, locale: Locale): string[] {
   const fields: string[] = []
   if (candidate.shape === '円形' && candidate.b !== undefined) {
     fields.push(`断面 ${candidate.b}φ`)
@@ -293,6 +314,16 @@ function candidateFields(candidate: SectionCandidate): string[] {
   if (candidate.stirrup) {
     fields.push(
       `あばら筋 ${candidate.stirrup.size}@${candidate.stirrup.pitchMm}`,
+    )
+  }
+  if (candidate.sideBar) {
+    fields.push(
+      `${t(locale, 'sectionImport.field.sideBar')} ${candidate.sideBar.count}-${candidate.sideBar.size}`,
+    )
+  }
+  if (candidate.widthTie) {
+    fields.push(
+      `${t(locale, 'sectionImport.field.widthTie')} ${candidate.widthTie.size}@${candidate.widthTie.pitchMm}`,
     )
   }
   return fields
@@ -343,7 +374,7 @@ function Candidate({
         </div>
         <div>
           <dt>{t(locale, 'sectionImport.parsed')}</dt>
-          <dd>{candidateFields(candidate).join(' / ') || '—'}</dd>
+          <dd>{candidateFields(candidate, locale).join(' / ') || '—'}</dd>
         </div>
       </dl>
       {Object.keys(candidate.raw).length > 0 ? (
@@ -561,7 +592,10 @@ export function SectionImport({
                                 t(locale, 'sectionImport.noStory')}
                             </span>
                           </div>
-                          <p>{candidateFields(row.candidate).join(' / ') || '—'}</p>
+                          <p>
+                            {candidateFields(row.candidate, locale).join(' / ') ||
+                              '—'}
+                          </p>
                         </li>
                       ))}
                     </ul>

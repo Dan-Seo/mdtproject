@@ -389,6 +389,67 @@ function parsePitch(
   return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
 }
 
+/**
+ * compact된 特記를 「1.」부터 순차인 번호열로 먼저 가른다. 숫자가 피치에 붙어
+ * 「@5002.」가 되어도 다음 번호가 2라는 사실이 오른쪽 경계를 증명한다.
+ * 번호열이 없으면 표제 전체가 한 항목이며, 빈 항목은 번호열의 증명이 아니므로
+ * 분리하지 않는다.
+ */
+function sequentialTitleItems(titleText: string): string[] {
+  const text = compact(titleText)
+  const firstMarker = text.indexOf('1.')
+  if (firstMarker < 0) return [text]
+
+  const items: string[] = []
+  let itemStart = firstMarker + '1.'.length
+  let nextNumber = 2
+
+  while (true) {
+    const marker = `${nextNumber}.`
+    const boundary = text.indexOf(marker, itemStart)
+    if (boundary < 0) {
+      const lastItem = text.slice(itemStart)
+      return lastItem.length > 0 ? [...items, lastItem] : [text]
+    }
+
+    const item = text.slice(itemStart, boundary)
+    const nextStart = boundary + marker.length
+    if (item.length === 0 || nextStart >= text.length) return [text]
+
+    items.push(item)
+    itemStart = nextStart
+    nextNumber += 1
+  }
+}
+
+function widthTieFromTitle(
+  titleText: string,
+): { value?: SectionCandidate['widthTie']; raw?: string } | undefined {
+  const item = sequentialTitleItems(titleText).find((candidate) =>
+    /(?:幅|巾)止(?:め)?筋/.test(candidate),
+  )
+  if (!item) return undefined
+
+  const label = item.match(/(?:幅|巾)止(?:め)?筋/)
+  if (!label || label.index === undefined) return undefined
+
+  const raw = item.slice(label.index)
+  // 항목 경계를 증명한 뒤에는 자릿수로 피치 끝을 추측하지 않는다. 幅止め筋 항목
+  // 전체가 이 문법일 때만 확정하고, 뒤에 다른 特記가 붙으면 raw 경로로 보낸다.
+  const match = raw.match(
+    /^(?:幅|巾)止(?:め)?筋(?:は)?([A-Z]\d+(?:\.\d+)?)-?@(\d+)(?:とする)?[。.]*$/i,
+  )
+  if (!match) return { raw }
+
+  const size = match[1].toUpperCase() as BarSize
+  const pitchMm = Number(match[2])
+  if (!barSizes.has(size) || pitchMm <= 0) return { raw }
+
+  return {
+    value: { size, pitchMm },
+  }
+}
+
 // 4자리 초과는 셀 병합 잔재, 한 자리는 소수 표기(「0.8×0.8」→8×0)의 잔재다 —
 // 어느 쪽도 확정하지 않는다
 function inDimensionRange(b: number, depth: number): boolean {
@@ -717,12 +778,31 @@ function setPitch(
   addIssue(candidate, '帯筋解釈不能')
 }
 
+function setSideBar(
+  candidate: SectionCandidate,
+  raw: string | undefined,
+): void {
+  if (raw === undefined) return
+  const value = compact(raw)
+  // 空欄・横線は「その配筋がない」という正常な図面値であり、読取失敗ではない。
+  if (value === '' || /^[-―]+$/.test(value)) return
+
+  // 主筋と同じ 本数-径 文法を使う。腹筋は高強度せん断補強筋を取らない。
+  const parsed = parseBar(raw)
+  if (parsed) {
+    candidate.sideBar = parsed
+    return
+  }
+
+  candidate.raw['腹筋'] = cleanedRebarRaw(raw)
+  addIssue(candidate, '腹筋解釈不能')
+}
+
 function rowsBetween(rows: TextRow[], startY: number, endY: number): TextRow[] {
   return rows.filter((row) => row.y > startY && row.y < endY)
 }
 
 // 柱·大梁 블록의 알려진 라벨 행 전부 — 접힘 감지의 「다음 라벨 행」 판정에 쓴다.
-// 腹筋은 파싱 대상이 아니지만 라벨 행이 맞으므로 접힘으로 오인하지 않게 넣는다
 const ROW_LABELS = [
   '主筋',
   '帯筋',
@@ -1245,6 +1325,50 @@ function cellsForMark(
     )
 }
 
+function cutoffCellsByMark(
+  rows: TextRow[],
+  positions: PositionColumn[],
+  marks: MarkColumn[],
+): Map<string, Array<{ position?: string; raw: string }>> {
+  const result = new Map<
+    string,
+    Array<{ position?: string; raw: string }>
+  >()
+  const positionTargets = positions.map((position, index) => ({
+    id: String(index),
+    centerX: position.centerX,
+  }))
+  const markTargets = marks.map(({ mark, centerX }) => ({
+    id: mark,
+    centerX,
+  }))
+
+  for (const segment of rows.flatMap((row) => row.segments)) {
+    // NFKC로 全角 ［］를 半角 []에 접되, raw에는 원문 글자를 그대로 남긴다.
+    // 안이 빈 表題의 「［］内は…」는 숫자 조건을 통과하지 않는다.
+    if (!/^\[\d+\]$/.test(compact(segment.text))) continue
+
+    const positionIndex = valuesAtTargets(
+      [segment],
+      positionTargets,
+    ).keys().next().value as string | undefined
+    const position =
+      positionIndex === undefined ? undefined : positions[Number(positionIndex)]
+    const mark =
+      position?.mark ??
+      (valuesAtTargets([segment], markTargets).keys().next().value as
+        | string
+        | undefined)
+    if (mark === undefined) continue
+
+    const cells = result.get(mark) ?? []
+    cells.push({ position: position?.label, raw: segment.text })
+    result.set(mark, cells)
+  }
+
+  return result
+}
+
 function parseGirderBlock(
   rows: TextRow[],
   headerIndex: number,
@@ -1293,16 +1417,19 @@ function parseGirderBlock(
     const stirrupRows = dataRows.filter((row) =>
       exactLabel(row, ['ST', 'STP', 'あばら筋']),
     )
+    const sideBarRows = dataRows.filter((row) => exactLabel(row, ['腹筋']))
     // 柱 블록과 같은 방어 — 라벨 행이 겹이면 여러 층 블록이 합쳐진 것이다
     const storyAmbiguous =
       topRows.length > 1 ||
       bottomRows.length > 1 ||
       stirrupRows.length > 1 ||
+      sideBarRows.length > 1 ||
       dimensionRows.length > 1
     const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
     const topRow = storyAmbiguous ? undefined : topRows[0]
     const bottomRow = storyAmbiguous ? undefined : bottomRows[0]
     const stirrupRow = storyAmbiguous ? undefined : stirrupRows[0]
+    const sideBarRow = storyAmbiguous ? undefined : sideBarRows[0]
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
@@ -1311,6 +1438,7 @@ function parseGirderBlock(
       ...position,
       index,
     }))
+    const cutoffCells = cutoffCellsByMark(dataRows, positions, marks)
     const dimensionLabel = dimensionRow
       ? exactLabel(dimensionRow, ['断面', 'b×D'])?.compact
       : undefined
@@ -1362,6 +1490,9 @@ function parseGirderBlock(
       stirrupRow && stirrupLabel
         ? valuesByMark(stirrupRow, [stirrupLabel], marks)
         : new Map<string, string>()
+    const sideBarValues = sideBarRow
+      ? valuesByMark(sideBarRow, ['腹筋'], marks)
+      : new Map<string, string>()
     // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋/あばら筋에도 건다
     const topContinuations = topRow
       ? barContinuationByMark(dataRows, topRow, slice.endY, marks, BAR_TOKEN)
@@ -1407,12 +1538,15 @@ function parseGirderBlock(
             : []
       const dimension = dimensionValues.get(mark)
       const stirrup = stirrupValues.get(mark)
+      const sideBar = sideBarValues.get(mark)
       // 柱 블록과 같은 이유 — 접힘도 「읽은 것이 있다」에 넣는다
       if (
         !dimension &&
         topCells.length === 0 &&
         bottomCells.length === 0 &&
         !stirrup &&
+        sideBar === undefined &&
+        !cutoffCells.has(mark) &&
         !topContinuations.has(mark) &&
         !bottomContinuations.has(mark) &&
         !stirrupContinuations.has(mark)
@@ -1484,6 +1618,13 @@ function parseGirderBlock(
           stirrupContinuations.get(mark),
         )
       }
+      setSideBar(result, sideBar)
+      for (const cell of cutoffCells.get(mark) ?? []) {
+        const key = cell.position
+          ? `カットオフ(${cell.position})`
+          : 'カットオフ'
+        result.raw[key] = cell.raw
+      }
       candidates.push(result)
     }
   }
@@ -1516,6 +1657,15 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
+  // 타이틀과 特記는 같은 표제 줄이어도 글자 크기·기준선 차이로 인접 복원 행이 될 수
+  // 있다. 최초 符号 행 앞까지만 합쳐 표의 데이터 행은 건드리지 않는다.
+  const titleLineText = compact(
+    tableRows
+      .slice(0, headerIndexes[0] ?? tableRows.length)
+      .flatMap((row) => row.items)
+      .map((item) => item.str)
+      .join(''),
+  )
   // 대상이 아닌 리스트를 못 읽었다고 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다
   const outOfScope = isOutOfScopeList(anchor.titleText)
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
@@ -1551,6 +1701,23 @@ function parseTableRegion(
         )
     candidates.push(...parsed)
   })
+
+  // 幅止め筋はリスト全体の特記であり、同じ大梁リストの全候補に効く。
+  // 柱・小梁ではこの特記自体を読まない — 1通則3) の対象に柱はなく、小梁は範囲外。
+  const hasGirder = candidates.some((candidate) => candidate.kind === '大梁')
+  const widthTie = hasGirder
+    ? widthTieFromTitle(titleLineText)
+    : undefined
+  if (widthTie) {
+    for (const candidate of candidates) {
+      if (candidate.kind !== '大梁') continue
+      if (widthTie.value) candidate.widthTie = { ...widthTie.value }
+      else if (widthTie.raw) {
+        candidate.raw['幅止筋'] = widthTie.raw
+        addIssue(candidate, '幅止め筋解釈不能')
+      }
+    }
+  }
 
   // 符号은 읽었으나 항목 행(断面·主筋·帯筋)을 하나도 못 읽은 표 — 「符号을 못
   // 읽었다」로 안내하면 사용자가 원도의 엉뚱한 곳을 본다
