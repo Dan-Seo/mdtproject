@@ -41,7 +41,8 @@
     },
     {
       "dir": "9-review-refutation",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-24T01:24:24+0900"
     }
   ]
 }
