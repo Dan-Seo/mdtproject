@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "apply",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-23T20:44:34+0900",
+      "summary": "読んだ腹筋・幅止め筋を既存値保持の規約で大梁断面に反映し、数量・3Dまで通した",
+      "completed_at": "2026-08-23T20:57:09+0900"
     }
   ],
   "created_at": "2026-08-23T18:00:00+0900"

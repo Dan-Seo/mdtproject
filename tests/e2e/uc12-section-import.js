@@ -6,15 +6,20 @@
 // C56의 断面 600φ도 円形柱로 들어온다 (ADR-027) — 둘 다 빈칸이 아니다.
 const pdfPath = ".cache/dwg-yokohama.pdf";
 const sandboxFixture = "uc12-dwg-yokohama.pdf.b64";
+const ojkkPdfPath = ".cache/dwg-ojkk-zumen6.pdf";
+const ojkkSandboxFixture = "uc12-dwg-ojkk.pdf.b64";
 let pdfBase64;
+let ojkkPdfBase64;
 try {
   // dev-browser는 QuickJS에서 호스트 경로를 직접 열 수 없다. AC 실행 전에 로컬
   // .cache PDF를 격리 temp에 base64로 미러링하며, 없으면 첫머리에서 명시적으로 실패한다.
   pdfBase64 = await readFile(sandboxFixture);
+  ojkkPdfBase64 = await readFile(ojkkSandboxFixture);
 } catch (error) {
   throw new Error(
-    `LOCAL FIXTURE MISSING: ${pdfPath} — 먼저 실행: ` +
-      `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture} ` +
+    `LOCAL FIXTURE MISSING: ${pdfPath} / ${ojkkPdfPath} — 먼저 실행: ` +
+      `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture}; ` +
+      `base64 -w0 ${ojkkPdfPath} > ~/.dev-browser/tmp/${ojkkSandboxFixture} ` +
       `(재현 절차: tests/fixtures/section-import/SOURCES.md) (${String(error)})`,
   );
 }
@@ -118,6 +123,62 @@ const after = await page.evaluate(() => {
   };
 });
 
+// ojkk의 G1(RF)을 샘플 G1에 겹쳐, 반영된 腹筋이 실제 Member를 통해 内訳書·3D까지
+// 관통하는지 본다. Section의 階 표기는 취입 매칭 키이고 Member의 sectionId는 그대로다.
+await page.evaluate(() => {
+  const store = window.__kijunStore;
+  if (!store) throw new Error("development store bridge is unavailable");
+  store.getState().updateProject((project) => ({
+    ...project,
+    sections: project.sections.map((section) => {
+      if (section.kind !== "大梁" || section.mark !== "G1") return section;
+      const next = { ...section, storyLabel: "RF" };
+      delete next.sideBar;
+      delete next.widthTie;
+      return next;
+    }),
+  }));
+});
+await page.setInputFiles("[data-testid='section-import-file']", {
+  name: "dwg-ojkk-zumen6.pdf",
+  mimeType: "application/pdf",
+  buffer: Buffer.from(ojkkPdfBase64, "base64"),
+});
+await page.waitForSelector("[data-testid='section-import-candidate-G1-RF']", {
+  timeout: 120000,
+});
+const ojkkBefore = await page.evaluate(() => {
+  const row = document.querySelector("[data-testid='section-import-candidate-G1-RF']");
+  return {
+    sideBarParsed: row?.textContent.includes("腹筋 2-D10") ?? false,
+    widthTieParsed: row?.textContent.includes("幅止め筋 D10@1000") ?? false,
+    sideBarAbsentFromTakeoff: ![...document.querySelectorAll("[data-testid^='quantity-line-']")]
+      .some((node) => node.textContent.includes("腹筋")),
+  };
+});
+await page.locator(
+  "[data-testid='section-import-candidate-G1-RF'] button:nth-of-type(1)",
+).click();
+await page.waitForFunction(
+  () => document.querySelector("[aria-label='G1(RF) 腹筋 径']")?.value === "D10",
+);
+const ojkkAfter = await page.evaluate(() => {
+  const value = (label) => document.querySelector(`[aria-label='${label}']`)?.value ?? null;
+  return {
+    sideBarSize: value("G1(RF) 腹筋 径"),
+    sideBarCount: value("G1(RF) 腹筋 本数"),
+    sideBarExtraLength: value("G1(RF) 腹筋 余長"),
+    widthTieSize: value("G1(RF) 幅止め筋 径"),
+    widthTiePitch: value("G1(RF) 幅止め筋 ピッチ"),
+    sideBarInTakeoff: [...document.querySelectorAll("[data-testid^='quantity-line-']")]
+      .some((node) => node.textContent.includes("腹筋")),
+    canvasLabel: document.querySelector("canvas")?.getAttribute("aria-label") ?? null,
+    paneFailures: [...document.querySelectorAll("[role='alert']")].map((node) =>
+      node.textContent.trim(),
+    ),
+  };
+});
+
 const checks = {
   approvalWasRequired: before.c51ExistsInTable === false,
   outOfScopeListed: before.b51VisibleInOutOfScope === true,
@@ -138,9 +199,21 @@ const checks = {
   takeoffStillRenders: after.grandTotal !== null,
   viewerStillRenders: after.canvasLabel === "選択部材の配筋3D",
   noPaneFailure: after.paneFailures.length === 0,
+  ojkkSideBarParsed: ojkkBefore.sideBarParsed === true,
+  ojkkWidthTieParsed: ojkkBefore.widthTieParsed === true,
+  sideBarWasAbsentBeforeApply: ojkkBefore.sideBarAbsentFromTakeoff === true,
+  sideBarApplied:
+    ojkkAfter.sideBarSize === "D10" &&
+    ojkkAfter.sideBarCount === "2" &&
+    ojkkAfter.sideBarExtraLength === "0",
+  widthTieApplied:
+    ojkkAfter.widthTieSize === "D10" && ojkkAfter.widthTiePitch === "1000",
+  importedSideBarInTakeoff: ojkkAfter.sideBarInTakeoff === true,
+  viewerSurvivesGirderDetailApply: ojkkAfter.canvasLabel === "選択部材の配筋3D",
+  noPaneFailureAfterGirderDetailApply: ojkkAfter.paneFailures.length === 0,
 };
 
-console.log(JSON.stringify({ before, after, checks }, null, 2));
+console.log(JSON.stringify({ before, after, ojkkBefore, ojkkAfter, checks }, null, 2));
 console.log(
   "SHOT " +
     (await saveScreenshot(await page.screenshot(), "uc12-section-import.png")),

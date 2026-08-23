@@ -69,5 +69,6 @@ dev-browser 샌드박스는 호스트 경로를 직접 열지 못하므로 PDF�
 
 ```
 base64 -w0 .cache/dwg-yokohama.pdf > ~/.dev-browser/tmp/uc12-dwg-yokohama.pdf.b64
+base64 -w0 .cache/dwg-ojkk-zumen6.pdf > ~/.dev-browser/tmp/uc12-dwg-ojkk.pdf.b64
 npx dev-browser --browser kijun --timeout 150 run tests/e2e/uc12-section-import.js
 ```
