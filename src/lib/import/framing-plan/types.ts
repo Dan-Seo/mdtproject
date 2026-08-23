@@ -128,3 +128,12 @@ export const PLAN_APPLY_SKIPS = [
 ] as const
 
 export type PlanApplySkip = (typeof PLAN_APPLY_SKIPS)[number]
+
+/** 階高 취입을 통째로 거부한 사유. 이때 案件은 손대지 않은 원본 그대로다 */
+export const ELEVATION_APPLY_REFUSALS = [
+  '階範囲不正',
+  '部材あり階置換不可',
+] as const
+
+export type ElevationApplyRefusal =
+  (typeof ELEVATION_APPLY_REFUSALS)[number]

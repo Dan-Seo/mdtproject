@@ -4,8 +4,12 @@ import type { Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
 
-import { applyFramingPlan } from './apply'
-import type { PlanBlock, PlanGridCandidate } from './types'
+import { applyElevation, applyFramingPlan } from './apply'
+import type {
+  ElevationCandidate,
+  PlanBlock,
+  PlanGridCandidate,
+} from './types'
 
 // 断面은 손으로 짓지 않고 샘플 案件에서 빌린다 — 손으로 지으면 스키마가 자라날 때
 // 이 테스트만 옛 모양으로 남고, 그 사실을 vitest는 알려주지 않는다 (tsc가 잡는다)
@@ -266,5 +270,119 @@ describe('applyFramingPlan — 다른 층을 버리는 동의', () => {
     })
     expect(result.refusal).toBeUndefined()
     expect(result.project.members).toHaveLength(1)
+  })
+})
+
+describe('applyElevation', () => {
+  // 도면 순서는 위에서 아래다. 실물 yokohama p8이 이 모양이다 —
+  // 맨 위는 라벨이 없는 パラペット 천단이고, 그 아래로 RCL·2FL·1FL·基礎下端이다.
+  const candidate: ElevationCandidate = {
+    titles: ['bY1通り軸組図1/100'],
+    levels: [
+      { labels: [], positionPt: 159 },
+      { labels: ['中央棟RCL(水下)'], positionPt: 199 },
+      { labels: ['2FL'], positionPt: 315 },
+      { labels: ['中央棟1FL', '基準GL'], positionPt: 442 },
+      { labels: ['基礎下端'], positionPt: 518 },
+    ],
+    heightsMm: [1400, 4100, 4480, 2690],
+    scalePtPerMm: 0.02835,
+  }
+
+  it('고른 범위의 간격만 階가 되고, 아래에서 위로 쌓인다', () => {
+    // 1FL(3)에서 RCL(1)까지 → 1階(4480)와 2階(4100). パラペット(1400)와
+    // 基礎(2690)는 階가 아니므로 범위 밖이다
+    const result = applyElevation(project(), {
+      candidate,
+      topLevelIndex: 1,
+      bottomLevelIndex: 3,
+    })
+    expect(result.refusal).toBeUndefined()
+    expect(result.project.stories.map((story) => story.height)).toEqual([
+      4480, 4100,
+    ])
+  })
+
+  it('階의 이름은 그 階의 바닥이 되는 레벨의 원문이다', () => {
+    const result = applyElevation(project(), {
+      candidate,
+      topLevelIndex: 1,
+      bottomLevelIndex: 3,
+    })
+    // 같은 높이에 라벨이 둘이면 둘 다 남긴다 — 하나를 고르지 않는다
+    expect(result.project.stories.map((story) => story.name)).toEqual([
+      '中央棟1FL／基準GL',
+      '2FL',
+    ])
+  })
+
+  it('라벨이 없는 레벨이 바닥이면 이름을 지어내지 않고 번호로 둔다', () => {
+    const result = applyElevation(project(), {
+      candidate,
+      topLevelIndex: 0,
+      bottomLevelIndex: 1,
+    })
+    expect(result.project.stories.map((story) => story.name)).toEqual([
+      '中央棟RCL(水下)',
+    ])
+  })
+
+  it('범위가 한 칸도 없으면 거부한다', () => {
+    const base = project()
+    const result = applyElevation(base, {
+      candidate,
+      topLevelIndex: 2,
+      bottomLevelIndex: 2,
+    })
+    expect(result.refusal).toBe('階範囲不正')
+    expect(result.project).toBe(base)
+  })
+
+  it('부재가 있으면 통째로 거부한다 — 階를 갈면 부재가 갈 곳을 잃는다', () => {
+    const base = project({
+      sections: [columnSection('C1')],
+      members: [
+        {
+          id: 'm1',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: 'sec-C1',
+          storyId: 'story-1',
+          position: { ix: 0, iy: 0 },
+        },
+      ],
+    })
+    const result = applyElevation(base, {
+      candidate,
+      topLevelIndex: 1,
+      bottomLevelIndex: 3,
+    })
+    expect(result.refusal).toBe('部材あり階置換不可')
+    expect(result.project).toBe(base)
+  })
+
+  it('동의하면 부재를 버리고 階를 갈아 끼운다', () => {
+    const base = project({
+      sections: [columnSection('C1')],
+      members: [
+        {
+          id: 'm1',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: 'sec-C1',
+          storyId: 'story-1',
+          position: { ix: 0, iy: 0 },
+        },
+      ],
+    })
+    const result = applyElevation(base, {
+      candidate,
+      topLevelIndex: 1,
+      bottomLevelIndex: 3,
+      discardMembers: true,
+    })
+    expect(result.refusal).toBeUndefined()
+    expect(result.project.members).toEqual([])
+    expect(result.project.stories).toHaveLength(2)
   })
 })

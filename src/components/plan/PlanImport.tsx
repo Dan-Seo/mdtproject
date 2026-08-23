@@ -3,7 +3,9 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 
 import {
+  applyElevation,
   applyFramingPlan,
+  type ElevationApplyResult,
   type PlanApplyResult,
 } from '@/lib/import/framing-plan/apply'
 import { parseFrameElevations } from '@/lib/import/framing-plan/elevation'
@@ -65,11 +67,32 @@ function Elevation({
   candidate,
   index,
   locale,
+  onApply,
+  result,
+  discardMembers,
+  onDiscardMembersChange,
 }: {
   candidate: ElevationCandidate
   index: number
   locale: 'ja' | 'ko'
+  onApply: (topLevelIndex: number, bottomLevelIndex: number) => void
+  result: ElevationApplyResult | null
+  discardMembers: boolean
+  onDiscardMembersChange: (next: boolean) => void
 }) {
+  // 「어느 레벨이 階의 경계인가」는 조문이 아니라 설계 의도라 사람이 고른다
+  // (ADR-030). 기본값은 양 끝 — 제품은 パラペット이나 基礎를 알아볼 수 없으므로
+  // 가장 넓게 잡아 두고 사용자가 좁힌다
+  const [top, setTop] = useState(0)
+  const [bottom, setBottom] = useState(candidate.levels.length - 1)
+
+  const levelLabel = (levelIndex: number) => {
+    const level = candidate.levels[levelIndex]
+    return level.labels.length > 0
+      ? level.labels.join('／')
+      : t(locale, 'planImport.levelUnlabelled')
+  }
+
   return (
     <div
       className={styles.elevation}
@@ -80,6 +103,14 @@ function Elevation({
           {candidate.titles.join('・') ||
             t(locale, 'planImport.elevationUntitled')}
         </strong>
+        <button
+          type="button"
+          className={styles.applyButton}
+          data-testid={`plan-import-apply-elevation-${index}`}
+          onClick={() => onApply(top, bottom)}
+        >
+          {t(locale, 'planImport.applyStories')}
+        </button>
       </div>
       <p className={styles.axes}>
         {candidate.levels.map((level, levelIndex) => (
@@ -95,6 +126,58 @@ function Elevation({
           </span>
         ))}
       </p>
+      <div className={styles.storyPicker}>
+        <label className={styles.storyPicker}>
+          {t(locale, 'planImport.topLevel')}
+          <select
+            data-testid={`plan-import-level-top-${index}`}
+            value={top}
+            onChange={(event) => setTop(Number(event.target.value))}
+          >
+            {candidate.levels.map((level, levelIndex) => (
+              <option key={levelIndex} value={levelIndex}>
+                {levelLabel(levelIndex)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.storyPicker}>
+          {t(locale, 'planImport.bottomLevel')}
+          <select
+            data-testid={`plan-import-level-bottom-${index}`}
+            value={bottom}
+            onChange={(event) => setBottom(Number(event.target.value))}
+          >
+            {candidate.levels.map((level, levelIndex) => (
+              <option key={levelIndex} value={levelIndex}>
+                {levelLabel(levelIndex)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {/* 동의는 거부를 한 번 본 뒤에만 물어본다 */}
+      {result?.refusal === '部材あり階置換不可' ? (
+        <label className={styles.storyPicker}>
+          <input
+            type="checkbox"
+            data-testid={`plan-import-discard-members-${index}`}
+            checked={discardMembers}
+            onChange={(event) => onDiscardMembersChange(event.target.checked)}
+          />
+          {t(locale, 'planImport.discardMembers')}
+        </label>
+      ) : null}
+      {result ? (
+        <p
+          className={styles.muted}
+          data-testid={`plan-import-elevation-result-${index}`}
+        >
+          {result.refusal
+            ? t(locale, `planImport.elevationRefusal.${result.refusal}`)
+            : `${t(locale, 'planImport.appliedStories')}: ${result.applied}`}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -114,6 +197,10 @@ export function PlanImport({
   const [storyId, setStoryId] = useState<string>(stories[0]?.id ?? '')
   const [result, setResult] = useState<PlanApplyResult | null>(null)
   const [discardOtherStories, setDiscardOtherStories] = useState(false)
+  const [discardMembers, setDiscardMembers] = useState(false)
+  const [elevationResults, setElevationResults] = useState<
+    Record<number, ElevationApplyResult>
+  >({})
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
 
@@ -142,6 +229,7 @@ export function PlanImport({
     setLoading(true)
     setFailed(false)
     setResult(null)
+    setElevationResults({})
     try {
       const next = await extractPages(file)
       if (requestRef.current !== requestId) return
@@ -170,6 +258,28 @@ export function PlanImport({
       return applied.project
     })
     if (applied) setResult(applied)
+  }
+
+  const applyStories = (
+    candidate: ElevationCandidate,
+    index: number,
+    topLevelIndex: number,
+    bottomLevelIndex: number,
+  ) => {
+    let applied: ElevationApplyResult | undefined
+    updateProject((project) => {
+      applied = applyElevation(project, {
+        candidate,
+        topLevelIndex,
+        bottomLevelIndex,
+        discardMembers,
+      })
+      return applied.project
+    })
+    if (applied) {
+      const next = applied
+      setElevationResults((current) => ({ ...current, [index]: next }))
+    }
   }
 
   return (
@@ -293,6 +403,12 @@ export function PlanImport({
                     candidate={candidate}
                     index={index}
                     locale={locale}
+                    result={elevationResults[index] ?? null}
+                    discardMembers={discardMembers}
+                    onDiscardMembersChange={setDiscardMembers}
+                    onApply={(topLevel, bottomLevel) =>
+                      applyStories(candidate, index, topLevel, bottomLevel)
+                    }
                   />
                 ))}
 

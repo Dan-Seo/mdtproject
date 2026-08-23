@@ -110,6 +110,43 @@ describe('PlanImport', () => {
     })
   })
 
+  it('階高를 案件의 階로 넣는다 — 어느 레벨이 階인지는 사람이 고른다', async () => {
+    open([elevationPage])
+
+    // 中央棟1FL(index 3)에서 中央棟RCL(index 1)까지 → 1階 4480·2階 4100.
+    // パラペット(1400)와 基礎(2690)는 階가 아니므로 범위 밖이다
+    fireEvent.change(screen.getByTestId('plan-import-level-top-0'), {
+      target: { value: '1' },
+    })
+    fireEvent.change(screen.getByTestId('plan-import-level-bottom-0'), {
+      target: { value: '3' },
+    })
+    fireEvent.click(screen.getByTestId('plan-import-apply-elevation-0'))
+
+    // 샘플 案件에 부재가 있어 한 번 거부된다 — 동의는 그 뒤에만 나온다
+    await waitFor(() =>
+      screen.getByTestId('plan-import-discard-members-0'),
+    )
+    fireEvent.click(screen.getByTestId('plan-import-discard-members-0'))
+    fireEvent.click(screen.getByTestId('plan-import-apply-elevation-0'))
+
+    await waitFor(() => {
+      const { stories } = useAppStore.getState().project
+      expect(stories.map((story) => story.height)).toEqual([4480, 4100])
+      expect(stories.map((story) => story.name)).toEqual([
+        '中央棟1FL／基準GL',
+        '2FL',
+      ])
+    })
+  })
+
+  it('階高 반영 전에는 案件의 階를 건드리지 않는다', () => {
+    const before = useAppStore.getState().project.stories
+    open([elevationPage])
+
+    expect(useAppStore.getState().project.stories).toBe(before)
+  })
+
   it('PDF 읽기에 실패하면 案件을 건드리지 않고 말한다', async () => {
     const before = useAppStore.getState().project
     render(

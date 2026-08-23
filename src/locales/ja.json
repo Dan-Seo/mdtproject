@@ -182,5 +182,13 @@
   "planImport.unplaced": "位置を決められない符号",
   "planImport.blockUntitled": "（図面名称なし）",
   "planImport.elevationUntitled": "（軸組図名称なし）",
-  "planImport.discardOtherStories": "他の階の部材を破棄して通り芯を置き換える"
+  "planImport.discardOtherStories": "他の階の部材を破棄して通り芯を置き換える",
+  "planImport.applyStories": "階に反映",
+  "planImport.appliedStories": "作った階",
+  "planImport.topLevel": "最上階の天端",
+  "planImport.bottomLevel": "最下階の床",
+  "planImport.levelUnlabelled": "（名称なし）",
+  "planImport.discardMembers": "部材を破棄して階を置き換える",
+  "planImport.elevationRefusal.階範囲不正": "階になる区間がありません",
+  "planImport.elevationRefusal.部材あり階置換不可": "部材があるため階を置き換えられません"
 }

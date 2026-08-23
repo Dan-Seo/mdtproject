@@ -1,7 +1,9 @@
 import type { Member, MemberKind, Section } from '@/domain/model/member'
-import type { Grid, Project } from '@/domain/model/project'
+import type { Grid, Project, Story } from '@/domain/model/project'
 
 import type {
+  ElevationApplyRefusal,
+  ElevationCandidate,
   PlanApplyRefusal,
   PlanApplySkip,
   PlanBlock,
@@ -173,5 +175,80 @@ export function applyFramingPlan(
     },
     applied: deduped.size,
     skipped,
+  }
+}
+
+export interface ElevationApplyOptions {
+  candidate: ElevationCandidate
+  /**
+   * 階의 경계로 쓸 레벨의 범위. index는 **도면 순서**(위에서 아래)다.
+   * 위 끝(top)이 최상階의 천장, 아래 끝(bottom)이 최하階의 바닥이 된다 —
+   * パラペット 천단이나 基礎下端처럼 階가 아닌 레벨은 범위 밖에 둔다.
+   */
+  topLevelIndex: number
+  bottomLevelIndex: number
+  /** 階를 갈면 부재가 갈 곳을 잃는다. 화면은 거부를 보여준 뒤에만 이 선택지를 낸다 */
+  discardMembers?: boolean
+}
+
+export interface ElevationApplyResult {
+  project: Project
+  /** 만든 階 수 */
+  applied: number
+  refusal?: ElevationApplyRefusal
+}
+
+/**
+ * 軸組図에서 읽은 높이를 案件의 階로 반영한다 (ADR-030).
+ *
+ * 「어느 레벨이 階의 경계인가」는 파서가 정하지 않으므로(FL·GL·基礎下端·RCL이
+ * 섞여 있다) 여기서 사용자의 선택을 받는다. 階의 이름도 지어내지 않고 그 階의
+ * **바닥이 되는 레벨의 원문**을 그대로 쓴다 — 같은 높이에 라벨이 둘이면 둘 다
+ * 남긴다(실물의 「中央棟1FL」과 「基準GL」이 그렇다).
+ */
+export function applyElevation(
+  project: Project,
+  {
+    candidate,
+    topLevelIndex,
+    bottomLevelIndex,
+    discardMembers = false,
+  }: ElevationApplyOptions,
+): ElevationApplyResult {
+  const valid =
+    Number.isInteger(topLevelIndex) &&
+    Number.isInteger(bottomLevelIndex) &&
+    topLevelIndex >= 0 &&
+    bottomLevelIndex > topLevelIndex &&
+    bottomLevelIndex < candidate.levels.length
+  if (!valid) {
+    return { project, applied: 0, refusal: '階範囲不正' }
+  }
+
+  // 階를 갈면 부재의 storyId가 가리키던 階가 사라진다. 부분 반영으로 넘어가면
+  // 「틀린 채로 완성된 것」이 되므로 통째로 거부하고, 사용자가 정한다
+  if (project.members.length > 0 && !discardMembers) {
+    return { project, applied: 0, refusal: '部材あり階置換不可' }
+  }
+
+  const stories: Story[] = []
+  // 도면은 위에서 아래, `Project.stories`는 아래에서 위다 (columnEnds가
+  // stories[level - 1]을 「아래 階」로 읽는다)
+  for (let i = bottomLevelIndex - 1; i >= topLevelIndex; i--) {
+    const floor = candidate.levels[i + 1]
+    const name =
+      floor.labels.length > 0
+        ? floor.labels.join('／')
+        : `${bottomLevelIndex - i}`
+    stories.push({
+      id: `story-${bottomLevelIndex - i}`,
+      name,
+      height: candidate.heightsMm[i],
+    })
+  }
+
+  return {
+    project: { ...project, stories, members: [] },
+    applied: stories.length,
   }
 }

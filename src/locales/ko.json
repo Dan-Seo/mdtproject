@@ -182,5 +182,13 @@
   "planImport.unplaced": "위치를 정하지 못한 符号",
   "planImport.blockUntitled": "(도면 명칭 없음)",
   "planImport.elevationUntitled": "(軸組図 명칭 없음)",
-  "planImport.discardOtherStories": "다른 층의 부재를 버리고 通り芯을 바꾼다"
+  "planImport.discardOtherStories": "다른 층의 부재를 버리고 通り芯을 바꾼다",
+  "planImport.applyStories": "階(층)에 반영",
+  "planImport.appliedStories": "만든 층",
+  "planImport.topLevel": "최상층 천단",
+  "planImport.bottomLevel": "최하층 바닥",
+  "planImport.levelUnlabelled": "(명칭 없음)",
+  "planImport.discardMembers": "부재를 버리고 층을 바꾼다",
+  "planImport.elevationRefusal.階範囲不正": "층이 될 구간이 없습니다",
+  "planImport.elevationRefusal.部材あり階置換不可": "부재가 있어 층을 바꿀 수 없습니다"
 }

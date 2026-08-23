@@ -116,6 +116,35 @@ const appliedPanel = await page.evaluate(() => ({
 }));
 const applied = { ...appliedPanel, spans: await readSpans() };
 
+// 4) 階高를 案件의 階로 넣는다 — 어느 레벨이 階인지는 사람이 고른다.
+// 中央棟1FL(index 3)에서 中央棟RCL(index 1)까지 → 1階 4480·2階 4100.
+// パラペット(1400)와 基礎(2690)는 階가 아니므로 범위 밖이다
+await page.selectOption("[data-testid='plan-import-level-top-0']", "1");
+await page.selectOption("[data-testid='plan-import-level-bottom-0']", "3");
+await page.click("[data-testid='plan-import-apply-elevation-0']");
+await page.waitForSelector("[data-testid='plan-import-elevation-result-0']");
+const storyRefused = await page.evaluate(() => ({
+  message:
+    document.querySelector("[data-testid='plan-import-elevation-result-0']")
+      ?.textContent ?? "",
+  consentOffered:
+    document.querySelector("[data-testid='plan-import-discard-members-0']") !==
+    null,
+}));
+if (storyRefused.consentOffered) {
+  await page.click("[data-testid='plan-import-discard-members-0']");
+  await page.click("[data-testid='plan-import-apply-elevation-0']");
+  await page.waitForTimeout(500);
+}
+// 階 이름은 層 탭(role=tab)에서 읽는다 — 스팬과 같이 DOM이 유일한 창구다.
+// 뷰어 탭(部材·建物)도 role=tab이라 목록에는 그것들도 섞인다 — 개수가 아니라
+// 「도면에서 온 이름이 거기 있는가」를 본다
+const stories = await page.evaluate(() =>
+  [...document.querySelectorAll("[role='tab']")].map((node) =>
+    node.textContent.trim(),
+  ),
+);
+
 const checks = {
   gridXLabelsRead:
     read.gridX.includes("bX1") && read.gridX.includes("cX1"),
@@ -140,9 +169,17 @@ const checks = {
   // 部材가 0본이 되어도 화면은 선다 — 割増는 引く 대상이 없을 뿐 오류가 아니다
   takeoffStillRenders: applied.grandTotal !== null,
   noPaneFailure: applied.paneFailures.length === 0,
+  // 階高: 고른 범위(1FL→RCL)의 두 칸만 階가 된다. パラペット·基礎는 범위 밖이다.
+  // 이 시점에는 앞의 通り芯 반영이 이미 부재를 비웠으므로 거부가 나지 않는다 —
+  // 부재가 남아 있을 때의 거부는 단위 테스트가 고정한다
+  storiesApplied: storyRefused.message.includes("2"),
+  // 이름은 그 階의 바닥이 되는 레벨의 원문 그대로다 — 지어내지 않고,
+  // 같은 높이의 라벨 둘은 둘 다 남는다
+  storiesNamedFromDrawing:
+    stories.includes("中央棟1FL／基準GL") && stories.includes("2FL"),
 };
 
-console.log(JSON.stringify({ read, refused, applied, checks }, null, 2));
+console.log(JSON.stringify({ read, refused, applied, storyRefused, stories, checks }, null, 2));
 console.log(
   "SHOT " + (await saveScreenshot(await page.screenshot(), "uc22-plan-import.png")),
 );
