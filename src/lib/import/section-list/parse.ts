@@ -375,6 +375,7 @@ function parseBar(value: string): ParsedBar | undefined {
 
 function parsePitch(
   value: string,
+  allowFourDigitPitch = false,
 ): { size: ShearBarSize; pitchMm: number } | undefined {
   // 셀 전체가 단일 「径@ピッチ」일 때만 채택한다 — 부분 매치를 허용하면
   // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다.
@@ -386,7 +387,31 @@ function parsePitch(
   if (!shearBarSizes.has(size)) return undefined
   const pitchMm = Number(match[2])
   // 4자리 피치는 인접 세그먼트가 붙은 잔재다(「D13@100」+「2」) — 확정하지 않는다
-  return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
+  // 다만 리스트 표제의 幅止め筋은 실제로 @1000이므로 그 호출부에서만 4자리를 허용한다.
+  const maxPitchDigits = allowFourDigitPitch ? 4 : 3
+  return match[2].length > maxPitchDigits || pitchMm <= 0
+    ? undefined
+    : { size, pitchMm }
+}
+
+function widthTieFromTitle(
+  titleText: string,
+): { value?: SectionCandidate['widthTie']; raw?: string } | undefined {
+  const label = titleText.match(/(?:幅|巾)止(?:め)?筋/)
+  if (!label || label.index === undefined) return undefined
+
+  const raw = titleText.slice(label.index)
+  // compact된 yokohama 표제는 「@1000」과 다음 항목 번호 「2.」가 붙어 @10002가 된다.
+  // 幅止め筋 표제에서 허용하는 4자리까지만 첫 토큰으로 잘라 기존 피치 파서에 맡긴다.
+  const token = raw
+    .slice(label[0].length)
+    .match(/[A-Z]\d+(?:\.\d+)?-?@\d{1,4}/i)?.[0]
+  const parsed = token ? parsePitch(token, true) : undefined
+  if (!parsed || !barSizes.has(parsed.size as BarSize)) return { raw }
+
+  return {
+    value: { size: parsed.size as BarSize, pitchMm: parsed.pitchMm },
+  }
 }
 
 // 4자리 초과는 셀 병합 잔재, 한 자리는 소수 표기(「0.8×0.8」→8×0)의 잔재다 —
@@ -1544,6 +1569,15 @@ function parseTableRegion(
     .map((row, index) => ({ index, marks: markColumns(row) }))
     .filter(({ marks }) => marks.length > 0)
     .map(({ index }) => index)
+  // 타이틀과 特記는 같은 표제 줄이어도 글자 크기·기준선 차이로 인접 복원 행이 될 수
+  // 있다. 최초 符号 행 앞까지만 합쳐 표의 데이터 행은 건드리지 않는다.
+  const titleLineText = compact(
+    tableRows
+      .slice(0, headerIndexes[0] ?? tableRows.length)
+      .flatMap((row) => row.items)
+      .map((item) => item.str)
+      .join(''),
+  )
   // 대상이 아닌 리스트를 못 읽었다고 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다
   const outOfScope = isOutOfScopeList(anchor.titleText)
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
@@ -1579,6 +1613,20 @@ function parseTableRegion(
         )
     candidates.push(...parsed)
   })
+
+  // 幅止め筋はリスト全体の特記であり、同じ大梁リストの全候補に効く。
+  // 柱・小梁ではこの特記自体を読まない — 1通則3) の対象に柱はなく、小梁は範囲外。
+  const hasGirder = candidates.some((candidate) => candidate.kind === '大梁')
+  const widthTie = hasGirder
+    ? widthTieFromTitle(titleLineText)
+    : undefined
+  if (widthTie) {
+    for (const candidate of candidates) {
+      if (candidate.kind !== '大梁') continue
+      if (widthTie.value) candidate.widthTie = { ...widthTie.value }
+      else if (widthTie.raw) candidate.raw['幅止筋'] = widthTie.raw
+    }
+  }
 
   // 符号은 읽었으나 항목 행(断面·主筋·帯筋)을 하나도 못 읽은 표 — 「符号을 못
   // 읽었다」로 안내하면 사용자가 원도의 엉뚱한 곳을 본다

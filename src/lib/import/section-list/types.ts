@@ -68,6 +68,12 @@ export interface SectionCandidate {
   }
   stirrup?: { size: ShearBarSize; pitchMm: number }
   /**
+   * 幅止め筋。リスト表題の特記から読む — 表のセルではない。
+   * 未定義は「その配筋がない」を意味する (ADR-012)。大梁にだけ載る
+   * (数量積算基準 1通則3) の列挙に柱がない)。
+   */
+  widthTie?: { size: BarSize; pitchMm: number }
+  /**
    * 腹筋。図面が「2-D10」と書く数そのもの — 1通則7) の割付ではない。
    * 未定義は「その配筋がない」を意味する (ADR-012)。
    * 余長 (extraLengthMm) は図面に無い — 取り込み側が決める (R9②)。
