@@ -23,7 +23,8 @@
       "name": "refute-guardrail-sync",
       "status": "completed",
       "started_at": "2026-08-23T21:32:19+0900",
-      "summary": "동기화 손실·가드레일 주입·phase 7과 next build 주장 세 건을 반증했으며 불일치 없이 AC 5종이 통과했다"
+      "summary": "동기화 손실·가드레일 주입·phase 7과 next build 주장 세 건을 반증했으며 불일치 없이 AC 5종이 통과했다",
+      "completed_at": "2026-08-23T21:38:11+0900"
     }
   ],
   "created_at": "2026-08-23T21:10:00+0900"
