@@ -47,6 +47,7 @@ const targets = [
   { cacheFile: 'dwg-yokohama.pdf', page: 7, output: 'yokohama-p7.json' },
   { cacheFile: 'dwg-yokohama.pdf', page: 8, output: 'yokohama-p8.json' },
   { cacheFile: 'dwg-kani-kids.pdf', page: 38, output: 'kani-p38.json' },
+  { cacheFile: 'dwg-kani-kids.pdf', page: 40, output: 'kani-p40.json' },
 ]
 
 async function titleBlockExclusions() {

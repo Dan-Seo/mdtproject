@@ -63,6 +63,14 @@ const fixtures = [
     needles: [['2階床伏図'], ['bX1'], ['bY6'], ['8700'], ['G51']],
   },
   {
+    file: 'kani-p40.json',
+    cacheFile: 'dwg-kani-kids.pdf',
+    sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',
+    page: 40,
+    // 軸組図 픽스처 — 断面リスト가 아니라 높이 방향의 근거다 (ADR-030)
+    needles: [['軸組図'], ['▽FL'], ['10,500'], ['C2']],
+  },
+  {
     file: 'kani-p38.json',
     cacheFile: 'dwg-kani-kids.pdf',
     sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',

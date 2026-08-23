@@ -29,14 +29,38 @@ const LEVEL_TOLERANCE_PT = 15
 /**
  * 레벨 라벨을 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
  *
- * 도면 안의 부재 부호까지 레벨 라벨로 삼지 않기 위한 것이다. 실물 p8의 라벨
- * 블록은 치수 열에서 최대 62pt 떨어져 있고, 그 바깥 창 폭은 도면마다 다르다 (R10).
+ * **이 창이 계열의 검증 장치다.** 치수 두 개만으로는 축척을 유도할 수는 있어도
+ * 대조할 수가 없다(유도한 축척이 자기 자신과 어긋날 수는 없다). 계열이 옳다는
+ * 증거는 「푼 레벨 위치에 실제로 라벨이 서 있다」는 독립된 사실 하나뿐이고,
+ * 창이 넓으면 그 증거가 가짜가 된다.
+ *
+ * 실물 kani p40에서 그 일이 일어났다 — 위·아래 두 軸組図의 **전체 치수**
+ * 5,535 둘이 한 열로 이어져 축척이 3배로 나왔는데, 창이 150pt이던 동안에는
+ * 128pt 떨어진 **通り芯 라벨 `Y1`**을 레벨 라벨로 주워 검증을 통과했다.
+ *
+ * 실측된 라벨 거리는 yokohama p8이 최대 62pt, kani p40이 최대 67pt다. 80은
+ * 그 위이고 128 아래다. 더 벌어지는 도면은 빈 후보로 실패한다 (R10).
  */
-const LABEL_WINDOW_PT = 150
+const LABEL_WINDOW_PT = 80
 /** 계열이 이어지는지 보는 축척 편차. 伏図 파서와 같은 값이다 */
 const SCALE_TOLERANCE_RATIO = 0.03
 /** 라벨이 붙은 레벨이 이보다 적으면 계열로 보지 않는다 — 부분 치수 열과의 유일한 구분 */
 const MINIMUM_LABELLED_LEVELS = 2
+/**
+ * 계열이 되려면 치수가 이만큼 있어야 한다.
+ *
+ * **둘로는 반증이 안 된다.** 치수 두 개는 축척을 하나 유도하는데, 유도한 값이
+ * 자기 자신과 어긋날 수는 없으므로 축척 일관성 검사가 공회전한다. 그러면 남는
+ * 증거는 라벨 일치뿐인데, 글자가 빽빽한 도면에서는 그것이 **우연히** 맞는다 —
+ * 실물 kani p40에서 위·아래 두 軸組図의 같은 치수(5,535 둘, 75 둘)가 한 열로
+ * 이어져 축척이 3배·220배로 나왔는데도 계산된 레벨 자리에 마침 글자가 있어
+ * 두 번 다 통과했다.
+ *
+ * 셋이면 축척이 둘 유도되어 서로를 반증할 수 있고, 그 검사가 위 두 경우를
+ * 모두 잡는다. 대가로 치수가 둘뿐인 軸組図(3레벨)는 읽지 않는다 — 지어내는
+ * 것보다 낫다 (R10).
+ */
+const MINIMUM_CHAIN_DIMENSIONS = 3
 
 interface Token {
   text: string
@@ -103,12 +127,12 @@ function chains(column: DimensionToken[]): DimensionToken[][] {
     if (continues) {
       current.push(column[i + 1])
     } else {
-      if (current.length >= 2) result.push(current)
+      if (current.length >= MINIMUM_CHAIN_DIMENSIONS) result.push(current)
       current = [column[i], column[i + 1]]
       reference = scale
     }
   }
-  if (current.length >= 2) result.push(current)
+  if (current.length >= MINIMUM_CHAIN_DIMENSIONS) result.push(current)
 
   return result
 }
