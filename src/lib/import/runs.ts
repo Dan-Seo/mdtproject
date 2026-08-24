@@ -211,11 +211,12 @@ export function recoverRows(items: TextItem[], gapRatio?: number): TextRow[] {
  * 회전각은 순서가 뒤집힐 수 있다 — 「700」이 「007」이 되면 조용히 틀린 값이 된다.
  * 회전 텍스트에서 w는 가로 폭이 아니라 글자 진행량이므로 세로 간격으로 쓴다.
  *
- * `gapRatio`는 인접 판정 배수이지만 **makeSegments의 `gapRatio`와 재는 대상이
+ * `originGapRatio`는 인접 판정 배수이지만 **makeSegments의 `gapRatio`와 재는 대상이
  * 다르다**: makeSegments는 진행량을 뺀 여백(`x - (previous.x + w)`)에 곱하고, 여기서는
  * 원점 사이 거리(`previous.y - y`)에 곱한다. 그래서 같은 수를 넣어도 같은 뜻이 아니고
  * — 토큰 내부 간격이 가로에서는 거의 0인데 세로에서는 정확히 1w다 — 세로 배수는 1을
- * 넘어야 한다.
+ * 넘어야 한다. 이름이 「原点間隔의 배수」라고 재는 대상을 이고 있는 이유가 이것이다:
+ * 둘 다 `gapRatio: number`이면 호출부가 0.5와 1.5를 맞바꿔 넣어도 타입이 막지 못한다.
  *
  * **두 축이 서로 다르게 느슨했던 것이 아니다.** 세로 조건을 가로의 척도로 옮기면
  * `여백 ≤ w·(배수−1)`이고, 배수 2·w≈0.5h(픽스처 5부의 숫자 글리프 실측 w/h는
@@ -225,7 +226,7 @@ export function recoverRows(items: TextItem[], gapRatio?: number): TextRow[] {
  */
 export function verticalRuns(
   items: TextItem[],
-  gapRatio: number = VERTICAL_RUN_GAP_RATIO,
+  originGapRatio: number = VERTICAL_RUN_GAP_RATIO,
 ): VerticalRun[] {
   const rotated = items
     .filter(
@@ -272,7 +273,7 @@ export function verticalRuns(
       previous !== undefined &&
       Math.abs(previous.x - item.x) <= COLUMN_TOLERANCE_PT &&
       gap >= 0 &&
-      gap <= Math.max(previous.w, item.w) * gapRatio
+      gap <= Math.max(previous.w, item.w) * originGapRatio
     if (!adjacent) flush()
     current.push(item)
   }
