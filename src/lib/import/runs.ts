@@ -24,7 +24,16 @@ export interface TextRow {
   segments: TextSegment[]
 }
 
-/** 세로쓰기(rot=-90) 문자열 하나. y는 세로 범위의 중앙이다. */
+/**
+ * 세로쓰기(rot=-90) 문자열 하나. y는 바운딩 박스의 세로 중심이다 —
+ * TextSegment.centerY와 같은 규약이다(ADR-030④ 「좌표 규약은 한 곳에」).
+ * 글자 원점(y)들의 단순 평균이 아니다: rot=-90에서 y는 진행 방향(-y) 기준
+ * 뒤쪽 끝(원점)이고, 앞쪽 끝은 자신의 w(진행량)만큼 더 나간 y-w다
+ * (textitems.ts: directionY=-1이므로 다음 글자의 y는 이 글자의 y-w) —
+ * makeSegments의 endX가 x+w로 앞쪽 끝을 구하는 것과 같은 셈이다. 원점만
+ * 평균 내면 마지막 글자 폭의 절반만큼 중심이 뒤(y가 큰 쪽)로 치우친다.
+ * 계산은 flush() 참고.
+ */
 export interface VerticalRun {
   text: string
   x: number
@@ -74,8 +83,16 @@ export function makeSegments(
   for (const item of sorted) {
     const group = groups.at(-1)
     const previous = group?.at(-1)
+    // 하한도 gapRatio에 맞춰 줄인다. 고정 4pt였다면 gapRatio를 좁혀도(라벨·치수용
+    // 0.5 등) h≤8인 도면에서 min(h)*gapRatio≤4가 되어 하한이 이겨 좁힘이 무효가
+    // 된다 — 배수를 좁히려는 의도가 고정 하한에 잠식되는 것이다. gapRatio가
+    // 기본값(2.2)이면 4*(gapRatio/DEFAULT)=4로 그대로라 section-list 파서(항상
+    // 기본값을 씀)의 동작은 바뀌지 않는다.
     const threshold = previous
-      ? Math.max(4, Math.min(previous.h, item.h) * gapRatio)
+      ? Math.max(
+          4 * (gapRatio / DEFAULT_SEGMENT_GAP_RATIO),
+          Math.min(previous.h, item.h) * gapRatio,
+        )
       : 0
 
     if (!group || !previous || item.x - (previous.x + previous.w) > threshold) {
@@ -86,15 +103,19 @@ export function makeSegments(
   }
 
   return groups.map((group) => {
-    const x = Math.min(...group.map((item) => item.x))
-    const endX = Math.max(...group.map((item) => item.x + item.w))
     const text = group.map((item) => item.str).join('')
-    // 세그먼트의 바운딩 박스로 centerY를 잰다(y는 베이스라인이라 글자 하나는
-    // [y-h, y] 구간). verticalRuns의 flush()와 같은 이유로 spread(Math.min(...))는
-    // 안 쓴다 — 인자 수가 글리프 수를 그대로 따라가 스택 한도에서 RangeError가 된다.
+    // 세그먼트의 바운딩 박스로 x·endX·centerY를 잰다(y는 베이스라인이라 글자
+    // 하나는 [y-h, y] 구간). spread(Math.min(...)/Math.max(...))는 안 쓴다 —
+    // 인자 수가 글리프 수를 그대로 따라가 스택 한도에서 RangeError가 된다
+    // (verticalRuns의 flush()와 같은 이유. x·endX는 한 번 이 이유로 고쳐진
+    // centerY 옆에 spread인 채로 남아 있었다 — #32 이월 지적 (b)).
+    let x = Number.POSITIVE_INFINITY
+    let endX = Number.NEGATIVE_INFINITY
     let top = Number.POSITIVE_INFINITY
     let bottom = Number.NEGATIVE_INFINITY
     for (const item of group) {
+      if (item.x < x) x = item.x
+      if (item.x + item.w > endX) endX = item.x + item.w
       if (item.y - item.h < top) top = item.y - item.h
       if (item.y > bottom) bottom = item.y
     }
@@ -174,10 +195,15 @@ export function verticalRuns(items: TextItem[]): VerticalRun[] {
     if (current.length === 0) return
     // spread(Math.min(...))는 인자 수가 사용자 PDF의 글리프 수를 그대로 따라가
     // 스택 한도에서 RangeError가 된다 — 렌더 경로라 임포트가 통째로 죽는다
+    //
+    // minY는 item.y - item.w(자신의 진행량만큼 앞쪽으로 더 나간 끝)의 최솟값이다.
+    // 원점(y) 그대로를 쓰면 마지막 글자의 원점(=그 글자의 뒤쪽 끝)에서 멈춰
+    // 앞쪽 끝을 놓친다 — VerticalRun.y의 규약 설명 참고. maxY는 보정이 없다:
+    // 첫 글자의 원점이 이미 런 전체의 뒤쪽 바깥 끝이라 더 나갈 데가 없다.
     let minY = Number.POSITIVE_INFINITY
     let maxY = Number.NEGATIVE_INFINITY
     for (const item of current) {
-      if (item.y < minY) minY = item.y
+      if (item.y - item.w < minY) minY = item.y - item.w
       if (item.y > maxY) maxY = item.y
     }
     runs.push({

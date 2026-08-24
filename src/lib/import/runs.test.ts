@@ -25,6 +25,39 @@ describe('makeSegments', () => {
     // centerY = (284+304)/2 = 294
     expect(segments[0].centerY).toBe(294)
   })
+
+  it('좁힌 gapRatio에서는 4pt 고정 하한이 좁힘을 잠식하지 않는다', () => {
+    // h=6, gapRatio=0.5 → min(h)*gapRatio=3 (<4). 이전 구현은 하한 4가 이겨
+    // threshold=4가 되고, 아래 간격 3.5는 4를 못 넘어 한 세그먼트로 붙는다.
+    // 하한도 gapRatio에 맞춰 줄면 threshold≈0.909가 되어 3.5>0.909로 갈린다.
+    const items = [
+      glyph('A', 0, 0, undefined, 6),
+      glyph('B', 8.5, 0, undefined, 6), // gap = 8.5-(0+5) = 3.5
+    ]
+
+    const segments = makeSegments(items, 0.5)
+
+    expect(segments).toHaveLength(2)
+  })
+
+  it('큰 그룹에서도 spread 없이 x·endX를 구해 RangeError 없이 동작한다', () => {
+    // makeSegments의 x·endX가 Math.min(...group.map(...))이던 시절엔 그룹
+    // 크기가 스택 한도를 넘으면 RangeError로 죽었다(centerY와 같은 계열의 버그,
+    // #32 이월 지적 (b)). 15만 개를 한 그룹(서로 붙은 글자)으로 만들어 재현한다.
+    const count = 150000
+    const items: TextItem[] = Array.from({ length: count }, (_, index) =>
+      glyph(String(index % 10), index * 5, 0),
+    )
+
+    let segments: ReturnType<typeof makeSegments> = []
+    expect(() => {
+      segments = makeSegments(items)
+    }).not.toThrow()
+
+    expect(segments).toHaveLength(1)
+    expect(segments[0].x).toBe(0)
+    expect(segments[0].endX).toBe((count - 1) * 5 + 5)
+  })
 })
 
 describe('recoverRows', () => {
@@ -61,5 +94,27 @@ describe('verticalRuns', () => {
     const runs = verticalRuns(items)
 
     expect(runs.map((run) => run.text)).toEqual(['16,500'])
+  })
+
+  it('y는 원점들의 단순 중점이 아니라 바운딩 박스의 세로 중심이다', () => {
+    // rot=-90에서 y는 진행 방향(-y) 기준 뒤쪽 끝(원점)이고, 앞쪽 끝은 자신의
+    // w(진행량)만큼 더 나간 y-w다(textitems.ts: directionY=-1이므로 다음 글자의
+    // y는 이 글자의 y-w). 원점만 평균 내면(구 구현) 마지막 글자 폭의 절반만큼
+    // 중심이 뒤(y가 큰 쪽)로 치우친다.
+    // 원점: 120,112,104,96,88,80(각 w=5) → 구 구현 y=(80+120)/2=100.
+    // 참 바운딩 박스: [80-5, 120]=[75,120] → y=(75+120)/2=97.5.
+    const items = [
+      glyph('1', 40, 120, -90),
+      glyph('0', 40, 112, -90),
+      glyph(',', 40, 104, -90),
+      glyph('5', 40, 96, -90),
+      glyph('0', 40, 88, -90),
+      glyph('0', 40, 80, -90),
+    ]
+
+    const runs = verticalRuns(items)
+
+    expect(runs).toHaveLength(1)
+    expect(runs[0].y).toBe(97.5)
   })
 })
