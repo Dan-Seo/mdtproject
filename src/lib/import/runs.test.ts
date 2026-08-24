@@ -40,6 +40,21 @@ describe('makeSegments', () => {
     expect(segments).toHaveLength(2)
   })
 
+  it('문턱은 어떤 글자 높이에서도 min(h)*gapRatio 다 — 절대 하한이 정의를 덮지 않는다', () => {
+    // 하한 `4*(gapRatio/DEFAULT)` 는 `min(h) < 4/2.2 = 1.8182pt` 일 때만 이긴다
+    // (gapRatio 가 양변에서 약분된다 — 배수와 무관한 조건이다). 픽스처 5부의
+    // 글자 높이는 4.26~14.16pt 라 모든 호출부에서 죽은 가지였다. 하한이 아직
+    // 이기는 유일한 구간(h < 1.8182)에서 문턱의 정의가 무엇인지 못박는다:
+    // 「글자 높이의 배수」이지 「그것과 고정 pt 중 큰 쪽」이 아니다.
+    const items = [
+      glyph('A', 0, 0, undefined, 1.5),
+      glyph('B', 8.5, 0, undefined, 1.5), // gap = 8.5-(0+5) = 3.5
+    ]
+
+    // min(h)*2.2 = 3.3 < 3.5 → 갈라야 한다. 하한 4가 살아 있으면 붙는다.
+    expect(makeSegments(items)).toHaveLength(2)
+  })
+
   it('큰 그룹에서도 spread 없이 x·endX를 구해 RangeError 없이 동작한다', () => {
     // makeSegments의 x·endX가 Math.min(...group.map(...))이던 시절엔 그룹
     // 크기가 스택 한도를 넘으면 RangeError로 죽었다(centerY와 같은 계열의 버그,

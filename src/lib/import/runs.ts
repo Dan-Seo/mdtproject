@@ -83,17 +83,27 @@ export function makeSegments(
   for (const item of sorted) {
     const group = groups.at(-1)
     const previous = group?.at(-1)
-    // 하한도 gapRatio에 맞춰 줄인다. 고정 4pt였다면 gapRatio를 좁혀도(라벨·치수용
-    // 0.5 등) h≤8인 도면에서 min(h)*gapRatio≤4가 되어 하한이 이겨 좁힘이 무효가
-    // 된다 — 배수를 좁히려는 의도가 고정 하한에 잠식되는 것이다. gapRatio가
-    // 기본값(2.2)이면 4*(gapRatio/DEFAULT)=4로 그대로라 section-list 파서(항상
-    // 기본값을 씀)의 동작은 바뀌지 않는다.
-    const threshold = previous
-      ? Math.max(
-          4 * (gapRatio / DEFAULT_SEGMENT_GAP_RATIO),
-          Math.min(previous.h, item.h) * gapRatio,
-        )
-      : 0
+    // 문턱은 글자 높이의 배수 하나뿐이다 — 절대 하한(옛 `Math.max(4, …)`)은
+    // 두지 않는다. 이유가 둘이다.
+    //
+    // (1) 어떤 형태로 써도 죽은 가지가 된다. 하한을 gapRatio에 비례시키면
+    //     `4*(r/2.2) > min(h)*r ⟺ min(h) < 4/2.2 = 1.8182pt`로 **r이 약분돼**
+    //     배수와 무관해지고, 픽스처 5부의 글자 높이는 4.26~14.16pt라 어느
+    //     호출부에서도 이기지 못한다. 고정 4pt로 되돌리면 이번엔 반대로
+    //     좁힌 배수(0.5)를 h≤8pt 도면에서 통째로 잠식한다.
+    // (2) 지킬 것이 있다는 가정 자체가 실측에서 무너진다. 「한 토큰이 여러
+    //     pdf.js 아이템으로 쪼개져 작은 절대 간격이 남는」 사례는 코퍼스에
+    //     실재한다 — yokohama-p14 y≈315.84의 「650x1000」이 `650`·`x`·`1`·`000`
+    //     네 아이템으로 온다. 그런데 **붙여야 할 간격(`1`→`000`)과 갈라야 할
+    //     간격(`650`→`x`, `x`→`1`)이 전부 정확히 4.9770pt로 같다.** 어떤 하한도
+    //     둘을 가르지 못한다 — 「1000」을 살리는 값은 「x1000」도 함께 만든다.
+    //     하한이 지킬 수 있었을 유일한 실물이 원리적으로 지킬 수 없는 것이다.
+    //
+    // 같은 아이템 안의 글자는 간격이 **정확히 0**이다(toTextItems가
+    // `x = 원점 + characterWidth*index`로 놓고 그 characterWidth를 w로 싣는다).
+    // 그래서 이 문턱이 가르는 것은 언제나 아이템 **사이**이고, 문턱을 좁혔을 때의
+    // 실패는 병합이 아니라 분리 — 지어내지 않고 거절하는 쪽이다.
+    const threshold = previous ? Math.min(previous.h, item.h) * gapRatio : 0
 
     if (!group || !previous || item.x - (previous.x + previous.w) > threshold) {
       groups.push([item])
