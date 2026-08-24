@@ -46,9 +46,32 @@ export interface VerticalRun {
 const ROTATION_TOLERANCE_DEG = 0.01
 /** 세로 런에서 같은 열로 보는 x 허용오차(pt) */
 const COLUMN_TOLERANCE_PT = 1
-/** 글자 진행량(w)에 곱해 인접 판정 상한을 만드는 배수 — 세로 런의 y 간격과
- *  타이틀 앵커의 같은 행(대역) 판정 둘 다에 쓴다 */
+/** 행 높이에 곱해 「같은 대역」 상한을 만드는 배수 — 섹션리스트 타이틀 앵커의
+ *  같은 행 판정(parse.ts)에 쓴다. 세로 런은 이 값을 쓰지 않는다:
+ *  `VERTICAL_RUN_GAP_RATIO` 참고 (#72 🟠) */
 export const PROXIMITY_MULTIPLIER = 2
+
+/**
+ * 세로 런의 인접 판정 배수. **원점 사이 거리**(`previous.y - item.y`)에 곱한다 —
+ * 한 pdf.js 아이템 안의 글자는 이 거리가 구조상 정확히 1w다(`toTextItems`가
+ * `y + directionY * characterWidth * index`로 놓고 그 characterWidth를 w로 싣는다).
+ *
+ * 실측(회전 문자열을 가진 픽스처 3부 ＝ kani-p38·ojkk-p2·ojkk-p3, 같은 열의 인접
+ * 307쌍): 토큰 **내부** 간격은 예외 없이 `gap/max(w) = 1.0000` 정확히, 토큰 **사이**의
+ * 최솟값은 `2.0000` 정확히다(kani-p38 x≈1625.92의 「150」「50」). 쓸 수 있는 창은
+ * 개구간 (1w, 2w)뿐이고 1.5는 그 한가운데 — 양 끝에서 0.5w씩 떨어진다.
+ *
+ * 옛 기본값 2는 그 창의 **상단 그 자체**라 이 한 쌍이 부동소수 잔차 1 ULP로 갈렸다.
+ * 붙는 쪽으로 넘어가면 「150」＋「50」이 「15050」이 되어 DIMENSION을 **통과한다** —
+ * 거절이 아니라 날조가 후보 풀에 들어간다(ADR-030 트레이드오프 (4)).
+ *
+ * 배수를 생략하는 호출부(`parseSectionLists`)도 이 값을 그대로 쓴다. 픽스처 5부의
+ * `verticalRuns` 출력은 배수 2와 1.5에서 **완전히 같다**(런 84/19/32/0/0, text·x·y까지
+ * 바이트 동일) — 안전한 쪽으로 옮기는 비용이 0이라 두 호출부를 함께 옮겼다.
+ *
+ * 規準 수치가 아니라 도면 판독 임계값이라 룰팩이 아니라 여기 상수로 둔다.
+ */
+export const VERTICAL_RUN_GAP_RATIO = 1.5
 
 /**
  * 하이픈류를 半角 '-'로 접는다. CP932 0x815C(全角ダッシュ)의 표준 매핑이 U+2014와
@@ -188,16 +211,21 @@ export function recoverRows(items: TextItem[], gapRatio?: number): TextRow[] {
  * 회전각은 순서가 뒤집힐 수 있다 — 「700」이 「007」이 되면 조용히 틀린 값이 된다.
  * 회전 텍스트에서 w는 가로 폭이 아니라 글자 진행량이므로 세로 간격으로 쓴다.
  *
- * `gapRatio`는 makeSegments와 같은 뜻의 인접 판정 배수다. 생략하면
- * `PROXIMITY_MULTIPLIER` — 섹션리스트 파서(항상 생략한다)의 동작을 바꾸지 않기
- * 위해서다. 다만 **간격을 재는 방식이 makeSegments와 다르므로 같은 수를 넣어도
- * 같은 뜻이 아니다**: makeSegments는 진행량을 뺀 여백(`x - (previous.x + w)`)을
- * 재고 여기서는 원점 사이 거리(`previous.y - y`)를 잰다. 그래서 토큰 내부 간격이
- * 가로에서는 거의 0인데 세로에서는 정확히 1w다 — 세로 배수는 1을 넘어야 한다.
+ * `gapRatio`는 인접 판정 배수이지만 **makeSegments의 `gapRatio`와 재는 대상이
+ * 다르다**: makeSegments는 진행량을 뺀 여백(`x - (previous.x + w)`)에 곱하고, 여기서는
+ * 원점 사이 거리(`previous.y - y`)에 곱한다. 그래서 같은 수를 넣어도 같은 뜻이 아니고
+ * — 토큰 내부 간격이 가로에서는 거의 0인데 세로에서는 정확히 1w다 — 세로 배수는 1을
+ * 넘어야 한다.
+ *
+ * **두 축이 서로 다르게 느슨했던 것이 아니다.** 세로 조건을 가로의 척도로 옮기면
+ * `여백 ≤ w·(배수−1)`이고, 배수 2·w≈0.5h(픽스처 5부의 숫자 글리프 실측 w/h는
+ * 0.4977~0.5226)에서 그 값은 0.5h ― 伏図 파서가 쓰는 가로 문턱(`min(h)·0.5`)과
+ * **같다**. 옛 기본값 2의 결함은 느슨함이 아니라 경계가 실측값과 정확히 겹친 것이다
+ * (`VERTICAL_RUN_GAP_RATIO` 참고).
  */
 export function verticalRuns(
   items: TextItem[],
-  gapRatio: number = PROXIMITY_MULTIPLIER,
+  gapRatio: number = VERTICAL_RUN_GAP_RATIO,
 ): VerticalRun[] {
   const rotated = items
     .filter(
