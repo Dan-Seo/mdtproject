@@ -161,6 +161,7 @@
   "planImport.issue.縮尺不整合": "スパンごとの実測縮尺が食い違います",
   "planImport.issue.合計不一致": "全体寸法がスパンの合計と一致しません",
   "planImport.issue.ラベル文字混在": "一つの並びに X と Y のラベルが混じっています",
+  "planImport.issue.通り芯対応不明": "どの X・Y 通り芯が一組か特定できませんでした",
   "planImport.role.格子点": "格子点",
   "planImport.role.辺": "辺",
   "planImport.role.ベイ": "ベイ",

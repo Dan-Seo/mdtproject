@@ -8,6 +8,7 @@ export const PLAN_GRID_ISSUES = [
   '縮尺不整合',
   '合計不一致',
   'ラベル文字混在',
+  '通り芯対応不明',
 ] as const
 
 export type PlanGridIssue = (typeof PLAN_GRID_ISSUES)[number]

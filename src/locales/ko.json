@@ -161,6 +161,7 @@
   "planImport.issue.縮尺不整合": "스팬별 실측 축척이 어긋납니다",
   "planImport.issue.合計不一致": "전체 치수가 스팬 합과 맞지 않습니다",
   "planImport.issue.ラベル文字混在": "한 열에 X와 Y 라벨이 섞여 있습니다",
+  "planImport.issue.通り芯対応不明": "어느 X·Y 通り芯이 한 짝인지 정할 수 없었습니다",
   "planImport.role.格子点": "격자점",
   "planImport.role.辺": "변",
   "planImport.role.ベイ": "베이",
