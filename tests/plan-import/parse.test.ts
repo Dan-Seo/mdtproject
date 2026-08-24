@@ -127,11 +127,13 @@ describe('yokohama p7 — 부재 배치', () => {
 
   it('블록마다 자기 위치의 通り芯을 갖는다 — 라벨은 같고 좌표는 다르다', () => {
     const [left, right] = parsed.blocks
-    expect(left.xAxes.map((axis) => axis.label)).toEqual(
-      right.xAxes.map((axis) => axis.label),
+    expect(left.xGrid.axes.map((axis) => axis.label)).toEqual(
+      right.xGrid.axes.map((axis) => axis.label),
     )
-    expect(left.xAxes[0].positionPt).toBeLessThan(right.xAxes[0].positionPt)
-    expect(left.yAxes.map((axis) => axis.label)).toEqual([
+    expect(left.xGrid.axes[0].positionPt).toBeLessThan(
+      right.xGrid.axes[0].positionPt,
+    )
+    expect(left.yGrid.axes.map((axis) => axis.label)).toEqual([
       'bY6',
       'bY5',
       'bY4',
@@ -178,14 +180,14 @@ describe('yokohama p7 — 부재 배치', () => {
       expect(block.placements.length).toBeGreaterThan(0)
       for (const placement of block.placements) {
         expect(placement.ix).toBeGreaterThanOrEqual(0)
-        expect(placement.ix).toBeLessThan(block.xAxes.length)
+        expect(placement.ix).toBeLessThan(block.xGrid.axes.length)
         expect(placement.iy).toBeGreaterThanOrEqual(0)
-        expect(placement.iy).toBeLessThan(block.yAxes.length)
+        expect(placement.iy).toBeLessThan(block.yGrid.axes.length)
         if (placement.role === '辺' && placement.axis === 'X') {
-          expect(placement.ix).toBeLessThan(block.xAxes.length - 1)
+          expect(placement.ix).toBeLessThan(block.xGrid.axes.length - 1)
         }
         if (placement.role === '辺' && placement.axis === 'Y') {
-          expect(placement.iy).toBeLessThan(block.yAxes.length - 1)
+          expect(placement.iy).toBeLessThan(block.yGrid.axes.length - 1)
         }
       }
     }

@@ -1,0 +1,18 @@
+{
+  "changed": [
+    "src/lib/import/framing-plan/types.ts",
+    "src/lib/import/framing-plan/parse.ts",
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/lib/import/framing-plan/parse.test.ts",
+    "tests/plan-import/parse.test.ts"
+  ],
+  "testCountBefore": 1411,
+  "testCountAfter": 1411,
+  "expectationChanges": [],
+  "gates": {
+    "lint": "passed (0 errors, 1 existing warning)",
+    "typecheck": "passed",
+    "test": "passed (81 files, 1411 tests)",
+    "build": "passed"
+  }
+}

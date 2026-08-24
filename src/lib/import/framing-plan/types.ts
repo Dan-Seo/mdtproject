@@ -67,9 +67,6 @@ export interface PlanBlock {
   /** 이 블록과 짝지어진 X·Y 通り芯 정의. 취입은 반드시 이 둘을 쓴다 */
   xGrid: PlanGridCandidate
   yGrid: PlanGridCandidate
-  /** 이 블록에서의 通り芯 실위치(pt). 라벨과 순서는 그리드 후보와 같다 */
-  xAxes: AxisCandidate[]
-  yAxes: AxisCandidate[]
   placements: MemberPlacement[]
   /** 블록 안에 있으나 스냅하지 못한 부호(중복 없음, 원문 순) — 지어내지 않는다 */
   unplacedMarks: string[]

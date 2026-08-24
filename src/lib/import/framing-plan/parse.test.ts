@@ -262,7 +262,10 @@ describe('parseFramingPlan — 부재 배치', () => {
     )
     expect(parsed.grids).toHaveLength(2)
     expect(parsed.blocks).toHaveLength(2)
-    expect(parsed.blocks.map((block) => block.xAxes[0]?.positionPt)).toEqual([
+    const xPositions = parsed.blocks.map(
+      (block) => block.xGrid.axes[0]?.positionPt,
+    )
+    expect(xPositions).toEqual([
       0, 800,
     ])
     expect(

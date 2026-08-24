@@ -571,8 +571,6 @@ function buildBlocks(
       ...(title === undefined ? {} : { title }),
       xGrid,
       yGrid,
-      xAxes,
-      yAxes,
       placements,
       unplacedMarks,
     })
@@ -580,8 +578,8 @@ function buildBlocks(
 
   return blocks.sort(
     (a, b) =>
-      a.xAxes[0].positionPt - b.xAxes[0].positionPt ||
-      a.yAxes[0].positionPt - b.yAxes[0].positionPt,
+      a.xGrid.axes[0].positionPt - b.xGrid.axes[0].positionPt ||
+      a.yGrid.axes[0].positionPt - b.yGrid.axes[0].positionPt,
   )
 }
 

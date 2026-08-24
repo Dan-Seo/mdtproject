@@ -97,8 +97,6 @@ function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
   return {
     xGrid,
     yGrid,
-    xAxes: xGrid.axes,
-    yAxes: yGrid.axes,
     placements: [],
     unplacedMarks: [],
     ...overrides,
