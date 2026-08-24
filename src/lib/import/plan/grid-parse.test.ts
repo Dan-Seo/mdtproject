@@ -1,7 +1,27 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { axisLabels, dimensionTexts } from '@/lib/import/plan/grid-parse'
 import type { TextItem } from '@/lib/import/types'
+
+const FIXTURES = [
+  'kani-p38.json',
+  'ojkk-p2.json',
+  'ojkk-p3.json',
+  'yokohama-p13.json',
+  'yokohama-p14.json',
+]
+
+function readItems(file: string): TextItem[] {
+  const path = resolve(
+    process.cwd(),
+    'tests/fixtures/section-import/textitems',
+    file,
+  )
+  return (JSON.parse(readFileSync(path, 'utf8')) as { items: TextItem[] }).items
+}
 
 const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
   str,
@@ -214,6 +234,33 @@ describe('dimensionTexts', () => {
     const items = [glyph('2', 100, 500), glyph('F', 105, 500)]
 
     expect(dimensionTexts(items)).toEqual([])
+  })
+
+  it('0mm になる文字列は寸法として拾わない', () => {
+    // 「000」「00000」「0,000」はどれも DIMENSION の形に合うが値は 0 だ。
+    // 0 が候補プールに入ると ADR-030③ の合計照合が壊れる — 部分和 S に対して
+    // S ∪ {0} も同じ合計になるので、「合計と合う組み合わせは一つ」という
+    // 一意性が消える。拾わないのが正しい。
+    const zeros = ['000', '00000', '0,000']
+
+    for (const text of zeros) {
+      const items = [...text].map((char, index) =>
+        glyph(char, 100 + index * 5, 500),
+      )
+      expect(dimensionTexts(items)).toEqual([])
+    }
+  })
+
+  it('実図面5部のどこからも 0mm 候補が出ない', () => {
+    // 机上の話ではない: yokohama-p14 の「650x1000」は pdf.js が
+    // `650`・`x`・`1`・`000` の4アイテムに割って出すので、狭めた閾値では
+    // `000` が単独セグメントになり 0mm として通っていた（4か所）。
+    for (const file of FIXTURES) {
+      const zeros = dimensionTexts(readItems(file)).filter(
+        (dimension) => dimension.valueMm <= 0,
+      )
+      expect({ file, zeros }).toEqual({ file, zeros: [] })
+    }
   })
 
   it('隣り合う二つの寸法値が一つのセグメントに癒着しない(gapRatio を狭めた効果)', () => {

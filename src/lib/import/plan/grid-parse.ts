@@ -105,9 +105,30 @@ const DIMENSION = /^(\d{1,2},\d{3}|\d{3,5})$/
 
 function toMillimetres(text: string): number | undefined {
   if (!DIMENSION.test(text)) return undefined
-  return Number(text.replace(/,/g, ''))
+  const value = Number(text.replace(/,/g, ''))
+  // 「000」「00000」「0,000」は形だけ寸法で値は 0 だ。0 を候補プールに入れると
+  // ADR-030③ の合計照合が壊れる — ある部分和 S が合計と合えば S ∪ {0} も必ず
+  // 合うので、「合う組み合わせは一つ」という一意性そのものが消える。
+  // 机上の危険ではない: yokohama-p14 の「650x1000」を pdf.js が
+  // `650`・`x`・`1`・`000` に割って出すため、実際に 0mm が4か所出ていた。
+  if (value <= 0) return undefined
+  return value
 }
 
+/**
+ * 図面から読めた寸法値をすべて拾う。**戻り値の順序に意味はない** — 呼び出し側は
+ * `axis` で絞ってから `positionPt` で自分で並べ替えること。
+ *
+ * 現在の並びは「X（行ごと・行内は左から）を全部、そのあとに Y（列ごと・列内は
+ * 下から）」だが、これは実装の副産物であって約束ではない。並べ替えてから返さない
+ * のは、そうしても呼び出し側の手間が減らないからだ: ADR-030③ の合計照合は軸ごとの
+ * 部分和で順序を見ないし、位置順が要る利用者はどのみち軸で絞ったあとに並べる。
+ * ここで混在配列を並べても誰も使えない保証が増えるだけになる。
+ *
+ * 拾うのは値と、その軸方向の位置だけだ。軸に直交する座標は落とす — 「スパン寸法線
+ * の上の 6,000」と「別の場所の詳細寸法の 6,000」は区別されずに同じプールに入る。
+ * ADR-030③ が設計上のふるいを合計照合に置いたので、ここで選り分けない。
+ */
 export function dimensionTexts(items: TextItem[]): DimensionText[] {
   const found: DimensionText[] = []
 
