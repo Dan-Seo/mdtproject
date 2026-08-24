@@ -74,7 +74,7 @@ function sameGrid(left: Grid, right: Grid): boolean {
 
 function positionOf(placement: MemberPlacement) {
   return placement.role === '辺'
-    ? { axis: placement.axis ?? 'X', ix: placement.ix, iy: placement.iy }
+    ? { axis: placement.axis, ix: placement.ix, iy: placement.iy }
     : { ix: placement.ix, iy: placement.iy }
 }
 
@@ -152,7 +152,7 @@ export function applyFramingPlan(
     members.push({
       // id는 사람이 읽는 값이 아니라 충돌만 피하면 된다. 같은 자리에 같은 符号을
       // 두 번 반영해도 하나로 접히도록 자리를 id에 넣는다
-      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}${placement.axis ? `-${placement.axis}` : ''}`,
+      id: `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}${placement.role === '辺' ? `-${placement.axis}` : ''}`,
       kind: section.kind,
       memberClass: '躯体',
       sectionId: section.id,

@@ -51,7 +51,8 @@
     },
     {
       "dir": "11-plan-import-hardening",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-24T09:50:37+0900"
     }
   ]
 }

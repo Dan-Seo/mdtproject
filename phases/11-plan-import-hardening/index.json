@@ -2,9 +2,39 @@
   "project": "Kijun",
   "phase": "11-plan-import-hardening",
   "steps": [
-    { "step": 0, "name": "placement-axis-union", "status": "pending" },
-    { "step": 1, "name": "grid-pairing-guard", "status": "pending" },
-    { "step": 2, "name": "xy-blind-tests", "status": "pending" },
-    { "step": 3, "name": "drop-axes-alias", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "placement-axis-union",
+      "status": "completed",
+      "started_at": "2026-08-24T09:16:32+0900",
+      "summary": "MemberPlacement를 role 판별 유니온으로 바꿔 辺의 axis를 필수화하고 위치·격자 경계·ID가 같은 방향을 사용하도록 고정했다.",
+      "completed_at": "2026-08-24T09:25:20+0900"
+    },
+    {
+      "step": 1,
+      "name": "grid-pairing-guard",
+      "status": "completed",
+      "started_at": "2026-08-24T09:25:21+0900",
+      "summary": "X·Y 通り芯 짝지음에 실측 스팬 비율 상한·Y 열 배타성·동점 거부를 추가해 불확실한 블록을 通り芯対応不明으로 떨어뜨렸다.",
+      "completed_at": "2026-08-24T09:34:53+0900"
+    },
+    {
+      "step": 2,
+      "name": "xy-blind-tests",
+      "status": "completed",
+      "started_at": "2026-08-24T09:34:54+0900",
+      "summary": "합성 伏図에서 X·Y와 블록별 通り芯을 독립 검증하고 방향별 testid 및 e2e 사각지대 주석으로 세 뮤테이션을 반증했다.",
+      "completed_at": "2026-08-24T09:46:04+0900"
+    },
+    {
+      "step": 3,
+      "name": "drop-axes-alias",
+      "status": "completed",
+      "started_at": "2026-08-24T09:46:05+0900",
+      "summary": "PlanBlock의 xAxes·yAxes 별칭을 제거하고 모든 소비처를 xGrid.axes·yGrid.axes로 통일했다.",
+      "completed_at": "2026-08-24T09:50:36+0900"
+    }
+  ],
+  "created_at": "2026-08-24T09:16:32+0900",
+  "completed_at": "2026-08-24T09:50:37+0900"
 }

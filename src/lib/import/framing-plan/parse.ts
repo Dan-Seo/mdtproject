@@ -60,6 +60,12 @@ const SCALE_TOLERANCE_RATIO = 0.03
  * 붙일 수 있다」의 경계다. 그보다 크게 잡으면 어느 쪽인지 제품이 고르게 된다.
  */
 const SNAP_RATIO = 0.25
+/**
+ * X·Y 열 짝지음 상한 ＝ X 通り芯의 중앙값 실측 스팬 × 이 비율.
+ * 페이지 축척에 따라 함께 변하고, Y 라벨 띠가 대표 스팬 1.5칸보다 멀면
+ * 같은 伏図이라는 기하 근거가 없으므로 블록을 내지 않는다.
+ */
+const GRID_PAIRING_DISTANCE_RATIO = 1.5
 
 interface LabelToken {
   label: string
@@ -435,7 +441,7 @@ function placementFor(
   mark: string,
   x: Snap,
   y: Snap,
-): MemberPlacement | undefined {
+): MemberPlacement {
   if (x.onNode && y.onNode) {
     return { mark, role: '格子点', ix: x.index, iy: y.index }
   }
@@ -472,15 +478,27 @@ function buildBlocks(
   ySequences: ValidatedSequence[],
   marks: PositionedToken[],
   titles: PositionedToken[],
+  issue: (code: PlanGridIssue) => void,
 ): PlanBlock[] {
   const blocks: PlanBlock[] = []
+  if (xSequences.length === 0 || ySequences.length === 0) return blocks
+
   const seen = new Set<string>()
+  const claimedY = new Map<ValidatedSequence, string>()
 
   for (const xSequence of xSequences) {
     const xExtent = extent(xSequence.axes)
+    const xKey = xSequence.axes
+      .map((axis) => `${axis.label}@${Math.round(axis.positionPt)}`)
+      .join(',')
+    const pairingLimit =
+      median(spanLengths(xSequence.axes)) * GRID_PAIRING_DISTANCE_RATIO
     let paired: ValidatedSequence | undefined
     let pairedDistance = Number.POSITIVE_INFINITY
+    let tied = false
     for (const ySequence of ySequences) {
+      const claimedBy = claimedY.get(ySequence)
+      if (claimedBy !== undefined && claimedBy !== xKey) continue
       const distance = distanceToRange(
         ySequence.across,
         xExtent.min,
@@ -489,9 +507,16 @@ function buildBlocks(
       if (distance < pairedDistance) {
         paired = ySequence
         pairedDistance = distance
+        tied = false
+      } else if (distance === pairedDistance) {
+        tied = true
       }
     }
-    if (!paired) continue
+    if (!paired || tied || pairedDistance > pairingLimit) {
+      issue('通り芯対応不明')
+      continue
+    }
+    claimedY.set(paired, xKey)
 
     const xGrid = gridCandidate(xSequence)
     const yGrid = gridCandidate(paired)
@@ -526,8 +551,7 @@ function buildBlocks(
         if (!unplacedMarks.includes(mark.text)) unplacedMarks.push(mark.text)
         continue
       }
-      const placement = placementFor(mark.text, x, y)
-      if (placement) placements.push(placement)
+      placements.push(placementFor(mark.text, x, y))
     }
 
     // 제목은 블록의 가로 범위 안에 있는 것만 본다 — 나란히 선 두 伏図에서
@@ -547,8 +571,6 @@ function buildBlocks(
       ...(title === undefined ? {} : { title }),
       xGrid,
       yGrid,
-      xAxes,
-      yAxes,
       placements,
       unplacedMarks,
     })
@@ -556,8 +578,8 @@ function buildBlocks(
 
   return blocks.sort(
     (a, b) =>
-      a.xAxes[0].positionPt - b.xAxes[0].positionPt ||
-      a.yAxes[0].positionPt - b.yAxes[0].positionPt,
+      a.xGrid.axes[0].positionPt - b.xGrid.axes[0].positionPt ||
+      a.yGrid.axes[0].positionPt - b.yGrid.axes[0].positionPt,
   )
 }
 
@@ -607,6 +629,7 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
     validated.filter((sequence) => sequence.direction === 'Y'),
     marks,
     titles,
+    issue,
   )
 
   return { grids, blocks, issues }

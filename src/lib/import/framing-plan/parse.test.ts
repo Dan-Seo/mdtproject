@@ -262,7 +262,10 @@ describe('parseFramingPlan — 부재 배치', () => {
     )
     expect(parsed.grids).toHaveLength(2)
     expect(parsed.blocks).toHaveLength(2)
-    expect(parsed.blocks.map((block) => block.xAxes[0]?.positionPt)).toEqual([
+    const xPositions = parsed.blocks.map(
+      (block) => block.xGrid.axes[0]?.positionPt,
+    )
+    expect(xPositions).toEqual([
       0, 800,
     ])
     expect(
@@ -270,5 +273,77 @@ describe('parseFramingPlan — 부재 배치', () => {
         block.placements.map((placement) => placement.mark),
       ),
     ).toEqual([['C1'], ['C2']])
+  })
+})
+
+describe('parseFramingPlan — X·Y 通り芯 짝지음', () => {
+  it('Y 열이 X 열의 실측 스팬에 비해 너무 멀면 블록을 만들지 않는다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('X1', 0, -40),
+        h('X2', 200, -40),
+        h('X3', 400, -40),
+        h('6000', 100, -20),
+        h('6000', 300, -20),
+        h('Y1', 800, 0),
+        h('Y2', 800, 200),
+        h('Y3', 800, 400),
+        v('6000', 820, 100),
+        v('6000', 820, 300),
+      ]),
+    )
+
+    expect(parsed.blocks).toEqual([])
+    expect(parsed.issues).toContain('通り芯対応不明')
+  })
+
+  it('서로 다른 X 열 둘이 같은 Y 열을 공유하지 않는다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('X1', 0, -40),
+        h('X2', 200, -40),
+        h('X3', 400, -40),
+        h('X1', 500, -40),
+        h('X2', 700, -40),
+        h('X3', 900, -40),
+        h('6000', 100, -20),
+        h('6000', 300, -20),
+        h('6000', 600, -20),
+        h('6000', 800, -20),
+        h('Y1', 450, 0),
+        h('Y2', 450, 200),
+        h('Y3', 450, 400),
+        v('6000', 470, 100),
+        v('6000', 470, 300),
+      ]),
+    )
+
+    expect(parsed.blocks).toHaveLength(1)
+    expect(parsed.issues).toContain('通り芯対応不明')
+  })
+
+  it('최소 거리가 같은 Y 열이 둘이면 배열 순서로 고르지 않는다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('X1', 400, -40),
+        h('X2', 600, -40),
+        h('X3', 800, -40),
+        h('6000', 500, -20),
+        h('6000', 700, -20),
+        h('Y1', 300, 0),
+        h('Y2', 300, 200),
+        h('Y3', 300, 400),
+        v('6000', 320, 100),
+        v('6000', 320, 300),
+        h('Y1', 900, 0),
+        h('Y2', 900, 200),
+        h('Y3', 900, 400),
+        v('6000', 920, 100),
+        v('6000', 920, 300),
+      ]),
+    )
+
+    expect(parsed.blocks).toEqual([])
+    expect(parsed.issues).toContain('通り芯対応不明')
   })
 })

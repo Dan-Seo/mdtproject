@@ -8,6 +8,7 @@ export const PLAN_GRID_ISSUES = [
   '縮尺不整合',
   '合計不一致',
   'ラベル文字混在',
+  '通り芯対応不明',
 ] as const
 
 export type PlanGridIssue = (typeof PLAN_GRID_ISSUES)[number]
@@ -43,15 +44,17 @@ export const PLAN_PLACEMENT_ROLES = ['格子点', '辺', 'ベイ'] as const
 
 export type PlanPlacementRole = (typeof PLAN_PLACEMENT_ROLES)[number]
 
-export interface MemberPlacement {
-  mark: string
-  role: PlanPlacementRole
-  /** 格子点·ベイ는 격자점/베이 원점, 辺은 부재가 시작하는 격자점 */
-  ix: number
-  iy: number
-  /** role === '辺' 일 때만 — 부재가 뻗는 방향 (GirderPosition.axis와 같은 뜻) */
-  axis?: 'X' | 'Y'
-}
+export type MemberPlacement =
+  | { mark: string; role: '格子点' | 'ベイ'; ix: number; iy: number }
+  | {
+      mark: string
+      role: '辺'
+      /** 부재가 시작하는 격자점 */
+      ix: number
+      iy: number
+      /** 부재가 뻗는 방향 (GirderPosition.axis와 같은 뜻) */
+      axis: 'X' | 'Y'
+    }
 
 /**
  * 도면 위의 伏図 한 장. 한 페이지에 여러 장이 실리므로(실물 yokohama p7은
@@ -64,9 +67,6 @@ export interface PlanBlock {
   /** 이 블록과 짝지어진 X·Y 通り芯 정의. 취입은 반드시 이 둘을 쓴다 */
   xGrid: PlanGridCandidate
   yGrid: PlanGridCandidate
-  /** 이 블록에서의 通り芯 실위치(pt). 라벨과 순서는 그리드 후보와 같다 */
-  xAxes: AxisCandidate[]
-  yAxes: AxisCandidate[]
   placements: MemberPlacement[]
   /** 블록 안에 있으나 스냅하지 못한 부호(중복 없음, 원문 순) — 지어내지 않는다 */
   unplacedMarks: string[]

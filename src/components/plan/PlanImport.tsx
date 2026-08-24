@@ -44,7 +44,7 @@ function Axes({
 }: {
   candidate: PlanGridCandidate
   label: string
-  testId?: string
+  testId: string
 }) {
   return (
     <div className={styles.group} data-testid={testId}>
@@ -403,16 +403,16 @@ export function PlanImport({
                         ? ` / ${t(locale, 'planImport.unplaced')}: ${block.unplacedMarks.join('・')}`
                         : ''}
                     </p>
-                    <div data-testid={`plan-import-block-grid-${index}`}>
-                      <Axes
-                        candidate={block.xGrid}
-                        label={t(locale, 'planImport.gridX')}
-                      />
-                      <Axes
-                        candidate={block.yGrid}
-                        label={t(locale, 'planImport.gridY')}
-                      />
-                    </div>
+                    <Axes
+                      candidate={block.xGrid}
+                      label={t(locale, 'planImport.gridX')}
+                      testId={`plan-import-block-grid-${index}-X`}
+                    />
+                    <Axes
+                      candidate={block.yGrid}
+                      label={t(locale, 'planImport.gridY')}
+                      testId={`plan-import-block-grid-${index}-Y`}
+                    />
                   </div>
                 ))}
 
