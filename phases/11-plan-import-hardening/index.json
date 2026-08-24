@@ -1,0 +1,10 @@
+{
+  "project": "Kijun",
+  "phase": "11-plan-import-hardening",
+  "steps": [
+    { "step": 0, "name": "placement-axis-union", "status": "pending" },
+    { "step": 1, "name": "grid-pairing-guard", "status": "pending" },
+    { "step": 2, "name": "xy-blind-tests", "status": "pending" },
+    { "step": 3, "name": "drop-axes-alias", "status": "pending" }
+  ]
+}
