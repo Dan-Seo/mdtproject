@@ -19,11 +19,22 @@ const AXIS_LABEL = /^([XY])(\d{1,2})$/
  */
 const DUPLICATE_LABEL_TOLERANCE_PT = 2
 
+/**
+ * makeSegments의 인접 판정 배수(라벨 전용). 한 라벨 안의 글자(예 "X"와 "1")는
+ * 사실상 붙어 있어 글자 사이 간격이 0에 가깝고, 서로 다른 라벨 사이는 그보다
+ * 뚜렷하게 벌어진다. 섹션리스트용 기본 배수(2.2, 글자 높이 h≈14pt에서
+ * 문턱≈31pt)는 그보다 좁게 찍힌 라벨 사이 간격(예: 10pt)까지 하나로 묶어
+ * compact가 "X1X2"가 되고, 정규식이 그 통짜 문자열을 통째로 버린다(Finding B).
+ * 문턱을 글자 높이의 절반(h≈14pt에서 ≈7pt)으로 좁혀, 라벨 내부의 거의 0인
+ * 간격은 여전히 묶고 라벨 사이 간격은 계속 가른다.
+ */
+const AXIS_LABEL_GAP_RATIO = 0.5
+
 export function axisLabels(items: TextItem[]): AxisLabel[] {
   const order: string[] = []
   const occurrencesByLabel = new Map<string, AxisLabel[]>()
 
-  for (const row of recoverRows(items)) {
+  for (const row of recoverRows(items, AXIS_LABEL_GAP_RATIO)) {
     for (const segment of row.segments) {
       const match = AXIS_LABEL.exec(segment.compact)
       if (!match) continue

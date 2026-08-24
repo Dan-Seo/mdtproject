@@ -55,7 +55,17 @@ export function compact(value: string): string {
   return normalized(value).replace(/\s+/g, '')
 }
 
-export function makeSegments(items: TextItem[]): TextSegment[] {
+/**
+ * 인접 판정 배수의 기본값. 섹션리스트 파서가 지금까지 이 값으로 동작해 왔고,
+ * gapRatio를 생략하는 호출(섹션리스트 쪽)은 전부 이 값을 그대로 쓴다 — 바꾸면
+ * 그 파서의 행 나눔이 달라진다.
+ */
+const DEFAULT_SEGMENT_GAP_RATIO = 2.2
+
+export function makeSegments(
+  items: TextItem[],
+  gapRatio: number = DEFAULT_SEGMENT_GAP_RATIO,
+): TextSegment[] {
   const sorted = [...items].sort((left, right) => left.x - right.x)
   const groups: TextItem[][] = []
 
@@ -63,7 +73,7 @@ export function makeSegments(items: TextItem[]): TextSegment[] {
     const group = groups.at(-1)
     const previous = group?.at(-1)
     const threshold = previous
-      ? Math.max(4, Math.min(previous.h, item.h) * 2.2)
+      ? Math.max(4, Math.min(previous.h, item.h) * gapRatio)
       : 0
 
     if (!group || !previous || item.x - (previous.x + previous.w) > threshold) {
@@ -91,7 +101,7 @@ export function makeSegments(items: TextItem[]): TextSegment[] {
   })
 }
 
-export function recoverRows(items: TextItem[]): TextRow[] {
+export function recoverRows(items: TextItem[], gapRatio?: number): TextRow[] {
   const rows: Array<Omit<TextRow, 'segments'>> = []
   const horizontalItems = items
     .filter(
@@ -127,7 +137,7 @@ export function recoverRows(items: TextItem[]): TextRow[] {
 
   return rows
     .sort((left, right) => left.y - right.y)
-    .map((row) => ({ ...row, segments: makeSegments(row.items) }))
+    .map((row) => ({ ...row, segments: makeSegments(row.items, gapRatio) }))
 }
 
 /**
