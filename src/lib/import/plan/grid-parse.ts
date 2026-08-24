@@ -23,7 +23,8 @@ export function axisLabels(items: TextItem[]): AxisLabel[] {
         axis,
         index: Number(match[2]),
         // X通りは図面の横位置に、Y通りは縦位置に並ぶ — 軸ごとに測る向きが違う。
-        positionPt: axis === 'X' ? segment.centerX : row.y + row.height / 2,
+        // row.y はベースライン(textitems.ts)なので文字の下端 — 中心は高さの半分だけ上、負方向にずれる。
+        positionPt: axis === 'X' ? segment.centerX : row.y - row.height / 2,
       })
     }
   }

@@ -25,7 +25,7 @@ describe('axisLabels', () => {
     expect(axisLabels(items)).toEqual([
       { label: 'X1', axis: 'X', index: 1, positionPt: 105 },
       { label: 'X2', axis: 'X', index: 2, positionPt: 205 },
-      { label: 'Y1', axis: 'Y', index: 1, positionPt: 304 },
+      { label: 'Y1', axis: 'Y', index: 1, positionPt: 296 },
     ])
   })
 
