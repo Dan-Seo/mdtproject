@@ -1,7 +1,7 @@
-import { recoverRows } from '@/lib/import/runs'
+import { recoverRows, verticalRuns } from '@/lib/import/runs'
 import type { TextItem } from '@/lib/import/types'
 
-import type { AxisLabel, GridAxis } from './types'
+import type { AxisLabel, DimensionText, GridAxis } from './types'
 
 /**
  * 通り芯ラベルの形。X・Y に続く1〜2桁の番号だけを取る。
@@ -20,23 +20,24 @@ const AXIS_LABEL = /^([XY])(\d{1,2})$/
 const DUPLICATE_LABEL_TOLERANCE_PT = 2
 
 /**
- * makeSegments의 인접 판정 배수(라벨 전용). 한 라벨 안의 글자(예 "X"와 "1")는
- * 사실상 붙어 있어 글자 사이 간격이 0에 가깝고, 서로 다른 라벨 사이는 그보다
- * 뚜렷하게 벌어진다. 섹션리스트용 기본 배수(2.2, 글자 높이 h≈14pt에서
- * 문턱≈31pt)는 그보다 좁게 찍힌 라벨 사이 간격(예: 10pt)까지 하나로 묶어
- * compact가 "X1X2"가 되는데, AXIS_LABEL이 `^([XY])(\d{1,2})$`로 앞뒤를 봉해
- * 이런 통짜 문자열을 통째로 버린다 — ADR-030③이 남긴 표기 흔들림(X1'・X1A 같은
- * 補助通り芯) 거절과 같은 계열의 실패다(둘 다 지어내지 않고 조용히 빠뜨린다).
- * 문턱을 글자 높이의 절반(h≈14pt에서 ≈7pt)으로 좁혀, 라벨 내부의 거의 0인
- * 간격은 여전히 묶고 라벨 사이 간격은 계속 가른다.
+ * makeSegments의 인접 판정 배수 — 라벨(「X1」)과 치수(「6,000」) 둘 다에 쓴다.
+ * 한 토큰 안의 글자는 사실상 붙어 있어 글자 사이 간격이 0에 가깝고, 서로 다른
+ * 토큰 사이는 그보다 뚜렷하게 벌어진다는 같은 전제가 둘 다에 성립한다.
+ * 섹션리스트용 기본 배수(2.2, 글자 높이 h≈14pt에서 문턱≈31pt)는 그보다 좁게
+ * 찍힌 토큰 사이 간격(예: 10pt)까지 하나로 묶는다 — 라벨은 compact가 "X1X2"가
+ * 되어 AXIS_LABEL(`^([XY])(\d{1,2})$`)이, 치수는 "6,0007,000"이 되어 DIMENSION이
+ * 통짜 문자열을 통째로 거절한다. ADR-030③이 남긴 표기 흔들림(X1'・X1A 같은
+ * 補助通り芯) 거절과 같은 계열의 실패다(지어내지 않고 조용히 빠뜨린다). 문턱을
+ * 글자 높이의 절반(h≈14pt에서 ≈7pt)으로 좁혀, 토큰 내부의 거의 0인 간격은
+ * 여전히 묶고 토큰 사이 간격은 계속 가른다.
  */
-const AXIS_LABEL_GAP_RATIO = 0.5
+const TIGHT_TOKEN_GAP_RATIO = 0.5
 
 export function axisLabels(items: TextItem[]): AxisLabel[] {
   const order: string[] = []
   const occurrencesByLabel = new Map<string, AxisLabel[]>()
 
-  for (const row of recoverRows(items, AXIS_LABEL_GAP_RATIO)) {
+  for (const row of recoverRows(items, TIGHT_TOKEN_GAP_RATIO)) {
     for (const segment of row.segments) {
       const match = AXIS_LABEL.exec(segment.compact)
       if (!match) continue
@@ -77,4 +78,41 @@ export function axisLabels(items: TextItem[]): AxisLabel[] {
   }
 
   return labels
+}
+
+/**
+ * 寸法値の形。3〜5桁で、千位にコンマが入ることがある。
+ * 3桁を下限にするのは、2桁以下が階数・枝番・本数であって寸法ではないからだ。
+ */
+const DIMENSION = /^(\d{1,2},\d{3}|\d{3,5})$/
+
+function toMillimetres(text: string): number | undefined {
+  if (!DIMENSION.test(text)) return undefined
+  return Number(text.replace(/,/g, ''))
+}
+
+export function dimensionTexts(items: TextItem[]): DimensionText[] {
+  const found: DimensionText[] = []
+
+  // 横書きは X通り方向の寸法 — 通り芯の間隔が図面の横に並ぶ。gapRatio は
+  // ラベルと同じ理由で狭める(TIGHT_TOKEN_GAP_RATIO 参照) — 寸法値一つ(例
+  // "6,000")の字間もラベルと同様ほぼ0で、基本倍率のままだと隣の寸法値と
+  // くっついて "6,0007,000" になり、DIMENSION が丸ごと拒否する。
+  for (const row of recoverRows(items, TIGHT_TOKEN_GAP_RATIO)) {
+    for (const segment of row.segments) {
+      const valueMm = toMillimetres(segment.compact)
+      if (valueMm === undefined) continue
+      found.push({ valueMm, positionPt: segment.centerX, axis: 'X' })
+    }
+  }
+
+  // 回転文字列は Y通り方向。verticalRuns は y 降順に読むので、図面の
+  // 「下から上へ」の読み順どおりの文字列が返る — ここで反転しない。
+  for (const run of verticalRuns(items)) {
+    const valueMm = toMillimetres(run.text)
+    if (valueMm === undefined) continue
+    found.push({ valueMm, positionPt: run.y, axis: 'Y' })
+  }
+
+  return found
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { axisLabels } from '@/lib/import/plan/grid-parse'
+import { axisLabels, dimensionTexts } from '@/lib/import/plan/grid-parse'
 import type { TextItem } from '@/lib/import/types'
 
 const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
@@ -9,6 +9,15 @@ const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
   y,
   w: 5,
   h,
+})
+
+const rotGlyph = (str: string, x: number, y: number): TextItem => ({
+  str,
+  x,
+  y,
+  w: 5,
+  h: 8,
+  rot: -90,
 })
 
 describe('axisLabels', () => {
@@ -102,6 +111,75 @@ describe('axisLabels', () => {
     expect(axisLabels(items)).toEqual([
       { label: 'X1', axis: 'X', index: 1, positionPt: 105 },
       { label: 'X2', axis: 'X', index: 2, positionPt: 125 },
+    ])
+  })
+})
+
+describe('dimensionTexts', () => {
+  it('横書きの寸法をコンマを外して mm で読む', () => {
+    const items = [
+      glyph('6', 100, 500),
+      glyph(',', 105, 500),
+      glyph('0', 110, 500),
+      glyph('0', 115, 500),
+      glyph('0', 120, 500),
+    ]
+
+    expect(dimensionTexts(items)).toEqual([
+      { valueMm: 6000, positionPt: 112.5, axis: 'X' },
+    ])
+  })
+
+  it('回転した寸法を Y軸として読む', () => {
+    // 読み順は y 降順 — 先頭の '1' が一番下(y が最大)に来る。
+    // positionPt は verticalRuns の y ＝ バウンディングボックスの縦中心
+    // （原点だけの平均ではない — runs.ts の VerticalRun.y 規約参照）。
+    // 原点: 120,112,104,96,88,80(各 w=5) → 真の下限は 80-5=75、上限は 120。
+    // positionPt = (75+120)/2 = 97.5
+    const items = [
+      rotGlyph('1', 40, 120),
+      rotGlyph('0', 40, 112),
+      rotGlyph(',', 40, 104),
+      rotGlyph('5', 40, 96),
+      rotGlyph('0', 40, 88),
+      rotGlyph('0', 40, 80),
+    ]
+
+    expect(dimensionTexts(items)).toEqual([
+      { valueMm: 10500, positionPt: 97.5, axis: 'Y' },
+    ])
+  })
+
+  it('寸法に見えない数字は拾わない', () => {
+    // 3桁未満は部材符号の枝番や階数であって寸法ではない
+    const items = [glyph('2', 100, 500), glyph('F', 105, 500)]
+
+    expect(dimensionTexts(items)).toEqual([])
+  })
+
+  it('隣り合う二つの寸法値が一つのセグメントに癒着しない(gapRatio を狭めた効果)', () => {
+    // 基本倍率(2.2, h=14.16 で閾値≈31pt)なら二値の間隔10ptは癒着し、
+    // "6,0007,000" になって DIMENSION が丸ごと拒否する — ADR-030③と同じ
+    // 失敗系列。ラベル用に狭めた倍率(0.5, 閾値≈7.08pt)を寸法にも使うことで
+    // 各値の内部(間隔0)は保ったまま値どうしは割る。
+    const h = 14.16
+    const items = [
+      glyph('6', 100, 500, h),
+      glyph(',', 105, 500, h),
+      glyph('0', 110, 500, h),
+      glyph('0', 115, 500, h),
+      glyph('0', 120, 500, h), // ここまでで "6,000"、endX=125
+      // 次の値まで間隔10pt(135-125)
+      glyph('7', 135, 500, h),
+      glyph(',', 140, 500, h),
+      glyph('0', 145, 500, h),
+      glyph('0', 150, 500, h),
+      glyph('0', 155, 500, h),
+    ]
+
+    expect(dimensionTexts(items)).toEqual([
+      { valueMm: 6000, positionPt: 112.5, axis: 'X' },
+      { valueMm: 7000, positionPt: 147.5, axis: 'X' },
     ])
   })
 })
