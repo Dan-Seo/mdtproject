@@ -319,6 +319,17 @@ describe('applyFramingPlan', () => {
     expect(result.skipped).toEqual([{ mark: 'C1', reason: '格子外' }])
   })
 
+  it('Y方向의 辺이 마지막 Y格子点에서 뻗으면 格子外로 남긴다', () => {
+    const result = applyFramingPlan(project({ sections: [girderSection('G1')] }), {
+      block: block({
+        placements: [{ mark: 'G1', role: '辺', ix: 0, iy: 1, axis: 'Y' }],
+      }),
+      storyId: 'story-1',
+    })
+    expect(result.project.members).toEqual([])
+    expect(result.skipped).toEqual([{ mark: 'G1', reason: '格子外' }])
+  })
+
   it('없는 층을 가리키면 통째로 거부한다', () => {
     const base = project()
     const result = applyFramingPlan(base, {

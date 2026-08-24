@@ -43,15 +43,17 @@ export const PLAN_PLACEMENT_ROLES = ['格子点', '辺', 'ベイ'] as const
 
 export type PlanPlacementRole = (typeof PLAN_PLACEMENT_ROLES)[number]
 
-export interface MemberPlacement {
-  mark: string
-  role: PlanPlacementRole
-  /** 格子点·ベイ는 격자점/베이 원점, 辺은 부재가 시작하는 격자점 */
-  ix: number
-  iy: number
-  /** role === '辺' 일 때만 — 부재가 뻗는 방향 (GirderPosition.axis와 같은 뜻) */
-  axis?: 'X' | 'Y'
-}
+export type MemberPlacement =
+  | { mark: string; role: '格子点' | 'ベイ'; ix: number; iy: number }
+  | {
+      mark: string
+      role: '辺'
+      /** 부재가 시작하는 격자점 */
+      ix: number
+      iy: number
+      /** 부재가 뻗는 방향 (GirderPosition.axis와 같은 뜻) */
+      axis: 'X' | 'Y'
+    }
 
 /**
  * 도면 위의 伏図 한 장. 한 페이지에 여러 장이 실리므로(실물 yokohama p7은

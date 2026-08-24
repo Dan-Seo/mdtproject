@@ -435,7 +435,7 @@ function placementFor(
   mark: string,
   x: Snap,
   y: Snap,
-): MemberPlacement | undefined {
+): MemberPlacement {
   if (x.onNode && y.onNode) {
     return { mark, role: '格子点', ix: x.index, iy: y.index }
   }
@@ -526,8 +526,7 @@ function buildBlocks(
         if (!unplacedMarks.includes(mark.text)) unplacedMarks.push(mark.text)
         continue
       }
-      const placement = placementFor(mark.text, x, y)
-      if (placement) placements.push(placement)
+      placements.push(placementFor(mark.text, x, y))
     }
 
     // 제목은 블록의 가로 범위 안에 있는 것만 본다 — 나란히 선 두 伏図에서

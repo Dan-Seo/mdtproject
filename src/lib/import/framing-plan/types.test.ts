@@ -81,8 +81,36 @@ describe('ParsedFramingPlan', () => {
       axis: 'X',
     }
     const point: MemberPlacement = { mark: 'C1', role: '格子点', ix: 0, iy: 0 }
+    const bay: MemberPlacement = { mark: 'S1', role: 'ベイ', ix: 0, iy: 0 }
 
-    expect(edge.axis).toBe('X')
-    expect(point.axis).toBeUndefined()
+    expect('axis' in edge && edge.axis).toBe('X')
+    expect('axis' in point).toBe(false)
+    expect('axis' in bay).toBe(false)
+
+    // @ts-expect-error 辺은 뻗는 방향이 없으면 표현할 수 없다
+    const edgeWithoutAxis: MemberPlacement = {
+      mark: 'G2',
+      role: '辺',
+      ix: 0,
+      iy: 0,
+    }
+    const pointWithAxis: MemberPlacement = {
+      mark: 'C2',
+      role: '格子点',
+      ix: 0,
+      iy: 0,
+      // @ts-expect-error 格子点에는 axis가 없다
+      axis: 'X',
+    }
+    const bayWithAxis: MemberPlacement = {
+      mark: 'S2',
+      role: 'ベイ',
+      ix: 0,
+      iy: 0,
+      // @ts-expect-error ベイ에는 axis가 없다
+      axis: 'Y',
+    }
+
+    expect([edgeWithoutAxis, pointWithAxis, bayWithAxis]).toHaveLength(3)
   })
 })

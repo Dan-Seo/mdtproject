@@ -2,9 +2,29 @@
   "project": "Kijun",
   "phase": "11-plan-import-hardening",
   "steps": [
-    { "step": 0, "name": "placement-axis-union", "status": "pending" },
-    { "step": 1, "name": "grid-pairing-guard", "status": "pending" },
-    { "step": 2, "name": "xy-blind-tests", "status": "pending" },
-    { "step": 3, "name": "drop-axes-alias", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "placement-axis-union",
+      "status": "completed",
+      "started_at": "2026-08-24T09:16:32+0900",
+      "summary": "MemberPlacement를 role 판별 유니온으로 바꿔 辺의 axis를 필수화하고 위치·격자 경계·ID가 같은 방향을 사용하도록 고정했다.",
+      "completed_at": "2026-08-24T09:23:19+0900"
+    },
+    {
+      "step": 1,
+      "name": "grid-pairing-guard",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "xy-blind-tests",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "drop-axes-alias",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-24T09:16:32+0900"
 }
