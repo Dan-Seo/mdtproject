@@ -93,7 +93,8 @@ describe('axisLabels', () => {
       glyph('X', 100, 40, h),
       glyph('1', 105, 40, h),
       // 다음 라벨과의 간격 10pt — 기본 배수(문턱 ≈31pt)라면 한 세그먼트로
-      // 붙어 compact가 "X1X2"가 되어 정규식이 통째로 버린다(Finding B)
+      // 붙어 compact가 "X1X2"가 되고, AXIS_LABEL(^([XY])(\d{1,2})$)이 그 통짜
+      // 문자열을 거절한다 — ADR-030③의 표기 흔들림 거절과 같은 계열의 실패
       glyph('X', 120, 40, h),
       glyph('2', 125, 40, h),
     ]
