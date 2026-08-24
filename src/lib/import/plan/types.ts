@@ -8,3 +8,13 @@ export interface AxisLabel {
   index: number
   positionPt: number
 }
+
+/**
+ * 図面に書かれた寸法値ひとつ。図面の寸法は mm 単位で、千位のコンマを打つ
+ * 書き方が多い（実測: kani 基礎伏図 の「6,000」）。
+ */
+export interface DimensionText {
+  valueMm: number
+  positionPt: number
+  axis: GridAxis
+}
