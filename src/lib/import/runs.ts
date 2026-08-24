@@ -1,4 +1,4 @@
-import type { TextItem } from '@/lib/import/section-list/types'
+import type { TextItem } from '@/lib/import/types'
 
 export interface TextSegment {
   text: string

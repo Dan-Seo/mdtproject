@@ -1,5 +1,5 @@
 import { recoverRows } from '@/lib/import/runs'
-import type { TextItem } from '@/lib/import/section-list/types'
+import type { TextItem } from '@/lib/import/types'
 
 import type { AxisLabel, GridAxis } from './types'
 
