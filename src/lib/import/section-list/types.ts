@@ -6,8 +6,6 @@ import type {
 
 import type { TextItem } from '@/lib/import/types'
 
-export type { TextItem }
-
 export interface TextPage {
   widthPt: number
   heightPt: number

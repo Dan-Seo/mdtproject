@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { makeSegments, recoverRows, verticalRuns } from '@/lib/import/runs'
-import type { TextItem } from '@/lib/import/section-list/types'
+import type { TextItem } from '@/lib/import/types'
 
 const glyph = (
   str: string,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { axisLabels } from '@/lib/import/plan/grid-parse'
-import type { TextItem } from '@/lib/import/section-list/types'
+import type { TextItem } from '@/lib/import/types'
 
 const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
   str,
