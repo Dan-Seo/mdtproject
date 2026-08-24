@@ -3,7 +3,11 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { axisLabels, dimensionTexts } from '@/lib/import/plan/grid-parse'
+import {
+  axisLabels,
+  dimensionTexts,
+  parseGrid,
+} from '@/lib/import/plan/grid-parse'
 import type { TextItem } from '@/lib/import/types'
 
 /**
@@ -115,5 +119,83 @@ describe('伏図 파서 — 실도면 5부', () => {
       x: 38,
       y: 52,
     })
+  })
+
+  it('【회귀 가드 ─ 파서 출력 유래. 実測 골든이 아니다】伏図가 아닌 4부에서는 격자를 하나도 내지 않는다', () => {
+    // 앞의 가드와 같은 이유로 파서 출력 유래다 — 다만 여기서 지키는 것은
+    // **값이 아니라 침묵**이다. ojkk 2부와 yokohama 2부는 断面リスト 페이지라
+    // 伏図가 없고, 따라서 어떤 격자도 나와서는 안 된다.
+    //
+    // yokohama-p14 는 그냥 「라벨이 없다」로 끝나지 않는다: 断面リスト의 符号
+    // X2・X3(그리고 Y4・Y5)가 通り芯 라벨의 모양을 그대로 갖고 있어 라벨로
+    // 잡힌다. X 는 그래서 스팬 1본짜리 축이 되고, 「和 ＝ 合計」는 스팬이 1본일
+    // 때 **아무것도 확인하지 않는다** — 区間 안의 900 을 合計로 읽으면
+    // 「X2~X3 는 900mm」라는 도면에 없는 격자가 성립한다. 合計를 스팬과 다른
+    // 한 본으로 요구하는 규칙이 그 자리를 막는다(뮤테이션으로 실측: 그 조건만
+    // 풀면 이 줄이 `spans=[900] issues=[]` 로 바뀐다).
+    const produced = FIXTURES.filter((file) => file !== 'kani-p38.json').flatMap(
+      (file) =>
+        parseGrid(readItems(file)).map((candidate) => ({
+          file,
+          axis: candidate.axis,
+          labels: candidate.labels.map((label) => label.label),
+          spansMm: candidate.spansMm,
+          totalMm: candidate.totalMm,
+          issues: candidate.issues,
+        })),
+    )
+
+    expect(produced).toEqual([
+      ...['ojkk-p2.json', 'ojkk-p3.json', 'yokohama-p13.json'].flatMap((file) =>
+        (['X', 'Y'] as const).map((axis) => ({
+          file,
+          axis,
+          labels: [],
+          spansMm: [],
+          totalMm: null,
+          issues: ['通り芯ラベル不足'],
+        })),
+      ),
+      {
+        file: 'yokohama-p14.json',
+        axis: 'X',
+        labels: ['X2', 'X3'],
+        spansMm: [],
+        totalMm: null,
+        issues: ['合計寸法不一致'],
+      },
+      {
+        file: 'yokohama-p14.json',
+        axis: 'Y',
+        labels: ['Y4', 'Y5'],
+        spansMm: [],
+        totalMm: null,
+        // 断面リスト의 Y4・Y5 는 位置가 같은 자리(둘 다 141.27pt)에 잡혀
+        // 사이에 아무 치수도 없다
+        issues: ['寸法本数不一致'],
+      },
+    ])
+  })
+
+  it('【회귀 가드 ─ 파서 출력 유래. 実測 골든이 아니다】kani-p38에서 두 축 다 격자가 하나로 정해진다', () => {
+    // 위 두 가드와 같은 성격(파서 출력 유래)이고, 여기서 지키는 것은
+    // **후보 38·52건에서 해가 정확히 하나로 좁혀진다**는 사실이다.
+    // 하나라도 더 나오면 `寸法組合せ不定`이 되어 값이 안 나온다 — 즉 이 가드는
+    // 「位置 구간 ＋ 合計」 두 겹이 실도면에서 실제로 유일해를 만든다는
+    // ADR-030③ 의 주장을 붙잡는다.
+    expect(parseGrid(readItems('kani-p38.json'))).toMatchObject([
+      {
+        axis: 'X',
+        spansMm: [6000, 6000, 8000],
+        totalMm: 20000,
+        issues: [],
+      },
+      {
+        axis: 'Y',
+        spansMm: [6000, 10500],
+        totalMm: 16500,
+        issues: [],
+      },
+    ])
   })
 })

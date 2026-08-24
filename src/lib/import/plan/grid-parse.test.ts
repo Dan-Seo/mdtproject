@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { axisLabels, dimensionTexts } from '@/lib/import/plan/grid-parse'
+import {
+  axisLabels,
+  dimensionTexts,
+  parseGrid,
+} from '@/lib/import/plan/grid-parse'
+import type { GridCandidate } from '@/lib/import/plan/types'
 import type { TextItem } from '@/lib/import/types'
 
 const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
@@ -284,5 +289,197 @@ describe('dimensionTexts', () => {
       { valueMm: 6000, positionPt: 112.5, axis: 'X' },
       { valueMm: 7000, positionPt: 147.5, axis: 'X' },
     ])
+  })
+})
+
+/**
+ * 라벨 문자열 하나를 横書き로 놓는다. 字送り는 glyph의 w(5)와 같아 한 세그먼트로
+ * 붙는다 — 세그먼트 중심은 (x, x + 5·글자수)의 중점이다.
+ */
+const horizontal = (text: string, x: number, y: number): TextItem[] =>
+  [...text].map((character, index) => glyph(character, x + index * 5, y))
+
+/**
+ * 回転寸法(rot=-90) 하나. 読み順은 y 내림차순이고 字送り는 정확히 1w다
+ * (`toTextItems`의 규약 — dimensionTexts 테스트의 주석 참고).
+ */
+const vertical = (text: string, x: number, topY: number): TextItem[] =>
+  [...text].map((character, index) => rotGlyph(character, x, topY - index * 5))
+
+/**
+ * X1..Xn 라벨과 그 사이의 스팬 寸法·合計寸法을 늘어놓은 최소 伏図.
+ * 라벨은 x=100부터 100pt 간격(중심 105·205·…), 스팬 寸法은 두 라벨 사이에 쓴다.
+ * 合計는 도면 전폭을 걸치는 치수선이라 왼쪽 끝에서 시작한다 — 그 결과 合計의
+ * 중심이 **첫 스팬 구간 안에 들어앉는다**(kani-p38 실측에서 20,000이 X2~X3
+ * 구간에 있는 것과 같은 모양이다).
+ */
+function xAxisItems(spans: number[], total: number): TextItem[] {
+  const items: TextItem[] = []
+
+  spans.forEach((span, index) => {
+    items.push(...horizontal(`X${index + 1}`, 100 + index * 100, 40))
+    items.push(
+      ...horizontal(span.toLocaleString('en-US'), 140 + index * 100, 500),
+    )
+  })
+  items.push(...horizontal(`X${spans.length + 1}`, 100 + spans.length * 100, 40))
+  items.push(...horizontal(total.toLocaleString('en-US'), 100, 560))
+
+  return items
+}
+
+function candidateOf(items: TextItem[], axis: 'X' | 'Y'): GridCandidate {
+  const found = parseGrid(items).find((entry) => entry.axis === axis)
+  expect(found, `missing axis: ${axis}`).toBeDefined()
+  return found as GridCandidate
+}
+
+describe('parseGrid', () => {
+  it('ラベルと寸法が噛み合えば取り込める候補を返す', () => {
+    const candidate = candidateOf(xAxisItems([6000, 6000, 8000], 20000), 'X')
+
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 6000, 8000])
+    expect(candidate.totalMm).toBe(20000)
+    expect(candidate.labels.map((label) => label.label)).toEqual([
+      'X1',
+      'X2',
+      'X3',
+      'X4',
+    ])
+  })
+
+  it('スパンの和が合計寸法と違えば値を出さずに理由を返す', () => {
+    // 8,000 と書いてあるべき所を 8,500 と読んだ場合 — 合計 20,000 と合わない。
+    // **値は一つも返さない**。読めた3本のうちどれが誤読かは判らないので、
+    // 部分的に正しそうな並びを返すのは「作らずに拒む」を破る (ADR-030③)。
+    const candidate = candidateOf(xAxisItems([6000, 6000, 8500], 20000), 'X')
+
+    expect(candidate.issues).toEqual(['合計寸法不一致'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('隣り合う2本の通り芯の間に寸法が一つも無ければ理由を返す', () => {
+    // 2番目・3番目のスパン寸法を落とす(x≥240 の寸法行)
+    const items = xAxisItems([6000, 6000, 8000], 20000).filter(
+      (item) => item.y !== 500 || item.x < 240,
+    )
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法本数不一致'])
+    expect(candidate.spansMm).toEqual([])
+  })
+
+  it('ラベルが1本しかなければスパンを定義できない', () => {
+    const candidate = candidateOf(horizontal('X1', 100, 40), 'X')
+
+    expect(candidate.issues).toEqual(['通り芯ラベル不足'])
+    expect(candidate.labels.map((label) => label.label)).toEqual(['X1'])
+  })
+
+  it('区間の外の寸法は無視し、区間の中の余分な寸法も合計が退ける', () => {
+    // kani-p38 실측의 모양 그대로다: X1~X2 구간에 스팬(6,000) 말고도 3,700·2,400이
+    // 들어와 있고, 라벨 범위 밖에는 部材 치수가 30건 널려 있다.
+    const items = [
+      ...xAxisItems([6000, 6000, 8000], 20000),
+      ...horizontal('2,400', 160, 620), // X1~X2 구간 안(중심 172.5)의 노이즈
+      ...horizontal('1,900', 600, 620), // 라벨 범위 밖(중심 612.5)의 노이즈
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 6000, 8000])
+  })
+
+  it('合計と合う並びが2通りあれば、どちらかを選ばずに理由を返す', () => {
+    // 2,000+3,000 と 3,000+2,000 のどちらも合計 5,000 に合う。位置で絞っても
+    // 一意にならない場合で、**選べば作ったことになる**ので選ばない (ADR-030③)。
+    const items = [
+      ...horizontal('X1', 100, 40),
+      ...horizontal('X2', 200, 40),
+      ...horizontal('X3', 300, 40),
+      ...horizontal('2,000', 140, 500), // X1~X2
+      ...horizontal('3,000', 160, 520), // X1~X2
+      ...horizontal('3,000', 240, 500), // X2~X3
+      ...horizontal('2,000', 260, 520), // X2~X3
+      ...horizontal('5,000', 100, 560), // 合計
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法組合せ不定'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('合計寸法が別に書かれていなければ、1スパンの図面でも検算は成立しない', () => {
+    // スパンが1本のとき「和 ＝ 合計」は**何も確かめない** — その1本自身を合計と
+    // 読めばいつでも合う。実測でそれが起きる: yokohama-p14 は断面リストの頁
+    // なのに符号 X2・X3 がラベルに見え、区間内の 900 を合計とすれば
+    // 「X2~X3 は 900mm」という**図面に無い格子**が一つ出来上がる。
+    // 合計として使う値は、スパンとは別の一本として図面に書かれていなければ
+    // ならない — 書かれていなければ検算する相手が居ない。
+    const candidate = candidateOf(
+      [
+        ...horizontal('X1', 100, 40),
+        ...horizontal('X2', 200, 40),
+        ...horizontal('6,000', 140, 500),
+      ],
+      'X',
+    )
+
+    expect(candidate.issues).toEqual(['合計寸法不一致'])
+    expect(candidate.spansMm).toEqual([])
+  })
+
+  it('合計寸法が別に書かれていれば、1スパンの図面も取り込める', () => {
+    const candidate = candidateOf(
+      [
+        ...horizontal('X1', 100, 40),
+        ...horizontal('X2', 200, 40),
+        ...horizontal('6,000', 140, 500), // スパン
+        ...horizontal('6,000', 140, 560), // 合計(全幅の寸法線)
+      ],
+      'X',
+    )
+
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000])
+    expect(candidate.totalMm).toBe(6000)
+  })
+
+  it('Y通りは位置順とラベル番号順が逆でも、位置順のスパンとして読む', () => {
+    // +y が下なので、図面の上から Y3・Y2・Y1 と並ぶ(kani-p38 実測)。
+    // ラベル番号で並べ替えると 6,000 と 10,500 が入れ替わる。
+    const items = [
+      ...horizontal('Y1', 40, 800), // 中心 796
+      ...horizontal('Y2', 40, 500), // 中心 496
+      ...horizontal('Y3', 40, 300), // 中心 296
+      ...vertical('6,000', 200, 410), // 中心 397.5 — Y3~Y2
+      ...vertical('16,500', 200, 575), // 中心 560 — 合計。Y2~Y1 の中に居る
+      ...vertical('10,500', 200, 655), // 中心 640 — Y2~Y1
+    ]
+
+    const candidate = candidateOf(items, 'Y')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 10500])
+    expect(candidate.totalMm).toBe(16500)
+    expect(candidate.labels.map((label) => label.label)).toEqual([
+      'Y3',
+      'Y2',
+      'Y1',
+    ])
+  })
+
+  it('プールの最大値がノイズなら、その軸は丸ごと拒む — 作るよりは拒む', () => {
+    // 合計はプールの最大値だと見る(Ruling 6)。スパンより大きな部材寸法などが
+    // 混ざればその値が合計に化け、スパンの和と合わなくなる。**拒否であって
+    // 捏造ではない**ので、この向きに倒れるのは正しい。
+    const items = [
+      ...xAxisItems([6000, 6000, 8000], 20000),
+      ...horizontal('99,000', 600, 620), // ラベル範囲外の巨大なノイズ
+    ]
+
+    expect(candidateOf(items, 'X').issues).toEqual(['合計寸法不一致'])
   })
 })
