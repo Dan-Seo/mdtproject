@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { recoverRows, verticalRuns } from '@/lib/import/runs'
+import { makeSegments, recoverRows, verticalRuns } from '@/lib/import/runs'
 import type { TextItem } from '@/lib/import/section-list/types'
 
 const glyph = (
@@ -8,7 +8,23 @@ const glyph = (
   x: number,
   y: number,
   rot?: number,
-): TextItem => ({ str, x, y, w: 5, h: 8, ...(rot === undefined ? {} : { rot }) })
+  h = 8,
+): TextItem => ({ str, x, y, w: 5, h, ...(rot === undefined ? {} : { rot }) })
+
+describe('makeSegments', () => {
+  it('centerY는 세그먼트 자신의 글리프에서만 잰다 — y는 평균, 높이는 최댓값(둘이 다른 값이면 행 집계와 갈린다)', () => {
+    const items = [
+      glyph('1', 10, 300, undefined, 8),
+      glyph('2', 15, 304, undefined, 20),
+    ]
+
+    const segments = makeSegments(items)
+
+    expect(segments).toHaveLength(1)
+    // baseline 평균 = (300+304)/2 = 302, 높이 최댓값 = 20 → centerY = 302 - 10
+    expect(segments[0].centerY).toBe(292)
+  })
+})
 
 describe('recoverRows', () => {
   it('가로로 인접한 글자를 한 세그먼트로 되돌린다', () => {

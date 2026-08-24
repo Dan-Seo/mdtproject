@@ -6,6 +6,13 @@ export interface TextSegment {
   x: number
   endX: number
   centerX: number
+  /**
+   * 세그먼트 자신의 글리프만으로 잰 세로 중심(pt). row.y・row.height(행 전체
+   * 집계값)를 쓰면 같은 행에 다른 高さ・y의 글자가 섞였을 때 어긋난다 — 항상
+   * 이 세그먼트의 값에서 구한다. y는 베이스라인(textitems.ts)이므로 중심은
+   * 높이의 절반만큼 위, 음수 방향으로 뺀다.
+   */
+  centerY: number
 }
 
 export interface TextRow {
@@ -70,7 +77,17 @@ export function makeSegments(items: TextItem[]): TextSegment[] {
     const x = Math.min(...group.map((item) => item.x))
     const endX = Math.max(...group.map((item) => item.x + item.w))
     const text = group.map((item) => item.str).join('')
-    return { text, compact: compact(text), x, endX, centerX: (x + endX) / 2 }
+    const baselineY =
+      group.reduce((total, item) => total + item.y, 0) / group.length
+    const height = Math.max(...group.map((item) => item.h))
+    return {
+      text,
+      compact: compact(text),
+      x,
+      endX,
+      centerX: (x + endX) / 2,
+      centerY: baselineY - height / 2,
+    }
   })
 }
 
