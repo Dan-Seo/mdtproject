@@ -24,17 +24,17 @@ function v(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 8, h: 0, rot: -90 }
 }
 
-function framingPage(spanMm: number): TextPage {
+function framingPage(xSpanMm: number, ySpanMm: number): TextPage {
   return {
     widthPt: 1000,
     heightPt: 1000,
     items: [
       h('X1', 0, -40),
       h('X2', 200, -40),
-      h(String(spanMm), 100, -20),
+      h(String(xSpanMm), 100, -20),
       h('Y1', -40, 0),
       h('Y2', -40, 200),
-      v(String(spanMm), -20, 100),
+      v(String(ySpanMm), -20, 100),
     ],
   }
 }
@@ -63,7 +63,7 @@ describe('PlanImport', () => {
   })
 
   it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', () => {
-    open([framingPage(6000), framingPage(8000)])
+    open([framingPage(6000, 5000), framingPage(8000, 7000)])
 
     expect(screen.getByTestId('plan-import-grid-X-0').textContent).toContain(
       '6000',
@@ -72,17 +72,32 @@ describe('PlanImport', () => {
       '8000',
     )
     expect(screen.getByTestId('plan-import-grid-Y-0').textContent).toContain(
-      '6000',
+      '5000',
     )
     expect(screen.getByTestId('plan-import-grid-Y-1').textContent).toContain(
-      '8000',
+      '7000',
     )
     expect(
-      screen.getByTestId('plan-import-block-grid-0').textContent,
+      screen.getByTestId('plan-import-block-grid-0-X').textContent,
     ).toContain('6000')
     expect(
-      screen.getByTestId('plan-import-block-grid-1').textContent,
+      screen.getByTestId('plan-import-block-grid-0-Y').textContent,
+    ).toContain('5000')
+    expect(
+      screen.getByTestId('plan-import-block-grid-1-X').textContent,
     ).toContain('8000')
+    expect(
+      screen.getByTestId('plan-import-block-grid-1-Y').textContent,
+    ).toContain('7000')
+    expect(
+      [
+        ...document.querySelectorAll(
+          '[data-testid^="plan-import-block-grid-0-"]',
+        ),
+      ].map(
+        (node) => node.getAttribute('data-testid'),
+      ),
+    ).toEqual(['plan-import-block-grid-0-X', 'plan-import-block-grid-0-Y'])
   })
 
   it('伏図 한 장마다 블록을 제목과 함께 보여준다', () => {

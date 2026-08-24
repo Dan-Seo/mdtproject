@@ -1,0 +1,37 @@
+{
+  "changed": [
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/components/plan/PlanImport.tsx",
+    "src/components/plan/PlanImport.test.tsx",
+    "tests/e2e/uc22-plan-import.js"
+  ],
+  "mutations": [
+    {
+      "mutation": "gridOf에서 xGrid와 yGrid 교환",
+      "failed": [
+        "applyFramingPlan > 여러 伏図 중 두 번째 블록은 두 번째 도면의 X·Y 通り芯을 구별해 취입한다",
+        "applyFramingPlan > 한 페이지의 스팬이 다른 伏図 두 장은 각 블록의 X·Y 通り芯으로 취입한다"
+      ]
+    },
+    {
+      "mutation": "buildBlocks에서 Y 그리드만 첫 번째 것으로 고정",
+      "failed": [
+        "applyFramingPlan > 한 페이지의 스팬이 다른 伏図 두 장은 각 블록의 X·Y 通り芯으로 취입한다"
+      ]
+    },
+    {
+      "mutation": "PlanImport의 블록별 Axes 순서를 Y·X로 교환",
+      "failed": [
+        "PlanImport > 모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다"
+      ]
+    }
+  ],
+  "e2eBlindSpot": "yokohama p7의 두 伏図 블록은 Y 스팬과 라벨이 같아 블록별 Y 그리드 귀속을 검증할 수 없으며, 합성 단위 테스트 「한 페이지의 스팬이 다른 伏図 두 장은 각 블록의 X·Y 通り芯으로 취입한다」가 이를 덮는다.",
+  "gates": {
+    "lint": "passed (기존 경고 1건, 오류 0건)",
+    "typecheck": "passed",
+    "test": "passed (81 files, 1411 tests)",
+    "build": "passed",
+    "e2e": "passed (16/16 application checks, ALL CHECKS PASSED); dev-browser는 결과 출력 뒤 QuickJS gc_obj_list teardown assertion으로 exit 1"
+  }
+}

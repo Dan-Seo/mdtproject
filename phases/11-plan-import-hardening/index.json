@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "xy-blind-tests",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-24T09:34:54+0900",
+      "summary": "합성 伏図에서 X·Y와 블록별 通り芯을 독립 검증하고 방향별 testid 및 e2e 사각지대 주석으로 세 뮤테이션을 반증했다.",
+      "completed_at": "2026-08-24T09:43:18+0900"
     },
     {
       "step": 3,

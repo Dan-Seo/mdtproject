@@ -35,18 +35,26 @@ function v(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 8, h: 0, rot: -90 }
 }
 
-function framingPage(spanMm: number): TextPage {
+function framingItems(
+  xSpanMm: number,
+  ySpanMm: number,
+  xOffsetPt = 0,
+): TextItem[] {
+  return [
+    h('X1', xOffsetPt, -40),
+    h('X2', xOffsetPt + 200, -40),
+    h(String(xSpanMm), xOffsetPt + 100, -20),
+    h('Y1', xOffsetPt - 40, 0),
+    h('Y2', xOffsetPt - 40, 200),
+    v(String(ySpanMm), xOffsetPt - 20, 100),
+  ]
+}
+
+function framingPage(xSpanMm: number, ySpanMm: number): TextPage {
   return {
     widthPt: 1000,
     heightPt: 1000,
-    items: [
-      h('X1', 0, -40),
-      h('X2', 200, -40),
-      h(String(spanMm), 100, -20),
-      h('Y1', -40, 0),
-      h('Y2', -40, 200),
-      v(String(spanMm), -20, 100),
-    ],
+    items: framingItems(xSpanMm, ySpanMm),
   }
 }
 
@@ -98,8 +106,10 @@ function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
 }
 
 describe('applyFramingPlan', () => {
-  it('여러 伏図 중 두 번째 블록은 두 번째 도면의 通り芯을 취입한다', () => {
-    const plans = [framingPage(6000), framingPage(8000)].map(parseFramingPlan)
+  it('여러 伏図 중 두 번째 블록은 두 번째 도면의 X·Y 通り芯을 구별해 취입한다', () => {
+    const plans = [framingPage(6000, 5000), framingPage(8000, 7000)].map(
+      parseFramingPlan,
+    )
     const blocks = plans.flatMap((plan) => plan.blocks)
     if (!blocks[1]) {
       throw new Error('synthetic framing plans were not parsed')
@@ -111,9 +121,52 @@ describe('applyFramingPlan', () => {
     })
 
     expect(result.project.grid.xSpans).toEqual([8000])
-    expect(result.project.grid.ySpans).toEqual([8000])
+    expect(result.project.grid.ySpans).toEqual([7000])
     expect(result.refusal).toBeUndefined()
     expect(result.skipped).toEqual([])
+  })
+
+  it('한 페이지의 스팬이 다른 伏図 두 장은 각 블록의 X·Y 通り芯으로 취입한다', () => {
+    const parsed = parseFramingPlan({
+      widthPt: 1400,
+      heightPt: 1000,
+      items: [
+        ...framingItems(6000, 5000),
+        ...framingItems(8000, 7000, 600),
+      ],
+    })
+
+    expect(parsed.blocks).toHaveLength(2)
+    expect(parsed.blocks.map((candidate) => candidate.xGrid.spansMm)).toEqual([
+      [6000],
+      [8000],
+    ])
+    expect(parsed.blocks.map((candidate) => candidate.yGrid.spansMm)).toEqual([
+      [5000],
+      [7000],
+    ])
+
+    const appliedGrids = parsed.blocks.map(
+      (candidate) =>
+        applyFramingPlan(project(), {
+          block: candidate,
+          storyId: 'story-1',
+        }).project.grid,
+    )
+    expect(appliedGrids).toEqual([
+      {
+        xSpans: [6000],
+        ySpans: [5000],
+        xLabels: ['X1', 'X2'],
+        yLabels: ['Y1', 'Y2'],
+      },
+      {
+        xSpans: [8000],
+        ySpans: [7000],
+        xLabels: ['X1', 'X2'],
+        yLabels: ['Y1', 'Y2'],
+      },
+    ])
   })
 
   it('通り芯을 도면의 스팬으로 바꾼다', () => {
