@@ -1,4 +1,4 @@
-import type { TextItem } from './section-list/types'
+import type { TextItem } from './types'
 
 /** pdf.js getTextContent()의 items 중 문자열 항목. */
 export interface PdfTextItemLike {

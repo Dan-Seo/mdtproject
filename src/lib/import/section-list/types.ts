@@ -4,14 +4,7 @@ import type {
   ShearBarSize,
 } from '@/domain/model/member'
 
-export interface TextItem {
-  str: string
-  x: number
-  y: number
-  w: number
-  h: number
-  rot?: number
-}
+import type { TextItem } from '@/lib/import/types'
 
 export interface TextPage {
   widthPt: number
