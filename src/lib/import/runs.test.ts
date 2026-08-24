@@ -12,7 +12,7 @@ const glyph = (
 ): TextItem => ({ str, x, y, w: 5, h, ...(rot === undefined ? {} : { rot }) })
 
 describe('makeSegments', () => {
-  it('centerY는 세그먼트 자신의 글리프에서만 잰다 — y는 평균, 높이는 최댓값(둘이 다른 값이면 행 집계와 갈린다)', () => {
+  it('centerY는 세그먼트 자신의 글리프에서 바운딩 박스로 잰다(행 집계와 다른 높이가 섞여도 흔들리지 않는다)', () => {
     const items = [
       glyph('1', 10, 300, undefined, 8),
       glyph('2', 15, 304, undefined, 20),
@@ -21,8 +21,9 @@ describe('makeSegments', () => {
     const segments = makeSegments(items)
 
     expect(segments).toHaveLength(1)
-    // baseline 평균 = (300+304)/2 = 302, 높이 최댓값 = 20 → centerY = 302 - 10
-    expect(segments[0].centerY).toBe(292)
+    // top = min(300-8, 304-20) = min(292, 284) = 284, bottom = max(300, 304) = 304
+    // centerY = (284+304)/2 = 294
+    expect(segments[0].centerY).toBe(294)
   })
 })
 

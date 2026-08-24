@@ -9,8 +9,10 @@ export interface TextSegment {
   /**
    * 세그먼트 자신의 글리프만으로 잰 세로 중심(pt). row.y・row.height(행 전체
    * 집계값)를 쓰면 같은 행에 다른 高さ・y의 글자가 섞였을 때 어긋난다 — 항상
-   * 이 세그먼트의 값에서 구한다. y는 베이스라인(textitems.ts)이므로 중심은
-   * 높이의 절반만큼 위, 음수 방향으로 뺀다.
+   * 이 세그먼트의 값에서 구한다. y는 베이스라인(textitems.ts)이므로 글자 하나는
+   * [y-h, y] 구간을 차지한다 — 평균 y에서 최댓값 h의 절반을 빼는 셈법은 서로 다른
+   * 글리프의 통계(평균과 최댓값)를 섞어 실제 바운딩 박스와 어긋난다. 그래서
+   * top(글자들의 y-h 중 최솟값)・bottom(y의 최댓값)을 직접 재 그 중점을 쓴다.
    */
   centerY: number
 }
@@ -87,16 +89,22 @@ export function makeSegments(
     const x = Math.min(...group.map((item) => item.x))
     const endX = Math.max(...group.map((item) => item.x + item.w))
     const text = group.map((item) => item.str).join('')
-    const baselineY =
-      group.reduce((total, item) => total + item.y, 0) / group.length
-    const height = Math.max(...group.map((item) => item.h))
+    // 세그먼트의 바운딩 박스로 centerY를 잰다(y는 베이스라인이라 글자 하나는
+    // [y-h, y] 구간). verticalRuns의 flush()와 같은 이유로 spread(Math.min(...))는
+    // 안 쓴다 — 인자 수가 글리프 수를 그대로 따라가 스택 한도에서 RangeError가 된다.
+    let top = Number.POSITIVE_INFINITY
+    let bottom = Number.NEGATIVE_INFINITY
+    for (const item of group) {
+      if (item.y - item.h < top) top = item.y - item.h
+      if (item.y > bottom) bottom = item.y
+    }
     return {
       text,
       compact: compact(text),
       x,
       endX,
       centerX: (x + endX) / 2,
-      centerY: baselineY - height / 2,
+      centerY: (top + bottom) / 2,
     }
   })
 }
