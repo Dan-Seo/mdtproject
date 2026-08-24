@@ -177,8 +177,18 @@ export function recoverRows(items: TextItem[], gapRatio?: number): TextRow[] {
  * rot=-90만 받는다. 읽기 순서가 y 내림차순인 것은 실물에서 확인한 값이고, 다른
  * 회전각은 순서가 뒤집힐 수 있다 — 「700」이 「007」이 되면 조용히 틀린 값이 된다.
  * 회전 텍스트에서 w는 가로 폭이 아니라 글자 진행량이므로 세로 간격으로 쓴다.
+ *
+ * `gapRatio`는 makeSegments와 같은 뜻의 인접 판정 배수다. 생략하면
+ * `PROXIMITY_MULTIPLIER` — 섹션리스트 파서(항상 생략한다)의 동작을 바꾸지 않기
+ * 위해서다. 다만 **간격을 재는 방식이 makeSegments와 다르므로 같은 수를 넣어도
+ * 같은 뜻이 아니다**: makeSegments는 진행량을 뺀 여백(`x - (previous.x + w)`)을
+ * 재고 여기서는 원점 사이 거리(`previous.y - y`)를 잰다. 그래서 토큰 내부 간격이
+ * 가로에서는 거의 0인데 세로에서는 정확히 1w다 — 세로 배수는 1을 넘어야 한다.
  */
-export function verticalRuns(items: TextItem[]): VerticalRun[] {
+export function verticalRuns(
+  items: TextItem[],
+  gapRatio: number = PROXIMITY_MULTIPLIER,
+): VerticalRun[] {
   const rotated = items
     .filter(
       (item) =>
@@ -224,7 +234,7 @@ export function verticalRuns(items: TextItem[]): VerticalRun[] {
       previous !== undefined &&
       Math.abs(previous.x - item.x) <= COLUMN_TOLERANCE_PT &&
       gap >= 0 &&
-      gap <= Math.max(previous.w, item.w) * PROXIMITY_MULTIPLIER
+      gap <= Math.max(previous.w, item.w) * gapRatio
     if (!adjacent) flush()
     current.push(item)
   }

@@ -33,6 +33,23 @@ const DUPLICATE_LABEL_TOLERANCE_PT = 2
  */
 const TIGHT_TOKEN_GAP_RATIO = 0.5
 
+/**
+ * verticalRuns の隣接判定倍率 — 回転文字列(Y通り方向の寸法)用に狭めた値。
+ *
+ * 横書き側と**同じ数を使えない**: makeSegments は進行量を引いた余白を測り、
+ * verticalRuns は原点どうしの距離を測る（runs.ts の verticalRuns 参照）。
+ * だから同じ「くっついた文字」でも横は間隔ほぼ0、縦はちょうど 1w になる。
+ *
+ * 実測（回転文字列を持つ픽스처 3부 = kani-p38・ojkk-p2・ojkk-p3、同一列の隣接
+ * 307ペア）: トークン**内部**の間隔は例外なく `gap/max(w) = 1.0000` ちょうど、
+ * トークン**間**の最小値は `2.0000` ちょうど（kani-p38 x≈1625.92 の「150」「50」）。
+ * 使える窓は開区間 (1w, 2w) しかなく、1.5 はその中点 — 両端から 0.5w ずつ離れる。
+ * 既定倍率(2)は窓の上端そのものなので、この一組が浮動小数の残差 1 ULP で分かれる
+ * — 붙으면 「15050」が DIMENSION を**通ってしまう**（拒否ではなく捏造）。
+ * 規準 수치가 아니라 도면 판독 임계값이라 룰팩이 아니라 여기 상수로 둔다.
+ */
+const TIGHT_VERTICAL_GAP_RATIO = 1.5
+
 export function axisLabels(items: TextItem[]): AxisLabel[] {
   const order: string[] = []
   const occurrencesByLabel = new Map<string, AxisLabel[]>()
@@ -108,7 +125,7 @@ export function dimensionTexts(items: TextItem[]): DimensionText[] {
 
   // 回転文字列は Y通り方向。verticalRuns は y 降順に読むので、図面の
   // 「下から上へ」の読み順どおりの文字列が返る — ここで反転しない。
-  for (const run of verticalRuns(items)) {
+  for (const run of verticalRuns(items, TIGHT_VERTICAL_GAP_RATIO)) {
     const valueMm = toMillimetres(run.text)
     if (valueMm === undefined) continue
     found.push({ valueMm, positionPt: run.y, axis: 'Y' })

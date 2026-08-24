@@ -132,21 +132,80 @@ describe('dimensionTexts', () => {
 
   it('回転した寸法を Y軸として読む', () => {
     // 読み順は y 降順 — 先頭の '1' が一番下(y が最大)に来る。
+    // 字送りは w ちょうど: toTextItems が同じ pdf.js アイテムの文字を
+    // `y + directionY * characterWidth * index` で置き、その characterWidth を
+    // そのまま w に載せる — つまり1トークン内部の原点間隔は**構造上** 1w だ
+    // (実測でも回転文字列 307ペアが例外なく 1.0000)。前の版は原点を8刻みに
+    // 置きながら w=5 のままで、一つの pdf.js アイテムでは起こりえない 1.6w
+    // だった。
     // positionPt は verticalRuns の y ＝ バウンディングボックスの縦中心
     // （原点だけの平均ではない — runs.ts の VerticalRun.y 規約参照）。
-    // 原点: 120,112,104,96,88,80(各 w=5) → 真の下限は 80-5=75、上限は 120。
-    // positionPt = (75+120)/2 = 97.5
+    // 原点: 120,115,110,105,100,95(各 w=5) → 真の下限は 95-5=90、上限は 120。
+    // positionPt = (90+120)/2 = 105
     const items = [
       rotGlyph('1', 40, 120),
-      rotGlyph('0', 40, 112),
-      rotGlyph(',', 40, 104),
-      rotGlyph('5', 40, 96),
-      rotGlyph('0', 40, 88),
-      rotGlyph('0', 40, 80),
+      rotGlyph('0', 40, 115),
+      rotGlyph(',', 40, 110),
+      rotGlyph('5', 40, 105),
+      rotGlyph('0', 40, 100),
+      rotGlyph('0', 40, 95),
     ]
 
     expect(dimensionTexts(items)).toEqual([
-      { valueMm: 10500, positionPt: 97.5, axis: 'Y' },
+      { valueMm: 10500, positionPt: 105, axis: 'Y' },
+    ])
+  })
+
+  it('세로 치수 두 값이 정확히 2w 간격이어도 붙지 않는다 — 붙으면 "15050"이 지어낸 값이 된다', () => {
+    // kani-p38 실측(x≈1625.92): 토큰 내부 글자 간격은 정확히 1w, 토큰 사이는
+    // 정확히 2w다. 기본 배수(PROXIMITY_MULTIPLIER=2)의 문턱이 딱 2w라서 이 경계는
+    // 부동소수 잔차 1 ULP로 갈린다 — 실측에서는 gap이 문턱보다 5.7e-14 커서
+    // 우연히 갈렸다. 부호가 뒤집히면(다른 pdf.js 빌드·viewport·픽스처 재생성)
+    // 「150」+「50」이 「15050」로 붙고, 그 통짜 문자열이 DIMENSION(\d{3,5})을
+    // **통과해** 도면에 없는 값이 후보 풀에 들어간다. 거절이 아니라 날조라서
+    // 이 프로젝트가 못 견디는 실패다.
+    const items = [
+      // 아래에서 위로 읽는다(y 내림차순). 「150」 — 글자 간격 5 ＝ 1w
+      rotGlyph('1', 40, 200),
+      rotGlyph('5', 40, 195),
+      rotGlyph('0', 40, 190),
+      // 다음 토큰까지 간격 10 ＝ 2w
+      rotGlyph('5', 40, 180),
+      rotGlyph('0', 40, 175),
+    ]
+
+    // 「50」은 2자리라 DIMENSION이 거절한다 — 남는 것은 150 하나뿐이고,
+    // 15050은 어디에도 없어야 한다.
+    // 「150」의 바운딩 박스: 원점 200·195·190, 앞쪽 끝은 190-5=185 → (185+200)/2
+    expect(dimensionTexts(items)).toEqual([
+      { valueMm: 150, positionPt: 192.5, axis: 'Y' },
+    ])
+  })
+
+  it('세로 치수가 2w 간격으로 붙으면 축 전체가 조용히 죽는다 — 갈라 읽는다', () => {
+    // 위와 같은 2w 경계인데 이번엔 두 값 다 정상 치수다. 붙으면
+    // 「6,00010,500」이 되어 DIMENSION이 통째로 거절 → Y축 후보가 0개가 되고,
+    // ADR-030③의 合計 대조는 「합이 안 맞는다」가 아니라 「값이 없다」로만 실패한다.
+    const items = [
+      // 「6,000」 — 원점 300·295·290·285·280, 앞쪽 끝 280-5=275 → (275+300)/2
+      rotGlyph('6', 40, 300),
+      rotGlyph(',', 40, 295),
+      rotGlyph('0', 40, 290),
+      rotGlyph('0', 40, 285),
+      rotGlyph('0', 40, 280),
+      // 간격 10 ＝ 2w
+      // 「10,500」 — 원점 270..245, 앞쪽 끝 245-5=240 → (240+270)/2
+      rotGlyph('1', 40, 270),
+      rotGlyph('0', 40, 265),
+      rotGlyph(',', 40, 260),
+      rotGlyph('5', 40, 255),
+      rotGlyph('0', 40, 250),
+      rotGlyph('0', 40, 245),
+    ]
+
+    expect(dimensionTexts(items)).toEqual([
+      { valueMm: 6000, positionPt: 287.5, axis: 'Y' },
+      { valueMm: 10500, positionPt: 255, axis: 'Y' },
     ])
   })
 
