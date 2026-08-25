@@ -1,0 +1,9 @@
+{
+  "project": "Kijun",
+  "phase": "12-plan-apply-story",
+  "steps": [
+    { "step": 0, "name": "section-lookup-by-story", "status": "pending" },
+    { "step": 1, "name": "section-story-picker", "status": "pending" },
+    { "step": 2, "name": "refute-doc-migration", "status": "pending" }
+  ]
+}
