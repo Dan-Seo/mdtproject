@@ -5,7 +5,9 @@
     {
       "step": 0,
       "name": "record-span1-exposure",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-25T23:34:28+0900",
+      "summary": "ADR-030·R15·실도면 코퍼스 주석/상수명을 정정하고 전체 AC 게이트를 통과시켰다."
     },
     {
       "step": 1,
@@ -13,5 +15,6 @@
       "kind": "verify",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-25T23:34:28+0900"
 }

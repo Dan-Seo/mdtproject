@@ -1,0 +1,22 @@
+{
+  "adr030": "framing-plan의 合計不一致 거절 경로와 스팬 1본 축의 설계상 허용을 트랙 정리 문단에 기록했다. 옛 grid-parse의 区間数不足과 framing-plan의 중점 매칭(±15pt)을 구분하고, 1본 축에서 축척 일관성의 대조 상대가 없다는 점과 断面リスト의 실패 원인이 sticky 라벨 패턴임을 적었다. git diff -- docs/ADR.md가 해당 트랙 정리 문단의 단일 hunk만 보이는 것으로 기존 문장 불변을 확인했다.",
+  "r15": "스팬 1본 축에서는 合計 검산이 공회전하고 중점 매칭(±15pt)만 남아 우연한 격자가 성립할 수 있다는 리스크를 세웠다. 라벨 2개 축을 근거 없이 거절하지 않는 이유, X2端 라벨 방어의 한계, 실도면 코퍼스 측정이라는 닫는 조건을 docs/RISKS.md와 AGENTS.md/CLAUDE.md 대장에 기록했다.",
+  "comment_fix": {
+    "measured": "yokohama-p14 12개(X2端·X3端·Y2端·Y3端·Y4端·Y5端의 반복), yokohama-p13 0개, ojkk-p2 0개, ojkk-p3 0개"
+  },
+  "constant_rename": {
+    "from": "SECTION_LIST_FIXTURES",
+    "to": "DRAWING_FIXTURES"
+  },
+  "vertical_unproven": {
+    "measured": "VERTICAL_RUN_GAP_RATIO 1.5·0.8·0.5·0.3에서 8부 모두 0mm 후보 0건. 0.8 이하에서는 회전 런이 문자 단위로 갈라져 DIMENSION_PATTERN(2자리 이상)에서 탈락한다.",
+    "guess": "세로 문턱이 낮아져도 0mm 가드가 울지 않는 직접 원인은 측정으로 확인했으며, 이 현상이 다른 도면 형식에서도 유지될지는 아직 확인하지 않았다."
+  },
+  "controller_measurement_mismatch": "none",
+  "gates": {
+    "test": "npm run test: 82 files, 1429 tests passed",
+    "golden": "npm run test:golden: 7 files, 362 tests passed",
+    "tsc": "npx tsc --noEmit: exit 0, no output",
+    "lint": "npm run lint: 0 errors, 1 pre-existing warning at route.test.ts:161 (_omitted)"
+  }
+}
