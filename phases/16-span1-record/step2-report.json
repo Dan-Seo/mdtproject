@@ -1,0 +1,21 @@
+{
+  "remeasured": {
+    "min_gap_ratio": "8부의 같은 열 인접쌍 980개를 재측정했다. 최솟값은 원시 0.9999999999999634, 6자리 반올림 1.000000이며, 6자리 기준 1 미만 쌍은 0개였다(원시 비교에서만 ULP 잔차 448개).",
+    "below_one": "0.99·0.8·0.5·0.3 모두 8부 전부 런 길이 분포 {1: 전 런}이고 DIMENSION_PATTERN 통과 0건이었다. 파일별 런 수는 kani-p38 289, kani-p40 176, ojkk-p2 57, ojkk-p3 96, yokohama-p13 0, yokohama-p14 0, yokohama-p7 422, yokohama-p8 80이다.",
+    "at_one": "배수 1.0의 0mm 후보는 kani-p38 3건, ojkk-p3 21건, yokohama-p7 13건, yokohama-p8 3건이며 나머지 4부는 0건이다.",
+    "two_vs_one_five": "기존 5부(kani-p38 84, ojkk-p2 19, ojkk-p3 32, yokohama-p13 0, yokohama-p14 0)는 배수 2와 1.5의 verticalRuns 출력이 모두 동일했다. 8부에서는 yokohama-p7만 갈렸고 2에서 91런, 1.5에서 92런이다. 1.5는 RSL(水下)+300,bY6通り側와 RSL(水下)±0을 분리하고, 2는 하나로 병합했다."
+  },
+  "hint_mismatch": "none at six-decimal precision; the raw minimum differs from the displayed 1.000000 only by floating-point ULP residue (0.9999999999999634).",
+  "edits": [
+    "tests/plan-import/parse.test.ts: 세로 문턱의 보호 효과를 8부 재측정값으로 주석에 기록하고 1.0 트립 건수를 추가했다.",
+    "src/lib/import/runs.ts: 기존 5부 비용 0 문장을 유지하고, 8부 yokohama-p7에서 2와 1.5가 갈리는 라벨 병합을 뒤에 덧붙였다."
+  ],
+  "diff_check": "AC3 통과: runs.ts diff는 VERTICAL_RUN_GAP_RATIO = 1.5 상수값을 포함한 코드 변경 없이 주석 3행 추가뿐이다. AC4 통과: parse.test.ts diff는 DRAWING_FIXTURES 목록·expect 기대값·픽스처를 바꾸지 않고 주석만 수정했다.",
+  "gates": {
+    "test": "npm run test: 82 files, 1429 tests passed",
+    "golden": "npm run test:golden: 7 files, 362 tests passed",
+    "tsc": "npx tsc --noEmit: exit 0, no output",
+    "lint": "npm run lint: 0 errors, 1 pre-existing warning at route.test.ts:161 (_omitted)"
+  },
+  "summary": "8부 재측정으로 세로 문턱의 트립 지점을 1.0으로 확인하고 0mm 가드 주석을 정정했다. 5부 출력 동일성은 유지하며, 8부에서 비용이 생기는 yokohama-p7 라벨 병합을 runs.ts 주석에 기록했다."
+}
