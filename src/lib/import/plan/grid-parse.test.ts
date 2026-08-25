@@ -592,4 +592,67 @@ describe('parseGrid', () => {
     expect(candidate.spansMm).toEqual([3000, 7000])
     expect(candidate.totalMm).toBe(10000)
   })
+
+  it('部分和が衝突して状態数が増えなくても、反復回数の上限で打ち切る(独立リビュー2回目 🔴1)', () => {
+    // MAX_REACH_ITERATIONS(=1,000,000)の実測根拠は grid-parse.ts のコメント参照。
+    // 公差1・始点をそろえた等差数列を2区間に置くと、合流後に増える和の種類は
+    // sumset の標準的な性質で |A|+|B|-1 に収まる — ここでは 1,005+1,005-1=2,009
+    // で MAX_REACH_STATES(10,000)にまるで届かない。それでも内側の二重ループは
+    // 1,005×1,005=1,010,025 回転がる — `next.size`(合流後の状態数)だけを見る
+    // 旧上限はこの反復そのものを一切止められない(独立リビュー2回目が5,000×5,000
+    // 規模で実測: 599ms、overflow は一度も出ない)。ここでは単体テストとして
+    // 現実的な時間に収まる規模(1,005×1,005)に落としてある — 「積が上限を超え、
+    // 合流後の状態数は上限を大きく下回る」という性質そのものは保っている。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 35000, 40),
+      ...horizontal('X3', 70000, 40),
+      ...horizontal('9000', 100000, 600), // 合計 — ラベル範囲外
+    ]
+    for (let i = 0; i < 1005; i += 1) {
+      items.push(...horizontal(String(3000 + i), 100 + i * 30, 500)) // 区間1(X1~X2)
+    }
+    for (let j = 0; j < 1005; j += 1) {
+      items.push(...horizontal(String(3000 + j), 35100 + j * 30, 520)) // 区間2(X2~X3)、同じ公差・始点
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
+  })
+
+  it('部分和が枝刈りで一つも残らなくても、反復回数の上限で打ち切る(独立リビュー2回目 🔴1)', () => {
+    // 先行区間の状態数(1,005個)は正当に MAX_REACH_STATES 未満まで育つが、次の
+    // 区間の値を全部「どの先行和(最大4,004)に足しても合計(9,000)を必ず超える
+    // 大きさ(6,001以上)」にそろえると、`next` は最後まで空のままになる —
+    // 挿入が一度も起きないので `next.size` を見る旧上限は原理的に発火しない。
+    // それでも内側の二重ループは 1,005×1,005=1,010,025 回転がる(独立リビュー
+    // 2回目が5,000×200,000規模で実測: 1.67秒、overflow は一度も出ない)。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 35000, 40),
+      ...horizontal('X3', 70000, 40),
+      ...horizontal('9000', 100000, 600), // 合計 — ラベル範囲外
+    ]
+    for (let i = 0; i < 1005; i += 1) {
+      items.push(...horizontal(String(3000 + i), 100 + i * 30, 500)) // 区間1、正当に到達可能(最大4,004)
+    }
+    for (let j = 0; j < 1005; j += 1) {
+      items.push(...horizontal(String(6001 + j), 35100 + j * 30, 520)) // 区間2、必ず枝刈りされる
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
+  })
 })
