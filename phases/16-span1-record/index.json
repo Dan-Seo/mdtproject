@@ -1,0 +1,17 @@
+{
+  "project": "Kijun",
+  "phase": "16-span1-record",
+  "steps": [
+    {
+      "step": 0,
+      "name": "record-span1-exposure",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "verify-tightening-cost",
+      "kind": "verify",
+      "status": "pending"
+    }
+  ]
+}
