@@ -171,6 +171,7 @@
   "planImport.skip.断面未登録": "断面一覧(단면일람)에 이 符号(부호)가 없습니다",
   "planImport.skip.部材種別相違": "도면의 자리와 부재 종별이 맞지 않습니다",
   "planImport.skip.格子外": "通り芯 바깥을 가리킵니다",
+  "planImport.skip.断面複数該当": "같은 符号에 해당하는 断面이 여러 개입니다",
   "planImport.open": "伏図(부시도) 취입",
   "planImport.file": "伏図·軸組図 PDF",
   "planImport.title": "伏図·軸組図에서 형상 읽기",

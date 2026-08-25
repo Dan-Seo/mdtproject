@@ -2,8 +2,23 @@
   "project": "Kijun",
   "phase": "12-plan-apply-story",
   "steps": [
-    { "step": 0, "name": "section-lookup-by-story", "status": "pending" },
-    { "step": 1, "name": "section-story-picker", "status": "pending" },
-    { "step": 2, "name": "refute-doc-migration", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "section-lookup-by-story",
+      "status": "completed",
+      "started_at": "2026-08-25T19:26:36+0900",
+      "summary": "同じmarkの断面を候補配列で保持し、指定storyLabelは厳密一致、複数候補は断面複数該当として反映しないようにした"
+    },
+    {
+      "step": 1,
+      "name": "section-story-picker",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "refute-doc-migration",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-25T19:26:36+0900"
 }

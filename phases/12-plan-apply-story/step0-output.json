@@ -1,0 +1,38 @@
+{
+  "changed": [
+    "src/lib/import/framing-plan/types.ts",
+    "src/lib/import/framing-plan/apply.ts",
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "reproduced": "実際のTextItem固定具をparseSectionListsで再生すると、yokohama-p13はC51等6符号、yokohama-p14はG51等5符号、ojkk-p2はC1/C2/C2A各6階、ojkk-p3はG1〜G5各6階で同じmarkに複数storyLabelが存在した",
+  "mutations": [
+    {
+      "mutation": "candidates[0] 되돌리기",
+      "failed": [
+        "同じ符号の断面が複数階にあれば階指定なしで反映しない",
+        "同じ符号と同じ階ラベルの重複断面も選べない"
+      ]
+    },
+    {
+      "mutation": "filter 느슨하게",
+      "failed": [
+        "同じ符号の断面が複数階にあれば階指定なしで反映しない",
+        "階ラベル이 없는 단면은 지정된 층의 후보로 취급하지 않는다"
+      ]
+    },
+    {
+      "mutation": "階↔F 정규화",
+      "failed": [
+        "階ラベルを正規化せず原文どおりに比較する"
+      ]
+    }
+  ],
+  "gates": {
+    "lint": "passed (0 errors; existing warning in src/app/api/oncall/alert/route.test.ts)",
+    "typecheck": "passed",
+    "test": "passed (81 files, 1417 tests)",
+    "build": "passed"
+  }
+}

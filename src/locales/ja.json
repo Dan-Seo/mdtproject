@@ -171,6 +171,7 @@
   "planImport.skip.断面未登録": "断面一覧にこの符号がありません",
   "planImport.skip.部材種別相違": "図面の位置と部材種別が合いません",
   "planImport.skip.格子外": "通り芯の外を指しています",
+  "planImport.skip.断面複数該当": "同じ符号に該当する断面が複数あります",
   "planImport.open": "伏図を取り込み",
   "planImport.file": "伏図・軸組図のPDF",
   "planImport.title": "伏図・軸組図から形状を読む",

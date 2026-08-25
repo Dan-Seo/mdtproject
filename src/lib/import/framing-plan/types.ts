@@ -128,6 +128,7 @@ export const PLAN_APPLY_SKIPS = [
   '断面未登録',
   '部材種別相違',
   '格子外',
+  '断面複数該当',
 ] as const
 
 export type PlanApplySkip = (typeof PLAN_APPLY_SKIPS)[number]
