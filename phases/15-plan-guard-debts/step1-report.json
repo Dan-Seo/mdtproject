@@ -1,0 +1,18 @@
+{
+  "claims": [
+    {
+      "id": "A",
+      "verdict": "refuted",
+      "measured": "합성 TextPage(widthPt=1000,heightPt=1000): X1@(100,50), X2@(300,50), 치수 6000@(200,80), Y1@(0,100), Y2@(0,300), 세로 치수 4500@(50,200,rot=-90). parseFramingPlan 결과는 grids 2개(X: axes X1@100·X2@300, spansMm [6000], scalePtPerMm 0.03333333333333333, totalConfirmed false; Y: axes Y1@100·Y2@300, spansMm [4500], scalePtPerMm 0.044444444444444446, totalConfirmed false), blocks 1개(동일한 xGrid/yGrid, placements [], unplacedMarks []), issues []였다.",
+      "why": "라벨 2개 축을 데이터 전에 거절하는 분기가 없다. src/lib/import/framing-plan/parse.ts:319의 인접 치수 수집과 :360의 선택적 total 조회가 그대로 1본 스팬을 만들며, 기존 src/lib/import/framing-plan/parse.test.ts:32도 같은 경로를 고정한다. 따라서 도면에 없는 1본 격자를 framing-plan이 후보로 낸다."
+    },
+    {
+      "id": "B",
+      "verdict": "refuted",
+      "measured": "A와 동일한 합계 없는 입력에서는 X·Y grids가 생성되고 두 후보의 totalConfirmed는 false였다. 합계 불일치 합성 입력(X1@(100,50), X2@(300,50), X3@(500,50), 인접 치수 6000@(200,80)·6000@(400,80), 전체 치수 11000@(300,110))에서는 parseFramingPlan 결과가 grids [], blocks [], issues [\"合計不一致\"]였다.",
+      "why": "totalConfirmed라는 필드는 실제로 있고, 합계가 없을 때 후보를 허용한다. 그러나 합계가 있으면 src/lib/import/framing-plan/parse.ts:360-367에서 스팬 합과 비교해 불일치 시 후보를 거절한다. ADR-030의 추가 문단은 이 거절 경로를 언급하지 않으며, 이 검증 스텝의 기준(서술과 코드의 누락도 반증)에 따라 정확한 서술이 아니므로 반증으로 판정한다."
+    }
+  ],
+  "refuted_count": 2,
+  "summary": "합성 1본 스팬 축이 X·Y 모두 grids 후보로 생성되어 A를 반증했고, 합계 불일치 시 合計不一致로 거절하는 동작이 ADR-030 문단에 누락되어 B도 반증했다."
+}

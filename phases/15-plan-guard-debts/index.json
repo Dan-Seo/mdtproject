@@ -5,13 +5,22 @@
     {
       "step": 0,
       "name": "repay-guard-debts",
-      "status": "pending"
+      "status": "completed",
+      "summary": "0mm 치수 후보 가드·폭 기반 elevation 헬퍼·断面リスト 기전 주석을 복구하고 전체 게이트를 통과시켰다.",
+      "started_at": "2026-08-25T23:16:02+0900",
+      "completed_at": "2026-08-25T23:24:31+0900"
     },
     {
       "step": 1,
       "name": "verify-adr030-claims",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "summary": "합성 1본 스팬 축이 X·Y 모두 grids 후보로 생성되어 A를 반증했고, 합계 불일치 시 合計不一致로 거절하는 동작이 ADR-030 문단에 누락되어 B도 반증했다.",
+      "started_at": "2026-08-25T23:24:32+0900",
+      "completed_at": "2026-08-25T23:27:16+0900",
+      "refuted_at": "2026-08-25T23:29:06+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-25T23:16:02+0900",
+  "completed_at": "2026-08-25T23:29:06+0900"
 }

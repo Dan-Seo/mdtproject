@@ -31,7 +31,7 @@ import type {
  */
 const AXIS_LABEL_PATTERN = /[a-z]?[XY]\d+/y
 /** 치수 문자열 — 쉼표 구분(6,000)과 무구분(8700) 둘 다 실물에 있다 */
-const DIMENSION_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d{2,})$/
+export const DIMENSION_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d{2,})$/
 /**
  * 부재 부호. 断面リスト의 것(section-list의 MARK_PATTERN)에 S(床板)를 더했다 —
  * 伏図에는 스ラブ 부호가 나오고 리스트 표에는 나오지 않는다.

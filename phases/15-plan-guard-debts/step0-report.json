@@ -1,0 +1,39 @@
+{
+  "debt1": {
+    "guard": "실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다",
+    "fixtures": [
+      "kani-p38.json",
+      "kani-p40.json",
+      "ojkk-p2.json",
+      "ojkk-p3.json",
+      "yokohama-p13.json",
+      "yokohama-p14.json",
+      "yokohama-p7.json",
+      "yokohama-p8.json"
+    ],
+    "measured": "현행 문턱 2.2에서 8부 모두 0건",
+    "breaking_gap_ratio": "0.5: yokohama-p14 4건; 0.8·0.7·0.6은 8부 모두 0건",
+    "pattern_source": "DIMENSION_PATTERN exported from src/lib/import/framing-plan/parse.ts"
+  },
+  "debt2": {
+    "constant": "VERTICAL_GLYPH_WIDTH_PT",
+    "widths_verified": [12, 6],
+    "restored": true
+  },
+  "debt3": {
+    "mechanism": "断面リスト의 X2端·Y4端 같은 세그먼트는 sticky AXIS_LABEL_PATTERN이 X2·Y4 뒤의 端까지 소비하지 못한다. splitAxisLabels가 세그먼트 전체를 설명하지 못해 빈 배열을 반환하므로 framing-plan은 라벨을 수집하지 못하고 通り芯ラベル未検出을 낸다. 옛 grid-parse의 X2·X3 검출 후 区間数不足 거절과는 다른 기전이다."
+  },
+  "controller_measurement_mismatch": "none",
+  "gates": {
+    "test": "npm run test — 82 files, 1429 tests passed",
+    "golden": "npm run test:golden — 7 files, 362 tests passed",
+    "tsc": "npx tsc --noEmit — passed with no output",
+    "lint": "npm run lint — 0 errors; existing route.test.ts:161 warning only"
+  },
+  "mutation": {
+    "gap_ratio": {
+      "failing_test": "실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다",
+      "restored": true
+    }
+  }
+}

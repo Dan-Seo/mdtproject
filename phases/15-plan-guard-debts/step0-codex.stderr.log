@@ -1,0 +1,10 @@
+2026-08-25T14:16:02.982291Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-25T14:16:03.147330Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-25T14:16:03.190290Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-25T14:18:49.953905Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\elevation.test.ts:
+      // 354 = 중심 350 + w/2 — v()가 원점을 중심 아래로 놓는다는 뜻
+      page(fourLevels().filter((item) => item.y !== 354)),
+2026-08-25T14:19:27.714891Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\plan-import\parse.test.ts:
+  return { ...fixture.page, items: fixture.items }
+}
+describe('断面リスト pages do not produce framing grids', () => {

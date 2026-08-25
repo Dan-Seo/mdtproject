@@ -11,11 +11,20 @@ function h(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 0, h: 8 }
 }
 
+const VERTICAL_GLYPH_WIDTH_PT = 8
+
 /** 세로쓰기 치수. 軸組図의 階高 치수는 실물에서 rot=-90이다.
  *  인자 y는 문자열의 물리 중심이고, TextItem.y(원점)는 진행량 w의 절반만큼
  *  그 아래다 — VerticalRun.y가 바운딩 박스 중심이라서다 (runs.ts) */
 function v(str: string, x: number, y: number): TextItem {
-  return { str, x, y: y + 4, w: 8, h: 0, rot: -90 }
+  return {
+    str,
+    x,
+    y: y + VERTICAL_GLYPH_WIDTH_PT / 2,
+    w: VERTICAL_GLYPH_WIDTH_PT,
+    h: 0,
+    rot: -90,
+  }
 }
 
 function page(items: TextItem[]): TextPage {
@@ -96,7 +105,11 @@ describe('parseFrameElevations', () => {
     // 축척이 3배·220배로 나왔는데도 계산된 자리에 마침 글자가 있어 통과했다
     const parsed = parseFrameElevations(
       // 354 = 중심 350 + w/2 — v()가 원점을 중심 아래로 싣는다
-      page(fourLevels().filter((item) => item.y !== 354)),
+      page(
+        fourLevels().filter(
+          (item) => item.y !== 350 + VERTICAL_GLYPH_WIDTH_PT / 2,
+        ),
+      ),
     )
     expect(parsed.elevations).toEqual([])
     expect(parsed.issues).toEqual(['寸法列未検出'])

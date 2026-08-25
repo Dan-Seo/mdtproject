@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "verify-adr030-claims",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 273.5772273999755,
+  "stdout_log": "phases\\15-plan-guard-debts\\step1-codex.stdout.log",
+  "stderr_log": "phases\\15-plan-guard-debts\\step1-codex.stderr.log"
+}
