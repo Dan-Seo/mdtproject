@@ -15,6 +15,11 @@
       "name": "verify-tightening-cost",
       "kind": "verify",
       "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "fix-vertical-threshold-comment",
+      "status": "pending"
     }
   ],
   "created_at": "2026-08-25T23:34:28+0900"
