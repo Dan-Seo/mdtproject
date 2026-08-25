@@ -78,6 +78,10 @@
       "dir": "16-span1-record",
       "status": "completed",
       "completed_at": "2026-08-26T08:49:13+0900"
+    },
+    {
+      "dir": "17-total-unconfirmed-risk",
+      "status": "pending"
     }
   ]
 }
