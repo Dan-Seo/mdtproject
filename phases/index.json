@@ -66,7 +66,8 @@
     },
     {
       "dir": "14-plan-track-unify",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-25T23:06:33+0900"
     }
   ]
 }
