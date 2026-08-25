@@ -61,7 +61,8 @@
     },
     {
       "dir": "13-harness-fixes",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-25T20:43:54+0900"
     }
   ]
 }
