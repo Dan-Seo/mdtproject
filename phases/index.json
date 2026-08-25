@@ -71,7 +71,8 @@
     },
     {
       "dir": "15-plan-guard-debts",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-25T23:29:06+0900"
     }
   ]
 }
