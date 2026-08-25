@@ -25,13 +25,15 @@ SPEC.loader.exec_module(execute)
 
 def pid_alive(pid: int) -> bool:
     if os.name == "nt":
+        # tasklist는 콘솔 코드페이지(cp949 등)로 출력한다 — 특히 해당 PID가 없을 때의
+        # 한국어 안내문이 UTF-8 strict 디코드를 깨뜨린다. 찾는 토큰은 ASCII이므로
+        # 디코드 없이 바이트로 비교한다.
         result = subprocess.run(
             ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
             capture_output=True,
-            text=True,
             check=False,
         )
-        return f'"{pid}"' in result.stdout
+        return f'"{pid}"'.encode("ascii") in result.stdout
 
     try:
         os.kill(pid, 0)
