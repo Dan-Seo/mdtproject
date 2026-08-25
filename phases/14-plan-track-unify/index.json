@@ -1,0 +1,17 @@
+{
+  "project": "Kijun",
+  "phase": "14-plan-track-unify",
+  "steps": [
+    {
+      "step": 0,
+      "name": "retire-grid-parse",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "verify-merge-resolution",
+      "kind": "verify",
+      "status": "pending"
+    }
+  ]
+}

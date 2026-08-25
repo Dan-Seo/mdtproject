@@ -63,6 +63,10 @@
       "dir": "13-harness-fixes",
       "status": "completed",
       "completed_at": "2026-08-25T20:43:54+0900"
+    },
+    {
+      "dir": "14-plan-track-unify",
+      "status": "pending"
     }
   ]
 }
