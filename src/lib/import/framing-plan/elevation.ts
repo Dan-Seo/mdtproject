@@ -265,22 +265,38 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
   const overlapFree = withoutOverlaps(elevations)
   overlapFree.sort((a, b) => a.levels[0].positionPt - b.levels[0].positionPt)
 
-  // 제목은 가장 가까운 계열에 붙인다 — 한 계열이 여러 通り의 軸組図에 공통으로
-  // 걸리므로(실물 p8은 좌단 치수 열 하나에 bY1·bY2·bY3 세 장) 1:1이 아니다
+  // 제목은 계열에 붙인다 — 한 계열이 여러 通り의 軸組図에 공통으로 걸리므로
+  // (실물 p8은 좌단 치수 열 하나에 bY1·bY2·bY3 세 장) 1:1이 아니다.
+  //
+  // 단순 최근접이 아니라 **제목 위에 있는 계열을 우선한다.** 軸組図의 캡션은
+  // 그림 아래에 적히는데(실물 p8의 6장 전부), 위 그림의 캡션은 위 그림의 하단과
+  // 아래 그림의 상단에서 거의 같은 거리에 놓인다(p8 실측 170.4pt 대 167.7pt) —
+  // 단순 최근접은 이 칼끝에서 갈리고, 실제로 VerticalRun.y 규약 정정(−w/2)이
+  // 그 판정을 뒤집어 위 계열이 제목 0장으로 사라졌다. 위에 계열이 하나도 없을
+  // 때만(캡션이 그림 위에 있는 형식) 아래에서 최근접을 찾는다.
   for (const title of titles) {
-    let nearest: ElevationCandidate | undefined
-    let nearestDistance = Number.POSITIVE_INFINITY
+    let above: ElevationCandidate | undefined
+    let aboveDistance = Number.POSITIVE_INFINITY
+    let below: ElevationCandidate | undefined
+    let belowDistance = Number.POSITIVE_INFINITY
     for (const elevation of overlapFree) {
       const top = elevation.levels[0].positionPt
       const bottom = elevation.levels[elevation.levels.length - 1].positionPt
-      const distance =
-        title.y < top ? top - title.y : title.y > bottom ? title.y - bottom : 0
-      if (distance < nearestDistance) {
-        nearest = elevation
-        nearestDistance = distance
+      if (title.y >= top) {
+        const distance = title.y > bottom ? title.y - bottom : 0
+        if (distance < aboveDistance) {
+          above = elevation
+          aboveDistance = distance
+        }
+      } else {
+        const distance = top - title.y
+        if (distance < belowDistance) {
+          below = elevation
+          belowDistance = distance
+        }
       }
     }
-    nearest?.titles.push(title.text)
+    ;(above ?? below)?.titles.push(title.text)
   }
 
   // 軸組図의 높이 계열은 軸組図에 속한다 — 제목이 붙지 않은 치수 열은 그것이

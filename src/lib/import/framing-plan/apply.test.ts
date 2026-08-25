@@ -4,7 +4,8 @@ import type { Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
 
-import type { TextItem, TextPage } from '../section-list/types'
+import type { TextItem } from '../types'
+import type { TextPage } from '../section-list/types'
 
 import { applyElevation, applyFramingPlan } from './apply'
 import { parseFramingPlan } from './parse'

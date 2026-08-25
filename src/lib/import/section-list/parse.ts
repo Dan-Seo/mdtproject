@@ -24,7 +24,6 @@ import type {
   TextPage,
 } from './types'
 
-
 interface MarkColumn {
   mark: string
   centerX: number
@@ -54,7 +53,6 @@ interface ParsedBar {
   count: number
 }
 
-
 const barSizes = new Set<BarSize>(BAR_SIZES)
 // 帯筋・あばら筋だけが高強度せん断補強筋 (K13・S13) を取れる。主筋の barSizes と
 // 分けているのは、主筋に入ると表5.3.4・表5.3.2 にない径を引くからだ (ADR-026)。
@@ -71,8 +69,6 @@ const MARK_PATTERN = /^(?:(?:C|G|FC|FG|B|CB)\d+[A-Z]?|W\d+|fg)$/i
  *  span/2와 정확히 일치했기 때문이다. 앵커를 표의 행으로 바꿔 상한이 실제로
  *  작동하게 됐다 (#32①, verticalsBySlice 참고) */
 const SLICE_DISTANCE_LIMIT_RATIO = 0.5
-
-
 
 /**
  * 표제란(도면 우하단 블록)의 図面名称 칸에는 그 도면의 이름이 들어간다 —

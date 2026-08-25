@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
-import type { TextItem, TextPage } from '@/lib/import/section-list/types'
+import type { TextItem } from '@/lib/import/types'
+import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
 import planFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p7.json'

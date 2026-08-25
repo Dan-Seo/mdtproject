@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { TextItem, TextPage } from '../section-list/types'
+import type { TextItem } from '../types'
+import type { TextPage } from '../section-list/types'
 
 import { parseFramingPlan } from './parse'
 

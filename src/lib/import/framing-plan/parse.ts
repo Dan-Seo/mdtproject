@@ -1,5 +1,6 @@
 import { compact, recoverRows, verticalRuns, type TextSegment } from '../runs'
-import type { TextItem, TextPage } from '../section-list/types'
+import type { TextItem } from '../types'
+import type { TextPage } from '../section-list/types'
 
 import type {
   AxisCandidate,
