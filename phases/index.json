@@ -68,6 +68,10 @@
       "dir": "14-plan-track-unify",
       "status": "completed",
       "completed_at": "2026-08-25T23:06:33+0900"
+    },
+    {
+      "dir": "15-plan-guard-debts",
+      "status": "pending"
     }
   ]
 }
