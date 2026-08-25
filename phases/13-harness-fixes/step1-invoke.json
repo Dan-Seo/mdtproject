@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "refuted-protocol",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 464.1847538999864,
+  "stdout_log": "phases\\13-harness-fixes\\step1-codex.stdout.log",
+  "stderr_log": "phases\\13-harness-fixes\\step1-codex.stderr.log"
+}

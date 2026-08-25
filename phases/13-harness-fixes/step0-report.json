@@ -1,0 +1,25 @@
+{
+  "reproduced": "타임아웃 테스트가 별도 스레드에서 30초 join으로 반환 여부를 감시하고, 자식·손자 PID가 모두 종료되는지 고정했다.",
+  "mutations": [
+    {
+      "mutation": "Windows 프로세스 트리 kill을 proc.kill()로 되돌림",
+      "failing_test": "test_timeout_kills_child_and_grandchild_without_hanging (손자 생존)",
+      "restored": true
+    },
+    {
+      "mutation": "stdout 파일 핸들을 stdout=PIPE로 되돌림",
+      "failing_test": "test_timeout_kills_child_and_grandchild_without_hanging (로그 marker 누락); test_normal_path_writes_stdout_and_stderr_to_logs",
+      "restored": true
+    },
+    {
+      "mutation": "step{N}-invoke.json을 step{N}-output.json으로 되돌림",
+      "failing_test": "test_invoke_uses_new_artifact_names_and_does_not_write_output_json",
+      "restored": true
+    }
+  ],
+  "gates": {
+    "execute_test": "passed (3 tests)",
+    "lint": "passed (0 errors; existing warning 1건)",
+    "test": "passed (81 files, 1418 tests)"
+  }
+}

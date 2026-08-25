@@ -10,6 +10,7 @@ import argparse
 import contextlib
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,51 @@ from pathlib import Path
 from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def run_codex_process(cmd, prompt, stdout_path, stderr_path, timeout_sec, cwd):
+    """Run a Codex command with file-backed output and whole-tree timeout cleanup."""
+    started = time.monotonic()
+    popen_kwargs = {
+        "cwd": cwd,
+        "stdin": subprocess.PIPE,
+        "text": True,
+        "encoding": "utf-8",
+    }
+    if os.name != "nt":
+        popen_kwargs["start_new_session"] = True
+
+    stdout_path = Path(stdout_path)
+    stderr_path = Path(stderr_path)
+    with stdout_path.open("w", encoding="utf-8") as stdout_file, stderr_path.open(
+        "w", encoding="utf-8"
+    ) as stderr_file:
+        popen_kwargs["stdout"] = stdout_file
+        popen_kwargs["stderr"] = stderr_file
+        proc = subprocess.Popen(cmd, **popen_kwargs)
+        timed_out = False
+        try:
+            proc.communicate(input=prompt, timeout=timeout_sec)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            if os.name == "nt":
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                    capture_output=True,
+                    check=False,
+                )
+            else:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            proc.wait()
+
+    return {
+        "exitCode": proc.returncode,
+        "timedOut": timed_out,
+        "elapsed": time.monotonic() - started,
+    }
 
 
 def _force_utf8_output():
@@ -68,9 +114,10 @@ class StepExecutor:
     CHORE_MSG = "chore({phase}): step {num} output"
     TZ = timezone(timedelta(hours=9))
 
-    def __init__(self, phase_dir_name: str, *, auto_push: bool = False):
-        self._root = str(ROOT)
-        self._phases_dir = ROOT / "phases"
+    def __init__(self, phase_dir_name: str, *, auto_push: bool = False, root=None):
+        self._root_path = Path(root) if root is not None else ROOT
+        self._root = str(self._root_path)
+        self._phases_dir = self._root_path / "phases"
         self._phase_dir = self._phases_dir / phase_dir_name
         self._phase_dir_name = phase_dir_name
         self._top_index_file = self._phases_dir / "index.json"
@@ -144,12 +191,13 @@ class StepExecutor:
         print(f"  Branch: {branch}")
 
     def _commit_step(self, step_num: int, step_name: str):
-        output_rel = f"phases/{self._phase_dir_name}/step{step_num}-output.json"
+        invoke_rel = f"phases/{self._phase_dir_name}/step{step_num}-invoke.json"
+        stdout_rel = f"phases/{self._phase_dir_name}/step{step_num}-codex.stdout.log"
+        stderr_rel = f"phases/{self._phase_dir_name}/step{step_num}-codex.stderr.log"
         index_rel = f"phases/{self._phase_dir_name}/index.json"
 
         self._run_git("add", "-A")
-        self._run_git("reset", "HEAD", "--", output_rel)
-        self._run_git("reset", "HEAD", "--", index_rel)
+        self._run_git("reset", "HEAD", "--", invoke_rel, stdout_rel, stderr_rel, index_rel)
 
         if self._run_git("diff", "--cached", "--quiet").returncode != 0:
             msg = self.FEAT_MSG.format(phase=self._phase_name, num=step_num, name=step_name)
@@ -186,10 +234,10 @@ class StepExecutor:
 
     def _load_guardrails(self) -> str:
         sections = []
-        agents_md = ROOT / "AGENTS.md"
+        agents_md = self._root_path / "AGENTS.md"
         if agents_md.exists():
             sections.append(f"## 프로젝트 규칙 (AGENTS.md)\n\n{agents_md.read_text(encoding='utf-8')}")
-        docs_dir = ROOT / "docs"
+        docs_dir = self._root_path / "docs"
         if docs_dir.is_dir():
             for doc in sorted(docs_dir.glob("*.md")):
                 sections.append(f"## {doc.stem}\n\n{doc.read_text(encoding='utf-8')}")
@@ -198,16 +246,17 @@ class StepExecutor:
     @staticmethod
     def _build_step_context(index: dict) -> str:
         lines = [
-            f"- Step {s['step']} ({s['name']}): {s['summary']}"
+            f"- Step {s['step']} ({s['name']}): "
+            f"{('(반증) ' if s['status'] == 'refuted' else '')}{s['summary']}"
             for s in index["steps"]
-            if s["status"] == "completed" and s.get("summary")
+            if s["status"] in ("completed", "refuted") and s.get("summary")
         ]
         if not lines:
             return ""
         return "## 이전 Step 산출물\n\n" + "\n".join(lines) + "\n\n"
 
     def _build_preamble(self, guardrails: str, step_context: str,
-                        prev_error: Optional[str] = None) -> str:
+                        prev_error: Optional[str] = None, verify: bool = False) -> str:
         commit_example = self.FEAT_MSG.format(
             phase=self._phase_name, num="N", name="<step-name>"
         )
@@ -216,6 +265,12 @@ class StepExecutor:
             retry_section = (
                 f"\n## ⚠ 이전 시도 실패 — 아래 에러를 반드시 참고하여 수정하라\n\n"
                 f"{prev_error}\n\n---\n\n"
+            )
+        verify_rule = ""
+        if verify:
+            verify_rule = (
+                '   - (이 step은 검증 전용) 반증 성립 → "refuted" + "summary"에 반증 요지. '
+                "반증 성립은 실패가 아니라 이 step의 정상 종결이다. 대상을 고치지 마라.\n"
             )
         return (
             f"당신은 {self._project} 프로젝트의 개발자입니다. 아래 step을 수행하세요.\n\n"
@@ -230,6 +285,7 @@ class StepExecutor:
             f"   - AC 통과 → \"completed\" + \"summary\" 필드에 이 step의 산출물을 한 줄로 요약\n"
             f"   - {self.MAX_RETRIES}회 수정 시도 후에도 실패 → \"error\" + \"error_message\" 기록\n"
             f"   - 사용자 개입이 필요한 경우 (API 키, 인증, 수동 설정 등) → \"blocked\" + \"blocked_reason\" 기록 후 즉시 중단\n"
+            f"{verify_rule}"
             f"6. 모든 변경사항을 커밋하라:\n"
             f"   {commit_example}\n\n---\n\n"
         )
@@ -253,25 +309,35 @@ class StepExecutor:
         # 적용하지 않으므로 "codex"만 넘기면 FileNotFoundError로 죽는다. which로 해석한다.
         # 못 찾으면 이름 그대로 넘겨 "codex가 없다"는 에러가 그대로 드러나게 둔다.
         codex_bin = shutil.which("codex") or "codex"
-        result = subprocess.run(
+        stdout_path = self._phase_dir / f"step{step_num}-codex.stdout.log"
+        stderr_path = self._phase_dir / f"step{step_num}-codex.stderr.log"
+        result = run_codex_process(
             [codex_bin, "exec", "--dangerously-bypass-approvals-and-sandbox",
              "--dangerously-bypass-hook-trust", "--json", "-"],
-            cwd=self._root, input=prompt, capture_output=True, text=True,
-            encoding="utf-8", timeout=1800,
+            prompt,
+            stdout_path,
+            stderr_path,
+            1800,
+            self._root,
         )
 
-        if result.returncode != 0:
-            print(f"\n  WARN: Codex가 비정상 종료됨 (code {result.returncode})")
-            if result.stderr:
-                print(f"  stderr: {result.stderr[:500]}")
+        if result["exitCode"] not in (0, None) or result["timedOut"]:
+            print(f"\n  WARN: Codex가 비정상 종료됨 (code {result['exitCode']})")
+            stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
+            if stderr:
+                print(f"  stderr: {stderr[-500:]}")
 
         output = {
-            "step": step_num, "name": step_name,
-            "exitCode": result.returncode,
-            "stdout": result.stdout, "stderr": result.stderr,
+            "step": step_num,
+            "name": step_name,
+            "exitCode": result["exitCode"],
+            "timedOut": result["timedOut"],
+            "elapsed": result["elapsed"],
+            "stdout_log": str(stdout_path.relative_to(self._root_path)),
+            "stderr_log": str(stderr_path.relative_to(self._root_path)),
         }
-        out_path = self._phase_dir / f"step{step_num}-output.json"
-        with open(out_path, "w", encoding="utf-8") as f:
+        out_path = self._phase_dir / f"step{step_num}-invoke.json"
+        with out_path.open("w", encoding="utf-8") as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
 
         return output
@@ -319,7 +385,12 @@ class StepExecutor:
         for attempt in range(1, self.MAX_RETRIES + 1):
             index = self._read_json(self._index_file)
             step_context = self._build_step_context(index)
-            preamble = self._build_preamble(guardrails, step_context, prev_error)
+            preamble = self._build_preamble(
+                guardrails,
+                step_context,
+                prev_error,
+                verify=step.get("kind") == "verify",
+            )
 
             tag = f"Step {step_num}/{self._total - 1} ({done} done): {step_name}"
             if attempt > 1:
@@ -342,6 +413,22 @@ class StepExecutor:
                 print(f"  ✓ Step {step_num}: {step_name} [{elapsed}s]")
                 return True
 
+            if status == "refuted":
+                if step.get("kind") == "verify":
+                    for s in index["steps"]:
+                        if s["step"] == step_num:
+                            s["refuted_at"] = ts
+                    self._write_json(self._index_file, index)
+                    self._commit_step(step_num, step_name)
+                    print(f"  ⊘ Step {step_num}: {step_name} refuted [{elapsed}s]")
+                    return True
+                err_msg = "status 'refuted'는 kind 'verify' 스텝에서만 유효하다"
+            else:
+                err_msg = next(
+                    (s.get("error_message", "Step did not update status") for s in index["steps"] if s["step"] == step_num),
+                    "Step did not update status",
+                )
+
             if status == "blocked":
                 for s in index["steps"]:
                     if s["step"] == step_num:
@@ -352,11 +439,6 @@ class StepExecutor:
                 print(f"    Reason: {reason}")
                 self._update_top_index("blocked")
                 sys.exit(2)
-
-            err_msg = next(
-                (s.get("error_message", "Step did not update status") for s in index["steps"] if s["step"] == step_num),
-                "Step did not update status",
-            )
 
             if attempt < self.MAX_RETRIES:
                 for s in index["steps"]:

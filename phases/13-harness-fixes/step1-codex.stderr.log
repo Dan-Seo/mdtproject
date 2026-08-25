@@ -1,0 +1,13 @@
+2026-08-25T11:36:07.947848Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-25T11:36:07.982600Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-25T11:38:00.024516Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\scripts\execute_test.py:
+            self.assertIn("timedOut", saved)
+
+if __name__ == "__main__":
+2026-08-25T11:39:36.912800Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\scripts\execute.py:
+        if prev_error:
+            retry_section = (
+                f"\n## ???댁쟾 ?쒕룄 ?ㅽ뙣 ???꾨옒 ?먮윭瑜?諛섎뱶??李멸퀬?섏뿬 ?섏젙?섎씪\n\n"
+                f"{prev_error}\n\n---\n\n"
+            )
+        return (

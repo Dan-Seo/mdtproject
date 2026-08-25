@@ -5,12 +5,20 @@
     {
       "step": 0,
       "name": "codex-invoke-io",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-25T20:19:15+0900",
+      "summary": "stdout·stderr를 파일로 직행시키고 Windows/Posix 프로세스 트리 타임아웃 회수 및 invoke 산출물 경계를 고정했다.",
+      "completed_at": "2026-08-25T20:27:45+0900"
     },
     {
       "step": 1,
       "name": "refuted-protocol",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-25T20:36:06+0900",
+      "summary": "verify 스텝의 refuted 정상 종결·비verify 게이트·반증 컨텍스트를 구현하고 회귀·뮤테이션 검증을 완료했다.",
+      "completed_at": "2026-08-25T20:43:50+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-25T20:19:15+0900",
+  "completed_at": "2026-08-25T20:43:54+0900"
 }
