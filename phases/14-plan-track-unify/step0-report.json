@@ -1,0 +1,32 @@
+{
+  "removed": [
+    "src/lib/import/plan/grid-parse.ts",
+    "src/lib/import/plan/types.ts",
+    "src/lib/import/plan/grid-parse.test.ts",
+    "tests/section-import/plan-grid.test.ts"
+  ],
+  "guard_moved": {
+    "from": "tests/section-import/plan-grid.test.ts",
+    "to": "tests/plan-import/parse.test.ts",
+    "measured": "yokohama-p14.json: grids 0, issues [通り芯ラベル未検出]; yokohama-p13.json: grids 0, issues [通り芯ラベル未検出]; ojkk-p2.json: grids 0, issues [通り芯ラベル未検出]; ojkk-p3.json: grids 0, issues [通り芯ラベル未検出]"
+  },
+  "controller_measurement_mismatch": "none",
+  "adr": {
+    "031": "번호 레이스 경위를 보존한 폐지 주석으로 갱신하고, plan 구현 삭제·합계 조합 검산 아이디어·스팬 1본 축 관측·runs.ts 좌표 규약의 생존을 기록했다",
+    "030": "伏図 트랙을 framing-plan 하나로 정리하고 ADR-031을 폐지했으며, totalConfirmed 선택적 검산으로 합계 없는 도면도 위치·축척 검증 시 후보가 될 수 있다는 대가를 추가했다"
+  },
+  "docs_touched": [
+    "docs/ADR.md"
+  ],
+  "mutation": {
+    "mutation": "AXIS_LABEL_PATTERN을 일반 영문-숫자 부호까지 허용하도록 완화",
+    "failing_test": "tests/plan-import/parse.test.ts > 断面リスト pages do not produce framing grids > does not invent grids from axis-like section marks (通り芯ラベル未検出 대신 寸法欠落 수신)",
+    "restored": true
+  },
+  "gates": {
+    "test": "npm run test: exit 0, 82 files / 1428 tests passed",
+    "golden": "npm run test:golden: exit 0, 7 files / 362 tests passed",
+    "tsc": "npx tsc --noEmit: exit 0, no output",
+    "lint": "npm run lint: exit 0, errors 0; 기존 route.test.ts:161 _omitted warning 1건"
+  }
+}

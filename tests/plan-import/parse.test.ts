@@ -27,6 +27,49 @@ function readPage(file: string): TextPage {
   return { ...fixture.page, items: fixture.items }
 }
 
+describe('断面リスト pages do not produce framing grids', () => {
+  it('does not invent grids from axis-like section marks', () => {
+    const files = [
+      'yokohama-p14.json',
+      'yokohama-p13.json',
+      'ojkk-p2.json',
+      'ojkk-p3.json',
+    ]
+
+    expect(
+      files.map((file) => {
+        const parsed = parseFramingPlan(readPage(file))
+        return {
+          file,
+          grids: parsed.grids.length,
+          issues: parsed.issues,
+        }
+      }),
+    ).toEqual([
+      {
+        file: 'yokohama-p14.json',
+        grids: 0,
+        issues: ['通り芯ラベル未検出'],
+      },
+      {
+        file: 'yokohama-p13.json',
+        grids: 0,
+        issues: ['通り芯ラベル未検出'],
+      },
+      {
+        file: 'ojkk-p2.json',
+        grids: 0,
+        issues: ['通り芯ラベル未検出'],
+      },
+      {
+        file: 'ojkk-p3.json',
+        grids: 0,
+        issues: ['通り芯ラベル未検出'],
+      },
+    ])
+  })
+})
+
 function grid(
   candidates: PlanGridCandidate[],
   direction: 'X' | 'Y',
