@@ -190,6 +190,7 @@ export function PlanImport({
 }: PlanImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const stories = useAppStore(({ project }) => project.stories)
+  const sections = useAppStore(({ project }) => project.sections)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const inputRef = useRef<HTMLInputElement>(null)
   const [pages, setPages] = useState<TextPage[] | null>(initialPages ?? null)
@@ -197,6 +198,9 @@ export function PlanImport({
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
   const [storyId, setStoryId] = useState<string>(stories[0]?.id ?? '')
+  const [sectionStoryLabel, setSectionStoryLabel] = useState<
+    string | undefined
+  >(undefined)
   const [result, setResult] = useState<PlanApplyResult | null>(null)
   const [discardOtherStories, setDiscardOtherStories] = useState(false)
   const [discardMembers, setDiscardMembers] = useState(false)
@@ -221,6 +225,16 @@ export function PlanImport({
     index: gridIndexes[candidate.direction]++,
   }))
   const blocks: PlanBlock[] = plans.flatMap((plan) => plan.blocks)
+  const sectionStoryLabels = useMemo(() => {
+    const labels: string[] = []
+    const seen = new Set<string>()
+    for (const section of sections) {
+      if (!section.storyLabel || seen.has(section.storyLabel)) continue
+      seen.add(section.storyLabel)
+      labels.push(section.storyLabel)
+    }
+    return labels
+  }, [sections])
   // 사유는 페이지마다 나오므로 접는다 — 같은 말이 페이지 수만큼 늘어서면 읽히지 않는다
   const issues = [...new Set(plans.flatMap((plan) => plan.issues))]
 
@@ -255,6 +269,7 @@ export function PlanImport({
       applied = applyFramingPlan(project, {
         block,
         storyId,
+        sectionStoryLabel,
         discardOtherStories,
       })
       return applied.project
@@ -361,6 +376,32 @@ export function PlanImport({
                     testId={`plan-import-grid-${candidate.direction}-${index}`}
                   />
                 ))}
+
+                {sectionStoryLabels.length > 0 ? (
+                  <label className={styles.storyPicker}>
+                    {t(locale, 'planImport.sectionStory')}
+                    <select
+                      data-testid="plan-import-section-story"
+                      value={sectionStoryLabel ?? ''}
+                      onChange={(event) =>
+                        setSectionStoryLabel(
+                          event.target.value === ''
+                            ? undefined
+                            : event.target.value,
+                        )
+                      }
+                    >
+                      <option value="">
+                        {t(locale, 'planImport.sectionStoryAny')}
+                      </option>
+                      {sectionStoryLabels.map((label) => (
+                        <option key={label} value={label}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
 
                 {blocks.length > 0 ? (
                   <label className={styles.storyPicker}>
