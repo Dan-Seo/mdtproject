@@ -1,0 +1,10 @@
+2026-08-25T13:51:45.481874Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-25T13:51:45.531124Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-25T13:53:39.252669Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\plan-import\parse.test.ts:
+  return { ...fixture.page, items: fixture.items }
+}
+
+// 湲곕?媛믪? ?꾨㈃?먯꽌 ?낅┰ ?꾩궗??媛믪씠??(?먮낯: tests/fixtures/section-import/SOURCES.md).
+2026-08-25T13:53:58.710435Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\plan-import\parse.test.ts:
+  return { ...fixture.page, items: fixture.items }
+})
