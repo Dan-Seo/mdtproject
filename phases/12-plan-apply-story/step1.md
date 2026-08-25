@@ -98,7 +98,7 @@ p13은 `C51`~`C58A`를 `1階`·`2階` 둘로, p14는 `G51`~`G54`를 `2階`·`R�
 
 ## 출력
 
-`phases/12-plan-apply-story/step1-output.json`:
+`phases/12-plan-apply-story/step1-report.json`:
 
 ```json
 {

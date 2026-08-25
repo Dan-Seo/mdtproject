@@ -60,6 +60,34 @@ describe('PlanImport', () => {
     expect(screen.getByTestId('plan-import-grid-Y-0').textContent).toContain(
       '10000',
     )
+    expect(screen.queryByTestId('plan-import-section-story')).toBeNull()
+  })
+
+  it('断面一覧의 階 후보를 첫 등장 순서로 보여주고 기본값은 고르지 않음이다', () => {
+    const base = createSampleProject()
+    const source = base.sections.find((section) => section.kind === '柱')
+    if (!source) throw new Error('sample has no 柱 section')
+
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...base,
+          sections: [
+            { ...source, id: 'section-C1-2階', mark: 'C1', storyLabel: '2階' },
+            { ...source, id: 'section-C1-1階', mark: 'C1', storyLabel: '1階' },
+            { ...source, id: 'section-C2-2階', mark: 'C2', storyLabel: '2階' },
+          ],
+        },
+      })
+    })
+
+    open([framingPage(6000, 5000)])
+
+    const picker = screen.getByTestId('plan-import-section-story')
+    expect(picker).toHaveValue('')
+    expect(
+      [...picker.querySelectorAll('option')].map((option) => option.value),
+    ).toEqual(['', '2階', '1階'])
   })
 
   it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', () => {

@@ -1,0 +1,41 @@
+{
+  "verdict": "refuted",
+  "checks": [
+    {
+      "id": "A",
+      "claim": "내용 무손실",
+      "result": "pass",
+      "evidence": "git show d1db0cc:CLAUDE.md에서 두 절의 제목 다음부터 다음 ## 제목 직전까지를 추출해 대조했다. docs/MILESTONES.md는 13/13줄, docs/RISKS.md는 15/15줄이 순서까지 동일했고 원본에만 있는 줄은 0개였다."
+    },
+    {
+      "id": "B",
+      "claim": "요약이 본문과 일치",
+      "result": "fail",
+      "evidence": "R1~R14는 모두 요약표에 있었고 R6/R7/R9/R14의 상태·핵심 잔여도 대응했다. 그러나 CLAUDE.md:55의 부재 확장 잔여는 3개뿐인 반면 docs/MILESTONES.md:13은 '平面 뷰에서 벽·床板을 놓고 지우는 입력'도 남은 것으로 적는다. 또한 CLAUDE.md:54의 도면 인식 잔여 칸은 두 트랙의 범위만 적고, docs/MILESTONES.md:11~12의 표 형식 커버리지·좌우 상이 8칸·階ラベル/Story 대응·カットオフ 반영·kani p40 미지원 등 잔여를 담지 않는다."
+    },
+    {
+      "id": "C",
+      "claim": "지시의 수치가 근거와 일치",
+      "result": "fail",
+      "evidence": "보고서에는 10,682/10,681(100.0%)(TOKEN-AUDIT:20), $0.18(TOKEN-AUDIT:58), TaskOutput 7,831자(TOKEN-AUDIT:137)가 있다. 그러나 git show 41a117c:scripts/execute.py 기준 46행은 스피너, 256행은 subprocess.run 시작, capture_output=True는 259행이며 342행은 flush 없는 print다. 따라서 256행 인용이 틀렸다."
+    },
+    {
+      "id": "D",
+      "claim": "주입량 72,397 -> 73,773",
+      "result": "fail",
+      "evidence": "scripts/execute.py:187~195의 비재귀 docs/*.md와 AGENTS.md 대상에 대해 git show 41a117c^ 및 git show 41a117c의 본문 문자 수를 직접 합산했다. 120,903/1.67=72,397.01은 맞지만, 이관 후는 123,295/1.67=73,829.34(증가 1,432.33토큰)로 73,773(증가 1,376)과 다르다."
+    },
+    {
+      "id": "E",
+      "claim": "동기화 가드가 반증 가능",
+      "result": "pass",
+      "evidence": "허용된 변이로 AGENTS.md 제목에 '[guardrail mutation]'을 한 줄 추가한 뒤 npx vitest run tests/docs/guardrail-sync.test.ts가 exit 1로 실패했고, expected CLAUDE 제목과 mutated AGENTS 제목의 불일치를 보고했다. AGENTS.md를 HEAD로 원복한 뒤 같은 테스트는 1개 통과했다."
+    },
+    {
+      "id": "F",
+      "claim": "링크 무파손",
+      "result": "pass",
+      "evidence": "새 CLAUDE.md의 백틱 경로 중 실제 경로로 판정 가능한 17개를 추출해 모두 존재를 확인했다. docs/MILESTONES.md, docs/RISKS.md, docs/reports/TOKEN-AUDIT-2026-08-25.md도 모두 존재한다. glob·플레이스홀더·명령어·라인 번호 표기는 파일 경로로 오인하지 않았다."
+    }
+  ]
+}

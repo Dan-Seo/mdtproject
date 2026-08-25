@@ -1,0 +1,36 @@
+{
+  "changed": [
+    "src/components/plan/PlanImport.tsx",
+    "src/components/plan/PlanImport.test.tsx",
+    "src/locales/ko.json",
+    "src/locales/ja.json",
+    "tests/e2e/uc22-plan-import.js"
+  ],
+  "mutations": [
+    {
+      "mutation": "기본값을 첫 항목으로",
+      "failed": [
+        "PlanImport.test.tsx: 기본값이 빈 선택값이 아니라 2階로 표시됨"
+      ]
+    },
+    {
+      "mutation": "sectionStoryLabel 미전달",
+      "failed": [
+        "uc22-plan-import.js: 추가 흐름이 plan-import-discard 대기에서 timeout"
+      ]
+    },
+    {
+      "mutation": "선택지 정렬",
+      "failed": [
+        "PlanImport.test.tsx: 첫 등장 순서 [2階, 1階]가 [1階, 2階]로 바뀜"
+      ]
+    }
+  ],
+  "e2e": "uc22-plan-import.js — 기존 AC와 section-story picker 추가 AC 모두 ALL CHECKS PASSED",
+  "gates": {
+    "lint": "passed (기존 route.test.ts의 미사용 변수 warning 1건)",
+    "typecheck": "passed",
+    "test": "passed (81 files, 1418 tests)",
+    "build": "passed"
+  }
+}

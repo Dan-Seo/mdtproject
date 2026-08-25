@@ -30,6 +30,11 @@ export interface PlanApplyOptions {
   block: PlanBlock
   storyId: string
   /**
+   * 어느 階의 断面을 쓸지 — 断面リスト 원문 그대로(`2階`·`6F`). 사람이 고른다.
+   * undefined는 「고르지 않았다」이지 「storyLabel이 없는 断面」이 아니다.
+   */
+  sectionStoryLabel?: string
+  /**
    * 通り芯이 바뀔 때 다른 층의 부재를 버리고 진행한다. 기본은 false이고,
    * 화면은 거부를 한 번 보여준 뒤에만 이 선택지를 낸다 — 조용한 기본값으로
    * 두면 사용자가 모르는 사이에 다른 층이 사라진다
@@ -104,7 +109,12 @@ function withinGrid(placement: MemberPlacement, grid: Grid): boolean {
 
 export function applyFramingPlan(
   project: Project,
-  { block, storyId, discardOtherStories = false }: PlanApplyOptions,
+  {
+    block,
+    storyId,
+    sectionStoryLabel,
+    discardOtherStories = false,
+  }: PlanApplyOptions,
 ): PlanApplyResult {
   if (!project.stories.some((story) => story.id === storyId)) {
     return { project, applied: 0, skipped: [], refusal: '階未指定' }
@@ -127,19 +137,30 @@ export function applyFramingPlan(
     }
   }
 
-  const sections = new Map<string, Section>()
+  const sections = new Map<string, Section[]>()
   for (const section of project.sections) {
-    if (!sections.has(section.mark)) sections.set(section.mark, section)
+    const candidates = sections.get(section.mark)
+    if (candidates) candidates.push(section)
+    else sections.set(section.mark, [section])
   }
 
   const members: Member[] = []
   const skipped: PlanApplyResult['skipped'] = []
   for (const placement of block.placements) {
-    const section = sections.get(placement.mark)
-    if (!section) {
+    const candidates = (sections.get(placement.mark) ?? []).filter(
+      (section) =>
+        sectionStoryLabel === undefined ||
+        section.storyLabel === sectionStoryLabel,
+    )
+    if (candidates.length === 0) {
       skipped.push({ mark: placement.mark, reason: '断面未登録' })
       continue
     }
+    if (candidates.length > 1) {
+      skipped.push({ mark: placement.mark, reason: '断面複数該当' })
+      continue
+    }
+    const section = candidates[0]
     if (ROLE_FOR_KIND[section.kind] !== placement.role) {
       skipped.push({ mark: placement.mark, reason: '部材種別相違' })
       continue

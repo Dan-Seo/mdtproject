@@ -24,6 +24,15 @@ function sectionOf(kind: Section['kind'], mark: string): Section {
   return { ...source, id: `sec-${mark}`, mark }
 }
 
+function sectionWithStory(
+  kind: Section['kind'],
+  mark: string,
+  storyLabel: string | undefined,
+  id = `sec-${mark}-${storyLabel ?? 'none'}`,
+): Section {
+  return { ...sectionOf(kind, mark), id, storyLabel }
+}
+
 const columnSection = (mark: string) => sectionOf('柱', mark)
 const girderSection = (mark: string) => sectionOf('大梁', mark)
 
@@ -104,6 +113,129 @@ function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
 }
 
 describe('applyFramingPlan', () => {
+  it('同じ符号の断面が複数階にあれば階指定なしで反映しない', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [
+          sectionWithStory('柱', 'C1', '1階'),
+          sectionWithStory('柱', 'C1', '2階'),
+        ],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+      },
+    )
+
+    expect(result.applied).toBe(0)
+    expect(result.skipped).toEqual([
+      { mark: 'C1', reason: '断面複数該当' },
+    ])
+  })
+
+  it('断面の階ラベルを厳密に指定すれば該当する断面だけを反映する', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [
+          sectionWithStory('柱', 'C1', '1階'),
+          sectionWithStory('柱', 'C1', '2階'),
+        ],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2階',
+      },
+    )
+
+    expect(result.applied).toBe(1)
+    expect(result.project.members[0]?.sectionId).toBe('sec-C1-2階')
+  })
+
+  it('指定した階ラベルの断面がなければ未登録として残す', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [sectionWithStory('柱', 'C1', '1階')],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '3階',
+      },
+    )
+
+    expect(result.applied).toBe(0)
+    expect(result.skipped).toEqual([{ mark: 'C1', reason: '断面未登録' }])
+  })
+
+  it('同じ符号と同じ階ラベルの重複断面も選べない', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [
+          sectionWithStory('柱', 'C1', '2階', 'sec-C1-2階-a'),
+          sectionWithStory('柱', 'C1', '2階', 'sec-C1-2階-b'),
+        ],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2階',
+      },
+    )
+
+    expect(result.applied).toBe(0)
+    expect(result.skipped).toEqual([
+      { mark: 'C1', reason: '断面複数該当' },
+    ])
+  })
+
+  it('階ラベルを正規化せず原文どおりに比較する', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [sectionWithStory('柱', 'C1', '2階')],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2F',
+      },
+    )
+
+    expect(result.applied).toBe(0)
+    expect(result.skipped).toEqual([{ mark: 'C1', reason: '断面未登録' }])
+  })
+
+  it('階ラベル이 없는 단면은 지정된 층의 후보로 취급하지 않는다', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [
+          sectionWithStory('柱', 'C1', undefined, 'sec-C1-no-story'),
+          sectionWithStory('柱', 'C1', '2階'),
+        ],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'C1', role: '格子点', ix: 1, iy: 1 }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2階',
+      },
+    )
+
+    expect(result.applied).toBe(1)
+    expect(result.project.members[0]?.sectionId).toBe('sec-C1-2階')
+  })
+
   it('여러 伏図 중 두 번째 블록은 두 번째 도면의 X·Y 通り芯을 구별해 취입한다', () => {
     const plans = [framingPage(6000, 5000), framingPage(8000, 7000)].map(
       parseFramingPlan,

@@ -101,7 +101,7 @@ npx vitest run tests/docs/guardrail-sync.test.ts
 
 ## 출력
 
-`phases/12-plan-apply-story/step2-output.json`:
+`phases/12-plan-apply-story/step2-report.json`:
 
 ```json
 {

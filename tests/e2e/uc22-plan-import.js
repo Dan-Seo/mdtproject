@@ -155,6 +155,94 @@ const stories = await page.evaluate(() =>
   ),
 );
 
+// 5) 새 흐름: 같은 PDF의 断面リスト를 먼저 승인한다. 이후 伏図 취입에서
+// 断面 階를 고르지 않으면 같은 符号의 후보를 지어내지 않고 멈춰야 한다.
+await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase("kijun");
+      request.onsuccess = resolve;
+      request.onerror = resolve;
+      request.onblocked = resolve;
+    }),
+);
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.waitForSelector("[data-testid='grand-total']");
+const sectionStoryAbsentAtSample = await page.evaluate(
+  () => document.querySelector("[data-testid='plan-import-section-story']") === null,
+);
+await page.setInputFiles("[data-testid='section-import-file']", {
+  name: "dwg-yokohama.pdf",
+  mimeType: "application/pdf",
+  buffer: Buffer.from(pdfBase64, "base64"),
+});
+await page.waitForSelector("[data-testid='section-import-candidate-C51-2階']", {
+  timeout: 120000,
+});
+await page.locator(
+  "[data-testid='section-import-candidate-C51-2階'] button:nth-of-type(1)",
+).click();
+await page.locator(
+  "[data-testid='section-import-candidate-C51-1階'] button:nth-of-type(1)",
+).click();
+await page.waitForFunction(
+  () =>
+    window.__kijunStore?.getState().project.sections.filter(
+      (section) => section.mark === "C51" && section.storyLabel,
+    ).length === 2,
+);
+
+await page.setInputFiles("[data-testid='plan-import-file']", {
+  name: "dwg-yokohama.pdf",
+  mimeType: "application/pdf",
+  buffer: Buffer.from(pdfBase64, "base64"),
+});
+await page.waitForSelector("[data-testid='plan-import-section-story']", {
+  timeout: 120000,
+});
+const sectionStoryPickerBefore = await page.evaluate(() => ({
+  value: document.querySelector("[data-testid='plan-import-section-story']")?.value ?? null,
+  options: [...document.querySelectorAll("[data-testid='plan-import-section-story'] option")].map(
+    (option) => option.value,
+  ),
+}));
+const targetApplyWithSections = await page.evaluate(() => {
+  const blocks = [...document.querySelectorAll("[data-testid^='plan-import-apply-']")];
+  const index = blocks.findIndex((button) =>
+    button.closest("div")?.textContent.includes("2階床伏図"),
+  );
+  return index < 0 ? null : blocks[index].getAttribute("data-testid");
+});
+if (!targetApplyWithSections) throw new Error("断面選択 흐름의 2階床伏図 블록을 찾지 못했다");
+
+// 격자 변경 동의를 먼저 보여준 뒤, 断面 階를 고르지 않은 채 다시 반영한다.
+await page.click(`[data-testid='${targetApplyWithSections}']`);
+await page.waitForSelector("[data-testid='plan-import-discard']");
+await page.click("[data-testid='plan-import-discard']");
+await page.click(`[data-testid='${targetApplyWithSections}']`);
+await page.waitForTimeout(500);
+const ambiguousApply = await page.evaluate(() => {
+  const state = window.__kijunStore?.getState().project;
+  return {
+    result: document.querySelector("[data-testid='plan-import-result']")?.textContent ?? "",
+    c51MemberCount:
+      state?.members.filter((member) => member.id.includes("-C51-")).length ?? -1,
+  };
+});
+
+await page.selectOption("[data-testid='plan-import-section-story']", "2階");
+await page.click(`[data-testid='${targetApplyWithSections}']`);
+await page.waitForTimeout(500);
+const selectedApply = await page.evaluate(() => {
+  const project = window.__kijunStore?.getState().project;
+  const member = project?.members.find((candidate) => candidate.id.includes("-C51-"));
+  const section = project?.sections.find((candidate) => candidate.id === member?.sectionId);
+  return {
+    sectionStoryLabel: section?.storyLabel ?? null,
+    mainCount: section?.kind === "柱" ? section.main.count : null,
+  };
+});
+
 const checks = {
   gridXLabelsRead:
     read.gridX.includes("bX1") && read.gridX.includes("cX1"),
@@ -188,6 +276,16 @@ const checks = {
   // 같은 높이의 라벨 둘은 둘 다 남는다
   storiesNamedFromDrawing:
     stories.includes("中央棟1FL／基準GL") && stories.includes("2FL"),
+  sectionStoryPickerHiddenWithoutLabels: sectionStoryAbsentAtSample,
+  sectionStoryPickerDefaultsToAny: sectionStoryPickerBefore.value === "",
+  sectionStoryOptionsKeepFirstAppearance:
+    sectionStoryPickerBefore.options.join(",") === ",2階,1階",
+  ambiguousSectionStorySkipsC51:
+    ambiguousApply.c51MemberCount === 0 &&
+    ambiguousApply.result.includes("同じ符号の断面が複数") &&
+    ambiguousApply.result.includes("どの階のものか選んでください"),
+  selectedSectionStoryApplied:
+    selectedApply.sectionStoryLabel === "2階" && selectedApply.mainCount === 18,
 };
 
 console.log(JSON.stringify({ read, refused, applied, spanNames, storyRefused, stories, checks }, null, 2));
