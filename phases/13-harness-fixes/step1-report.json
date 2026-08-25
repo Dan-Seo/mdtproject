@@ -1,0 +1,25 @@
+{
+  "reproduced": "가짜 StepExecutor로 verify 스텝이 refuted를 쓰는 사고를 재현하고, invoke 1회·summary 보존·refuted_at 기록·후속 pending 실행·finalize completed를 고정했다.",
+  "mutations": [
+    {
+      "mutation": "refuted를 error와 같은 재시도 경로로 되돌림",
+      "failing_test": "test_refuted_verify_is_terminal_and_preserves_summary; test_refuted_verify_allows_next_pending_step; test_invalid_refuted_status_retries_with_explicit_prev_error",
+      "restored": true
+    },
+    {
+      "mutation": "kind verify 게이트를 제거하고 모든 refuted를 정상 종결로 허용함",
+      "failing_test": "test_invalid_refuted_status_retries_with_explicit_prev_error",
+      "restored": true
+    },
+    {
+      "mutation": "_build_step_context에서 refuted 스텝을 제외함",
+      "failing_test": "test_build_step_context_includes_refuted_summary",
+      "restored": true
+    }
+  ],
+  "gates": {
+    "execute_test": "passed (10 tests)",
+    "lint": "passed (0 errors; existing warning 1)",
+    "test": "passed (81 files, 1418 tests)"
+  }
+}

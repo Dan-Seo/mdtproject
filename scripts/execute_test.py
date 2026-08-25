@@ -201,5 +201,167 @@ class InvokeArtifactTests(unittest.TestCase):
             self.assertIn("timedOut", saved)
 
 
+class FakeStepExecutor(execute.StepExecutor):
+    """Write predetermined step outcomes instead of invoking Codex."""
+
+    def __init__(self, phase_dir_name: str, outcomes: dict[int, list[dict]], *, root: Path):
+        self.outcomes = outcomes
+        self.calls_by_step: dict[int, int] = {}
+        self.preambles: list[str] = []
+        super().__init__(phase_dir_name, root=root)
+
+    def _invoke_codex(self, step: dict, preamble: str) -> dict:
+        step_num = step["step"]
+        attempt = self.calls_by_step.get(step_num, 0)
+        self.calls_by_step[step_num] = attempt + 1
+        self.preambles.append(preamble)
+        choices = self.outcomes[step_num]
+        outcome = choices[min(attempt, len(choices) - 1)]
+        index = self._read_json(self._index_file)
+        for candidate in index["steps"]:
+            if candidate["step"] == step_num:
+                candidate["status"] = outcome["status"]
+                if "summary" in outcome:
+                    candidate["summary"] = outcome["summary"]
+                if "error_message" in outcome:
+                    candidate["error_message"] = outcome["error_message"]
+        self._write_json(self._index_file, index)
+        return {"step": step_num}
+
+
+def make_harness_fixture(root: Path, steps: list[dict], *, top_index: bool = False) -> None:
+    phase_dir = root / "phases" / "fixture"
+    phase_dir.mkdir(parents=True)
+    (phase_dir / "index.json").write_text(
+        json.dumps({"project": "test", "phase": "fixture", "steps": steps}),
+        encoding="utf-8",
+    )
+    for step in steps:
+        (phase_dir / f"step{step['step']}.md").write_text("test prompt", encoding="utf-8")
+    if top_index:
+        (root / "phases" / "index.json").write_text(
+            json.dumps({"phases": [{"dir": "fixture", "status": "pending"}]}),
+            encoding="utf-8",
+        )
+    subprocess.run(["git", "init"], cwd=root, capture_output=True, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+
+
+class RefutedProtocolTests(unittest.TestCase):
+    def test_refuted_verify_is_terminal_and_preserves_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [{"step": 0, "name": "verify", "kind": "verify", "status": "pending"}]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture",
+                {0: [{"status": "refuted", "summary": "주장이 반증됨"}]},
+                root=root,
+            )
+
+            result = executor._execute_single_step(steps[0], "guards")
+
+            saved = json.loads((root / "phases" / "fixture" / "index.json").read_text(encoding="utf-8"))
+            saved_step = saved["steps"][0]
+            self.assertTrue(result)
+            self.assertEqual(executor.calls_by_step[0], 1)
+            self.assertEqual(saved_step["status"], "refuted")
+            self.assertIn("refuted_at", saved_step)
+            self.assertEqual(saved_step["summary"], "주장이 반증됨")
+            self.assertIn("반증 성립 → \"refuted\"", executor.preambles[0])
+
+    def test_refuted_verify_allows_next_pending_step(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "verify", "kind": "verify", "status": "pending"},
+                {"step": 1, "name": "next", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture",
+                {
+                    0: [{"status": "refuted", "summary": "첫 주장 반증"}],
+                    1: [{"status": "completed", "summary": "후속 구현 완료"}],
+                },
+                root=root,
+            )
+
+            executor._execute_all_steps("guards")
+
+            self.assertEqual(executor.calls_by_step, {0: 1, 1: 1})
+            saved = json.loads((root / "phases" / "fixture" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual([step["status"] for step in saved["steps"]], ["refuted", "completed"])
+
+    def test_finalize_marks_phase_completed_after_refuted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [{"step": 0, "name": "verify", "kind": "verify", "status": "refuted", "summary": "반증"}]
+            make_harness_fixture(root, steps, top_index=True)
+            executor = FakeStepExecutor("fixture", {0: []}, root=root)
+
+            executor._finalize()
+
+            top = json.loads((root / "phases" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(top["phases"][0]["status"], "completed")
+
+    def test_invalid_refuted_status_retries_with_explicit_prev_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [{"step": 0, "name": "implementation", "status": "pending"}]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture",
+                {
+                    0: [
+                        {"status": "refuted", "summary": "잘못된 종결"},
+                        {"status": "completed", "summary": "수정 완료"},
+                    ]
+                },
+                root=root,
+            )
+
+            result = executor._execute_single_step(steps[0], "guards")
+
+            expected = "status 'refuted'는 kind 'verify' 스텝에서만 유효하다"
+            self.assertTrue(result)
+            self.assertEqual(executor.calls_by_step[0], 2)
+            self.assertIn(expected, executor.preambles[1])
+
+    def test_check_blockers_does_not_exit_on_refuted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [{"step": 0, "name": "verify", "kind": "verify", "status": "refuted", "summary": "반증"}]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor("fixture", {0: []}, root=root)
+
+            executor._check_blockers()
+
+    def test_build_step_context_includes_refuted_summary(self) -> None:
+        context = execute.StepExecutor._build_step_context(
+            {
+                "steps": [
+                    {"step": 0, "name": "verify", "status": "refuted", "summary": "주장이 틀림"},
+                    {"step": 1, "name": "done", "status": "completed", "summary": "완료"},
+                ]
+            }
+        )
+
+        self.assertIn("Step 0 (verify): (반증) 주장이 틀림", context)
+        self.assertIn("Step 1 (done): 완료", context)
+
+    def test_verify_preamble_only_adds_refuted_rule_for_verify_steps(self) -> None:
+        executor = object.__new__(execute.StepExecutor)
+        executor._phase_dir_name = "fixture"
+        executor._phase_name = "fixture"
+        executor._project = "test"
+        regular = executor._build_preamble("guards", "", verify=False)
+        verify = executor._build_preamble("guards", "", verify=True)
+
+        self.assertNotIn("반증 성립", regular)
+        self.assertIn("반증 성립", verify)
+
+
 if __name__ == "__main__":
     unittest.main()

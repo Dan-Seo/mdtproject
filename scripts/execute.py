@@ -246,16 +246,17 @@ class StepExecutor:
     @staticmethod
     def _build_step_context(index: dict) -> str:
         lines = [
-            f"- Step {s['step']} ({s['name']}): {s['summary']}"
+            f"- Step {s['step']} ({s['name']}): "
+            f"{('(반증) ' if s['status'] == 'refuted' else '')}{s['summary']}"
             for s in index["steps"]
-            if s["status"] == "completed" and s.get("summary")
+            if s["status"] in ("completed", "refuted") and s.get("summary")
         ]
         if not lines:
             return ""
         return "## 이전 Step 산출물\n\n" + "\n".join(lines) + "\n\n"
 
     def _build_preamble(self, guardrails: str, step_context: str,
-                        prev_error: Optional[str] = None) -> str:
+                        prev_error: Optional[str] = None, verify: bool = False) -> str:
         commit_example = self.FEAT_MSG.format(
             phase=self._phase_name, num="N", name="<step-name>"
         )
@@ -264,6 +265,12 @@ class StepExecutor:
             retry_section = (
                 f"\n## ⚠ 이전 시도 실패 — 아래 에러를 반드시 참고하여 수정하라\n\n"
                 f"{prev_error}\n\n---\n\n"
+            )
+        verify_rule = ""
+        if verify:
+            verify_rule = (
+                '   - (이 step은 검증 전용) 반증 성립 → "refuted" + "summary"에 반증 요지. '
+                "반증 성립은 실패가 아니라 이 step의 정상 종결이다. 대상을 고치지 마라.\n"
             )
         return (
             f"당신은 {self._project} 프로젝트의 개발자입니다. 아래 step을 수행하세요.\n\n"
@@ -278,6 +285,7 @@ class StepExecutor:
             f"   - AC 통과 → \"completed\" + \"summary\" 필드에 이 step의 산출물을 한 줄로 요약\n"
             f"   - {self.MAX_RETRIES}회 수정 시도 후에도 실패 → \"error\" + \"error_message\" 기록\n"
             f"   - 사용자 개입이 필요한 경우 (API 키, 인증, 수동 설정 등) → \"blocked\" + \"blocked_reason\" 기록 후 즉시 중단\n"
+            f"{verify_rule}"
             f"6. 모든 변경사항을 커밋하라:\n"
             f"   {commit_example}\n\n---\n\n"
         )
@@ -377,7 +385,12 @@ class StepExecutor:
         for attempt in range(1, self.MAX_RETRIES + 1):
             index = self._read_json(self._index_file)
             step_context = self._build_step_context(index)
-            preamble = self._build_preamble(guardrails, step_context, prev_error)
+            preamble = self._build_preamble(
+                guardrails,
+                step_context,
+                prev_error,
+                verify=step.get("kind") == "verify",
+            )
 
             tag = f"Step {step_num}/{self._total - 1} ({done} done): {step_name}"
             if attempt > 1:
@@ -400,6 +413,22 @@ class StepExecutor:
                 print(f"  ✓ Step {step_num}: {step_name} [{elapsed}s]")
                 return True
 
+            if status == "refuted":
+                if step.get("kind") == "verify":
+                    for s in index["steps"]:
+                        if s["step"] == step_num:
+                            s["refuted_at"] = ts
+                    self._write_json(self._index_file, index)
+                    self._commit_step(step_num, step_name)
+                    print(f"  ⊘ Step {step_num}: {step_name} refuted [{elapsed}s]")
+                    return True
+                err_msg = "status 'refuted'는 kind 'verify' 스텝에서만 유효하다"
+            else:
+                err_msg = next(
+                    (s.get("error_message", "Step did not update status") for s in index["steps"] if s["step"] == step_num),
+                    "Step did not update status",
+                )
+
             if status == "blocked":
                 for s in index["steps"]:
                     if s["step"] == step_num:
@@ -410,11 +439,6 @@ class StepExecutor:
                 print(f"    Reason: {reason}")
                 self._update_top_index("blocked")
                 sys.exit(2)
-
-            err_msg = next(
-                (s.get("error_message", "Step did not update status") for s in index["steps"] if s["step"] == step_num),
-                "Step did not update status",
-            )
 
             if attempt < self.MAX_RETRIES:
                 for s in index["steps"]:
