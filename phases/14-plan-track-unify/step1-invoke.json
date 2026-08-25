@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "verify-merge-resolution",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 469.64078319998225,
+  "stdout_log": "phases\\14-plan-track-unify\\step1-codex.stdout.log",
+  "stderr_log": "phases\\14-plan-track-unify\\step1-codex.stderr.log"
+}
