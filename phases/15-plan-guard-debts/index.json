@@ -5,7 +5,9 @@
     {
       "step": 0,
       "name": "repay-guard-debts",
-      "status": "pending"
+      "status": "completed",
+      "summary": "0mm 치수 후보 가드·폭 기반 elevation 헬퍼·断面リスト 기전 주석을 복구하고 전체 게이트를 통과시켰다.",
+      "started_at": "2026-08-25T23:16:02+0900"
     },
     {
       "step": 1,
@@ -13,5 +15,6 @@
       "kind": "verify",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-25T23:16:02+0900"
 }

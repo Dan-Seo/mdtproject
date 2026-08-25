@@ -3,9 +3,13 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { parseFramingPlan } from '@/lib/import/framing-plan/parse'
+import {
+  DIMENSION_PATTERN,
+  parseFramingPlan,
+} from '@/lib/import/framing-plan/parse'
 import type { PlanGridCandidate } from '@/lib/import/framing-plan/types'
 import type { TextPage } from '@/lib/import/section-list/types'
+import { recoverRows, verticalRuns } from '@/lib/import/runs'
 
 // TextItem 픽스처 코퍼스는 section-import와 공유한다 — 좌표 규약과 표제란 제외를
 // 한 파이프라인(scripts/extract-textitems.mjs)이 보증하기 때문이다.
@@ -27,6 +31,57 @@ function readPage(file: string): TextPage {
   return { ...fixture.page, items: fixture.items }
 }
 
+const SECTION_LIST_FIXTURES = [
+  'kani-p38.json',
+  'kani-p40.json',
+  'ojkk-p2.json',
+  'ojkk-p3.json',
+  'yokohama-p13.json',
+  'yokohama-p14.json',
+  'yokohama-p7.json',
+  'yokohama-p8.json',
+]
+
+function dimensionCandidates(page: TextPage): string[] {
+  const horizontal = recoverRows(page.items).flatMap((row) =>
+    row.segments.map((segment) => segment.compact),
+  )
+  const vertical = verticalRuns(page.items).map((run) => run.text)
+  return [...horizontal, ...vertical].filter((text) =>
+    DIMENSION_PATTERN.test(text),
+  )
+}
+
+it('실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다', () => {
+  // 이 가드는 파서 출력이 아니라 runs.ts의 세그먼트 문턱 불변식이다.
+  // 실측상 기본 문턱에서는 8부 모두 0건이고, gapRatio를 0.5로 낮추면
+  // yokohama-p14의 「650x1000」이 650·x·1·000으로 갈라져 000이 4건 나온다.
+  // 0.8·0.7·0.6에서는 침묵하므로 촘촘한 경계가 아닌 굵은 트립와이어다.
+  const measured = SECTION_LIST_FIXTURES.map((file) => {
+    const candidates = dimensionCandidates(readPage(file))
+    return {
+      file,
+      nonPositive: candidates.filter(
+        (text) => Number.parseInt(text.replaceAll(',', ''), 10) <= 0,
+      ),
+    }
+  })
+
+  expect(measured).toEqual(
+    SECTION_LIST_FIXTURES.map((file) => ({ file, nonPositive: [] })),
+  )
+})
+
+// 이 네 페이지가 위험한 이유는 断面リスト의 부재 符号 X2·X3·Y4·Y5가
+// 通り芯 라벨의 모양을 그대로 갖기 때문이다. 이 실측 근거는 fa5ab24의
+// tests/section-import/plan-grid.test.ts에 남아 있다.
+//
+// 옛 grid-parse는 X2·X3를 먼저 라벨로 찾은 뒤, 스팬 1본 축은 검산이
+// 공회전한다는 이유로 `区間数不足`으로 거절했다. framing-plan은 기전이
+// 다르다. 실제 세그먼트는 `X2端`·`Y4端`처럼 라벨 뒤에 `端`이 붙어 있고,
+// sticky AXIS_LABEL_PATTERN은 X2를 매치한 뒤 남은 端까지 소비하지 못한다.
+// splitAxisLabels가 세그먼트 전체를 설명하지 못한 것으로 보고 빈 배열을
+// 반환하므로, framing-plan은 라벨을 찾기 전 단계에서 `通り芯ラベル未検出`을 낸다.
 describe('断面リスト pages do not produce framing grids', () => {
   it('does not invent grids from axis-like section marks', () => {
     const files = [
