@@ -1,0 +1,15 @@
+{
+  "claims": [
+    {
+      "id": "A",
+      "verdict": "refuted",
+      "measured": "파일 | direction | labels | spansMm | totalConfirmed | issues\n kani-p38.json | X | 4 (X1,X2,X3,X4) | [6000,6000,8000] | true | []\n kani-p38.json | Y | 3 (Y3,Y2,Y1) | [6000,10500] | true | []\n kani-p40.json | X | 0 (candidate 없음) | — | — | []\n kani-p40.json | Y | 3 (Y1,Y2,Y3) | [10500,6000] | true | []\n ojkk-p2.json | X | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n ojkk-p2.json | Y | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n ojkk-p3.json | X | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n ojkk-p3.json | Y | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n yokohama-p13.json | X | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n yokohama-p13.json | Y | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n yokohama-p14.json | X | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n yokohama-p14.json | Y | 0 (candidate 없음) | — | — | [通り芯ラベル未検出]\n yokohama-p7.json | X | 4 (bX1,bX2,bX3,cX1) | [8700,8700,1200] | false | []\n yokohama-p7.json | Y | 6 (bY6,bY5,bY4,bY3,bY2,bY1) | [5000,6000,10000,6000,5000] | false | []\n yokohama-p8.json | X | 3 (bX1,bX2,bX3) | [8700,8700] | false | []\n yokohama-p8.json | Y | 0 (candidate 없음) | — | — | []",
+      "two_label_candidates": "none — 8개 TextItem fixture에 parseFramingPlan을 실행한 grids 7건 모두 labels 수가 3 이상이며, 2개 후보는 0건이다.",
+      "tightening_breaks": "합성 단위 테스트: src/lib/import/framing-plan/parse.test.ts에서 22개 중 7개 실패. 실패 경로는 X/Y 2라벨 후보, 쉼표 치수 2라벨 후보, 치수 누락 오류 보고, 반복 블록 접기, X·Y 혼재 오류 보고, 2라벨 격자의 미배치 부호 경로다. 실도면 대조: tests/plan-import/parse.test.ts 13개 모두 통과. 즉 실도면 후보 커버리지를 깨는 테스트는 none이고, 합성 입력에서만 2라벨 수용 계약이 깨진다.",
+      "restored": true,
+      "why": "코퍼스에는 라벨 2개짜리 후보가 없으므로 이 코퍼스에서 1본 축 수용을 제거해도 잃는 실도면 후보가 없다. 다만 기존 합성 테스트 7건이 2라벨 수용을 명시적으로 고정하므로 파서 일반 계약까지 없애는 것은 별도 변경이며, 실험 뒤 대상 코드는 원복했다."
+    }
+  ],
+  "refuted_count": 1,
+  "summary": "8부 코퍼스의 parseFramingPlan 그리드 후보는 모두 라벨 3개 이상이고 2개 후보가 0건이라, 이 코퍼스에서 1본 축 수용을 없애도 실도면 커버리지가 줄어든다는 주장은 반증됐다. 임시 차단은 합성 테스트 7건만 깨뜨렸고 실도면 대조 13건은 통과했으며 코드는 원복했다."
+}
