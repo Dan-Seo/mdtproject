@@ -5,13 +5,30 @@
     {
       "step": 0,
       "name": "record-span1-exposure",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-25T23:34:28+0900",
+      "summary": "ADR-030·R15·실도면 코퍼스 주석/상수명을 정정하고 전체 AC 게이트를 통과시켰다.",
+      "completed_at": "2026-08-25T23:45:30+0900"
     },
     {
       "step": 1,
       "name": "verify-tightening-cost",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T08:38:38+0900",
+      "summary": "8부 코퍼스에 라벨 2개짜리 그리드 후보가 없어, 1본 축 수용 제거가 이 코퍼스의 실도면 커버리지를 줄인다는 주장을 반증했다. 임시 차단은 합성 테스트 7건만 깨뜨렸고 코드는 원복했다.",
+      "completed_at": "2026-08-26T08:42:30+0900",
+      "refuted_at": "2026-08-26T08:43:25+0900"
+    },
+    {
+      "step": 2,
+      "name": "fix-vertical-threshold-comment",
+      "status": "completed",
+      "started_at": "2026-08-26T08:43:26+0900",
+      "summary": "8부 재측정으로 세로 문턱의 트립 지점을 1.0으로 확인하고 0mm 가드 주석을 정정했다. 5부 출력 동일성은 유지하며, 8부에서 비용이 생기는 yokohama-p7 라벨 병합을 runs.ts 주석에 기록했다.",
+      "completed_at": "2026-08-26T08:49:13+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-25T23:34:28+0900",
+  "completed_at": "2026-08-26T08:49:13+0900"
 }

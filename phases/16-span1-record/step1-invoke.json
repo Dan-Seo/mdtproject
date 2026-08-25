@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "verify-tightening-cost",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 287.5406762000057,
+  "stdout_log": "phases\\16-span1-record\\step1-codex.stdout.log",
+  "stderr_log": "phases\\16-span1-record\\step1-codex.stderr.log"
+}

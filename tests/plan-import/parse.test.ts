@@ -31,7 +31,7 @@ function readPage(file: string): TextPage {
   return { ...fixture.page, items: fixture.items }
 }
 
-const SECTION_LIST_FIXTURES = [
+const DRAWING_FIXTURES = [
   'kani-p38.json',
   'kani-p40.json',
   'ojkk-p2.json',
@@ -57,7 +57,14 @@ it('실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다', 
   // 실측상 기본 문턱에서는 8부 모두 0건이고, gapRatio를 0.5로 낮추면
   // yokohama-p14의 「650x1000」이 650·x·1·000으로 갈라져 000이 4건 나온다.
   // 0.8·0.7·0.6에서는 침묵하므로 촘촘한 경계가 아닌 굵은 트립와이어다.
-  const measured = SECTION_LIST_FIXTURES.map((file) => {
+  // 세로 `VERTICAL_RUN_GAP_RATIO`도 가로와 같은 굵은 트립와이어다. 8부 전체의 같은
+  // 열 인접쌍에서 `gap / max(w)` 최솟값은 1.000000이고, 1 미만인 쌍은 0개였다
+  // (6자리 반올림 기준; 원시 최솟값은 부동소수 ULP 잔차로 0.9999999999999634).
+  // 0.99·0.8·0.5·0.3에서는 모든 런이 1글자로 갈라져 `DIMENSION_PATTERN`
+  // 통과가 0건이다. 배수가 정확히 1.0일 때는 창 `(1w, 2w)`의 하단 모서리에서
+  // `00`·`000` 조각이 생겨 0mm 가드가 울며, kani-p38 3건 · ojkk-p3 21건 ·
+  // yokohama-p7 13건 · yokohama-p8 3건이다.
+  const measured = DRAWING_FIXTURES.map((file) => {
     const candidates = dimensionCandidates(readPage(file))
     return {
       file,
@@ -68,13 +75,14 @@ it('실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다', 
   })
 
   expect(measured).toEqual(
-    SECTION_LIST_FIXTURES.map((file) => ({ file, nonPositive: [] })),
+    DRAWING_FIXTURES.map((file) => ({ file, nonPositive: [] })),
   )
 })
 
-// 이 네 페이지가 위험한 이유는 断面リスト의 부재 符号 X2·X3·Y4·Y5가
-// 通り芯 라벨의 모양을 그대로 갖기 때문이다. 이 실측 근거는 fa5ab24의
-// tests/section-import/plan-grid.test.ts에 남아 있다.
+// 이 네 페이지 중 축 라벨 모양의 세그먼트를 가진 것은 yokohama-p14 하나뿐이다
+// (12개: `X2端`·`X3端`·`Y2端`·`Y3端`·`Y4端`·`Y5端`의 반복). yokohama-p13·ojkk-p2·
+// ojkk-p3은 각각 0개라 라벨 후보 자체가 없다. 이 구별은 폐지된 원본 테스트에도
+// 명시돼 있었고, 실측 근거는 fa5ab24의 tests/section-import/plan-grid.test.ts에 남아 있다.
 //
 // 옛 grid-parse는 X2·X3를 먼저 라벨로 찾은 뒤, 스팬 1본 축은 검산이
 // 공회전한다는 이유로 `区間数不足`으로 거절했다. framing-plan은 기전이
