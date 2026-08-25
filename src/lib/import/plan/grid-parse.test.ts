@@ -412,13 +412,9 @@ describe('parseGrid', () => {
     expect(candidate.totalMm).toBeNull()
   })
 
-  it('合計寸法が別に書かれていなければ、1スパンの図面でも検算は成立しない', () => {
+  it('ラベルがちょうど2本(スパン1本)なら、合計寸法の有無に関わらず検算は成立しない', () => {
     // スパンが1本のとき「和 ＝ 合計」は**何も確かめない** — その1本自身を合計と
-    // 読めばいつでも合う。実測でそれが起きる: yokohama-p14 は断面リストの頁
-    // なのに符号 X2・X3 がラベルに見え、区間内の 900 を合計とすれば
-    // 「X2~X3 は 900mm」という**図面に無い格子**が一つ出来上がる。
-    // 合計として使う値は、スパンとは別の一本として図面に書かれていなければ
-    // ならない — 書かれていなければ検算する相手が居ない。
+    // 読めばいつでも合う(区間数不足)。合計を別に書かなくても同じだ。
     const candidate = candidateOf(
       [
         ...horizontal('X1', 100, 40),
@@ -428,24 +424,36 @@ describe('parseGrid', () => {
       'X',
     )
 
-    expect(candidate.issues).toEqual(['合計寸法不一致'])
+    expect(candidate.issues).toEqual(['区間数不足'])
     expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
   })
 
-  it('合計寸法が別に書かれていれば、1スパンの図面も取り込める', () => {
+  it('合計寸法を別に書いても、スパンが1本の軸は取り込めない — 検算が空洞化する穴(独立リビュー 🔴1)', () => {
+    // 以前はこの形(スパンと別の一本として合計が書かれている)を「取り込める」と
+    // していたが、それ自体が検算の抜け穴だった。この1本を合計と読めば常に
+    // 和＝合計になる — 別の場所に同じ値がもう一本あるかどうかは無関係で、
+    // 実測でも起きた: yokohama-p14 は断面リストの頁なのに符号 X2・X3 が
+    // ラベルに見え、区間内の 900 を合計と読めば「X2~X3 は 900mm」という
+    // **図面に無い格子**が一つ出来上がっていた(リビューアが実図面の 900 の
+    // 重複で、コントローラーが合成入力で、それぞれ独立に再現した)。
+    // 「別の一本」を要求する writtenAsTotal ガードでは閉じない — ここでは
+    // 6,000 が軸上にもう一本ある(=合計として「書かれている」体裁)が、
+    // それでも区間数不足で値を出さない。
     const candidate = candidateOf(
       [
         ...horizontal('X1', 100, 40),
         ...horizontal('X2', 200, 40),
         ...horizontal('6,000', 140, 500), // スパン
-        ...horizontal('6,000', 140, 560), // 合計(全幅の寸法線)
+        ...horizontal('6,000', 140, 560), // 別の一本として書かれた「合計」
+        ...horizontal('6,000', 600, 620), // ラベル範囲外の重複 — どこでもよい
       ],
       'X',
     )
 
-    expect(candidate.issues).toEqual([])
-    expect(candidate.spansMm).toEqual([6000])
-    expect(candidate.totalMm).toBe(6000)
+    expect(candidate.issues).toEqual(['区間数不足'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
   })
 
   it('Y通りは位置順とラベル番号順が逆でも、位置順のスパンとして読む', () => {
@@ -481,5 +489,107 @@ describe('parseGrid', () => {
     ]
 
     expect(candidateOf(items, 'X').issues).toEqual(['合計寸法不一致'])
+  })
+
+  it('区間内に唯一ある寸法が合計除外フィルタで弾かれても、理由は「本数不一致」であって「合計不一致」ではない(独立リビュー 🟡3)', () => {
+    // 区間1(X1~X2)の唯一の候補が合計(＝プール最大値)と同値で、別の一本として
+    // 書かれていない(writtenAsTotal===1)場合、除外フィルタを通すとその区間の
+    // usable が空になる。フィルタを掛ける**前**に「区間(inside)が空でない」だけ
+    // 見ていた旧実装は、これを素通りさせて最後に DP が失敗し、見当違いの理由
+    // (合計寸法不一致)を返していた。
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('5000', 800, 500), // 区間1の唯一の候補 — かつプール最大値
+      ...horizontal('3000', 2800, 500), // 区間2
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法本数不一致'])
+    expect(candidate.spansMm).toEqual([])
+  })
+
+  it('部分和の状態数が上限を超えたら、部分結果を返さずに即座に打ち切る(独立リビュー 🔴2)', () => {
+    // MAX_REACH_STATES(=10,000)の実測根拠は grid-parse.ts のコメント参照。
+    // ラベルを3本(区間2つ)にする — ラベル2本(区間数不足)の早期リジェクトを
+    // 迂回するためだ。区間1に100種、区間2に150種の値を離して置くと組み合わせが
+    // 最大100×150=15,000通りになり上限(10,000)を超える。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 20000, 40),
+      ...horizontal('X3', 50000, 40),
+    ]
+    for (let i = 0; i < 100; i += 1) {
+      items.push(...horizontal(String(1000 + i * 900), 100 + i * 50, 500))
+    }
+    for (let j = 0; j < 150; j += 1) {
+      items.push(...horizontal(String(100 + j), 25000 + j * 50, 500))
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
+  })
+
+  it('曖昧さが最後の区間ではなく途中の区間で生じても、前方に伝播する(独立リビュー 🟡4)', () => {
+    // 既存の曖昧テストは2区間で、最終合流でしか曖昧さを検知しない —
+    // `count: Math.min(2, state.count)` を `count: 1` に変えても、その変異は
+    // 「新しい和を初めて作るとき」にしか効かないので見逃す。ここでは3区間目
+    // (X3~X4)で新しい和(7,500)へ移る際に、2区間目(X2~X3)で既に曖昧になった
+    // 状態(count=2, 経路 [1,000+6,000] と [4,000+3,000] がどちらも7,000)が
+    // そのまま運ばれることを確かめる。
+    //   区間1(X1~X2): 1,000 / 4,000
+    //   区間2(X2~X3): 3,000 / 6,000 → 1,000+6,000 と 4,000+3,000 がどちらも 7,000
+    //   区間3(X3~X4): 500 → 7,000+500=7,500 に曖昧さがそのまま運ばれる
+    //   合計: 7,500(ラベル範囲外に書く)
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('X4', 6000, 40),
+      ...horizontal('1000', 200, 500), // 区間1
+      ...horizontal('4000', 800, 500), // 区間1
+      ...horizontal('3000', 2200, 500), // 区間2
+      ...horizontal('6000', 2800, 500), // 区間2
+      ...horizontal('500', 4500, 500), // 区間3
+      ...horizontal('7500', 6500, 560), // 合計(ラベル範囲外)
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法組合せ不定'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('区間の境界(開区間)ちょうどにある寸法候補は、どちらの区間にも入れない(独立リビュー 🟡5)', () => {
+    // ラベル X2 の中心位置(2,005)にぴったり重なる寸法「4,000」を置く。開区間
+    // なのでどちらの区間にも入らないのが正しい — 区間1(X1~X2)は3,000/6,000、
+    // 区間2(X2~X3)は7,000/6,000 で、合計10,000に合うのは 3,000+7,000 の
+    // 一通りだけになる。`>`→`>=`(区間2の下限)にすると境界の4,000が区間2に
+    // 漏れて 6,000+4,000=10,000 という別解が、`<`→`<=`(区間1の上限)にすると
+    // 区間1に漏れて 4,000+6,000=10,000 という別解が生まれる — どちらの変異でも
+    // 結果が 寸法組合せ不定 に倒れ、この一つのテストで両方を検出する。
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('3000', 200, 500), // 区間1
+      ...horizontal('6000', 800, 500), // 区間1
+      ...horizontal('4000', 1995, 520), // ちょうど X2 の中心(2,005) — 境界
+      ...horizontal('7000', 2200, 500), // 区間2
+      ...horizontal('6000', 2800, 500), // 区間2
+      ...horizontal('10000', 4500, 560), // 合計(ラベル範囲外)
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([3000, 7000])
+    expect(candidate.totalMm).toBe(10000)
   })
 })

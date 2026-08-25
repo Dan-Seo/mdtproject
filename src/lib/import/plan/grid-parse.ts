@@ -167,6 +167,26 @@ interface Reached {
 }
 
 /**
+ * `reachTotal` が追跡する部分和の状態数(`states.size`)の上限。`totalMm`(正規表現上
+ * ≤999,999)と窓数(`AXIS_LABEL` の `\d{1,2}` で軸あたりラベル≤98→窓≤97)だけでは
+ * 計算量が締まらない — 独立リビューが実測した: 30窓×40値で5.4秒/364MB、
+ * 50窓×40値で15.7秒/1.50GB、98窓×50値で84秒/2.55GBがブラウザのメインスレッドで
+ * 発生する。ブラウザを長時間止められる入力が存在すること自体が失敗モードだ。
+ *
+ * 上限は「窓が終わるのを待たず、新しい和を1つ作るたびにその場で見る」— 1窓に
+ * 数千の値があると、窓一つの処理だけで状態数が上限をはるかに超えて膨らんでから
+ * 気付くことになるからだ(実測: この点検が窓の終わりだけだと、値3,000本の窓が
+ * 1つあるだけで状態数が90万近くまで育ってから初めて打ち切られ、750ms前後かかる)。
+ * 挿入のたびに見れば、どんな窓構成でも上限を超えた瞬間に打ち切れる。
+ *
+ * 値は10,000。ワースト入力(上の30/50/98窓構成、および1窓に20万値)のいずれでも
+ * 数ミリ秒で打ち切りが働くことを測定で確認した一方、kani-p38 の実測状態数は
+ * X軸6・Y軸43(区間 [3,2,1]・[5,10])で、この上限の1,000分の1にも届かない —
+ * 実図面での余裕は十分にある(計測スクリプトはスクラッチパッド行き、コミット対象外)。
+ */
+const MAX_REACH_STATES = 10_000
+
+/**
  * 区間ごとに寸法を1本ずつ選び、和が `totalMm` になる並びを探す。
  *
  * 素朴な部分和(プール全体から spanCount 本を選ぶ)は規模で破綻する — C(37,3)=7,770 は
@@ -174,10 +194,18 @@ interface Reached {
  * になり、和による DP に畳める(状態は到達した和の種類だけで、区間数に対して指数に
  * ならない)。実測 kani-p38 では X 3×4×1、Y 7×23 まで落ちる。
  *
- * 枝刈りは「和が `totalMm` を超えたら捨てる」だけでよい。寸法値は必ず正だからだ
- * (`toMillimetres` が 0 以下を弾いている)。この一行は 0 の拒否に寄りかかっている。
+ * 枝刈りは「和が `totalMm` を超えたら捨てる」だけでよい — 寸法値は必ず正なので
+ * 和は単調に増え、一度超えたら後から何を足しても戻らない。0 を候補プールから
+ * 弾くことが守る**一意性**の話はこれとは別で、`toMillimetres` のコメント参照。
+ *
+ * `states.size` が `MAX_REACH_STATES` を超えたら `'overflow'` を返して打ち切る —
+ * 部分結果を返さない。値を出すか出さないかの二択で、途中まで調べた並びを
+ * 「たぶん合っている」として返すことはしない。
  */
-function reachTotal(windows: number[][], totalMm: number): Reached | undefined {
+function reachTotal(
+  windows: number[][],
+  totalMm: number,
+): Reached | undefined | 'overflow' {
   let states = new Map<number, Reached>([[0, { count: 1, spansMm: [] }]])
 
   for (const values of windows) {
@@ -196,6 +224,7 @@ function reachTotal(windows: number[][], totalMm: number): Reached | undefined {
             count: Math.min(2, state.count),
             spansMm: [...state.spansMm, value],
           })
+          if (next.size > MAX_REACH_STATES) return 'overflow'
         }
       }
     }
@@ -248,6 +277,13 @@ export function parseGrid(items: TextItem[]): GridCandidate[] {
 
     if (axisLabelsInOrder.length < 2) return reject('通り芯ラベル不足')
 
+    // ラベルがちょうど2本(＝区間が1つ)だと、「和 ＝ 合計」は証拠ではなく定義に
+    // なる — その1本自身を合計と読めば常に成立してしまうからだ。データを見る前に
+    // 判る話なので、プールを作る前にここで拒む。写経ミスではなく検算そのものが
+    // 無力な場合であって、writtenAsTotal(下)がその区間に何本あるかとは無関係に
+    // 常にこう倒れる(ADR-030③-2 の正誤参照)。
+    if (axisLabelsInOrder.length === 2) return reject('区間数不足')
+
     const pool = dimensions.filter((dimension) => dimension.axis === axis)
 
     // 合計はプールの最大値だと見る(実測: kani-p38 の X 20,000 ＝ 6,000+6,000+8,000、
@@ -270,21 +306,26 @@ export function parseGrid(items: TextItem[]): GridCandidate[] {
         (dimension) => dimension.positionPt > from && dimension.positionPt < to,
       )
 
-      if (inside.length === 0) return reject('寸法本数不一致')
-
       // 合計に使う値は、スパンとは別の一本として図面に書かれていなければならない。
       // 一本しか無いのにそれをスパンとして消費すると、検算する相手が消えて
-      // 「和 ＝ 合計」が自分自身との照合になる。スパンが1本の軸ではそれが
-      // **必ず**成立してしまう — 実測でも起きる: yokohama-p14 は断面リストの頁
-      // なのに符号 X2・X3 がラベルに見え、区間内の 900 を合計とすれば
-      // 「X2~X3 は 900mm」という図面に無い格子が一つ出来上がる。
-      // スパンが2本以上ならこの除外は無害だ(値は全て正なので、合計と同じ値の
-      // スパンがあれば残りを足した和は必ず合計を超える)。
+      // 「和 ＝ 合計」が自分自身との照合になる — ラベル2本(区間1つ)の軸では
+      // それが**必ず**成立してしまうが、そちらは上の `区間数不足` が先に弾く
+      // (ADR-030③-2)。ここに来る時点で区間は2つ以上あるので、この除外は
+      // 実質無害だ — 値は全て正なので、合計と同じ値を1区間で使っても残りの
+      // 区間の和が必ず合計を超え、どのみち解にはならない。それでも残すのは、
+      // 解になり得ないと分かっている候補を早めに落として状態数を抑えるためだ。
       const usable = inside
         .filter(
           (dimension) => dimension.valueMm !== totalMm || writtenAsTotal > 1,
         )
         .map((dimension) => dimension.valueMm)
+
+      // 区間に寸法が一つも無い場合と、合計除外フィルタで使える寸法が0本になった
+      // 場合は事実として別だが、`寸法本数不一致` は「この区間に使えるスパン候補が
+      // 無い」という一点では共通なので同じ理由を使う — フィルタ**後**に見る:
+      // フィルタ前に見ると、フィルタが窓を空にしたのに合計照合まで進んでしまい、
+      // DP が失敗してようやく `合計寸法不一致`(見当違いの理由)で出る。
+      if (usable.length === 0) return reject('寸法本数不一致')
 
       // 同じ値が同じ区間に何本あっても読みは一つだ — 値で畳まないと、同じ並びが
       // 本数だけ数えられて `寸法組合せ不定` に化ける
@@ -292,6 +333,7 @@ export function parseGrid(items: TextItem[]): GridCandidate[] {
     }
 
     const reached = reachTotal(windows, totalMm)
+    if (reached === 'overflow') return reject('計算量超過')
     if (reached === undefined) return reject('合計寸法不一致')
     if (reached.count > 1) return reject('寸法組合せ不定')
 
