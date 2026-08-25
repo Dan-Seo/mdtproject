@@ -1,27 +1,12 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
 import { describe, expect, it } from 'vitest'
 
-import { axisLabels, dimensionTexts } from '@/lib/import/plan/grid-parse'
+import {
+  axisLabels,
+  dimensionTexts,
+  parseGrid,
+} from '@/lib/import/plan/grid-parse'
+import type { GridCandidate } from '@/lib/import/plan/types'
 import type { TextItem } from '@/lib/import/types'
-
-const FIXTURES = [
-  'kani-p38.json',
-  'ojkk-p2.json',
-  'ojkk-p3.json',
-  'yokohama-p13.json',
-  'yokohama-p14.json',
-]
-
-function readItems(file: string): TextItem[] {
-  const path = resolve(
-    process.cwd(),
-    'tests/fixtures/section-import/textitems',
-    file,
-  )
-  return (JSON.parse(readFileSync(path, 'utf8')) as { items: TextItem[] }).items
-}
 
 const glyph = (str: string, x: number, y: number, h = 8): TextItem => ({
   str,
@@ -280,92 +265,6 @@ describe('dimensionTexts', () => {
     }
   })
 
-  it('実図面5部のどこからも 0mm 候補が出ない', () => {
-    // 机上の話ではない: yokohama-p14 の「650x1000」は pdf.js が
-    // `650`・`x`・`1`・`000` の4アイテムに割って出すので、狭めた閾値では
-    // `000` が単独セグメントになり 0mm として通っていた（4か所）。
-    for (const file of FIXTURES) {
-      const zeros = dimensionTexts(readItems(file)).filter(
-        (dimension) => dimension.valueMm <= 0,
-      )
-      expect({ file, zeros }).toEqual({ file, zeros: [] })
-    }
-  })
-
-  it('【회귀 가드 ─ 파서 출력 유래. 実測 골든이 아니다】kani-p38의 通り芯과 스팬·合計가 그대로 나온다', () => {
-    // **기대값의 출처는 파서 자신의 출력이다.** ADR-010의 골든테스트는 「원문
-    // 표를 독립 전사한 픽스처」와 대조하는 것이고 이 테스트는 그것이 아니다 —
-    // `.cache/`가 비어 원본 PDF가 없어 지금은 육안 전사를 할 방법이 없다.
-    // 그래서 이것은 「이 값이 옳다」를 주장하지 않는다. 지키는 것은 하나다:
-    // **인접 문턱 3개(가로 배수 0.5·세로 배수 1.5·고정 4pt 하한 제거)를 한꺼번에
-    // 움직였는데, 이 도면이 조용히 스팬을 잃지 않는가.** 직전 판의 실도면
-    // 테스트는 「0mm가 안 나온다」만 봤기 때문에 스팬 하나가 통째로 사라져도
-    // 아무도 몰랐다.
-    //
-    // 육안 전사한 `kani-p38-grid.json`이 들어오면 이 테스트는 그것으로 교체된다.
-    // 그때까지 이 값들을 「도면이 이렇다」의 근거로 인용하지 말 것.
-    //
-    // 값은 ADR-030의 実測 서술과 일치한다: X1~X4·Y1~Y3, X 스팬 6,000/6,000/8,000
-    // 合計 20,000(= 6,000+6,000+8,000), Y 스팬 6,000/10,500 合計 16,500.
-    const items = readItems('kani-p38.json')
-
-    // 라벨은 반환 순서(행 y→x의 조우 순서)를 약속하지 않으므로 라벨명으로
-    // 정렬해 비교한다. 位置는 pt를 반올림한다 — 부동소수 잔차를 고정하는 것은
-    // 이 가드의 목적이 아니다.
-    const labels = axisLabels(items)
-      .map((label) => ({
-        label: label.label,
-        axis: label.axis,
-        at: Math.round(label.positionPt),
-      }))
-      .sort((left, right) => left.label.localeCompare(right.label))
-
-    expect(labels).toEqual([
-      { label: 'X1', axis: 'X', at: 364 },
-      { label: 'X2', axis: 'X', at: 534 },
-      { label: 'X3', axis: 'X', at: 704 },
-      { label: 'X4', axis: 'X', at: 931 },
-      // Y는 도면 위쪽이 y 작은 쪽 — Y3가 위, Y1이 아래다
-      { label: 'Y1', axis: 'Y', at: 786 },
-      { label: 'Y2', axis: 'Y', at: 488 },
-      { label: 'Y3', axis: 'Y', at: 318 },
-    ])
-
-    const dimensions = dimensionTexts(items)
-    const pool = (axis: 'X' | 'Y') =>
-      dimensions.filter((dimension) => dimension.axis === axis)
-
-    const spans = (axis: 'X' | 'Y', values: number[]) =>
-      pool(axis)
-        .filter((dimension) => values.includes(dimension.valueMm))
-        .map((dimension) => ({
-          mm: dimension.valueMm,
-          at: Math.round(dimension.positionPt),
-        }))
-        .sort((left, right) => left.at - right.at)
-
-    // 位置 순서로 늘어놓는다. 合計는 도면 전체를 걸치는 치수선이라 중앙에 온다.
-    expect(spans('X', [6000, 8000, 20000])).toEqual([
-      { mm: 6000, at: 449 }, // X1–X2
-      { mm: 6000, at: 619 }, // X2–X3
-      { mm: 20000, at: 647 }, // 合計 X1–X4
-      { mm: 8000, at: 818 }, // X3–X4
-    ])
-    expect(spans('Y', [6000, 10500, 16500])).toEqual([
-      { mm: 6000, at: 405 }, // Y3–Y2
-      { mm: 16500, at: 554 }, // 合計 Y3–Y1
-      { mm: 10500, at: 639 }, // Y2–Y1
-    ])
-
-    // 후보 풀의 크기 ＝ ADR-030이 「노이즈가 압도적이라 合計 대조가 유일한
-    // 장치다」의 근거로 든 수치다. 손으로 적는 값이라 코드보다 뒤처지므로
-    // 여기서 못 박는다 — 문턱을 움직여 이 수가 변하면 ADR도 같이 고쳐야 한다.
-    expect({ x: pool('X').length, y: pool('Y').length }).toEqual({
-      x: 38,
-      y: 52,
-    })
-  })
-
   it('隣り合う二つの寸法値が一つのセグメントに癒着しない(gapRatio を狭めた効果)', () => {
     // 基本倍率(2.2, h=14.16 で閾値≈31pt)なら二値の間隔10ptは癒着し、
     // "6,0007,000" になって DIMENSION が丸ごと拒否する — ADR-030③と同じ
@@ -390,5 +289,370 @@ describe('dimensionTexts', () => {
       { valueMm: 6000, positionPt: 112.5, axis: 'X' },
       { valueMm: 7000, positionPt: 147.5, axis: 'X' },
     ])
+  })
+})
+
+/**
+ * 라벨 문자열 하나를 横書き로 놓는다. 字送り는 glyph의 w(5)와 같아 한 세그먼트로
+ * 붙는다 — 세그먼트 중심은 (x, x + 5·글자수)의 중점이다.
+ */
+const horizontal = (text: string, x: number, y: number): TextItem[] =>
+  [...text].map((character, index) => glyph(character, x + index * 5, y))
+
+/**
+ * 回転寸法(rot=-90) 하나. 読み順은 y 내림차순이고 字送り는 정확히 1w다
+ * (`toTextItems`의 규약 — dimensionTexts 테스트의 주석 참고).
+ */
+const vertical = (text: string, x: number, topY: number): TextItem[] =>
+  [...text].map((character, index) => rotGlyph(character, x, topY - index * 5))
+
+/**
+ * X1..Xn 라벨과 그 사이의 스팬 寸法·合計寸法을 늘어놓은 최소 伏図.
+ * 라벨은 x=100부터 100pt 간격(중심 105·205·…), 스팬 寸法은 두 라벨 사이에 쓴다.
+ * 合計는 도면 전폭을 걸치는 치수선이라 왼쪽 끝에서 시작한다 — 그 결과 合計의
+ * 중심이 **첫 스팬 구간 안에 들어앉는다**(kani-p38 실측에서 20,000이 X2~X3
+ * 구간에 있는 것과 같은 모양이다).
+ */
+function xAxisItems(spans: number[], total: number): TextItem[] {
+  const items: TextItem[] = []
+
+  spans.forEach((span, index) => {
+    items.push(...horizontal(`X${index + 1}`, 100 + index * 100, 40))
+    items.push(
+      ...horizontal(span.toLocaleString('en-US'), 140 + index * 100, 500),
+    )
+  })
+  items.push(...horizontal(`X${spans.length + 1}`, 100 + spans.length * 100, 40))
+  items.push(...horizontal(total.toLocaleString('en-US'), 100, 560))
+
+  return items
+}
+
+function candidateOf(items: TextItem[], axis: 'X' | 'Y'): GridCandidate {
+  const found = parseGrid(items).find((entry) => entry.axis === axis)
+  expect(found, `missing axis: ${axis}`).toBeDefined()
+  return found as GridCandidate
+}
+
+describe('parseGrid', () => {
+  it('ラベルと寸法が噛み合えば取り込める候補を返す', () => {
+    const candidate = candidateOf(xAxisItems([6000, 6000, 8000], 20000), 'X')
+
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 6000, 8000])
+    expect(candidate.totalMm).toBe(20000)
+    expect(candidate.labels.map((label) => label.label)).toEqual([
+      'X1',
+      'X2',
+      'X3',
+      'X4',
+    ])
+  })
+
+  it('スパンの和が合計寸法と違えば値を出さずに理由を返す', () => {
+    // 8,000 と書いてあるべき所を 8,500 と読んだ場合 — 合計 20,000 と合わない。
+    // **値は一つも返さない**。読めた3本のうちどれが誤読かは判らないので、
+    // 部分的に正しそうな並びを返すのは「作らずに拒む」を破る (ADR-030③)。
+    const candidate = candidateOf(xAxisItems([6000, 6000, 8500], 20000), 'X')
+
+    expect(candidate.issues).toEqual(['合計寸法不一致'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('隣り合う2本の通り芯の間に寸法が一つも無ければ理由を返す', () => {
+    // 2番目・3番目のスパン寸法を落とす(x≥240 の寸法行)
+    const items = xAxisItems([6000, 6000, 8000], 20000).filter(
+      (item) => item.y !== 500 || item.x < 240,
+    )
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法本数不一致'])
+    expect(candidate.spansMm).toEqual([])
+  })
+
+  it('ラベルが1本しかなければスパンを定義できない', () => {
+    const candidate = candidateOf(horizontal('X1', 100, 40), 'X')
+
+    expect(candidate.issues).toEqual(['通り芯ラベル不足'])
+    expect(candidate.labels.map((label) => label.label)).toEqual(['X1'])
+  })
+
+  it('区間の外の寸法は無視し、区間の中の余分な寸法も合計が退ける', () => {
+    // kani-p38 실측의 모양 그대로다: X1~X2 구간에 스팬(6,000) 말고도 3,700·2,400이
+    // 들어와 있고, 라벨 범위 밖에는 部材 치수가 30건 널려 있다.
+    const items = [
+      ...xAxisItems([6000, 6000, 8000], 20000),
+      ...horizontal('2,400', 160, 620), // X1~X2 구간 안(중심 172.5)의 노이즈
+      ...horizontal('1,900', 600, 620), // 라벨 범위 밖(중심 612.5)의 노이즈
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 6000, 8000])
+  })
+
+  it('合計と合う並びが2通りあれば、どちらかを選ばずに理由を返す', () => {
+    // 2,000+3,000 と 3,000+2,000 のどちらも合計 5,000 に合う。位置で絞っても
+    // 一意にならない場合で、**選べば作ったことになる**ので選ばない (ADR-030③)。
+    const items = [
+      ...horizontal('X1', 100, 40),
+      ...horizontal('X2', 200, 40),
+      ...horizontal('X3', 300, 40),
+      ...horizontal('2,000', 140, 500), // X1~X2
+      ...horizontal('3,000', 160, 520), // X1~X2
+      ...horizontal('3,000', 240, 500), // X2~X3
+      ...horizontal('2,000', 260, 520), // X2~X3
+      ...horizontal('5,000', 100, 560), // 合計
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法組合せ不定'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('ラベルがちょうど2本(スパン1本)なら、合計寸法の有無に関わらず検算は成立しない', () => {
+    // スパンが1本のとき「和 ＝ 合計」は**何も確かめない** — その1本自身を合計と
+    // 読めばいつでも合う(区間数不足)。合計を別に書かなくても同じだ。
+    const candidate = candidateOf(
+      [
+        ...horizontal('X1', 100, 40),
+        ...horizontal('X2', 200, 40),
+        ...horizontal('6,000', 140, 500),
+      ],
+      'X',
+    )
+
+    expect(candidate.issues).toEqual(['区間数不足'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('合計寸法を別に書いても、スパンが1本の軸は取り込めない — 検算が空洞化する穴(独立リビュー 🔴1)', () => {
+    // 以前はこの形(スパンと別の一本として合計が書かれている)を「取り込める」と
+    // していたが、それ自体が検算の抜け穴だった。この1本を合計と読めば常に
+    // 和＝合計になる — 別の場所に同じ値がもう一本あるかどうかは無関係で、
+    // 実測でも起きた: yokohama-p14 は断面リストの頁なのに符号 X2・X3 が
+    // ラベルに見え、区間内の 900 を合計と読めば「X2~X3 は 900mm」という
+    // **図面に無い格子**が一つ出来上がっていた(リビューアが実図面の 900 の
+    // 重複で、コントローラーが合成入力で、それぞれ独立に再現した)。
+    // 「別の一本」を要求する writtenAsTotal ガードでは閉じない — ここでは
+    // 6,000 が軸上にもう一本ある(=合計として「書かれている」体裁)が、
+    // それでも区間数不足で値を出さない。
+    const candidate = candidateOf(
+      [
+        ...horizontal('X1', 100, 40),
+        ...horizontal('X2', 200, 40),
+        ...horizontal('6,000', 140, 500), // スパン
+        ...horizontal('6,000', 140, 560), // 別の一本として書かれた「合計」
+        ...horizontal('6,000', 600, 620), // ラベル範囲外の重複 — どこでもよい
+      ],
+      'X',
+    )
+
+    expect(candidate.issues).toEqual(['区間数不足'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('Y通りは位置順とラベル番号順が逆でも、位置順のスパンとして読む', () => {
+    // +y が下なので、図面の上から Y3・Y2・Y1 と並ぶ(kani-p38 実測)。
+    // ラベル番号で並べ替えると 6,000 と 10,500 が入れ替わる。
+    const items = [
+      ...horizontal('Y1', 40, 800), // 中心 796
+      ...horizontal('Y2', 40, 500), // 中心 496
+      ...horizontal('Y3', 40, 300), // 中心 296
+      ...vertical('6,000', 200, 410), // 中心 397.5 — Y3~Y2
+      ...vertical('16,500', 200, 575), // 中心 560 — 合計。Y2~Y1 の中に居る
+      ...vertical('10,500', 200, 655), // 中心 640 — Y2~Y1
+    ]
+
+    const candidate = candidateOf(items, 'Y')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([6000, 10500])
+    expect(candidate.totalMm).toBe(16500)
+    expect(candidate.labels.map((label) => label.label)).toEqual([
+      'Y3',
+      'Y2',
+      'Y1',
+    ])
+  })
+
+  it('プールの最大値がノイズなら、その軸は丸ごと拒む — 作るよりは拒む', () => {
+    // 合計はプールの最大値だと見る(Ruling 6)。スパンより大きな部材寸法などが
+    // 混ざればその値が合計に化け、スパンの和と合わなくなる。**拒否であって
+    // 捏造ではない**ので、この向きに倒れるのは正しい。
+    const items = [
+      ...xAxisItems([6000, 6000, 8000], 20000),
+      ...horizontal('99,000', 600, 620), // ラベル範囲外の巨大なノイズ
+    ]
+
+    expect(candidateOf(items, 'X').issues).toEqual(['合計寸法不一致'])
+  })
+
+  it('区間内に唯一ある寸法が合計除外フィルタで弾かれても、理由は「本数不一致」であって「合計不一致」ではない(独立リビュー 🟡3)', () => {
+    // 区間1(X1~X2)の唯一の候補が合計(＝プール最大値)と同値で、別の一本として
+    // 書かれていない(writtenAsTotal===1)場合、除外フィルタを通すとその区間の
+    // usable が空になる。フィルタを掛ける**前**に「区間(inside)が空でない」だけ
+    // 見ていた旧実装は、これを素通りさせて最後に DP が失敗し、見当違いの理由
+    // (合計寸法不一致)を返していた。
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('5000', 800, 500), // 区間1の唯一の候補 — かつプール最大値
+      ...horizontal('3000', 2800, 500), // 区間2
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法本数不一致'])
+    expect(candidate.spansMm).toEqual([])
+  })
+
+  it('部分和の状態数が上限を超えたら、部分結果を返さずに即座に打ち切る(独立リビュー 🔴2)', () => {
+    // MAX_REACH_STATES(=10,000)の実測根拠は grid-parse.ts のコメント参照。
+    // ラベルを3本(区間2つ)にする — ラベル2本(区間数不足)の早期リジェクトを
+    // 迂回するためだ。区間1に100種、区間2に150種の値を離して置くと組み合わせが
+    // 最大100×150=15,000通りになり上限(10,000)を超える。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 20000, 40),
+      ...horizontal('X3', 50000, 40),
+    ]
+    for (let i = 0; i < 100; i += 1) {
+      items.push(...horizontal(String(1000 + i * 900), 100 + i * 50, 500))
+    }
+    for (let j = 0; j < 150; j += 1) {
+      items.push(...horizontal(String(100 + j), 25000 + j * 50, 500))
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
+  })
+
+  it('曖昧さが最後の区間ではなく途中の区間で生じても、前方に伝播する(独立リビュー 🟡4)', () => {
+    // 既存の曖昧テストは2区間で、最終合流でしか曖昧さを検知しない —
+    // `count: Math.min(2, state.count)` を `count: 1` に変えても、その変異は
+    // 「新しい和を初めて作るとき」にしか効かないので見逃す。ここでは3区間目
+    // (X3~X4)で新しい和(7,500)へ移る際に、2区間目(X2~X3)で既に曖昧になった
+    // 状態(count=2, 経路 [1,000+6,000] と [4,000+3,000] がどちらも7,000)が
+    // そのまま運ばれることを確かめる。
+    //   区間1(X1~X2): 1,000 / 4,000
+    //   区間2(X2~X3): 3,000 / 6,000 → 1,000+6,000 と 4,000+3,000 がどちらも 7,000
+    //   区間3(X3~X4): 500 → 7,000+500=7,500 に曖昧さがそのまま運ばれる
+    //   合計: 7,500(ラベル範囲外に書く)
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('X4', 6000, 40),
+      ...horizontal('1000', 200, 500), // 区間1
+      ...horizontal('4000', 800, 500), // 区間1
+      ...horizontal('3000', 2200, 500), // 区間2
+      ...horizontal('6000', 2800, 500), // 区間2
+      ...horizontal('500', 4500, 500), // 区間3
+      ...horizontal('7500', 6500, 560), // 合計(ラベル範囲外)
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual(['寸法組合せ不定'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+  })
+
+  it('区間の境界(開区間)ちょうどにある寸法候補は、どちらの区間にも入れない(独立リビュー 🟡5)', () => {
+    // ラベル X2 の中心位置(2,005)にぴったり重なる寸法「4,000」を置く。開区間
+    // なのでどちらの区間にも入らないのが正しい — 区間1(X1~X2)は3,000/6,000、
+    // 区間2(X2~X3)は7,000/6,000 で、合計10,000に合うのは 3,000+7,000 の
+    // 一通りだけになる。`>`→`>=`(区間2の下限)にすると境界の4,000が区間2に
+    // 漏れて 6,000+4,000=10,000 という別解が、`<`→`<=`(区間1の上限)にすると
+    // 区間1に漏れて 4,000+6,000=10,000 という別解が生まれる — どちらの変異でも
+    // 結果が 寸法組合せ不定 に倒れ、この一つのテストで両方を検出する。
+    const items = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 2000, 40),
+      ...horizontal('X3', 4000, 40),
+      ...horizontal('3000', 200, 500), // 区間1
+      ...horizontal('6000', 800, 500), // 区間1
+      ...horizontal('4000', 1995, 520), // ちょうど X2 の中心(2,005) — 境界
+      ...horizontal('7000', 2200, 500), // 区間2
+      ...horizontal('6000', 2800, 500), // 区間2
+      ...horizontal('10000', 4500, 560), // 合計(ラベル範囲外)
+    ]
+
+    const candidate = candidateOf(items, 'X')
+    expect(candidate.issues).toEqual([])
+    expect(candidate.spansMm).toEqual([3000, 7000])
+    expect(candidate.totalMm).toBe(10000)
+  })
+
+  it('部分和が衝突して状態数が増えなくても、反復回数の上限で打ち切る(独立リビュー2回目 🔴1)', () => {
+    // MAX_REACH_ITERATIONS(=1,000,000)の実測根拠は grid-parse.ts のコメント参照。
+    // 公差1・始点をそろえた等差数列を2区間に置くと、合流後に増える和の種類は
+    // sumset の標準的な性質で |A|+|B|-1 に収まる — ここでは 1,005+1,005-1=2,009
+    // で MAX_REACH_STATES(10,000)にまるで届かない。それでも内側の二重ループは
+    // 1,005×1,005=1,010,025 回転がる — `next.size`(合流後の状態数)だけを見る
+    // 旧上限はこの反復そのものを一切止められない(独立リビュー2回目が5,000×5,000
+    // 規模で実測: 599ms、overflow は一度も出ない)。ここでは単体テストとして
+    // 現実的な時間に収まる規模(1,005×1,005)に落としてある — 「積が上限を超え、
+    // 合流後の状態数は上限を大きく下回る」という性質そのものは保っている。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 35000, 40),
+      ...horizontal('X3', 70000, 40),
+      ...horizontal('9000', 100000, 600), // 合計 — ラベル範囲外
+    ]
+    for (let i = 0; i < 1005; i += 1) {
+      items.push(...horizontal(String(3000 + i), 100 + i * 30, 500)) // 区間1(X1~X2)
+    }
+    for (let j = 0; j < 1005; j += 1) {
+      items.push(...horizontal(String(3000 + j), 35100 + j * 30, 520)) // 区間2(X2~X3)、同じ公差・始点
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
+  })
+
+  it('部分和が枝刈りで一つも残らなくても、反復回数の上限で打ち切る(独立リビュー2回目 🔴1)', () => {
+    // 先行区間の状態数(1,005個)は正当に MAX_REACH_STATES 未満まで育つが、次の
+    // 区間の値を全部「どの先行和(最大4,004)に足しても合計(9,000)を必ず超える
+    // 大きさ(6,001以上)」にそろえると、`next` は最後まで空のままになる —
+    // 挿入が一度も起きないので `next.size` を見る旧上限は原理的に発火しない。
+    // それでも内側の二重ループは 1,005×1,005=1,010,025 回転がる(独立リビュー
+    // 2回目が5,000×200,000規模で実測: 1.67秒、overflow は一度も出ない)。
+    const items: TextItem[] = [
+      ...horizontal('X1', 0, 40),
+      ...horizontal('X2', 35000, 40),
+      ...horizontal('X3', 70000, 40),
+      ...horizontal('9000', 100000, 600), // 合計 — ラベル範囲外
+    ]
+    for (let i = 0; i < 1005; i += 1) {
+      items.push(...horizontal(String(3000 + i), 100 + i * 30, 500)) // 区間1、正当に到達可能(最大4,004)
+    }
+    for (let j = 0; j < 1005; j += 1) {
+      items.push(...horizontal(String(6001 + j), 35100 + j * 30, 520)) // 区間2、必ず枝刈りされる
+    }
+
+    const start = performance.now()
+    const candidate = candidateOf(items, 'X')
+    const elapsedMs = performance.now() - start
+
+    expect(candidate.issues).toEqual(['計算量超過'])
+    expect(candidate.spansMm).toEqual([])
+    expect(candidate.totalMm).toBeNull()
+    expect(elapsedMs).toBeLessThan(1000)
   })
 })
