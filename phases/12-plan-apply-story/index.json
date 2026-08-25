@@ -7,7 +7,8 @@
       "name": "section-lookup-by-story",
       "status": "completed",
       "started_at": "2026-08-25T19:26:36+0900",
-      "summary": "同じmarkの断面を候補配列で保持し、指定storyLabelは厳密一致、複数候補は断面複数該当として反映しないようにした"
+      "summary": "同じmarkの断面を候補配列で保持し、指定storyLabelは厳密一致、複数候補は断面複数該当として反映しないようにした",
+      "completed_at": "2026-08-25T19:35:48+0900"
     },
     {
       "step": 1,
