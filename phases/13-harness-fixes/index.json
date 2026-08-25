@@ -1,0 +1,16 @@
+{
+  "project": "Kijun",
+  "phase": "13-harness-fixes",
+  "steps": [
+    {
+      "step": 0,
+      "name": "codex-invoke-io",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "refuted-protocol",
+      "status": "pending"
+    }
+  ]
+}

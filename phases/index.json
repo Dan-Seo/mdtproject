@@ -56,6 +56,11 @@
     },
     {
       "dir": "12-plan-apply-story",
+      "status": "completed",
+      "completed_at": "2026-08-25T20:01:16+0900"
+    },
+    {
+      "dir": "13-harness-fixes",
       "status": "pending"
     }
   ]
