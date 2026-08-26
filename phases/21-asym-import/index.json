@@ -1,0 +1,22 @@
+{
+  "project": "Kijun",
+  "phase": "21-asym-import",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr033-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "parse-asymmetric-cells",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "import-apply-and-editor",
+      "status": "pending"
+    }
+  ]
+}

@@ -98,6 +98,10 @@
       "dir": "20-girder-end-asymmetry",
       "status": "completed",
       "completed_at": "2026-08-26T13:20:30+0900"
+    },
+    {
+      "dir": "21-asym-import",
+      "status": "pending"
     }
   ]
 }
