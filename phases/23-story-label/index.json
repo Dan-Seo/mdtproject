@@ -33,7 +33,7 @@
       "name": "filter-fallback-ledger",
       "status": "completed",
       "started_at": "2026-08-26T16:38:44+0900",
-      "completed_at": "2026-08-26T16:45:30+0900",
+      "completed_at": "2026-08-26T16:49:13+0900",
       "summary": "階 필터가 정확 일치 断面을 우선하고 일치가 없을 때만 무라벨 断面으로 폴백하도록 구현했으며, 단일·복수 폴백과 기존 우선순위를 테스트로 고정하고 대장을 갱신했다.",
       "report": "phases/23-story-label/step3-report.json"
     }
