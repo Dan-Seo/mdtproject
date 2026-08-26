@@ -185,6 +185,51 @@ describe('useTakeoff', () => {
     expect(result.current.lines.some(({ role }) => role === '主筋')).toBe(true)
   })
 
+  it('keeps a wall with no 上部大梁 as one unsupported member', () => {
+    const source = createSampleProject()
+    const wall = source.members.find(({ kind }) => kind === '耐震壁')
+    const wallPosition = wall?.position
+    if (
+      wall === undefined ||
+      wallPosition === undefined ||
+      !('axis' in wallPosition)
+    ) {
+      throw new Error('sample must contain an edge 耐震壁')
+    }
+
+    const missingGirderId = source.members.find(
+      (member) =>
+        member.kind === '大梁' &&
+        member.storyId === wall.storyId &&
+        'axis' in member.position &&
+        member.position.axis === wallPosition.axis &&
+        member.position.ix === wallPosition.ix &&
+        member.position.iy === wallPosition.iy,
+    )?.id
+    if (missingGirderId === undefined) {
+      throw new Error('sample must contain a wall-top 大梁')
+    }
+
+    useAppStore.setState({
+      project: {
+        ...source,
+        members: source.members.filter(({ id }) => id !== missingGirderId),
+      },
+    })
+
+    const { result } = renderHook(() => useTakeoff())
+
+    expect(result.current.unsupportedMembers).toContainEqual({
+      memberId: wall.id,
+      mark: 'W1',
+      storyName: '1階',
+      reason: '寸法不成立',
+    })
+    expect(result.current.lines.some(({ memberKind }) => memberKind === '柱')).toBe(
+      true,
+    )
+  })
+
   it('keeps the other members when a 柱 turns out unbuildable', () => {
     // 帯筋 初期オフセット은 이제 断面一覧 입력이라 사용자가 배치 구간을 넘길 수
     // 있다. 大梁과 같이 그 부재만 빠져야 하고, 페인이 죽으면 안 된다.

@@ -175,7 +175,23 @@ function main(): void {
   healthyHook.unmount()
 
   useAppStore.setState({ project: missingWallGirder })
-  const wallCrash = observeError(() => renderHook(() => useTakeoff()))
+  let wallCrash: ErrorObservation | null = null
+  let wallRejectedAsUnsupported = false
+  try {
+    const wallTakeoffHook = renderHook(() => useTakeoff())
+    wallRejectedAsUnsupported = wallTakeoffHook.result.current.unsupportedMembers.some(
+      ({ memberId, reason }) => memberId === wall.id && reason === '寸法不成立',
+    )
+    wallTakeoffHook.unmount()
+  } catch (error) {
+    wallCrash = {
+      constructor: error instanceof Error ? error.constructor.name : typeof error,
+      name: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+      isError: error instanceof Error,
+      isMemberUnsupportedError: error instanceof MemberUnsupportedError,
+    }
+  }
   useAppStore.setState({ project: sample })
 
   const wallSection = findSection(sample, wall.sectionId)
@@ -310,15 +326,18 @@ function main(): void {
     {
       id: 'plain-error-crash',
       status:
-        wallCrash !== null &&
-        wallCrash.isError &&
-        !wallCrash.isMemberUnsupportedError
+        wallCrash === null &&
+        wallRejectedAsUnsupported
           ? 'upheld'
           : 'refuted',
       evidence: [
         'healthy sample useTakeoff completed',
-        { removedWallTopGirderIds: wallTopGirderIds, thrown: wallCrash },
-        'useTakeoff catch path rethrows errors that are not MemberUnsupportedError',
+        {
+          removedWallTopGirderIds: wallTopGirderIds,
+          thrown: wallCrash,
+          wallRejectedAsUnsupported,
+        },
+        'useTakeoff absorbs a missing wall-top 大梁 as MemberUnsupportedError',
       ],
     },
     {
@@ -349,12 +368,13 @@ function main(): void {
       status:
         slabCrash !== null &&
         slabCrash.isError &&
-        !slabCrash.isMemberUnsupportedError
+        slabCrash.isMemberUnsupportedError
           ? 'upheld'
           : 'refuted',
       evidence: [
         { supportIds, missingSupport: missingSlabSupportId, thrown: slabCrash },
         'slabBay resolves minX, maxX, minY, and maxY through girderSectionAt',
+        'slabBay rejects a missing support as MemberUnsupportedError',
         {
           slabEndsTakesSupportInput,
           slabRebarPassesBothEndSupports,

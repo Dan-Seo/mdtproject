@@ -11,6 +11,8 @@ import { createSampleProject } from './sample-project'
 import {
   PROJECT_SCHEMA_VERSION,
   beamDepthAbove,
+  canPlaceSlab,
+  canPlaceWall,
   columnEnds,
   deserializeProject,
   findSection,
@@ -20,7 +22,10 @@ import {
   gridPoint,
   gridPointCount,
   memberGroupKey,
+  placeableSlabPositions,
+  placeableWallPositions,
   serializeProject,
+  slabBay,
   setNote,
   storyElevation,
   wallSpan,
@@ -201,6 +206,167 @@ describe('project lookup helpers', () => {
 
   it('throws when no same-story 大梁 touches the 柱', () => {
     expect(() => beamDepthAbove(createProject(), column)).toThrow()
+  })
+})
+
+describe('wall and slab placement topology', () => {
+  it('accepts positions whose existing geometry calculation has all supports', () => {
+    const project = createSampleProject()
+    const wallPosition = { axis: 'X' as const, ix: 0, iy: 0 }
+    const slabPosition = { ix: 0, iy: 0 }
+
+    expect(canPlaceWall(project, '1F', wallPosition)).toBe(true)
+    expect(canPlaceSlab(project, '1F', slabPosition)).toBe(true)
+    expect(placeableWallPositions(project, '1F')).toContainEqual(wallPosition)
+    expect(placeableSlabPositions(project, '1F')).toContainEqual(slabPosition)
+
+    const wall: Member = {
+      id: '1F-W-candidate-X1Y1-X',
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: wallSection.id,
+      storyId: '1F',
+      position: wallPosition,
+    }
+    const slab: Member = {
+      id: '1F-S-candidate-X1Y1',
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: 'section-S1',
+      storyId: '1F',
+      position: slabPosition,
+    }
+
+    expect(() => wallSpan(project, wall)).not.toThrow()
+    expect(() => slabBay(project, slab)).not.toThrow()
+  })
+
+  it('rejects a wall edge when its 大梁 or either endpoint 柱 is absent', () => {
+    const project = createSampleProject()
+    const position = { axis: 'Y' as const, ix: 0, iy: 0 }
+    const wall: Member = {
+      id: '1F-W-candidate-Y1Y1',
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: wallSection.id,
+      storyId: '1F',
+      position,
+    }
+    const topGirder = project.members.find(
+      (member) =>
+        member.kind === '大梁' &&
+        member.storyId === '1F' &&
+        'axis' in member.position &&
+        member.position.axis === position.axis &&
+        member.position.ix === position.ix &&
+        member.position.iy === position.iy,
+    )!
+    const endpoint = project.members.find(
+      (member) =>
+        member.kind === '柱' &&
+        member.storyId === '1F' &&
+        !('axis' in member.position) &&
+        member.position.ix === position.ix &&
+        member.position.iy === position.iy,
+    )!
+
+    for (const removedId of [topGirder.id, endpoint.id]) {
+      const missingSupport = {
+        ...project,
+        members: project.members.filter(({ id }) => id !== removedId),
+      }
+
+      expect(canPlaceWall(missingSupport, '1F', position)).toBe(false)
+      expect(placeableWallPositions(missingSupport, '1F')).not.toContainEqual(
+        position,
+      )
+      expect(() => wallSpan(missingSupport, wall)).toThrow(
+        MemberUnsupportedError,
+      )
+    }
+  })
+
+  it('turns a wall-top 大梁 section mismatch into member-level rejection', () => {
+    const project = createSampleProject()
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')!
+    const topGirder = project.members.find(
+      (member) =>
+        member.kind === '大梁' &&
+        member.storyId === wall.storyId &&
+        'axis' in member.position &&
+        'axis' in wall.position &&
+        member.position.axis === wall.position.axis &&
+        member.position.ix === wall.position.ix &&
+        member.position.iy === wall.position.iy,
+    )!
+    const invalid = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === topGirder.id
+          ? { ...member, sectionId: 'section-C1' }
+          : member,
+      ),
+    }
+
+    expect(() => wallSpan(invalid, wall)).toThrow(MemberUnsupportedError)
+  })
+
+  it('rejects a slab bay unless all four surrounding 大梁 are present', () => {
+    const project = createSampleProject()
+    const position = { ix: 0, iy: 0 }
+    const slab: Member = {
+      id: '1F-S-candidate-X1Y1',
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: 'section-S1',
+      storyId: '1F',
+      position,
+    }
+    const supportIds = [
+      '1F-G1-X1Y1-Y',
+      '1F-G2-X2Y1-Y',
+      '1F-G1-X1Y1-X',
+      '1F-G2-X1Y2-X',
+    ]
+
+    for (const removedId of supportIds) {
+      const missingSupport = {
+        ...project,
+        members: project.members.filter(({ id }) => id !== removedId),
+      }
+
+      expect(canPlaceSlab(missingSupport, '1F', position)).toBe(false)
+      expect(placeableSlabPositions(missingSupport, '1F')).not.toContainEqual(
+        position,
+      )
+      expect(() => slabBay(missingSupport, slab)).toThrow(
+        MemberUnsupportedError,
+      )
+    }
+  })
+
+  it('turns a slab support section mismatch into member-level rejection', () => {
+    const project = createSampleProject()
+    const invalid = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === '1F-G1-X1Y1-Y'
+          ? { ...member, sectionId: 'section-C1' }
+          : member,
+      ),
+    }
+    const slab = invalid.members.find(({ kind }) => kind === '床板')!
+
+    expect(() => slabBay(invalid, slab)).toThrow(MemberUnsupportedError)
+  })
+
+  it('does not use an occupied member as a topology failure', () => {
+    const project = createSampleProject()
+
+    // Occupancy is checked later against the mark-derived id. The topology
+    // predicate has no mark and must therefore remain usable for another mark.
+    expect(canPlaceWall(project, '1F', { axis: 'Y', ix: 0, iy: 0 })).toBe(true)
+    expect(canPlaceSlab(project, '1F', { ix: 0, iy: 0 })).toBe(true)
   })
 })
 

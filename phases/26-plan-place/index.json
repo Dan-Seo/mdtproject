@@ -14,7 +14,10 @@
     {
       "step": 1,
       "name": "placement-domain-guard",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T22:42:33+0900",
+      "summary": "벽·床板의 누락/지지 断面 불일치를 기존 reason인 寸法不成立의 부재 단위 거부로 흡수하고, wallSpan·slabBay와 정합하는 canPlace/후보 위치 순수 함수를 추가했다.",
+      "completed_at": "2026-08-26T22:53:59+0900"
     },
     {
       "step": 2,
