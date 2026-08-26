@@ -14,7 +14,9 @@
     {
       "step": 1,
       "name": "parse-asymmetric-cells",
-      "status": "pending"
+      "status": "blocked",
+      "started_at": "2026-08-26T13:48:35+0900",
+      "blocked_reason": "ADR-033 반증 — Claude 인계 대기"
     },
     {
       "step": 2,
