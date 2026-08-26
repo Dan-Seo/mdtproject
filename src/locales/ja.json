@@ -202,6 +202,8 @@
   "planImport.gridX": "X通り",
   "planImport.gridY": "Y通り",
   "planImport.story": "取り込む階",
+  "planImport.storyAny": "選択しない",
+  "planImport.autoSelection": "自動選択の根拠",
   "planImport.sectionStory": "どの階の断面一覧を使うか",
   "planImport.sectionStoryAny": "選ばない",
   "planImport.apply": "反映",

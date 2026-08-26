@@ -1,6 +1,12 @@
 'use client'
 
-import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react'
 
 import {
   applyElevation,
@@ -19,6 +25,7 @@ import { extractTextPages } from '@/lib/import/pdf-text'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 import { t } from '@/lib/i18n'
+import { storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
 
 import styles from './PlanImport.module.css'
 
@@ -35,6 +42,57 @@ interface PlanImportProps {
   /** 테스트에서 PDF 추출을 건너뛰고 페이지를 직접 넣는다 */
   initialPages?: TextPage[]
   extractPages?: (file: File) => Promise<TextPage[]>
+}
+
+interface SelectionEvidence {
+  title: string
+  target: string
+}
+
+interface AutomaticSelections {
+  storyId?: string
+  story?: SelectionEvidence
+  sectionStoryLabel?: string
+  section?: SelectionEvidence
+}
+
+function automaticSelections(
+  block: PlanBlock,
+  stories: Array<{ id: string; name: string }>,
+  sectionStoryLabels: string[],
+): AutomaticSelections {
+  if (!block.title) return {}
+
+  const titleLabel = storyLabelFromTitle(block.title)
+  const titleKey = titleLabel ? storyKey(titleLabel) : undefined
+  if (titleKey === undefined) return {}
+
+  const matchingStories = stories.filter(
+    (story) =>
+      storyKey(story.id) === titleKey || storyKey(story.name) === titleKey,
+  )
+  const story = matchingStories.length === 1 ? matchingStories[0] : undefined
+
+  const matchingSectionLabels = sectionStoryLabels.filter(
+    (label) => storyKey(label) === titleKey,
+  )
+  const sectionStoryLabel =
+    matchingSectionLabels.length === 1 ? matchingSectionLabels[0] : undefined
+
+  return {
+    ...(story
+      ? {
+          storyId: story.id,
+          story: { title: block.title, target: story.name },
+        }
+      : {}),
+    ...(sectionStoryLabel
+      ? {
+          sectionStoryLabel,
+          section: { title: block.title, target: sectionStoryLabel },
+        }
+      : {}),
+  }
 }
 
 function Axes({
@@ -197,9 +255,18 @@ export function PlanImport({
   const [open, setOpen] = useState(initialPages !== undefined)
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
-  const [storyId, setStoryId] = useState<string>(stories[0]?.id ?? '')
+  const [storyId, setStoryId] = useState('')
+  const [storySelectionWasManual, setStorySelectionWasManual] = useState(false)
   const [sectionStoryLabel, setSectionStoryLabel] = useState<
     string | undefined
+  >(undefined)
+  const [sectionSelectionWasManual, setSectionSelectionWasManual] =
+    useState(false)
+  const [storyEvidence, setStoryEvidence] = useState<
+    SelectionEvidence | undefined
+  >(undefined)
+  const [sectionEvidence, setSectionEvidence] = useState<
+    SelectionEvidence | undefined
   >(undefined)
   const [result, setResult] = useState<PlanApplyResult | null>(null)
   const [discardOtherStories, setDiscardOtherStories] = useState(false)
@@ -235,6 +302,15 @@ export function PlanImport({
     }
     return labels
   }, [sections])
+
+  useEffect(() => {
+    if (storyId === '' || stories.some((story) => story.id === storyId)) return
+
+    setStoryId('')
+    setStorySelectionWasManual(false)
+    setStoryEvidence(undefined)
+  }, [stories, storyId])
+
   // 사유는 페이지마다 나오므로 접는다 — 같은 말이 페이지 수만큼 늘어서면 읽히지 않는다
   const issues = [...new Set(plans.flatMap((plan) => plan.issues))]
 
@@ -264,12 +340,33 @@ export function PlanImport({
   }
 
   const apply = (block: PlanBlock) => {
+    const automatic = automaticSelections(block, stories, sectionStoryLabels)
+    const nextStoryId = storySelectionWasManual
+      ? storyId
+      : automatic.storyId ?? ''
+    const nextSectionStoryLabel = sectionSelectionWasManual
+      ? sectionStoryLabel
+      : automatic.sectionStoryLabel
+
+    if (!storySelectionWasManual && automatic.story) {
+      setStoryId(nextStoryId)
+      setStoryEvidence(automatic.story)
+    } else {
+      setStoryEvidence(undefined)
+    }
+    if (!sectionSelectionWasManual && automatic.section) {
+      setSectionStoryLabel(nextSectionStoryLabel)
+      setSectionEvidence(automatic.section)
+    } else {
+      setSectionEvidence(undefined)
+    }
+
     let applied: PlanApplyResult | undefined
     updateProject((project) => {
       applied = applyFramingPlan(project, {
         block,
-        storyId,
-        sectionStoryLabel,
+        storyId: nextStoryId,
+        sectionStoryLabel: nextSectionStoryLabel,
         discardOtherStories,
       })
       return applied.project
@@ -378,46 +475,75 @@ export function PlanImport({
                 ))}
 
                 {sectionStoryLabels.length > 0 ? (
-                  <label className={styles.storyPicker}>
-                    {t(locale, 'planImport.sectionStory')}
-                    <select
-                      data-testid="plan-import-section-story"
-                      value={sectionStoryLabel ?? ''}
-                      onChange={(event) =>
-                        setSectionStoryLabel(
-                          event.target.value === ''
-                            ? undefined
-                            : event.target.value,
-                        )
-                      }
-                    >
-                      <option value="">
-                        {t(locale, 'planImport.sectionStoryAny')}
-                      </option>
-                      {sectionStoryLabels.map((label) => (
-                        <option key={label} value={label}>
-                          {label}
+                  <div className={styles.storyPicker}>
+                    <label className={styles.storyPicker}>
+                      {t(locale, 'planImport.sectionStory')}
+                      <select
+                        data-testid="plan-import-section-story"
+                        value={sectionStoryLabel ?? ''}
+                        onChange={(event) => {
+                          setSectionStoryLabel(
+                            event.target.value === ''
+                              ? undefined
+                              : event.target.value,
+                          )
+                          setSectionSelectionWasManual(true)
+                          setSectionEvidence(undefined)
+                        }}
+                      >
+                        <option value="">
+                          {t(locale, 'planImport.sectionStoryAny')}
                         </option>
-                      ))}
-                    </select>
-                  </label>
+                        {sectionStoryLabels.map((label) => (
+                          <option key={label} value={label}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {sectionEvidence ? (
+                      <span
+                        className={styles.muted}
+                        data-testid="plan-import-section-story-evidence"
+                      >
+                        {`${t(locale, 'planImport.autoSelection')}: ${sectionEvidence.title} → ${sectionEvidence.target}`}
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 {blocks.length > 0 ? (
-                  <label className={styles.storyPicker}>
-                    {t(locale, 'planImport.story')}
-                    <select
-                      data-testid="plan-import-story"
-                      value={storyId}
-                      onChange={(event) => setStoryId(event.target.value)}
-                    >
-                      {stories.map((story) => (
-                        <option key={story.id} value={story.id}>
-                          {story.name}
+                  <div className={styles.storyPicker}>
+                    <label className={styles.storyPicker}>
+                      {t(locale, 'planImport.story')}
+                      <select
+                        data-testid="plan-import-story"
+                        value={storyId}
+                        onChange={(event) => {
+                          setStoryId(event.target.value)
+                          setStorySelectionWasManual(true)
+                          setStoryEvidence(undefined)
+                        }}
+                      >
+                        <option value="">
+                          {t(locale, 'planImport.storyAny')}
                         </option>
-                      ))}
-                    </select>
-                  </label>
+                        {stories.map((story) => (
+                          <option key={story.id} value={story.id}>
+                            {story.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {storyEvidence ? (
+                      <span
+                        className={styles.muted}
+                        data-testid="plan-import-story-evidence"
+                      >
+                        {`${t(locale, 'planImport.autoSelection')}: ${storyEvidence.title} → ${storyEvidence.target}`}
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 {blocks.map((block, index) => (

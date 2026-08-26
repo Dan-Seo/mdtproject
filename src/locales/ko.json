@@ -202,6 +202,8 @@
   "planImport.gridX": "X通り(엑스 기준선)",
   "planImport.gridY": "Y通り(와이 기준선)",
   "planImport.story": "취입할 층",
+  "planImport.storyAny": "고르지 않음",
+  "planImport.autoSelection": "자동 선택 근거",
   "planImport.sectionStory": "어느 階의 断面一覧(단면일람)을 쓰는가",
   "planImport.sectionStoryAny": "고르지 않음",
   "planImport.apply": "반영",

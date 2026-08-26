@@ -147,11 +147,18 @@ export function applyFramingPlan(
   const members: Member[] = []
   const skipped: PlanApplyResult['skipped'] = []
   for (const placement of block.placements) {
-    const candidates = (sections.get(placement.mark) ?? []).filter(
-      (section) =>
-        sectionStoryLabel === undefined ||
-        section.storyLabel === sectionStoryLabel,
-    )
+    const allCandidates = sections.get(placement.mark) ?? []
+    const candidates =
+      sectionStoryLabel === undefined
+        ? allCandidates
+        : (() => {
+            const labeled = allCandidates.filter(
+              (section) => section.storyLabel === sectionStoryLabel,
+            )
+            return labeled.length > 0
+              ? labeled
+              : allCandidates.filter((section) => section.storyLabel === undefined)
+          })()
     if (candidates.length === 0) {
       skipped.push({ mark: placement.mark, reason: '断面未登録' })
       continue

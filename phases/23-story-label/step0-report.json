@@ -1,0 +1,135 @@
+{
+  "phase": "23-story-label",
+  "step": 0,
+  "checks": [
+    {
+      "id": "silent-default",
+      "status": "refuted",
+      "evidence": [
+        {
+          "path": "src/components/plan/PlanImport.tsx:200,271,411-417",
+          "finding": "대상 Story state는 초기 마운트 때만 stories[0]?.id를 받고, apply 시 현재 storyId를 그대로 전달한다. stories 변경 후 이를 동기화하는 경로가 없다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.ts:261-278",
+          "finding": "applyElevation은 기존 1F 대신 새 Story id story-1을 만들 수 있다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.ts:119-120",
+          "finding": "존재하지 않는 storyId는 階未指定으로 거부한다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "초기 선택 1F → applyElevation 후 stories [story-1] → stale selection 1F로 applyFramingPlan 호출 시 refusal=階未指定. stories가 비어 있지 않아도 현재 UI 순서에서 거부에 도달한다."
+        }
+      ]
+    },
+    {
+      "id": "wall-slab-trap",
+      "status": "upheld",
+      "evidence": [
+        {
+          "path": "src/lib/import/section-list/parse.ts:997-1087",
+          "finding": "parseWallBlock의 SectionCandidate 생성에는 storyLabel이 없고, 階 행을 읽는 storyFromRow도 호출하지 않는다."
+        },
+        {
+          "path": "src/lib/import/section-list/parse.ts:1138-1247",
+          "finding": "parseSlabBlock의 SectionCandidate 생성에도 storyLabel이 없고, 階 행을 읽는 경로가 없다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.ts:140-153",
+          "finding": "sectionStoryLabel이 지정되면 section.storyLabel === sectionStoryLabel만 통과시킨다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "실물 TextItem 기반 壁リスト·スラブリスト 후보 24건의 storyLabel이 모두 undefined였고, 샘플 W1·S1에 sectionStoryLabel=2階를 적용하면 applied=0, 둘 다 断面未登録이었다."
+        }
+      ]
+    },
+    {
+      "id": "title-raw",
+      "status": "refuted",
+      "evidence": [
+        {
+          "path": "src/lib/import/framing-plan/parse.ts:190,568-574",
+          "finding": "タイトル候補는 segment.compact에서 수집되고 PlanBlock.title에는 candidate.text가 복사된다."
+        },
+        {
+          "path": "src/lib/import/runs.ts:95-96",
+          "finding": "compact는 NFKC 정규화와 공백 제거를 수행하므로 candidate.text는 원문 문자열 자체가 아니다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "rawTitle=' 2階床伏図1/100'을 넣은 framing-plan 결과는 parsedTitle='2階床伏図1/100'이었다. 제목에서 階를 별도 추출하지 않는 사실은 유지되지만, title-raw 전제의 원문 보존 부분은 반증됐다."
+        }
+      ]
+    },
+    {
+      "id": "pattern-coverage",
+      "status": "upheld",
+      "evidence": [
+        {
+          "path": "src/lib/import/section-list/parse.ts:64",
+          "finding": "STORY_PATTERN은 정확히 RF, R階, 숫자+F, 숫자+階만 허용한다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "RF·R階·2F·2階는 입력 storyLabel로 유지되고 B1F·地下2階·PH·塔屋는 undefined가 됐다."
+        }
+      ]
+    },
+    {
+      "id": "story-shape",
+      "status": "upheld",
+      "evidence": [
+        {
+          "path": "src/domain/model/project.ts:92-96",
+          "finding": "Story interface는 id, name, height만 갖고 level 필드가 없다."
+        },
+        {
+          "path": "src/domain/model/project.ts:158-165",
+          "finding": "storyElevation은 stories 배열 앞쪽 Story들의 height를 누적해 표고를 계산하므로 배열 순서가 아래→위 레벨을 정한다."
+        },
+        {
+          "path": "src/components/plan/PlanEditor.tsx:88-112; src/components/plan/PlanImport.tsx:414-417",
+          "finding": "기존 Story를 탭·드롭다운으로 선택하는 UI만 있으며 Story 생성·개명·삭제 UI는 없다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "샘플 Story의 런타임 키는 [height,id,name]이고 level 필드는 없었다."
+        }
+      ]
+    },
+    {
+      "id": "raw-equality",
+      "status": "refuted",
+      "evidence": [
+        {
+          "path": "src/components/section/SectionImport.tsx:134-136",
+          "finding": "断面 후보 매칭은 mark, kind, storyLabel을 모두 ===로 비교한다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.ts:150-153",
+          "finding": "伏図 취입의 階 필터도 section.storyLabel === sectionStoryLabel이다."
+        },
+        {
+          "command": "npx tsx phases/23-story-label/step0-verify.ts",
+          "result": "section.storyLabel='RF'와 요청 sectionStoryLabel='R階'를 적용하면 C1이 断面未登録으로 탈락했다. 구현의 raw equality 자체는 upheld다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.test.ts:201-216",
+          "finding": "기존 회귀 테스트는 2階 대 2F의 비동등성을 고정한다. RF 대 R階를 직접 함께 넣어 고정한 테스트는 검색 결과 확인되지 않았다. tests/section-import/parse.test.ts:128-129와 :205는 각각 RF·R階 후보의 존재만 검증하고 교차 비동등성은 검증하지 않는다."
+        }
+      ]
+    }
+  ],
+  "validation": [
+    "npx tsx phases/23-story-label/step0-verify.ts: passed; intentional counterexamples recorded",
+    "npx vitest run src/lib/import/framing-plan/apply.test.ts src/lib/import/section-list/parse.test.ts tests/section-import/parse.test.ts tests/plan-import/parse.test.ts src/components/section/SectionImport.test.tsx: 5 files, 172 tests passed",
+    "npm test: 82 files, 1496 tests passed",
+    "npm run typecheck: passed",
+    "npm run lint: passed with the pre-existing warning src/app/api/oncall/alert/route.test.ts:161"
+  ],
+  "verdict": "refuted",
+  "summary": "6개 전제 중 wall-slab-trap·pattern-coverage·story-shape는 유지됐다. 그러나 elevation 취입 후 stale storyId로 階未指定에 도달하는 반례, PlanBlock.title의 compact 정규화로 원문이 보존되지 않는 반례, RF/R階 교차 비동등성이 기존 테스트에 직접 고정되지 않은 사실이 확인되어 종합 판정은 refuted다. 대상 구현은 수정하지 않았다."
+}

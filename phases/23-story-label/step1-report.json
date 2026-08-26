@@ -1,0 +1,54 @@
+{
+  "phase": "23-story-label",
+  "step": 1,
+  "name": "story-key-helpers",
+  "outputs": [
+    "src/lib/import/story-label.ts",
+    "src/lib/import/story-label.test.ts"
+  ],
+  "signatures": [
+    {
+      "name": "storyKey",
+      "signature": "storyKey(label: string): string | undefined",
+      "behavior": "compact() 후 RF/R階를 R로, nF/n階를 선행 0을 제거한 숫자 키로 정규화하고 미지원 표기는 undefined를 반환"
+    },
+    {
+      "name": "storyLabelFromTitle",
+      "signature": "storyLabelFromTitle(title: string): string | undefined",
+      "behavior": "compact() 후 지원 階 토큰을 찾아 정준 키가 정확히 하나일 때 첫 토큰의 라벨을 반환하고, 없거나 모호하면 undefined를 반환"
+    }
+  ],
+  "test_cases": [
+    "2階, 2F, ２階, RF, R階, 01F 정규화",
+    "B1F, 地下1階, PH, 塔屋, 빈 문자열, X1 및 비라벨 제목 거절",
+    "2階床伏図1/100, R階床伏図, 전각·공백 제목 토큰 추출",
+    "서로 다른 키가 있는 제목 거절",
+    "2階와 2F처럼 같은 키가 반복된 제목에서 첫 토큰 유지"
+  ],
+  "validation": [
+    {
+      "command": "npx vitest run src/lib/import/story-label.test.ts",
+      "status": "passed",
+      "result": "1 file, 6 tests"
+    },
+    {
+      "command": "npm run test",
+      "status": "passed",
+      "result": "83 files, 1502 tests"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "0 errors; pre-existing warning in src/app/api/oncall/alert/route.test.ts:161"
+    }
+  ],
+  "constraints": [
+    "src/lib/import/runs.ts was not modified",
+    "parsers, components, and domain code were not modified"
+  ],
+  "summary": "TDD로 storyKey와 storyLabelFromTitle 순수 헬퍼 및 회귀 테스트를 추가하고 전체 게이트를 통과했다."
+}

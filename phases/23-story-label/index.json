@@ -6,23 +6,38 @@
       "step": 0,
       "name": "verify-adr035-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T16:10:02+0900",
+      "summary": "elevation 후 stale storyId로 階未指定에 도달하고 PlanBlock.title이 compact 정규화되며 RF/R階 직접 회귀 테스트가 없어 ADR-035 전제를 반증함"
     },
     {
       "step": 1,
       "name": "story-key-helpers",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T16:21:49+0900",
+      "completed_at": "2026-08-26T16:25:32+0900",
+      "summary": "compact() 기반 storyKey·storyLabelFromTitle 순수 헬퍼와 회귀 테스트를 추가하고 test·typecheck·lint를 통과함",
+      "report": "phases/23-story-label/step1-report.json"
     },
     {
       "step": 2,
       "name": "plan-import-auto-select",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T16:28:08+0900",
+      "completed_at": "2026-08-26T16:38:43+0900",
+      "summary": "PlanImport를 기본 미선택으로 바꾸고 제목의 階 키에 따른 정확 일치 자동 선택·근거 표시·stale Story 리셋을 구현했으며 전체 게이트를 통과했다.",
+      "report": "phases/23-story-label/step2-report.json"
     },
     {
       "step": 3,
       "name": "filter-fallback-ledger",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T16:38:44+0900",
+      "completed_at": "2026-08-26T16:49:13+0900",
+      "summary": "階 필터가 정확 일치 断面을 우선하고 일치가 없을 때만 무라벨 断面으로 폴백하도록 구현했으며, 단일·복수 폴백과 기존 우선순위를 테스트로 고정하고 대장을 갱신했다.",
+      "report": "phases/23-story-label/step3-report.json"
     }
   ],
-  "created_at": "2026-08-26T16:10:00+0900"
+  "created_at": "2026-08-26T16:10:00+0900",
+  "completed_at": "2026-08-26T16:49:13+0900"
 }

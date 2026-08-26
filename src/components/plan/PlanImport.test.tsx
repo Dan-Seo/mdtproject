@@ -25,7 +25,11 @@ function v(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 8, h: 0, rot: -90 }
 }
 
-function framingPage(xSpanMm: number, ySpanMm: number): TextPage {
+function framingPage(
+  xSpanMm: number,
+  ySpanMm: number,
+  title?: string,
+): TextPage {
   return {
     widthPt: 1000,
     heightPt: 1000,
@@ -36,6 +40,7 @@ function framingPage(xSpanMm: number, ySpanMm: number): TextPage {
       h('Y1', -40, 0),
       h('Y2', -40, 200),
       v(String(ySpanMm), -20, 100),
+      ...(title ? [h(title, 100, 100)] : []),
     ],
   }
 }
@@ -89,6 +94,174 @@ describe('PlanImport', () => {
     expect(
       [...picker.querySelectorAll('option')].map((option) => option.value),
     ).toEqual(['', '2階', '1階'])
+  })
+
+  it('제목의 階와 정확히 일치하는 Story를 반영 시 자동 선택하고 근거를 보인다', async () => {
+    const base = createSampleProject()
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...base,
+          stories: [{ id: '2F', name: '2階', height: 3600 }],
+          members: [],
+        },
+      })
+    })
+
+    open([framingPage(6000, 5000, '2階床伏図')])
+
+    const storyPicker = screen.getByTestId('plan-import-story')
+    expect(storyPicker).toHaveValue('')
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => expect(storyPicker).toHaveValue('2F'))
+    expect(screen.getByTestId('plan-import-story-evidence').textContent).toContain(
+      '2階床伏図',
+    )
+    expect(screen.getByTestId('plan-import-story-evidence').textContent).toContain(
+      '2階',
+    )
+  })
+
+  it('R階와 RF는 같은 storyKey로 Story와 断面の階를 자동 선택한다', async () => {
+    const base = createSampleProject()
+    const source = base.sections.find((section) => section.kind === '柱')
+    if (!source) throw new Error('sample has no 柱 section')
+
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...base,
+          stories: [{ id: 'story-r', name: 'R階', height: 3600 }],
+          members: [],
+          sections: [{ ...source, id: 'section-C1-RF', storyLabel: 'RF' }],
+        },
+      })
+    })
+
+    open([framingPage(6000, 5000, 'R階床伏図')])
+
+    expect(screen.getByTestId('plan-import-story')).toHaveValue('')
+    expect(screen.getByTestId('plan-import-section-story')).toHaveValue('')
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-import-story')).toHaveValue('story-r')
+      expect(screen.getByTestId('plan-import-section-story')).toHaveValue('RF')
+    })
+    expect(screen.getByTestId('plan-import-story-evidence').textContent).toContain(
+      'R階床伏図',
+    )
+    expect(
+      screen.getByTestId('plan-import-section-story-evidence').textContent,
+    ).toContain('RF')
+  })
+
+  it('인식할 수 없는 Story name에는 자동 선택하지 않고 미선택을 유지한다', async () => {
+    const base = createSampleProject()
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...base,
+          stories: [
+            { id: 'story-central', name: '中央棟1FL／基準GL', height: 3600 },
+          ],
+          members: [],
+        },
+      })
+    })
+
+    open([framingPage(6000, 5000, '2階床伏図')])
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('plan-import-story')).toHaveValue(''),
+    )
+    expect(screen.queryByTestId('plan-import-story-evidence')).toBeNull()
+  })
+
+  it('사용자가 먼저 고른 Story와 断面の階는 자동 선택으로 덮지 않는다', async () => {
+    const base = createSampleProject()
+    const source = base.sections.find((section) => section.kind === '柱')
+    if (!source) throw new Error('sample has no 柱 section')
+
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...base,
+          stories: [
+            { id: '1F', name: '1階', height: 4200 },
+            { id: '2F', name: '2階', height: 3600 },
+          ],
+          members: [],
+          sections: [
+            { ...source, id: 'section-C1-1階', storyLabel: '1階' },
+            { ...source, id: 'section-C1-2階', storyLabel: '2階' },
+          ],
+        },
+      })
+    })
+
+    open([framingPage(6000, 5000, '2階床伏図')])
+    fireEvent.change(screen.getByTestId('plan-import-story'), {
+      target: { value: '1F' },
+    })
+    fireEvent.change(screen.getByTestId('plan-import-section-story'), {
+      target: { value: '1階' },
+    })
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-import-story')).toHaveValue('1F')
+      expect(screen.getByTestId('plan-import-section-story')).toHaveValue('1階')
+    })
+    expect(screen.queryByTestId('plan-import-story-evidence')).toBeNull()
+    expect(screen.queryByTestId('plan-import-section-story-evidence')).toBeNull()
+  })
+
+  it('기본 미선택 상태로 반영하면 階未指定 거부를 표시한다', async () => {
+    const base = createSampleProject()
+    act(() => {
+      useAppStore.setState({ project: { ...base, members: [] } })
+    })
+
+    open([framingPage(6000, 5000)])
+    expect(screen.getByTestId('plan-import-story')).toHaveValue('')
+    fireEvent.click(screen.getByTestId('plan-import-apply-0'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-import-result').textContent).toContain(
+        '取り込む階を選んでください',
+      )
+    })
+  })
+
+  it('현재 선택한 Story가 案件에서 사라지면 미선택으로 되돌린다', async () => {
+    const base = createSampleProject()
+    act(() => {
+      useAppStore.setState({
+        project: { ...base, members: [] },
+      })
+    })
+
+    open([framingPage(6000, 5000)])
+    fireEvent.change(screen.getByTestId('plan-import-story'), {
+      target: { value: '1F' },
+    })
+    expect(screen.getByTestId('plan-import-story')).toHaveValue('1F')
+
+    act(() => {
+      useAppStore.setState({
+        project: {
+          ...useAppStore.getState().project,
+          stories: [{ id: '2F', name: '2階', height: 3600 }],
+        },
+      })
+    })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('plan-import-story')).toHaveValue(''),
+    )
   })
 
   it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', () => {
