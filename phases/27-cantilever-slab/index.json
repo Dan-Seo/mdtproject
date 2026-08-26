@@ -1,0 +1,27 @@
+{
+  "project": "Kijun",
+  "phase": "27-cantilever-slab",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr039-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "cantilever-domain-rulepack-golden",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "cantilever-viewer-plan-place",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "ledger-corrections",
+      "status": "pending"
+    }
+  ]
+}
