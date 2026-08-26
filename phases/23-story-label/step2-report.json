@@ -1,0 +1,51 @@
+{
+  "phase": "23-story-label",
+  "step": 2,
+  "name": "plan-import-auto-select",
+  "outputs": [
+    "src/components/plan/PlanImport.tsx",
+    "src/components/plan/PlanImport.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/e2e/uc22-plan-import.js"
+  ],
+  "changes": [
+    "대상 Story 선택의 초기값을 빈 값으로 두고 선택하지 않음 placeholder를 추가했다.",
+    "stories에서 선택한 Story가 사라지면 선택값·자동 선택 근거를 비우고 자동 선택 가능 상태로 되돌린다.",
+    "반영할 PlanBlock의 제목에서 storyLabelFromTitle·storyKey를 적용해 정확히 하나인 Story와 断面の階만 자동 선택한다.",
+    "자동 선택된 제목·대상 근거를 각 드롭다운 옆에 표시하고 사용자가 직접 바꾸면 해당 근거를 지운다.",
+    "UC-22에서 대상 Story 2F를 명시적으로 선택하도록 갱신했다."
+  ],
+  "updated_expectations": [
+    "PlanImport의 새 테스트 6건으로 기본 미선택·階未指定 거부·정확 일치 자동 선택·R階/RF alias·미지원 라벨·사용자 선택 보존·stale Story 리셋을 고정했다.",
+    "tests/e2e/uc22-plan-import.js는 stories[0] 암묵 기본값 대신 대상 블록 승인 전 2F를 명시적으로 선택한다."
+  ],
+  "validation": [
+    {
+      "command": "npm test -- --run src/components/plan/PlanImport.test.tsx",
+      "status": "passed",
+      "result": "1 file, 18 tests"
+    },
+    {
+      "command": "npm run test",
+      "status": "passed",
+      "result": "83 files, 1508 tests"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "0 errors; pre-existing warning in src/app/api/oncall/alert/route.test.ts:161"
+    }
+  ],
+  "constraints": [
+    "src/domain/** was not modified",
+    "src/lib/import/** was not modified",
+    "no new e2e scenario was added",
+    "no dev server was started"
+  ],
+  "summary": "PlanImport에 기본 미선택·정확 일치 자동 선택·근거 표시·stale 선택 리셋을 추가하고 TDD 및 전체 게이트를 통과했다."
+}

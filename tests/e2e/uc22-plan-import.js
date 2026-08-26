@@ -88,6 +88,11 @@ const targetApply = await page.evaluate(() => {
 });
 if (!targetApply) throw new Error("2階床伏図 블록을 찾지 못했다");
 
+// 대상 Story의 기본값은 미선택이다. 도면 제목과 별개로 이 승인에 사용할
+// Story를 명시한다 — 자동 선택의 근거 표시 테스트와 사용자 선택 경로를
+// 섞지 않는다.
+await page.selectOption("[data-testid='plan-import-story']", "2F");
+
 // 1) 승인 전에는 案件이 바뀌지 않는다
 const untouched = await readSpans();
 
@@ -215,7 +220,11 @@ const targetApplyWithSections = await page.evaluate(() => {
 });
 if (!targetApplyWithSections) throw new Error("断面選択 흐름의 2階床伏図 블록을 찾지 못했다");
 
-// 격자 변경 동의를 먼저 보여준 뒤, 断面 階를 고르지 않은 채 다시 반영한다.
+// 격자 변경 동의를 먼저 보여준 뒤, 断面 階를 「선택하지 않음」으로 명시해
+// 같은 符号의 다중 断面 거부 경로를 검증한다. 제목 자동 선택을 그대로 두면
+// 이 블록에서는 2階가 자동으로 선택되므로, 이 테스트의 의도를 명시한다.
+await page.selectOption("[data-testid='plan-import-story']", "2F");
+await page.selectOption("[data-testid='plan-import-section-story']", "");
 await page.click(`[data-testid='${targetApplyWithSections}']`);
 await page.waitForSelector("[data-testid='plan-import-discard']");
 await page.click("[data-testid='plan-import-discard']");
