@@ -32,7 +32,7 @@
       "name": "wall-extent-input-ledger",
       "status": "completed",
       "started_at": "2026-08-26T22:05:01+0900",
-      "completed_at": "2026-08-26T22:20:29+0900",
+      "completed_at": "2026-08-26T22:24:34+0900",
       "summary": "PlanEditor에 선택된 耐震壁의 높이·길이 방향 wallExtent 입력과 범위 초과 寸法不成立 표시를 추가하고, ja/ko locale 및 phase 25 대장을 갱신했다. npm run test·npx tsc --noEmit·npm run lint를 통과했다."
     }
   ],
