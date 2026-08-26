@@ -32,13 +32,16 @@ export const CANDIDATE_ISSUES = [
   '幅止め筋解釈不能',
   '階不明',
   '項目行重複',
+  '壁筋解釈不能',
+  '壁厚相違',
+  '床板筋解釈不能',
 ] as const
 
 export type CandidateIssue = (typeof CANDIDATE_ISSUES)[number]
 
 /** リストから読んだ一つの符号・一つの階の候補。確実な値だけを保持する。 */
 export interface SectionCandidate {
-  kind: '柱' | '大梁' | '対象外'
+  kind: '柱' | '大梁' | '耐震壁' | '床板' | '対象外'
   mark: string
   storyLabel?: string
   /** 柱の断面形状。'円形' のとき b・d はともに直径である (ADR-027)。 */
@@ -73,6 +76,22 @@ export interface SectionCandidate {
    * 余長 (extraLengthMm) は図面に無い — 取り込み側が決める (R9②)。
    */
   sideBar?: { size: BarSize; count: number }
+  /** 耐震壁の壁厚 (mm)。 */
+  thickness?: number
+  /** 耐震壁の配筋層数。図面のシングル/ダブル表記をそのまま受ける。 */
+  layers?: 1 | 2
+  /** 耐震壁の縦筋・横筋。 */
+  vertical?: { size: BarSize; pitchMm: number }
+  horizontal?: { size: BarSize; pitchMm: number }
+  /** 床板の方向は、軸の決定前なので短辺・長辺のまま保持する。 */
+  shortSide?: {
+    top?: { size: BarSize; pitchMm: number }
+    bottom?: { size: BarSize; pitchMm: number }
+  }
+  longSide?: {
+    top?: { size: BarSize; pitchMm: number }
+    bottom?: { size: BarSize; pitchMm: number }
+  }
   /** 解釈できず空欄にした項目の原文。 */
   raw: Record<string, string>
   issues: CandidateIssue[]

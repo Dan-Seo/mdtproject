@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "file": "ojkk-akamichi-p4-walls-slabs.json",
+      "cells_checked": 99,
+      "mismatches": [],
+      "unverifiable": [
+        "expected의 listKind \"屋内階段・屋外階段 配筋図\"는 원시 TextItem에 단일 문자열로 존재하지 않는다. 원시에는 \"屋内階段 配筋図\"와 \"屋外階段 配筋図\"가 각각 존재하며, 두 구획을 하나의 対象外 항목으로 묶은 정규화 표현으로 판단했다.",
+        "シングル→1층, ダブル·ﾀﾞﾌﾞﾙﾁﾄﾞﾘ→2층은 원시 괄호 표기는 확인되지만 층수 의미 자체는 TextItem만으로 독립 확정할 수 없다.",
+        "開口補強筋·片持床板·備考를 제품 스코프 밖으로 분류하는 ADR 근거는 원시 TextItem의 사실 대조 대상이 아니다. 원시의 표제·문자열만 확인했다."
+      ]
+    },
+    {
+      "file": "yokohama-kanazawa-p15-slabs-walls.json",
+      "cells_checked": 61,
+      "mismatches": [],
+      "unverifiable": [
+        "壁リスト의 EW18·W25·W18·W15·CBW 인출선 값과 縦筋/横筋 배치는 expected notes가 명시한 이미지 근거라 TextItem 행·열만으로 확정할 수 없다.",
+        "CBW를 콘크리트 블록壁 해치로 판정한 내용과 이미지 기반 開口補強筋 값은 원시 TextItem으로 반증할 수 없다.",
+        "壁リスト를 形式対象外로 분류하는 형상·도면 구획 판정은 제목과 텍스트 존재는 확인되지만 이미지·인출선 구조 전체를 TextItem만으로 확정할 수 없다."
+      ]
+    }
+  ],
+  "verdict": "upheld",
+  "summary": "원시 TextItem만 행·열 재구성해 ojkk 99개·yokohama 61개 셀과 marks를 대조했다. 수치·리터럴·표제·스코프 표시는 모두 원시에 부합했고 전사 오류는 없었다. ojkk의 계단 配筋図 listKind는 두 원시 제목을 합친 정규화 표현이며, 인출선·해치 등 이미지 근거는 검증 불가로 남겼다."
+}

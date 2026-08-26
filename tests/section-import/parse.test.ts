@@ -497,6 +497,37 @@ interface ExpectedKaniEntry {
   STP: string
 }
 
+interface ExpectedWallEntry {
+  mark: string
+  thickness?: number
+  断面raw?: string
+  縦筋: string
+  横筋: string
+}
+
+interface ExpectedSlabEntry {
+  mark: string
+  thickness: number
+  上端筋?: Record<string, string>
+  下端筋?: Record<string, string>
+  上筋?: Record<string, string>
+  下筋?: Record<string, string>
+}
+
+interface ExpectedList {
+  listKind: string
+  scope?: string
+  entries?: Array<{ mark: string }>
+  outOfScopeMarks?: string[]
+  marks?: string[]
+}
+
+interface ExpectedWallSlabDoc {
+  lists: Array<ExpectedList & {
+    entries?: Array<ExpectedWallEntry | ExpectedSlabEntry>
+  }>
+}
+
 /** 「D13-@100」·「D10@200」 표기 차를 흡수한다 — 하이픈은 장식이다 */
 function normPitch(text: string): string {
   return text.replace('-@', '@')
@@ -735,5 +766,172 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         entry.mark,
       ).toBe(normPitch(entry.STP))
     }
+  })
+
+  it('ojkk 壁リスト·スラブリスト — 벽 5칸과 床板 6칸을 전사 대조한다', () => {
+    const doc = readExpected<ExpectedWallSlabDoc>(
+      'ojkk-akamichi-p4-walls-slabs.json',
+    )
+    const parsed = parseSectionLists(readPage('ojkk-p4.json'))
+    const walls = list(parsed, '壁リスト')
+    const slabs = list(parsed, 'スラブリスト')
+    const expectedListKinds = doc.lists
+      .filter(({ listKind }) => listKind !== '屋内階段・屋外階段 配筋図')
+      .map(({ listKind }) => listKind)
+      .sort()
+    expect(parsed.map(({ listKind }) => listKind).sort()).toEqual(expectedListKinds)
+    for (const listSpec of doc.lists.filter(
+      ({ listKind }) => listKind !== '屋内階段・屋外階段 配筋図',
+    )) {
+      const parsedList = list(parsed, listSpec.listKind)
+      const expectedMarks = [
+        ...(listSpec.entries ?? []).map(({ mark }) => mark),
+        ...(listSpec.outOfScopeMarks ?? []),
+        ...(listSpec.marks ?? []),
+      ].sort()
+      expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
+    }
+    const wallEntries = doc.lists.find(({ listKind }) => listKind === '壁リスト')!
+      .entries as ExpectedWallEntry[]
+    const slabEntries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
+      .entries as ExpectedSlabEntry[]
+
+    const counts = { wallThickness: 0, wallVertical: 0, wallHorizontal: 0, slabThickness: 0, slabBars: 0 }
+    for (const entry of wallEntries) {
+      const c = candidate(walls, entry.mark)
+      expect(c.kind, entry.mark).toBe('耐震壁')
+      if (entry.thickness !== undefined) {
+        expect(c.thickness, entry.mark).toBe(entry.thickness)
+        counts.wallThickness += 1
+      } else {
+        expect(c.thickness, entry.mark).toBeUndefined()
+        expect(c.raw['断面'], entry.mark).toBe(entry['断面raw'])
+      }
+      for (const [role, expected] of [['vertical', entry.縦筋], ['horizontal', entry.横筋]] as const) {
+        const parsedBar = c[role]
+        const match = expected.match(/^(D\d+)@([0-9]+)\((.+)\)$/)
+        if (match) {
+          expect(parsedBar, `${entry.mark} ${role}`).toEqual({
+            size: match[1],
+            pitchMm: Number(match[2]),
+          })
+          expect(c.layers, `${entry.mark} ${role}`).toBe(
+            /ダブル|ﾀﾞﾌﾞﾙ|ダブルチドリ/.test(match[3]) ? 2 : 1,
+          )
+          counts[role === 'vertical' ? 'wallVertical' : 'wallHorizontal'] += 1
+        } else {
+          expect(parsedBar, `${entry.mark} ${role}`).toBeUndefined()
+          expect(c.raw[role === 'vertical' ? '縦筋' : '横筋'], `${entry.mark} ${role}`).toBe(expected)
+        }
+      }
+    }
+    expect(counts).toEqual({
+      wallThickness: 4,
+      wallVertical: 5,
+      wallHorizontal: 5,
+      slabThickness: 0,
+      slabBars: 0,
+    })
+
+    for (const entry of slabEntries) {
+      const c = candidate(slabs, entry.mark)
+      expect(c.kind, entry.mark).toBe('床板')
+      expect(c.thickness, entry.mark).toBe(entry.thickness)
+      counts.slabThickness += 1
+      const top = entry.上端筋 ?? entry.上筋!
+      const bottom = entry.下端筋 ?? entry.下筋!
+      for (const [face, values] of [['top', top], ['bottom', bottom] as const] as const) {
+        for (const [axis, expected] of Object.entries(values)) {
+          const key = axis === '短辺方向' ? 'shortSide' : 'longSide'
+          const parsedBar = c[key]?.[face]
+          const match = expected.match(/^(D\d+)-?@([0-9]+)$/)
+          if (match) {
+            expect(parsedBar, `${entry.mark} ${axis} ${face}`).toEqual({
+              size: match[1],
+              pitchMm: Number(match[2]),
+            })
+            counts.slabBars += 1
+          } else {
+            expect(parsedBar, `${entry.mark} ${axis} ${face}`).toBeUndefined()
+            expect(
+              c.raw[`${axis}(${face})`],
+              `${entry.mark} ${axis} ${face}`,
+            ).toBe(expected)
+          }
+        }
+      }
+    }
+    expect(counts.slabThickness).toBe(6)
+    expect(counts.slabBars).toBe(15)
+    expectMarksInclude(slabs, ['FS1', 'FS2', 'FS3', 'FS4'])
+    for (const mark of doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!.outOfScopeMarks!) {
+      expect(candidate(slabs, mark).kind, mark).toBe('対象外')
+    }
+
+    for (const listSpec of doc.lists.filter(
+      ({ scope, listKind }) =>
+        scope === '対象外' &&
+        ['小梁リスト', '片持梁リスト'].includes(listKind),
+    )) {
+      const parsedList = list(parsed, listSpec.listKind)
+      expect(parsedList.candidates.every(({ kind }) => kind === '対象外')).toBe(true)
+      for (const mark of listSpec.marks ?? []) expectMarksInclude(parsedList, [mark])
+    }
+  })
+
+  it('yokohama スラブリスト — 上筋/下筋 별칭과 床板 실패 경로를 대조한다', () => {
+    const doc = readExpected<ExpectedWallSlabDoc>(
+      'yokohama-kanazawa-p15-slabs-walls.json',
+    )
+    const parsed = parseSectionLists(readPage('yokohama-p15.json'))
+    const slabs = list(parsed, 'スラブリスト')
+    expect(parsed.map(({ listKind }) => listKind).sort()).toEqual(
+      doc.lists.map(({ listKind }) => listKind).sort(),
+    )
+    for (const listSpec of doc.lists) {
+      const parsedList = list(parsed, listSpec.listKind)
+      const expectedMarks =
+        listSpec.scope === '形式対象外'
+          ? []
+          : [
+              ...(listSpec.entries ?? []).map(({ mark }) => mark),
+              ...(listSpec.marks ?? []),
+            ].sort()
+      expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
+    }
+    const entries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
+      .entries as ExpectedSlabEntry[]
+    let thickness = 0
+    let bars = 0
+    for (const entry of entries) {
+      const c = candidate(slabs, entry.mark)
+      expect(c.kind).toBe('床板')
+      expect(c.thickness).toBe(entry.thickness)
+      thickness += 1
+      const top = entry.上筋!
+      const bottom = entry.下筋!
+      for (const [face, values] of [['top', top], ['bottom', bottom] as const] as const) {
+        for (const [axis, expected] of Object.entries(values)) {
+          const key = axis === '短辺方向' ? 'shortSide' : 'longSide'
+          const parsedBar = c[key]?.[face]
+          const match = expected.match(/^(D\d+)-?@([0-9]+)$/)
+          if (match) {
+            expect(parsedBar).toEqual({ size: match[1], pitchMm: Number(match[2]) })
+            bars += 1
+          } else {
+            expect(parsedBar).toBeUndefined()
+            expect(c.raw[`${axis}(${face})`]).toBe(expected)
+          }
+        }
+      }
+    }
+    expect({ thickness, bars }).toEqual({ thickness: 6, bars: 19 })
+
+    for (const listSpec of doc.lists.filter(({ scope }) => scope === '対象外')) {
+      const parsedList = list(parsed, listSpec.listKind)
+      expect(parsedList.candidates.every(({ kind }) => kind === '対象外')).toBe(true)
+      for (const mark of listSpec.marks ?? []) expectMarksInclude(parsedList, [mark])
+    }
+    expect(list(parsed, '壁リスト').candidates).toHaveLength(0)
   })
 })

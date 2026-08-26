@@ -6,17 +6,28 @@
       "step": 0,
       "name": "verify-transcription",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T11:21:53+0900",
+      "summary": "원시 TextItem만 대조해 ojkk 99개·yokohama 61개 셀과 marks를 확인했으며 전사 오류 없이 upheld. 계단 配筋図의 결합 listKind와 이미지 근거 항목은 raw 검증 한계로 기록함",
+      "completed_at": "2026-08-26T11:27:45+0900"
     },
     {
       "step": 1,
       "name": "parse-wall-slab-lists",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T11:27:48+0900",
+      "summary": "표 형식 壁リスト·スラブリスト를 후보로 파싱하고 대상외·해석 불가 셀·확정 칸 수를 골든으로 고정",
+      "completed_at": "2026-08-26T11:55:25+0900"
     },
     {
       "step": 2,
       "name": "import-apply-wall-slab",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T11:55:26+0900",
+      "summary": "SectionImport에 耐震壁·床板 후보 반영과 床板 短辺=X/Y 방향 선택을 연결하고 신규 필드 검증·기존값 보존을 테스트로 고정",
+      "completed_at": "2026-08-26T12:06:46+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T11:21:53+0900",
+  "completed_at": "2026-08-26T12:06:47+0900"
 }

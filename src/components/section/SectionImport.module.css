@@ -164,6 +164,29 @@
   color: var(--text-muted);
 }
 
+.directionChoice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--text-muted);
+}
+
+.directionChoice select {
+  min-height: 28px;
+  padding: 0 var(--space-xxs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-body);
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.directionChoice select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .rowActions {
   justify-content: flex-end;
 }

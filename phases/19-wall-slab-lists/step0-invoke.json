@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "verify-transcription",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 352.6110939999926,
+  "stdout_log": "phases\\19-wall-slab-lists\\step0-codex.stdout.log",
+  "stderr_log": "phases\\19-wall-slab-lists\\step0-codex.stderr.log"
+}

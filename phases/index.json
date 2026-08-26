@@ -91,7 +91,8 @@
     },
     {
       "dir": "19-wall-slab-lists",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-26T12:06:47+0900"
     }
   ]
 }

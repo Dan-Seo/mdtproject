@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "import-apply-wall-slab",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 679.8325168999727,
+  "stdout_log": "phases\\19-wall-slab-lists\\step2-codex.stdout.log",
+  "stderr_log": "phases\\19-wall-slab-lists\\step2-codex.stderr.log"
+}

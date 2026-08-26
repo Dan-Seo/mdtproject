@@ -59,9 +59,9 @@ const barSizes = new Set<BarSize>(BAR_SIZES)
 const shearBarSizes = new Set<ShearBarSize>(SHEAR_BAR_SIZES)
 
 const TITLE_PATTERN =
-  /(柱断面リスト|大梁断面リスト|小梁断面リスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
+  /(柱断面リスト|大梁断面リスト|小梁断面リスト|小梁リスト|片持梁リスト|片持スラブリスト|耐圧版リスト|壁リスト|スラブリスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
 const STORY_PATTERN = /^(?:RF|R階|\d+F|\d+階)$/
-const MARK_PATTERN = /^(?:(?:C|G|FC|FG|B|CB)\d+[A-Z]?|W\d+|fg)$/i
+const MARK_PATTERN = /^(?:(?:FCG|CG|EW|BW|FS|CS|FC|FG|FB|CB|C|G|B|S|W)\d+[A-Z]?|fg)$/i
 
 /** 세로 런을 층 슬라이스에 배정할 때의 거리 상한 = 슬라이스 폭 × 이 값.
  *  배정 앵커가 층 라벨이던 동안에는 이 검사가 중간 층에서 항상 참이었다 —
@@ -150,7 +150,7 @@ function storyFromRow(row: TextRow): string | undefined {
  * 「후보는 対象外인데 실패 안내는 뜬다」로 조용히 갈라진다
  */
 function isOutOfScopeList(titleText: string): boolean {
-  return /小梁|地中梁|基礎/.test(titleText)
+  return /小梁|地中梁|基礎|片持梁|片持スラブ|耐圧版/.test(titleText)
 }
 
 function kindFromMark(mark: string, titleText: string): SectionCandidate['kind'] {
@@ -792,6 +792,357 @@ function setSideBar(
 
   candidate.raw['腹筋'] = cleanedRebarRaw(raw)
   addIssue(candidate, '腹筋解釈不能')
+}
+
+interface WallMarkGroup {
+  marks: string[]
+  centerX: number
+}
+
+const WALL_MARK_PATTERN = /(?:EW\d+[A-Z]?|W\d+[A-Z]?)/gi
+const SLAB_MARK_PATTERN = /^(?:S|FS|CS)\d+[A-Z]?$/i
+
+function marksInText(value: string): string[] {
+  return [...value.matchAll(WALL_MARK_PATTERN)].map((match) =>
+    match[0].toUpperCase(),
+  )
+}
+
+function wallMarkGroups(row: TextRow): WallMarkGroup[] {
+  const labels = row.segments.filter((segment) => segment.compact === '符号')
+  for (const label of [...labels].reverse()) {
+    const groups = row.segments
+      .filter((segment) => segment.x > label.endX)
+      .flatMap((segment) => {
+        const marks = marksInText(segment.compact)
+        return marks.length > 0 ? [{ marks, centerX: segment.centerX }] : []
+      })
+    if (groups.length > 0) return groups
+  }
+  return []
+}
+
+function valuesForWallGroups(
+  row: TextRow,
+  labelText: string,
+  groups: WallMarkGroup[],
+  split: (text: string) => string[],
+  valueRow: TextRow = row,
+): Map<string, string> {
+  const label = [...row.segments]
+    .reverse()
+    .find((segment) => segment.compact === labelText)
+  if (!label) return new Map()
+
+  const values = valueRow.segments.filter((segment) =>
+    valueRow === row ? segment.x > label.endX : true,
+  )
+  const result = new Map<string, string>()
+  for (const segment of values) {
+    const covered = groups.filter(
+      (group) => group.centerX >= segment.x && group.centerX <= segment.endX,
+    )
+    if (covered.length === 0) continue
+    const parts = split(segment.text)
+    if (covered.length === parts.length) {
+      covered.forEach((group, index) => {
+        for (const mark of group.marks) result.set(mark, parts[index])
+      })
+      continue
+    }
+    if (covered.length === 1 && parts.length === covered[0].marks.length) {
+      covered[0].marks.forEach((mark, index) => result.set(mark, parts[index]))
+      continue
+    }
+    // A single mark with two thicknesses is ambiguous. Keep the complete cell
+    // for every mark in the group; the caller will leave the typed field empty.
+    for (const group of covered) {
+      for (const mark of group.marks) result.set(mark, segment.text)
+    }
+  }
+  return result
+}
+
+function wallThicknessParts(text: string): string[] {
+  return normalized(text)
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+}
+
+function wallBarParts(text: string): string[] {
+  const value = compact(text)
+  if (/[・･]/.test(value) || /[A-Z]\d+[A-Z]\d+/i.test(value)) return []
+  return value.match(/[A-Z]\d+-?@\d+(?:\([^)]*\))?/gi) ?? []
+}
+
+function parseWallBar(value: string):
+  | { size: BarSize; pitchMm: number; layers: 1 | 2 }
+  | undefined {
+  const match = compact(value).match(
+    /^([A-Z]\d+)-?@(\d+)(?:\(([^)]*)\))?$/i,
+  )
+  if (!match) return undefined
+  const size = match[1].toUpperCase() as BarSize
+  const pitchMm = Number(match[2])
+  if (!barSizes.has(size) || pitchMm <= 0) return undefined
+  const note = match[3]
+  if (!note) return undefined
+  const layers = /ダブル|ﾀﾞﾌﾞﾙ/.test(normalized(note)) ? 2 : /シングル/.test(note) ? 1 : undefined
+  return layers === undefined ? undefined : { size, pitchMm, layers }
+}
+
+function parseWallBlock(
+  rows: TextRow[],
+  titleText: string,
+  endY: number,
+): SectionCandidate[] {
+  const header = rows.find((row) => wallMarkGroups(row).length > 0)
+  if (!header) return []
+  const groups = wallMarkGroups(header)
+  const bodyRows = rows.filter((row) => row.y > header.y && row.y < endY)
+  const dimensionRow = bodyRows
+    .filter((row) =>
+      row.segments.some((segment) => segment.compact === '断面'),
+    )
+    .at(-1)
+  const verticalRow = bodyRows.find((row) =>
+    row.segments.some((segment) => segment.compact === '縦筋'),
+  )
+  const horizontalRow = bodyRows.find((row) =>
+    row.segments.some((segment) => segment.compact === '横筋'),
+  )
+  if (!dimensionRow && !verticalRow && !horizontalRow) return []
+
+  const dimensionValueRow = dimensionRow
+    ? bodyRows.find(
+        (row) =>
+          row.y > dimensionRow.y &&
+          row.y < (verticalRow?.y ?? endY) &&
+          row.segments.some((segment) =>
+            groups.some(
+              (group) =>
+                group.centerX >= segment.x && group.centerX <= segment.endX,
+            ),
+          ),
+      )
+    : undefined
+  const thicknesses = dimensionRow
+    ? valuesForWallGroups(
+        dimensionRow,
+        '断面',
+        groups,
+        wallThicknessParts,
+        dimensionValueRow,
+      )
+    : new Map<string, string>()
+  const verticals = verticalRow
+    ? valuesForWallGroups(verticalRow, '縦筋', groups, wallBarParts)
+    : new Map<string, string>()
+  const horizontals = horizontalRow
+    ? valuesForWallGroups(horizontalRow, '横筋', groups, wallBarParts)
+    : new Map<string, string>()
+
+  return groups.flatMap(({ marks }) =>
+    marks.map((mark): SectionCandidate => {
+      const candidate: SectionCandidate = {
+        kind: isOutOfScopeList(titleText) ? '対象外' : '耐震壁',
+        mark,
+        raw: {},
+        issues: [],
+      }
+      const thickness = thicknesses.get(mark)
+      if (thickness && /^\d+$/.test(thickness)) {
+        candidate.thickness = Number(thickness)
+      } else if (thickness) {
+        candidate.raw['断面'] = thickness
+        addIssue(candidate, '壁厚相違')
+      }
+
+      const setBar = (
+        role: 'vertical' | 'horizontal',
+        value: string | undefined,
+      ) => {
+        if (value === undefined) return
+        const parsed = parseWallBar(value)
+        if (!parsed) {
+          candidate.raw[role === 'vertical' ? '縦筋' : '横筋'] = value
+          addIssue(candidate, '壁筋解釈不能')
+          return
+        }
+        if (candidate.layers !== undefined && candidate.layers !== parsed.layers) {
+          candidate.raw[role === 'vertical' ? '縦筋' : '横筋'] = value
+          addIssue(candidate, '壁筋解釈不能')
+          return
+        }
+        candidate[role] = { size: parsed.size, pitchMm: parsed.pitchMm }
+        candidate.layers = parsed.layers
+      }
+      setBar('vertical', verticals.get(mark))
+      setBar('horizontal', horizontals.get(mark))
+      return candidate
+    }),
+  )
+}
+
+function slabMark(row: TextRow): { mark: string; centerX: number } | undefined {
+  const segment = row.segments.find((candidate) =>
+    SLAB_MARK_PATTERN.test(candidate.compact),
+  )
+  return segment
+    ? { mark: segment.compact.toUpperCase(), centerX: segment.centerX }
+    : undefined
+}
+
+function slabBarCell(row: TextRow, centerX: number): TextSegment | undefined {
+  return row.segments
+    .filter((segment) => /@\d+/.test(compact(segment.text)))
+    .sort(
+      (left, right) =>
+        Math.abs(left.centerX - centerX) - Math.abs(right.centerX - centerX),
+    )[0]
+}
+
+function parseSlabBar(value: string): { size: BarSize; pitchMm: number } | undefined {
+  const match = compact(value).match(/^([A-Z]\d+)-?@(\d+)$/i)
+  if (!match) return undefined
+  const size = match[1].toUpperCase() as BarSize
+  const pitchMm = Number(match[2])
+  return barSizes.has(size) && pitchMm > 0 ? { size, pitchMm } : undefined
+}
+
+function slabThickness(row: TextRow, centerX: number): number | undefined {
+  const value = row.segments
+    .filter((segment) => /^\d[\d,]*$/.test(compact(segment.text)))
+    .sort(
+      (left, right) =>
+        Math.abs(left.centerX - centerX) - Math.abs(right.centerX - centerX),
+    )[0]
+    ?.compact
+  return value === undefined ? undefined : Number(value.replace(/,/g, ''))
+}
+
+function nextHeaderY(rows: TextRow[], endY: number): number | undefined {
+  return rows.find(
+    (row) =>
+      row.y >= endY &&
+      row.segments.some((segment) => segment.compact.startsWith('符号')) &&
+      !row.segments.some((segment) =>
+        /短辺方向|長辺方向/.test(segment.compact),
+      ),
+  )?.y
+}
+
+function parseSlabBlock(
+  rows: TextRow[],
+  anchor: TitleAnchor,
+  endY: number,
+): SectionCandidate[] {
+  const directionHeader = rows.find((row) =>
+    row.segments.some((segment) => segment.compact === '短辺方向') &&
+    row.segments.some((segment) => segment.compact === '長辺方向'),
+  )
+  const shortX = directionHeader?.segments.find(
+    (segment) => segment.compact === '短辺方向',
+  )?.centerX
+  const longX = directionHeader?.segments.find(
+    (segment) => segment.compact === '長辺方向',
+  )?.centerX
+  if (shortX === undefined || longX === undefined) return []
+
+  const initialRows = rows.filter((row) => row.y > anchor.row.y)
+  const firstMark = initialRows.map(slabMark).find(
+    (mark): mark is { mark: string; centerX: number } => mark !== undefined,
+  )
+  if (!firstMark) return []
+  const markRows = initialRows
+    .map((row) => ({ row, mark: slabMark(row) }))
+    .filter(
+      (entry): entry is { row: TextRow; mark: { mark: string; centerX: number } } =>
+        entry.mark !== undefined &&
+        Math.abs(entry.mark.centerX - firstMark.centerX) <
+          Math.max(20, Math.abs(shortX - firstMark.centerX)),
+    )
+  const bridgeTitle = rows.find(
+    (row) =>
+      Math.abs(row.y - endY) < 0.01 &&
+      row.segments.some((segment) => /壁リスト/.test(segment.compact)),
+  )
+  const scanEnd = bridgeTitle ? nextHeaderY(rows, endY) ?? endY : endY
+  const candidates = markRows.filter(({ row }) => row.y < scanEnd)
+  if (candidates.length === 0) return []
+
+  const thicknessHeader = rows.find((row) =>
+    row.segments.some((segment) => /床厚|スラブ厚/.test(segment.compact)),
+  )
+  const thicknessX =
+    thicknessHeader?.segments.find((segment) =>
+      /床厚|スラブ厚/.test(segment.compact),
+    )?.centerX ?? firstMark.centerX
+  const outOfScope = isOutOfScopeList(anchor.titleText)
+
+  return candidates.map(({ row, mark }, index) => {
+    const nextY = candidates[index + 1]?.row.y ?? scanEnd
+    const cantilever =
+      mark.mark.startsWith('CS') &&
+      rows.some(
+        (candidateRow) =>
+          candidateRow.y >= row.y - 1 &&
+          candidateRow.y < nextY &&
+          candidateRow.segments.some((segment) =>
+            segment.compact.includes('片持ちスラブ'),
+          ),
+      )
+    const candidate: SectionCandidate = {
+      kind: outOfScope || cantilever ? '対象外' : '床板',
+      mark: mark.mark,
+      raw: {},
+      issues: [],
+    }
+    const sectionRows = rows.filter(
+      (candidateRow) => candidateRow.y > row.y - 20 && candidateRow.y < nextY,
+    )
+    const thickness = slabThickness(row, thicknessX)
+    if (!outOfScope && thickness !== undefined) candidate.thickness = thickness
+
+    if (outOfScope || cantilever) return candidate
+
+    const faceRows = new Map<'top' | 'bottom', TextRow>()
+    for (const face of ['top', 'bottom'] as const) {
+      const labels = face === 'top' ? ['上端筋', '上筋'] : ['下端筋', '下筋']
+      const faceRow = sectionRows
+        .filter((candidateRow) =>
+          candidateRow.segments.some((segment) =>
+            labels.includes(segment.compact),
+          ),
+        )
+        .sort((left, right) => Math.abs(left.y - row.y) - Math.abs(right.y - row.y))[0]
+      if (faceRow) faceRows.set(face, faceRow)
+    }
+
+    for (const [face, faceRow] of faceRows) {
+      for (const [axis, centerX] of [
+        ['短辺方向', shortX],
+        ['長辺方向', longX],
+      ] as const) {
+        const cell = slabBarCell(faceRow, centerX)
+        const key = axis === '短辺方向' ? 'shortSide' : 'longSide'
+        const rawKey = `${axis}(${face})`
+        if (!cell) continue
+        const parsed = parseSlabBar(cell.text)
+        if (!parsed) {
+          candidate.raw[rawKey] = cell.text
+          addIssue(candidate, '床板筋解釈不能')
+          continue
+        }
+        candidate[key] = {
+          ...candidate[key],
+          [face]: parsed,
+        }
+      }
+    }
+    return candidate
+  })
 }
 
 function rowsBetween(rows: TextRow[], startY: number, endY: number): TextRow[] {
@@ -1636,13 +1987,19 @@ function parseTableRegion(
   xEnd: number,
   verticals: VerticalRun[],
 ): ParsedSectionList | undefined {
+  const isSlabList = /スラブリスト|耐圧版リスト/.test(anchor.listKind)
+  const isWallList = anchor.listKind === '壁リスト'
   // 영역을 y뿐 아니라 x대역으로도 잘라낸다 — 좌우로 나란한 리스트에서 옆 표의
   // 세그먼트가 섞이면 符号·라벨 매칭이 옆 표를 오염시킨다
   const tableRows = rows
-    .filter((row) => row.y >= anchor.row.y && row.y < endY)
+    .filter(
+      (row) =>
+        row.y >= anchor.row.y && (isSlabList || row.y < endY),
+    )
     .map((row) => {
       const items = row.items.filter(
-        (item) => item.x + item.w >= xStart && item.x < xEnd,
+        (item) =>
+          isSlabList || isWallList || (item.x + item.w >= xStart && item.x < xEnd),
       )
       return items.length > 0
         ? { ...row, items, segments: makeSegments(items) }
@@ -1664,6 +2021,19 @@ function parseTableRegion(
   )
   // 대상이 아닌 리스트를 못 읽었다고 알리면 정상 파싱된 도면에서도 실패 안내가 뜬다
   const outOfScope = isOutOfScopeList(anchor.titleText)
+  if (isWallList || isSlabList) {
+    const candidates =
+      isWallList
+        ? parseWallBlock(tableRows, anchor.titleText, endY)
+        : parseSlabBlock(tableRows, anchor, endY)
+    return {
+      listKind: anchor.listKind,
+      candidates,
+      ...(candidates.length === 0 && !outOfScope
+        ? { issue: '項目行未認識' as const }
+        : {}),
+    }
+  }
   // 타이틀은 인식했는데 符号 행을 못 읽은 표를 통째로 버리면, 화면에는
   // 「断面リスト가 없다」로 보여 사용자가 인식 실패와 구분할 수 없다.
   // 사유를 코드로 실어 보내고 문구는 표시부가 고른다 (CandidateIssue와 같은 규약)
@@ -1759,7 +2129,9 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
     // 우측 경계도 중점 — 「이웃 x−40」 고정이면 중앙 정렬 타이틀을 가진 오른쪽 표의
     // 라벨열이 왼쪽 대역에 새어 들어와 셀 값에 이어붙는다
     const xEnd = rightNeighbor
-      ? (anchor.x + rightNeighbor.x) / 2
+      ? isOutOfScopeList(anchor.titleText)
+        ? rightNeighbor.x
+        : (anchor.x + rightNeighbor.x) / 2
       : Number.POSITIVE_INFINITY
     // 블록 끝은 이 x대역 안에서 아래에 오는 다음 타이틀
     const below = anchors
