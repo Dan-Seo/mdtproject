@@ -6,7 +6,10 @@
       "step": 0,
       "name": "verify-adr037-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T21:35:49+0900",
+      "completed_at": "2026-08-26T21:35:49+0900",
+      "summary": "ADR-037의 7개 전제를 실행 반례로 모두 upheld로 확인. 하네스가 스텝 경계에서 exit 255로 죽어 Claude가 인계해 기록했다."
     },
     {
       "step": 1,
@@ -23,5 +26,6 @@
       "name": "wall-extent-input-ledger",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T21:21:29+0900"
 }
