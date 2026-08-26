@@ -1,0 +1,86 @@
+{
+  "step": 1,
+  "name": "parse-asymmetric-cells",
+  "resolvedCells": [
+    {
+      "member": "G51",
+      "story": "R階",
+      "row": "上筋",
+      "size": "D25",
+      "values": [
+        { "label": "外端", "count": 8 },
+        { "label": "中央", "count": 8 },
+        { "label": "内端", "count": 13 }
+      ]
+    },
+    {
+      "member": "G51",
+      "story": "R階",
+      "row": "下筋",
+      "size": "D25",
+      "values": [
+        { "label": "外端", "count": 8 },
+        { "label": "中央", "count": 8 },
+        { "label": "内端", "count": 11 }
+      ]
+    },
+    {
+      "member": "G55",
+      "story": "R階",
+      "row": "上筋",
+      "size": "D25",
+      "values": [
+        { "label": "Y2端", "count": 4 },
+        { "label": "中央", "count": 5 },
+        { "label": "Y3端", "count": 8 }
+      ]
+    },
+    {
+      "member": "G55",
+      "story": "R階",
+      "row": "下筋",
+      "size": "D25",
+      "values": [
+        { "label": "Y2端", "count": 4 },
+        { "label": "中央", "count": 5 },
+        { "label": "Y3端", "count": 5 }
+      ]
+    }
+  ],
+  "cutoff": {
+    "member": "G51",
+    "story": "R階",
+    "label": "内端",
+    "raw": "［2500］",
+    "valueMm": 2500
+  },
+  "goldenPins": {
+    "yokohamaP14GirderMainBefore": 3,
+    "yokohamaP14GirderMainAfter": 5,
+    "yokohamaP14Stirrup": 5,
+    "yokohamaP14Dimension": 5
+  },
+  "residualIssue": {
+    "code": "主筋端部左右相違",
+    "present": true,
+    "paths": [
+      "三欄でない位置表（中央欄なし）の既存拒否回帰"
+    ],
+    "p14Resolved": true
+  },
+  "verification": {
+    "targeted": "passed — 2 files, 98 tests",
+    "typecheck": "passed — npx tsc --noEmit",
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1",
+    "fullTest": {
+      "status": "failed",
+      "summary": "82 files, 1466 passed, 3 failed",
+      "failures": [
+        "SectionImport: new asymmetric candidate is still expected to be blocked",
+        "SectionImport: existing-section apply still assumes symmetric girderMain",
+        "SectionImport: parser issue assertion still expects the old G51 rejection"
+      ],
+      "nextStep": "Step 2 must update SectionImport to consume asymmetricEnds; Step 1 did not modify components."
+    }
+  }
+}

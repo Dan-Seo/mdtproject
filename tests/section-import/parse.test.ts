@@ -196,7 +196,7 @@ describe('parseSectionLists', () => {
     }
   })
 
-  it('leaves position-dependent 大梁 main bars blank and maps uniform sections', () => {
+  it('maps position-dependent 大梁 main bars, including asymmetric ends', () => {
     const parsed = parseSectionLists(readPage('yokohama-p14.json'))
     const girders = list(parsed, '大梁断面リスト')
 
@@ -209,18 +209,18 @@ describe('parseSectionLists', () => {
       depth: 800,
       stirrup: { size: 'D13', pitchMm: 100 },
     })
-    expect(g51Roof.girderMain).toBeUndefined()
-    expect(g51Roof.raw).toMatchObject({
-      '上筋(外端)': '8-D25',
-      '上筋(中央)': '8-D25',
-      '上筋(内端)': '13-D25',
-      '下筋(外端)': '8-D25',
-      '下筋(中央)': '8-D25',
-      '下筋(内端)': '11-D25',
+    expect(g51Roof.girderMain).toEqual({
+      size: 'D25',
+      topCount: 8,
+      bottomCount: 8,
+      asymmetricEnds: {
+        labels: ['外端', '内端'],
+        topCounts: [8, 13],
+        bottomCounts: [8, 11],
+      },
+      cutoffFromSupportFaceMm: 2500,
     })
-
-    // 外端 8 ≠ 内端 13 — どちらが始端かを決められないので確定しない
-    expect(g51Roof.issues).toContain('主筋端部左右相違')
+    expect(g51Roof.issues).not.toContain('主筋端部左右相違')
     expect(g51Roof.sideBar).toEqual({ size: 'D10', count: 2 })
 
     const cutoffEntries = girders.candidates.flatMap(({ raw }) =>
@@ -265,7 +265,16 @@ describe('parseSectionLists', () => {
       depth: 700,
       girderMain: { size: 'D22', topCount: 5, bottomCount: 4 },
     })
-    expect(candidate(girders, 'G55', 'R階').girderMain).toBeUndefined()
+    expect(candidate(girders, 'G55', 'R階').girderMain).toEqual({
+      size: 'D25',
+      topCount: 5,
+      bottomCount: 5,
+      asymmetricEnds: {
+        labels: ['Y2端', 'Y3端'],
+        topCounts: [4, 8],
+        bottomCounts: [4, 5],
+      },
+    })
   })
 
   it('keeps a half-width cutoff raw without a position instead of inventing a candidate field', () => {
@@ -639,20 +648,62 @@ function sweepGirders(
       if (c.girderMain) {
         // 位置別に確定した候補は、位置ごとに転写と突き合わせる — 端部の値を中央に
         // 入れた候補は「確定した」ままここを通ってしまう
-        const { size, topCount, bottomCount, endTopCount, endBottomCount } =
-          c.girderMain
+        const {
+          size,
+          topCount,
+          bottomCount,
+          endTopCount,
+          endBottomCount,
+          asymmetricEnds,
+        } = c.girderMain
+        if (asymmetricEnds) {
+          const endpointPositions = Object.keys(topCells).filter(
+            (position) => !isCenterPosition(position),
+          )
+          expect(asymmetricEnds.labels, `${label} endpoint labels`).toEqual(
+            endpointPositions,
+          )
+          if (asymmetricEnds.topCounts) {
+            expect(
+              asymmetricEnds.topCounts,
+              `${label} ${labels.top} endpoint counts`,
+            ).toEqual(
+              endpointPositions.map((position) =>
+                Number(topCells[position]?.split('-')[0]),
+              ),
+            )
+          }
+          if (asymmetricEnds.bottomCounts) {
+            expect(
+              asymmetricEnds.bottomCounts,
+              `${label} ${labels.bottom} endpoint counts`,
+            ).toEqual(
+              endpointPositions.map((position) =>
+                Number(bottomCells[position]?.split('-')[0]),
+              ),
+            )
+          }
+        }
         for (const [position, text] of Object.entries(topCells)) {
+          const endIndex = asymmetricEnds?.labels.indexOf(position) ?? -1
           const count = isCenterPosition(position)
             ? topCount
-            : (endTopCount ?? topCount)
+            : endIndex >= 0
+              ? (asymmetricEnds?.topCounts?.[endIndex] ?? endTopCount ?? topCount)
+              : (endTopCount ?? topCount)
           expect(`${count}-${size}`, `${label} ${labels.top}(${position})`).toBe(
             text,
           )
         }
         for (const [position, text] of Object.entries(bottomCells)) {
+          const endIndex = asymmetricEnds?.labels.indexOf(position) ?? -1
           const count = isCenterPosition(position)
             ? bottomCount
-            : (endBottomCount ?? bottomCount)
+            : endIndex >= 0
+              ? (asymmetricEnds?.bottomCounts?.[endIndex] ??
+                endBottomCount ??
+                bottomCount)
+              : (endBottomCount ?? bottomCount)
           expect(
             `${count}-${size}`,
             `${label} ${labels.bottom}(${position})`,
@@ -719,10 +770,10 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         '大梁断面リスト',
         { top: '上筋', bottom: '下筋', stirrup: 'ST' },
       ),
-      // 端部가 좌우 동값인 1칸(G51 2階)은 位置別로 확정한다. 나머지 2칸
-      // (G51 R階 外端8/内端13, G55 R階)은 좌우가 달라 미확정이 정답 — 製品의
-      // Grid는 通り芯 라벨이 없어 어느 쪽이 始端인지 정할 수 없다
-    ).toEqual({ main: 3, stirrup: 5, dimension: 5 })
+      // 端部가 좌우 동값인 1칸(G51 2階)은 기존 대칭 필드로, 나머지 2칸
+      // (G51 R階 外端8/内端13, G55 R階)은 원문 라벨과 좌우 본수를
+      // asymmetricEnds로 확정한다. 방향 결정은 다음 취입 단계의 책임이다
+    ).toEqual({ main: 5, stirrup: 5, dimension: 5 })
   })
 
   it('ojkk 大梁リスト — 32칸 (断面 라벨 행 없음·2F에만 G1A·G2A)', () => {

@@ -31,6 +31,7 @@ interface MarkColumn {
 
 interface PositionColumn {
   label: string
+  rawLabel: string
   centerX: number
   mark: string
 }
@@ -172,7 +173,11 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
 
   const positions = row.segments
     .filter((segment) => segment.centerX > label.endX)
-    .map((segment) => ({ label: segment.compact, centerX: segment.centerX }))
+    .map((segment) => ({
+      label: segment.compact,
+      rawLabel: segment.text,
+      centerX: segment.centerX,
+    }))
     .filter((position) => position.label.length > 0)
 
   if (positions.length === 0) return []
@@ -587,9 +592,22 @@ function setColumnMain(
  * 端部・中央に読み替えない — 読み替えれば図面にない断面を作る。
  */
 function positionZone(label: string): '端部' | '中央' | undefined {
-  if (label.includes('中央')) return '中央'
-  if (label.includes('端')) return '端部'
+  const normalizedLabel = compact(label)
+  if (normalizedLabel.includes('中央')) return '中央'
+  if (normalizedLabel.includes('端')) return '端部'
   return undefined
+}
+
+function isThreePositionLayout(
+  cells: Array<{ position: string }>,
+): boolean {
+  const zones = cells.map(({ position }) => positionZone(position))
+  return (
+    cells.length === 3 &&
+    zones[0] === '端部' &&
+    zones[1] === '中央' &&
+    zones[2] === '端部'
+  )
 }
 
 function uniqueCount(bars: ParsedBar[]): number | undefined {
@@ -603,12 +621,12 @@ function uniqueCount(bars: ParsedBar[]): number | undefined {
 /**
  * 位置で本数を分けている表を、端部欄と中央欄の対として読む。
  *
- * 「Y3端／Y4端」のように両端が違う表は取り込まない — 製品の Grid は通り芯ラベルを
- * 持たないのでどちらが始端かを決められず、決めればそれは図面にない向きになる
- * (ADR-004)。径は全欄で一つに揃っている表だけを確定する。
+ * 「Y3端／Y4端」のように両端が違う三欄表は、位置ラベルと左右の本数を
+ * そのまま候補に載せる。二欄の端部・中央表は従来どおり単一の端部本数に
+ * 畳み込む。径は全欄で一つに揃っている表だけを確定する。
  */
 function positionalGirderMain(
-  cells: Array<{ position: string }>,
+  cells: Array<{ position: string; rawPosition?: string }>,
   top: ParsedBar[],
   bottom: ParsedBar[],
 ):
@@ -618,28 +636,37 @@ function positionalGirderMain(
   const zones = cells.map(({ position }) => positionZone(position))
   if (zones.some((zone) => zone === undefined)) return undefined
 
+  // 左端・中央・右端の三欄でない表は、左右非対称の端部として再解釈しない。
+  // 端部・中央の二欄は従来どおり、単一の端部本数として扱う。
+  const asymmetricLayout = isThreePositionLayout(cells)
+  if (cells.length === 3 && !asymmetricLayout) return undefined
+
   const pick = (bars: ParsedBar[], zone: '端部' | '中央') =>
     bars.filter((_, index) => zones[index] === zone)
   const endTop = pick(top, '端部')
   const endBottom = pick(bottom, '端部')
-  const endTopCount = uniqueCount(endTop)
-  const endBottomCount = uniqueCount(endBottom)
-
-  if (
-    (endTop.length > 0 && endTopCount === undefined) ||
-    (endBottom.length > 0 && endBottomCount === undefined)
-  ) {
-    return { issue: '主筋端部左右相違' }
-  }
-
   const centerTopCount = uniqueCount(pick(top, '中央'))
   const centerBottomCount = uniqueCount(pick(bottom, '中央'))
   if (
     centerTopCount === undefined ||
     centerBottomCount === undefined ||
-    endTopCount === undefined ||
-    endBottomCount === undefined
+    endTop.length === 0 ||
+    endBottom.length === 0
   ) {
+    if (
+      endTop.length > 0 &&
+      uniqueCount(endTop) === undefined &&
+      !asymmetricLayout
+    ) {
+      return { issue: '主筋端部左右相違' }
+    }
+    if (
+      endBottom.length > 0 &&
+      uniqueCount(endBottom) === undefined &&
+      !asymmetricLayout
+    ) {
+      return { issue: '主筋端部左右相違' }
+    }
     return undefined
   }
 
@@ -647,23 +674,82 @@ function positionalGirderMain(
   if (size === undefined) return undefined
   if (![...top, ...bottom].every((bar) => bar.size === size)) return undefined
 
-  return {
-    girderMain: {
-      size,
-      topCount: centerTopCount,
-      bottomCount: centerBottomCount,
-      endTopCount,
-      endBottomCount,
-    },
+  if (!asymmetricLayout) {
+    const endTopCount = uniqueCount(endTop)
+    const endBottomCount = uniqueCount(endBottom)
+    if (endTopCount === undefined || endBottomCount === undefined) {
+      return { issue: '主筋端部左右相違' }
+    }
+    return {
+      girderMain: {
+        size,
+        topCount: centerTopCount,
+        bottomCount: centerBottomCount,
+        endTopCount,
+        endBottomCount,
+      },
+    }
   }
+
+  const endTopCounts = [top[0]?.count, top[2]?.count] as const
+  const endBottomCounts = [bottom[0]?.count, bottom[2]?.count] as const
+  if (
+    endTopCounts[0] === undefined ||
+    endTopCounts[1] === undefined ||
+    endBottomCounts[0] === undefined ||
+    endBottomCounts[1] === undefined
+  ) {
+    return undefined
+  }
+
+  const labels = [
+    cells[0]?.rawPosition ?? cells[0]?.position,
+    cells[2]?.rawPosition ?? cells[2]?.position,
+  ] as const
+  if (labels[0] === undefined || labels[1] === undefined) return undefined
+  const asymmetricTop = endTopCounts[0] !== endTopCounts[1]
+  const asymmetricBottom = endBottomCounts[0] !== endBottomCounts[1]
+  const girderMain: NonNullable<SectionCandidate['girderMain']> = {
+    size,
+    topCount: centerTopCount,
+    bottomCount: centerBottomCount,
+  }
+
+  if (asymmetricTop || asymmetricBottom) {
+    girderMain.asymmetricEnds = {
+      labels: [labels[0], labels[1]],
+      ...(asymmetricTop
+        ? { topCounts: [endTopCounts[0], endTopCounts[1]] as [number, number] }
+        : {}),
+      ...(asymmetricBottom
+        ? {
+            bottomCounts: [endBottomCounts[0], endBottomCounts[1]] as [
+              number,
+              number,
+            ],
+          }
+        : {}),
+    }
+    if (!asymmetricTop) girderMain.endTopCount = endTopCounts[0]
+    if (!asymmetricBottom) girderMain.endBottomCount = endBottomCounts[0]
+  } else {
+    girderMain.endTopCount = endTopCounts[0]
+    girderMain.endBottomCount = endBottomCounts[0]
+  }
+
+  return { girderMain }
 }
 
 function setGirderMain(
   candidate: SectionCandidate,
   topLabel: string,
   bottomLabel: string,
-  topCells: Array<{ position: string; raw: string }>,
-  bottomCells: Array<{ position: string; raw: string }>,
+  topCells: Array<{ position: string; rawPosition?: string; raw: string }>,
+  bottomCells: Array<{
+    position: string
+    rawPosition?: string
+    raw: string
+  }>,
   expectedCellCount: number,
 ): void {
   if (topCells.length === 0 && bottomCells.length === 0) return
@@ -1660,15 +1746,20 @@ function cellsForMark(
   values: Map<string, string>,
   positions: Array<PositionColumn & { index: number }>,
   mark: string,
-): Array<{ position: string; raw: string }> {
+): Array<{ position: string; rawPosition: string; raw: string }> {
   return positions
     .filter((position) => position.mark === mark)
     .map((position) => ({
       position: position.label,
+      rawPosition: position.rawLabel,
       raw: values.get(String(position.index)),
     }))
     .filter(
-      (cell): cell is { position: string; raw: string } => cell.raw !== undefined,
+      (cell): cell is {
+        position: string
+        rawPosition: string
+        raw: string
+      } => cell.raw !== undefined,
     )
 }
 
@@ -1714,6 +1805,39 @@ function cutoffCellsByMark(
   }
 
   return result
+}
+
+function cutoffFromSupportFace(
+  cells: Array<{ position?: string; raw: string }>,
+  positions: PositionColumn[],
+): number | undefined {
+  if (
+    cells.length === 0 ||
+    !isThreePositionLayout(positions.map(({ label }) => ({ position: label })))
+  ) {
+    return undefined
+  }
+
+  const leftLabel = positions[0]?.label
+  const rightLabel = positions[2]?.label
+  if (leftLabel === undefined || rightLabel === undefined) return undefined
+
+  const values: number[] = []
+  for (const cell of cells) {
+    if (cell.position !== leftLabel && cell.position !== rightLabel) {
+      return undefined
+    }
+    const match = compact(cell.raw).match(/^\[(\d+)\]$/)
+    if (!match) return undefined
+    const value = Number(match[1])
+    if (!Number.isFinite(value)) return undefined
+    values.push(value)
+  }
+
+  const first = values[0]
+  return first !== undefined && values.every((value) => value === first)
+    ? first
+    : undefined
 }
 
 function parseGirderBlock(
@@ -1908,6 +2032,10 @@ function parseGirderBlock(
         raw: {},
         issues: [],
       }
+      const cutoffMm = cutoffFromSupportFace(
+        cutoffCells.get(mark) ?? [],
+        markPositions,
+      )
       setDimension(result, dimension, false, verticalValues.get(mark))
       const topFold = topContinuations.get(mark)
       const bottomFold = bottomContinuations.get(mark)
@@ -1955,6 +2083,9 @@ function parseGirderBlock(
           bottomCells,
           markPositions.length,
         )
+      }
+      if (cutoffMm !== undefined && result.girderMain !== undefined) {
+        result.girderMain.cutoffFromSupportFaceMm = cutoffMm
       }
       if (stirrupLabel) {
         setPitch(
