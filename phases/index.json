@@ -118,6 +118,10 @@
       "dir": "24-wall-class",
       "status": "completed",
       "completed_at": "2026-08-26T17:42:23+0900"
+    },
+    {
+      "dir": "25-wall-extent",
+      "status": "pending"
     }
   ]
 }

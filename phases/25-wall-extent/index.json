@@ -1,0 +1,27 @@
+{
+  "project": "Kijun",
+  "phase": "25-wall-extent",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr037-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "wall-extent-domain-golden",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "wall-extent-viewer-plan",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "wall-extent-input-ledger",
+      "status": "pending"
+    }
+  ]
+}
