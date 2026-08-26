@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "widen-textitem-corpus",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1236.400554199994,
+  "stdout_log": "phases\\18-plan-corpus-widen\\step0-codex.stdout.log",
+  "stderr_log": "phases\\18-plan-corpus-widen\\step0-codex.stderr.log"
+}
