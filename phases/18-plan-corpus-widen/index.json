@@ -5,12 +5,20 @@
     {
       "step": 0,
       "name": "widen-textitem-corpus",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T10:15:17+0900",
+      "summary": "실물 3부의 미추출 6면을 표제란 제외와 함께 추가해 TextItem 코퍼스를 14면으로 확대하고 p8 검증 누락을 닫음",
+      "completed_at": "2026-08-26T10:35:53+0900"
     },
     {
       "step": 1,
       "name": "remeasure-thresholds-14",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T10:35:56+0900",
+      "summary": "14면 재측정으로 세로 1.0 트립 69건·중점 창 6~30pt 유지와 새 4면의 격자·階高 실태를 고정하고 R15를 발주처 2곳 한계로 열어 둠",
+      "completed_at": "2026-08-26T11:05:43+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T10:15:17+0900",
+  "completed_at": "2026-08-26T11:05:44+0900"
 }

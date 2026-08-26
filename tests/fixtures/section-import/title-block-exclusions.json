@@ -8,6 +8,12 @@
     "yokohama-p7.json": { "x": 1800, "y": 1500 },
     "yokohama-p8.json": { "x": 1800, "y": 1500 },
     "kani-p38.json": { "x": 440, "y": 1040 },
-    "kani-p40.json": { "x": 440, "y": 1040 }
+    "kani-p40.json": { "x": 440, "y": 1040 },
+    "yokohama-p6.json": { "x": 1800, "y": 1500 },
+    "yokohama-p9.json": { "x": 1800, "y": 1500 },
+    "yokohama-p15.json": { "x": 1800, "y": 1500 },
+    "ojkk-p4.json": { "x": 660, "y": 700 },
+    "kani-p39.json": { "x": 440, "y": 1040 },
+    "kani-p41.json": { "x": 440, "y": 1040 }
   }
 }

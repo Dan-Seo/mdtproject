@@ -31,6 +31,8 @@ const fixtures = [
     cacheFile: 'dwg-ojkk-zumen6.pdf',
     sha256: 'dcb9504a50d8661a76bbd96c412a20f468cfff7495167cd055ca0bb2289e1343',
     page: 2,
+    // 実測 707 件 × 0.8 の切り捨て。
+    minimumItems: 565,
     needles: [['柱リスト'], ['C2A'], ['16-D25'], ['22-D32'], ['700']],
   },
   {
@@ -38,6 +40,8 @@ const fixtures = [
     cacheFile: 'dwg-ojkk-zumen6.pdf',
     sha256: 'dcb9504a50d8661a76bbd96c412a20f468cfff7495167cd055ca0bb2289e1343',
     page: 3,
+    // 実測 1,447 件 × 0.8 の切り捨て。
+    minimumItems: 1157,
     needles: [['梁リスト'], ['上端筋'], ['あばら筋']],
   },
   {
@@ -45,6 +49,8 @@ const fixtures = [
     cacheFile: 'dwg-yokohama.pdf',
     sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
     page: 13,
+    // 実測 1,229 件 × 0.8 の切り捨て。
+    minimumItems: 983,
     needles: [['柱断面リスト'], ['C58A'], ['18-D25'], ['600φ']],
   },
   {
@@ -52,6 +58,8 @@ const fixtures = [
     cacheFile: 'dwg-yokohama.pdf',
     sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
     page: 14,
+    // 実測 1,026 件 × 0.8 の切り捨て。
+    minimumItems: 820,
     needles: [['大梁断面リスト'], ['G51'], ['13-D25'], ['650']],
   },
   {
@@ -59,6 +67,8 @@ const fixtures = [
     cacheFile: 'dwg-yokohama.pdf',
     sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
     page: 7,
+    // 実測 1,649 件 × 0.8 の切り捨て。
+    minimumItems: 1319,
     // 伏図 픽스처 — 断面リスト가 아니라 형상(通り芯·부재 배치)의 근거다 (ADR-030)
     needles: [['2階床伏図'], ['bX1'], ['bY6'], ['8700'], ['G51']],
   },
@@ -67,6 +77,8 @@ const fixtures = [
     cacheFile: 'dwg-kani-kids.pdf',
     sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',
     page: 40,
+    // 実測 833 件 × 0.8 の切り捨て。
+    minimumItems: 666,
     // 軸組図 픽스처 — 断面リスト가 아니라 높이 방향의 근거다 (ADR-030)
     needles: [['軸組図'], ['▽FL'], ['10,500'], ['C2']],
   },
@@ -75,7 +87,72 @@ const fixtures = [
     cacheFile: 'dwg-kani-kids.pdf',
     sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',
     page: 38,
+    // 実測 863 件 × 0.8 の切り捨て。
+    minimumItems: 690,
     needles: [['地中梁リスト'], ['ＦＧ１', 'FG1'], ['3-D19'], ['D10@200']],
+  },
+  {
+    file: 'ojkk-p4.json',
+    cacheFile: 'dwg-ojkk-zumen6.pdf',
+    sha256: 'dcb9504a50d8661a76bbd96c412a20f468cfff7495167cd055ca0bb2289e1343',
+    page: 4,
+    // 実測 2,301 件 × 0.8 の切り捨て。
+    minimumItems: 1840,
+    needles: [['小梁リスト'], ['スラブリスト'], ['壁リスト'], ['D10@200']],
+  },
+  {
+    file: 'yokohama-p6.json',
+    cacheFile: 'dwg-yokohama.pdf',
+    sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
+    page: 6,
+    // 実測 1,330 件 × 0.8 の切り捨て。
+    minimumItems: 1064,
+    needles: [['基礎伏図'], ['1階床伏図'], ['bX1'], ['8700']],
+  },
+  {
+    file: 'yokohama-p8.json',
+    cacheFile: 'dwg-yokohama.pdf',
+    sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
+    page: 8,
+    // 実測 723 件 × 0.8 の切り捨て。
+    minimumItems: 578,
+    needles: [['bY1'], ['bY6'], ['8700'], ['FG51']],
+  },
+  {
+    file: 'yokohama-p9.json',
+    cacheFile: 'dwg-yokohama.pdf',
+    sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
+    page: 9,
+    // 実測 830 件 × 0.8 の切り捨て。
+    minimumItems: 664,
+    needles: [['bX1'], ['bX2A'], ['bX3'], ['5000']],
+  },
+  {
+    file: 'yokohama-p15.json',
+    cacheFile: 'dwg-yokohama.pdf',
+    sha256: '37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b',
+    page: 15,
+    // 実測 1,545 件 × 0.8 の切り捨て。
+    minimumItems: 1236,
+    needles: [['スラブリスト'], ['壁リスト'], ['S51'], ['EW18']],
+  },
+  {
+    file: 'kani-p39.json',
+    cacheFile: 'dwg-kani-kids.pdf',
+    sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',
+    page: 39,
+    // 実測 513 件 × 0.8 の切り捨て。
+    minimumItems: 410,
+    needles: [['梁伏図'], ['X1'], ['Y3'], ['20,000']],
+  },
+  {
+    file: 'kani-p41.json',
+    cacheFile: 'dwg-kani-kids.pdf',
+    sha256: '6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f',
+    page: 41,
+    // 実測 399 件 × 0.8 の切り捨て。
+    minimumItems: 319,
+    needles: [['Y2通り軸組図'], ['Y1通り軸組図'], ['X4'], ['20,000']],
   },
 ] as const
 
@@ -312,9 +389,9 @@ describe('section-import TextItem fixtures', () => {
     })
     expect(fixture.page.widthPt).toBeGreaterThan(0)
     expect(fixture.page.heightPt).toBeGreaterThan(0)
-    // 표제란(개인 실명·연락처)은 추출 시점에 제외한다 — 밀도 하한은 그 제외 후의
-    // 최소 실측(ojkk-p2 707)보다 낮게 잡아, 빈 픽스처·절단 회귀만 걸러낸다
-    expect(fixture.items.length).toBeGreaterThanOrEqual(600)
+    // 표제란(개인 실명·연락처)은 추출 시점에 제외한다. 페이지별 밀도 차이를
+    // 전체 하한 하향으로 숨기지 않고, 각 실측값의 80%를 내림한 하한을 쓴다.
+    expect(fixture.items.length).toBeGreaterThanOrEqual(spec.minimumItems)
 
     for (const item of fixture.items) {
       expect(item.x).toBeGreaterThanOrEqual(0)
