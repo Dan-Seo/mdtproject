@@ -8,7 +8,8 @@
       "kind": "verify",
       "status": "completed",
       "started_at": "2026-08-26T17:06:39+0900",
-      "summary": "ADR-036의 여섯 전제를 실행 반례와 픽스처 대조로 모두 upheld로 확인하고 step0-report.json을 작성했다."
+      "summary": "ADR-036의 여섯 전제를 실행 반례와 픽스처 대조로 모두 upheld로 확인하고 step0-report.json을 작성했다.",
+      "completed_at": "2026-08-26T17:19:53+0900"
     },
     {
       "step": 1,
