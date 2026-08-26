@@ -1,0 +1,109 @@
+{
+  "pages": [
+    {
+      "file": "ojkk-p4.json",
+      "lists": [
+        {
+          "listKind": "壁リスト",
+          "candidateCount": 5,
+          "confirmed": 4,
+          "blank": 1,
+          "outOfScope": 0,
+          "marks": ["W10", "W15", "EW15", "EW15A", "W20"],
+          "candidateIssues": ["壁厚相違"]
+        },
+        {
+          "listKind": "スラブリスト",
+          "candidateCount": 12,
+          "confirmed": 2,
+          "blank": 4,
+          "outOfScope": 6,
+          "marks": ["S1", "S2", "FS1", "FS2", "FS3", "FS4", "CS1", "CS2", "CS3", "CS4", "CS5", "CS6"],
+          "candidateIssues": ["床板筋解釈不能"]
+        },
+        {
+          "listKind": "小梁リスト",
+          "candidateCount": 9,
+          "confirmed": 0,
+          "blank": 0,
+          "outOfScope": 9,
+          "marks": ["B1", "B2", "B3", "FB1", "FB2", "FB3", "FB4", "FB5", "BW20"]
+        },
+        {
+          "listKind": "片持梁リスト",
+          "candidateCount": 3,
+          "confirmed": 0,
+          "blank": 0,
+          "outOfScope": 3,
+          "marks": ["CG1", "FCG1", "CB1"]
+        }
+      ]
+    },
+    {
+      "file": "yokohama-p15.json",
+      "lists": [
+        {
+          "listKind": "壁リスト",
+          "candidateCount": 0,
+          "confirmed": 0,
+          "blank": 0,
+          "outOfScope": 0,
+          "marks": [],
+          "listIssue": "項目行未認識"
+        },
+        {
+          "listKind": "スラブリスト",
+          "candidateCount": 6,
+          "confirmed": 2,
+          "blank": 4,
+          "outOfScope": 0,
+          "marks": ["S51", "S52", "S53", "S54", "S55", "S56"],
+          "candidateIssues": ["床板筋解釈不能"]
+        },
+        {
+          "listKind": "片持スラブリスト",
+          "candidateCount": 2,
+          "confirmed": 0,
+          "blank": 0,
+          "outOfScope": 2,
+          "marks": ["CS51", "CS52"]
+        },
+        {
+          "listKind": "耐圧版リスト",
+          "candidateCount": 2,
+          "confirmed": 0,
+          "blank": 0,
+          "outOfScope": 2,
+          "marks": ["FS51", "FS52"]
+        }
+      ]
+    }
+  ],
+  "confirmedCellPins": {
+    "ojkk-p4.json": {
+      "wallThickness": 4,
+      "wallVertical": 5,
+      "wallHorizontal": 5,
+      "slabThickness": 6,
+      "slabBars": 15
+    },
+    "yokohama-p15.json": {
+      "wallCandidates": 0,
+      "slabThickness": 6,
+      "slabBars": 19
+    }
+  },
+  "candidateIssuesAdded": ["壁筋解釈不能", "壁厚相違", "床板筋解釈不能"],
+  "notes": [
+    "ojkkのCS1〜CS6はスラブリスト内でも備考『片持ちスラブ』により対象外とした。",
+    "yokohamaの壁リストは表形式の行・列構造がないため候補0で終了した。",
+    "短辺方向・長辺方向をX/Yへ変換せず候補に保持した。"
+  ],
+  "verification": {
+    "targeted": "passed — 27 tests",
+    "test": "passed — 82 files, 1447 tests",
+    "typecheck": "passed — npx tsc --noEmit",
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1"
+  },
+  "summary": "ojkk 壁5候補・床板6候補とyokohama 床板6候補を表形式から候補化し、対象外リストと正直な空欄をゴールデンで固定した"
+}
