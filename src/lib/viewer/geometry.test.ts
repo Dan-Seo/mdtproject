@@ -1315,7 +1315,8 @@ describe('roleToLayer', () => {
     ['X方向下端筋', 'main'],
     ['Y方向上端筋', 'main'],
     ['Y方向下端筋', 'main'],
-  ] satisfies [RebarRole, 'main' | 'hoop'][])(
+    ['開口補強筋', 'hidden'],
+  ] satisfies [RebarRole, 'main' | 'hoop' | 'hidden'][])(
     'maps %s to %s',
     (role, expected) => {
       expect(roleToLayer(role)).toBe(expected)

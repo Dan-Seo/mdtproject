@@ -219,6 +219,84 @@ describe('PlanEditor 開口部の入力 (数量積算基準 1通則8))', () => {
     ).toBe(1800)
   })
 
+  it('edits an 開口補強筋 transcription through updateProject', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: '開口補強筋を追加' }),
+    )
+
+    fireEvent.change(
+      screen.getByLabelText(
+        `W1 ${wall.id} 1 開口補強筋（設計図書から転記） 1 径`,
+      ),
+      { target: { value: 'D16' } },
+    )
+    fireEvent.change(
+      screen.getByLabelText(
+        `W1 ${wall.id} 1 開口補強筋（設計図書から転記） 1 本数`,
+      ),
+      { target: { value: '4' } },
+    )
+    fireEvent.change(
+      screen.getByLabelText(
+        `W1 ${wall.id} 1 開口補強筋（設計図書から転記） 1 設計長さ (mm)`,
+      ),
+      { target: { value: '1800' } },
+    )
+
+    const reinforcement =
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.openings![0]
+        .reinforcements![0]
+    expect(reinforcement).toEqual({ size: 'D16', count: 4, lengthMm: 1800 })
+  })
+
+  it('deletes only the selected 開口補強筋 row', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: '開口補強筋を追加' }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: '開口補強筋を追加' }),
+    )
+
+    const removeButtons = screen.getAllByRole('button', {
+      name: /補強筋を削除$/,
+    })
+    expect(removeButtons).toHaveLength(2)
+    fireEvent.click(removeButtons[0])
+
+    const stored =
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.openings![0]
+        .reinforcements!
+    expect(stored).toHaveLength(1)
+  })
+
+  it('drops the reinforcements key when the last transcription row is removed', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: '開口補強筋を追加' }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: /補強筋を削除$/ }),
+    )
+
+    const stored =
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.openings![0]
+    expect(stored).not.toHaveProperty('reinforcements')
+  })
+
   it('marks an opening the clause does not deduct', () => {
     const wall = selectWall()
     render(<PlanEditor />)
