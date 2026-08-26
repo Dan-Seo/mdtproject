@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "wall-extent-viewer-plan",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 742.7820457999478,
+  "stdout_log": "phases\\25-wall-extent\\step2-codex.stdout.log",
+  "stderr_log": "phases\\25-wall-extent\\step2-codex.stderr.log"
+}

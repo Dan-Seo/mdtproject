@@ -1,0 +1,22 @@
+2026-08-26T12:52:38.777804Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T12:52:38.930446Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T12:58:31.749138Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\viewer\building.ts:
+      const start = gridPoint(project.grid, position.ix, position.iy)
+      const span = wallSpan(project, member)
+      openings = member.openings ?? []
+      // 壁のローカル原点は「始端の柱内側面・壁下端・厚さの手前面」。壁下端は
+      // 階の床板上面＝階の基準標高そのものである（大梁と違い天井から下げない）。
+      const base = storyElevation(project.stories, member.storyId)
+
+      worldPoint =
+        member.position.axis === 'X'
+          ? ([x, y, z]) => [
+              start.x + span.startFaceOffsetMm + x,
+              base + y,
+              start.y - section.thickness / 2 + z,
+            ]
+          : ([x, y, z]) => [
+              start.x - section.thickness / 2 + z,
+              base + y,
+              start.y + span.startFaceOffsetMm + x,
+            ]
