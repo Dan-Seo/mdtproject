@@ -86,7 +86,8 @@
     },
     {
       "dir": "18-plan-corpus-widen",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-26T11:05:44+0900"
     }
   ]
 }
