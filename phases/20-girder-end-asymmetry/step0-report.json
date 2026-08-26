@@ -1,0 +1,42 @@
+{
+  "checks": [
+    {
+      "what": "ADR-032의 다섯 분해항은 음수가 되지 않고 세 위치별 본수 불변식을 보존한다",
+      "range": "s, c, e ∈ [0, 12]^3; 2,197조합",
+      "counterexamples": [],
+      "evidence": "through=min(s,c,e), startStub=max(0,s-c), endStub=max(0,e-c), centerOnly=max(0,c-max(s,e)), oneSided(始端)=max(0,min(s,c)-e), oneSided(終端)=max(0,min(c,e)-s)를 스크래치 전수 계산했다. s=through+startStub+oneSided(始端), c=through+centerOnly+oneSided(始端)+oneSided(終端), e=through+endStub+oneSided(終端)가 전 조합에서 성립했다."
+    },
+    {
+      "what": "始端定着 편측근과 終端定着 편측근은 동시에 양수가 아니다",
+      "range": "s, c, e ∈ [0, 12]^3; 2,197조합",
+      "counterexamples": [],
+      "evidence": "두 항의 동시 양수 조건은 각각 e<min(s,c), s<min(c,e)이므로 e<s와 s<e를 동시에 요구한다. 전수 계산에서도 동시 양수 0건이었다."
+    },
+    {
+      "what": "각 분해 그룹은 始端→中央→終端에서 연속한 한 구간으로 해석된다",
+      "range": "s, c, e ∈ [0, 12]^3; 양수인 각 항의 위치 서명",
+      "counterexamples": [],
+      "evidence": "through=SCE, startStub=S, endStub=E, centerOnly=C, oneSided(始端)=SC, oneSided(終端)=CE로 분류했다. 비연속 서명 SE(始端과終端에는 서지만中央에는 없는 본)는 어떤 항에도 생성되지 않았다. 예시 (6,4,9)는 through=4, startStub=2, endStub=5로 두 단부 스텁으로 분해된다."
+    },
+    {
+      "what": "s=e에서 기존 splitGirderMainRow와 동치다",
+      "range": "s=e ∈ [0, 12], c ∈ [0, 12]; 169조합",
+      "counterexamples": [],
+      "evidence": "기존 함수의 throughCount=min(endCount,centerCount), cutoffCount=abs(endCount-centerCount), cutoffAt=(endCount>=centerCount ? 端部 : 中央)와 대조했다. 端部 지배 시 양측 stub=cutoffCount·centerOnly=0, 中央 지배 시 centerOnly=cutoffCount·양측 stub=0, 양 편측근=0이 전 조합에서 일치했다."
+    },
+    {
+      "what": "yokohama-p14의 ADR-032 인용 실물 전제",
+      "range": "tests/fixtures/section-import/textitems/yokohama-p14.json; 문자 단위 TextItem을 y행/x순으로 재구성",
+      "counterexamples": [],
+      "evidence": "G51(헤더 x=364.98,y=124.38)의 위치행은 外端・中央・内端이고 上筋 행은 8-D25・8-D25・13-D25, 下筋 행은 8-D25・8-D25・11-D25였다. G55(헤더 x=1900.44,y=124.38)의 위치행은 Y2端・中央・Y3端이고 上筋 행은 4-D25・5-D25・8-D25, 下筋 행은 4-D25・5-D25・5-D25였다."
+    },
+    {
+      "what": "기존 직렬화와 현재 코드의 호환 주장",
+      "range": "src/domain/model/project.ts:isMainRow 및 src/domain/model/member.ts:splitGirderMainRow",
+      "counterexamples": [],
+      "evidence": "현재 isMainRow는 endCount와 centerCount가 유한수인지만 요구하고 startCount를 요구하지 않으므로 startCount 없는 기존 레코드를 통과시키는 구조다. 현재 splitGirderMainRow는 ADR-032가 일반화하려는 min/差 분해를 그대로 사용한다."
+    }
+  ],
+  "verdict": "upheld",
+  "summary": "ADR-032 §3 분해 수식은 s,c,e ∈ [0,12]^3 2,197조합 전수검사와 G51/G55 실물 TextItem 대조에서 반증되지 않았다. 음수·편측근 동시 양수·불변식·대칭 동치·비연속 그룹 모두 반례 0건이며, 기존 min/差 분해 및 직렬화 호환 전제도 코드와 일치한다."
+}

@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr032-decomposition",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "summary": "ADR-032 §3 분해 수식은 s,c,e ∈ [0,12]^3 2,197조합 전수검사와 G51/G55 실물 TextItem 대조에서 반증되지 않았다. 음수·편측근 동시 양수·불변식·대칭 동치·비연속 그룹 모두 반례 0건이며, 기존 min/差 분해 및 직렬화 호환 전제도 코드와 일치한다.",
+      "started_at": "2026-08-26T12:21:25+0900"
     },
     {
       "step": 1,
@@ -18,5 +20,6 @@
       "name": "engine-goldens-viewer",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T12:21:25+0900"
 }
