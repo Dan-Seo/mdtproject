@@ -10,6 +10,9 @@ step 1의 비대칭 후보를 `GirderSection.main.top/bottom.startCount`로 잇�
 ## 할 일
 
 1. **취입 반영** (`src/components/section/SectionImport.tsx`):
+   - 소비 대상은 step 1의 `girderMainAsymmetric` 필드다 — 방향이 정해지면
+     labels/topCounts/bottomCounts/中央 값으로 `GirderMainRow`(startCount·
+     endCount·centerCount)를 조립한다.
    - 비대칭 후보 행에 방향 결정을 더하라:
      - **자동**: 두 端 라벨이 「〈軸名〉端」이고 軸名 둘이 `project.grid`의
        같은 축 라벨(`xLabels`/`yLabels`)에 정확히 존재하면 축 순서로 결정.
