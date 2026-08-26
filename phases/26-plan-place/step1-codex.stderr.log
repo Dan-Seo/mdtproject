@@ -1,0 +1,18 @@
+2026-08-26T13:42:34.376314Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T13:42:34.450202Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T13:51:17.464432Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\domain\model\project.ts:
+  )
+
+  if (section.kind !== '柱') {
+    reject(`柱 member references a non-柱 section: ${support.id}`)
+  }
+2026-08-26T13:51:48.129204Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\phases\26-plan-place\step0-verify.ts:
+      status:
+        slabCrash !== null &&
+        slabCrash.isError &&
+        !slabCrash.isMemberUnsupportedError
+          ? 'upheld'
+          : 'refuted',
+      evidence: [
+        { supportIds, missingSupport: missingSlabSupportId, thrown: slabCrash },
+        'slabBay resolves four supports: minX, maxX, minY, and maxY through girderSectionAt',
