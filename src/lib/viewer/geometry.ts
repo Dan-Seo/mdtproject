@@ -71,7 +71,7 @@ export const CAMERA_DIRECTION: Point3 = [0.72, 0.34, 0.86]
 const MINIMUM_DISPLAY_DIAMETER = 14
 const DISPLAY_DIAMETER_SCALE = 1.6
 
-export type RebarLayer = 'main' | 'hoop'
+export type RebarLayer = 'main' | 'hoop' | 'hidden'
 
 export function roleToLayer(role: RebarRole): RebarLayer {
   switch (role) {
@@ -101,6 +101,9 @@ export function roleToLayer(role: RebarRole): RebarLayer {
     case 'Y方向上端筋':
     case 'Y方向下端筋':
       return 'main'
+    // 開口補強筋は設計図書転記の数量入力であり、3D形状は作図しない (ADR-034)。
+    case '開口補強筋':
+      return 'hidden'
     default: {
       const unsupported: never = role
       throw new Error(`Unsupported RebarRole: ${unsupported}`)
@@ -954,6 +957,8 @@ function rebarSegmentRuns(
   radiusOf: RadiusOf = rebarRadius,
   openings: Opening[] = [],
 ): SegmentRun[] {
+  if (roleToLayer(rebar.role) === 'hidden') return []
+
   // 壁と床板だけ表示半径が部材厚に縛られる。配置と描画で別々の半径を使うと、
   // 詰めたはずの層が描くときにまた太って食い込む。
   const radius =

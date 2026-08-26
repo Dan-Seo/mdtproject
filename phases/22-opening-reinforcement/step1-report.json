@@ -1,0 +1,45 @@
+{
+  "step": 1,
+  "name": "domain-reinforcement-quantity",
+  "status": "completed",
+  "golden": {
+    "fixture": "tests/golden/fixtures/quantity-r5-ch3.json",
+    "cases": [
+      "wall-opening-reinforcement",
+      "slab-opening-reinforcement"
+    ],
+    "handDerivation": [
+      "耐震壁: D13 1.800m×4本×1.000kg/m＝7.200kg、所要数量＝7.200×1.04＝7.488kg。D10は単位質量未入力のため設計数量・所要数量ともnull。",
+      "床板: D13 0.900m×3本×1.000kg/m＝2.700kg、所要数量＝2.700×1.04＝2.808kg。定着・余長・継手は加えない。"
+    ]
+  },
+  "changedFiles": [
+    "src/domain/model/member.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/rebar.ts",
+    "src/domain/rebar/wall.ts",
+    "src/domain/rebar/slab.ts",
+    "src/lib/viewer/geometry.ts",
+    "tests/golden/fixtures/quantity-r5-ch3.json",
+    "tests/golden/quantity-measurement.test.ts",
+    "src/domain/model/project.test.ts",
+    "src/domain/rebar/wall.test.ts",
+    "src/domain/rebar/slab.test.ts"
+  ],
+  "gates": {
+    "npm run test": {
+      "status": "passed",
+      "testFiles": 82,
+      "tests": 1488
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "warnings": 1,
+      "warning": "Existing unused _omitted warning in src/app/api/oncall/alert/route.test.ts"
+    }
+  },
+  "summary": "OpeningReinforcementをoptionalで追加し、既存のProject JSON互換を保ったまま値検証を強化。耐震壁・床板から設計図書転記値を直接Rebar化して既存のaggregateQuantityでkg/割増を算定し、開口補強筋はgeometryでhiddenとして3Dインスタンスを生成しない。"
+}

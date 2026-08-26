@@ -29,6 +29,8 @@ export type RebarRole =
   | 'X方向下端筋'
   | 'Y方向上端筋'
   | 'Y方向下端筋'
+  /** 1通則8) なお書きで設計図書に委任された、転記入力の開口補強筋 */
+  | '開口補強筋'
 
 export type RebarShape = 'straight' | 'hook90' | 'hoop'
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { jpMlitRulePack } from '../../rulepack'
-import type { Member, SlabSection } from '../model/member'
+import type { Member, Opening, SlabSection } from '../model/member'
 import { slabRun, type Project } from '../model/project'
 import { createSampleProject, slabSection } from '../model/sample-project'
 import { MemberUnsupportedError } from '../model/unsupported'
@@ -337,5 +337,52 @@ describe('generateSlabRebar — 開口部の欠除 (数量積算基準 1通則8)
     expect(bottom[1].ruleHits.map(({ key }) => key)).toContain(
       'measure.opening.deduction.minimum.area',
     )
+  })
+})
+
+describe('generateSlabRebar — 開口補強筋の設計図書転記 (1通則8) なお書き', () => {
+  it('emits reinforcement transcriptions from a floor opening', () => {
+    const opening: Opening = {
+      id: 'S1-reinforcement-opening',
+      xMm: 2400,
+      yMm: 2400,
+      widthMm: 1200,
+      heightMm: 1200,
+      reinforcements: [{ size: 'D13', count: 3, lengthMm: 900 }],
+    }
+    const target = slabAt(project, 0, 0)
+    const withOpening: Project = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === target.id ? { ...member, openings: [opening] } : member,
+      ),
+    }
+
+    const reinforcements = generateSlabRebar(
+      {
+        run: slabRun(withOpening, slabAt(withOpening, 0, 0), 'X'),
+        section: slabSection,
+      },
+      jpMlitRulePack,
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcements).toHaveLength(1)
+    expect(reinforcements[0]).toMatchObject({
+      role: '開口補強筋',
+      size: 'D13',
+      count: 3,
+      length: 900,
+      shape: 'straight',
+      points: [
+        [0, 0, 0],
+        [900, 0, 0],
+      ],
+      closed: false,
+      ruleHits: [],
+    })
+    expect(reinforcements[0]).not.toHaveProperty('zones')
+    expect(reinforcements[0]).not.toHaveProperty('placement')
+    expect(reinforcements[0].formula).toContain('設計図書転記')
+    expect(reinforcements[0].formula).toContain('1通則8)')
   })
 })

@@ -1,5 +1,7 @@
 import {
+  BAR_SIZES,
   MEMBER_KINDS,
+  type BarSize,
   type ColumnSection,
   type ColumnPosition,
   type GirderPosition,
@@ -1078,6 +1080,32 @@ const isOpening = shapedAs({
   heightMm: isFiniteNumber,
 })
 
+const isBarSize = (value: unknown): value is BarSize =>
+  BAR_SIZES.includes(value as BarSize)
+
+const isPositiveInteger = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0
+
+const isPositiveFiniteNumber = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+
+const isOpeningReinforcement = shapedAs({
+  size: isBarSize,
+  count: isPositiveInteger,
+  lengthMm: isPositiveFiniteNumber,
+})
+
+const isOpeningWithReinforcements = (value: unknown): boolean => {
+  if (!isOpening(value)) return false
+
+  const reinforcements = (value as { reinforcements?: unknown }).reinforcements
+  return (
+    reinforcements === undefined ||
+    (Array.isArray(reinforcements) &&
+      reinforcements.every(isOpeningReinforcement))
+  )
+}
+
 const isMemberKind = (value: unknown): boolean =>
   MEMBER_KINDS.includes(value as MemberKind)
 
@@ -1215,7 +1243,9 @@ function isProjectShape(value: unknown): boolean {
         // ならない — openingDeduction が中を読んで欠除量を出すからだ。
         ((member as { openings?: unknown }).openings === undefined ||
           (Array.isArray((member as { openings?: unknown }).openings) &&
-            ((member as { openings: unknown[] }).openings).every(isOpening))),
+            ((member as { openings: unknown[] }).openings).every(
+              isOpeningWithReinforcements,
+            ))),
     ) &&
     (notes === undefined ||
       (isRecord(notes) && Object.values(notes).every(isString))) &&
