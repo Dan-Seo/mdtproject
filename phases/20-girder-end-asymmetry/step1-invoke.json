@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "model-decompose-main-row",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 475.75544989999617,
+  "stdout_log": "phases\\20-girder-end-asymmetry\\step1-codex.stdout.log",
+  "stderr_log": "phases\\20-girder-end-asymmetry\\step1-codex.stderr.log"
+}
