@@ -2,12 +2,14 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import type { WallSection } from '@/domain/model/member'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
 import ojkkGirderFixture from '../../../tests/fixtures/section-import/textitems/ojkk-p3.json'
 import yokohamaFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p13.json'
 import yokohamaGirderFixture from '../../../tests/fixtures/section-import/textitems/yokohama-p14.json'
+import ojkkWallSlabFixture from '../../../tests/fixtures/section-import/textitems/ojkk-p4.json'
 import { SectionImport } from './SectionImport'
 
 const ojkkGirderPage: TextPage = {
@@ -28,6 +30,11 @@ const yokohamaPage: TextPage = {
 const yokohamaGirderPage: TextPage = {
   ...yokohamaGirderFixture.page,
   items: yokohamaGirderFixture.items,
+}
+
+const ojkkWallSlabPage: TextPage = {
+  ...ojkkWallSlabFixture.page,
+  items: ojkkWallSlabFixture.items,
 }
 
 /** 타이틀은 읽히고 符号 행만 인식되지 않는 표. */
@@ -482,6 +489,106 @@ describe('SectionImport', () => {
     // 지우지 않는다. phase 6의 「빈칸은 기존값 유지」 규약이다.
     expect(section.sideBar).toEqual(sideBarBefore)
     expect(section.widthTie).toEqual(widthTieBefore)
+  })
+
+  it('does not allow a new 床板 candidate before its direction is selected', () => {
+    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-FS4-none')
+    expect(
+      within(row).getByTestId('section-import-slab-direction-FS4'),
+    ).toHaveValue('')
+    expect(within(row).getByRole('button', { name: '反映' })).toBeDisabled()
+    expect(
+      useAppStore.getState().project.sections.some(({ mark }) => mark === 'FS4'),
+    ).toBe(false)
+  })
+
+  it.each([
+    ['x', 100, 150],
+    ['y', 150, 100],
+  ] as const)(
+    'maps 短辺 to the selected %s direction and 長辺 to the other direction',
+    (direction, xPitch, yPitch) => {
+      render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+
+      const row = screen.getByTestId('section-import-candidate-FS4-none')
+      fireEvent.change(
+        within(row).getByTestId('section-import-slab-direction-FS4'),
+        { target: { value: direction } },
+      )
+      expect(within(row).getByRole('button', { name: '反映' })).not.toBeDisabled()
+      fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+      const section = useAppStore
+        .getState()
+        .project.sections.find(({ mark }) => mark === 'FS4')
+      expect(section?.kind).toBe('床板')
+      if (section?.kind !== '床板') throw new Error('Expected imported 床板 section')
+      expect(section).toMatchObject({
+        thickness: 150,
+        x: {
+          top: { size: 'D13', pitch: xPitch },
+          bottom: { size: 'D10', pitch: xPitch },
+        },
+        y: {
+          top: { size: 'D13', pitch: yPitch },
+          bottom: { size: 'D10', pitch: yPitch },
+        },
+      })
+    },
+  )
+
+  it('blocks a new 壁 candidate when its thickness is unparsed', () => {
+    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-EW15-none')
+    expect(within(row).getByRole('button', { name: '反映' })).toBeDisabled()
+    expect(row).toHaveTextContent(
+      '未解析の欄がある新規符号は反映できません（原文を参照）',
+    )
+  })
+
+  it('preserves existing WallSection fields when applying parsed wall fields', () => {
+    const base = createSampleProject()
+    const existing: WallSection = {
+      id: 'section-EW15',
+      kind: '耐震壁',
+      mark: 'EW15',
+      thickness: 240,
+      fc: 30,
+      grade: 'SD390',
+      exposure: '屋外',
+      finish: '仕上げなし',
+      spliceMethod: '重ね継手',
+      layers: 2,
+      vertical: { size: 'D13', pitch: 250, startOffsetMm: 40 },
+      horizontal: { size: 'D13', pitch: 250, startOffsetMm: 60 },
+    }
+    useAppStore.setState({
+      project: { ...base, sections: [...base.sections, existing] },
+    })
+
+    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+    const row = screen.getByTestId('section-import-candidate-EW15-none')
+    expect(within(row).getByRole('button', { name: '反映' })).not.toBeDisabled()
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(({ mark }) => mark === 'EW15')
+    expect(section?.kind).toBe('耐震壁')
+    if (section?.kind !== '耐震壁') throw new Error('Expected existing 耐震壁 section')
+    expect(section).toMatchObject({
+      thickness: 240,
+      fc: 30,
+      grade: 'SD390',
+      exposure: '屋外',
+      finish: '仕上げなし',
+      layers: 1,
+      vertical: { size: 'D10', pitch: 150, startOffsetMm: 40 },
+      horizontal: { size: 'D10', pitch: 150, startOffsetMm: 60 },
+    })
   })
 
   it('names the unreadable list even when another list produced candidates', () => {

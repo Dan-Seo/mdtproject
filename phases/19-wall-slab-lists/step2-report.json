@@ -1,0 +1,36 @@
+{
+  "step": 2,
+  "name": "import-apply-wall-slab",
+  "summary": "SectionImport의 반영 타입을 柱·大梁에서 耐震壁·床板까지 확장하고, 床板의 短辺/長辺을 사용자가 X/Y 방향으로 선택한 뒤 반영하도록 했다.",
+  "directionLocaleKeys": [
+    "sectionImport.slabDirection",
+    "sectionImport.slabDirectionPlaceholder",
+    "sectionImport.slabDirection.shortToX",
+    "sectionImport.slabDirection.shortToY"
+  ],
+  "files": [
+    "src/components/section/SectionImport.tsx",
+    "src/components/section/SectionImport.test.tsx",
+    "src/components/section/SectionImport.module.css",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/RISKS.md",
+    "phases/19-wall-slab-lists/index.json",
+    "phases/19-wall-slab-lists/step2-report.json"
+  ],
+  "verification": {
+    "targeted": "passed — SectionImport 23 tests",
+    "test": "passed — 82 files, 1452 tests",
+    "typecheck": "passed — npx tsc --noEmit",
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1",
+    "guardrailSync": "passed — tests/docs/guardrail-sync.test.ts"
+  },
+  "regressions": [
+    "방향 미선택 床板 신규 후보는 반영 불가",
+    "短辺=X/Y 선택에 따른 x/y 매핑을 양방향으로 검증",
+    "두께 미확정 신규 EW15는 반영 불가",
+    "기존 耐震壁은 파싱된 필드만 갱신하고 thickness·기본값·startOffsetMm를 보존"
+  ]
+}
