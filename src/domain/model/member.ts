@@ -134,28 +134,6 @@ export interface GirderMainRow {
 }
 
 /**
- * 位置別本数を「梁の全長にわたる主筋」と「そうでない主筋」に分けた結果。
- *
- * 数量積算基準 2（３）梁1) が長さを定めるのは全長にわたる主筋だけで、トップ筋・
- * 補強筋等は設計図書に委ねられる。両位置に共通して立つ本数（少ない方）が通し筋、
- * 差がカットオフ筋である。
- */
-export interface GirderMainSplit {
-  throughCount: number
-  cutoffCount: number
-  /** カットオフ筋が立つ側。cutoffCount が 0 なら意味を持たない */
-  cutoffAt: '端部' | '中央'
-}
-
-export function splitGirderMainRow(row: GirderMainRow): GirderMainSplit {
-  return {
-    throughCount: Math.min(row.endCount, row.centerCount),
-    cutoffCount: Math.abs(row.endCount - row.centerCount),
-    cutoffAt: row.endCount >= row.centerCount ? '端部' : '中央',
-  }
-}
-
-/**
  * 大梁主筋の位置別本数を、重なりを保つグループへ分解する。
  *
  * 本数は累積集合として解釈する。通し筋・始端/終端 stub・中央筋に加えて、

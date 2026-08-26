@@ -234,9 +234,10 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
       .filter((testCase) => !('expectation' in testCase))
       .map((testCase) => [testCase.id, testCase] as const),
   )('%s', (_id, testCase) => {
-    const rebar = generate(testCase).find(
+    const candidates = generate(testCase).filter(
       (candidate) => candidate.role === testCase.role,
     )
+    const rebar = candidates[testCase.roleIndex ?? 0]
 
     expect(rebar, `${testCase.role} should be generated`).toBeDefined()
     expect(

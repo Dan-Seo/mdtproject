@@ -1,5 +1,5 @@
 import {
-  splitGirderMainRow,
+  decomposeGirderMainRow,
   type ColumnSection,
   type GirderMainRow,
   type GirderSection,
@@ -222,10 +222,15 @@ function girderMainPlacements(
   radiusOf: RadiusOf,
 ): Point3[] {
   const { row, upper, cutoff } = girderMainRowOf(rebar.role, section)
-  const split = splitGirderMainRow(row)
-  // 段の総本数は端部・中央の多い方だ。通し筋が手前の枠、カットオフ筋が
-  // 残りの枠を取る — 行ごとに全幅へ広げると同じ枠に二重に描かれる。
-  const slots = split.throughCount + split.cutoffCount
+  const decomposition = decomposeGirderMainRow(row)
+  // 段の総本数は始端・中央・終端の最大値だ。通し筋が手前の枠を取り、
+  // nesting 分解で決まった各カットオフ筋が残りの枠を取る — 行ごとに全幅へ
+  // 広げると同じ枠に二重に描かれる。
+  const slots = Math.max(
+    row.startCount ?? row.endCount,
+    row.centerCount,
+    row.endCount,
+  )
   const [, , insetZ] = rebar.points[0]
   const inward = 2 * radiusOf(section.stirrup.size) + radiusOf(rebar.size)
   const width = Math.max(0, section.b - 2 * (insetZ + inward))
@@ -233,7 +238,9 @@ function girderMainPlacements(
   // 数量の count は「1か所あたり本数 × 位置数」なので、枠の数は位置で割る。
   const offsets = rebar.axisOffsetsMm ?? [0]
   const perPlacement = rebar.count / offsets.length
-  const firstSlot = cutoff ? split.throughCount : 0
+  const firstSlot = cutoff
+    ? rebar.axisSlotStart ?? decomposition.throughCount
+    : 0
 
   return offsets.flatMap((offsetMm) =>
     Array.from({ length: perPlacement }, (_, index): Point3 => {

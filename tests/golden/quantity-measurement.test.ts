@@ -15,7 +15,11 @@ import {
   type Story,
 } from '../../src/domain/model/project'
 import { MemberUnsupportedError } from '../../src/domain/model/unsupported'
-import { aggregateQuantity, massLines } from '../../src/domain/quantity'
+import {
+  aggregateQuantity,
+  massLines,
+  spliceLines,
+} from '../../src/domain/quantity'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
 import { generateSlabRebar } from '../../src/domain/rebar/slab'
@@ -32,6 +36,36 @@ import fixture from './fixtures/quantity-r5-ch3.json'
  * 期待値は原文からの独立転写であって実装から導かない (ADR-010)。この
  * ファイルが読むのは fixture の数値だけで、ルールパック照会で組み立て直さない。
  */
+
+type AsymmetricGirderCase = {
+  id: string
+  b: number
+  depth: number
+  fc: number
+  grade: GirderSection['grade']
+  exposure: GirderSection['exposure']
+  finish: GirderSection['finish']
+  mainSize: GirderSection['main']['size']
+  top: GirderSection['main']['top']
+  bottom: GirderSection['main']['bottom']
+  clearMm: number
+  cutoffMm: number
+  supportB: number
+  supportD: number
+  spanCount?: number
+  expected?: Array<{
+    role: string
+    designLengthMm: number
+    count: number
+    spliceCountPerBar: number
+    spliceTotalCount: number
+  }>
+  expectedErrorReason?: string
+  handDerivation: string
+}
+
+const asymmetricGirderCases =
+  fixture.cases.asymmetricGirderMain as AsymmetricGirderCase[]
 
 const STORY: Story = { id: '1F', name: '1階', height: 4200 }
 
@@ -157,9 +191,43 @@ function girderRebarFor(
   const run = girderRun(project, owner)
 
   return {
+    project,
     run,
     rebars: generateGirderRebar({ run, section: girder }, jpMlitRulePack),
   }
+}
+
+function asymmetricGirderRebarFor(testCase: AsymmetricGirderCase) {
+  const column = columnSection({
+    b: testCase.supportB,
+    d: testCase.supportD,
+    fc: testCase.fc,
+    grade: testCase.grade,
+    exposure: testCase.exposure,
+    finish: testCase.finish,
+  })
+  const girder = girderSection({
+    b: testCase.b,
+    depth: testCase.depth,
+    fc: testCase.fc,
+    grade: testCase.grade,
+    exposure: testCase.exposure,
+    finish: testCase.finish,
+    main: {
+      size: testCase.mainSize,
+      top: testCase.top,
+      bottom: testCase.bottom,
+      cutoffFromSupportFaceMm: testCase.cutoffMm,
+    },
+  })
+  const spanCount = testCase.spanCount ?? 1
+  const centerSpan = testCase.clearMm + testCase.supportB
+
+  return girderRebarFor(
+    Array.from({ length: spanCount }, () => centerSpan),
+    column,
+    girder,
+  )
 }
 
 function columnRebarFor(section: ColumnSection, story: Story = STORY) {
@@ -615,6 +683,72 @@ describe('2（３）梁1) 連続する主筋は定着にかえて柱幅の1/2', 
 
     // 中間支点に定着が付いたら二重計上に戻ったということ (R7②)。
     expect(top.zones?.filter(({ kind }) => kind === '定着')).toHaveLength(2)
+  })
+})
+
+describe('ADR-032 左右非対称な大梁主筋の数量', () => {
+  const supportedCases = asymmetricGirderCases.filter(
+    (testCase) => testCase.expected !== undefined,
+  )
+
+  it.each(supportedCases)('$id は分解した全主筋行を数量にする', (testCase) => {
+    const { project, rebars } = asymmetricGirderRebarFor(testCase)
+    const remaining = rebars.filter(
+      ({ role }) =>
+        role === '上端筋' ||
+        role === '下端筋' ||
+        role === '上端カットオフ筋' ||
+        role === '下端カットオフ筋',
+    )
+
+    for (const expected of testCase.expected!) {
+      const index = remaining.findIndex(
+        (rebar) =>
+          rebar.role === expected.role &&
+          rebar.length === expected.designLengthMm &&
+          rebar.count === expected.count,
+      )
+      expect(index, `${testCase.id}: ${expected.role}`).toBeGreaterThanOrEqual(0)
+
+      const [rebar] = remaining.splice(index, 1)
+      expect(rebar.formula, `${testCase.id}: formula`).toContain(
+        String(expected.designLengthMm),
+      )
+
+      const lines = aggregateQuantity(project, [rebar], jpMlitRulePack)
+      expect(massLines(lines)[0]).toMatchObject({
+        lengthMm: expected.designLengthMm,
+        countPerMember: expected.count,
+      })
+      const splice = spliceLines(lines)[0]
+      if (expected.spliceTotalCount === 0) {
+        expect(splice).toBeUndefined()
+      } else {
+        expect(splice).toMatchObject({
+          countPerMember: expected.spliceTotalCount,
+        })
+        expect(rebar.splice?.countPerBar).toBe(expected.spliceCountPerBar)
+      }
+    }
+
+    expect(remaining, `${testCase.id}: unexpected main rows`).toEqual([])
+  })
+
+  it('rejects a multi-span run when any main row is asymmetric', () => {
+    const testCase = asymmetricGirderCases.find(
+      ({ expectedErrorReason }) => expectedErrorReason !== undefined,
+    )!
+
+    try {
+      asymmetricGirderRebarFor(testCase)
+      throw new Error('expected asymmetric multi-span run to be unsupported')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe(
+        testCase.expectedErrorReason,
+      )
+      expect((error as Error).message).toContain('外端/内端がランのどの支点か')
+    }
   })
 })
 

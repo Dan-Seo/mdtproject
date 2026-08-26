@@ -132,6 +132,12 @@ export interface Rebar {
    * 없으면 `points`가 이미 부재 로컬 좌표라는 뜻이다.
    */
   axisOffsetsMm?: number[]
+  /**
+   * 大梁主筋の同一段で、この行が占める最初の枠番号。位置別本数を nesting
+   * 分解したとき、片側筋は stub の後ろの枠に入る — points と axisOffsetsMm
+   * だけではその段内の枠を復元できないため、導出結果として持たせる。
+   */
+  axisSlotStart?: number
   /** 継手を持たない鉄筋（フープ・スタラップ）にはない */
   splice?: RebarSplice
   zones?: RebarZone[]

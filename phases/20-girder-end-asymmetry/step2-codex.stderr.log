@@ -1,0 +1,12 @@
+2026-08-26T03:34:30.906423Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T03:34:30.992364Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T03:45:12.279637Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\golden\fixtures\quantity-r5-ch3.json:
+        "handDerivation": "通し筋は上4本・下4本で設計長さ＝7200＋継手1000＝8200、継手は1か所。上筋は終端ス stub3本（1000＋1500＝2500）と終端定着の片側筋1本（内法5200−カットオフ位置1500＋終端定着1000＝4700）。下筋は終端定着の片側筋1本（5200−1500＋1000＝4700）。片側筋の設計長さは floor(4700÷7000)＝0か所."
+2026-08-26T03:47:49.649292Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\golden\quantity-measurement.test.ts:
+type Project,
+type Story,
+} from '../../src/domain/model/project'
+2026-08-26T03:48:09.486305Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\golden\quantity-measurement.test.ts:
+type Case = (typeof fixture.cases)[number]
+type Deviation = NonNullable<Case['deviation']>
+2026-08-26T03:59:45.070084Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\Users\emper\mdtproject\phases\20-girder-end-asymmetry\step2-report.json

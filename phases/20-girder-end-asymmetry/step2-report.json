@@ -1,0 +1,51 @@
+{
+  "step": 2,
+  "name": "engine-goldens-viewer",
+  "status": "completed",
+  "cases": [
+    {
+      "id": "G51-R-floor-stub",
+      "rebar": [
+        { "role": "\u4e0a\u7aef\u7b4b", "count": 8, "designLengthMm": 8200 },
+        { "role": "\u4e0b\u7aef\u7b4b", "count": 8, "designLengthMm": 8200 },
+        { "role": "\u4e0a\u7aef\u30ab\u30c3\u30c8\u30aa\u30d5\u7b4b", "count": 5, "designLengthMm": 2500 },
+        { "role": "\u4e0b\u7aef\u30ab\u30c3\u30c8\u30aa\u30d5\u7b4b", "count": 3, "designLengthMm": 2500 }
+      ]
+    },
+    {
+      "id": "G55-R-floor-mixed",
+      "rebar": [
+        { "role": "\u4e0a\u7aef\u7b4b", "count": 4, "designLengthMm": 8200 },
+        { "role": "\u4e0b\u7aef\u7b4b", "count": 4, "designLengthMm": 8200 },
+        { "role": "\u4e0a\u7aef\u30ab\u30c3\u30c8\u30aa\u30d5\u7b4b", "count": 3, "designLengthMm": 2500 },
+        { "role": "\u4e0a\u7aef\u30ab\u30c3\u30c8\u30aa\u30d5\u7b4b", "count": 1, "designLengthMm": 4700 },
+        { "role": "\u4e0b\u7aef\u30ab\u30c3\u30c8\u30aa\u30d5\u7b4b", "count": 1, "designLengthMm": 4700 }
+      ]
+    }
+  ],
+  "unsupported": {
+    "id": "multi-span-asymmetric-unsupported",
+    "code": "\u30ab\u30c3\u30c8\u30aa\u30d5\u4f4d\u7f6e\u4e0d\u6210\u7acb",
+    "message": "\u5916\u7aef/\u5185\u7aef\u304c\u30e9\u30f3\u306e\u3069\u306e\u652f\u70b9\u304b\u5b9a\u3081\u3089\u308c\u306a\u3044"
+  },
+  "updatedFiles": [
+    "tests/golden/fixtures/fabrication-length.json",
+    "tests/golden/fixtures/quantity-r5-ch3.json",
+    "tests/golden/fabrication-length.test.ts",
+    "tests/golden/quantity-measurement.test.ts",
+    "src/domain/model/member.ts",
+    "src/domain/model/member.test.ts",
+    "src/domain/model/rebar.ts",
+    "src/domain/rebar/girder.ts",
+    "src/lib/viewer/geometry.ts",
+    "src/lib/viewer/geometry.test.ts",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/RISKS.md"
+  ],
+  "verification": {
+    "test": "npm run test - 1467 passed",
+    "typecheck": "npx tsc --noEmit - passed",
+    "lint": "npm run lint - 0 errors; existing warning only"
+  }
+}

@@ -644,6 +644,138 @@
       "derivation": "支点柱の加工用かぶり ＝ 40 ＋ 10 ＝ 50 ／ 使用可能投影 ＝ 柱せい 500 − 50 ＝ 450 ／ 直線 L1 ＝ 1000 ＞ 450 なので折曲げ定着 ／ 必要投影 ＝ max(La 500, 柱せい 500 × 3/4 ＝ 375) ＝ 500 ＞ 450 ／ 定着が成立しないので加工長は算出しない",
       "expectation": "throw",
       "reason": "定着不成立"
+    },
+    {
+      "id": "girder-asymmetric-g51-end-stub",
+      "title": "G51 R階 大梁主筋 — 終端だけのカットオフ筋（終端スタブ型）",
+      "role": "上端カットオフ筋",
+      "roleIndex": 0,
+      "given": {
+        "kind": "大梁",
+        "section": {
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "main": {
+            "size": "D25",
+            "top": {
+              "startCount": 8,
+              "centerCount": 8,
+              "endCount": 13
+            },
+            "bottom": {
+              "startCount": 8,
+              "centerCount": 8,
+              "endCount": 11
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          }
+        },
+        "supportSection": {
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし"
+        },
+        "spans": [
+          {
+            "centerSpan": 6000,
+            "clear": 5200,
+            "startFaceOffsetMm": 400,
+            "endFaceOffsetMm": 400,
+            "startSupportLengthAlongAxisMm": 800,
+            "endSupportLengthAlongAxisMm": 800
+          }
+        ],
+        "coreLengthMm": 5200
+      },
+      "uses": [
+        "L1",
+        "bentStraightFloor",
+        "La",
+        "tailMinimum",
+        "projectionMinimum",
+        "minimumCover",
+        "fabricationCoverAddition"
+      ],
+      "derivation": "G51 上筋 s＝8・c＝8・e＝13 → 通し筋8本、終端スタブ5本。終端スタブの 3D 加工長＝カットオフ位置 1500（定着長さ 1000 は設計長さだけに算入）",
+      "expectedFabricationLengthMm": 1500
+    },
+    {
+      "id": "girder-asymmetric-g55-one-sided",
+      "title": "G55 R階 大梁主筋 — 終端スタブに加えて終端定着の片側筋",
+      "role": "上端カットオフ筋",
+      "roleIndex": 1,
+      "given": {
+        "kind": "大梁",
+        "section": {
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "main": {
+            "size": "D25",
+            "top": {
+              "startCount": 4,
+              "centerCount": 5,
+              "endCount": 8
+            },
+            "bottom": {
+              "startCount": 4,
+              "centerCount": 5,
+              "endCount": 5
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          }
+        },
+        "supportSection": {
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし"
+        },
+        "spans": [
+          {
+            "centerSpan": 6000,
+            "clear": 5200,
+            "startFaceOffsetMm": 400,
+            "endFaceOffsetMm": 400,
+            "startSupportLengthAlongAxisMm": 800,
+            "endSupportLengthAlongAxisMm": 800
+          }
+        ],
+        "coreLengthMm": 5200
+      },
+      "uses": [
+        "L1",
+        "bentStraightFloor",
+        "La",
+        "tailMinimum",
+        "projectionMinimum",
+        "minimumCover",
+        "fabricationCoverAddition"
+      ],
+      "derivation": "G55 上筋 s＝4・c＝5・e＝8 → 通し筋4本、終端スタブ3本、終端定着の片側筋1本。片側筋の 3D 加工長＝内法 5200 − カットオフ位置 1500 ＝ 3700（終端定着長さ 1000 は設計長さだけに算入）",
+      "expectedFabricationLengthMm": 3700
     }
   ]
 }

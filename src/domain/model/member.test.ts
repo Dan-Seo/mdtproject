@@ -6,7 +6,6 @@ import {
   SHEAR_BAR_SIZES,
   decomposeGirderMainRow,
   sectionMarkLabel,
-  splitGirderMainRow,
   type BarSize,
   type ColumnSection,
   type GirderSection,
@@ -117,33 +116,6 @@ describe('member model', () => {
     expect(sectionMarkLabel({ ...base, storyLabel: '2階' })).toBe('C51(2階)')
     // 内訳書는 이미 階별로 묶인다 — 저장되는 符号에는 階가 들어가지 않는다
     expect({ ...base, storyLabel: '2階' }.mark).toBe('C51')
-  })
-})
-
-describe('splitGirderMainRow', () => {
-  // 積算基準 2（３）梁1) が定めるのは「梁の全長にわたる主筋」だけで、
-  // トップ筋・補強筋等は設計図書に委ねられる — 少ない方が通し筋である。
-  it('端部が多い断面では差が端部側のカットオフ筋になる', () => {
-    expect(splitGirderMainRow({ endCount: 5, centerCount: 3 })).toEqual({
-      throughCount: 3,
-      cutoffCount: 2,
-      cutoffAt: '端部',
-    })
-  })
-
-  it('中央が多い断面では差が中央側のカットオフ筋になる', () => {
-    expect(splitGirderMainRow({ endCount: 2, centerCount: 4 })).toEqual({
-      throughCount: 2,
-      cutoffCount: 2,
-      cutoffAt: '中央',
-    })
-  })
-
-  it('同数なら通し筋だけでカットオフ筋は立たない', () => {
-    expect(splitGirderMainRow({ endCount: 4, centerCount: 4 })).toMatchObject({
-      throughCount: 4,
-      cutoffCount: 0,
-    })
   })
 })
 
@@ -282,25 +254,21 @@ describe('decomposeGirderMainRow', () => {
     }
   })
 
-  it('is equivalent to splitGirderMainRow for symmetric ends', () => {
+  it('keeps symmetric ends free of one-sided groups', () => {
     for (let endCount = 0; endCount <= 12; endCount += 1) {
       for (let centerCount = 0; centerCount <= 12; centerCount += 1) {
         const row = { endCount, centerCount, startCount: endCount }
         const decomposed = decomposeGirderMainRow(row)
-        const legacy = splitGirderMainRow(row)
 
-        expect(decomposed.throughCount).toBe(legacy.throughCount)
         expect(decomposed.oneSidedCount).toBe(0)
         if (endCount >= centerCount) {
-          expect(decomposed.startStubCount).toBe(legacy.cutoffCount)
-          expect(decomposed.endStubCount).toBe(legacy.cutoffCount)
+          expect(decomposed.startStubCount).toBe(endCount - centerCount)
+          expect(decomposed.endStubCount).toBe(endCount - centerCount)
           expect(decomposed.centerOnlyCount).toBe(0)
-          expect(legacy.cutoffAt).toBe('端部')
         } else {
           expect(decomposed.startStubCount).toBe(0)
           expect(decomposed.endStubCount).toBe(0)
-          expect(decomposed.centerOnlyCount).toBe(legacy.cutoffCount)
-          expect(legacy.cutoffAt).toBe('中央')
+          expect(decomposed.centerOnlyCount).toBe(centerCount - endCount)
         }
       }
     }
