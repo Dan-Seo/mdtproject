@@ -1,0 +1,54 @@
+{
+  "checks": [
+    {
+      "id": "clause-delegation",
+      "status": "upheld",
+      "evidence": [
+        "tests/golden/fixtures/quantity-r5-ch3.json:110-115의 1通則8) quote가 開口補強筋을 設計図書에 의해 計測・計算하도록 위임한다.",
+        "tests/golden/fixtures의 모든 JSON 문자열을 補強으로 검색한 결과, 개구 보강근의 형상·본수·길이를 직접 정하는 조문은 없었다. 추가 hit는 柱頭・柱脚、梁、床板、壁의 일반적인 設計図書 위임과 spec-r7-ch5의 横補強筋量 언급뿐이었다.",
+        "tests/golden/quantity-measurement.test.ts:1157-1166도 開口補強筋을 룰팩이 만들지 않아야 함을 고정한다."
+      ]
+    },
+    {
+      "id": "pipeline",
+      "status": "refuted",
+      "evidence": [
+        "src/domain/model/member.ts:438-451의 Member 공통 인터페이스에 openings?: Opening[]가 있어 타입상 柱·大梁에도 열려 있다.",
+        "src/domain/model/project.ts:1214-1218의 검증은 모든 member에 대해 openings 배열의 모양만 검사하고 member.kind별 壁·床板 제한을 하지 않는다.",
+        "실행 반례: 柱 member에 openings와 Opening.reinforcements 형태의 미지 중첩 키를 추가한 JSON을 deserializeProject에 넣었고 {\"accepted\":true,\"memberKind\":\"柱\",\"openings\":1,\"unknownNestedField\":true}를 얻었다.",
+        "고지 자체는 src/components/quantity/TakeoffPane.tsx:682-712에서 耐震壁·床板 행이 있으면 상시 표시되고, src/locales/ja.json·ko.json의 takeoff.wallOpening은 開口補強筋 미계상과 과소 계상을 명시한다.",
+        "질량 파이프라인은 src/domain/quantity/index.ts:242-313에서 Rebar를 aggregateQuantity로 받아 Project.unitMass를 사용한다.",
+        "腹筋 선례는 src/domain/rebar/girder.ts:863-910에서 ruleHits: []와 입력값 기반 算出式으로 처리된다."
+      ]
+    },
+    {
+      "id": "compatibility",
+      "status": "upheld",
+      "evidence": [
+        "src/domain/model/project.ts:970-978의 hasShape는 선언된 필드만 검사하고 미지 키를 거부하지 않는다.",
+        "src/domain/model/project.ts:1214-1218에서 openings는 optional이고, src/domain/model/project.ts:61의 PROJECT_SCHEMA_VERSION은 11로 유지된다.",
+        "기존 Project의 serializeProject/deserializeProject 왕복 검증은 통과했다. optional openings가 없는 기존 경로는 src/domain/model/project.ts:715 및 src/domain/rebar/wall.ts:237의 ?? []로 이전 의미를 유지한다."
+      ]
+    },
+    {
+      "id": "viewer-role-handling",
+      "status": "upheld",
+      "evidence": [
+        "src/lib/viewer/geometry.ts:76-107의 roleToLayer는 현재 RebarRole 전체를 exhaustive whitelist로 매핑하며 開口補強筋 role은 아직 존재하지 않는다.",
+        "src/lib/viewer/geometry.ts:1038-1041의 rebarBatches는 전달된 모든 Rebar에 roleToLayer를 호출한다. 따라서 step 1에서 開口補強筋 role을 추가하면 step 2가 명시적으로 skip해야 하며, 그렇지 않으면 exhaustive role 처리에서 그리거나 오류가 난다.",
+        "현재 壁·床板의 기존 role은 rebarPlacements와 rebarSegmentRuns를 통해 그려진다; 보강근을 자동으로 걸러내는 별도 skip은 없다."
+      ]
+    },
+    {
+      "id": "verification",
+      "status": "passed",
+      "evidence": [
+        "npm run test:golden: 7 files / 367 tests passed",
+        "npm run test -- src/domain/model/project.test.ts src/domain/rebar/girder.test.ts src/domain/quantity/index.test.ts src/components/quantity/TakeoffPane.test.tsx src/lib/viewer/geometry.test.ts tests/golden/quantity-measurement.test.ts: 6 files / 314 tests passed",
+        "npm run typecheck: passed"
+      ]
+    }
+  ],
+  "verdict": "refuted",
+  "summary": "ADR-034의 조문 위임·파이프라인·호환성·뷰어 전제를 대조한 결과, Member와 Project 검증기가 openings를 耐震壁·床板으로 제한하지 않아 柱에도 openings가 deserialize되는 반례가 성립했다. 대상 코드는 수정하지 않았다."
+}

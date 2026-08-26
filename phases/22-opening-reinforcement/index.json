@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr034-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T15:01:04+0900",
+      "summary": "Member와 Project 검증기가 openings를 耐震壁·床板으로 제한하지 않아 柱에도 openings가 deserialize되는 반례를 확인했다."
     },
     {
       "step": 1,
