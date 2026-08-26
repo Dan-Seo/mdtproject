@@ -771,6 +771,37 @@ describe('generateGirderRebar — カットオフ筋', () => {
     })
   })
 
+  it('中央筋と片側筋が共存してもカットオフ筋のslotを重ねない', () => {
+    const generated = generateGirderRebar(
+      input({
+        section: withMain({
+          top: { startCount: 2, centerCount: 9, endCount: 5 },
+        }),
+      }),
+      jpMlitRulePack,
+    )
+    const cutoffs = byCutoffRole(generated, '上端カットオフ筋')
+
+    expect(byRole(generated, '上端筋').count).toBe(2)
+    expect(cutoffs).toHaveLength(2)
+
+    const slotRanges = cutoffs
+      .map(({ axisSlotStart, count }) => {
+        expect(axisSlotStart).toBeDefined()
+        return Array.from(
+          { length: count },
+          (_, index) => axisSlotStart! + index,
+        )
+      })
+      .sort((left, right) => left[0] - right[0])
+
+    expect(slotRanges).toEqual([
+      [2, 3, 4, 5],
+      [6, 7, 8],
+    ])
+    expect(new Set(slotRanges.flat()).size).toBe(7)
+  })
+
   it('連続スパンでは中間支点を通すカットオフ筋が別行になる', () => {
     const generated = generateGirderRebar(
       input({

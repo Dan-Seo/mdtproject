@@ -126,27 +126,77 @@ export interface GirderMainRow {
   endCount: number
   /** 中央の本数 */
   centerCount: number
+  /**
+   * 始端側の本数 — 左右で違うときだけ持つ。無ければ endCount と同じ（対称）。
+   * 始端はランローカル（GirderRun.memberOffsetsMm の 0 側）。
+   */
+  startCount?: number
 }
 
 /**
- * 位置別本数を「梁の全長にわたる主筋」と「そうでない主筋」に分けた結果。
+ * 大梁主筋の位置別本数を、重なりを保つグループへ分解する。
  *
- * 数量積算基準 2（３）梁1) が長さを定めるのは全長にわたる主筋だけで、トップ筋・
- * 補強筋等は設計図書に委ねられる。両位置に共通して立つ本数（少ない方）が通し筋、
- * 差がカットオフ筋である。
+ * 本数は累積集合として解釈する。通し筋・始端/終端 stub・中央筋に加えて、
+ * 一方の支点だけで定着する 편측근を返す。始端と終端の両方に定着する 편측근は
+ * 同時に成立しないため、`oneSidedAnchor` は一方だけを持つ (ADR-032)。
  */
-export interface GirderMainSplit {
+export interface GirderMainDecomposition {
   throughCount: number
-  cutoffCount: number
-  /** カットオフ筋が立つ側。cutoffCount が 0 なら意味を持たない */
-  cutoffAt: '端部' | '中央'
+  startStubCount: number
+  endStubCount: number
+  centerOnlyCount: number
+  oneSidedCount: number
+  oneSidedAnchor?: '始端' | '終端'
 }
 
-export function splitGirderMainRow(row: GirderMainRow): GirderMainSplit {
+export function decomposeGirderMainRow(
+  row: GirderMainRow,
+): GirderMainDecomposition {
+  const startCount = row.startCount ?? row.endCount
+  const throughCount = Math.min(startCount, row.centerCount, row.endCount)
+  const startStubCount = Math.max(0, startCount - row.centerCount)
+  const endStubCount = Math.max(0, row.endCount - row.centerCount)
+  const centerOnlyCount = Math.max(
+    0,
+    row.centerCount - Math.max(startCount, row.endCount),
+  )
+  const oneSidedStartCount = Math.max(
+    0,
+    Math.min(startCount, row.centerCount) - row.endCount,
+  )
+  const oneSidedEndCount = Math.max(
+    0,
+    Math.min(row.centerCount, row.endCount) - startCount,
+  )
+
+  if (oneSidedStartCount > 0) {
+    return {
+      throughCount,
+      startStubCount,
+      endStubCount,
+      centerOnlyCount,
+      oneSidedCount: oneSidedStartCount,
+      oneSidedAnchor: '始端',
+    }
+  }
+
+  if (oneSidedEndCount > 0) {
+    return {
+      throughCount,
+      startStubCount,
+      endStubCount,
+      centerOnlyCount,
+      oneSidedCount: oneSidedEndCount,
+      oneSidedAnchor: '終端',
+    }
+  }
+
   return {
-    throughCount: Math.min(row.endCount, row.centerCount),
-    cutoffCount: Math.abs(row.endCount - row.centerCount),
-    cutoffAt: row.endCount >= row.centerCount ? '端部' : '中央',
+    throughCount,
+    startStubCount,
+    endStubCount,
+    centerOnlyCount,
+    oneSidedCount: 0,
   }
 }
 

@@ -182,6 +182,55 @@ describe('project lookup helpers', () => {
   })
 })
 
+describe('GirderMainRow serialization compatibility', () => {
+  it('accepts a finite startCount while keeping the legacy omitted field valid', () => {
+    const project = createProject()
+    const withAsymmetricRow = {
+      ...project,
+      sections: [
+        columnSection,
+        {
+          ...shallowGirderSection,
+          main: {
+            ...shallowGirderSection.main,
+            top: { endCount: 8, centerCount: 5, startCount: 4 },
+          },
+        },
+      ],
+    }
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+    expect(deserializeProject(serializeProject(withAsymmetricRow))).toEqual(
+      withAsymmetricRow,
+    )
+  })
+
+  it('rejects a non-finite-shaped startCount when it is present', () => {
+    const project = createProject()
+    const validProject = {
+      ...project,
+      sections: [
+        columnSection,
+        {
+          ...shallowGirderSection,
+          main: {
+            ...shallowGirderSection.main,
+            top: { endCount: 8, centerCount: 5, startCount: 4 },
+          },
+        },
+      ],
+    }
+    const serialized = serializeProject(validProject).replace(
+      '"startCount":4',
+      '"startCount":null',
+    )
+
+    expect(() => deserializeProject(serialized)).toThrow(
+      'Project shape mismatch',
+    )
+  })
+})
+
 describe('girderSpan', () => {
   const rectangularColumnSection: ColumnSection = {
     ...columnSection,

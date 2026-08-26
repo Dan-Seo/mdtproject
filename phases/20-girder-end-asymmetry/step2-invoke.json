@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "engine-goldens-viewer",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1642.8413793999935,
+  "stdout_log": "phases\\20-girder-end-asymmetry\\step2-codex.stdout.log",
+  "stderr_log": "phases\\20-girder-end-asymmetry\\step2-codex.stderr.log"
+}

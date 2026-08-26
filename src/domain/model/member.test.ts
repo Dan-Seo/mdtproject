@@ -4,8 +4,8 @@ import {
   BAR_SIZES,
   HIGH_STRENGTH_SHEAR_BAR_SIZES,
   SHEAR_BAR_SIZES,
+  decomposeGirderMainRow,
   sectionMarkLabel,
-  splitGirderMainRow,
   type BarSize,
   type ColumnSection,
   type GirderSection,
@@ -119,30 +119,159 @@ describe('member model', () => {
   })
 })
 
-describe('splitGirderMainRow', () => {
-  // 積算基準 2（３）梁1) が定めるのは「梁の全長にわたる主筋」だけで、
-  // トップ筋・補強筋等は設計図書に委ねられる — 少ない方が通し筋である。
-  it('端部が多い断面では差が端部側のカットオフ筋になる', () => {
-    expect(splitGirderMainRow({ endCount: 5, centerCount: 3 })).toEqual({
-      throughCount: 3,
-      cutoffCount: 2,
-      cutoffAt: '端部',
-    })
+describe('decomposeGirderMainRow', () => {
+  it.each([
+    [
+      'G51 上端筋の stub 型',
+      { startCount: 8, centerCount: 8, endCount: 13 },
+      {
+        throughCount: 8,
+        startStubCount: 0,
+        endStubCount: 5,
+        centerOnlyCount: 0,
+        oneSidedCount: 0,
+      },
+    ],
+    [
+      'G51 下端筋の stub 型',
+      { startCount: 8, centerCount: 8, endCount: 11 },
+      {
+        throughCount: 8,
+        startStubCount: 0,
+        endStubCount: 3,
+        centerOnlyCount: 0,
+        oneSidedCount: 0,
+      },
+    ],
+    [
+      'G55 上端筋の mixed 型',
+      { startCount: 4, centerCount: 5, endCount: 8 },
+      {
+        throughCount: 4,
+        startStubCount: 0,
+        endStubCount: 3,
+        centerOnlyCount: 0,
+        oneSidedCount: 1,
+        oneSidedAnchor: '終端',
+      },
+    ],
+    [
+      'G55 下端筋の mixed 型',
+      { startCount: 4, centerCount: 5, endCount: 5 },
+      {
+        throughCount: 4,
+        startStubCount: 0,
+        endStubCount: 0,
+        centerOnlyCount: 0,
+        oneSidedCount: 1,
+        oneSidedAnchor: '終端',
+      },
+    ],
+    [
+      '両側 stub 型',
+      { startCount: 6, centerCount: 4, endCount: 9 },
+      {
+        throughCount: 4,
+        startStubCount: 2,
+        endStubCount: 5,
+        centerOnlyCount: 0,
+        oneSidedCount: 0,
+      },
+    ],
+    [
+      '中央型',
+      { startCount: 2, centerCount: 4, endCount: 2 },
+      {
+        throughCount: 2,
+        startStubCount: 0,
+        endStubCount: 0,
+        centerOnlyCount: 2,
+        oneSidedCount: 0,
+      },
+    ],
+    [
+      '対称 stub 型',
+      { startCount: 5, centerCount: 3, endCount: 5 },
+      {
+        throughCount: 3,
+        startStubCount: 2,
+        endStubCount: 2,
+        centerOnlyCount: 0,
+        oneSidedCount: 0,
+      },
+    ],
+  ])('%sをADR-032のnesting分解にする', (_name, row, expected) => {
+    expect(decomposeGirderMainRow(row)).toEqual(expected)
   })
 
-  it('中央が多い断面では差が中央側のカットオフ筋になる', () => {
-    expect(splitGirderMainRow({ endCount: 2, centerCount: 4 })).toEqual({
-      throughCount: 2,
-      cutoffCount: 2,
-      cutoffAt: '中央',
-    })
+  it('omits oneSidedAnchor when no one-sided group exists', () => {
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        decomposeGirderMainRow({ startCount: 6, centerCount: 4, endCount: 9 }),
+        'oneSidedAnchor',
+      ),
+    ).toBe(false)
   })
 
-  it('同数なら通し筋だけでカットオフ筋は立たない', () => {
-    expect(splitGirderMainRow({ endCount: 4, centerCount: 4 })).toMatchObject({
-      throughCount: 4,
-      cutoffCount: 0,
-    })
+  it('preserves each position count and never creates both one-sided anchors', () => {
+    for (let startCount = 0; startCount <= 12; startCount += 1) {
+      for (let centerCount = 0; centerCount <= 12; centerCount += 1) {
+        for (let endCount = 0; endCount <= 12; endCount += 1) {
+          const split = decomposeGirderMainRow({
+            startCount,
+            centerCount,
+            endCount,
+          })
+          const oneSidedAtStart =
+            split.oneSidedCount > 0 && split.oneSidedAnchor === '始端'
+          const oneSidedAtEnd =
+            split.oneSidedCount > 0 && split.oneSidedAnchor === '終端'
+
+          expect(startCount).toBe(
+            split.throughCount +
+              split.startStubCount +
+              (oneSidedAtStart ? split.oneSidedCount : 0),
+          )
+          expect(centerCount).toBe(
+            split.throughCount +
+              split.centerOnlyCount +
+              (oneSidedAtStart ? split.oneSidedCount : 0) +
+              (oneSidedAtEnd ? split.oneSidedCount : 0),
+          )
+          expect(endCount).toBe(
+            split.throughCount +
+              split.endStubCount +
+              (oneSidedAtEnd ? split.oneSidedCount : 0),
+          )
+          expect(oneSidedAtStart && oneSidedAtEnd).toBe(false)
+          expect(split.throughCount).toBeGreaterThanOrEqual(0)
+          expect(split.startStubCount).toBeGreaterThanOrEqual(0)
+          expect(split.endStubCount).toBeGreaterThanOrEqual(0)
+          expect(split.centerOnlyCount).toBeGreaterThanOrEqual(0)
+          expect(split.oneSidedCount).toBeGreaterThanOrEqual(0)
+        }
+      }
+    }
+  })
+
+  it('keeps symmetric ends free of one-sided groups', () => {
+    for (let endCount = 0; endCount <= 12; endCount += 1) {
+      for (let centerCount = 0; centerCount <= 12; centerCount += 1) {
+        const row = { endCount, centerCount, startCount: endCount }
+        const decomposed = decomposeGirderMainRow(row)
+
+        expect(decomposed.oneSidedCount).toBe(0)
+        if (endCount >= centerCount) {
+          expect(decomposed.startStubCount).toBe(endCount - centerCount)
+          expect(decomposed.endStubCount).toBe(endCount - centerCount)
+          expect(decomposed.centerOnlyCount).toBe(0)
+        } else {
+          expect(decomposed.startStubCount).toBe(0)
+          expect(decomposed.endStubCount).toBe(0)
+          expect(decomposed.centerOnlyCount).toBe(centerCount - endCount)
+        }
+      }
+    }
   })
 })
 

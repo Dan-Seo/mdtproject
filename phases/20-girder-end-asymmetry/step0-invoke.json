@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "verify-adr032-decomposition",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 307.59006070002215,
+  "stdout_log": "phases\\20-girder-end-asymmetry\\step0-codex.stdout.log",
+  "stderr_log": "phases\\20-girder-end-asymmetry\\step0-codex.stderr.log"
+}

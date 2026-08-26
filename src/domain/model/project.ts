@@ -986,10 +986,19 @@ const shapedAs =
   (value: unknown): boolean =>
     hasShape(value, fields)
 
-const isMainRow = shapedAs({
-  endCount: isFiniteNumber,
-  centerCount: isFiniteNumber,
-})
+const isMainRow = (value: unknown): boolean => {
+  if (
+    !hasShape(value, {
+      endCount: isFiniteNumber,
+      centerCount: isFiniteNumber,
+    })
+  ) {
+    return false
+  }
+
+  const row = value as Record<string, unknown>
+  return row.startCount === undefined || isFiniteNumber(row.startCount)
+}
 
 const isAxis = (value: unknown): boolean => value === 'X' || value === 'Y'
 

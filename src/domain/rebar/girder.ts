@@ -1,5 +1,5 @@
 import {
-  splitGirderMainRow,
+  decomposeGirderMainRow,
   type GirderSection,
   type Member,
 } from '../model/member'
@@ -387,6 +387,10 @@ function generateMain(
 interface CutoffPosition {
   /** 귀속 부재 — 数量의 束ね 단위가 된다 */
   memberId: string
+  /** その位置に立つ1か所あたりの本数 */
+  count: number
+  /** 同一段の枠番号で、この行が占める最初の位置 */
+  slotStart: number
   /** 부재 로컬 x에서 그리기 시작하는 위치 (mm) */
   fromMm: number
   /** 3D에 그리는 길이 (mm) */
@@ -400,9 +404,10 @@ interface CutoffPosition {
 
 interface CutoffRow {
   role: '上端カットオフ筋' | '下端カットオフ筋'
-  /** 1か所あたりの本数 = 端部と中央の差 */
+  /** 1か所あたりの本数 */
   count: number
-  at: '端部' | '中央'
+  at: '端部' | '始端スタブ' | '終端スタブ' | '始端' | '終端' | '中央'
+  slotStart: number
   y: number
   bendDirection: '上' | '下'
 }
@@ -440,6 +445,8 @@ function cutoffPositions(
 
       return {
         memberId: member.id,
+        count: row.count,
+        slotStart: row.slotStart,
         fromMm: cutoffMm,
         drawnMm: designMm,
         designMm,
@@ -475,6 +482,58 @@ function cutoffPositions(
     },
     pack,
   )
+
+  if (row.at === '始端' || row.at === '終端') {
+    if (run.spans.length !== 1) {
+      throw new MemberUnsupportedError(
+        'カットオフ位置不成立',
+        `外端/内端がランのどの支点か定められない: ${run.ownerId}`,
+      )
+    }
+
+    const span = run.spans[0]
+    const detail = row.at === '始端' ? start : end
+    const drawnMm = span.clear - cutoffMm
+    const label = row.at === '始端' ? '始端支点' : '終端支点'
+
+    return [
+      {
+        memberId: run.ownerId,
+        count: row.count,
+        slotStart: row.slotStart,
+        fromMm: row.at === '始端' ? 0 : cutoffMm,
+        drawnMm,
+        designMm: drawnMm + detail.lengthMm,
+        rules: detail.usedRules,
+        basis:
+          `${endFormula(label, detail)} ＋ 内法長さ ${span.clear} − ` +
+          `カットオフ位置 ${cutoffMm} ＝ ${drawnMm} ＋ ${detail.lengthMm} ＝ ` +
+          `${drawnMm + detail.lengthMm}`,
+      },
+    ]
+  }
+
+  if (row.at === '始端スタブ' || row.at === '終端スタブ') {
+    const detail = row.at === '始端スタブ' ? start : end
+    const label = row.at === '始端スタブ' ? '始端支点' : '終端支点'
+
+    return [
+      {
+        memberId: run.ownerId,
+        count: row.count,
+        slotStart: row.slotStart,
+        fromMm:
+          row.at === '始端スタブ' ? 0 : run.coreLengthMm - cutoffMm,
+        drawnMm: cutoffMm,
+        designMm: detail.lengthMm + cutoffMm,
+        rules: detail.usedRules,
+        basis:
+          `${endFormula(label, detail)} ＋ カットオフ位置 ${cutoffMm} ＝ ` +
+          `${detail.lengthMm + cutoffMm}`,
+      },
+    ]
+  }
+
   // 始端・終端を名で分けない — 両端の定着が同じなら基礎式も同じ文字列になり、
   // 1行に束ねたときに同じ計算が二度並ばない。違えば設計長さも違うので別行になる。
   const outer = (
@@ -482,6 +541,8 @@ function cutoffPositions(
     fromMm: number,
   ): CutoffPosition => ({
     memberId: run.ownerId,
+    count: row.count,
+    slotStart: row.slotStart,
     fromMm,
     drawnMm: cutoffMm,
     designMm: detail.lengthMm + cutoffMm,
@@ -499,6 +560,8 @@ function cutoffPositions(
 
     return {
       memberId: run.ownerId,
+      count: row.count,
+      slotStart: row.slotStart,
       fromMm: supportStartMm - cutoffMm,
       drawnMm: designMm,
       designMm,
@@ -522,9 +585,11 @@ function generateCutoff(
   coverRule: RuleHit,
   fabricationCoverAdditionRule: RuleHit,
   fabricationCoverMm: number,
-  row: CutoffRow,
+  rows: CutoffRow[],
 ): Rebar[] {
   const { section } = input
+  const firstRow = rows[0]
+  if (firstRow === undefined) return []
   const lapRule = lookupRule(pack, 'lap.L1', {
     fc: section.fc,
     grade: section.grade,
@@ -538,16 +603,20 @@ function generateCutoff(
   // 中間支点を貫く鉄筋が外側支点の短い描画長さで描かれてしまう (ADR-019)。
   const groups = new Map<string, CutoffPosition[]>()
 
-  for (const position of cutoffPositions(input, pack, row)) {
-    const key = `${position.memberId}|${position.designMm}|${position.drawnMm}`
-    const group = groups.get(key)
-    if (group) group.push(position)
-    else groups.set(key, [position])
+  for (const row of rows) {
+    for (const position of cutoffPositions(input, pack, row)) {
+      const key =
+        `${position.memberId}|${position.designMm}|${position.drawnMm}|` +
+        `${position.count}|${position.slotStart}`
+      const group = groups.get(key)
+      if (group) group.push(position)
+      else groups.set(key, [position])
+    }
   }
 
   return [...groups.values()].map((positions, index): Rebar => {
     const [first] = positions
-    const count = row.count * positions.length
+    const count = first.count * positions.length
     const splice = intervalSplice(
       'カットオフ筋',
       section,
@@ -566,26 +635,27 @@ function generateCutoff(
     const basis = [...new Set(positions.map(({ basis }) => basis))].join(' ／ ')
 
     return {
-      id: `${first.memberId}|cutoff-${row.role}-${index}`,
+      id: `${first.memberId}|cutoff-${firstRow.role}-${index}`,
       memberId: first.memberId,
-      role: row.role,
+      role: firstRow.role,
       size: section.main.size,
       shape: 'straight',
       points: [
-        [0, row.y, fabricationCoverMm],
-        [first.drawnMm, row.y, fabricationCoverMm],
+        [0, firstRow.y, fabricationCoverMm],
+        [first.drawnMm, firstRow.y, fabricationCoverMm],
       ],
       closed: false,
       length,
       count,
       axisOffsetsMm: positions.map(({ fromMm }) => fromMm),
+      axisSlotStart: first.slotStart,
       splice: {
         method: section.spliceMethod,
         countPerBar: splice.countPerBar,
         lengthMm: splice.lengthMm,
         rules: splice.rules,
         formula:
-          `継手箇所数 ＝ ${row.role}1本あたり ${splice.countPerBar}か所` +
+          `継手箇所数 ＝ ${firstRow.role}1本あたり ${splice.countPerBar}か所` +
           `（${splice.basis}） ／ ` +
           `方式 ＝ ${section.spliceMethod} ／ ` +
           `設計長さへの算入 ＝ ${spliceLengthTerm} ／ ` +
@@ -599,7 +669,7 @@ function generateCutoff(
       ]),
       formula:
         `設計長さ ＝ ${basis} ＋ 継手 ${spliceLengthTerm} ＝ ${length} ／ ` +
-        `本数 ＝ 1か所あたり ${row.count}（断面一覧の端部・中央の差 — ` +
+        `本数 ＝ 1か所あたり ${first.count}（断面一覧の端部・中央の差 — ` +
         `数量積算基準 2（３）梁1)「トップ筋、ハンチ部分の主筋、補強筋等は設計図書` +
         `による」） × ${positions.length}か所 ＝ ${count} ／ ` +
         `配置基準 ＝ 加工用かぶり厚さ ${fabricationCoverMm} ／ ` +
@@ -867,14 +937,15 @@ export function generateGirderRebar(
   const fabricationCoverMm =
     minimumCoverMm + fabricationCoverAdditionMm
 
-  // 位置別本数を通し筋とカットオフ筋に分ける。数量積算基準 2（３）梁1) が
+  // 位置別本数を通し筋・stub・中央筋・片側筋へ分ける。数量積算基準 2（３）梁1) が
   // 長さを定めるのは「梁の全長にわたる主筋」だけで、差の分は設計図書による。
   const rows = [
     {
       id: 'top' as const,
       role: '上端筋' as const,
       cutoffRole: '上端カットオフ筋' as const,
-      split: splitGirderMainRow(section.main.top),
+      source: section.main.top,
+      decomposition: decomposeGirderMainRow(section.main.top),
       y: section.depth - fabricationCoverMm,
       bendDirection: '下' as const,
     },
@@ -882,11 +953,26 @@ export function generateGirderRebar(
       id: 'bottom' as const,
       role: '下端筋' as const,
       cutoffRole: '下端カットオフ筋' as const,
-      split: splitGirderMainRow(section.main.bottom),
+      source: section.main.bottom,
+      decomposition: decomposeGirderMainRow(section.main.bottom),
       y: fabricationCoverMm,
       bendDirection: '上' as const,
     },
   ]
+
+  if (
+    run.spans.length > 1 &&
+    rows.some(
+      ({ source }) =>
+        (source.startCount ?? source.endCount) !== source.endCount,
+    )
+  ) {
+    throw new MemberUnsupportedError(
+      'カットオフ位置不成立',
+      `外端/内端がランのどの支点か定められない: ${run.ownerId}`,
+    )
+  }
+
   const through = rows.map((row) =>
     generateMain(
       input,
@@ -897,29 +983,105 @@ export function generateGirderRebar(
       {
         id: row.id,
         role: row.role,
-        count: row.split.throughCount,
+        count: row.decomposition.throughCount,
         y: row.y,
         bendDirection: row.bendDirection,
       },
     ),
   )
   const cutoffs = rows.flatMap((row) =>
-    row.split.cutoffCount === 0
-      ? []
-      : generateCutoff(
+    (() => {
+      const { decomposition } = row
+      const asymmetric =
+        (row.source.startCount ?? row.source.endCount) !== row.source.endCount
+      const cutoffRows: CutoffRow[] = []
+
+      if (asymmetric) {
+        if (decomposition.startStubCount > 0) {
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.startStubCount,
+            at: '始端スタブ',
+            slotStart: decomposition.throughCount,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+        if (decomposition.endStubCount > 0) {
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.endStubCount,
+            at: '終端スタブ',
+            slotStart: decomposition.throughCount,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+        if (decomposition.centerOnlyCount > 0) {
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.centerOnlyCount,
+            at: '中央',
+            slotStart: decomposition.throughCount,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+        if (
+          decomposition.oneSidedCount > 0 &&
+          decomposition.oneSidedAnchor !== undefined
+        ) {
+          // 支点側スタブ（その側の本数 > 中央本数）と中央筋（中央本数 >
+          // 両側の本数）は同時に正にならない。したがって片側筋は通し筋・
+          // 中央筋・アンカー側スタブの後ろに置けば、どの本数関係でも枠が重ならない。
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.oneSidedCount,
+            at: decomposition.oneSidedAnchor,
+            slotStart:
+              decomposition.throughCount +
+              decomposition.centerOnlyCount +
+              (decomposition.oneSidedAnchor === '始端'
+                ? decomposition.startStubCount
+                : decomposition.endStubCount),
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+      } else {
+        if (decomposition.startStubCount > 0) {
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.startStubCount,
+            at: '端部',
+            slotStart: decomposition.throughCount,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+        if (decomposition.centerOnlyCount > 0) {
+          cutoffRows.push({
+            role: row.cutoffRole,
+            count: decomposition.centerOnlyCount,
+            at: '中央',
+            slotStart: decomposition.throughCount,
+            y: row.y,
+            bendDirection: row.bendDirection,
+          })
+        }
+      }
+
+      return cutoffRows.length === 0
+        ? []
+        : generateCutoff(
           input,
           pack,
           coverRule,
           fabricationCoverAdditionRule,
           fabricationCoverMm,
-          {
-            role: row.cutoffRole,
-            count: row.split.cutoffCount,
-            at: row.split.cutoffAt,
-            y: row.y,
-            bendDirection: row.bendDirection,
-          },
-        ),
+          cutoffRows,
+        )
+    })(),
   )
   // bend.hook135 を引かないのは積算基準 1通則2) が「フックはないものとする」と
   // 定めるからで、その事実自体を measure.hoop.length.addition が出典付きで持つ。

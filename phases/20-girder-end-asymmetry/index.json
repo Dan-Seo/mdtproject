@@ -6,17 +6,36 @@
       "step": 0,
       "name": "verify-adr032-decomposition",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "summary": "ADR-032 §3 분해 수식은 s,c,e ∈ [0,12]^3 2,197조합 전수검사와 G51/G55 실물 TextItem 대조에서 반증되지 않았다. 음수·편측근 동시 양수·불변식·대칭 동치·비연속 그룹 모두 반례 0건이며, 기존 min/差 분해 및 직렬화 호환 전제도 코드와 일치한다.",
+      "started_at": "2026-08-26T12:21:25+0900",
+      "completed_at": "2026-08-26T12:26:33+0900"
     },
     {
       "step": 1,
       "name": "model-decompose-main-row",
-      "status": "pending"
+      "status": "completed",
+      "summary": "GirderMainRow에 선택적 startCount와 ADR-032 nesting 분해 함수를 추가하고, 실물·대칭 호환·[0,12]^3 전수 property 테스트 및 JSON shape 검증을 통과시켰다.",
+      "started_at": "2026-08-26T12:26:33+0900",
+      "completed_at": "2026-08-26T12:34:29+0900"
     },
     {
       "step": 2,
       "name": "engine-goldens-viewer",
-      "status": "pending"
+      "status": "completed",
+      "summary": "ADR-032 비대칭 大梁 主筋을 골든·산정·数量·3D에 연결하고 다스팬 비대칭을 차단했다.",
+      "started_at": "2026-08-26T12:34:30+0900",
+      "completed_at": "2026-08-26T13:01:53+0900"
+    },
+    {
+      "step": 3,
+      "name": "fix-one-sided-slot-overlap",
+      "status": "completed",
+      "started_at": "2026-08-26T13:14:56+0900",
+      "completed_at": "2026-08-26T13:20:30+0900",
+      "summary": "구현·회귀 테스트는 1차 시도가 커밋(3dc5321)까지 완료 — codex 사용량 한도로 status 기록과 report만 실패(3회 재시도 전부 한도). Claude가 diff를 읽고 slot 서로소 핀·(2,9,5) 뷰어 회귀를 확인, tsc·lint·전체 테스트 1469건 통과로 검증하고 종결. step3-report.json은 이 사유로 없다."
     }
-  ]
+  ],
+  "created_at": "2026-08-26T12:21:25+0900",
+  "completed_at": "2026-08-26T13:01:54+0900"
 }
