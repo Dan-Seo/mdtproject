@@ -126,7 +126,8 @@
     },
     {
       "dir": "26-plan-place",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-26T23:13:56+0900"
     }
   ]
 }
