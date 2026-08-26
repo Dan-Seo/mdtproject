@@ -1,0 +1,22 @@
+{
+  "remeasured": {
+    "grids": "kani-p38: X(축4) [6000,6000,8000] true, Y(축3) [6000,10500] true; kani-p40: Y(축3) [10500,6000] true; ojkk-p2·p3: grids 0; yokohama-p13·p14: grids 0; yokohama-p7: X(축4) [8700,8700,1200] false, Y(축6) [5000,6000,10000,6000,5000] false; yokohama-p8: X(축3) [8700,8700] false. 유효 격자 총 6건.",
+    "two_axis": "0/6 — 유효 후보 중 축이 2개인 후보 없음.",
+    "total_unconfirmed": "3건: yokohama-p7 X·Y, yokohama-p8 X. 모두 totalConfirmed=false."
+  },
+  "hint_mismatch": "none — 8개 fixture에 parseFramingPlan을 직접 실행한 결과가 힌트와 일치했다.",
+  "edits": [
+    "docs/RISKS.md: R15의 대상을 合計이 확인되지 않은 축으로 변경하고 totalConfirmed=false, 축척 일관성, 코퍼스 6건/3건, 1본 축 0/6 및 step 1의 닫는 조건을 기록했다.",
+    "AGENTS.md·CLAUDE.md: 열린 리스크 표의 R15 행을 동일한 한 줄 요약으로 갱신했다.",
+    "phases/17-total-unconfirmed-risk/step0-report.json: 재측정·diff·게이트 결과를 기록했다.",
+    "phases/17-total-unconfirmed-risk/index.json: step 0을 completed로 기록했다."
+  ],
+  "diff_check": "AC3: git diff -- src/ tests/는 비어 있다. AC4: docs/RISKS.md diff는 R15 한 줄의 단일 hunk다. AC5: AGENTS.md와 CLAUDE.md의 R15 행은 완전히 같다.",
+  "gates": {
+    "test": "passed — 82 files, 1429 tests",
+    "golden": "passed — 7 files, 362 tests",
+    "tsc": "passed — npx tsc --noEmit 무출력",
+    "lint": "passed — 0 errors, 기존 route.test.ts:161 _omitted warning 1건"
+  },
+  "summary": "R15를 合計이 확인되지 않은 축으로 정정하고, 8부 코퍼스에서 유효 격자 6건·totalConfirmed=false 3건(yokohama-p7 X·Y, p8 X)·1본 축 0건을 재확인했으며 전체 AC 게이트를 통과시켰다."
+}

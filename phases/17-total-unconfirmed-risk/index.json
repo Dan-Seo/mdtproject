@@ -5,14 +5,30 @@
     {
       "step": 0,
       "name": "rewrite-r15",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T08:58:43+0900",
+      "summary": "R15를 合計이 확인되지 않은 축으로 정정하고, 8부 코퍼스에서 유효 격자 6건·totalConfirmed=false 3건(yokohama-p7 X·Y, p8 X)·1본 축 0건을 재확인했으며 전체 AC 게이트를 통과시켰다.",
+      "completed_at": "2026-08-26T09:03:12+0900"
     },
     {
       "step": 1,
       "name": "verify-midpoint-discrimination",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T09:03:13+0900",
+      "summary": "중점 매칭(±15pt)은 반증됐다. 8부 16개 파일·방향의 출력이 4·8·15·30·60·150·400pt에서 모두 같았고, 채택값은 0.000000~5.803118pt, 최근접 미사용 경쟁값은 totalConfirmed=true에서 최소 28.350023pt·false에서 최소 140.325470pt였다. 구현은 수정하지 않았다.",
+      "completed_at": "2026-08-26T09:10:37+0900",
+      "refuted_at": "2026-08-26T09:12:44+0900"
+    },
+    {
+      "step": 2,
+      "name": "remeasure-midpoint-window",
+      "status": "completed",
+      "started_at": "2026-08-26T09:19:47+0900",
+      "summary": "중점 매칭 sweep을 재현해 안전 창을 6pt 이상 30pt 미만으로 기록하고, T=4의 寸法欠落·T=30 이상의 合計不一致 경계와 step 1 sweep/slack 재현 차이를 문서·R15 대장에 반영했다.",
+      "completed_at": "2026-08-26T09:27:48+0900"
     }
   ],
-  "created_at": "2026-08-26T09:00:00+0900"
+  "created_at": "2026-08-26T09:00:00+0900",
+  "completed_at": "2026-08-26T09:27:49+0900"
 }
