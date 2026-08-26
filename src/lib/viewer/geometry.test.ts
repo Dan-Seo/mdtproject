@@ -554,6 +554,51 @@ describe('rebarPlacements — ADR-032 nesting 分解', () => {
     expect(zAt(segments, 4500)).toHaveLength(8)
     expect(new Set(zAt(segments, 4500))).toHaveLength(8)
   })
+
+  it('keeps central-only and one-sided bars in distinct slots for (2,9,5)', () => {
+    const section: GirderSection = {
+      ...asymmetricSection,
+      main: {
+        ...asymmetricSection.main,
+        top: { startCount: 2, centerCount: 9, endCount: 5 },
+      },
+    }
+    const through: Rebar = {
+      ...girderTop,
+      id: '1F-G1|central-one-sided-through',
+      count: 2,
+    }
+    const centerOnly: Rebar = {
+      ...endStub,
+      id: '1F-G1|central-one-sided-center',
+      count: 4,
+      points: [
+        [0, 700, 50],
+        [2200, 700, 50],
+      ],
+      axisOffsetsMm: [1500],
+      axisSlotStart: 2,
+    }
+    const oneSided: Rebar = {
+      ...endStub,
+      id: '1F-G1|central-one-sided-end',
+      count: 3,
+      points: [
+        [0, 700, 50],
+        [3700, 700, 50],
+      ],
+      axisOffsetsMm: [1500],
+      axisSlotStart: 6,
+    }
+    const segments = [through, centerOnly, oneSided].flatMap((rebar) =>
+      rebarSegments(rebar, section),
+    )
+
+    expect(zAt(segments, 1000)).toHaveLength(2)
+    expect(zAt(segments, 2500)).toHaveLength(9)
+    expect(zAt(segments, 4500)).toHaveLength(5)
+    expect(new Set(zAt(segments, 2500))).toHaveLength(9)
+  })
 })
 
 describe('rebarSegments', () => {

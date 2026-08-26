@@ -1031,12 +1031,16 @@ export function generateGirderRebar(
           decomposition.oneSidedCount > 0 &&
           decomposition.oneSidedAnchor !== undefined
         ) {
+          // 支点側スタブ（その側の本数 > 中央本数）と中央筋（中央本数 >
+          // 両側の本数）は同時に正にならない。したがって片側筋は通し筋・
+          // 中央筋・アンカー側スタブの後ろに置けば、どの本数関係でも枠が重ならない。
           cutoffRows.push({
             role: row.cutoffRole,
             count: decomposition.oneSidedCount,
             at: decomposition.oneSidedAnchor,
             slotStart:
               decomposition.throughCount +
+              decomposition.centerOnlyCount +
               (decomposition.oneSidedAnchor === '始端'
                 ? decomposition.startStubCount
                 : decomposition.endStubCount),
