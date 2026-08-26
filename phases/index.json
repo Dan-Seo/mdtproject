@@ -83,6 +83,10 @@
       "dir": "17-total-unconfirmed-risk",
       "status": "completed",
       "completed_at": "2026-08-26T09:27:49+0900"
+    },
+    {
+      "dir": "18-plan-corpus-widen",
+      "status": "pending"
     }
   ]
 }

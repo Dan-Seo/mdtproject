@@ -1,0 +1,16 @@
+{
+  "project": "Kijun",
+  "phase": "18-plan-corpus-widen",
+  "steps": [
+    {
+      "step": 0,
+      "name": "widen-textitem-corpus",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "remeasure-thresholds-14",
+      "status": "pending"
+    }
+  ]
+}
