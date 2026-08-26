@@ -45,8 +45,10 @@ const BLOCK_TITLE_PATTERN = /伏図/
 const BAND_TOLERANCE_PT = 8
 /** 치수 열이 라벨 밴드에서 떨어질 수 있는 거리. 실측 최대 50pt(kani X) */
 const DIMENSION_WINDOW_PT = 60
-/** 치수 중심과 인접 축 중점의 어긋남 허용. 실측 안전 창은 6pt 이상 30pt 미만이다.
- *  6pt 미만에서는 기존 치수가 빠져 寸法欠落, 30pt 이상에서는 오탐이 들어와 合計不一致가 된다. */
+/** 치수 중심과 인접 축 중점의 어긋남 허용. 14면 sweep의 안전 창도 6pt 이상
+ *  30pt 미만이다. 4pt에서는 기존 치수가 빠져 寸法欠落, 30pt부터는 오탐이 들어와
+ *  合計不一致가 된다. 채택 최댓값은 5.803722pt, 合計 미확인 축의 최근접 미사용
+ *  경쟁 치수는 140.325470pt다. */
 const MIDPOINT_TOLERANCE_PT = 15
 /** 스팬별 실측 축척(pt/mm)의 중앙값 대비 허용 편차. 실측 최대 0.5% */
 const SCALE_TOLERANCE_RATIO = 0.03

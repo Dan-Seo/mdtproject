@@ -93,3 +93,48 @@ describe('kani p40 (X1–X4通り軸組図)', () => {
     expect(parsed.issues).toEqual(['寸法列未検出'])
   })
 })
+
+// 아래 기대값은 새 픽스처의 원시 TextItem 문자와 좌표에서 독립 전사했다
+// (원본·쪽: tests/fixtures/section-import/SOURCES.md). 파서 출력에서 복사하지 않았다.
+// p6·p39는 伏図이고 軸組図 제목이 없으며, p41의 階高 열은 원문 추출에서
+// 450과 150이 「150450」으로 붙어 반증 가능한 치수 연쇄가 서지 않는다.
+describe('새 형상 페이지의 빈 軸組図 후보', () => {
+  it.each(['yokohama-p6.json', 'kani-p39.json', 'kani-p41.json'])(
+    '%s는 값을 지어내지 않고 명시 사유로 실패한다',
+    (file) => {
+      const parsed = parseFrameElevations(readPage(file))
+      expect(parsed.elevations).toEqual([])
+      expect(parsed.issues).toEqual(['寸法列未検出'])
+    },
+  )
+})
+
+// yokohama p9의 세로쓰기 원시 TextItem은 위 계열 1400·4100·4480·2490,
+// 아래 계열 1400·4100·4480·2690이다. 각 경계의 원문 라벨과 제목도 함께 전사했다.
+describe('yokohama p9 (軸組図(2))', () => {
+  const parsed = parseFrameElevations(readPage('yokohama-p9.json'))
+
+  it('위·아래 두 줄의 階高 계열을 원문 치수대로 낸다', () => {
+    expect(parsed.issues).toEqual([])
+    expect(parsed.elevations.map((entry) => entry.heightsMm)).toEqual([
+      [1400, 4100, 4480, 2490],
+      [1400, 4100, 4480, 2690],
+    ])
+  })
+
+  it('경계 라벨과 각 계열의 軸組図 제목을 원문 그대로 싣는다', () => {
+    for (const elevation of parsed.elevations) {
+      expect(elevation.levels.map((level) => level.labels)).toEqual([
+        [],
+        ['中央棟RCL(水下)'],
+        ['2FL'],
+        ['中央棟1FL', '基準GL'],
+        ['基礎下端'],
+      ])
+    }
+    expect(parsed.elevations.map((entry) => entry.titles)).toEqual([
+      ['bX1通り軸組図1/100', 'bX2A通り軸組図1/100'],
+      ['bX2通り軸組図1/100', 'bX3通り軸組図1/100'],
+    ])
+  })
+})

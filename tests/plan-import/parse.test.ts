@@ -33,13 +33,19 @@ function readPage(file: string): TextPage {
 
 const DRAWING_FIXTURES = [
   'kani-p38.json',
+  'kani-p39.json',
   'kani-p40.json',
+  'kani-p41.json',
   'ojkk-p2.json',
   'ojkk-p3.json',
+  'ojkk-p4.json',
   'yokohama-p13.json',
   'yokohama-p14.json',
+  'yokohama-p15.json',
+  'yokohama-p6.json',
   'yokohama-p7.json',
   'yokohama-p8.json',
+  'yokohama-p9.json',
 ]
 
 function dimensionCandidates(page: TextPage): string[] {
@@ -52,18 +58,20 @@ function dimensionCandidates(page: TextPage): string[] {
   )
 }
 
-it('실도면 8부의 가로·세로 치수 후보에는 0mm 이하가 없다', () => {
+it('실도면 14면의 가로·세로 치수 후보에는 0mm 이하가 없다', () => {
   // 이 가드는 파서 출력이 아니라 runs.ts의 세그먼트 문턱 불변식이다.
-  // 실측상 기본 문턱에서는 8부 모두 0건이고, gapRatio를 0.5로 낮추면
+  // 실측상 기본 문턱에서는 14면 모두 0건이고, gapRatio를 0.5로 낮추면
   // yokohama-p14의 「650x1000」이 650·x·1·000으로 갈라져 000이 4건 나온다.
   // 0.8·0.7·0.6에서는 침묵하므로 촘촘한 경계가 아닌 굵은 트립와이어다.
-  // 세로 `VERTICAL_RUN_GAP_RATIO`도 가로와 같은 굵은 트립와이어다. 8부 전체의 같은
-  // 열 인접쌍에서 `gap / max(w)` 최솟값은 1.000000이고, 1 미만인 쌍은 0개였다
+  // 세로 `VERTICAL_RUN_GAP_RATIO`도 가로와 같은 굵은 트립와이어다. 14면 전체의 같은
+  // 열 인접 1,697쌍에서 `gap / max(w)` 최솟값은 1.000000이고, 1.5~2.0 구간은
+  // yokohama-p7의 1쌍뿐이었다. 1 미만인 쌍은 0개였다
   // (6자리 반올림 기준; 원시 최솟값은 부동소수 ULP 잔차로 0.9999999999999634).
   // 0.99·0.8·0.5·0.3에서는 모든 런이 1글자로 갈라져 `DIMENSION_PATTERN`
   // 통과가 0건이다. 배수가 정확히 1.0일 때는 창 `(1w, 2w)`의 하단 모서리에서
-  // `00`·`000` 조각이 생겨 0mm 가드가 울며, kani-p38 3건 · ojkk-p3 21건 ·
-  // yokohama-p7 13건 · yokohama-p8 3건이다.
+  // `00`·`000` 조각이 생겨 0mm 가드가 울며, 기존 8면의 40건을 포함해 kani-p38 3건 ·
+  // kani-p39 11건 · ojkk-p3 21건 · ojkk-p4 1건 · yokohama-p6 12건 · p7 13건 ·
+  // p8 3건 · p9 5건, 합계 69건이다.
   const measured = DRAWING_FIXTURES.map((file) => {
     const candidates = dimensionCandidates(readPage(file))
     return {
@@ -211,6 +219,126 @@ describe('kani p38 (基礎伏図)', () => {
   it('세부 치수 연쇄(2,800+3,200 등)는 중점 매칭이 배제한다', () => {
     expect(parsed.issues).toEqual([])
     expect(parsed.grids).toHaveLength(2)
+  })
+})
+
+// 아래 기대값은 새 픽스처의 원시 TextItem 문자 좌표에서 독립 전사했다
+// (원본·쪽: tests/fixtures/section-import/SOURCES.md). 파서 출력에서 복사하지 않았다.
+// yokohama p6의 위·아래 축 대역에는 bX1·bX2·bX3·cX1과 8700·8700·1200이,
+// 좌우 세로 치수 열에는 bY6→bY1과 5000·6000·10000·6000·5000이 반복된다.
+describe('yokohama p6 (基礎伏図・1階床伏図)', () => {
+  const parsed = parseFramingPlan(readPage('yokohama-p6.json'))
+
+  it('반복된 두 伏図의 X·Y 격자 정의를 각각 하나로 접는다', () => {
+    expect(parsed.issues).toEqual([])
+    expect(
+      parsed.grids.map((candidate) => ({
+        direction: candidate.direction,
+        labels: candidate.axes.map((axis) => axis.label),
+        spansMm: candidate.spansMm,
+        totalConfirmed: candidate.totalConfirmed,
+      })),
+    ).toEqual([
+      {
+        direction: 'X',
+        labels: ['bX1', 'bX2', 'bX3', 'cX1'],
+        spansMm: [8700, 8700, 1200],
+        totalConfirmed: false,
+      },
+      {
+        direction: 'Y',
+        labels: ['bY6', 'bY5', 'bY4', 'bY3', 'bY2', 'bY1'],
+        spansMm: [5000, 6000, 10000, 6000, 5000],
+        totalConfirmed: false,
+      },
+    ])
+  })
+})
+
+// kani p39 원시 TextItem의 가로 대역은 X1→X4와 6,000·6,000·8,000,
+// 세로 대역은 Y3→Y1과 6,000·10,500을 명시하고 두 合計(20,000·16,500)를 갖는다.
+describe('kani p39 (梁伏図)', () => {
+  const parsed = parseFramingPlan(readPage('kani-p39.json'))
+
+  it('X·Y 격자를 合計 확인 후보로 낸다', () => {
+    expect(parsed.issues).toEqual([])
+    expect(
+      parsed.grids.map((candidate) => ({
+        direction: candidate.direction,
+        labels: candidate.axes.map((axis) => axis.label),
+        spansMm: candidate.spansMm,
+        totalConfirmed: candidate.totalConfirmed,
+      })),
+    ).toEqual([
+      {
+        direction: 'X',
+        labels: ['X1', 'X2', 'X3', 'X4'],
+        spansMm: [6000, 6000, 8000],
+        totalConfirmed: true,
+      },
+      {
+        direction: 'Y',
+        labels: ['Y3', 'Y2', 'Y1'],
+        spansMm: [6000, 10500],
+        totalConfirmed: true,
+      },
+    ])
+  })
+})
+
+// kani p41 원시 TextItem에는 두 軸組図마다 X1→X4와 6,000·6,000·8,000,
+// 合計 20,000이 반복된다. Y축 열은 없으므로 X 정의 하나만 접혀 나온다.
+describe('kani p41 (Y1・Y2通り軸組図)', () => {
+  const parsed = parseFramingPlan(readPage('kani-p41.json'))
+
+  it('반복된 X 격자 하나만 내고 Y 격자를 지어내지 않는다', () => {
+    expect(parsed.issues).toEqual([])
+    expect(
+      parsed.grids.map((candidate) => ({
+        direction: candidate.direction,
+        labels: candidate.axes.map((axis) => axis.label),
+        spansMm: candidate.spansMm,
+        totalConfirmed: candidate.totalConfirmed,
+      })),
+    ).toEqual([
+      {
+        direction: 'X',
+        labels: ['X1', 'X2', 'X3', 'X4'],
+        spansMm: [6000, 6000, 8000],
+        totalConfirmed: true,
+      },
+    ])
+  })
+})
+
+// yokohama p9 원시 TextItem에는 위쪽 bY1→bY6 대역(5000·6000·10000·6000·5000)과
+// 옆의 bY1→bY3 대역(5000·6000)이 있고, 아래쪽 軸組図에서도 같은 정의가 반복된다.
+describe('yokohama p9 (軸組図(2))의 framing-plan 실태', () => {
+  const parsed = parseFramingPlan(readPage('yokohama-p9.json'))
+
+  it('Y 방향 두 격자 정의를 후보로 내고 合計는 확인하지 않는다', () => {
+    expect(parsed.issues).toEqual([])
+    expect(
+      parsed.grids.map((candidate) => ({
+        direction: candidate.direction,
+        labels: candidate.axes.map((axis) => axis.label),
+        spansMm: candidate.spansMm,
+        totalConfirmed: candidate.totalConfirmed,
+      })),
+    ).toEqual([
+      {
+        direction: 'Y',
+        labels: ['bY1', 'bY2', 'bY3', 'bY4', 'bY5', 'bY6'],
+        spansMm: [5000, 6000, 10000, 6000, 5000],
+        totalConfirmed: false,
+      },
+      {
+        direction: 'Y',
+        labels: ['bY1', 'bY2', 'bY3'],
+        spansMm: [5000, 6000],
+        totalConfirmed: false,
+      },
+    ])
   })
 })
 
