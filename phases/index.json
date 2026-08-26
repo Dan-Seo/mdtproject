@@ -101,7 +101,8 @@
     },
     {
       "dir": "21-asym-import",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-26T14:46:28+0900"
     }
   ]
 }
