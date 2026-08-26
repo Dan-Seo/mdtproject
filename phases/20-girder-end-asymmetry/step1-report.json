@@ -1,0 +1,45 @@
+{
+  "changes": [
+    {
+      "file": "src/domain/model/member.ts",
+      "items": [
+        "GirderMainRow.startCount?: number — 始端側の本数。省略時は endCount と同じ",
+        "decomposeGirderMainRow(row) — 通し筋・始端/終端stub・中央筋・편측근をADR-032の式で返す",
+        "oneSidedCount が0のとき oneSidedAnchor を返さない"
+      ]
+    },
+    {
+      "file": "src/domain/model/project.ts",
+      "items": [
+        "isMainRow は既存の startCount 省略レコードを受け入れ、指定時は有限数だけ受け入れる"
+      ]
+    }
+  ],
+  "tests": {
+    "file": "src/domain/model/member.test.ts",
+    "cases": [
+      "G51 stub 型 (8,8,13)・(8,8,11)",
+      "G55 mixed 型 (4,5,8)・(4,5,5)",
+      "両側 stub 型 (6,4,9)",
+      "中央型 (2,4,2)",
+      "対称 stub 型 (5,3,5)",
+      "各位置の本数保存・負数なし・편측근両側同時なし",
+      "s=e の splitGirderMainRow との対称同値"
+    ],
+    "sweep": "startCount, centerCount, endCount ∈ [0,12]^3 — 2,197組合せ"
+  },
+  "compatibility": {
+    "file": "src/domain/model/project.test.ts",
+    "cases": [
+      "startCount を省略した既存レコード",
+      "有限 startCount を持つレコード",
+      "null startCount の拒否"
+    ]
+  },
+  "verification": {
+    "npm run test": "82 files, 1464 tests passed",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+  },
+  "summary": "GirderMainRowの始端本数を後方互換のまま追加し、ADR-032の5分解グループと位置別本数不変式をTDDで固定した。"
+}
