@@ -100,6 +100,61 @@ type OpeningReinforcementCase = {
 const openingReinforcementCases =
   fixture.cases.openingReinforcement.cases as OpeningReinforcementCase[]
 
+type WallClassCase = {
+  id: string
+  wallClass: '耐力壁' | '耐力壁以外'
+  expected: {
+    lapMm: number
+    coverMm: number
+    vertical: {
+      lengthMm: number
+      count: number
+      designKg: number
+      requiredKg: number
+      ruleKeys: string[]
+    }
+    horizontal: {
+      lengthMm: number
+      count: number
+      designKg: number
+      requiredKg: number
+      ruleKeys: string[]
+    }
+    totalDesignKg: number
+    totalRequiredKg: number
+  }
+  handDerivation: string
+}
+
+type WallClassFixture = {
+  clause: string
+  shared: {
+    mark: string
+    thicknessMm: number
+    fc: WallSection['fc']
+    grade: WallSection['grade']
+    exposure: WallSection['exposure']
+    finish: WallSection['finish']
+    spliceMethod: WallSection['spliceMethod']
+    layers: WallSection['layers']
+    vertical: {
+      size: BarSize
+      pitchMm: number
+      startOffsetMm: number
+    }
+    horizontal: {
+      size: BarSize
+      pitchMm: number
+      startOffsetMm: number
+    }
+    span: WallSpan
+    unitMassKgPerM: Partial<Record<ShearBarSize, number>>
+  }
+  cases: WallClassCase[]
+}
+
+const wallClassFixture = fixture.cases.wallClass as WallClassFixture
+
 const STORY: Story = { id: '1F', name: '1階', height: 4200 }
 
 function columnSection(
@@ -1371,5 +1426,130 @@ describe('1通則8) 開口補強筋の設計図書転記', () => {
         key.startsWith('measure.opening.reinforcement'),
       ),
     ).toEqual([])
+  })
+})
+
+describe('表5.3.6・5.3.4(3)(ｱ) 壁の wallClass 区分', () => {
+  function generateCase(entry: WallClassCase) {
+    const shared = wallClassFixture.shared
+    const section = {
+      id: 'section-W-class',
+      kind: '耐震壁' as const,
+      mark: shared.mark,
+      wallClass: entry.wallClass,
+      thickness: shared.thicknessMm,
+      fc: shared.fc,
+      grade: shared.grade,
+      exposure: shared.exposure,
+      finish: shared.finish,
+      spliceMethod: shared.spliceMethod,
+      layers: shared.layers,
+      vertical: {
+        size: shared.vertical.size,
+        pitch: shared.vertical.pitchMm,
+        startOffsetMm: shared.vertical.startOffsetMm,
+      },
+      horizontal: {
+        size: shared.horizontal.size,
+        pitch: shared.horizontal.pitchMm,
+        startOffsetMm: shared.horizontal.startOffsetMm,
+      },
+    } as WallSection
+    const member: Member = {
+      id: `1F-W-class-${entry.wallClass}`,
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: STORY.id,
+      position: { axis: 'X', ix: 0, iy: 0 },
+    }
+    const span = shared.span
+    const project: Project = {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: `壁区分ゴールデン — ${entry.wallClass}`,
+      grid: {
+        xSpans: [span.clearLengthMm + span.startFaceOffsetMm + span.endFaceOffsetMm],
+        ySpans: [span.clearLengthMm],
+      },
+      stories: [STORY],
+      sections: [section],
+      members: [member],
+      unitMass: shared.unitMassKgPerM,
+    }
+    const rebars = generateWallRebar(
+      { member, section, span },
+      jpMlitRulePack,
+    )
+    const lines = massLines(aggregateQuantity(project, rebars, jpMlitRulePack))
+
+    return { rebars, lines, entry }
+  }
+
+  it.each(wallClassFixture.cases)('$id — $handDerivation', (entry) => {
+    const generated = generateCase(entry)
+
+    for (const role of ['縦筋', '横筋'] as const) {
+      const expected = entry.expected[role === '縦筋' ? 'vertical' : 'horizontal']
+      const rebar = generated.rebars.find(({ role: candidateRole }) => candidateRole === role)!
+      const line = generated.lines.find(({ role: candidateRole }) => candidateRole === role)!
+      const ruleKeys = rebar.ruleHits.map(({ key }) => key)
+
+      expect(rebar.splice?.lengthMm, entry.handDerivation).toBe(
+        entry.expected.lapMm,
+      )
+      expect(rebar.length, entry.handDerivation).toBe(expected.lengthMm)
+      expect(rebar.count, entry.handDerivation).toBe(expected.count)
+      expect(
+        rebar.ruleHits.find(({ key }) => key === 'cover.minimum')?.value,
+        entry.handDerivation,
+      ).toBe(entry.expected.coverMm)
+      for (const key of expected.ruleKeys) expect(ruleKeys).toContain(key)
+      if (entry.wallClass === '耐力壁以外') {
+        expect(ruleKeys).not.toContain('lap.wall.minimum')
+        expect(rebar.formula).toContain('耐力壁以外は表5.3.2のみ')
+      }
+
+      expect(line.lengthMm, entry.handDerivation).toBe(expected.lengthMm)
+      expect(line.countPerMember, entry.handDerivation).toBe(expected.count)
+      expect(line.designKg, entry.handDerivation).toBeCloseTo(
+        expected.designKg,
+        10,
+      )
+      expect(line.requiredKg, entry.handDerivation).toBeCloseTo(
+        expected.requiredKg,
+        10,
+      )
+    }
+
+    const designKg = generated.lines.reduce(
+      (sum, line) => sum + (line.designKg ?? 0),
+      0,
+    )
+    const requiredKg = generated.lines.reduce(
+      (sum, line) => sum + (line.requiredKg ?? 0),
+      0,
+    )
+    expect(designKg, entry.handDerivation).toBeCloseTo(
+      entry.expected.totalDesignKg,
+      10,
+    )
+    expect(requiredKg, entry.handDerivation).toBeCloseTo(
+      entry.expected.totalRequiredKg,
+      10,
+    )
+  })
+
+  it('calculates the same wall twice with only wallClass changed', () => {
+    const generated = wallClassFixture.cases.map(generateCase)
+    expect(generated.map(({ entry }) => entry.wallClass)).toEqual([
+      '耐力壁',
+      '耐力壁以外',
+    ])
+    expect(generated[0].rebars.map(({ role, length }) => [role, length])).not.toEqual(
+      generated[1].rebars.map(({ role, length }) => [role, length]),
+    )
+    expect(generated[0].entry.expected.totalDesignKg).toBeGreaterThan(
+      generated[1].entry.expected.totalDesignKg,
+    )
   })
 })

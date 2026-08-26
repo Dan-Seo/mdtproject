@@ -167,7 +167,8 @@
 # 要る、耐震壁の値で代用してはならない」と書き残した行が、床板 (ADR-028) で先に要る
 # ようになった。この行だけ**屋内・屋外の区別がない**のが原文の構造で、条件から
 # exposure を落としてあるのはそのためである（落とすと lookupRule はどちらにも当たる）。
-# 「耐力壁以外の壁」＝雑壁の側はまだ部材がないので載せない。
+# 「耐力壁以外の壁」＝雑壁の2行もここに載せる。雑壁は別の部材ではなく、
+# WallSection.wallClass からこの表の行を選ぶ。
 
 - key: cover.minimum
   label: 床板の最小かぶり厚さ（仕上げあり）
@@ -188,3 +189,23 @@
   source: { ref: spec, section: 表5.3.6, page: 33 }
   confidence: transcribed
   note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「スラブ、耐力壁以外の壁」仕上げなし — この行に屋内・屋外の区別はない）
+
+- key: cover.minimum
+  label: 雑壁の最小かぶり厚さ（仕上げあり）
+  expr: 20mm
+  conditions: { memberKind: 雑壁, soilContact: false, finish: 仕上げあり }
+  value: 20
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「スラブ、耐力壁以外の壁」仕上げあり — 雑壁は WallSection の区分であり別の部材ではない）
+
+- key: cover.minimum
+  label: 雑壁の最小かぶり厚さ（仕上げなし）
+  expr: 30mm
+  conditions: { memberKind: 雑壁, soilContact: false, finish: 仕上げなし }
+  value: 30
+  unit: mm
+  source: { ref: spec, section: 表5.3.6, page: 33 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.6「スラブ、耐力壁以外の壁」仕上げなし — 雑壁は WallSection の区分であり別の部材ではない）

@@ -60,7 +60,17 @@ export function generateWallRebar(
   const { member, section, span } = input
   const conditions = { fc: section.fc, grade: section.grade, hook: false }
 
-  const coverRule = lookupRule(pack, 'cover.minimum', coverConditions(section))
+  const coverQuery =
+    section.wallClass === '耐力壁以外'
+      ? {
+          // 表5.3.6 の「スラブ、耐力壁以外の壁」行は exposure を持たない。
+          // 雑壁は別の MemberKind ではなく、WallSection の区分としてこの行を選ぶ。
+          memberKind: '雑壁',
+          soilContact: false,
+          finish: section.finish,
+        }
+      : coverConditions(section)
+  const coverRule = lookupRule(pack, 'cover.minimum', coverQuery)
   const fabricationCoverAdditionRule = lookupRule(
     pack,
     'cover.fabrication.addition',
@@ -70,9 +80,12 @@ export function generateWallRebar(
   // 限られる（表頭がその2つだけを名指す）ので、壁筋は一般値を引く。
   const anchorageRule = lookupRule(pack, 'anchorage.L1', conditions)
   const tableLapRule = lookupRule(pack, 'lap.L1', conditions)
-  // 5.3.4(3)(ｱ) — 耐力壁だけが持つ下限。柱・梁の主筋と違い表5.3.2 の値をそのまま
-  // 使わず、40d と比べて大きい方を取る。
-  const wallLapMinimumRule = lookupRule(pack, 'lap.wall.minimum', {})
+  // 5.3.4(3)(ｱ) の下限は耐力壁だけに適用する。耐力壁以外は
+  // 表5.3.2 の L1 だけを使い、lookupRule にも入らない (ADR-036 の読み)。
+  const wallLapMinimumRule =
+    section.wallClass === '耐力壁以外'
+      ? undefined
+      : lookupRule(pack, 'lap.wall.minimum', {})
   const spliceFactorRule = lookupRule(pack, 'measure.splice.length.factor', {
     method: section.spliceMethod,
   })
@@ -210,7 +223,7 @@ interface WallBarInput {
   layerOffsets: number[]
   anchorageRule: RuleHit
   tableLapRule: RuleHit
-  wallLapMinimumRule: RuleHit
+  wallLapMinimumRule: RuleHit | undefined
   spliceFactorRule: RuleHit
   distributionAdditionRule: RuleHit
   coverRule: RuleHit
@@ -249,8 +262,13 @@ function buildWallBars(input: WallBarInput): Rebar[] {
   const diameter = barDiameter(size)
   const anchorageMm = millimetres(anchorageRule, diameter)
   const tableLapMm = millimetres(tableLapRule, diameter)
-  const wallLapMinimumMm = millimetres(wallLapMinimumRule, diameter)
-  const lapMm = Math.max(tableLapMm, wallLapMinimumMm)
+  const lapCandidates = [
+    tableLapMm,
+    ...(wallLapMinimumRule
+      ? [millimetres(wallLapMinimumRule, diameter)]
+      : []),
+  ]
+  const lapMm = Math.max(...lapCandidates)
 
   // 1通則7) の割付本数は1層分だ。層数（シングル／ダブル）は規準ではなく
   // 壁リストの記載であり、断面一覧の入力である (ADR-012)。
@@ -416,7 +434,7 @@ interface WallSpliceInput {
   /** この群が開口部を横切って断たれているか (2（５）壁1)② 但書) */
   deducted: boolean
   tableLapRule: RuleHit
-  wallLapMinimumRule: RuleHit
+  wallLapMinimumRule: RuleHit | undefined
   spliceFactorRule: RuleHit
   pack: RulePack
 }
@@ -466,13 +484,20 @@ function resolveWallSplice(input: WallSpliceInput): RebarSplice {
 
   const lengthMm = spliceLengthMm(countPerBar, lapMm, spliceFactorRule)
   const rules: RuleHit[] = [countRule, spliceFactorRule]
-  if (lengthMm > 0) rules.push(tableLapRule, wallLapMinimumRule)
+  if (lengthMm > 0) {
+    rules.push(tableLapRule)
+    if (wallLapMinimumRule) rules.push(wallLapMinimumRule)
+  }
 
   const lapTerm =
     lengthMm > 0
-      ? `${countPerBar}か所 × 重ね継手長さ ${lapMm}（標準仕様書 5.3.4(3)(ｱ) — ` +
-        `表5.3.2 の ${tableLapRule.value}d と耐力壁の下限 ` +
-        `${wallLapMinimumRule.value}d の大きい方）＝ ${lengthMm}`
+      ? wallLapMinimumRule
+        ? `${countPerBar}か所 × 重ね継手長さ ${lapMm}（標準仕様書 5.3.4(3)(ｱ) — ` +
+          `表5.3.2 の ${tableLapRule.value}d と耐力壁の下限 ` +
+          `${wallLapMinimumRule.value}d の大きい方）＝ ${lengthMm}`
+        : `${countPerBar}か所 × 重ね継手長さ ${lapMm}（標準仕様書 表5.3.2 ` +
+          `の ${tableLapRule.value}d のみ。5.3.4(3)(ｱ) は耐力壁限定 — ` +
+          `耐力壁以外は表5.3.2のみ（ADR-036の読み））＝ ${lengthMm}`
       : `${countPerBar}か所 — ${section.spliceMethod}は長さの変化なし 0`
 
   return {

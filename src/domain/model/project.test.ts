@@ -5,6 +5,7 @@ import type {
   GirderSection,
   Member,
   OpeningReinforcement,
+  WallSection,
 } from './member'
 import { createSampleProject } from './sample-project'
 import {
@@ -78,6 +79,21 @@ const column: Member = {
   sectionId: columnSection.id,
   storyId: '1F',
   position: { ix: 1, iy: 1 },
+}
+
+const wallSection: WallSection = {
+  id: 'section-W1',
+  kind: '耐震壁',
+  mark: 'W1',
+  thickness: 200,
+  fc: 24,
+  grade: 'SD345',
+  exposure: '屋内',
+  finish: '仕上げあり',
+  spliceMethod: '重ね継手',
+  layers: 1,
+  vertical: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+  horizontal: { size: 'D13', pitch: 200, startOffsetMm: 0 },
 }
 
 function createProject(members: Member[] = [column]): Project {
@@ -228,6 +244,44 @@ describe('GirderMainRow serialization compatibility', () => {
     const serialized = serializeProject(validProject).replace(
       '"startCount":4',
       '"startCount":null',
+    )
+
+    expect(() => deserializeProject(serialized)).toThrow(
+      'Project shape mismatch',
+    )
+  })
+})
+
+describe('WallSection.wallClass serialization compatibility', () => {
+  function projectWithWallClass(wallClass: WallSection['wallClass']): Project {
+    return {
+      ...createProject(),
+      sections: [
+        ...createProject().sections,
+        { ...wallSection, ...(wallClass === undefined ? {} : { wallClass }) },
+      ],
+    }
+  }
+
+  it('round-trips both documented wall classes without changing the schema version', () => {
+    for (const wallClass of ['耐力壁', '耐力壁以外'] as const) {
+      const project = projectWithWallClass(wallClass)
+
+      expect(project.schemaVersion).toBe(PROJECT_SCHEMA_VERSION)
+      expect(deserializeProject(serializeProject(project))).toEqual(project)
+    }
+  })
+
+  it('keeps a legacy WallSection without wallClass valid', () => {
+    const project = projectWithWallClass(undefined)
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it('rejects an undocumented wallClass value', () => {
+    const serialized = serializeProject(projectWithWallClass('耐力壁')).replace(
+      '"wallClass":"耐力壁"',
+      '"wallClass":"雑壁"',
     )
 
     expect(() => deserializeProject(serialized)).toThrow(

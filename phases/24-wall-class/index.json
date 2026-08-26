@@ -14,7 +14,10 @@
     {
       "step": 1,
       "name": "wall-class-domain-rulepack",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T17:19:53+0900",
+      "summary": "wallClass model/rulepack/rebar and golden pair implemented; all AC gates passed",
+      "completed_at": "2026-08-26T17:30:54+0900"
     },
     {
       "step": 2,

@@ -278,6 +278,12 @@ export interface WallSection {
   mark: string
   /** ColumnSection.storyLabel と同じ。 */
   storyLabel?: string
+  /**
+   * 設計図書で判断した壁の区分。雑壁は別の MemberKind ではなく、壁の
+   * かぶりと重ね継手下限だけを分ける。省略は既存案件との互換のため
+   * 耐力壁として扱う (ADR-036)。
+   */
+  wallClass?: '耐力壁' | '耐力壁以外'
   /** 壁厚 (mm) */
   thickness: number
   fc: number
