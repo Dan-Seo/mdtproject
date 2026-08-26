@@ -93,6 +93,10 @@
       "dir": "19-wall-slab-lists",
       "status": "completed",
       "completed_at": "2026-08-26T12:06:47+0900"
+    },
+    {
+      "dir": "20-girder-end-asymmetry",
+      "status": "pending"
     }
   ]
 }

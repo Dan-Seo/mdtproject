@@ -1,0 +1,22 @@
+{
+  "project": "Kijun",
+  "phase": "20-girder-end-asymmetry",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr032-decomposition",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "model-decompose-main-row",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "engine-goldens-viewer",
+      "status": "pending"
+    }
+  ]
+}
