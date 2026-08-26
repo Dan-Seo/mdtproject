@@ -445,17 +445,28 @@ function GirderMainCountInput({
 }: {
   section: GirderSection
   row: 'top' | 'bottom'
-  place: '端部' | '中央'
+  place: '端部' | '始端' | '終端' | '中央'
   update(updater: (section: Section) => Section): void
 }) {
-  const key = place === '端部' ? 'endCount' : 'centerCount'
+  const key =
+    place === '中央'
+      ? 'centerCount'
+      : place === '始端'
+        ? 'startCount'
+        : 'endCount'
+  const value =
+    place === '始端'
+      ? section.main[row].startCount ?? section.main[row].endCount
+      : place === '中央'
+        ? section.main[row].centerCount
+        : section.main[row].endCount
 
   return (
     <NumberInput
       label={`${sectionMarkLabel(section)} 主筋 ${
         row === 'top' ? '上' : '下'
       } ${place} 本数`}
-      value={section.main[row][key]}
+      value={value}
       onChange={(count) =>
         update((current) => {
           if (current.kind !== '大梁') return current
@@ -484,12 +495,30 @@ function GirderMainField({
       {(['top', 'bottom'] as const).map((row) => (
         <div key={row} className={styles.compoundField}>
           <span>{row === 'top' ? '上' : '下'}</span>
-          <GirderMainCountInput
-            section={section}
-            row={row}
-            place="端部"
-            update={update}
-          />
+          {section.main[row].startCount === undefined ? (
+            <GirderMainCountInput
+              section={section}
+              row={row}
+              place="端部"
+              update={update}
+            />
+          ) : (
+            <>
+              <GirderMainCountInput
+                section={section}
+                row={row}
+                place="始端"
+                update={update}
+              />
+              <span aria-hidden="true">／</span>
+              <GirderMainCountInput
+                section={section}
+                row={row}
+                place="終端"
+                update={update}
+              />
+            </>
+          )}
           <span aria-hidden="true">／</span>
           <GirderMainCountInput
             section={section}
@@ -497,6 +526,29 @@ function GirderMainField({
             place="中央"
             update={update}
           />
+          <label className={styles.girderAsymmetricToggle}>
+            <input
+              type="checkbox"
+              aria-label={`${sectionMarkLabel(section)} ${
+                row === 'top' ? '上筋' : '下筋'
+              } 左右で違う`}
+              checked={section.main[row].startCount !== undefined}
+              onChange={(event) => {
+                const asymmetric = event.currentTarget.checked
+                update((current) => {
+                  if (current.kind !== '大梁') return current
+                  const nextRow = { ...current.main[row] }
+                  if (asymmetric) nextRow.startCount ??= nextRow.endCount
+                  else delete nextRow.startCount
+                  return {
+                    ...current,
+                    main: { ...current.main, [row]: nextRow },
+                  }
+                })
+              }}
+            />
+            左右で違う
+          </label>
         </div>
       ))}
       <BarSizeSelect

@@ -25,6 +25,7 @@ import type {
   TextPage,
 } from '@/lib/import/section-list/types'
 import { t } from '@/lib/i18n'
+import { compact } from '@/lib/import/runs'
 import { useAppStore, type Locale } from '@/lib/store'
 
 import styles from './SectionImport.module.css'
@@ -61,6 +62,56 @@ type ImportableSection =
   | SlabSection
 
 type SlabDirection = 'x' | 'y'
+type GirderDirection = 'first' | 'second'
+
+/**
+ * 「Y2端」のような軸名付きラベルだけを自動対応の対象にする。外端・内端は
+ * Gridのラベルと偶然一致しても、軸名として解釈してはならない (ADR-033) 。
+ */
+function axisNameFromEndLabel(label: string): string | undefined {
+  const value = compact(label)
+  if (!value.endsWith('端')) return undefined
+  const axisName = value.slice(0, -1)
+  return axisName === '' || axisName === '外' || axisName === '内'
+    ? undefined
+    : axisName
+}
+
+/**
+ * 断面リストの端部ラベルと同じ軸のGridラベルが両方見つかったときだけ、
+ * 軸インデックスの低い側を始端にする。比較の両辺は compact() を通す —
+ * framing-plan 側も同じ正規化を使うため、これは文字列の完全一致であって
+ * 도면 방향을 추정하는 휴리스틱이 아니다 (ADR-033) 。
+ */
+function automaticGirderDirection(
+  project: Project,
+  candidate: SectionCandidate,
+): GirderDirection | undefined {
+  const asymmetric = candidate.girderMainAsymmetric
+  if (!asymmetric) return undefined
+
+  const axisNames = asymmetric.labels.map(axisNameFromEndLabel)
+  if (axisNames.some((axisName) => axisName === undefined)) return undefined
+
+  for (const labels of [project.grid.xLabels, project.grid.yLabels]) {
+    if (!labels) continue
+    const indexes = axisNames.map((axisName) =>
+      labels.findIndex((label) => compact(label) === axisName),
+    )
+    if (indexes.every((index) => index >= 0) && indexes[0] !== indexes[1]) {
+      return indexes[0] < indexes[1] ? 'first' : 'second'
+    }
+  }
+  return undefined
+}
+
+function resolvedGirderDirection(
+  project: Project,
+  candidate: SectionCandidate,
+  selected?: GirderDirection,
+): GirderDirection | undefined {
+  return selected ?? automaticGirderDirection(project, candidate)
+}
 
 function isImportableSection(section: Section): section is ImportableSection {
   return (
@@ -109,6 +160,7 @@ function cloneSource(
 function missingParsedFields(
   candidate: SectionCandidate,
   slabDirection?: SlabDirection,
+  girderDirection?: GirderDirection,
 ): boolean {
   if (candidate.kind === '柱') {
     return (
@@ -119,10 +171,14 @@ function missingParsedFields(
     )
   }
   if (candidate.kind === '大梁') {
+    const mainAvailable =
+      candidate.girderMain !== undefined ||
+      (candidate.girderMainAsymmetric !== undefined &&
+        girderDirection !== undefined)
     return (
       candidate.b === undefined ||
       candidate.depth === undefined ||
-      candidate.girderMain === undefined ||
+      !mainAvailable ||
       candidate.stirrup === undefined
     )
   }
@@ -162,6 +218,7 @@ function applyParsedFields(
   section: Section,
   candidate: SectionCandidate,
   slabDirection?: SlabDirection,
+  girderDirection?: GirderDirection,
 ): Section {
   if (section.kind === '柱' && candidate.kind === '柱') {
     return {
@@ -188,35 +245,58 @@ function applyParsedFields(
   }
 
   if (section.kind === '大梁' && candidate.kind === '大梁') {
+    const parsedMain = candidate.girderMainAsymmetric && girderDirection
+      ? (() => {
+          const startIndex = girderDirection === 'first' ? 0 : 1
+          const endIndex = 1 - startIndex
+          return {
+            ...section.main,
+            size: candidate.girderMainAsymmetric.size,
+            top: {
+              startCount: candidate.girderMainAsymmetric.topCounts[startIndex],
+              centerCount: candidate.girderMainAsymmetric.topCenterCount,
+              endCount: candidate.girderMainAsymmetric.topCounts[endIndex],
+            },
+            bottom: {
+              startCount:
+                candidate.girderMainAsymmetric.bottomCounts[startIndex],
+              centerCount: candidate.girderMainAsymmetric.bottomCenterCount,
+              endCount: candidate.girderMainAsymmetric.bottomCounts[endIndex],
+            },
+          }
+        })()
+      : candidate.girderMain === undefined
+        ? undefined
+        : {
+            ...section.main,
+            size: candidate.girderMain.size,
+            top: {
+              endCount:
+                candidate.girderMain.endTopCount ??
+                candidate.girderMain.topCount,
+              centerCount: candidate.girderMain.topCount,
+            },
+            bottom: {
+              endCount:
+                candidate.girderMain.endBottomCount ??
+                candidate.girderMain.bottomCount,
+              centerCount: candidate.girderMain.bottomCount,
+            },
+          }
+    const nextMain =
+      candidate.cutoffFromSupportFaceMm === undefined
+        ? parsedMain
+        : {
+            ...(parsedMain ?? section.main),
+            cutoffFromSupportFaceMm: candidate.cutoffFromSupportFaceMm,
+          }
+
     return {
       ...section,
       mark: candidate.mark,
       ...(candidate.b === undefined ? {} : { b: candidate.b }),
       ...(candidate.depth === undefined ? {} : { depth: candidate.depth }),
-      ...(candidate.girderMain === undefined
-        ? {}
-        : {
-            main: {
-              ...section.main,
-              size: candidate.girderMain.size,
-              // 端部欄を持つ表だけが端部の本数を別に寄こす。持たない表は全長で
-              // 同じ本数なので中央の値をそのまま端部にも入れる。左右で端部が
-              // 違う表は取り込まない — parse.ts が 主筋端部左右相違 で空欄に
-              // 残す (ADR-021)。
-              top: {
-                endCount:
-                  candidate.girderMain.endTopCount ??
-                  candidate.girderMain.topCount,
-                centerCount: candidate.girderMain.topCount,
-              },
-              bottom: {
-                endCount:
-                  candidate.girderMain.endBottomCount ??
-                  candidate.girderMain.bottomCount,
-                centerCount: candidate.girderMain.bottomCount,
-              },
-            },
-          }),
+      ...(nextMain === undefined ? {} : { main: nextMain }),
       ...(candidate.stirrup === undefined
         ? {}
         : {
@@ -356,9 +436,21 @@ function applyCandidate(
   project: Project,
   candidate: SectionCandidate,
   slabDirection?: SlabDirection,
+  selectedGirderDirection?: GirderDirection,
 ): Project {
   if (candidate.kind === '対象外') return project
   if (candidate.kind === '床板' && slabDirection === undefined) return project
+  const girderDirection = resolvedGirderDirection(
+    project,
+    candidate,
+    selectedGirderDirection,
+  )
+  if (
+    candidate.girderMainAsymmetric !== undefined &&
+    girderDirection === undefined
+  ) {
+    return project
+  }
 
   const existing = matchingSection(project, candidate)
   if (existing) {
@@ -366,14 +458,24 @@ function applyCandidate(
       ...project,
       sections: project.sections.map((section) =>
         section.id === existing.id
-          ? applyParsedFields(section, candidate, slabDirection)
+          ? applyParsedFields(
+              section,
+              candidate,
+              slabDirection,
+              girderDirection,
+            )
           : section,
       ),
     }
   }
 
   const source = cloneSource(project, candidate)
-  if (!source || missingParsedFields(candidate, slabDirection)) return project
+  if (
+    !source ||
+    missingParsedFields(candidate, slabDirection, girderDirection)
+  ) {
+    return project
+  }
   // id는 사람이 읽는 값이 아니라 충돌만 피하면 된다 — 階를 섞어 먼저 좁힌다
   const id = uniqueSectionId(
     project,
@@ -411,7 +513,12 @@ function applyCandidate(
               },
             }
   const cloned = withCandidateStory(
-    applyParsedFields(clonedSource, candidate, slabDirection),
+    applyParsedFields(
+      clonedSource,
+      candidate,
+      slabDirection,
+      girderDirection,
+    ),
     candidate,
   )
 
@@ -426,7 +533,15 @@ function sectionSummary(section: ImportableSection): string {
   }
   if (section.kind === '大梁') {
     const { top, bottom } = section.main
-    return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${top.endCount}／${top.centerCount}・下${bottom.endCount}／${bottom.centerCount}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
+    const topCounts =
+      top.startCount === undefined
+        ? `${top.endCount}／${top.centerCount}`
+        : `${top.startCount}／${top.centerCount}／${top.endCount}`
+    const bottomCounts =
+      bottom.startCount === undefined
+        ? `${bottom.endCount}／${bottom.centerCount}`
+        : `${bottom.startCount}／${bottom.centerCount}／${bottom.endCount}`
+    return `${sectionMarkLabel(section)} / ${section.b}×${section.depth} / 上${topCounts}・下${bottomCounts}-${section.main.size} / ${section.stirrup.size}@${section.stirrup.pitch}`
   }
   if (section.kind === '耐震壁') {
     return `${sectionMarkLabel(section)} / 壁厚${section.thickness} / ${section.layers}層 / 縦筋 ${section.vertical.size}@${section.vertical.pitch} / 横筋 ${section.horizontal.size}@${section.horizontal.pitch}`
@@ -458,6 +573,15 @@ function candidateFields(candidate: SectionCandidate, locale: Locale): string[] 
         `端部 上${endTopCount ?? topCount}・下${endBottomCount ?? bottomCount}`,
       )
     }
+  }
+  if (candidate.girderMainAsymmetric) {
+    const asymmetric = candidate.girderMainAsymmetric
+    fields.push(
+      `主筋 上${asymmetric.topCenterCount}・下${asymmetric.bottomCenterCount}-${asymmetric.size}`,
+    )
+    fields.push(
+      `端部 ${asymmetric.labels[0]} 上${asymmetric.topCounts[0]}・下${asymmetric.bottomCounts[0]} / ${asymmetric.labels[1]} 上${asymmetric.topCounts[1]}・下${asymmetric.bottomCounts[1]}`,
+    )
   }
   if (candidate.stirrup) {
     fields.push(
@@ -522,15 +646,19 @@ function Candidate({
   row,
   ignored,
   slabDirection,
+  girderDirection,
   onIgnore,
   onSlabDirectionChange,
+  onGirderDirectionChange,
   onApply,
 }: {
   row: CandidateRow
   ignored: boolean
   slabDirection?: SlabDirection
+  girderDirection?: GirderDirection
   onIgnore(): void
   onSlabDirectionChange(direction: SlabDirection | undefined): void
+  onGirderDirectionChange(direction: GirderDirection | undefined): void
   onApply(): void
 }) {
   const { candidate } = row
@@ -538,9 +666,16 @@ function Candidate({
   const locale = useAppStore(({ locale }) => locale)
   const existing = matchingSection(project, candidate)
   const source = existing ? undefined : cloneSource(project, candidate)
-  const incomplete = !existing && missingParsedFields(candidate, slabDirection)
+  const automaticDirection = automaticGirderDirection(project, candidate)
+  const resolvedDirection =
+    girderDirection ?? automaticDirection
+  const incomplete =
+    !existing &&
+    missingParsedFields(candidate, slabDirection, resolvedDirection)
   const directionMissing =
-    candidate.kind === '床板' && slabDirection === undefined
+    (candidate.kind === '床板' && slabDirection === undefined) ||
+    (candidate.girderMainAsymmetric !== undefined &&
+      resolvedDirection === undefined)
   const story = candidate.storyLabel ?? t(locale, 'sectionImport.noStory')
   // 파서는 이슈 코드만 싣는다 — 문장은 여기서 locale로 푼다
   const issueMessages = candidate.issues.map((issue) =>
@@ -632,6 +767,39 @@ function Candidate({
           </select>
         </div>
       ) : null}
+      {candidate.kind === '大梁' && candidate.girderMainAsymmetric ? (
+        <div className={styles.directionChoice}>
+          <label htmlFor={`section-import-girder-direction-${row.id}`}>
+            {t(locale, 'sectionImport.girderDirection')}
+          </label>
+          <select
+            id={`section-import-girder-direction-${row.id}`}
+            data-testid={`section-import-girder-direction-${candidate.mark}`}
+            value={resolvedDirection ?? ''}
+            onChange={(event) => {
+              const value = event.currentTarget.value
+              onGirderDirectionChange(
+                value === 'first' || value === 'second' ? value : undefined,
+              )
+            }}
+          >
+            <option value="">
+              {t(locale, 'sectionImport.girderDirectionPlaceholder')}
+            </option>
+            <option value="first">
+              {candidate.girderMainAsymmetric.labels[0]}=始端
+            </option>
+            <option value="second">
+              {candidate.girderMainAsymmetric.labels[1]}=始端
+            </option>
+          </select>
+          <span>
+            {automaticDirection !== undefined
+              ? `${t(locale, 'sectionImport.girderDirection.auto')}（${candidate.girderMainAsymmetric.labels[resolvedDirection === 'first' ? 0 : 1]}=始端）`
+              : t(locale, 'sectionImport.girderDirection.manual')}
+          </span>
+        </div>
+      ) : null}
       <div className={styles.rowActions}>
         <button
           type="button"
@@ -666,6 +834,9 @@ export function SectionImport({
   const [slabDirections, setSlabDirections] = useState<
     Record<string, SlabDirection>
   >({})
+  const [girderDirections, setGirderDirections] = useState<
+    Record<string, GirderDirection>
+  >({})
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
   const lists = useMemo(
@@ -699,6 +870,7 @@ export function SectionImport({
     setFailed(false)
     setIgnored(new Set())
     setSlabDirections({})
+    setGirderDirections({})
     try {
       const next = await extractPages(file)
       if (requestRef.current !== requestId) return
@@ -783,11 +955,20 @@ export function SectionImport({
                       row={row}
                       ignored={ignored.has(row.id)}
                       slabDirection={slabDirections[row.id]}
+                      girderDirection={girderDirections[row.id]}
                       onIgnore={() =>
                         setIgnored((current) => new Set(current).add(row.id))
                       }
                       onSlabDirectionChange={(direction) =>
                         setSlabDirections((current) => {
+                          const next = { ...current }
+                          if (direction === undefined) delete next[row.id]
+                          else next[row.id] = direction
+                          return next
+                        })
+                      }
+                      onGirderDirectionChange={(direction) =>
+                        setGirderDirections((current) => {
                           const next = { ...current }
                           if (direction === undefined) delete next[row.id]
                           else next[row.id] = direction
@@ -800,6 +981,7 @@ export function SectionImport({
                             project,
                             row.candidate,
                             slabDirections[row.id],
+                            girderDirections[row.id],
                           ),
                         )
                       }

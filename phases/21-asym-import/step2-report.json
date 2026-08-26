@@ -1,0 +1,34 @@
+{
+  "step": 2,
+  "name": "import-apply-and-editor",
+  "directionDecision": {
+    "automatic": "Y2端/Y3端처럼 端을 제거한 라벨이 동일한 xLabels 또는 yLabels에 compact() 완전 일치하면 축 index가 낮은 라벨을 始端으로 결정하고, 그 근거를 행에 표시하며 select로 반전할 수 있다.",
+    "manual": "外端/内端 또는 Grid에 대응하는 라벨이 없는 경우 기본은 미선택이며 反映을 막는다. 사용자가 선택한 라벨을 始端으로 사용한다.",
+    "appliedFields": "방향이 결정된 girderMainAsymmetric의 labels/topCounts/bottomCounts/中央 값을 startCount/endCount/centerCount로 반영하고, cutoffFromSupportFaceMm은 파싱된 경우에만 덮어쓴다."
+  },
+  "localeKeys": [
+    "sectionImport.girderDirection",
+    "sectionImport.girderDirectionPlaceholder",
+    "sectionImport.girderDirection.auto",
+    "sectionImport.girderDirection.manual"
+  ],
+  "updatedFiles": [
+    "src/components/section/SectionImport.tsx",
+    "src/components/section/SectionImport.test.tsx",
+    "src/components/section/SectionTable.tsx",
+    "src/components/section/SectionTable.test.tsx",
+    "src/components/section/SectionTable.module.css",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "docs/RISKS.md",
+    "docs/MILESTONES.md"
+  ],
+  "verification": {
+    "targeted": "passed — 2 files, 44 tests",
+    "fullTest": "passed — 82 files, 1474 tests",
+    "typecheck": "passed — npx tsc --noEmit",
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1"
+  }
+}

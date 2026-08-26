@@ -51,6 +51,47 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('G1 継手方式')).toHaveValue('ガス圧接')
   })
 
+  it('toggles each 大梁主筋 row between symmetric and asymmetric端部 counts', () => {
+    render(<SectionTable />)
+
+    const toggle = screen.getByLabelText('G1 上筋 左右で違う')
+    expect(toggle).not.toBeChecked()
+
+    fireEvent.click(toggle)
+    let section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.top.startCount).toBe(section.main.top.endCount)
+
+    fireEvent.change(screen.getByLabelText('G1 主筋 上 始端 本数'), {
+      target: { value: '6' },
+    })
+    fireEvent.change(screen.getByLabelText('G1 主筋 上 終端 本数'), {
+      target: { value: '7' },
+    })
+
+    section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.top).toMatchObject({
+      startCount: 6,
+      endCount: 7,
+      centerCount: 4,
+    })
+
+    fireEvent.click(screen.getByLabelText('G1 上筋 左右で違う'))
+    section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-G1')
+    if (section?.kind !== '大梁') throw new Error('Expected 大梁 section')
+    expect(section.main.top).toEqual({
+      endCount: 7,
+      centerCount: 4,
+    })
+  })
+
   // 幅止め筋·腹筋은 断面一覧에 없으면 그 배근이 없다는 뜻이라 optional 이다
   // (ADR-012). 그래서 「なし → 径을 고름」과 「이미 있는 径을 바꿈」이 서로 다른
   // 경로를 타는데, 후자가 빠져 있었다 — 径을 두 번째로 고르면 값이 버려졌다.
