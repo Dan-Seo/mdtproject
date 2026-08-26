@@ -631,6 +631,11 @@ function positionalGirderMain(
   bottom: ParsedBar[],
 ):
   | { girderMain: NonNullable<SectionCandidate['girderMain']> }
+  | {
+      girderMainAsymmetric: NonNullable<
+        SectionCandidate['girderMainAsymmetric']
+      >
+    }
   | { issue: CandidateIssue }
   | undefined {
   const zones = cells.map(({ position }) => positionZone(position))
@@ -702,42 +707,34 @@ function positionalGirderMain(
     return undefined
   }
 
-  const labels = [
-    cells[0]?.rawPosition ?? cells[0]?.position,
-    cells[2]?.rawPosition ?? cells[2]?.position,
-  ] as const
+  const labels = [cells[0]?.position, cells[2]?.position] as const
   if (labels[0] === undefined || labels[1] === undefined) return undefined
-  const asymmetricTop = endTopCounts[0] !== endTopCounts[1]
-  const asymmetricBottom = endBottomCounts[0] !== endBottomCounts[1]
-  const girderMain: NonNullable<SectionCandidate['girderMain']> = {
-    size,
-    topCount: centerTopCount,
-    bottomCount: centerBottomCount,
-  }
 
-  if (asymmetricTop || asymmetricBottom) {
-    girderMain.asymmetricEnds = {
-      labels: [labels[0], labels[1]],
-      ...(asymmetricTop
-        ? { topCounts: [endTopCounts[0], endTopCounts[1]] as [number, number] }
-        : {}),
-      ...(asymmetricBottom
-        ? {
-            bottomCounts: [endBottomCounts[0], endBottomCounts[1]] as [
-              number,
-              number,
-            ],
-          }
-        : {}),
+  const asymmetric =
+    endTopCounts[0] !== endTopCounts[1] ||
+    endBottomCounts[0] !== endBottomCounts[1]
+  if (asymmetric) {
+    return {
+      girderMainAsymmetric: {
+        size,
+        labels: [labels[0], labels[1]],
+        topCounts: [endTopCounts[0], endTopCounts[1]],
+        bottomCounts: [endBottomCounts[0], endBottomCounts[1]],
+        topCenterCount: centerTopCount,
+        bottomCenterCount: centerBottomCount,
+      },
     }
-    if (!asymmetricTop) girderMain.endTopCount = endTopCounts[0]
-    if (!asymmetricBottom) girderMain.endBottomCount = endBottomCounts[0]
-  } else {
-    girderMain.endTopCount = endTopCounts[0]
-    girderMain.endBottomCount = endBottomCounts[0]
   }
 
-  return { girderMain }
+  return {
+    girderMain: {
+      size,
+      topCount: centerTopCount,
+      bottomCount: centerBottomCount,
+      endTopCount: endTopCounts[0],
+      endBottomCount: endBottomCounts[0],
+    },
+  }
 }
 
 function setGirderMain(
@@ -807,6 +804,25 @@ function setGirderMain(
       : undefined
     if (positional && 'girderMain' in positional) {
       candidate.girderMain = positional.girderMain
+      return
+    }
+    if (positional && 'girderMainAsymmetric' in positional) {
+      candidate.girderMainAsymmetric = positional.girderMainAsymmetric
+      // step 2 전에는 이 후보를 반영하지 않지만, 확정한 위치별 값을 화면에서
+      // 원문과 함께 대조할 수 있어야 한다. 값 자체는 별도 필드가 정본이다.
+      for (const cell of topCells) {
+        candidate.raw[`${topLabel}(${cell.position})`] = cleanedRebarRaw(
+          cell.raw,
+        )
+      }
+      for (const cell of bottomCells) {
+        candidate.raw[`${bottomLabel}(${cell.position})`] = cleanedRebarRaw(
+          cell.raw,
+        )
+      }
+      // 비대칭 값은 새 필드에 보존했지만, 방향을 선택하기 전인 이 단계에서는
+      // girderMain으로 반영할 수 없다. 기존 취입 화면의 차단 안내를 유지한다.
+      addIssue(candidate, '主筋端部左右相違')
       return
     }
     positionalIssue = positional?.issue
@@ -2084,9 +2100,7 @@ function parseGirderBlock(
           markPositions.length,
         )
       }
-      if (cutoffMm !== undefined && result.girderMain !== undefined) {
-        result.girderMain.cutoffFromSupportFaceMm = cutoffMm
-      }
+      if (cutoffMm !== undefined) result.cutoffFromSupportFaceMm = cutoffMm
       if (stirrupLabel) {
         setPitch(
           result,

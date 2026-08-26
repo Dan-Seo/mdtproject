@@ -209,18 +209,16 @@ describe('parseSectionLists', () => {
       depth: 800,
       stirrup: { size: 'D13', pitchMm: 100 },
     })
-    expect(g51Roof.girderMain).toEqual({
+    expect(g51Roof.girderMain).toBeUndefined()
+    expect(g51Roof.girderMainAsymmetric).toEqual({
       size: 'D25',
-      topCount: 8,
-      bottomCount: 8,
-      asymmetricEnds: {
-        labels: ['外端', '内端'],
-        topCounts: [8, 13],
-        bottomCounts: [8, 11],
-      },
-      cutoffFromSupportFaceMm: 2500,
+      labels: ['外端', '内端'],
+      topCounts: [8, 13],
+      bottomCounts: [8, 11],
+      topCenterCount: 8,
+      bottomCenterCount: 8,
     })
-    expect(g51Roof.issues).not.toContain('主筋端部左右相違')
+    expect(g51Roof.cutoffFromSupportFaceMm).toBe(2500)
     expect(g51Roof.sideBar).toEqual({ size: 'D10', count: 2 })
 
     const cutoffEntries = girders.candidates.flatMap(({ raw }) =>
@@ -265,15 +263,14 @@ describe('parseSectionLists', () => {
       depth: 700,
       girderMain: { size: 'D22', topCount: 5, bottomCount: 4 },
     })
-    expect(candidate(girders, 'G55', 'R階').girderMain).toEqual({
+    expect(candidate(girders, 'G55', 'R階').girderMain).toBeUndefined()
+    expect(candidate(girders, 'G55', 'R階').girderMainAsymmetric).toEqual({
       size: 'D25',
-      topCount: 5,
-      bottomCount: 5,
-      asymmetricEnds: {
-        labels: ['Y2端', 'Y3端'],
-        topCounts: [4, 8],
-        bottomCounts: [4, 5],
-      },
+      labels: ['Y2端', 'Y3端'],
+      topCounts: [4, 8],
+      bottomCounts: [4, 5],
+      topCenterCount: 5,
+      bottomCenterCount: 5,
     })
   })
 
@@ -645,65 +642,71 @@ function sweepGirders(
         expect(c.depth, label).toBe(cell.depth)
         counts.dimension += 1
       }
-      if (c.girderMain) {
-        // 位置別に確定した候補は、位置ごとに転写と突き合わせる — 端部の値を中央に
-        // 入れた候補は「確定した」ままここを通ってしまう
+      if (c.girderMainAsymmetric) {
         const {
           size,
-          topCount,
-          bottomCount,
-          endTopCount,
-          endBottomCount,
-          asymmetricEnds,
-        } = c.girderMain
-        if (asymmetricEnds) {
-          const endpointPositions = Object.keys(topCells).filter(
-            (position) => !isCenterPosition(position),
-          )
-          expect(asymmetricEnds.labels, `${label} endpoint labels`).toEqual(
-            endpointPositions,
-          )
-          if (asymmetricEnds.topCounts) {
-            expect(
-              asymmetricEnds.topCounts,
-              `${label} ${labels.top} endpoint counts`,
-            ).toEqual(
-              endpointPositions.map((position) =>
-                Number(topCells[position]?.split('-')[0]),
-              ),
-            )
-          }
-          if (asymmetricEnds.bottomCounts) {
-            expect(
-              asymmetricEnds.bottomCounts,
-              `${label} ${labels.bottom} endpoint counts`,
-            ).toEqual(
-              endpointPositions.map((position) =>
-                Number(bottomCells[position]?.split('-')[0]),
-              ),
-            )
-          }
-        }
+          labels: endpointLabels,
+          topCounts,
+          bottomCounts,
+          topCenterCount,
+          bottomCenterCount,
+        } = c.girderMainAsymmetric
+        const endpointPositions = Object.keys(topCells).filter(
+          (position) => !isCenterPosition(position),
+        )
+        expect(endpointLabels, `${label} endpoint labels`).toEqual(
+          endpointPositions,
+        )
+        expect(topCounts, `${label} ${labels.top} endpoint counts`).toEqual(
+          endpointPositions.map((position) =>
+            Number(topCells[position]?.split('-')[0]),
+          ),
+        )
+        expect(
+          bottomCounts,
+          `${label} ${labels.bottom} endpoint counts`,
+        ).toEqual(
+          endpointPositions.map((position) =>
+            Number(bottomCells[position]?.split('-')[0]),
+          ),
+        )
         for (const [position, text] of Object.entries(topCells)) {
-          const endIndex = asymmetricEnds?.labels.indexOf(position) ?? -1
+          const endIndex = endpointLabels.indexOf(position)
           const count = isCenterPosition(position)
-            ? topCount
-            : endIndex >= 0
-              ? (asymmetricEnds?.topCounts?.[endIndex] ?? endTopCount ?? topCount)
-              : (endTopCount ?? topCount)
+            ? topCenterCount
+            : topCounts[endIndex]
           expect(`${count}-${size}`, `${label} ${labels.top}(${position})`).toBe(
             text,
           )
         }
         for (const [position, text] of Object.entries(bottomCells)) {
-          const endIndex = asymmetricEnds?.labels.indexOf(position) ?? -1
+          const endIndex = endpointLabels.indexOf(position)
+          const count = isCenterPosition(position)
+            ? bottomCenterCount
+            : bottomCounts[endIndex]
+          expect(
+            `${count}-${size}`,
+            `${label} ${labels.bottom}(${position})`,
+          ).toBe(text)
+        }
+        counts.main += 1
+      } else if (c.girderMain) {
+        // 位置別に確定した候補は、位置ごとに転写と突き合わせる — 端部の値を中央に
+        // 入れた候補は「確定した」ままここを通ってしまう
+        const { size, topCount, bottomCount, endTopCount, endBottomCount } =
+          c.girderMain
+        for (const [position, text] of Object.entries(topCells)) {
+          const count = isCenterPosition(position)
+            ? topCount
+            : (endTopCount ?? topCount)
+          expect(`${count}-${size}`, `${label} ${labels.top}(${position})`).toBe(
+            text,
+          )
+        }
+        for (const [position, text] of Object.entries(bottomCells)) {
           const count = isCenterPosition(position)
             ? bottomCount
-            : endIndex >= 0
-              ? (asymmetricEnds?.bottomCounts?.[endIndex] ??
-                endBottomCount ??
-                bottomCount)
-              : (endBottomCount ?? bottomCount)
+            : (endBottomCount ?? bottomCount)
           expect(
             `${count}-${size}`,
             `${label} ${labels.bottom}(${position})`,
@@ -772,7 +775,7 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
       ),
       // 端部가 좌우 동값인 1칸(G51 2階)은 기존 대칭 필드로, 나머지 2칸
       // (G51 R階 外端8/内端13, G55 R階)은 원문 라벨과 좌우 본수를
-      // asymmetricEnds로 확정한다. 방향 결정은 다음 취입 단계의 책임이다
+      // girderMainAsymmetric로 확정한다. 방향 결정은 다음 취입 단계의 책임이다
     ).toEqual({ main: 5, stirrup: 5, dimension: 5 })
   })
 

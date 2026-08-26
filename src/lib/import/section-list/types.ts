@@ -58,22 +58,25 @@ export interface SectionCandidate {
     bottomCount: number
     /**
      * 端部欄の本数。位置で本数を分けている表だけが持ち、両端が同値のときに
-     * 使う。左右で異なる表は asymmetricEnds に載せる。
+     * 使う。左右で異なる三欄表は girderMainAsymmetric に載せる。
      */
     endTopCount?: number
     endBottomCount?: number
-    /**
-     * 左右の端部本数が異なる表だけが持つ。labels は表の左端・右端の原文順で、
-     * 上下どちらか一方だけが非対称な場合はその側の counts だけを持つ。
-     */
-    asymmetricEnds?: {
-      labels: [string, string]
-      topCounts?: [number, number]
-      bottomCounts?: [number, number]
-    }
-    /** 端部のカットオフ寸法。左右が異なる場合は確定せず raw に残す。 */
-    cutoffFromSupportFaceMm?: number
   }
+  /**
+   * 左右の端部本数が異なる三欄表。labels は表の左端・右端の順で、
+   * compact() 後の図面原文ラベルを保持する。対称な側も同じ本数を二つ持つ。
+   */
+  girderMainAsymmetric?: {
+    size: BarSize
+    labels: [string, string]
+    topCounts: [number, number]
+    bottomCounts: [number, number]
+    topCenterCount: number
+    bottomCenterCount: number
+  }
+  /** 端部のカットオフ寸法。左右が異なる場合は確定せず raw に残す。 */
+  cutoffFromSupportFaceMm?: number
   stirrup?: { size: ShearBarSize; pitchMm: number }
   /**
    * 幅止め筋。リスト表題の特記から読む — 表のセルではない。

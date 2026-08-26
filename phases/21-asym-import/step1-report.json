@@ -60,27 +60,25 @@
     "yokohamaP14Stirrup": 5,
     "yokohamaP14Dimension": 5
   },
+  "isolation": {
+    "asymmetricField": "girderMainAsymmetric",
+    "girderMainForAsymmetric": "undefined",
+    "preStep2Import": "blocked",
+    "rawValuesPreserved": true
+  },
   "residualIssue": {
     "code": "主筋端部左右相違",
     "present": true,
     "paths": [
-      "三欄でない位置表（中央欄なし）の既存拒否回帰"
+      "三欄でない位置表（中央欄なし）の既存拒否回帰",
+      "非対称候補は方向選択前なので Step 2 前の反映を既存 UI で停止"
     ],
     "p14Resolved": true
   },
   "verification": {
     "targeted": "passed — 2 files, 98 tests",
+    "fullTest": "passed — 82 files, 1469 tests",
     "typecheck": "passed — npx tsc --noEmit",
-    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1",
-    "fullTest": {
-      "status": "failed",
-      "summary": "82 files, 1466 passed, 3 failed",
-      "failures": [
-        "SectionImport: new asymmetric candidate is still expected to be blocked",
-        "SectionImport: existing-section apply still assumes symmetric girderMain",
-        "SectionImport: parser issue assertion still expects the old G51 rejection"
-      ],
-      "nextStep": "Step 2 must update SectionImport to consume asymmetricEnds; Step 1 did not modify components."
-    }
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1"
   }
 }

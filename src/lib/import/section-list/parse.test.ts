@@ -1474,17 +1474,16 @@ describe('parseSectionLists (synthetic)', () => {
     })
     const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
 
-    expect(g1.girderMain).toEqual({
+    expect(g1.girderMain).toBeUndefined()
+    expect(g1.girderMainAsymmetric).toEqual({
       size: 'D25',
-      topCount: 4,
-      bottomCount: 4,
-      endBottomCount: 4,
-      asymmetricEnds: {
-        labels: ['Y3端', 'Y4端'],
-        topCounts: [6, 5],
-      },
+      labels: ['Y3端', 'Y4端'],
+      topCounts: [6, 5],
+      bottomCounts: [4, 4],
+      topCenterCount: 4,
+      bottomCenterCount: 4,
     })
-    expect(g1.issues).toEqual([])
+    expect(g1.issues).toContain('主筋端部左右相違')
   })
 
   it('still refuses a positional table that has no 中央 column', () => {
