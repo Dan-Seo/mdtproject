@@ -261,6 +261,25 @@ describe('generateWallRebar — 開口補強筋の設計図書転記 (1通則8) 
       expect(rebar.formula).toContain(`${rebar.count}`)
     }
   })
+
+  it('does not emit an untranscribed zero-length row', () => {
+    const reinforcements = generateWallRebar(
+      input({
+        member: {
+          ...reinforcementMember,
+          openings: [
+            {
+              ...reinforcementMember.openings![0],
+              reinforcements: [{ size: 'D13', count: 4, lengthMm: 0 }],
+            },
+          ],
+        },
+      }),
+      jpMlitRulePack,
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcements).toEqual([])
+  })
 })
 
 describe('generateWallRebar — 開口部の欠除 (数量積算基準 1通則8))', () => {

@@ -254,6 +254,23 @@ describe('PlanEditor 開口部の入力 (数量積算基準 1通則8))', () => {
     expect(reinforcement).toEqual({ size: 'D16', count: 4, lengthMm: 1800 })
   })
 
+  it('marks a newly added zero-length row as untranscribed', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+    fireEvent.click(screen.getByRole('button', { name: '開口部を追加' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: '開口補強筋を追加' }),
+    )
+
+    expect(
+      screen.getByTestId('opening-reinforcement-untranscribed'),
+    ).toHaveTextContent('未転記')
+    expect(
+      screen.getByTestId('opening-reinforcement-untranscribed'),
+    ).toHaveTextContent('数量に計上されません')
+    expect(wall.id).toBeTruthy()
+  })
+
   it('deletes only the selected 開口補強筋 row', () => {
     const wall = selectWall()
     render(<PlanEditor />)

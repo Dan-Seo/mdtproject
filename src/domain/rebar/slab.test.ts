@@ -385,4 +385,32 @@ describe('generateSlabRebar — 開口補強筋の設計図書転記 (1通則8) 
     expect(reinforcements[0].formula).toContain('設計図書転記')
     expect(reinforcements[0].formula).toContain('1通則8)')
   })
+
+  it('does not emit an untranscribed zero-length row', () => {
+    const opening: Opening = {
+      id: 'S1-untranscribed-opening',
+      xMm: 2400,
+      yMm: 2400,
+      widthMm: 1200,
+      heightMm: 1200,
+      reinforcements: [{ size: 'D13', count: 3, lengthMm: 0 }],
+    }
+    const target = slabAt(project, 0, 0)
+    const withOpening: Project = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === target.id ? { ...member, openings: [opening] } : member,
+      ),
+    }
+
+    const reinforcements = generateSlabRebar(
+      {
+        run: slabRun(withOpening, slabAt(withOpening, 0, 0), 'X'),
+        section: slabSection,
+      },
+      jpMlitRulePack,
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcements).toEqual([])
+  })
 })

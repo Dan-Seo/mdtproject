@@ -276,12 +276,27 @@ describe('Opening.reinforcements serialization validation', () => {
     expect(deserializeProject(serializeProject(project))).toEqual(project)
   })
 
+  it('round-trips an untranscribed zero-length reinforcement row', () => {
+    const project = createProject([
+      {
+        ...column,
+        openings: [
+          {
+            ...opening,
+            reinforcements: [{ size: 'D13', count: 1, lengthMm: 0 }],
+          },
+        ],
+      },
+    ])
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
   it.each([
     ['an unsupported bar size', { size: 'D99' }],
     ['a high-strength shear bar size', { size: 'K13' }],
     ['a zero count', { count: 0 }],
     ['a fractional count', { count: 1.5 }],
-    ['a zero length', { lengthMm: 0 }],
     ['a negative length', { lengthMm: -1 }],
     ['a non-finite length', { lengthMm: Number.POSITIVE_INFINITY }],
   ])('rejects %s in a reinforcement transcription', (_label, change) => {

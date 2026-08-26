@@ -888,6 +888,17 @@ function OpeningEditor() {
                               >
                                 −
                               </button>
+                              {reinforcement.lengthMm === 0 && (
+                                <span
+                                  className={styles.openingWarning}
+                                  data-testid="opening-reinforcement-untranscribed"
+                                >
+                                  {t(
+                                    locale,
+                                    'plan.openings.reinforcements.untranscribed',
+                                  )}
+                                </span>
+                              )}
                             </li>
                           )
                         },

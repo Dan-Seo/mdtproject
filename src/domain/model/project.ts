@@ -1086,13 +1086,15 @@ const isBarSize = (value: unknown): value is BarSize =>
 const isPositiveInteger = (value: unknown): boolean =>
   typeof value === 'number' && Number.isInteger(value) && value > 0
 
-const isPositiveFiniteNumber = (value: unknown): boolean =>
-  typeof value === 'number' && Number.isFinite(value) && value > 0
+const isNonNegativeFiniteNumber = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0
 
 const isOpeningReinforcement = shapedAs({
   size: isBarSize,
   count: isPositiveInteger,
-  lengthMm: isPositiveFiniteNumber,
+  // 0 is the persisted 未転記 state. The rebar generators omit it until the
+  // design-document transcription supplies a length.
+  lengthMm: isNonNegativeFiniteNumber,
 })
 
 const isOpeningWithReinforcements = (value: unknown): boolean => {

@@ -172,6 +172,7 @@
   "plan.openings.reinforcements.empty": "開口補強筋 없음",
   "plan.openings.reinforcements.add": "開口補強筋 추가",
   "plan.openings.reinforcements.remove": "補強筋 삭제",
+  "plan.openings.reinforcements.untranscribed": "▲ 未転記 — 수량에 계상되지 않습니다",
   "plan.openings.reinforcements.size": "径",
   "plan.openings.reinforcements.count": "본수",
   "plan.openings.reinforcements.length": "設計長さ (mm)",

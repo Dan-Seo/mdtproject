@@ -172,6 +172,7 @@
   "plan.openings.reinforcements.empty": "開口補強筋なし",
   "plan.openings.reinforcements.add": "開口補強筋を追加",
   "plan.openings.reinforcements.remove": "補強筋を削除",
+  "plan.openings.reinforcements.untranscribed": "▲ 未転記 — 数量に計上されません",
   "plan.openings.reinforcements.size": "径",
   "plan.openings.reinforcements.count": "本数",
   "plan.openings.reinforcements.length": "設計長さ (mm)",
