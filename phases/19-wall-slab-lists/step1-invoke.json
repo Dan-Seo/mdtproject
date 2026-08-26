@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "parse-wall-slab-lists",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1657.4549754000036,
+  "stdout_log": "phases\\19-wall-slab-lists\\step1-codex.stdout.log",
+  "stderr_log": "phases\\19-wall-slab-lists\\step1-codex.stderr.log"
+}

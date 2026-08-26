@@ -1,0 +1,11 @@
+2026-08-26T02:27:49.016851Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T02:27:49.086699Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T02:27:49.228403Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T02:35:58.661777Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+const MARK_PATTERN = /^(?:(?:C|G|FC|FG|B|CB)\d+[A-Z]?|fg)$/i
+2026-08-26T02:40:03.567793Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+    if (!outOfScope) {
+2026-08-26T02:45:14.083745Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+  /(?:柱断面リスト|大梁断面リスト|小梁断面リスト|小梁リスト|片持梁リスト|片持スラブリスト|耐圧版リスト|壁リスト|スラブリスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
+2026-08-26T02:49:14.493883Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+  /(柱断面リスト|大梁断面リスト|小梁断面リスト|小梁リスト|片持梁リスト|片持スラブリスト|耐圧版リスト|壁リスト|スラブリスト|地中梁リスト|柱リスト|大梁リスト|梁リスト|屋内階段配筋図|屋外階段配筋図|屋内階段|屋外階段)/
