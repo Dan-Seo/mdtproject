@@ -15,7 +15,8 @@
       "name": "domain-reinforcement-quantity",
       "status": "completed",
       "summary": "開口補強筋の転記モデル・壁/床板の数量算定・3D非表示とゴールデン/検証テストを追加し、全ゲートを通過。",
-      "started_at": "2026-08-26T15:08:28+0900"
+      "started_at": "2026-08-26T15:08:28+0900",
+      "completed_at": "2026-08-26T15:29:19+0900"
     },
     {
       "step": 2,
