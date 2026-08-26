@@ -5,14 +5,19 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import {
   BAR_SIZES,
   type BarSize,
+  type GirderPosition,
   type Member,
   type Opening,
   type OpeningReinforcement,
+  type Section,
+  type SlabPosition,
   type WallExtent,
 } from '@/domain/model/member'
 import {
   findSection,
   gridPoint,
+  placeableSlabPositions,
+  placeableWallPositions,
   slabBay,
   storyNotFound,
   wallSpan,
@@ -528,6 +533,375 @@ function SpanEditor({ axis }: { axis: SpanAxis }) {
         {t(locale, 'plan.addSpan')}
       </button>
     </fieldset>
+  )
+}
+
+type PlacementPosition = GirderPosition | SlabPosition
+type PlacementFailure = 'section' | 'unavailable' | 'duplicate'
+
+export interface PlanPlacementResult {
+  project: Project
+  member?: Member
+  reason?: PlacementFailure
+}
+
+function placementMemberId(
+  storyId: string,
+  mark: string,
+  position: PlacementPosition,
+): string {
+  const axis = 'axis' in position ? `-${position.axis}` : ''
+  return `${storyId}-${mark}-${position.ix}-${position.iy}${axis}`
+}
+
+function samePlacementPosition(
+  member: Member,
+  storyId: string,
+  kind: '耐震壁' | '床板',
+  position: PlacementPosition,
+): boolean {
+  if (member.storyId !== storyId || member.kind !== kind) return false
+
+  if (kind === '耐震壁') {
+    if (!('axis' in member.position) || !('axis' in position)) return false
+    return (
+      member.position.axis === position.axis &&
+      member.position.ix === position.ix &&
+      member.position.iy === position.iy
+    )
+  }
+
+  if ('axis' in member.position || 'axis' in position) return false
+  return (
+    member.position.ix === position.ix && member.position.iy === position.iy
+  )
+}
+
+function hasMemberAtPlacement(
+  project: Project,
+  storyId: string,
+  kind: '耐震壁' | '床板',
+  position: PlacementPosition,
+): boolean {
+  return project.members.some((member) =>
+    samePlacementPosition(member, storyId, kind, position),
+  )
+}
+
+/**
+ * UI가 누를 수 있는 배치 한 건을 Project로 변환한다.
+ *
+ * 기하의 성립 여부는 step 1의 도메인 판정만 사용하고, 여기서는 UI가
+ * 선택한 断面과 부재 id를 조합한다. duplicate 검사는 이벤트가 연속으로
+ * 들어오거나 이미 취입된 案件을 편집하는 경우에도 같은 id가 늘지 않게
+ * 하는 마지막 방어다.
+ */
+export function placePlanMember(
+  project: Project,
+  storyId: string,
+  sectionId: string,
+  position: PlacementPosition,
+): PlanPlacementResult {
+  const section = project.sections.find(({ id }) => id === sectionId)
+  if (section === undefined) return { project, reason: 'section' }
+
+  const kind = section.kind
+  if (kind !== '耐震壁' && kind !== '床板') {
+    return { project, reason: 'section' }
+  }
+
+  const id = placementMemberId(storyId, section.mark, position)
+  if (project.members.some((member) => member.id === id)) {
+    return { project, reason: 'duplicate' }
+  }
+
+  const placeable =
+    kind === '耐震壁'
+      ? 'axis' in position &&
+        placeableWallPositions(project, storyId).some(
+          (candidate) =>
+            candidate.axis === position.axis &&
+            candidate.ix === position.ix &&
+            candidate.iy === position.iy,
+        )
+      : !('axis' in position) &&
+        placeableSlabPositions(project, storyId).some(
+          (candidate) =>
+            candidate.ix === position.ix && candidate.iy === position.iy,
+        )
+
+  if (!placeable) return { project, reason: 'unavailable' }
+
+  const member: Member = {
+    id,
+    kind,
+    memberClass: '躯体',
+    sectionId: section.id,
+    storyId,
+    position,
+  }
+
+  return {
+    project: { ...project, members: [...project.members, member] },
+    member,
+  }
+}
+
+function placementAxisLabel(
+  project: Project,
+  axis: 'X' | 'Y',
+  index: number,
+): string {
+  const labels = axis === 'X' ? project.grid.xLabels : project.grid.yLabels
+  return labels?.[index] ?? `${axis}${index + 1}`
+}
+
+function placementLabel(
+  project: Project,
+  position: PlacementPosition,
+): string {
+  if ('axis' in position) {
+    if (position.axis === 'Y') {
+      return `${placementAxisLabel(project, 'X', position.ix)} / ${placementAxisLabel(project, 'Y', position.iy)}-${placementAxisLabel(project, 'Y', position.iy + 1)}`
+    }
+    return `${placementAxisLabel(project, 'X', position.ix)}-${placementAxisLabel(project, 'X', position.ix + 1)} / ${placementAxisLabel(project, 'Y', position.iy)}`
+  }
+
+  return `${placementAxisLabel(project, 'X', position.ix)}-${placementAxisLabel(project, 'X', position.ix + 1)} / ${placementAxisLabel(project, 'Y', position.iy)}-${placementAxisLabel(project, 'Y', position.iy + 1)}`
+}
+
+function removePlanMember(project: Project, memberId: string): Project {
+  return {
+    ...project,
+    members: project.members.filter(({ id }) => id !== memberId),
+  }
+}
+
+function PlacementEditor() {
+  const project = useAppStore(({ project }) => project)
+  const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
+  const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
+  const locale = useAppStore(({ locale }) => locale)
+  const [wallSectionSelection, setWallSectionSelection] = useState<string>()
+  const [slabSectionSelection, setSlabSectionSelection] = useState<string>()
+  const [placementError, setPlacementError] = useState<PlacementFailure>()
+
+  const wallSections = project.sections.filter(
+    (section): section is Extract<Section, { kind: '耐震壁' }> =>
+      section.kind === '耐震壁',
+  )
+  const slabSections = project.sections.filter(
+    (section): section is Extract<Section, { kind: '床板' }> =>
+      section.kind === '床板',
+  )
+  const wallSectionId = wallSections.some(
+    ({ id }) => id === wallSectionSelection,
+  )
+    ? wallSectionSelection
+    : wallSections[0]?.id
+  const slabSectionId = slabSections.some(
+    ({ id }) => id === slabSectionSelection,
+  )
+    ? slabSectionSelection
+    : slabSections[0]?.id
+  const wallPositions =
+    wallSectionId === undefined
+      ? []
+      : placeableWallPositions(project, activeStoryId).filter(
+          (position) =>
+            !hasMemberAtPlacement(project, activeStoryId, '耐震壁', position),
+        )
+  const slabPositions =
+    slabSectionId === undefined
+      ? []
+      : placeableSlabPositions(project, activeStoryId).filter(
+          (position) =>
+            !hasMemberAtPlacement(project, activeStoryId, '床板', position),
+        )
+
+  const place = (sectionId: string | undefined, position: PlacementPosition) => {
+    if (sectionId === undefined) return
+
+    let result: PlanPlacementResult | undefined
+    useAppStore.setState((state) => {
+      result = placePlanMember(state.project, activeStoryId, sectionId, position)
+      return result.member === undefined ? {} : { project: result.project }
+    })
+
+    if (result?.member === undefined) {
+      setPlacementError(result?.reason)
+      return
+    }
+
+    setPlacementError(undefined)
+    useAppStore.getState().selectMember(result.member.id)
+  }
+
+  const selectedMember = project.members.find(
+    ({ id }) => id === selectedMemberId,
+  )
+  const canDelete =
+    selectedMember?.kind === '耐震壁' || selectedMember?.kind === '床板'
+  const selectedSection =
+    selectedMember === undefined
+      ? undefined
+      : project.sections.find(({ id }) => id === selectedMember.sectionId)
+
+  const deleteSelected = () => {
+    if (!selectedMember || !canDelete) return
+    useAppStore.setState((state) => ({
+      project: removePlanMember(state.project, selectedMember.id),
+      sel: { group: null, memberId: null },
+    }))
+    setPlacementError(undefined)
+  }
+
+  const failureMessage =
+    placementError === 'duplicate'
+      ? t(locale, 'plan.placement.duplicate')
+      : placementError === 'unavailable'
+        ? t(locale, 'plan.placement.unavailable')
+        : placementError === 'section'
+          ? t(locale, 'plan.placement.sectionMissing')
+          : null
+
+  return (
+    <section className={styles.placementEditor} data-testid="placement-editor">
+      <div className={styles.placementGroups}>
+        <fieldset className={styles.placementGroup}>
+          <legend className={styles.spanLegend}>
+            {t(locale, 'plan.placement.wall.title')}
+          </legend>
+          {wallSections.length === 0 ? (
+            <p
+              className={styles.openingHint}
+              data-testid="placement-wall-no-section"
+            >
+              {t(locale, 'plan.placement.wall.sectionMissing')}
+            </p>
+          ) : (
+            <>
+              <label className={styles.placementLabel}>
+                <span>{t(locale, 'plan.placement.section')}</span>
+                <select
+                  className={styles.placementSelect}
+                  data-testid="placement-wall-section"
+                  value={wallSectionId ?? ''}
+                  onChange={(event) =>
+                    setWallSectionSelection(event.currentTarget.value)
+                  }
+                >
+                  {wallSections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.mark}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className={styles.placementCandidates}>
+                {wallPositions.length === 0 ? (
+                  <p className={styles.openingHint}>
+                    {t(locale, 'plan.placement.empty')}
+                  </p>
+                ) : (
+                  wallPositions.map((position) => (
+                    <button
+                      key={`wall-${position.axis}-${position.ix}-${position.iy}`}
+                      type="button"
+                      className={styles.placementCandidate}
+                      data-testid={`placement-wall-${position.axis}-${position.ix}-${position.iy}`}
+                      onClick={() => place(wallSectionId, position)}
+                    >
+                      {placementLabel(project, position)}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </fieldset>
+
+        <fieldset className={styles.placementGroup}>
+          <legend className={styles.spanLegend}>
+            {t(locale, 'plan.placement.slab.title')}
+          </legend>
+          {slabSections.length === 0 ? (
+            <p
+              className={styles.openingHint}
+              data-testid="placement-slab-no-section"
+            >
+              {t(locale, 'plan.placement.slab.sectionMissing')}
+            </p>
+          ) : (
+            <>
+              <label className={styles.placementLabel}>
+                <span>{t(locale, 'plan.placement.section')}</span>
+                <select
+                  className={styles.placementSelect}
+                  data-testid="placement-slab-section"
+                  value={slabSectionId ?? ''}
+                  onChange={(event) =>
+                    setSlabSectionSelection(event.currentTarget.value)
+                  }
+                >
+                  {slabSections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.mark}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className={styles.placementCandidates}>
+                {slabPositions.length === 0 ? (
+                  <p className={styles.openingHint}>
+                    {t(locale, 'plan.placement.empty')}
+                  </p>
+                ) : (
+                  slabPositions.map((position) => (
+                    <button
+                      key={`slab-${position.ix}-${position.iy}`}
+                      type="button"
+                      className={styles.placementCandidate}
+                      data-testid={`placement-slab-${position.ix}-${position.iy}`}
+                      onClick={() => place(slabSectionId, position)}
+                    >
+                      {placementLabel(project, position)}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </fieldset>
+      </div>
+
+      {canDelete && selectedMember && selectedSection && (
+        <div className={styles.placementActions}>
+          <button
+            type="button"
+            className={styles.placementDelete}
+            data-testid="delete-member"
+            aria-label={`${selectedSection.mark} ${selectedMember.id} ${t(
+              locale,
+              'plan.placement.delete',
+            )}`}
+            onClick={deleteSelected}
+          >
+            {t(locale, 'plan.placement.delete')}
+          </button>
+        </div>
+      )}
+
+      {failureMessage !== null && (
+        <p
+          className={styles.placementMessage}
+          data-testid="placement-error"
+          role="alert"
+        >
+          ▲ {failureMessage}
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -1327,6 +1701,7 @@ export function PlanEditor() {
         <SpanEditor axis="x" />
         <SpanEditor axis="y" />
       </div>
+      <PlacementEditor />
       <WallExtentEditor />
       <OpeningEditor />
       <div className={styles.drawingFrame}>

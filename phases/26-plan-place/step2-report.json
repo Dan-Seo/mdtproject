@@ -1,0 +1,23 @@
+{
+  "step": 2,
+  "name": "plan-place-delete-ui",
+  "status": "completed",
+  "summary": "平面 페인에 step 1의 배치 가능 위치만 후보로 제시하고 耐震壁·床板 배치 및 선택 삭제를 추가했으며, 회귀 테스트와 마일스톤을 갱신했다.",
+  "changes": [
+    "PlanEditor에 断面一覧의 耐震壁·床板 断面 선택, 빈 辺·ベイ 후보, ADR-038 부재 id, memberClass 躯体 배치를 추가했다.",
+    "선택된 耐震壁·床板만 삭제할 수 있게 하고, 삭제 시 부재에 붙은 openings·wallExtent가 함께 사라지는 동작을 고정했다.",
+    "일본어·한국어 배치/삭제 안내와 PlanEditor 배치 UI 스타일을 추가했다.",
+    "docs/MILESTONES.md에서 平面 뷰 壁·床板 배치·삭제 입력을 phase 26(ADR-038) 완료로 기록하고 남은 항목을 片持床板으로 한정했다."
+  ],
+  "tests": [
+    "src/components/plan/PlanEditor.test.tsx: 36 tests passed",
+    "npm run test: 84 test files, 1558 tests passed",
+    "npx tsc --noEmit: passed",
+    "npm run lint: passed with 0 errors and 1 pre-existing warning"
+  ],
+  "gate": {
+    "npm run test": "passed",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed"
+  }
+}
