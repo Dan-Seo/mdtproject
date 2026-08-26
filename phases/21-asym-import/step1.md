@@ -1,7 +1,10 @@
 # Step 1: 좌우 비대칭 칸을 후보로 담는다 — 골든 갱신 먼저
 
-**전제**: step 0이 `refuted`면 `blocked`로 두고 「ADR-033 반증 — Claude 인계
-대기」를 적어라.
+**전제**: step 0은 `refuted`로 끝났고(무정규화 전제의 반례), 저자가
+`docs/ADR.md`의 ADR-033에 정정 주석(2026-08-26)을 달아 해소했다 — §2의
+자동 대응은 「같은 `compact` 정규화를 지난 문자열끼리의 정확 일치」다.
+이 반증은 닫혔으므로 이 스텝은 진행하라. **새로운** 반증 사유를 발견하면
+`blocked`로 멈추고 사유를 적어라.
 
 ## 배경
 
@@ -23,12 +26,17 @@ parse.ts`)의 `positionalGirderMain`은 좌우 다른 端部를
    - 확정 칸 수 핀을 그만큼 올린다. **그 외 기존 골든 기대값 수정 금지** —
      더 바꿔야 통과한다면 `blocked`로 멈추고 사유를 적어라.
    - expected 전사 파일은 수정하지 마라.
-2. **`SectionCandidate.girderMain` 확장** (`types.ts`): 기존 대칭 필드는
-   그대로 두고, 비대칭일 때만 갖는 형태를 더하라 —
-   `asymmetricEnds?: { labels: [string, string], topCounts?: [number, number],
-   bottomCounts?: [number, number] }` (labels는 표의 왼쪽 端·오른쪽 端 순,
-   도면 원문). 상하 중 한쪽만 비대칭인 표도 담을 수 있어야 한다.
-   `cutoffFromSupportFaceMm?: number`도 더하라.
+2. **비대칭은 `girderMain` 밖의 별도 필드에 담아라** (`types.ts`):
+   `girderMainAsymmetric?: { size: BarSize, labels: [string, string],
+   topCounts: [number, number], bottomCounts: [number, number],
+   topCenterCount: number, bottomCenterCount: number }`
+   (labels는 표의 왼쪽 端·오른쪽 端 순, 도면 원문 — `compact` 정규화 후 값).
+   **비대칭 표에서 `girderMain`은 undefined로 남긴다** — 이것이 이 스텝의
+   격리 조건이다: 취입 화면(step 2 전)은 비대칭 후보를 지금처럼 반영 불가로
+   두고, 기존 컴포넌트 테스트가 그것을 보증한다. 상하 중 한쪽만 비대칭인
+   표는 topCounts/bottomCounts에 그 행의 실값(대칭 행은 같은 값 둘)을 담아라.
+   `cutoffFromSupportFaceMm?: number`도 더하라 (기존 취입 화면은 이 필드를
+   읽지 않으므로 격리를 깨지 않는다).
 3. **파서**: `positionalGirderMain`에서 좌우가 다르면 거부 대신 위 형태로
    확정하라. 단 —
    - 径이 전 칸에서 하나가 아니면 기존대로 미확정.

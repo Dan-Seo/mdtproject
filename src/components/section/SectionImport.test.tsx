@@ -211,7 +211,132 @@ describe('SectionImport', () => {
     expect(useAppStore.getState().project).toBe(before)
   })
 
-  it('preserves blank fields when applying onto an existing story-scoped section', () => {
+  it('automatically maps 通り芯型端部 labels to 始端 by grid order', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        grid: { ...base.grid, yLabels: ['Y1', 'Y 2', 'Y3'] },
+      },
+    })
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G55-R階')
+    const direction = within(row).getByTestId(
+      'section-import-girder-direction-G55',
+    )
+    expect(direction).toHaveValue('first')
+    expect(row).toHaveTextContent('通り芯ラベルの順序で自動決定')
+    expect(within(row).getByRole('button', { name: '反映' })).not.toBeDisabled()
+
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G55' && storyLabel === 'R階',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.main).toMatchObject({
+      size: 'D25',
+      top: { startCount: 4, centerCount: 5, endCount: 8 },
+      bottom: { startCount: 4, centerCount: 5, endCount: 5 },
+    })
+  })
+
+  it('reverses automatic 始端 mapping when grid labels are reversed', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        grid: { ...base.grid, yLabels: ['Y3', 'Y2', 'Y1'] },
+      },
+    })
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G55-R階')
+    expect(
+      within(row).getByTestId('section-import-girder-direction-G55'),
+    ).toHaveValue('second')
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G55' && storyLabel === 'R階',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.main.top).toMatchObject({
+      startCount: 8,
+      centerCount: 5,
+      endCount: 4,
+    })
+  })
+
+  it('requires a manual 始端 choice when Grid has no matching labels', () => {
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G55-R階')
+    const direction = within(row).getByTestId(
+      'section-import-girder-direction-G55',
+    )
+    expect(direction).toHaveValue('')
+    expect(row).not.toHaveTextContent('通り芯ラベルの順序で自動決定')
+    expect(within(row).getByRole('button', { name: '反映' })).toBeDisabled()
+
+    fireEvent.change(direction, { target: { value: 'second' } })
+    expect(within(row).getByRole('button', { name: '反映' })).not.toBeDisabled()
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G55' && storyLabel === 'R階',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.main.top).toMatchObject({
+      startCount: 8,
+      centerCount: 5,
+      endCount: 4,
+    })
+  })
+
+  it('does not auto-resolve 外端/内端 labels and applies cutoff with manual choice', () => {
+    const base = createSampleProject()
+    useAppStore.setState({
+      project: {
+        ...base,
+        grid: { ...base.grid, xLabels: ['外', '内'] },
+      },
+    })
+    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+
+    const row = screen.getByTestId('section-import-candidate-G51-R階')
+    const direction = within(row).getByTestId(
+      'section-import-girder-direction-G51',
+    )
+    expect(direction).toHaveValue('')
+    expect(row).not.toHaveTextContent('通り芯ラベルの順序で自動決定')
+    expect(within(row).getByRole('button', { name: '反映' })).toBeDisabled()
+
+    fireEvent.change(direction, { target: { value: 'first' } })
+    fireEvent.click(within(row).getByRole('button', { name: '反映' }))
+
+    const section = useAppStore
+      .getState()
+      .project.sections.find(
+        ({ mark, storyLabel }) => mark === 'G51' && storyLabel === 'R階',
+      )
+    if (section?.kind !== '大梁') throw new Error('Expected imported 大梁 section')
+    expect(section.main).toMatchObject({
+      size: 'D25',
+      top: { startCount: 8, centerCount: 8, endCount: 13 },
+      bottom: { startCount: 8, centerCount: 8, endCount: 11 },
+      cutoffFromSupportFaceMm: 2500,
+    })
+  })
+
+  it('applies asymmetric fields and preserves other existing story-scoped values', () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -244,6 +369,10 @@ describe('SectionImport', () => {
     render(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G51-R階')
+    fireEvent.change(
+      within(row).getByTestId('section-import-girder-direction-G51'),
+      { target: { value: 'first' } },
+    )
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
 
     const section = useAppStore
@@ -256,11 +385,12 @@ describe('SectionImport', () => {
     expect(section).toMatchObject({
       b: 650,
       depth: 800,
-      // 主筋 후보는 빈칸(좌우 상이) — 기존 값을 덮지 않는다
+      // 비대칭 主筋은 수동으로 始端을 정한 뒤 반영한다.
       main: {
-        size: 'D22',
-        top: { endCount: 4, centerCount: 4 },
-        bottom: { endCount: 4, centerCount: 4 },
+        size: 'D25',
+        top: { startCount: 8, centerCount: 8, endCount: 13 },
+        bottom: { startCount: 8, centerCount: 8, endCount: 11 },
+        cutoffFromSupportFaceMm: 2500,
       },
       stirrup: { size: 'D13', pitch: 100, startOffsetMm: 50 },
     })

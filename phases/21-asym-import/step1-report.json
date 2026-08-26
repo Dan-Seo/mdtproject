@@ -1,0 +1,84 @@
+{
+  "step": 1,
+  "name": "parse-asymmetric-cells",
+  "resolvedCells": [
+    {
+      "member": "G51",
+      "story": "R階",
+      "row": "上筋",
+      "size": "D25",
+      "values": [
+        { "label": "外端", "count": 8 },
+        { "label": "中央", "count": 8 },
+        { "label": "内端", "count": 13 }
+      ]
+    },
+    {
+      "member": "G51",
+      "story": "R階",
+      "row": "下筋",
+      "size": "D25",
+      "values": [
+        { "label": "外端", "count": 8 },
+        { "label": "中央", "count": 8 },
+        { "label": "内端", "count": 11 }
+      ]
+    },
+    {
+      "member": "G55",
+      "story": "R階",
+      "row": "上筋",
+      "size": "D25",
+      "values": [
+        { "label": "Y2端", "count": 4 },
+        { "label": "中央", "count": 5 },
+        { "label": "Y3端", "count": 8 }
+      ]
+    },
+    {
+      "member": "G55",
+      "story": "R階",
+      "row": "下筋",
+      "size": "D25",
+      "values": [
+        { "label": "Y2端", "count": 4 },
+        { "label": "中央", "count": 5 },
+        { "label": "Y3端", "count": 5 }
+      ]
+    }
+  ],
+  "cutoff": {
+    "member": "G51",
+    "story": "R階",
+    "label": "内端",
+    "raw": "［2500］",
+    "valueMm": 2500
+  },
+  "goldenPins": {
+    "yokohamaP14GirderMainBefore": 3,
+    "yokohamaP14GirderMainAfter": 5,
+    "yokohamaP14Stirrup": 5,
+    "yokohamaP14Dimension": 5
+  },
+  "isolation": {
+    "asymmetricField": "girderMainAsymmetric",
+    "girderMainForAsymmetric": "undefined",
+    "preStep2Import": "blocked",
+    "rawValuesPreserved": true
+  },
+  "residualIssue": {
+    "code": "主筋端部左右相違",
+    "present": true,
+    "paths": [
+      "三欄でない位置表（中央欄なし）の既存拒否回帰",
+      "非対称候補は方向選択前なので Step 2 前の反映を既存 UI で停止"
+    ],
+    "p14Resolved": true
+  },
+  "verification": {
+    "targeted": "passed — 2 files, 98 tests",
+    "fullTest": "passed — 82 files, 1469 tests",
+    "typecheck": "passed — npx tsc --noEmit",
+    "lint": "passed — 0 errors; existing route.test.ts:161 warning 1"
+  }
+}

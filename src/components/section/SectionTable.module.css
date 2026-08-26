@@ -94,6 +94,18 @@
   gap: var(--space-xxs);
 }
 
+.girderAsymmetricToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.girderAsymmetricToggle input {
+  margin: 0;
+}
+
 /* 幅止·腹筋은 항목이 둘이라 한 줄에 다 넣으면 표가 가로로 터진다. */
 .girderDetailField {
   flex-wrap: wrap;

@@ -1450,7 +1450,7 @@ describe('parseSectionLists (synthetic)', () => {
     })
   })
 
-  it('refuses a three-column table whose two ends differ', () => {
+  it('carries a three-column table whose two ends differ', () => {
     const parsed = parseSectionLists({
       widthPt: 480,
       heightPt: 240,
@@ -1474,12 +1474,16 @@ describe('parseSectionLists (synthetic)', () => {
     })
     const g1 = candidate(list(parsed, '大梁リスト'), 'G1', undefined)
 
-    // 製品の Grid は通り芯ラベルを持たない — どちらが始端かを決めれば、
-    // それは図面にない向きを製品が作ったことになる (ADR-004)
     expect(g1.girderMain).toBeUndefined()
+    expect(g1.girderMainAsymmetric).toEqual({
+      size: 'D25',
+      labels: ['Y3端', 'Y4端'],
+      topCounts: [6, 5],
+      bottomCounts: [4, 4],
+      topCenterCount: 4,
+      bottomCenterCount: 4,
+    })
     expect(g1.issues).toContain('主筋端部左右相違')
-    expect(g1.raw['上筋(Y3端)']).toBe('6-D25')
-    expect(g1.raw['上筋(Y4端)']).toBe('5-D25')
   })
 
   it('still refuses a positional table that has no 中央 column', () => {

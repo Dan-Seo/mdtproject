@@ -6,17 +6,30 @@
       "step": 0,
       "name": "verify-adr033-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "summary": "girderRun과 p14 원시 사실은 확인됐지만 framing-plan 파서의 compact()가 raw Grid 라벨을 정규화하므로 ADR-033의 무정규화 전제가 반증됨",
+      "started_at": "2026-08-26T13:39:00+0900",
+      "refuted_at": "2026-08-26T13:48:32+0900"
     },
     {
       "step": 1,
       "name": "parse-asymmetric-cells",
-      "status": "pending"
+      "status": "completed",
+      "summary": "大梁の左右非対称4行をgirderMainAsymmetricへ隔離し、G51のカットオフ2500を候補へ反映。既存対称経路とStep 2前の反映禁止を維持した。",
+      "started_at": "2026-08-26T14:11:18+0900",
+      "completed_at": "2026-08-26T14:23:34+0900",
+      "report": "phases/21-asym-import/step1-report.json"
     },
     {
       "step": 2,
       "name": "import-apply-and-editor",
-      "status": "pending"
+      "status": "completed",
+      "summary": "비대칭 大梁의 Grid 축 순서 자동·사용자 始端 선택 취입과 断面一覧 좌우 편집을 구현하고 R13 대장을 해소로 갱신했다.",
+      "started_at": "2026-08-26T14:23:36+0900",
+      "completed_at": "2026-08-26T14:46:27+0900",
+      "report": "phases/21-asym-import/step2-report.json"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T13:39:00+0900",
+  "completed_at": "2026-08-26T14:46:28+0900"
 }
