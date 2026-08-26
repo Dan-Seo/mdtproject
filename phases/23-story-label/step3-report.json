@@ -1,0 +1,53 @@
+{
+  "phase": "23-story-label",
+  "step": 3,
+  "name": "filter-fallback-ledger",
+  "outputs": [
+    "src/lib/import/framing-plan/apply.ts",
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/domain/model/member.ts",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/MILESTONES.md"
+  ],
+  "reproduction": {
+    "command": "npx vitest run src/lib/import/framing-plan/apply.test.ts",
+    "status": "failed_before_implementation",
+    "result": "31 tests, 1 failed: the new unlabeled wall fallback expected applied=1 but received 0"
+  },
+  "changes": [
+    "sectionStoryLabel이 지정되면 먼저 원문 === 일치 후보만 사용하고, 일치 후보가 0개일 때만 storyLabel === undefined 후보로 폴백한다.",
+    "무라벨 후보 1개는 반영하고, 무라벨 후보가 여러 개면 기존 중복 사유인 断面複数該当으로 반영하지 않는다.",
+    "일치 라벨이 있는 경우 무라벨 후보를 무시하는 기존 동작과, 불일치 라벨만 있는 경우 断面未登録 동작을 유지하는 테스트를 보존했다.",
+    "src/domain/model/member.ts의 storyLabel 주석을 ADR-035 현행 동작에 맞게 갱신했다.",
+    "AGENTS.md·CLAUDE.md 도면 인식 잔여 대장에서 階 라벨↔Story 대응을 제거하고, docs/MILESTONES.md의 완료 항목에 ADR-035·phase 23 결과를 추가했다."
+  ],
+  "validation": [
+    {
+      "command": "npx vitest run src/lib/import/framing-plan/apply.test.ts",
+      "status": "passed",
+      "result": "1 file, 32 tests"
+    },
+    {
+      "command": "npm run test",
+      "status": "passed",
+      "result": "83 files, 1510 tests"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "0 errors; pre-existing warning in src/app/api/oncall/alert/route.test.ts:161"
+    }
+  ],
+  "constraints": [
+    "src/components/** was not modified",
+    "existing golden fixtures and expectations were not modified",
+    "wall/slab section parsers were not modified",
+    "scripts/execute.py was not run"
+  ],
+  "summary": "階 필터가 정확 일치 断面을 우선하고, 일치가 없을 때만 무라벨 壁·床板 断面으로 폴백하도록 고정했으며 대장·주석을 갱신하고 전체 게이트를 통과했다."
+}

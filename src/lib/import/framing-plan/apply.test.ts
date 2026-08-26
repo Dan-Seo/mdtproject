@@ -237,6 +237,46 @@ describe('applyFramingPlan', () => {
     expect(result.project.members[0]?.sectionId).toBe('sec-C1-2階')
   })
 
+  it('일치하는 階 라벨이 없으면 무라벨 断面으로 폴백한다', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [sectionWithStory('耐震壁', 'W1', undefined, 'sec-W1-no-story')],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'W1', role: '辺', ix: 0, iy: 0, axis: 'X' }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2階',
+      },
+    )
+
+    expect(result.applied).toBe(1)
+    expect(result.project.members[0]?.sectionId).toBe('sec-W1-no-story')
+  })
+
+  it('일치하는 階 라벨이 없고 무라벨 断面이 여러 개면 선택하지 않는다', () => {
+    const result = applyFramingPlan(
+      project({
+        sections: [
+          sectionWithStory('耐震壁', 'W1', undefined, 'sec-W1-no-story-a'),
+          sectionWithStory('耐震壁', 'W1', undefined, 'sec-W1-no-story-b'),
+        ],
+      }),
+      {
+        block: block({
+          placements: [{ mark: 'W1', role: '辺', ix: 0, iy: 0, axis: 'X' }],
+        }),
+        storyId: 'story-1',
+        sectionStoryLabel: '2階',
+      },
+    )
+
+    expect(result.applied).toBe(0)
+    expect(result.project.members).toEqual([])
+    expect(result.skipped).toEqual([{ mark: 'W1', reason: '断面複数該当' }])
+  })
+
   it('여러 伏図 중 두 번째 블록은 두 번째 도면의 X·Y 通り芯을 구별해 취입한다', () => {
     const plans = [framingPage(6000, 5000), framingPage(8000, 7000)].map(
       parseFramingPlan,
