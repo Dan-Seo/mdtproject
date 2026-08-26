@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr035-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T16:10:02+0900",
+      "summary": "elevation 후 stale storyId로 階未指定에 도달하고 PlanBlock.title이 compact 정규화되며 RF/R階 직접 회귀 테스트가 없어 ADR-035 전제를 반증함"
     },
     {
       "step": 1,
