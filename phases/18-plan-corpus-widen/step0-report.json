@@ -1,0 +1,43 @@
+{
+  "added": [
+    {
+      "file": "yokohama-p6.json",
+      "items": 1330,
+      "exclusion": { "x": 1800, "y": 1500 },
+      "titleBlockMeasured": { "x": 1847.46021, "y": 1562.8199 }
+    },
+    {
+      "file": "yokohama-p9.json",
+      "items": 830,
+      "exclusion": { "x": 1800, "y": 1500 },
+      "titleBlockMeasured": { "x": 1847.46021, "y": 1562.8199 }
+    },
+    {
+      "file": "yokohama-p15.json",
+      "items": 1545,
+      "exclusion": { "x": 1800, "y": 1500 },
+      "titleBlockMeasured": { "x": 1847.46021, "y": 1562.8199 }
+    },
+    {
+      "file": "ojkk-p4.json",
+      "items": 2301,
+      "exclusion": { "x": 660, "y": 700 },
+      "titleBlockMeasured": { "x": 731.0685848544, "y": 725.7005805599999 }
+    },
+    {
+      "file": "kani-p39.json",
+      "items": 513,
+      "exclusion": { "x": 440, "y": 1040 },
+      "titleBlockMeasured": { "x": 484.3613874888, "y": 1101.0008808 }
+    },
+    {
+      "file": "kani-p41.json",
+      "items": 399,
+      "exclusion": { "x": 440, "y": 1040 },
+      "titleBlockMeasured": { "x": 484.3613874888, "y": 1101.0008808 }
+    }
+  ],
+  "p8_scan": "clean",
+  "existing_fixtures_changed": "none",
+  "summary": "실물 3부의 미추출 6면을 표제란 제외와 함께 추가해 TextItem 코퍼스를 14면으로 확대하고 p8 검증 누락을 닫음"
+}

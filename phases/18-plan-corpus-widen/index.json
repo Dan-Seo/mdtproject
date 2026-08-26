@@ -5,12 +5,15 @@
     {
       "step": 0,
       "name": "widen-textitem-corpus",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T10:15:17+0900",
+      "summary": "실물 3부의 미추출 6면을 표제란 제외와 함께 추가해 TextItem 코퍼스를 14면으로 확대하고 p8 검증 누락을 닫음"
     },
     {
       "step": 1,
       "name": "remeasure-thresholds-14",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T10:15:17+0900"
 }
