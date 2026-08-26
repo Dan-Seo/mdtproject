@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "section-table-input-ledger",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 468.00974169996334,
+  "stdout_log": "phases\\24-wall-class\\step2-codex.stdout.log",
+  "stderr_log": "phases\\24-wall-class\\step2-codex.stderr.log"
+}
