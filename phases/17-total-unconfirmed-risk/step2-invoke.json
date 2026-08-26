@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "remeasure-midpoint-window",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 481.09522509999806,
+  "stdout_log": "phases\\17-total-unconfirmed-risk\\step2-codex.stdout.log",
+  "stderr_log": "phases\\17-total-unconfirmed-risk\\step2-codex.stderr.log"
+}
