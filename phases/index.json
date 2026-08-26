@@ -121,7 +121,8 @@
     },
     {
       "dir": "25-wall-extent",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-26T22:24:35+0900"
     }
   ]
 }
