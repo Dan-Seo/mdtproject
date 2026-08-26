@@ -103,6 +103,10 @@
       "dir": "21-asym-import",
       "status": "completed",
       "completed_at": "2026-08-26T14:46:28+0900"
+    },
+    {
+      "dir": "22-opening-reinforcement",
+      "status": "pending"
     }
   ]
 }
