@@ -1,0 +1,11 @@
+2026-08-26T12:36:10.198604Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T12:36:10.270272Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T12:44:28.334310Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\domain\rebar\wall.ts:
+  if (role === '縦筋' && deducted) {
+    // 開口を横切る縦筋は階高全体にわたらず、開口部腰壁・垂れ壁の縦筋になる。
+    // 同じ項の但書が「開口部腰壁、手すり壁等の継手はないものと定める」。
+    countRule = lookupRule(pack, 'measure.splice.wall.opening', {})
+    countPerBar = spliceCount(countRule)
+    countFormula =
+      `${countPerBar}か所（数量積算基準 2（５）壁1)② 但書 — ` +
+      `開口部腰壁、手すり壁等の継手はないものとする）`

@@ -943,6 +943,142 @@
     ]
   },
 
+  "wallExtent": {
+    "clause": "数量積算基準 2（５）壁1)①②・1通則4)・1通則7)",
+    "shared": {
+      "mark": "W-extent",
+      "thicknessMm": 200,
+      "fc": 24,
+      "grade": "SD295",
+      "exposure": "屋内",
+      "finish": "仕上げあり",
+      "spliceMethod": "重ね継手",
+      "layers": 1,
+      "vertical": { "size": "D13", "pitchMm": 200, "startOffsetMm": 0 },
+      "horizontal": { "size": "D13", "pitchMm": 200, "startOffsetMm": 0 },
+      "span": {
+        "axis": "X",
+        "clearLengthMm": 5200,
+        "clearHeightMm": 3450,
+        "startFaceOffsetMm": 400,
+        "endFaceOffsetMm": 400,
+        "girderDepthAboveMm": 750
+      },
+      "unitMassKgPerM": { "D13": 1 }
+    },
+    "cases": [
+      {
+        "id": "wall-extent-waist",
+        "label": "腰壁 — 下端接続・上端自由端",
+        "extent": { "vertical": { "anchor": "下端", "heightMm": 1200 } },
+        "expected": {
+          "span": {
+            "clearLengthMm": 5200,
+            "clearHeightMm": 1200,
+            "freeEnds": { "vertical": "上端" },
+            "originOffsetMm": { "along": 0, "height": 0 }
+          },
+          "vertical": {
+            "lengthMm": 1655,
+            "count": 27,
+            "spliceCountPerBar": 0,
+            "anchorageCount": 1,
+            "designKg": 44.685,
+            "requiredKg": 46.4724,
+            "ruleKeys": ["measure.splice.wall.opening"]
+          },
+          "horizontal": {
+            "lengthMm": 6630,
+            "count": 7,
+            "spliceCountPerBar": 1,
+            "anchorageCount": 2,
+            "designKg": 46.41,
+            "requiredKg": 48.2664,
+            "ruleKeys": ["measure.splice.interval"]
+          },
+          "totalDesignKg": 91.095,
+          "totalRequiredKg": 94.7388
+        },
+        "handDerivation": "内法5200×3450の同じ壁に vertical={anchor:下端,height:1200} だけを加える。2（５）壁1)①の接続側は下端だけなので、縦筋は1200＋定着455＝1655mm（定着1回）、割付は内法長さの⌈5200÷200⌉＋1＝27本、部分高さなので2（５）壁1)②の製品の読みとして継手0か所（measure.splice.wall.opening）。横筋は内法長さ5200＋定着455×2＋1通則4)の継手520＝6630mm、割付対象は範囲高さ1200なので⌈1200÷200⌉＋1＝7本。D13の単位質量1.000kg/mで設計数量44.685＋46.410＝91.095kg、所要数量91.095×1.04＝94.7388kg。"
+      },
+      {
+        "id": "wall-extent-sleeve",
+        "label": "袖壁 — 始端接続・終端自由端",
+        "extent": { "horizontal": { "anchor": "始端", "lengthMm": 2400 } },
+        "expected": {
+          "span": {
+            "clearLengthMm": 2400,
+            "clearHeightMm": 3450,
+            "freeEnds": { "horizontal": "終端" },
+            "originOffsetMm": { "along": 0, "height": 0 }
+          },
+          "vertical": {
+            "lengthMm": 4880,
+            "count": 13,
+            "spliceCountPerBar": 1,
+            "anchorageCount": 2,
+            "designKg": 63.44,
+            "requiredKg": 65.9776,
+            "ruleKeys": ["measure.splice.wall.vertical"]
+          },
+          "horizontal": {
+            "lengthMm": 2855,
+            "count": 19,
+            "spliceCountPerBar": 0,
+            "anchorageCount": 1,
+            "designKg": 54.245,
+            "requiredKg": 56.4148,
+            "ruleKeys": ["measure.splice.interval"]
+          },
+          "totalDesignKg": 117.685,
+          "totalRequiredKg": 122.3924
+        },
+        "handDerivation": "内法5200×3450の同じ壁に horizontal={anchor:始端,length:2400} だけを加える。2（５）壁1)①の接続側は始端だけなので、横筋は2400＋定着455＝2855mm（定着1回）、割付は内法高さの⌈3450÷200⌉＋1＝19本。縦筋は内法高さ3450＋定着455×2＋各階1継手520＝4880mm、割付対象は範囲長2400なので⌈2400÷200⌉＋1＝13本。D13の単位質量1.000kg/mで設計数量63.440＋54.245＝117.685kg、所要数量117.685×1.04＝122.3924kg。継手の根拠は2（５）壁1)②（縦筋）と1通則4)（横筋）。"
+      },
+      {
+        "id": "wall-extent-none-regression",
+        "label": "範囲なし — 既存の全内法壁",
+        "expected": {
+          "span": {
+            "clearLengthMm": 5200,
+            "clearHeightMm": 3450,
+            "freeEnds": {},
+            "originOffsetMm": { "along": 0, "height": 0 }
+          },
+          "vertical": {
+            "lengthMm": 4880,
+            "count": 27,
+            "spliceCountPerBar": 1,
+            "anchorageCount": 2,
+            "designKg": 131.76,
+            "requiredKg": 137.0304,
+            "ruleKeys": ["measure.splice.wall.vertical"]
+          },
+          "horizontal": {
+            "lengthMm": 6630,
+            "count": 19,
+            "spliceCountPerBar": 1,
+            "anchorageCount": 2,
+            "designKg": 125.97,
+            "requiredKg": 131.0088,
+            "ruleKeys": ["measure.splice.interval"]
+          },
+          "totalDesignKg": 257.73,
+          "totalRequiredKg": 268.0392
+        },
+        "handDerivation": "wallExtent를 저장하지 않은 기존 벽은 내법5200×3450 전체를 사용한다. 縦筋＝3450＋定着455×2＋各階1継手520＝4880mm・⌈5200÷200⌉＋1＝27本、横筋＝5200＋定着455×2＋1通則4)継手520＝6630mm・⌈3450÷200⌉＋1＝19本。既存 wallClass 골든과 같은 257.730kg／268.0392kg이어야 한다."
+      }
+    ],
+    "invalid": [
+      {
+        "id": "wall-extent-height-too-large",
+        "extent": { "vertical": { "anchor": "下端", "heightMm": 3451 } },
+        "reason": "寸法不成立",
+        "handDerivation": "heightMm=3451은 내법높이3450을 1mm 초과하므로 범위를 잘라 받지 않고 2（５）壁의 내법 범위 입력을 거부한다."
+      }
+    ]
+  },
+
   "openingReinforcement": {
     "clause": "1通則8) なお書き",
     "note": "期待値は 1通則8) の「開口補強筋は設計図書により計測・計算する」から、設計図書を転記した径・本数・設計長さだけで手計算した。製品は定着・余長・継手を加えない。質量は設計長さ×本数×利用者入力の単位質量、所要数量は設計数量×（1＋既存の躯体割増率）で、ルールパックに開口補強筋の数値行は追加しない。",

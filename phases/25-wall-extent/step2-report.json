@@ -1,0 +1,24 @@
+{
+  "phase": "25-wall-extent",
+  "step": 2,
+  "status": "completed",
+  "changes": {
+    "concreteBoxes": "buildingLayout places partial wall boxes from wallSpan originOffsetMm, clearLengthMm, and clearHeightMm; anchors resolve to support-column faces, floor, and upper-girder underside.",
+    "rebarOrigin": "buildingLayout translates range-local wall Rebar.points by the same along/height extent origin; domain coordinates remain unchanged. Member view already consumes the range-local dimensions directly.",
+    "openings": "buildingLayout passes the extent world origin to boxHoles, while clipSegments and carveBox continue to consume range-local opening coordinates without a second deduction or shift.",
+    "plan": "PlanEditor draws a horizontal wall only across its extent and adds an existing-system label for vertical/horizontal extents (for example, 腰壁 H=900)."
+  },
+  "tests": [
+    "src/lib/viewer/geometry.test.ts: extent-local opening carving and segment clipping",
+    "src/lib/viewer/building.test.ts: anchored partial wall boxes, opening carve, and range-local rebar placement",
+    "src/components/plan/PlanEditor.test.tsx: partial wall span and extent label"
+  ],
+  "gates": {
+    "npm run test": "passed: 83 files, 1539 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed: 0 errors; existing warning in src/app/api/oncall/alert/route.test.ts:161"
+  },
+  "domainModified": false,
+  "e2eAdded": false,
+  "devServerStarted": false
+}

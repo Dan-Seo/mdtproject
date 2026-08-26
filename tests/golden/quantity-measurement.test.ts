@@ -7,6 +7,7 @@ import type {
   Member,
   SlabSection,
   ShearBarSize,
+  WallExtent,
   WallSection,
 } from '../../src/domain/model/member'
 import {
@@ -14,6 +15,7 @@ import {
   PROJECT_SCHEMA_VERSION,
   girderRun,
   slabRun,
+  wallSpan,
   type Project,
   type Story,
   type WallSpan,
@@ -154,6 +156,56 @@ type WallClassFixture = {
 }
 
 const wallClassFixture = fixture.cases.wallClass as WallClassFixture
+
+type WallExtentCase = {
+  id: string
+  extent?: WallExtent
+  expected: {
+    span: {
+      clearLengthMm: number
+      clearHeightMm: number
+      freeEnds: Partial<{
+        vertical: '上端' | '下端'
+        horizontal: '始端' | '終端'
+      }>
+      originOffsetMm: { along: number; height: number }
+    }
+    vertical: {
+      lengthMm: number
+      count: number
+      spliceCountPerBar: number
+      anchorageCount: number
+      designKg: number
+      requiredKg: number
+      ruleKeys: string[]
+    }
+    horizontal: {
+      lengthMm: number
+      count: number
+      spliceCountPerBar: number
+      anchorageCount: number
+      designKg: number
+      requiredKg: number
+      ruleKeys: string[]
+    }
+    totalDesignKg: number
+    totalRequiredKg: number
+  }
+  handDerivation: string
+}
+
+type WallExtentFixture = {
+  shared: WallClassFixture['shared']
+  cases: WallExtentCase[]
+  invalid: Array<{
+    id: string
+    extent: WallExtent
+    reason: string
+    handDerivation: string
+  }>
+}
+
+const wallExtentFixture = fixture.cases.wallExtent as WallExtentFixture
 
 const STORY: Story = { id: '1F', name: '1階', height: 4200 }
 
@@ -1551,5 +1603,211 @@ describe('表5.3.6・5.3.4(3)(ｱ) 壁の wallClass 区分', () => {
     expect(generated[0].entry.expected.totalDesignKg).toBeGreaterThan(
       generated[1].entry.expected.totalDesignKg,
     )
+  })
+})
+
+describe('ADR-037 壁の部分高さ・部分長さ extent ゴールデン', () => {
+  function wallProject(section: WallSection, member: Member): Project {
+    const column = columnSection({ id: 'section-C-extent', mark: 'C-extent' })
+    const girder = girderSection({ id: 'section-G-extent', mark: 'G-extent' })
+
+    return {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: '壁範囲ゴールデン案件',
+      grid: { xSpans: [6000], ySpans: [6000] },
+      stories: [STORY],
+      sections: [column, girder, section],
+      members: [
+        {
+          id: '1F-C-extent-start',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: column.id,
+          storyId: STORY.id,
+          position: { ix: 0, iy: 0 },
+        },
+        {
+          id: '1F-C-extent-end',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: column.id,
+          storyId: STORY.id,
+          position: { ix: 1, iy: 0 },
+        },
+        {
+          id: '1F-G-extent',
+          kind: '大梁',
+          memberClass: '躯体',
+          sectionId: girder.id,
+          storyId: STORY.id,
+          position: { axis: 'X', ix: 0, iy: 0 },
+        },
+        member,
+      ],
+    }
+  }
+
+  function generateCase(entry: WallExtentCase) {
+    const shared = wallExtentFixture.shared
+    const section: WallSection = {
+      id: 'section-W-extent',
+      kind: '耐震壁',
+      mark: shared.mark,
+      wallClass: '耐力壁',
+      thickness: shared.thicknessMm,
+      fc: shared.fc,
+      grade: shared.grade,
+      exposure: shared.exposure,
+      finish: shared.finish,
+      spliceMethod: shared.spliceMethod,
+      layers: shared.layers,
+      vertical: {
+        size: shared.vertical.size,
+        pitch: shared.vertical.pitchMm,
+        startOffsetMm: shared.vertical.startOffsetMm,
+      },
+      horizontal: {
+        size: shared.horizontal.size,
+        pitch: shared.horizontal.pitchMm,
+        startOffsetMm: shared.horizontal.startOffsetMm,
+      },
+    }
+    const member: Member = {
+      id: `1F-W-extent-${entry.id}`,
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: STORY.id,
+      position: { axis: 'X', ix: 0, iy: 0 },
+      ...(entry.extent ? { wallExtent: entry.extent } : {}),
+    }
+    const project = wallProject(section, member)
+    const span = wallSpan(project, member)
+    const projectWithMass = { ...project, unitMass: shared.unitMassKgPerM }
+    const rebars = generateWallRebar(
+      { member, section, span },
+      jpMlitRulePack,
+    )
+    const lines = massLines(
+      aggregateQuantity(projectWithMass, rebars, jpMlitRulePack),
+    )
+
+    return { entry, member, span, rebars, lines }
+  }
+
+  it.each(wallExtentFixture.cases)('$id — $handDerivation', (entry) => {
+    const generated = generateCase(entry)
+
+    expect(generated.span.clearLengthMm).toBe(entry.expected.span.clearLengthMm)
+    expect(generated.span.clearHeightMm).toBe(entry.expected.span.clearHeightMm)
+    expect(generated.span.freeEnds).toEqual(entry.expected.span.freeEnds)
+    expect(generated.span.originOffsetMm).toEqual(entry.expected.span.originOffsetMm)
+
+    for (const role of ['縦筋', '横筋'] as const) {
+      const expected = entry.expected[role === '縦筋' ? 'vertical' : 'horizontal']
+      const rebar = generated.rebars.find(({ role: candidateRole }) => candidateRole === role)!
+      const line = generated.lines.find(({ role: candidateRole }) => candidateRole === role)!
+
+      expect(rebar.length, entry.handDerivation).toBe(expected.lengthMm)
+      expect(rebar.count, entry.handDerivation).toBe(expected.count)
+      expect(rebar.splice?.countPerBar, entry.handDerivation).toBe(
+        expected.spliceCountPerBar,
+      )
+      expect(
+        rebar.zones?.filter(({ kind }) => kind === '定着'),
+        entry.handDerivation,
+      ).toHaveLength(expected.anchorageCount)
+      const spliceRuleKeys = rebar.splice?.rules
+        .map(({ key: ruleKey }) => ruleKey)
+        .filter(
+          (ruleKey) =>
+            ruleKey.startsWith('measure.splice.wall') ||
+            ruleKey === 'measure.splice.interval',
+        )
+      expect(spliceRuleKeys).toEqual(expected.ruleKeys)
+
+      expect(line.lengthMm, entry.handDerivation).toBe(expected.lengthMm)
+      expect(line.countPerMember, entry.handDerivation).toBe(expected.count)
+      expect(line.designKg, entry.handDerivation).toBeCloseTo(expected.designKg, 10)
+      expect(line.requiredKg, entry.handDerivation).toBeCloseTo(expected.requiredKg, 10)
+
+      if (expected.anchorageCount !== 2) {
+        expect(rebar.formula, entry.handDerivation).toContain('自由端')
+        expect(rebar.formula, entry.handDerivation).toContain('定着なし')
+      }
+      if (role === '縦筋' && entry.extent?.vertical) {
+        expect(rebar.splice?.formula, entry.handDerivation).toContain(
+          '部分高さ壁の縦筋',
+        )
+        expect(rebar.splice?.formula, entry.handDerivation).toContain(
+          '継手なし',
+        )
+      }
+    }
+
+    const designKg = generated.lines.reduce(
+      (sum, line) => sum + (line.designKg ?? 0),
+      0,
+    )
+    const requiredKg = generated.lines.reduce(
+      (sum, line) => sum + (line.requiredKg ?? 0),
+      0,
+    )
+    expect(designKg, entry.handDerivation).toBeCloseTo(
+      entry.expected.totalDesignKg,
+      10,
+    )
+    expect(requiredKg, entry.handDerivation).toBeCloseTo(
+      entry.expected.totalRequiredKg,
+      10,
+    )
+  })
+
+  it.each(wallExtentFixture.invalid)('$id — $handDerivation', (entry) => {
+    const shared = wallExtentFixture.shared
+    const section: WallSection = {
+      id: 'section-W-extent-invalid',
+      kind: '耐震壁',
+      mark: shared.mark,
+      thickness: shared.thicknessMm,
+      fc: shared.fc,
+      grade: shared.grade,
+      exposure: shared.exposure,
+      finish: shared.finish,
+      spliceMethod: shared.spliceMethod,
+      layers: shared.layers,
+      vertical: {
+        size: shared.vertical.size,
+        pitch: shared.vertical.pitchMm,
+        startOffsetMm: shared.vertical.startOffsetMm,
+      },
+      horizontal: {
+        size: shared.horizontal.size,
+        pitch: shared.horizontal.pitchMm,
+        startOffsetMm: shared.horizontal.startOffsetMm,
+      },
+    }
+    const member: Member = {
+      id: `1F-W-extent-${entry.id}`,
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: STORY.id,
+      position: { axis: 'X', ix: 0, iy: 0 },
+      wallExtent: entry.extent,
+    }
+
+    expect(() => wallSpan(wallProject(section, member), member)).toThrow(
+      MemberUnsupportedError,
+    )
+    expect(entry.reason).toBe('寸法不成立')
+  })
+
+  it('keeps the existing no-extent wall quantity equal to the wallClass golden', () => {
+    const generated = generateCase(wallExtentFixture.cases[2])
+    expect(generated.rebars.map(({ role, length, count }) => [role, length, count])).toEqual([
+      ['縦筋', 4880, 27],
+      ['横筋', 6630, 19],
+    ])
   })
 })

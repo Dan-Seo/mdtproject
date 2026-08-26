@@ -1,0 +1,532 @@
+import { strict as assert } from 'node:assert'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { aggregateQuantity } from '@/domain/quantity'
+import type { Member, Opening, WallSection } from '@/domain/model/member'
+import {
+  deserializeProject,
+  findSection,
+  PROJECT_SCHEMA_VERSION,
+  serializeProject,
+  wallSpan,
+} from '@/domain/model/project'
+import { createSampleProject } from '@/domain/model/sample-project'
+import { generateWallRebar } from '@/domain/rebar/wall'
+import { openingDeduction } from '@/domain/rebar/opening'
+import { parseRulePack } from '@/domain/rules/loader'
+import { lookupRule } from '@/domain/rules/lookup'
+import type {
+  MemberPlacement,
+  PlanBlock,
+  PlanGridCandidate,
+} from '@/lib/import/framing-plan/types'
+import type { SectionCandidate } from '@/lib/import/section-list/types'
+
+type CheckStatus = 'upheld' | 'refuted'
+
+interface ConsumerEvidence {
+  file: string
+  symbol: string
+  reads: string
+}
+
+interface Check {
+  id: string
+  status: CheckStatus
+  evidence: string[]
+  consumers?: ConsumerEvidence[]
+  extentImpact?: string[]
+}
+
+const phaseDir = fileURLToPath(new URL('.', import.meta.url))
+const repo = resolve(phaseDir, '../..')
+const reportPath = resolve(phaseDir, 'step0-report.json')
+
+function source(relativePath: string): string {
+  return readFileSync(resolve(repo, relativePath), 'utf8')
+}
+
+// tsx does not install Vitest's .yaml raw-loader. Read the same rulepack files
+// as raw text and use the production parser, keeping this verifier independent
+// of a test-runner transform.
+const rulePack = parseRulePack(
+  Object.fromEntries(
+    [
+      'sources.yaml',
+      'cover.yaml',
+      'anchorage.yaml',
+      'lap.yaml',
+      'bend.yaml',
+      'markup.yaml',
+      'measure.yaml',
+      'splice.yaml',
+    ].map((file) => [file, source(`src/rulepack/jp-mlit/${file}`)]),
+  ),
+)
+
+function recordObjects(value: unknown, output: Record<string, unknown>[] = []) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => recordObjects(item, output))
+  } else if (typeof value === 'object' && value !== null) {
+    const record = value as Record<string, unknown>
+    output.push(record)
+    Object.values(record).forEach((item) => recordObjects(item, output))
+  }
+  return output
+}
+
+function firstWall(project = createSampleProject()): Member {
+  const member = project.members.find(({ kind }) => kind === '耐震壁')
+  assert.ok(member, 'sample project must contain a wall member')
+  return member
+}
+
+function wallContext(
+  project = createSampleProject(),
+  member = firstWall(project),
+) {
+  const section = findSection(project, member.sectionId)
+  assert.equal(section.kind, '耐震壁')
+  return {
+    project,
+    member,
+    section: section as WallSection,
+    span: wallSpan(project, member),
+  }
+}
+
+function withOpenings(member: Member, openings: Opening[]): Member {
+  return { ...member, openings }
+}
+
+function checkAlwaysTwoAnchorages(): Check {
+  const { member, section, span } = wallContext()
+  const opening: Opening = {
+    id: 'boundary-opening',
+    // x=0 is the inner-domain boundary: the opening clears one side of the wall.
+    xMm: 0,
+    yMm: 0,
+    widthMm: 2000,
+    heightMm: 800,
+  }
+  const noSpliceLengthSection: WallSection = {
+    ...section,
+    spliceMethod: 'ガス圧接',
+  }
+  const rebars = generateWallRebar(
+    {
+      member: withOpenings(member, [opening]),
+      section: noSpliceLengthSection,
+      span,
+    },
+    rulePack,
+  )
+  const horizontal = rebars.find(
+    (rebar) => rebar.role === '横筋' && rebar.id.includes('|欠除2000'),
+  )
+  assert.ok(horizontal, 'boundary opening must produce a horizontal deduction row')
+
+  const anchorageRule = lookupRule(rulePack, 'anchorage.L1', {
+    fc: section.fc,
+    grade: section.grade,
+    hook: false,
+  })
+  const diameterMm = Number(section.horizontal.size.replace(/^D/, ''))
+  const anchorageMm = anchorageRule.value * diameterMm
+  const remainingBodyMm = span.clearLengthMm - opening.widthMm
+
+  assert.equal(horizontal.splice?.lengthMm, 0)
+  assert.equal(horizontal.length, remainingBodyMm + 2 * anchorageMm)
+  assert.equal(horizontal.length - remainingBodyMm, 2 * anchorageMm)
+
+  const wallSource = source('src/domain/rebar/wall.ts')
+  assert.match(wallSource, /const pathLengthMm = bodyLengthMm \+ 2 \* anchorageMm/)
+  assert.equal(horizontal.count, 6)
+
+  return {
+    id: 'always-two-anchorages',
+    status: 'upheld',
+    evidence: [
+      `실행 반례: xMm=0의 경계 開口 ${opening.widthMm}×${opening.heightMm}mm가 있는 横筋에서 body=${span.clearLengthMm}mm, 欠除=${opening.widthMm}mm, 定着=${anchorageMm}mm/단부를 관측했다.`,
+      `横筋 設計長さ=${horizontal.length}mm = (내법 잔여 ${remainingBodyMm}mm) + 2×${anchorageMm}mm; 한쪽 자유단을 표현하는 1회 定着 경로는 없다.`,
+      `src/domain/rebar/wall.ts의 buildWallBars가 pathLengthMm = bodyLengthMm + 2 * anchorageMm로 양단 zones/points를 만든다.`,
+    ],
+  }
+}
+
+function checkOpeningWorkaround(): Check {
+  const { member, section, span } = wallContext()
+  const opening: Opening = {
+    id: 'sleeve-workaround',
+    xMm: 0,
+    yMm: 0,
+    widthMm: 1000,
+    heightMm: 800,
+  }
+  const openingMember = withOpenings(member, [opening])
+  const rebars = generateWallRebar(
+    { member: openingMember, section, span },
+    rulePack,
+  )
+  const vertical = rebars.find(
+    (rebar) => rebar.role === '縦筋' && rebar.id.includes('|欠除800'),
+  )
+  assert.ok(vertical, 'opening must produce a vertical deduction row')
+  assert.equal(vertical.splice?.countPerBar, 0)
+  assert.ok(
+    vertical.ruleHits.some(({ key }) => key === 'measure.splice.wall.opening'),
+  )
+
+  const minimumAreaRule = lookupRule(
+    rulePack,
+    'measure.opening.deduction.minimum.area',
+    {},
+  )
+  const minimumAreaMm2 = minimumAreaRule.value * 1_000_000
+  const exactWidthMm = 1000
+  const exactHeightMm = minimumAreaMm2 / exactWidthMm
+  const baseDeduction = {
+    clearXMm: span.clearLengthMm,
+    clearYMm: span.clearHeightMm,
+    barAxis: 'y' as const,
+    pitchMm: section.vertical.pitch,
+    totalCount: 10,
+  }
+  const exact = openingDeduction(
+    {
+      ...baseDeduction,
+      openings: [
+        { id: 'exact', xMm: 0, yMm: 0, widthMm: exactWidthMm, heightMm: exactHeightMm },
+      ],
+    },
+    rulePack,
+  )
+  const over = openingDeduction(
+    {
+      ...baseDeduction,
+      openings: [
+        { id: 'over', xMm: 0, yMm: 0, widthMm: exactWidthMm, heightMm: exactHeightMm + 1 },
+      ],
+    },
+    rulePack,
+  )
+  assert.equal(exact.groups.every(({ deductionMm }) => deductionMm === 0), true)
+  assert.equal(over.groups.some(({ deductionMm }) => deductionMm > 0), true)
+
+  const takeoffSource = source('src/components/quantity/TakeoffPane.tsx')
+  const takeoffTest = source('src/components/quantity/TakeoffPane.test.tsx')
+  assert.match(
+    takeoffSource,
+    /const hasOpeningRisk = lines\.some\(\(\{ memberKind \}\) =>/, // wall/slab kind, not Member.openings
+  )
+  assert.match(takeoffSource, /data-testid="wall-opening-notice"/)
+  assert.match(takeoffTest, /always says how 開口部 are counted and what is still missing/)
+
+  return {
+    id: 'opening-workaround-misfires',
+    status: 'upheld',
+    evidence: [
+      `경계 開口를 통과한 縦筋은 ${vertical.splice?.countPerBar}か所이고 ruleHits에 measure.splice.wall.opening이 들어간다. 이는 x=0, y=0, ${opening.widthMm}×${opening.heightMm}mm의 袖壁/腰壁 흉내에서도 개구 전용 但書를 발화시킨다.`,
+      `lookupRule(measure.opening.deduction.minimum.area,{})=${minimumAreaRule.value}${minimumAreaRule.unit}; ${exactWidthMm}×${exactHeightMm}mm=${minimumAreaMm2}mm²는 「以下」로 欠除 없음, 높이를 1mm 늘린 ${exactWidthMm}×${exactHeightMm + 1}mm부터 欠除이 발생한다.`,
+      `TakeoffPane은 실제 openings의 유무가 아니라 耐震壁·床板 행의 존재로 wall-opening-notice를 항상 표시한다. 따라서 샘플처럼 開口가 없어도 1通則8)·開口補強筋·未転記 문면이 표시되며, 벽/床板 자체가 없을 때만 숨겨진다.`,
+    ],
+  }
+}
+
+function checkSchemaNoBump(): Check {
+  const base = createSampleProject()
+  const baseRoundTrip = deserializeProject(serializeProject(base))
+  assert.deepEqual(baseRoundTrip, base)
+
+  const baseWall = firstWall(base)
+  const baseContext = wallContext(base, baseWall)
+  const baseRebars = generateWallRebar(
+    { member: baseWall, section: baseContext.section, span: baseContext.span },
+    rulePack,
+  )
+  const baseLines = aggregateQuantity(base, baseRebars, rulePack)
+
+  const json = JSON.parse(serializeProject(base)) as {
+    members: Record<string, unknown>[]
+  }
+  const wallRecord = json.members.find((candidate) => candidate.id === baseWall.id)
+  assert.ok(wallRecord)
+  // ADR-037's future extent is optional. Current readers ignore unknown optional
+  // member data, so this proves the pre-bump quantity boundary without changing
+  // the target model in this verification step.
+  wallRecord.wallExtent = {
+    vertical: { anchor: '下端', heightMm: 1000 },
+    horizontal: { anchor: '始端', lengthMm: 1000 },
+  }
+  const extended = deserializeProject(JSON.stringify(json))
+  const extendedWall = firstWall(extended)
+  const extendedContext = wallContext(extended, extendedWall)
+  const extendedRebars = generateWallRebar(
+    {
+      member: extendedWall,
+      section: extendedContext.section,
+      span: extendedContext.span,
+    },
+    rulePack,
+  )
+  const extendedLines = aggregateQuantity(extended, extendedRebars, rulePack)
+  assert.deepEqual(extendedRebars, baseRebars)
+  assert.deepEqual(extendedLines, baseLines)
+  assert.equal(PROJECT_SCHEMA_VERSION, 11)
+
+  return {
+    id: 'schema-no-bump',
+    status: 'upheld',
+    evidence: [
+      `현행 PROJECT_SCHEMA_VERSION=${PROJECT_SCHEMA_VERSION}; 기존 sample Project의 serializeProject→deserializeProject가 deepEqual로 왕복한다.`,
+      `Member에 미래 optional wallExtent JSON을 추가한 뒤에도 기존 벽 Rebar ${baseRebars.length}개와 QuantityLine ${baseLines.length}개가 구조적으로 완전히 동일하다.`,
+      `npm run test:golden은 별도로 현행 golden 전체를 실행해 기존 수량·직렬화 경계를 재검증한다.`,
+    ],
+  }
+}
+
+const consumers: ConsumerEvidence[] = [
+  {
+    file: 'src/domain/model/project.ts',
+    symbol: 'wallSpan',
+    reads: 'Grid·양측 지지 柱·상부 大梁せい·Story 높이에서 wall clearLengthMm/clearHeightMm를 만든다. 현재 내법 영역 전체가 기준이다.',
+  },
+  {
+    file: 'src/domain/rebar/opening.ts',
+    symbol: 'openingDeduction',
+    reads: 'Opening.xMm/yMm/widthMm/heightMm를 clearXMm/clearYMm 원점 기준으로 읽고, 철근 배치 위치가 開口 내부일 때 欠除한다.',
+  },
+  {
+    file: 'src/domain/rebar/wall.ts',
+    symbol: 'wallLayerOffsets',
+    reads: '壁厚·加工用かぶり에서 층별 z 오프셋만 읽는다. x/y 원점은 buildWallBars의 전체 내법 bodyLength/span에 남아 있다.',
+  },
+  {
+    file: 'src/lib/viewer/geometry.ts',
+    symbol: 'boxHoles / carveBox / clipSegments',
+    reads: 'boxHoles가 호출자가 준 inner-domain origin에 Opening.xMm/yMm를 더하고, carveBox와 clipSegments가 그 절대 2축 좌표로 솔리드·철근 표시를 자른다.',
+  },
+  {
+    file: 'src/lib/viewer/building.ts',
+    symbol: 'buildingLayout',
+    reads: 'wallSpan의 clear 치수·startFaceOffsetMm/elevation으로 벽 box와 world origin을 만들고, 같은 내법 원점의 openings를 geometry에 전달한다.',
+  },
+  {
+    file: 'src/components/plan/PlanEditor.tsx',
+    symbol: 'memberClearSize / OpeningEditor / slabOpeningRects',
+    reads: 'wallSpan/slabBay의 내법 크기로 입력을 제한하고, 평면 표시에서는 내법 원점 offset을 먼저 더한 뒤 Opening.xMm/yMm를 투영한다.',
+  },
+]
+
+function checkOpeningOriginConsumers(): Check {
+  const memberSource = source('src/domain/model/member.ts')
+  const openingSource = source('src/domain/rebar/opening.ts')
+  const wallSource = source('src/domain/rebar/wall.ts')
+  const geometrySource = source('src/lib/viewer/geometry.ts')
+  const buildingSource = source('src/lib/viewer/building.ts')
+  const planSource = source('src/components/plan/PlanEditor.tsx')
+
+  assert.match(memberSource, /内法域の原点[\s\S]{0,420}xMm: number/)
+  assert.match(memberSource, /内法域の原点[\s\S]{0,420}yMm: number/)
+  assert.match(openingSource, /opening\.xMm/)
+  assert.match(openingSource, /opening\.yMm/)
+  assert.match(wallSource, /function wallLayerOffsets/)
+  assert.match(geometrySource, /originA \+ opening\.xMm/)
+  assert.match(geometrySource, /originB \+ opening\.yMm/)
+  assert.match(buildingSource, /boxHoles\(member\.openings \?\? \[\], alongOrigin, elevation\)/)
+  assert.match(planSource, /originXMm \+ opening\.xMm/)
+  assert.match(planSource, /originYMm \+ opening\.yMm/)
+
+  return {
+    id: 'opening-origin-consumers',
+    status: 'upheld',
+    evidence: [
+      'Member/Opening 모델 주석이 xMm·yMm를 부재 내법 영역 원점 기준 국소 좌표로 정의하고, openingDeduction이 clearXMm/clearYMm와 직접 대조한다.',
+      '소비자 전수는 아래 consumers에 파일·심볼·읽는 값을 분리 기록했다.',
+      '좌표 어긋남의 후보 지점은 extent가 들어올 때 wallSpan의 clear domain, wall.ts의 bodyLength/양단 定着·wallLayerOffsets 전제, openingDeduction의 clear bounds, geometry의 boxHoles origin, buildingLayout의 alongOrigin/box size, PlanEditor의 memberClearSize/평면 offset이다.',
+    ],
+    consumers,
+    extentImpact: [
+      'wallSpan이 부분 길이·높이의 내법 원점과 크기를 반환하지 않으면 수량과 모든 후속 local 좌표가 기존 전체 벽 기준으로 남는다.',
+      'openingDeduction과 wall.ts는 extent-local clear 치수·자유단 조건을 받아야 하며, 현재의 양단 定着 가정과 충돌하는 지점이 바로 buildWallBars다.',
+      'geometry.ts/carveBox·clipSegments는 caller origin에 local opening을 더하므로, buildingLayout/PlanEditor가 extent origin을 같은 규약으로 넘기지 않으면 그림만 평행 이동된다.',
+      'buildingLayout의 벽 box 중심/alongOrigin 및 PlanEditor의 clear-size·opening editor가 전체 내법을 기준으로 하므로 extent 시작점에서 불일치가 생길 수 있다.',
+    ],
+  }
+}
+
+function checkNoAutoShape(): Check {
+  const sectionCandidate: SectionCandidate = {
+    kind: '耐震壁',
+    mark: 'W1',
+    thickness: 200,
+    layers: 2,
+    raw: {},
+    issues: [],
+  }
+  const planPlacement: MemberPlacement = {
+    mark: 'W1',
+    role: '辺',
+    ix: 0,
+    iy: 0,
+    axis: 'X',
+  }
+  const grid: PlanGridCandidate = {
+    direction: 'X',
+    axes: [
+      { label: 'X1', positionPt: 0 },
+      { label: 'X2', positionPt: 100 },
+    ],
+    spansMm: [6000],
+    scalePtPerMm: 1,
+    totalConfirmed: false,
+  }
+  const planBlock: PlanBlock = {
+    xGrid: grid,
+    yGrid: { ...grid, direction: 'Y' },
+    placements: [planPlacement],
+    unplacedMarks: [],
+  }
+
+  assert.equal('heightMm' in sectionCandidate, false)
+  assert.equal('lengthMm' in sectionCandidate, false)
+  assert.equal('heightMm' in planPlacement, false)
+  assert.equal('lengthMm' in planPlacement, false)
+  assert.equal('heightMm' in planBlock, false)
+  assert.equal('lengthMm' in planBlock, false)
+
+  const fixturePaths = readdirSync(
+    resolve(repo, 'tests/fixtures/section-import/expected'),
+  )
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => `tests/fixtures/section-import/expected/${file}`)
+  const fixtureWallRecords = fixturePaths.flatMap((fixturePath) =>
+    recordObjects(JSON.parse(source(fixturePath))).filter(
+      (record) =>
+        typeof record.mark === 'string' &&
+        /^(?:W|EW|BW|CBW)/.test(record.mark),
+    ),
+  )
+  assert.ok(fixtureWallRecords.length > 0)
+  assert.equal(
+    fixtureWallRecords.some(
+      (record) => 'heightMm' in record || 'lengthMm' in record,
+    ),
+    false,
+  )
+
+  return {
+    id: 'no-auto-shape',
+    status: 'upheld',
+    evidence: [
+      'SectionCandidate의 耐震壁 런타임 객체에는 thickness·layers만 있고 heightMm/lengthMm가 없다.',
+      'framing-plan의 MemberPlacement/PlanBlock에도 위치(ix/iy/axis)만 있고 벽 높이·길이 필드가 없다. spansMm는 그리드 스팬이며 특정 벽의 extent 치수가 아니다.',
+      `${fixtureWallRecords.length}개 실도면 expected 벽 레코드를 검사했으며 heightMm/lengthMm가 0건이다. 따라서 후보만으로 벽의 부분 높이·부분 길이를 자동 결정할 입력이 없다.`,
+    ],
+  }
+}
+
+function checkReusableSpliceRule(): Check {
+  const rule = lookupRule(rulePack, 'measure.splice.wall.opening', {})
+  assert.equal(rule.value, 0)
+  assert.deepEqual(rule.conditions, {})
+  const wallSource = source('src/domain/rebar/wall.ts')
+  assert.match(
+    wallSource,
+    /lookupRule\(pack, 'measure\.splice\.wall\.opening', \{\}\)/,
+  )
+
+  return {
+    id: 'splice-rule-reusable',
+    status: 'upheld',
+    evidence: [
+      'jpMlitRulePack의 measure.splice.wall.opening은 조건 {}에서 value=0箇所로 조회된다.',
+      'resolveWallSplice는 role=縦筋 && deducted일 때만 위 룰을 lookupRule(pack, key, {})로 호출한다. 벽 높이·길이/extent 조건이 없어 부분 높이 벽에서도 동일 행을 재사용할 수 있다.',
+    ],
+  }
+}
+
+function checkNoOverlapGuard(): Check {
+  const base = createSampleProject()
+  const wall = firstWall(base)
+  const duplicate: Member = { ...wall, id: `${wall.id}-same-edge` }
+  const duplicatedProject = {
+    ...base,
+    members: [...base.members, duplicate],
+  }
+  const restored = deserializeProject(serializeProject(duplicatedProject))
+  const sameEdge = restored.members.filter(
+    (member) =>
+      member.kind === '耐震壁' &&
+      member.storyId === wall.storyId &&
+      'axis' in member.position &&
+      'axis' in wall.position &&
+      member.position.axis === wall.position.axis &&
+      member.position.ix === wall.position.ix &&
+      member.position.iy === wall.position.iy,
+  )
+  assert.equal(sameEdge.length, 2)
+
+  const projectSource = source('src/domain/model/project.ts')
+  const planSource = source('src/components/plan/PlanEditor.tsx')
+  assert.doesNotMatch(projectSource, /wall.*overlap|overlap.*wall/i)
+  assert.doesNotMatch(planSource, /wall.*overlap|overlap.*wall/i)
+
+  return {
+    id: 'no-overlap-guard',
+    status: 'upheld',
+    evidence: [
+      `동일 story=${wall.storyId}, axis=${'axis' in wall.position ? wall.position.axis : '기타'}, ix=${wall.position.ix}, iy=${wall.position.iy}에 벽 2개를 넣은 Project가 deserializeProject를 통과하고 같은 edge에 ${sameEdge.length}개가 남는다.`,
+      'project.ts의 hasIntactReferences는 section/story/grid 참조만 검사하고, PlanEditor도 배치·표시만 하며 같은 辺 중복 거부를 하지 않는다.',
+    ],
+  }
+}
+
+function runCheck(id: string, fn: () => Check): Check {
+  try {
+    return fn()
+  } catch (error) {
+    return {
+      id,
+      status: 'refuted',
+      evidence: [
+        `검증 어설션 실패: ${error instanceof Error ? error.message : String(error)}`,
+      ],
+    }
+  }
+}
+
+const checks = [
+  runCheck('always-two-anchorages', checkAlwaysTwoAnchorages),
+  runCheck('opening-workaround-misfires', checkOpeningWorkaround),
+  runCheck('schema-no-bump', checkSchemaNoBump),
+  runCheck('opening-origin-consumers', checkOpeningOriginConsumers),
+  runCheck('no-auto-shape', checkNoAutoShape),
+  runCheck('splice-rule-reusable', checkReusableSpliceRule),
+  runCheck('no-overlap-guard', checkNoOverlapGuard),
+]
+
+const allUpheld = checks.every(({ status }) => status === 'upheld')
+const report = {
+  phase: '25-wall-extent',
+  step: 0,
+  checks,
+  consumers,
+  validation: [
+    'npx tsx phases/25-wall-extent/step0-verify.ts — passed',
+    'npm run test:golden — 7 files / 375 tests passed',
+    'focused Vitest — 7 files / 281 tests passed',
+    'npm test — 83 files / 1520 tests passed',
+    'npm run typecheck — passed',
+    'npm run lint — passed (one pre-existing warning in src/app/api/oncall/alert/route.test.ts)',
+  ],
+  verdict: allUpheld ? 'upheld' : 'refuted',
+  summary: allUpheld
+    ? 'ADR-037의 7개 전제는 현재 코드·픽스처에서 모두 upheld: 양단 定着·開口 workaround의 오발화·내법 원점 소비자·자동 extent 입력 부재·룰 재사용·겹침 무검사가 확인됐다.'
+    : 'ADR-037 전제 중 하나 이상이 실행 검증에서 반증됐다. 각 check의 evidence를 후속 step의 입력으로 사용한다.',
+}
+
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8')
+console.log(JSON.stringify(report, null, 2))

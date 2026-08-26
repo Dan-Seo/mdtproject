@@ -12,6 +12,7 @@ import {
   type Section,
   type ShearBarSize,
   type SlabPosition,
+  type WallExtent,
 } from './member'
 import { MemberUnsupportedError } from './unsupported'
 import { coverConditions } from '../rules/lookup'
@@ -357,6 +358,16 @@ export interface WallSpan {
   endFaceOffsetMm: number
   /** 内法高さを決めた上部大梁のせい (mm) */
   girderDepthAboveMm: number
+  /** 範囲を指定したときの自由端。省略軸は両端が接続側である。 */
+  freeEnds?: {
+    vertical?: '上端' | '下端'
+    horizontal?: '始端' | '終端'
+  }
+  /** 内法域の原点から、範囲の原点までのローカルオフセット (mm)。 */
+  originOffsetMm?: {
+    along: number
+    height: number
+  }
 }
 
 /**
@@ -427,9 +438,9 @@ export function wallSpan(project: Project, member: Member): WallSpan {
   }
 
   const girderDepthAboveMm = girderDepthAboveWall(project, member)
-  const clearHeightMm = story.height - girderDepthAboveMm
+  const fullClearHeightMm = story.height - girderDepthAboveMm
 
-  if (clearHeightMm <= 0) {
+  if (fullClearHeightMm <= 0) {
     throw new MemberUnsupportedError(
       '寸法不成立',
       `耐震壁 内法高さ must be positive: ${member.id} ` +
@@ -437,13 +448,72 @@ export function wallSpan(project: Project, member: Member): WallSpan {
     )
   }
 
+  const extent = member.wallExtent
+  let actualLengthMm = clearLengthMm
+  let actualHeightMm = fullClearHeightMm
+  let alongOriginMm = 0
+  let heightOriginMm = 0
+  const freeEnds: NonNullable<WallSpan['freeEnds']> = {}
+
+  if (extent?.horizontal) {
+    assertWallExtentDimension(
+      member,
+      'lengthMm',
+      extent.horizontal.lengthMm,
+      clearLengthMm,
+    )
+    actualLengthMm = extent.horizontal.lengthMm
+    alongOriginMm =
+      extent.horizontal.anchor === '始端'
+        ? 0
+        : clearLengthMm - extent.horizontal.lengthMm
+    freeEnds.horizontal =
+      extent.horizontal.anchor === '始端' ? '終端' : '始端'
+  }
+
+  if (extent?.vertical) {
+    assertWallExtentDimension(
+      member,
+      'heightMm',
+      extent.vertical.heightMm,
+      fullClearHeightMm,
+    )
+    actualHeightMm = extent.vertical.heightMm
+    heightOriginMm =
+      extent.vertical.anchor === '下端'
+        ? 0
+        : fullClearHeightMm - extent.vertical.heightMm
+    freeEnds.vertical = extent.vertical.anchor === '下端' ? '上端' : '下端'
+  }
+
   return {
     axis,
-    clearLengthMm,
-    clearHeightMm,
+    clearLengthMm: actualLengthMm,
+    clearHeightMm: actualHeightMm,
     startFaceOffsetMm,
     endFaceOffsetMm,
     girderDepthAboveMm,
+    freeEnds,
+    originOffsetMm: { along: alongOriginMm, height: heightOriginMm },
+  }
+}
+
+function assertWallExtentDimension(
+  member: Member,
+  field: 'lengthMm' | 'heightMm',
+  value: number,
+  fullDimensionMm: number,
+): void {
+  if (
+    !Number.isFinite(value) ||
+    value <= 0 ||
+    value > fullDimensionMm
+  ) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `耐震壁 wallExtent.${field} must be within 内法寸法: ${member.id} ` +
+        `(${value} mm > ${fullDimensionMm} mm)`,
+    )
   }
 }
 
@@ -965,6 +1035,9 @@ const isString = (value: unknown): boolean => typeof value === 'string'
 const isFiniteNumber = (value: unknown): boolean =>
   typeof value === 'number' && Number.isFinite(value)
 
+const isPositiveFiniteNumber = (value: unknown): boolean =>
+  isFiniteNumber(value) && (value as number) > 0
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -1113,6 +1186,28 @@ const isOpeningWithReinforcements = (value: unknown): boolean => {
   )
 }
 
+const isWallExtent = (value: unknown): value is WallExtent =>
+  isRecord(value) &&
+  (value.vertical === undefined ||
+    hasShape(value.vertical, {
+      anchor: (anchor) => anchor === '下端' || anchor === '上端',
+      heightMm: isPositiveFiniteNumber,
+    })) &&
+  (value.horizontal === undefined ||
+    hasShape(value.horizontal, {
+      anchor: (anchor) => anchor === '始端' || anchor === '終端',
+      lengthMm: isPositiveFiniteNumber,
+    }))
+
+const isValidMemberWallExtent = (member: unknown): boolean => {
+  if (!isRecord(member)) return false
+
+  const extent = member.wallExtent
+  if (extent === undefined) return true
+
+  return member.kind === '耐震壁' && isWallExtent(extent)
+}
+
 const isMemberKind = (value: unknown): boolean =>
   MEMBER_KINDS.includes(value as MemberKind)
 
@@ -1246,6 +1341,9 @@ function isProjectShape(value: unknown): boolean {
         hasShape(member, {
           position: shapedAs(POSITION_FIELDS[(member as Member).kind]),
         }) &&
+        // 部材の内法範囲は耐震壁にだけ付く。別の部材に通してしまうと、
+        // 3Dだけが範囲を持つなど数量と表示の座標契約が種別をまたいで崩れる。
+        isValidMemberWallExtent(member) &&
         // 開口は無くてよい (「開口なし」の意) が、有るなら配列でなければ
         // ならない — openingDeduction が中を読んで欠除量を出すからだ。
         ((member as { openings?: unknown }).openings === undefined ||

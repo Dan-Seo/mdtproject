@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type KeyboardEvent } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 
 import {
   BAR_SIZES,
@@ -8,6 +8,7 @@ import {
   type Member,
   type Opening,
   type OpeningReinforcement,
+  type WallExtent,
 } from '@/domain/model/member'
 import {
   findSection,
@@ -17,6 +18,7 @@ import {
   wallSpan,
   type Project,
 } from '@/domain/model/project'
+import { MemberUnsupportedError } from '@/domain/model/unsupported'
 import { lookupRule } from '@/domain/rules/lookup'
 import { jpMlitRulePack } from '@/rulepack'
 import { t } from '@/lib/i18n'
@@ -71,6 +73,23 @@ function activateMember(
   if (event.key !== 'Enter' && event.key !== ' ') return
   event.preventDefault()
   select()
+}
+
+function wallExtentLabel(member: Member): string | null {
+  const extent = member.wallExtent
+  if (extent === undefined) return null
+
+  const labels: string[] = []
+  if (extent.vertical !== undefined) {
+    labels.push(
+      `${extent.vertical.anchor === '下端' ? '腰壁' : '下り壁'} H=${extent.vertical.heightMm}`,
+    )
+  }
+  if (extent.horizontal !== undefined) {
+    labels.push(`袖壁 L=${extent.horizontal.lengthMm}`)
+  }
+
+  return labels.length === 0 ? null : labels.join(' / ')
 }
 
 export function StoryTabs() {
@@ -229,10 +248,33 @@ function PlanMember({
       axis === 'X' ? ix + 1 : ix,
       axis === 'Y' ? iy + 1 : iy,
     )
-    const x1 = transform.x(start.x)
-    const y1 = transform.y(start.y)
-    const x2 = transform.x(end.x)
-    const y2 = transform.y(end.y)
+    const extent = member.wallExtent
+    const range =
+      extent?.horizontal === undefined
+        ? null
+        : (() => {
+            try {
+              const span = wallSpan(project, member)
+              const startAlong =
+                (axis === 'X' ? start.x : start.y) +
+                span.startFaceOffsetMm +
+                (span.originOffsetMm?.along ?? 0)
+              return {
+                start: startAlong,
+                end: startAlong + span.clearLengthMm,
+              }
+            } catch {
+              // 断面や受け材が未入力でも、平面の既存の全スパン表示は残す。
+              return null
+            }
+          })()
+    const startAlong = range?.start ?? (axis === 'X' ? start.x : start.y)
+    const endAlong = range?.end ?? (axis === 'X' ? end.x : end.y)
+    const x1 = transform.x(axis === 'X' ? startAlong : start.x)
+    const y1 = transform.y(axis === 'X' ? start.y : startAlong)
+    const x2 = transform.x(axis === 'X' ? endAlong : end.x)
+    const y2 = transform.y(axis === 'X' ? end.y : endAlong)
+    const extentLabel = wallExtentLabel(member)
 
     // 壁は大梁と同じ辺に立つ。通り芯の上に重ねて1本で描くと、大梁のヒット領域が
     // 上に載って**壁を選べなくなる**（実ブラウザ検証で判明）。平面図の慣用どおり
@@ -288,6 +330,17 @@ function PlanMember({
         >
           {section.mark}
         </text>
+        {extentLabel !== null && (
+          <text
+            className={styles.memberLabel}
+            data-testid="wall-extent-label"
+            x={(x1 + x2) / 2 + (axis === 'Y' ? faceOffset + 12 : 0)}
+            y={(y1 + y2) / 2 + (axis === 'X' ? faceOffset + 28 : 0)}
+            textAnchor="middle"
+          >
+            {extentLabel}
+          </text>
+        )}
       </g>
     )
   }
@@ -522,6 +575,81 @@ function replaceOpenings(
       return { ...member, openings }
     }),
   }
+}
+
+type WallExtentAxis = 'vertical' | 'horizontal'
+type WallExtentAnchor = '下端' | '上端' | '始端' | '終端' | 'none'
+
+function replaceWallExtent(
+  project: Project,
+  memberId: string,
+  extent: WallExtent | undefined,
+): Project {
+  return {
+    ...project,
+    members: project.members.map((member) => {
+      if (member.id !== memberId) return member
+      if (extent === undefined) {
+        const next = { ...member }
+        delete next.wallExtent
+        return next
+      }
+      return { ...member, wallExtent: extent }
+    }),
+  }
+}
+
+function updateWallExtentAxis(
+  extent: WallExtent | undefined,
+  axis: WallExtentAxis,
+  anchor: WallExtentAnchor,
+): WallExtent | undefined {
+  const next = { ...extent }
+
+  if (anchor === 'none') {
+    delete next[axis]
+  } else if (axis === 'vertical' && (anchor === '下端' || anchor === '上端')) {
+    if (extent?.vertical === undefined) return extent
+    next.vertical = {
+      anchor,
+      heightMm: extent.vertical.heightMm,
+    }
+  } else if (
+    axis === 'horizontal' &&
+    (anchor === '始端' || anchor === '終端')
+  ) {
+    if (extent?.horizontal === undefined) return extent
+    next.horizontal = {
+      anchor,
+      lengthMm: extent.horizontal.lengthMm,
+    }
+  }
+
+  return next.vertical === undefined && next.horizontal === undefined
+    ? undefined
+    : next
+}
+
+function updateWallExtentDimension(
+  extent: WallExtent | undefined,
+  axis: WallExtentAxis,
+  anchor: WallExtentAnchor,
+  value: number,
+): WallExtent {
+  const next = { ...extent }
+  if (axis === 'vertical' && (anchor === '下端' || anchor === '上端')) {
+    return {
+      ...next,
+      vertical: { anchor, heightMm: value },
+    }
+  }
+  if (axis === 'horizontal' && (anchor === '始端' || anchor === '終端')) {
+    return {
+      ...next,
+      horizontal: { anchor, lengthMm: value },
+    }
+  }
+  return next
 }
 
 function replaceOpeningReinforcements(
@@ -925,6 +1053,259 @@ function OpeningEditor() {
   )
 }
 
+function WallExtentEditor() {
+  const project = useAppStore(({ project }) => project)
+  const locale = useAppStore(({ locale }) => locale)
+  const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
+  const updateProject = useAppStore(({ updateProject }) => updateProject)
+  const [draft, setDraft] = useState<{
+    memberId: string | null
+    verticalAnchor: WallExtentAnchor
+    horizontalAnchor: WallExtentAnchor
+    verticalValue: string
+    horizontalValue: string
+  }>({
+    memberId: null,
+    verticalAnchor: 'none',
+    horizontalAnchor: 'none',
+    verticalValue: '',
+    horizontalValue: '',
+  })
+
+  const member = project.members.find(({ id }) => id === selectedMemberId)
+  if (!member || member.kind !== '耐震壁') return null
+
+  const section = findSection(project, member.sectionId)
+  const extent = member.wallExtent
+  const activeDraft: typeof draft =
+    draft.memberId === member.id
+      ? draft
+      : {
+          memberId: member.id,
+          verticalAnchor: extent?.vertical?.anchor ?? 'none',
+          horizontalAnchor: extent?.horizontal?.anchor ?? 'none',
+          verticalValue:
+            extent?.vertical === undefined
+              ? ''
+              : String(extent.vertical.heightMm),
+          horizontalValue:
+            extent?.horizontal === undefined
+              ? ''
+              : String(extent.horizontal.lengthMm),
+        }
+  let invalid = false
+  if (extent !== undefined) {
+    try {
+      wallSpan(project, member)
+    } catch (error) {
+      invalid =
+        error instanceof MemberUnsupportedError && error.reason === '寸法不成立'
+    }
+  }
+  const draftDimensionInvalid =
+    (activeDraft.verticalAnchor !== 'none' &&
+      activeDraft.verticalValue !== '' &&
+      (!Number.isFinite(Number(activeDraft.verticalValue)) ||
+        Number(activeDraft.verticalValue) <= 0)) ||
+    (activeDraft.horizontalAnchor !== 'none' &&
+      activeDraft.horizontalValue !== '' &&
+      (!Number.isFinite(Number(activeDraft.horizontalValue)) ||
+        Number(activeDraft.horizontalValue) <= 0))
+
+  const commit = (next: WallExtent | undefined) => {
+    updateProject((current) => replaceWallExtent(current, member.id, next))
+  }
+
+  const changeAxis = (axis: WallExtentAxis, anchor: WallExtentAnchor) => {
+    const nextDraft: typeof draft = {
+      ...activeDraft,
+      ...(axis === 'vertical'
+        ? {
+            verticalAnchor: anchor,
+            verticalValue:
+              anchor === 'none'
+                ? ''
+                : extent?.vertical === undefined
+                  ? ''
+                  : String(extent.vertical.heightMm),
+          }
+        : {
+            horizontalAnchor: anchor,
+            horizontalValue:
+              anchor === 'none'
+                ? ''
+                : extent?.horizontal === undefined
+                  ? ''
+                  : String(extent.horizontal.lengthMm),
+          }),
+      memberId: member.id,
+    }
+    setDraft(nextDraft)
+
+    if (
+      anchor === 'none' ||
+      (axis === 'vertical' && extent?.vertical) ||
+      (axis === 'horizontal' && extent?.horizontal)
+    ) {
+      commit(updateWallExtentAxis(extent, axis, anchor))
+    }
+  }
+
+  const changeDimension = (axis: WallExtentAxis, rawValue: string) => {
+    const value = Number(rawValue)
+    setDraft({
+      ...activeDraft,
+      memberId: member.id,
+      ...(axis === 'vertical'
+        ? { verticalValue: rawValue }
+        : { horizontalValue: rawValue }),
+    })
+    if (!Number.isFinite(value) || value <= 0) return
+
+    const anchor =
+      axis === 'vertical'
+        ? activeDraft.verticalAnchor
+        : activeDraft.horizontalAnchor
+    commit(updateWallExtentDimension(extent, axis, anchor, value))
+  }
+
+  const verticalAnchor = activeDraft.verticalAnchor
+  const horizontalAnchor = activeDraft.horizontalAnchor
+
+  return (
+    <fieldset
+      className={styles.wallExtentFieldset}
+      data-testid="wall-extent-editor"
+    >
+      <legend className={styles.spanLegend}>
+        {t(locale, 'plan.wallExtent.title')} — {section.mark}
+      </legend>
+      <p className={styles.openingHint}>
+        {t(locale, 'plan.wallExtent.hint')}
+      </p>
+      <div className={styles.wallExtentList}>
+        <fieldset className={styles.wallExtentAxis}>
+          <legend className={styles.openingFieldLabel}>
+            {t(locale, 'plan.wallExtent.vertical')}
+          </legend>
+          <select
+            className={styles.spanInput}
+            data-testid="wall-extent-vertical-anchor"
+            aria-label={`${section.mark} ${t(
+              locale,
+              'plan.wallExtent.vertical',
+            )}`}
+            value={verticalAnchor}
+            onChange={(event) =>
+              changeAxis(
+                'vertical',
+                event.currentTarget.value as WallExtentAnchor,
+              )
+            }
+          >
+            <option value="none">
+              {t(locale, 'plan.wallExtent.none')}
+            </option>
+            <option value="下端">
+              {t(locale, 'plan.wallExtent.anchor.vertical.lower')}
+            </option>
+            <option value="上端">
+              {t(locale, 'plan.wallExtent.anchor.vertical.upper')}
+            </option>
+          </select>
+          {verticalAnchor !== 'none' && (
+            <label className={styles.openingField}>
+              <span className={styles.openingFieldLabel}>
+                {t(locale, 'plan.wallExtent.dimension')}
+              </span>
+              <input
+                className={styles.spanInput}
+                type="number"
+                step="1"
+                data-testid="wall-extent-vertical-dimension"
+                aria-label={`${section.mark} ${t(
+                  locale,
+                  'plan.wallExtent.vertical',
+                )} ${t(locale, 'plan.wallExtent.dimension')}`}
+                value={activeDraft.verticalValue}
+                onChange={(event) =>
+                  changeDimension('vertical', event.currentTarget.value)
+                }
+              />
+              <span className={styles.unit}>
+                {t(locale, 'plan.wallExtent.unit')}
+              </span>
+            </label>
+          )}
+        </fieldset>
+        <fieldset className={styles.wallExtentAxis}>
+          <legend className={styles.openingFieldLabel}>
+            {t(locale, 'plan.wallExtent.horizontal')}
+          </legend>
+          <select
+            className={styles.spanInput}
+            data-testid="wall-extent-horizontal-anchor"
+            aria-label={`${section.mark} ${t(
+              locale,
+              'plan.wallExtent.horizontal',
+            )}`}
+            value={horizontalAnchor}
+            onChange={(event) =>
+              changeAxis(
+                'horizontal',
+                event.currentTarget.value as WallExtentAnchor,
+              )
+            }
+          >
+            <option value="none">
+              {t(locale, 'plan.wallExtent.none')}
+            </option>
+            <option value="始端">
+              {t(locale, 'plan.wallExtent.anchor.horizontal.start')}
+            </option>
+            <option value="終端">
+              {t(locale, 'plan.wallExtent.anchor.horizontal.end')}
+            </option>
+          </select>
+          {horizontalAnchor !== 'none' && (
+            <label className={styles.openingField}>
+              <span className={styles.openingFieldLabel}>
+                {t(locale, 'plan.wallExtent.dimension')}
+              </span>
+              <input
+                className={styles.spanInput}
+                type="number"
+                step="1"
+                data-testid="wall-extent-horizontal-dimension"
+                aria-label={`${section.mark} ${t(
+                  locale,
+                  'plan.wallExtent.horizontal',
+                )} ${t(locale, 'plan.wallExtent.dimension')}`}
+                value={activeDraft.horizontalValue}
+                onChange={(event) =>
+                  changeDimension('horizontal', event.currentTarget.value)
+                }
+              />
+              <span className={styles.unit}>
+                {t(locale, 'plan.wallExtent.unit')}
+              </span>
+            </label>
+          )}
+        </fieldset>
+      </div>
+      {(invalid || draftDimensionInvalid) && (
+        <p
+          className={styles.wallExtentInvalid}
+          data-testid="wall-extent-invalid"
+          role="alert"
+        >
+          ▲ {t(locale, 'plan.wallExtent.invalid')}
+        </p>
+      )}
+    </fieldset>
+  )
+}
+
 export function PlanEditor() {
   const project = useAppStore(({ project }) => project)
   const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
@@ -946,6 +1327,7 @@ export function PlanEditor() {
         <SpanEditor axis="x" />
         <SpanEditor axis="y" />
       </div>
+      <WallExtentEditor />
       <OpeningEditor />
       <div className={styles.drawingFrame}>
         <svg

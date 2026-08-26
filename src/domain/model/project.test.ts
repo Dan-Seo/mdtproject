@@ -23,6 +23,7 @@ import {
   serializeProject,
   setNote,
   storyElevation,
+  wallSpan,
   type Project,
   type Story,
 } from './project'
@@ -287,6 +288,127 @@ describe('WallSection.wallClass serialization compatibility', () => {
     expect(() => deserializeProject(serialized)).toThrow(
       'Project shape mismatch',
     )
+  })
+})
+
+describe('Member.wallExtent serialization and wallSpan', () => {
+  function sampleWall(project: Project): Member {
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')
+    if (!wall) throw new Error('sample project must contain a 耐震壁')
+    return wall
+  }
+
+  function withWallExtent(extent: unknown): Project {
+    const project = createSampleProject()
+    const wall = sampleWall(project)
+    return {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === wall.id
+          ? { ...member, wallExtent: extent as never }
+          : member,
+      ),
+    }
+  }
+
+  it('round-trips a valid extent without changing schemaVersion', () => {
+    const project = withWallExtent({
+      vertical: { anchor: '下端', heightMm: 1200 },
+      horizontal: { anchor: '終端', lengthMm: 2400 },
+    })
+
+    expect(project.schemaVersion).toBe(PROJECT_SCHEMA_VERSION)
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it('keeps an existing member without wallExtent compatible', () => {
+    const project = createSampleProject()
+    expect(
+      deserializeProject(serializeProject(project)),
+    ).toEqual(project)
+    expect(sampleWall(project)).not.toHaveProperty('wallExtent')
+  })
+
+  it.each([
+    ['unsupported vertical anchor', { vertical: { anchor: '中央', heightMm: 1200 } }],
+    ['zero vertical height', { vertical: { anchor: '下端', heightMm: 0 } }],
+    ['negative horizontal length', { horizontal: { anchor: '始端', lengthMm: -1 } }],
+    ['non-finite horizontal length', { horizontal: { anchor: '始端', lengthMm: '2400' } }],
+    ['null wallExtent', null],
+  ])('rejects %s', (_label, extent) => {
+    expect(() =>
+      deserializeProject(serializeProject(withWallExtent(extent))),
+    ).toThrow('Project shape mismatch')
+  })
+
+  it('rejects wallExtent on a non-耐震壁 member', () => {
+    const project = createSampleProject()
+    const column = project.members.find(({ kind }) => kind === '柱')!
+    const invalid = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === column.id
+          ? {
+              ...member,
+              wallExtent: {
+                vertical: { anchor: '下端', heightMm: 1200 },
+              },
+            }
+          : member,
+      ),
+    } as Project
+
+    expect(() => deserializeProject(serializeProject(invalid))).toThrow(
+      'Project shape mismatch',
+    )
+  })
+
+  it('applies range dimensions, free ends, and the range origin to wallSpan', () => {
+    const base = createSampleProject()
+    const baseWall = sampleWall(base)
+    const baseSpan = wallSpan(base, baseWall)
+
+    const waistProject = withWallExtent({
+      vertical: { anchor: '下端', heightMm: 1200 },
+    })
+    const waist = sampleWall(waistProject)
+    const waistSpan = wallSpan(waistProject, waist)
+    expect(waistSpan.clearLengthMm).toBe(baseSpan.clearLengthMm)
+    expect(waistSpan.clearHeightMm).toBe(1200)
+    expect(waistSpan.freeEnds).toEqual({ vertical: '上端' })
+    expect(waistSpan.originOffsetMm).toEqual({ along: 0, height: 0 })
+
+    const sleeveProject = withWallExtent({
+      horizontal: { anchor: '終端', lengthMm: 2400 },
+    })
+    const sleeve = sampleWall(sleeveProject)
+    const sleeveSpan = wallSpan(sleeveProject, sleeve)
+    expect(sleeveSpan.clearLengthMm).toBe(2400)
+    expect(sleeveSpan.clearHeightMm).toBe(baseSpan.clearHeightMm)
+    expect(sleeveSpan.freeEnds).toEqual({ horizontal: '始端' })
+    expect(sleeveSpan.originOffsetMm).toEqual({
+      along: baseSpan.clearLengthMm - 2400,
+      height: 0,
+    })
+  })
+
+  it('rejects an extent beyond the inner wall dimensions as 寸法不成立', () => {
+    const base = createSampleProject()
+    const baseWall = sampleWall(base)
+    const invalid = withWallExtent({
+      vertical: {
+        anchor: '下端',
+        heightMm: wallSpan(base, baseWall).clearHeightMm + 1,
+      },
+    })
+    const invalidWall = sampleWall(invalid)
+
+    expect(() => wallSpan(invalid, invalidWall)).toThrow(MemberUnsupportedError)
+    try {
+      wallSpan(invalid, invalidWall)
+    } catch (error) {
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+    }
   })
 })
 

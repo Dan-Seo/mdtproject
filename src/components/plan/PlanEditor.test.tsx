@@ -145,6 +145,60 @@ describe('PlanEditor', () => {
       { axis: 'y' },
     ])
   })
+
+  it('draws a wall only over its partial extent and labels the height extent', () => {
+    const project = createSampleProject()
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')!
+
+    const { container } = render(<PlanEditor />)
+    const fullWallButton = screen.getByRole('button', {
+      name: `W1 ${wall.id}`,
+    })
+    const fullWallLines = fullWallButton.querySelectorAll('line')
+    const fullWallFace = fullWallLines[2]
+    if (fullWallFace === undefined) {
+      throw new Error('Full wall face was not rendered')
+    }
+    const fullLength = Math.abs(
+      Number(fullWallFace.getAttribute('y2')) -
+        Number(fullWallFace.getAttribute('y1')),
+    )
+
+    act(() =>
+      useAppStore.setState({
+        project: {
+          ...project,
+          members: project.members.map((member) =>
+            member.id === wall.id
+              ? {
+                  ...member,
+                  wallExtent: {
+                    horizontal: { anchor: '終端', lengthMm: 2400 },
+                    vertical: { anchor: '下端', heightMm: 900 },
+                  },
+                }
+              : member,
+          ),
+        },
+      }),
+    )
+
+    const wallButton = screen.getByRole('button', { name: `W1 ${wall.id}` })
+    const wallLines = wallButton.querySelectorAll('line')
+    const visibleWall = wallLines[2]
+    if (visibleWall === undefined) throw new Error('Wall face was not rendered')
+
+    const drawnLength = Math.abs(
+      Number(visibleWall.getAttribute('y2')) -
+        Number(visibleWall.getAttribute('y1')),
+    )
+    expect(drawnLength).toBeGreaterThan(0)
+    expect(drawnLength).toBeLessThan(fullLength * 0.6)
+    expect(screen.getByTestId('wall-extent-label')).toHaveTextContent(
+      '腰壁 H=900',
+    )
+    expect(container.querySelectorAll('[data-testid="wall-extent-label"]')).toHaveLength(1)
+  })
 })
 
 describe('PlanEditor 開口部の入力 (数量積算基準 1通則8))', () => {
@@ -396,6 +450,113 @@ describe('PlanEditor 開口部の入力 (数量積算基準 1通則8))', () => {
     const height = Number(rects[0].getAttribute('height'))
     expect(width).toBeCloseTo(height, 6)
     expect(width).toBeGreaterThan(0)
+  })
+})
+
+describe('PlanEditor 壁の内法範囲入力 (ADR-037)', () => {
+  beforeEach(() => {
+    capture.mockClear()
+    useAppStore.setState({
+      project: createSampleProject(),
+      sel: { group: null, memberId: null },
+      activeStoryId: '1F',
+      locale: 'ja',
+    })
+  })
+
+  function selectWall() {
+    const wall = useAppStore
+      .getState()
+      .project.members.find(({ kind }) => kind === '耐震壁')!
+    act(() => {
+      useAppStore.getState().selectMember(wall.id)
+    })
+    return wall
+  }
+
+  it('defaults both axes to 指定しない（全内法）', () => {
+    selectWall()
+    render(<PlanEditor />)
+
+    expect(screen.getByTestId('wall-extent-editor')).toBeInTheDocument()
+    expect(screen.getByTestId('wall-extent-vertical-anchor')).toHaveValue(
+      'none',
+    )
+    expect(screen.getByTestId('wall-extent-horizontal-anchor')).toHaveValue(
+      'none',
+    )
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ kind }) => kind === '耐震壁'),
+    ).not.toHaveProperty('wallExtent')
+  })
+
+  it('stores each selected axis and deletes an axis when reset to 全内法', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+
+    fireEvent.change(screen.getByTestId('wall-extent-vertical-anchor'), {
+      target: { value: '下端' },
+    })
+    fireEvent.change(screen.getByTestId('wall-extent-vertical-dimension'), {
+      target: { value: '900' },
+    })
+    fireEvent.change(screen.getByTestId('wall-extent-horizontal-anchor'), {
+      target: { value: '終端' },
+    })
+    fireEvent.change(screen.getByTestId('wall-extent-horizontal-dimension'), {
+      target: { value: '2400' },
+    })
+
+    expect(
+      useAppStore.getState().project.members.find(({ id }) => id === wall.id),
+    ).toMatchObject({
+      wallExtent: {
+        vertical: { anchor: '下端', heightMm: 900 },
+        horizontal: { anchor: '終端', lengthMm: 2400 },
+      },
+    })
+
+    fireEvent.change(screen.getByTestId('wall-extent-vertical-anchor'), {
+      target: { value: 'none' },
+    })
+    expect(
+      useAppStore.getState().project.members.find(({ id }) => id === wall.id),
+    ).toMatchObject({
+      wallExtent: { horizontal: { anchor: '終端', lengthMm: 2400 } },
+    })
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === wall.id)!.wallExtent,
+    ).not.toHaveProperty('vertical')
+
+    fireEvent.change(screen.getByTestId('wall-extent-horizontal-anchor'), {
+      target: { value: 'none' },
+    })
+    expect(
+      useAppStore.getState().project.members.find(({ id }) => id === wall.id),
+    ).not.toHaveProperty('wallExtent')
+  })
+
+  it('keeps an out-of-range value and shows the domain rejection', () => {
+    const wall = selectWall()
+    render(<PlanEditor />)
+
+    fireEvent.change(screen.getByTestId('wall-extent-vertical-anchor'), {
+      target: { value: '下端' },
+    })
+    fireEvent.change(screen.getByTestId('wall-extent-vertical-dimension'), {
+      target: { value: '99999' },
+    })
+
+    expect(
+      useAppStore.getState().project.members.find(({ id }) => id === wall.id),
+    ).toMatchObject({ wallExtent: { vertical: { heightMm: 99999 } } })
+    expect(screen.getByTestId('wall-extent-invalid')).toHaveTextContent(
+      '寸法不成立',
+    )
   })
 })
 

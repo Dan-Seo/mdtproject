@@ -34,6 +34,9 @@ step 0 report의 `consumers` 목록이 무대다 — `src/lib/viewer/geometry.ts
 - `src/domain/**` 수정 금지 — 필요해지면 `blocked`.
 - 새 3D 표현(치수선·해칭 등) 추가 금지. 배근 규준 수치 금지.
 - `scripts/execute.py` 금지 — 재귀다.
+- **`phases/**/step*-codex.*.log`·`step*-invoke.json`을 지우지 마라** — 하네스가
+  쓰는 기록이고 삭제 시도가 정책에 막혀 phase 25 step 0에서 하네스가
+  통째로 죽었다. 작업 트리에 남은 그 파일들은 정상이다.
 
 ## AC
 

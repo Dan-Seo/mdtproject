@@ -9,6 +9,7 @@ import {
   gridPoint,
   gridPointCount,
   storyElevation,
+  wallSpan,
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
@@ -471,6 +472,79 @@ describe('buildingLayout', () => {
     expect(
       layout.rebar.some(({ memberId }) => unsupportedMemberIds.has(memberId)),
     ).toBe(false)
+  })
+
+  it('places a partial wall box, opening, and range-local rebar at the extent origin', () => {
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')!
+    const extentProject: Project = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === wall.id
+          ? {
+              ...member,
+              wallExtent: {
+                horizontal: { anchor: '終端', lengthMm: 2400 },
+                vertical: { anchor: '上端', heightMm: 900 },
+              },
+              openings: [
+                {
+                  id: 'extent-opening',
+                  xMm: 400,
+                  yMm: 200,
+                  widthMm: 800,
+                  heightMm: 400,
+                },
+              ],
+            }
+          : member,
+      ),
+    }
+    const span = wallSpan(extentProject, extentProject.members.find(({ id }) => id === wall.id)!)
+    const rangeLocalBar: Rebar = {
+      id: `${wall.id}|range-local-bar`,
+      memberId: wall.id,
+      role: '横筋',
+      size: 'D13',
+      shape: 'straight',
+      points: [
+        [0, 0, 100],
+        [span.clearLengthMm, 0, 100],
+      ],
+      closed: false,
+      length: span.clearLengthMm,
+      count: 1,
+      placement: {
+        axis: 'y',
+        clearMm: span.clearHeightMm,
+        pitchMm: span.clearHeightMm,
+        startOffsetMm: 0,
+        lastGapMm: span.clearHeightMm,
+        positionCount: 1,
+        positionsMm: [0],
+      },
+      ruleHits: [],
+      formula: 'test',
+    }
+
+    const layout = buildingLayout(
+      extentProject,
+      [rangeLocalBar],
+      noUnsupportedMembers,
+    )
+    const wallBoxes = layout.boxes.filter(({ memberId }) => memberId === wall.id)
+
+    expect(wallBoxes).toHaveLength(4)
+    expect(wallBoxes.every(({ size }) => size[0] === 200)).toBe(true)
+    expect(Math.min(...wallBoxes.map(({ center, size }) => center[1] - size[1] / 2))).toBe(2550)
+    expect(Math.max(...wallBoxes.map(({ center, size }) => center[1] + size[1] / 2))).toBe(3450)
+    expect(Math.min(...wallBoxes.map(({ center, size }) => center[2] - size[2] / 2))).toBe(3200)
+    expect(Math.max(...wallBoxes.map(({ center, size }) => center[2] + size[2] / 2))).toBe(5600)
+
+    const bar = layout.rebar.find(({ memberId }) => memberId === wall.id)
+    expect(bar).toBeDefined()
+    expect(bar?.from[1]).toBe(2550)
+    expect(bar?.to[1]).toBe(2550)
+    expect([bar?.from[2], bar?.to[2]]).toEqual([3200, 5600])
   })
 })
 

@@ -1,0 +1,21 @@
+{
+  "step": 3,
+  "name": "wall-extent-input-ledger",
+  "input_ui": {
+    "component": "src/components/plan/PlanEditor.tsx",
+    "summary": "선택된 耐震壁 편집 영역에 높이 방향(下端/上端)과 길이 방향(始端/終端)의 anchor·치수(mm) 입력을 추가했다. 두 축은 指定しない（全内法）가 기본이며, 기본으로 되돌리면 해당 키를 삭제하고 둘 다 비면 wallExtent 전체를 삭제한다.",
+    "rejection": "内法을 넘는 양의 치수는 입력을 막거나 clamp하지 않고 Project에 보존하며, wallSpan의 寸法不成立을 PlanEditor 안에서 경고로 표시한다.",
+    "tests": "PlanEditor 컴포넌트 테스트에서 기본값, 양 축 저장·축별 삭제, 내법 초과 거부 표시를 고정했다."
+  },
+  "ledger_updates": [
+    "docs/MILESTONES.md: 雑壁의 부분 높이·부분 길이 형상을 phase 25(ADR-037) 완료로 기록하고 壁式構造の壁만 잔여로 남겼다.",
+    "docs/MILESTONES.md: phase 19에서 끝난 断面リスト의 壁リスト·スラブリスト 대응을 부재 확장 잔여 목록에서 제거했다.",
+    "AGENTS.md 및 CLAUDE.md: 일본 고유 형태·제품의 잔여를 壁式構造の壁로 동기 갱신했다.",
+    "docs/RISKS.md R2: 부분 높이 벽의 縦筋 継手 0か所 판정이 제품의 읽기임을 추가했다."
+  ],
+  "gates": {
+    "npm run test": "passed — 83 files, 1542 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed — pre-existing warning 1건(route.test.ts:161 _omitted), errors 0"
+  }
+}

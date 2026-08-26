@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "wall-extent-domain-golden",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 987.4011719000409,
+  "stdout_log": "phases\\25-wall-extent\\step1-codex.stdout.log",
+  "stderr_log": "phases\\25-wall-extent\\step1-codex.stderr.log"
+}
