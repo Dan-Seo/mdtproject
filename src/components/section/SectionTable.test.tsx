@@ -210,6 +210,38 @@ describe('SectionTable', () => {
     expect(screen.getByLabelText('C1 仕上げ')).toHaveValue('仕上げあり')
   })
 
+  it('stores 壁区分 and removes the optional key when reset to the default', () => {
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('W1 壁区分')
+    expect(select).toHaveValue('耐力壁')
+
+    fireEvent.change(select, { target: { value: '耐力壁以外' } })
+    let section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-W1')
+    expect(section?.kind).toBe('耐震壁')
+    if (section?.kind !== '耐震壁') throw new Error('Expected 耐震壁 section')
+    expect(section.wallClass).toBe('耐力壁以外')
+
+    fireEvent.change(select, { target: { value: '耐力壁' } })
+    section = useAppStore
+      .getState()
+      .project.sections.find(({ id }) => id === 'section-W1')
+    if (section?.kind !== '耐震壁') throw new Error('Expected 耐震壁 section')
+    expect('wallClass' in section).toBe(false)
+    expect(select).toHaveValue('耐力壁')
+  })
+
+  it('localizes the 壁区分 label while keeping its domain values in Japanese', () => {
+    useAppStore.setState({ locale: 'ko' })
+    render(<SectionTable />)
+
+    const select = screen.getByLabelText('W1 벽 구분')
+    expect(select).toHaveValue('耐力壁')
+    expect(select).toHaveTextContent('耐力壁以外（雑壁）')
+  })
+
   it('keeps a user change to あばら筋 初期オフセット in Project', () => {
     // 規準에 값이 없는 배치값이므로 룰팩이 아니라 断面一覧이 정한다 (ADR-012).
     render(<SectionTable />)

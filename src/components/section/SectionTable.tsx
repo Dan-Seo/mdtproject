@@ -22,7 +22,8 @@ import {
   type WallSection,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
-import { useAppStore } from '@/lib/store'
+import { t } from '@/lib/i18n'
+import { useAppStore, type Locale } from '@/lib/store'
 import { capture } from '@/lib/telemetry'
 
 import styles from './SectionTable.module.css'
@@ -40,6 +41,10 @@ const spliceMethods: readonly SpliceMethod[] = SPLICE_METHODS
 const exposures: Exposure[] = ['屋内', '屋外']
 
 const finishes: Finish[] = ['仕上げあり', '仕上げなし']
+
+type WallClass = NonNullable<WallSection['wallClass']>
+
+const wallClasses: readonly WallClass[] = ['耐力壁', '耐力壁以外']
 
 function replaceSection(
   project: Project,
@@ -240,12 +245,44 @@ function SpliceMethodSelect({
 function CoverConditionField({
   section,
   update,
+  locale,
 }: {
   section: Section
   update(updater: (section: Section) => Section): void
+  locale: Locale
 }) {
   return (
     <div className={styles.compoundField}>
+      {section.kind === '耐震壁' ? (
+        <select
+          className={styles.select}
+          value={section.wallClass ?? '耐力壁'}
+          aria-label={`${sectionMarkLabel(section)} ${t(locale, 'section.wallClass')}`}
+          onChange={(event) => {
+            const wallClass = event.currentTarget.value as WallClass
+            update((current) => {
+              if (current.kind !== '耐震壁') return current
+              if (wallClass === '耐力壁') {
+                const next = { ...current }
+                delete next.wallClass
+                return next
+              }
+              return { ...current, wallClass }
+            })
+          }}
+        >
+          {wallClasses.map((wallClass) => (
+            <option key={wallClass} value={wallClass}>
+              {t(
+                locale,
+                wallClass === '耐力壁'
+                  ? 'section.wallClass.strength'
+                  : 'section.wallClass.nonStrength',
+              )}
+            </option>
+          ))}
+        </select>
+      ) : null}
       {/* 表5.3.6 の「スラブ、耐力壁以外の壁」行は仕上げの有無だけで分かれ、
           屋内・屋外の区別を持たない — 効かないつまみを置かない (ADR-028)。 */}
       {section.kind === '床板' ? null : (
@@ -903,6 +940,7 @@ function GirderDetailField({
 
 export function SectionTable() {
   const project = useAppStore(({ project }) => project)
+  const locale = useAppStore(({ locale }) => locale)
   const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
   const selectMember = useAppStore(({ selectMember }) => selectMember)
@@ -1079,6 +1117,7 @@ export function SectionTable() {
                   <CoverConditionField
                     section={section}
                     update={updateCurrent}
+                    locale={locale}
                   />
                 </td>
               </tr>
