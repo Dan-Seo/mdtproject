@@ -73,6 +73,23 @@ function activateMember(
   select()
 }
 
+function wallExtentLabel(member: Member): string | null {
+  const extent = member.wallExtent
+  if (extent === undefined) return null
+
+  const labels: string[] = []
+  if (extent.vertical !== undefined) {
+    labels.push(
+      `${extent.vertical.anchor === '下端' ? '腰壁' : '下り壁'} H=${extent.vertical.heightMm}`,
+    )
+  }
+  if (extent.horizontal !== undefined) {
+    labels.push(`袖壁 L=${extent.horizontal.lengthMm}`)
+  }
+
+  return labels.length === 0 ? null : labels.join(' / ')
+}
+
 export function StoryTabs() {
   const stories = useAppStore(({ project }) => project.stories)
   const activeStoryId = useAppStore(({ activeStoryId }) => activeStoryId)
@@ -229,10 +246,33 @@ function PlanMember({
       axis === 'X' ? ix + 1 : ix,
       axis === 'Y' ? iy + 1 : iy,
     )
-    const x1 = transform.x(start.x)
-    const y1 = transform.y(start.y)
-    const x2 = transform.x(end.x)
-    const y2 = transform.y(end.y)
+    const extent = member.wallExtent
+    const range =
+      extent?.horizontal === undefined
+        ? null
+        : (() => {
+            try {
+              const span = wallSpan(project, member)
+              const startAlong =
+                (axis === 'X' ? start.x : start.y) +
+                span.startFaceOffsetMm +
+                (span.originOffsetMm?.along ?? 0)
+              return {
+                start: startAlong,
+                end: startAlong + span.clearLengthMm,
+              }
+            } catch {
+              // 断面や受け材が未入力でも、平面の既存の全スパン表示は残す。
+              return null
+            }
+          })()
+    const startAlong = range?.start ?? (axis === 'X' ? start.x : start.y)
+    const endAlong = range?.end ?? (axis === 'X' ? end.x : end.y)
+    const x1 = transform.x(axis === 'X' ? startAlong : start.x)
+    const y1 = transform.y(axis === 'X' ? start.y : startAlong)
+    const x2 = transform.x(axis === 'X' ? endAlong : end.x)
+    const y2 = transform.y(axis === 'X' ? end.y : endAlong)
+    const extentLabel = wallExtentLabel(member)
 
     // 壁は大梁と同じ辺に立つ。通り芯の上に重ねて1本で描くと、大梁のヒット領域が
     // 上に載って**壁を選べなくなる**（実ブラウザ検証で判明）。平面図の慣用どおり
@@ -288,6 +328,17 @@ function PlanMember({
         >
           {section.mark}
         </text>
+        {extentLabel !== null && (
+          <text
+            className={styles.memberLabel}
+            data-testid="wall-extent-label"
+            x={(x1 + x2) / 2 + (axis === 'Y' ? faceOffset + 12 : 0)}
+            y={(y1 + y2) / 2 + (axis === 'X' ? faceOffset + 28 : 0)}
+            textAnchor="middle"
+          >
+            {extentLabel}
+          </text>
+        )}
       </g>
     )
   }

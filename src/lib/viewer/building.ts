@@ -199,14 +199,21 @@ export function buildingLayout(
       const position = member.position
       const start = gridPoint(project.grid, position.ix, position.iy)
       const span = wallSpan(project, member)
+      const rangeOrigin = span.originOffsetMm ?? { along: 0, height: 0 }
       const alongCenter =
-        span.startFaceOffsetMm + span.clearLengthMm / 2
-      const centerY = elevation + span.clearHeightMm / 2
+        span.startFaceOffsetMm + rangeOrigin.along + span.clearLengthMm / 2
+      const centerY = elevation + rangeOrigin.height + span.clearHeightMm / 2
       // 壁の局所 x は通り芯の向き（X通りなら世界の x ＝ 軸0、Y通りなら
       // 世界の z ＝ 軸2）、局所 y は高さ ＝ 軸1 である。
       const alongOrigin =
-        (position.axis === 'X' ? start.x : start.y) + span.startFaceOffsetMm
-      const holes = boxHoles(member.openings ?? [], alongOrigin, elevation)
+        (position.axis === 'X' ? start.x : start.y) +
+        span.startFaceOffsetMm +
+        rangeOrigin.along
+      const holes = boxHoles(
+        member.openings ?? [],
+        alongOrigin,
+        elevation + rangeOrigin.height,
+      )
       box =
         position.axis === 'X'
           ? {
@@ -343,6 +350,7 @@ export function buildingLayout(
         member.position.iy,
       )
       const span = wallSpan(project, member)
+      const rangeOrigin = span.originOffsetMm ?? { along: 0, height: 0 }
       openings = member.openings ?? []
       // 壁のローカル原点は「始端の柱内側面・壁下端・厚さの手前面」。壁下端は
       // 階の床板上面＝階の基準標高そのものである（大梁と違い天井から下げない）。
@@ -351,14 +359,14 @@ export function buildingLayout(
       worldPoint =
         member.position.axis === 'X'
           ? ([x, y, z]) => [
-              start.x + span.startFaceOffsetMm + x,
-              base + y,
+              start.x + span.startFaceOffsetMm + rangeOrigin.along + x,
+              base + rangeOrigin.height + y,
               start.y - section.thickness / 2 + z,
             ]
           : ([x, y, z]) => [
               start.x - section.thickness / 2 + z,
-              base + y,
-              start.y + span.startFaceOffsetMm + x,
+              base + rangeOrigin.height + y,
+              start.y + span.startFaceOffsetMm + rangeOrigin.along + x,
             ]
     }
 

@@ -22,7 +22,10 @@
     {
       "step": 2,
       "name": "wall-extent-viewer-plan",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T21:52:37+0900",
+      "completed_at": "2026-08-26T22:02:00+0900",
+      "summary": "Updated building/member wall geometry and range-local openings/rebar transforms; PlanEditor now draws horizontal extents and labels vertical extents. Added geometry, building-layout, and PlanEditor regression tests."
     },
     {
       "step": 3,

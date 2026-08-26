@@ -35,6 +35,7 @@ import {
   lerpCameraFit,
   boxHoles,
   carveBox,
+  clipSegments,
   rebarBatches,
   rebarPlacements,
   rebarRadius,
@@ -1279,6 +1280,68 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
     const area = pieces.reduce((sum, { size }) => sum + size[0] * size[1], 0)
 
     expect(area).toBe(5200 * 3450 - 1800 * 1200 - 1800 * 600)
+  })
+
+  it('uses the extent origin for a range-local opening box', () => {
+    const rangeOpening: Opening = {
+      id: 'range-op',
+      xMm: 300,
+      yMm: 200,
+      widthMm: 800,
+      heightMm: 400,
+    }
+    const rangeOrigin = { xMm: 2800, yMm: 2550 }
+    const box = {
+      center: [4000, 3000, 100] as Point3,
+      size: [2400, 900, 200] as Point3,
+    }
+
+    const pieces = carveBox(
+      box,
+      [0, 1],
+      boxHoles([rangeOpening], rangeOrigin.xMm, rangeOrigin.yMm),
+    )
+
+    expect(pieces).toHaveLength(4)
+    const area = pieces.reduce(
+      (sum, { size }) => sum + size[0] * size[1],
+      0,
+    )
+    expect(area).toBe(2400 * 900 - 800 * 400)
+    expect(
+      pieces.every(({ center, size }) => {
+        const minX = center[0] - size[0] / 2
+        const maxX = center[0] + size[0] / 2
+        const minY = center[1] - size[1] / 2
+        const maxY = center[1] + size[1] / 2
+        return !(minX < 3100 && maxX > 3900 && minY < 3150 && maxY > 2750)
+      }),
+    ).toBe(true)
+  })
+
+  it('clips an extent-local bar against an extent-local opening', () => {
+    const rangeOpening: Opening = {
+      id: 'range-op',
+      xMm: 800,
+      yMm: 200,
+      widthMm: 800,
+      heightMm: 500,
+    }
+    const segments = clipSegments(
+      [
+        {
+          from: [0, 450, 0],
+          to: [2400, 450, 0],
+          radius: 1,
+        },
+      ],
+      [rangeOpening],
+    )
+
+    expect(segments.map(({ from, to }) => [from[0], to[0]])).toEqual([
+      [0, 800],
+      [1600, 2400],
+    ])
   })
 })
 
