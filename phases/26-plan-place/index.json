@@ -1,0 +1,22 @@
+{
+  "project": "Kijun",
+  "phase": "26-plan-place",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr038-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "placement-domain-guard",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "plan-place-delete-ui",
+      "status": "pending"
+    }
+  ]
+}
