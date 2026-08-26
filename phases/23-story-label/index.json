@@ -24,7 +24,7 @@
       "name": "plan-import-auto-select",
       "status": "completed",
       "started_at": "2026-08-26T16:28:08+0900",
-      "completed_at": "2026-08-26T16:36:00+0900",
+      "completed_at": "2026-08-26T16:38:43+0900",
       "summary": "PlanImport를 기본 미선택으로 바꾸고 제목의 階 키에 따른 정확 일치 자동 선택·근거 표시·stale Story 리셋을 구현했으며 전체 게이트를 통과했다.",
       "report": "phases/23-story-label/step2-report.json"
     },
