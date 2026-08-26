@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "untranscribed-zero-length",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T15:50:17+0900",
+      "completed_at": "2026-08-26T15:54:55+0900",
+      "summary": "未転記の設計長さ0行を保存・再読込できるようにし、壁・床板の算定では数量に出さず、平面ペインに未転記表示を追加した"
     }
   ],
   "created_at": "2026-08-26T15:05:00+0900"

@@ -1,0 +1,45 @@
+{
+  "step": 3,
+  "name": "untranscribed-zero-length",
+  "status": "completed",
+  "reproduction": {
+    "test": "npx vitest run src/domain/model/project.test.ts src/domain/rebar/wall.test.ts src/domain/rebar/slab.test.ts src/components/plan/PlanEditor.test.tsx -t \"zero-length|untranscribed zero|untranscribed\"",
+    "beforeFixFailed": true,
+    "observed": [
+      "serializeProject→deserializeProject が lengthMm: 0 を Project shape mismatch で拒否した",
+      "壁・床板が lengthMm: 0 の 開口補強筋 Rebar を生成した",
+      "平面ペインに 未転記 表示がなかった"
+    ],
+    "afterFixPassed": true
+  },
+  "changedFiles": [
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/domain/rebar/wall.ts",
+    "src/domain/rebar/wall.test.ts",
+    "src/domain/rebar/slab.ts",
+    "src/domain/rebar/slab.test.ts",
+    "src/components/plan/PlanEditor.tsx",
+    "src/components/plan/PlanEditor.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "phases/22-opening-reinforcement/index.json",
+    "phases/22-opening-reinforcement/step3-report.json"
+  ],
+  "summary": "設計長さ0を未転記状態として保存可能にし、壁・床板の算定から除外し、ja/koの平面入力に未転記告知を追加した。",
+  "gates": {
+    "npm run test": {
+      "status": "passed",
+      "testFiles": 82,
+      "tests": 1496
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "warnings": 1,
+      "warning": "既存 src/app/api/oncall/alert/route.test.ts の _omitted 未使用警告"
+    }
+  }
+}
