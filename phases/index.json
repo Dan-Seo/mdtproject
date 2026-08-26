@@ -108,6 +108,10 @@
       "dir": "22-opening-reinforcement",
       "status": "completed",
       "completed_at": "2026-08-26T15:58:47+0900"
+    },
+    {
+      "dir": "23-story-label",
+      "status": "pending"
     }
   ]
 }

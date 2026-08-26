@@ -1,0 +1,28 @@
+{
+  "project": "Kijun",
+  "phase": "23-story-label",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr035-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "story-key-helpers",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "plan-import-auto-select",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "filter-fallback-ledger",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-26T16:10:00+0900"
+}
