@@ -17,7 +17,7 @@
       "status": "completed",
       "summary": "大梁の左右非対称4行をgirderMainAsymmetricへ隔離し、G51のカットオフ2500を候補へ反映。既存対称経路とStep 2前の反映禁止を維持した。",
       "started_at": "2026-08-26T14:11:18+0900",
-      "completed_at": "2026-08-26T14:20:00+0900",
+      "completed_at": "2026-08-26T14:23:34+0900",
       "report": "phases/21-asym-import/step1-report.json"
     },
     {
