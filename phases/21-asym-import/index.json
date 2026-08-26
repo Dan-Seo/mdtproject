@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr033-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "summary": "girderRun과 p14 원시 사실은 확인됐지만 framing-plan 파서의 compact()가 raw Grid 라벨을 정규화하므로 ADR-033의 무정규화 전제가 반증됨",
+      "started_at": "2026-08-26T13:39:00+0900"
     },
     {
       "step": 1,
@@ -18,5 +20,6 @@
       "name": "import-apply-and-editor",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T13:39:00+0900"
 }

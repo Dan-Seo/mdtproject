@@ -1,0 +1,101 @@
+{
+  "checks": [
+    {
+      "id": "girder-run-start-order",
+      "verdict": "upheld",
+      "evidence": [
+        {
+          "path": "src/domain/model/project.ts:757-839",
+          "finding": "girderRun은 X 방향에서 ix, Y 방향에서 iy를 기준으로 부재를 오름차순 정렬하고, 정렬된 members[0]으로 spans[0]을 만들며 누적 루프의 첫 memberOffsetsMm을 0으로 둔다."
+        },
+        {
+          "command": "npx tsx -e <reversed-member-array-and-negative-index-check>",
+          "result": "배열을 역순으로 바꿔도 [Y ix0/iy0, Y ix0/iy1] 순서와 offsets [0,6000]가 유지됐다. iy=-1 입력은 RangeError: Grid point index out of range: (0, -1)로 거부됐다."
+        }
+      ]
+    },
+    {
+      "id": "grid-label-preservation",
+      "verdict": "refuted",
+      "evidence": [
+        {
+          "path": "src/lib/import/framing-plan/parse.ts:120-154,203-205",
+          "finding": "축 라벨은 splitAxisLabels에서 compact(item.str)로 만든 text 또는 verticalRuns의 compact 결과에서 candidate label이 된다."
+        },
+        {
+          "path": "src/lib/import/runs.ts:91-95",
+          "finding": "compact는 NFKC 정규화와 공백 제거를 수행하고 normalized는 하이픈도 치환한다."
+        },
+        {
+          "path": "src/lib/import/framing-plan/apply.ts:58-63",
+          "finding": "취입부는 candidate label을 xLabels/yLabels에 그대로 복사하지만, 파서 단계의 정규화 이후 값이다."
+        }
+      ],
+      "counterexample": {
+        "rawTextItems": ["X 1", "X2"],
+        "parsedGridLabels": ["X1", "X2"],
+        "issues": [],
+        "result": "파서가 raw TextItem의 공백을 제거해 다른 문자열을 Grid 라벨로 산출한다. 따라서 ‘어디에서도 정규화·개명하지 않는다’는 전제는 문자 그대로 거짓이다."
+      }
+    },
+    {
+      "id": "yokohama-p14-raw-facts",
+      "verdict": "upheld",
+      "evidence": {
+        "method": "recoverRows로 원시 TextItem을 행/세그먼트로 재구성하고, ‘位置’ 헤더가 있는 행의 세그먼트를 직접 대조했다.",
+        "positionRows": {
+          "yokohama-p13.json": [
+            ["外端", "中央", "内端", "内端・中央", "外端", "外端", "中央", "内端", "端部", "中央", "全断面", "全断面", "外端", "中央", "内端", "全断面", "全断面"],
+            ["全断面", "全断面", "全断面", "全断面"]
+          ],
+          "yokohama-p14.json": [
+            ["外端", "中央", "内端", "Y3端", "中央", "Y4端", "Y3端", "中央", "Y4端", "Y4端", "中央", "Y5端", "全断面", "Y2端", "中央", "Y3端", "全断面"],
+            ["外端", "中央", "内端", "X2端", "中央", "X3端", "全断面", "Y2端", "中央", "Y3端"]
+          ]
+        },
+        "g51RoofCutoff": {
+          "positionHeaderCentersPt": {
+            "外端": 257.49,
+            "中央": 375.57,
+            "内端": 493.71
+          },
+          "cutoffToken": {
+            "text": "[2500]",
+            "centerPt": 493.707,
+            "rowY": 294.54
+          },
+          "finding": "[2500]의 중심이 G51 R階 위치 헤더의 内端 중심과 일치하고, G51 R階의 내端 열에만 있다."
+        }
+      }
+    },
+    {
+      "id": "axis-name-suffix",
+      "verdict": "upheld",
+      "evidence": {
+        "p14UniqueLabels": ["外端", "中央", "内端", "Y3端", "Y4端", "Y5端", "全断面", "Y2端", "X2端", "X3端"],
+        "suffixResults": [
+          { "label": "Y3端", "base": "Y3", "axisShaped": true },
+          { "label": "Y4端", "base": "Y4", "axisShaped": true },
+          { "label": "Y5端", "base": "Y5", "axisShaped": true },
+          { "label": "Y2端", "base": "Y2", "axisShaped": true },
+          { "label": "X2端", "base": "X2", "axisShaped": true },
+          { "label": "X3端", "base": "X3", "axisShaped": true },
+          { "label": "外端", "base": "外", "axisShaped": false },
+          { "label": "内端", "base": "内", "axisShaped": false },
+          { "label": "中央", "base": null, "axisShaped": false },
+          { "label": "全断面", "base": null, "axisShaped": false }
+        ],
+        "p13BoundaryLabels": ["内端・中央", "端部", "全断面"],
+        "finding": "末尾 端 제거는 Y2/Y3/Y4/Y5/X2/X3에는 축명 후보를 만들지만 外端·内端에는 外·内를 만든다. 따라서 suffix 제거만으로는 충분하지 않고, ADR-033이 요구한 Grid의 같은 축 라벨 정확 일치가 비축명 라벨을 구분하는 조건이다."
+      }
+    }
+  ],
+  "validation": [
+    "npx vitest run tests/plan-import/parse.test.ts tests/section-import/parse.test.ts src/lib/import/framing-plan/apply.test.ts: 3 files, 71 tests passed",
+    "npm test: 82 files, 1469 tests passed",
+    "npm run typecheck: passed",
+    "npm run lint: passed with the existing warning src/app/api/oncall/alert/route.test.ts:161"
+  ],
+  "verdict": "refuted",
+  "summary": "girderRun의 오름차순 始端 규약, p13·p14 원시 위치 라벨, G51 R階의 [2500] 内端 배치는 확인됐다. 그러나 framing-plan 파서가 compact()로 raw 라벨을 정규화하므로 Grid 라벨이 어디에서도 정규화·개명되지 않는다는 ADR-033 전제는 반증됐다. 대상 코드와 테스트 픽스처는 수정하지 않았다."
+}
