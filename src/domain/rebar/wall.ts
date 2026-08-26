@@ -32,6 +32,27 @@ export interface WallRebarInput {
   span: WallSpan
 }
 
+interface AnchorageEnds {
+  start: boolean
+  end: boolean
+}
+
+function anchorageEnds(role: WallBarInput['role'], span: WallSpan): AnchorageEnds {
+  const freeEnd =
+    role === '縦筋' ? span.freeEnds?.vertical : span.freeEnds?.horizontal
+
+  return {
+    start:
+      role === '縦筋'
+        ? freeEnd !== '下端'
+        : freeEnd !== '始端',
+    end:
+      role === '縦筋'
+        ? freeEnd !== '上端'
+        : freeEnd !== '終端',
+  }
+}
+
 function barDiameter(size: BarSize): number {
   const diameter = Number(size.replace(/^D/, ''))
 
@@ -261,6 +282,10 @@ function buildWallBars(input: WallBarInput): Rebar[] {
 
   const diameter = barDiameter(size)
   const anchorageMm = millimetres(anchorageRule, diameter)
+  const anchorage = anchorageEnds(role, span)
+  const startAnchorageMm = anchorage.start ? anchorageMm : 0
+  const endAnchorageMm = anchorage.end ? anchorageMm : 0
+  const anchorageCount = Number(anchorage.start) + Number(anchorage.end)
   const tableLapMm = millimetres(tableLapRule, diameter)
   const lapCandidates = [
     tableLapMm,
@@ -303,26 +328,48 @@ function buildWallBars(input: WallBarInput): Rebar[] {
   // 3D に描かれる経路。継手は位置が決まらないので描かない（表5.3.3 が原文で画像）。
   // 開口の欠けもここには現れない — 欠ける位置は本ごとに違うので、表示部が
   // `Member.openings` で切る (ADR-029)。
-  const pathLengthMm = bodyLengthMm + 2 * anchorageMm
+  const pathLengthMm = bodyLengthMm + startAnchorageMm + endAnchorageMm
 
   const anchorageTarget = role === '縦筋' ? '上下の大梁・床板' : '両側の柱'
+  const anchoredSides = [
+    anchorage.start ? (role === '縦筋' ? '下端' : '始端') : undefined,
+    anchorage.end ? (role === '縦筋' ? '上端' : '終端') : undefined,
+  ].filter((side): side is string => side !== undefined)
+  const freeSides = [
+    !anchorage.start ? (role === '縦筋' ? '下端' : '始端') : undefined,
+    !anchorage.end ? (role === '縦筋' ? '上端' : '終端') : undefined,
+  ].filter((side): side is string => side !== undefined)
+  const anchorageTerm =
+    anchorageCount === 0
+      ? '定着なし'
+      : `定着 L1 ${anchorageRule.value}d(${anchorageMm}) × ${anchorageCount}回 ` +
+        `（${anchoredSides.join('・')}接続側の${anchorageTarget}へ定着）`
+  const freeEndTerm =
+    freeSides.length === 0
+      ? ''
+      : ` ／ ${freeSides.join('・')}は自由端 — 定着なし（2（５）壁1)① ` +
+        `接続する他の部分に定着）`
   const layerTerm =
     section.layers === 1 ? 'シングル配筋 ×1' : `ダブル配筋 ×${section.layers}`
   const roleKey = role === '縦筋' ? 'vertical' : 'horizontal'
 
   const zones: RebarZone[] = [
-    {
-      kind: '定着',
-      ruleKey: anchorageRule.key,
-      pathFromMm: 0,
-      pathToMm: anchorageMm,
-    },
-    {
-      kind: '定着',
-      ruleKey: anchorageRule.key,
-      pathFromMm: pathLengthMm - anchorageMm,
-      pathToMm: pathLengthMm,
-    },
+    ...(anchorage.start
+      ? [{
+          kind: '定着' as const,
+          ruleKey: anchorageRule.key,
+          pathFromMm: 0,
+          pathToMm: anchorageMm,
+        }]
+      : []),
+    ...(anchorage.end
+      ? [{
+          kind: '定着' as const,
+          ruleKey: anchorageRule.key,
+          pathFromMm: pathLengthMm - anchorageMm,
+          pathToMm: pathLengthMm,
+        }]
+      : []),
   ]
 
   // 代表1本は繰り返し軸の原点に置く — 実際の位置は placement が与える。
@@ -331,17 +378,18 @@ function buildWallBars(input: WallBarInput): Rebar[] {
   const points: [number, number, number][] =
     role === '縦筋'
       ? [
-          [0, -anchorageMm, z],
-          [0, bodyLengthMm + anchorageMm, z],
+          [0, -startAnchorageMm, z],
+          [0, bodyLengthMm + endAnchorageMm, z],
         ]
       : [
-          [-anchorageMm, 0, z],
-          [bodyLengthMm + anchorageMm, 0, z],
+          [-startAnchorageMm, 0, z],
+          [bodyLengthMm + endAnchorageMm, 0, z],
         ]
 
   return deduction.groups.map(({ deductionMm, count: groupCount }) => {
     // 1通則4) が継手箇所数を求める「計測・計算した鉄筋の長さ」は欠除後の長さだ。
-    const measuredLengthMm = bodyLengthMm - deductionMm + 2 * anchorageMm
+    const measuredLengthMm =
+      bodyLengthMm - deductionMm + startAnchorageMm + endAnchorageMm
 
     const splice = resolveWallSplice({
       role,
@@ -353,6 +401,7 @@ function buildWallBars(input: WallBarInput): Rebar[] {
       tableLapRule,
       wallLapMinimumRule,
       spliceFactorRule,
+      heightRestricted: role === '縦筋' && span.freeEnds?.vertical !== undefined,
       pack,
     })
 
@@ -410,8 +459,8 @@ function buildWallBars(input: WallBarInput): Rebar[] {
         ...splice.rules,
       ],
       formula:
-        `設計長さ ＝ ${bodyLabel} ${bodyLengthMm}${deductionTerm} ＋ 定着 L1 ` +
-        `${anchorageRule.value}d(${anchorageMm}) × 2（両端 — ${anchorageTarget}へ定着）` +
+        `設計長さ ＝ ${bodyLabel} ${bodyLengthMm}${deductionTerm} ＋ ${anchorageTerm}` +
+        `${freeEndTerm}` +
         ` ＋ 継手 ${splice.formula} ＝ ${designLengthMm} ／ ` +
         `本数 ＝ ⌈${distributionLabel} ${distributionOverMm} ÷ ピッチ ${pitchMm}⌉ ` +
         `＋ ${distributionAdditionRule.value}（数量積算基準 1通則7)）＝ ${perLayerCount}` +
@@ -433,6 +482,8 @@ interface WallSpliceInput {
   lapMm: number
   /** この群が開口部を横切って断たれているか (2（５）壁1)② 但書) */
   deducted: boolean
+  /** 高さ範囲を指定した部分高さ壁。縦筋は階を貫通しないので継手0か所と読む。 */
+  heightRestricted: boolean
   tableLapRule: RuleHit
   wallLapMinimumRule: RuleHit | undefined
   spliceFactorRule: RuleHit
@@ -452,6 +503,7 @@ function resolveWallSplice(input: WallSpliceInput): RebarSplice {
     measuredLengthMm,
     lapMm,
     deducted,
+    heightRestricted,
     tableLapRule,
     wallLapMinimumRule,
     spliceFactorRule,
@@ -462,14 +514,16 @@ function resolveWallSplice(input: WallSpliceInput): RebarSplice {
   let countPerBar: number
   let countFormula: string
 
-  if (role === '縦筋' && deducted) {
+  if (role === '縦筋' && (deducted || heightRestricted)) {
     // 開口を横切る縦筋は階高全体にわたらず、開口部腰壁・垂れ壁の縦筋になる。
     // 同じ項の但書が「開口部腰壁、手すり壁等の継手はないものとする」と定める。
     countRule = lookupRule(pack, 'measure.splice.wall.opening', {})
     countPerBar = spliceCount(countRule)
-    countFormula =
-      `${countPerBar}か所（数量積算基準 2（５）壁1)② 但書 — ` +
-      `開口部腰壁、手すり壁等の継手はないものとする）`
+    countFormula = heightRestricted
+      ? `${countPerBar}か所（ADR-037の読み — 部分高さ壁の縦筋は階を貫通しないため、` +
+        `2（５）壁1)② 但書の開口部腰壁等と同じく継手なし）`
+      : `${countPerBar}か所（数量積算基準 2（５）壁1)② 但書 — ` +
+        `開口部腰壁、手すり壁等の継手はないものとする）`
   } else if (role === '縦筋') {
     countRule = lookupRule(pack, 'measure.splice.wall.vertical', {})
     countPerBar = spliceCount(countRule)

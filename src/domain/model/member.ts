@@ -416,6 +416,22 @@ export type WallPosition = GirderPosition
 export type SlabPosition = ColumnPosition
 
 /**
+ * 雑壁（腰壁・下り壁・袖壁）の内法範囲。設計図書からの部材単位の転記であり、
+ * 省略した軸は全内法を意味する。範囲を断面に置かないのは、同じ符号でも部材ごと
+ * に高さ・長さが違い得るためである (ADR-037)。
+ */
+export interface WallExtent {
+  vertical?: {
+    anchor: '下端' | '上端'
+    heightMm: number
+  }
+  horizontal?: {
+    anchor: '始端' | '終端'
+    lengthMm: number
+  }
+}
+
+/**
  * 開口部 1か所 (数量積算基準 1通則8))。
  *
  * 断面ではなく **部材** に付く。同じ符号の壁が何枚も建つのに、窓はその1枚に
@@ -461,6 +477,8 @@ export interface Member {
    * 「未入力」ではない — 製品は開口の有無を推定しないので、内訳書は開口補強筋を
    * 計上していないことを常時告知する (R14)。柱・大梁は受け取らない：同項が
    * 挙げるのは窓・出入口等で、それが開くのは壁と床板だからである。
-   */
+  */
   openings?: Opening[]
+  /** 設計図書から転記した壁の内法範囲。未指定の軸は全内法 (ADR-037)。 */
+  wallExtent?: WallExtent
 }

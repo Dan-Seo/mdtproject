@@ -1,0 +1,27 @@
+{
+  "phase": "25-wall-extent",
+  "step": 1,
+  "status": "completed",
+  "goldenCases": {
+    "wall-extent-waist": "vertical anchor 下端: 縦筋は範囲高さ＋下端側の定着1回、内法長さに割付し、部分高さの縦筋継手は0か所。横筋は範囲高さを割付対象にし、長さ方向の両端定着と1通則4)の継手を適用した。",
+    "wall-extent-sleeve": "horizontal anchor 始端: 横筋は範囲長さ＋始端側の定着1回、内法高さに割付。縦筋は範囲長さに割付し、全高なので現行の各階1か所継手を維持した。",
+    "wall-extent-none-regression": "wallExtentなしは従来の全内法寸法・両端定着・継手・数量を維持した。",
+    "wall-extent-height-too-large": "heightMmが内法高さを超える入力はclampせずMemberUnsupportedError('寸法不成立')で拒否した。"
+  },
+  "freeEndRule": "vertical anchor 下端は上端が自由端、anchor 上端は下端が自由端。horizontal anchor 始端は終端が自由端、anchor 終端は始端が自由端。自由端側の定着は0回で、算出式に2（５）壁1)①の接続側定着と自由端を明記した。",
+  "changedFiles": [
+    "tests/golden/fixtures/quantity-r5-ch3.json",
+    "tests/golden/quantity-measurement.test.ts",
+    "src/domain/model/member.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/domain/rebar/wall.ts",
+    "phases/25-wall-extent/index.json",
+    "phases/25-wall-extent/step1-report.json"
+  ],
+  "gates": {
+    "npm run test": "passed — 83 files, 1535 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed — existing warning in src/app/api/oncall/alert/route.test.ts:161"
+  }
+}
