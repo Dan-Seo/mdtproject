@@ -1,0 +1,19 @@
+{
+  "step": 2,
+  "name": "section-table-input-ledger",
+  "status": "completed",
+  "premise": "Step 1 completed",
+  "ui": "기존 かぶり条件 셀 안에 ja·ko locale 기반 壁区分 select를 추가했다. 기본값 耐力壁은 wallClass 키를 저장하지 않고, 耐力壁以外 선택만 optional wallClass를 저장한다.",
+  "importPreservation": "기존 耐震壁에 wallClass: 耐力壁以外을 둔 뒤 断面リスト 후보를 반영해도 해당 값이 유지되는 컴포넌트 회귀 테스트를 추가했다. 파서 후보에는 wallClass를 추가하지 않았다.",
+  "ledgerUpdates": [
+    "docs/MILESTONES.md: 雑壁의 区分(wallClass)·かぶり·40d 하한을 phase 24 완료로 기록하고 부분 형상 잔여를 명시",
+    "AGENTS.md·CLAUDE.md: 남은 항목을 雑壁 형상(부분 높이·袖壁)·壁式構造の壁로 동기화",
+    "docs/RISKS.md: R2에 耐力壁以外의 40d 하한 미적용이 제품의 읽기임을 기록"
+  ],
+  "gates": {
+    "npm run test": "passed — 83 files, 1520 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed — 0 errors, 1 pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+  },
+  "summary": "SectionTable에 wallClass 입력과 locale 라벨을 추가하고, 断面リスト 취입 시 기존 wallClass 보존을 테스트로 고정했으며, phase 대장을 갱신했다."
+}

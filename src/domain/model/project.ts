@@ -1046,6 +1046,11 @@ const SECTION_FIELDS: Record<
   },
   耐震壁: {
     thickness: isFiniteNumber,
+    // 雑壁 여부는 설계도서에서 사용자가 전사한 구분이다. optional은 기존
+    // 레코드의 생략을 耐力壁로 해석하기 위한 것이며, 다른 값을 조용히
+    // 통과시키면 cover/lap 분기가 정의되지 않은 채 계산된다 (ADR-036).
+    wallClass: (value) =>
+      value === undefined || value === '耐力壁' || value === '耐力壁以外',
     // 層数はそのまま本数の倍率だ。欠けると縦筋・横筋の本数が NaN になる。
     layers: isFiniteNumber,
     vertical: isBarRow,

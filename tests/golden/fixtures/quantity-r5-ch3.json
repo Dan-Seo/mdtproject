@@ -866,6 +866,83 @@
     ]
   },
 
+  "wallClass": {
+    "clause": "標準仕様書 5.3.4(3)(ｱ) — 耐力壁の重ね継手長さは表5.3.2の値と40dの大きい方",
+    "shared": {
+      "mark": "W-class",
+      "thicknessMm": 200,
+      "fc": 24,
+      "grade": "SD295",
+      "exposure": "屋内",
+      "finish": "仕上げあり",
+      "spliceMethod": "重ね継手",
+      "layers": 1,
+      "vertical": { "size": "D13", "pitchMm": 200, "startOffsetMm": 0 },
+      "horizontal": { "size": "D13", "pitchMm": 200, "startOffsetMm": 0 },
+      "span": {
+        "axis": "X",
+        "clearLengthMm": 5200,
+        "clearHeightMm": 3450,
+        "startFaceOffsetMm": 400,
+        "endFaceOffsetMm": 400,
+        "girderDepthAboveMm": 750
+      },
+      "unitMassKgPerM": { "D13": 1 }
+    },
+    "cases": [
+      {
+        "id": "wall-class-strength-wall",
+        "wallClass": "耐力壁",
+        "expected": {
+          "lapMm": 520,
+          "coverMm": 30,
+          "vertical": {
+            "lengthMm": 4880,
+            "count": 27,
+            "designKg": 131.76,
+            "requiredKg": 137.0304,
+            "ruleKeys": ["cover.minimum", "lap.wall.minimum"]
+          },
+          "horizontal": {
+            "lengthMm": 6630,
+            "count": 19,
+            "designKg": 125.97,
+            "requiredKg": 131.0088,
+            "ruleKeys": ["cover.minimum", "lap.wall.minimum"]
+          },
+          "totalDesignKg": 257.73,
+          "totalRequiredKg": 268.0392
+        },
+        "handDerivation": "fc24・SD295・D13에서 표5.3.2 L1＝35d＝455mm, 耐力壁 하한 40d＝520mm이므로 継手長＝520mm. 定着 L1＝35d＝455mm, 縦筋 ＝ 3450＋2×455＋520＝4880mm, 本数＝⌈5200÷200⌉＋1＝27본, 質量＝4.880m×27×1.000＝131.760kg. 横筋은 내법 길이 5200＋2×455에 6000mm마다 1継手를 더해 6630mm, 本数＝⌈3450÷200⌉＋1＝19본, 質量＝6.630m×19×1.000＝125.970kg. 合計 設計数量＝257.730kg, 所要数量＝257.730×1.04＝268.0392kg"
+      },
+      {
+        "id": "wall-class-non-strength-wall",
+        "wallClass": "耐力壁以外",
+        "expected": {
+          "lapMm": 455,
+          "coverMm": 20,
+          "vertical": {
+            "lengthMm": 4815,
+            "count": 27,
+            "designKg": 130.005,
+            "requiredKg": 135.2052,
+            "ruleKeys": ["cover.minimum", "lap.L1"]
+          },
+          "horizontal": {
+            "lengthMm": 6565,
+            "count": 19,
+            "designKg": 124.735,
+            "requiredKg": 129.7244,
+            "ruleKeys": ["cover.minimum", "lap.L1"]
+          },
+          "totalDesignKg": 254.74,
+          "totalRequiredKg": 264.9296
+        },
+        "handDerivation": "같은 벽에서 wallClass만 耐力壁以外로 바꾼다. 40d 하한은 耐力壁限定이므로 継手長＝표5.3.2 L1＝35d＝455mm. 縦筋 ＝ 3450＋2×455＋455＝4815mm, 本数＝27본, 質量＝4.815m×27×1.000＝130.005kg. 横筋은 5200＋2×455＋455＝6565mm, 本数＝19본, 質量＝6.565m×19×1.000＝124.735kg. 合計 設計数量＝254.740kg, 所要数量＝254.740×1.04＝264.9296kg. ruleHits에는 cover.minimum과 lap.L1만 있고 lap.wall.minimum은 없다"
+      }
+    ]
+  },
+
   "openingReinforcement": {
     "clause": "1通則8) なお書き",
     "note": "期待値は 1通則8) の「開口補強筋は設計図書により計測・計算する」から、設計図書を転記した径・本数・設計長さだけで手計算した。製品は定着・余長・継手を加えない。質量は設計長さ×本数×利用者入力の単位質量、所要数量は設計数量×（1＋既存の躯体割増率）で、ルールパックに開口補強筋の数値行は追加しない。",

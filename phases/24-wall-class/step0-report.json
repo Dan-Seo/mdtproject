@@ -1,0 +1,62 @@
+{
+  "premises": [
+    {
+      "id": "cover-no-kg",
+      "status": "upheld",
+      "evidence": [
+        "mock cover values low=20mm/high=60mm",
+        "aggregate designKg low=527.4200000000001/high=527.4200000000001; rebar length/count are unchanged",
+        "3D layer offset changed (30 -> 70)",
+        "thin-wall double-layer guard: low cover passed, high cover failed (MemberUnsupportedError: 耐震壁 ダブル配筋 must fit the 壁厚: 1F-W1-X1Y1-Y (壁厚 100 ≤ 2×加工用かぶり 70))"
+      ]
+    },
+    {
+      "id": "lap-floor-unconditional",
+      "status": "upheld",
+      "evidence": [
+        "selected fc=24, grade=SD295, size=D13",
+        "lap.L1=35d < 40d lap.wall.minimum",
+        "vertical splice length=520mm equals the 40d-floor contribution",
+        "source={\"short\":\"標準仕様書\",\"doc\":\"公共建築工事標準仕様書（建築工事編）\",\"edition\":\"令和7年版（最終改定 令和7年5月12日）\",\"publisher\":\"国土交通省 大臣官房官庁営繕部\",\"url\":\"https://www.mlit.go.jp/gobuild/content/001888816.pdf\",\"section\":\"5.3.4(3)(ｱ)\",\"page\":28}; note=原文転写（転写者＝承認者・独立検討待ち R6）。「特記がなければ、耐力壁の鉄筋の重ね継手の長さは、40d（軽量コンクリートの場合は50d）又は表5.3.2 の重ね継手の長さのうちいずれか大きい値とする」"
+      ]
+    },
+    {
+      "id": "no-auto-classification",
+      "status": "upheld",
+      "evidence": [
+        "expected fixture notes classify W10, W15, EW15 as 雑壁",
+        "parsed candidates remain kind=耐震壁, 耐震壁, 耐震壁",
+        "candidate.raw contains no 備考 field; parser does not infer wallClass from free text"
+      ]
+    },
+    {
+      "id": "lookup-no-ambiguity",
+      "status": "upheld",
+      "evidence": [
+        "added two in-memory cover rows with memberKind=雑壁",
+        "耐震壁 query -> 耐震壁; 床板 query -> 床板",
+        "雑壁 query -> 雑壁; no ambiguous lookup or cross-hit"
+      ]
+    },
+    {
+      "id": "import-preserve",
+      "status": "upheld",
+      "evidence": [
+        "executed SectionImport applyCandidate through the real approval button",
+        "parsed wall fields changed while wallClass stayed 耐力壁以外",
+        "the branch spreads the existing section and only assigns parsed wall fields"
+      ]
+    },
+    {
+      "id": "fixture-coupling",
+      "status": "upheld",
+      "evidence": [
+        "in-memory fixture-only mutation appended memberKinds=雑壁",
+        "the same coverCases expansion used by spec-tables.test.ts calls lookupRule for the new member kind",
+        "one-sided mutation failed with Rule not found; fixture and rulepack must be changed together"
+      ]
+    }
+  ],
+  "verdict": "upheld",
+  "summary": "ADR-036의 여섯 전제가 현재 코드·픽스처에서 모두 유지되었다."
+}

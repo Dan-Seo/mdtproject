@@ -1,0 +1,39 @@
+{
+  "step": 1,
+  "name": "wall-class-domain-rulepack",
+  "status": "completed",
+  "premise": "Step 0 verdict upheld",
+  "goldenPair": {
+    "fc": 24,
+    "grade": "SD295",
+    "size": "D13",
+    "tableLap": "35d = 455mm",
+    "strengthWallLap": "40d = 520mm",
+    "nonStrengthWallLap": "表5.3.2 L1 = 455mm",
+    "designQuantityKg": {
+      "耐力壁": 257.73,
+      "耐力壁以外": 254.74
+    },
+    "requiredQuantityKg": {
+      "耐力壁": 268.0392,
+      "耐力壁以外": 264.9296
+    },
+    "handDerivation": "同一の壁条件で wallClass だけを変更。縦筋は耐力壁が 3450 + 2×455 + 520 = 4880mm、耐力壁以外が 3450 + 2×455 + 455 = 4815mm、各27本。横筋は耐力壁が 5200 + 2×455 + 520 = 6630mm、耐力壁以外が 5200 + 2×455 + 455 = 6565mm、各19本。単位質量は D13 を 1.000kg/m とする。耐力壁以外は cover.minimum の雑壁行を使い、lap.wall.minimum を ruleHits に含めない。"
+  },
+  "changedFiles": [
+    "src/domain/model/member.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/domain/rebar/wall.ts",
+    "src/rulepack/jp-mlit/cover.yaml",
+    "tests/golden/fixtures/quantity-r5-ch3.json",
+    "tests/golden/fixtures/spec-r7-ch5.json",
+    "tests/golden/quantity-measurement.test.ts"
+  ],
+  "gates": {
+    "npm run test": "passed — 83 files, 1518 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed — 0 errors, 1 warning (route.test.ts unused variable)"
+  },
+  "summary": "WallSection.wallClass optional区分、雑壁のcoverルール、耐力壁限定の継手下限分岐を実装し、同一条件の耐力壁／耐力壁以外ゴールデン対を追加した。"
+}

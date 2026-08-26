@@ -1855,7 +1855,8 @@
       "kind": "cover.minimum",
       "conditions": {
         "memberKinds": [
-          "床板"
+          "床板",
+          "雑壁"
         ],
         "soilContact": false,
         "finish": "仕上げあり"
@@ -1871,7 +1872,8 @@
       "kind": "cover.minimum",
       "conditions": {
         "memberKinds": [
-          "床板"
+          "床板",
+          "雑壁"
         ],
         "soilContact": false,
         "finish": "仕上げなし"
