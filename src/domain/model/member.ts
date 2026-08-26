@@ -423,6 +423,12 @@ export type SlabPosition = ColumnPosition
  *
  * 寸法は「建具類等開口部の**内法寸法**」— 同項がそう定める。
  */
+export interface OpeningReinforcement {
+  size: BarSize
+  count: number
+  lengthMm: number
+}
+
 export interface Opening {
   id: string
   /** 内法域の原点から開口までの局所 x (mm) */
@@ -433,6 +439,8 @@ export interface Opening {
   widthMm: number
   /** 局所 y 方向の内法寸法 (mm) */
   heightMm: number
+  /** 1通則8) なお書きに基づく設計図書転記の開口補強筋 */
+  reinforcements?: OpeningReinforcement[]
 }
 
 export interface Member {

@@ -303,6 +303,10 @@ describe('TakeoffPane', () => {
     expect(notice).toHaveTextContent('0.5㎡')
     expect(notice).toHaveTextContent('開口補強筋')
     expect(notice).toHaveTextContent('床板')
+    expect(notice).toHaveTextContent('設計図書')
+    expect(notice).toHaveTextContent('転記')
+    expect(notice).toHaveTextContent('未転記')
+    expect(notice).not.toHaveTextContent('計上していません')
   })
 
   it('does not show the 開口部 notice without 耐震壁 or 床板', () => {

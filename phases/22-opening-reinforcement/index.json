@@ -6,17 +6,33 @@
       "step": 0,
       "name": "verify-adr034-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T15:01:04+0900",
+      "summary": "Member와 Project 검증기가 openings를 耐震壁·床板으로 제한하지 않아 柱에도 openings가 deserialize되는 반례를 확인했다."
     },
     {
       "step": 1,
       "name": "domain-reinforcement-quantity",
-      "status": "pending"
+      "status": "completed",
+      "summary": "開口補強筋の転記モデル・壁/床板の数量算定・3D非表示とゴールデン/検証テストを追加し、全ゲートを通過。",
+      "started_at": "2026-08-26T15:08:28+0900",
+      "completed_at": "2026-08-26T15:29:19+0900"
     },
     {
       "step": 2,
       "name": "plan-editor-notice-ledger",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T15:29:20+0900",
+      "completed_at": "2026-08-26T15:39:39+0900",
+      "summary": "平面ペインに開口補強筋の設計図書転記入力を追加し、欠除・未転記の常時告知を更新、3D hidden 経路と R14 대장을 검증 완료"
+    },
+    {
+      "step": 3,
+      "name": "untranscribed-zero-length",
+      "status": "completed",
+      "started_at": "2026-08-26T15:50:17+0900",
+      "completed_at": "2026-08-26T15:54:55+0900",
+      "summary": "未転記の設計長さ0行を保存・再読込できるようにし、壁・床板の算定では数量に出さず、平面ペインに未転記表示を追加した"
     }
   ],
   "created_at": "2026-08-26T15:05:00+0900"

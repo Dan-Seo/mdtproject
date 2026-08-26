@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import type {
+  BarSize,
   ColumnSection,
   GirderSection,
   Member,
   SlabSection,
+  ShearBarSize,
+  WallSection,
 } from '../../src/domain/model/member'
 import {
   columnEnds,
@@ -13,6 +16,7 @@ import {
   slabRun,
   type Project,
   type Story,
+  type WallSpan,
 } from '../../src/domain/model/project'
 import { MemberUnsupportedError } from '../../src/domain/model/unsupported'
 import {
@@ -23,12 +27,18 @@ import {
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
 import { generateSlabRebar } from '../../src/domain/rebar/slab'
+import { generateWallRebar } from '../../src/domain/rebar/wall'
 import {
   distributionCount,
   intervalSpliceCount,
 } from '../../src/domain/rebar/measurement'
 import { openingDeduction } from '../../src/domain/rebar/opening'
 import { lookupRule } from '../../src/domain/rules/lookup'
+import {
+  rebarBatches,
+  rebarSegments,
+  roleToLayer,
+} from '../../src/lib/viewer/geometry'
 import { jpMlitRulePack } from '../../src/rulepack'
 import fixture from './fixtures/quantity-r5-ch3.json'
 
@@ -66,6 +76,29 @@ type AsymmetricGirderCase = {
 
 const asymmetricGirderCases =
   fixture.cases.asymmetricGirderMain as AsymmetricGirderCase[]
+
+type OpeningReinforcementCase = {
+  id: string
+  label: string
+  memberKind: '耐震壁' | '床板'
+  reinforcements: Array<{
+    size: BarSize
+    count: number
+    lengthMm: number
+  }>
+  unitMassKgPerM: Partial<Record<ShearBarSize, number>>
+  expected: Array<{
+    size: BarSize
+    count: number
+    lengthMm: number
+    designKg: number | null
+    requiredKg: number | null
+  }>
+  handDerivation: string
+}
+
+const openingReinforcementCases =
+  fixture.cases.openingReinforcement.cases as OpeningReinforcementCase[]
 
 const STORY: Story = { id: '1F', name: '1階', height: 4200 }
 
@@ -1166,5 +1199,177 @@ describe('1通則8) 開口部による鉄筋の欠除', () => {
         key.startsWith('measure.opening'),
       ),
     ).toHaveLength(1)
+  })
+})
+
+describe('1通則8) 開口補強筋の設計図書転記', () => {
+  function wallInput(entry: OpeningReinforcementCase) {
+    const section: WallSection = {
+      id: 'section-opening-wall',
+      kind: '耐震壁',
+      mark: 'W-opening',
+      thickness: 200,
+      fc: 24,
+      grade: 'SD345',
+      exposure: '屋内',
+      finish: '仕上げあり',
+      spliceMethod: '重ね継手',
+      layers: 1,
+      vertical: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+      horizontal: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+    }
+    const member: Member = {
+      id: '1F-W-opening-X1Y1-X',
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: STORY.id,
+      position: { axis: 'X', ix: 0, iy: 0 },
+      openings: [
+        {
+          id: `${entry.id}-opening`,
+          xMm: 1000,
+          yMm: 500,
+          widthMm: 1800,
+          heightMm: 1200,
+          reinforcements: entry.reinforcements,
+        },
+      ],
+    }
+    const project: Project = {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: `開口補強筋ゴールデン — ${entry.label}`,
+      grid: { xSpans: [6000], ySpans: [6000] },
+      stories: [STORY],
+      sections: [section],
+      members: [member],
+      unitMass: entry.unitMassKgPerM,
+    }
+    const span: WallSpan = {
+      axis: 'X',
+      clearLengthMm: 5200,
+      clearHeightMm: 3450,
+      startFaceOffsetMm: 400,
+      endFaceOffsetMm: 400,
+      girderDepthAboveMm: 750,
+    }
+
+    return {
+      project,
+      rebars: generateWallRebar({ member, section, span }, jpMlitRulePack),
+    }
+  }
+
+  function slabInput(entry: OpeningReinforcementCase) {
+    const base = slabRunFor([6000], 'X', slabSection())
+    const original = base.project.members.find(({ kind }) => kind === '床板')!
+    const project: Project = {
+      ...base.project,
+      unitMass: entry.unitMassKgPerM,
+      members: base.project.members.map((member) =>
+        member.id === original.id
+          ? {
+              ...member,
+              openings: [
+                {
+                  id: `${entry.id}-opening`,
+                  xMm: 2400,
+                  yMm: 2400,
+                  widthMm: 1200,
+                  heightMm: 1200,
+                  reinforcements: entry.reinforcements,
+                },
+              ],
+            }
+          : member,
+      ),
+    }
+    const member = project.members.find(({ kind }) => kind === '床板')!
+
+    return {
+      project,
+      rebars: generateSlabRebar(
+        { run: slabRun(project, member, 'X'), section: slabSection() },
+        jpMlitRulePack,
+      ),
+    }
+  }
+
+  it.each(openingReinforcementCases)('$id — $handDerivation', (entry) => {
+    const generated =
+      entry.memberKind === '耐震壁' ? wallInput(entry) : slabInput(entry)
+    const reinforcementRebars = generated.rebars.filter(
+      ({ role }) => role === '開口補強筋',
+    )
+    const reinforcementLines = massLines(
+      aggregateQuantity(generated.project, generated.rebars, jpMlitRulePack),
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcementRebars).toHaveLength(entry.expected.length)
+    expect(reinforcementLines).toHaveLength(entry.expected.length)
+
+    for (const expected of entry.expected) {
+      const rebar = reinforcementRebars.find(
+        ({ size }) => size === expected.size,
+      )!
+      const line = reinforcementLines.find(
+        ({ size }) => size === expected.size,
+      )!
+
+      expect(rebar).toMatchObject({
+        role: '開口補強筋',
+        size: expected.size,
+        count: expected.count,
+        length: expected.lengthMm,
+        shape: 'straight',
+        points: [
+          [0, 0, 0],
+          [expected.lengthMm, 0, 0],
+        ],
+        closed: false,
+        ruleHits: [],
+      })
+      expect(rebar).not.toHaveProperty('zones')
+      expect(rebar).not.toHaveProperty('placement')
+      expect(roleToLayer(rebar.role)).toBe('hidden')
+      expect(rebarSegments(rebar, columnSection())).toEqual([])
+      expect(
+        rebarBatches(
+          [{ rowId: rebar.id, rebar }],
+          columnSection(),
+        ),
+      ).toEqual([])
+      expect(rebar.formula).toContain('設計図書転記')
+      expect(rebar.formula).toContain('1通則8)')
+      expect(line.countPerMember).toBe(expected.count)
+      expect(line.lengthMm).toBe(expected.lengthMm)
+      expect(line.unitMassKgPerM).toBe(
+        entry.unitMassKgPerM[expected.size] ?? null,
+      )
+      if (expected.designKg === null) {
+        expect(line.designKg, entry.handDerivation).toBeNull()
+      } else {
+        expect(line.designKg, entry.handDerivation).toBeCloseTo(
+          expected.designKg,
+          10,
+        )
+      }
+      if (expected.requiredKg === null) {
+        expect(line.requiredKg, entry.handDerivation).toBeNull()
+      } else {
+        expect(line.requiredKg, entry.handDerivation).toBeCloseTo(
+          expected.requiredKg,
+          10,
+        )
+      }
+    }
+  })
+
+  it('does not add a rule-pack entry for transcribed reinforcement values', () => {
+    expect(
+      jpMlitRulePack.entries.filter(({ key }) =>
+        key.startsWith('measure.opening.reinforcement'),
+      ),
+    ).toEqual([])
   })
 })

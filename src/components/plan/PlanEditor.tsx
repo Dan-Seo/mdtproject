@@ -2,7 +2,13 @@
 
 import { useRef, type KeyboardEvent } from 'react'
 
-import type { Member, Opening } from '@/domain/model/member'
+import {
+  BAR_SIZES,
+  type BarSize,
+  type Member,
+  type Opening,
+  type OpeningReinforcement,
+} from '@/domain/model/member'
 import {
   findSection,
   gridPoint,
@@ -518,6 +524,39 @@ function replaceOpenings(
   }
 }
 
+function replaceOpeningReinforcements(
+  project: Project,
+  memberId: string,
+  openingId: string,
+  reinforcements: OpeningReinforcement[],
+): Project {
+  return {
+    ...project,
+    members: project.members.map((member) => {
+      if (member.id !== memberId || member.openings === undefined) {
+        return member
+      }
+
+      return {
+        ...member,
+        openings: member.openings.map((opening) => {
+          if (opening.id !== openingId) return opening
+
+          // 空配列は「開口補強筋の転記なし」— キーを残すと、未転記と空の
+          // 配列を別の状態として保存することになる。openings 自体と同じ規約。
+          if (reinforcements.length === 0) {
+            const next = { ...opening }
+            delete next.reinforcements
+            return next
+          }
+
+          return { ...opening, reinforcements }
+        }),
+      }
+    }),
+  }
+}
+
 const openingFields = [
   { key: 'xMm', label: 'plan.openings.x' },
   { key: 'yMm', label: 'plan.openings.y' },
@@ -554,11 +593,30 @@ function OpeningEditor() {
     lookupRule(jpMlitRulePack, 'measure.opening.deduction.minimum.area', {})
       .value * 1_000_000
 
-  const commit = (next: Opening[]) => {
-    updateProject((current) => replaceOpenings(current, member.id, next))
+  const reportEdit = () => {
     if (editReported.current) return
     editReported.current = true
     capture('opening_edited', { memberKind: member.kind })
+  }
+
+  const commit = (next: Opening[]) => {
+    updateProject((current) => replaceOpenings(current, member.id, next))
+    reportEdit()
+  }
+
+  const commitReinforcements = (
+    openingId: string,
+    reinforcements: OpeningReinforcement[],
+  ) => {
+    updateProject((current) =>
+      replaceOpeningReinforcements(
+        current,
+        member.id,
+        openingId,
+        reinforcements,
+      ),
+    )
+    reportEdit()
   }
 
   const add = () => {
@@ -575,6 +633,15 @@ function OpeningEditor() {
         widthMm,
         heightMm,
       },
+    ])
+  }
+
+  const addReinforcement = (opening: Opening) => {
+    commitReinforcements(opening.id, [
+      ...(opening.reinforcements ?? []),
+      // 径は選択肢の先頭を仮置きする。設計長さは規準から作らず、設計図書の
+      // 転記値を利用者が入力するまで 0 のままにして、製品が値を発明しない。
+      { size: BAR_SIZES[0], count: 1, lengthMm: 0 },
     ])
   }
 
@@ -655,6 +722,197 @@ function OpeningEditor() {
                     ▲ 内法をはみ出しています
                   </span>
                 )}
+                <div
+                  className={styles.reinforcementEditor}
+                  data-testid={`opening-reinforcements-${opening.id}`}
+                >
+                  <span className={styles.openingFieldLabel}>
+                    {t(locale, 'plan.openings.reinforcements.title')}
+                  </span>
+                  <p className={styles.openingHint}>
+                    {t(locale, 'plan.openings.reinforcements.hint')}
+                  </p>
+                  {(opening.reinforcements ?? []).length === 0 ? (
+                    <p
+                      className={styles.openingHint}
+                      data-testid={`opening-reinforcements-empty-${opening.id}`}
+                    >
+                      {t(locale, 'plan.openings.reinforcements.empty')}
+                    </p>
+                  ) : (
+                    <ul className={styles.reinforcementList}>
+                      {(opening.reinforcements ?? []).map(
+                        (reinforcement, reinforcementIndex) => {
+                          const labelPrefix = `${section.mark} ${member.id} ${
+                            index + 1
+                          } ${t(
+                            locale,
+                            'plan.openings.reinforcements.title',
+                          )} ${reinforcementIndex + 1}`
+
+                          return (
+                            <li
+                              className={styles.reinforcementItem}
+                              data-testid={`opening-reinforcement-${opening.id}-${reinforcementIndex}`}
+                              key={`${opening.id}-reinforcement-${reinforcementIndex}`}
+                            >
+                              <label className={styles.openingField}>
+                                <span className={styles.openingFieldLabel}>
+                                  {t(
+                                    locale,
+                                    'plan.openings.reinforcements.size',
+                                  )}
+                                </span>
+                                <select
+                                  className={styles.spanInput}
+                                  value={reinforcement.size}
+                                  aria-label={`${labelPrefix} ${t(
+                                    locale,
+                                    'plan.openings.reinforcements.size',
+                                  )}`}
+                                  onChange={(event) => {
+                                    const size = event.currentTarget
+                                      .value as BarSize
+                                    commitReinforcements(
+                                      opening.id,
+                                      (opening.reinforcements ?? []).map(
+                                        (current, position) =>
+                                          position === reinforcementIndex
+                                            ? { ...current, size }
+                                            : current,
+                                      ),
+                                    )
+                                  }}
+                                >
+                                  {BAR_SIZES.map((size) => (
+                                    <option key={size} value={size}>
+                                      {size}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className={styles.openingField}>
+                                <span className={styles.openingFieldLabel}>
+                                  {t(
+                                    locale,
+                                    'plan.openings.reinforcements.count',
+                                  )}
+                                </span>
+                                <input
+                                  className={styles.spanInput}
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={reinforcement.count}
+                                  aria-label={`${labelPrefix} ${t(
+                                    locale,
+                                    'plan.openings.reinforcements.count',
+                                  )}`}
+                                  onChange={(event) => {
+                                    const count = Number(
+                                      event.currentTarget.value,
+                                    )
+                                    if (
+                                      !Number.isInteger(count) ||
+                                      count < 1
+                                    ) {
+                                      return
+                                    }
+                                    commitReinforcements(
+                                      opening.id,
+                                      (opening.reinforcements ?? []).map(
+                                        (current, position) =>
+                                          position === reinforcementIndex
+                                            ? { ...current, count }
+                                            : current,
+                                      ),
+                                    )
+                                  }}
+                                />
+                              </label>
+                              <label className={styles.openingField}>
+                                <span className={styles.openingFieldLabel}>
+                                  {t(
+                                    locale,
+                                    'plan.openings.reinforcements.length',
+                                  )}
+                                </span>
+                                <input
+                                  className={styles.spanInput}
+                                  type="number"
+                                  min="0"
+                                  step="10"
+                                  value={reinforcement.lengthMm}
+                                  aria-label={`${labelPrefix} ${t(
+                                    locale,
+                                    'plan.openings.reinforcements.length',
+                                  )}`}
+                                  onChange={(event) => {
+                                    const lengthMm = Number(
+                                      event.currentTarget.value,
+                                    )
+                                    if (
+                                      !Number.isFinite(lengthMm) ||
+                                      lengthMm < 0
+                                    ) {
+                                      return
+                                    }
+                                    commitReinforcements(
+                                      opening.id,
+                                      (opening.reinforcements ?? []).map(
+                                        (current, position) =>
+                                          position === reinforcementIndex
+                                            ? { ...current, lengthMm }
+                                            : current,
+                                      ),
+                                    )
+                                  }}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                className={styles.removeButton}
+                                aria-label={`${labelPrefix} ${t(
+                                  locale,
+                                  'plan.openings.reinforcements.remove',
+                                )}`}
+                                onClick={() =>
+                                  commitReinforcements(
+                                    opening.id,
+                                    (opening.reinforcements ?? []).filter(
+                                      (_, position) =>
+                                        position !== reinforcementIndex,
+                                    ),
+                                  )
+                                }
+                              >
+                                −
+                              </button>
+                              {reinforcement.lengthMm === 0 && (
+                                <span
+                                  className={styles.openingWarning}
+                                  data-testid="opening-reinforcement-untranscribed"
+                                >
+                                  {t(
+                                    locale,
+                                    'plan.openings.reinforcements.untranscribed',
+                                  )}
+                                </span>
+                              )}
+                            </li>
+                          )
+                        },
+                      )}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.addButton}
+                    onClick={() => addReinforcement(opening)}
+                  >
+                    {t(locale, 'plan.openings.reinforcements.add')}
+                  </button>
+                </div>
               </li>
             )
           })}

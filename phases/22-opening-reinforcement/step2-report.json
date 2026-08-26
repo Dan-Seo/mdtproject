@@ -1,0 +1,48 @@
+{
+  "step": 2,
+  "name": "plan-editor-notice-ledger",
+  "status": "completed",
+  "changedFiles": [
+    "src/components/plan/PlanEditor.tsx",
+    "src/components/plan/PlanEditor.module.css",
+    "src/components/plan/PlanEditor.test.tsx",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/components/quantity/TakeoffPane.test.tsx",
+    "src/lib/viewer/geometry.test.ts",
+    "src/lib/viewer/building.test.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/22-opening-reinforcement/index.json",
+    "phases/22-opening-reinforcement/step2-report.json"
+  ],
+  "summary": "平面ペインの各開口に径・本数・設計長さ(mm)の開口補強筋転記行を追加し、空配列のキー削除、未転記リスク告知、3D hidden 経路、R14 대장을 갱신했다.",
+  "gates": {
+    "npm run test": {
+      "status": "passed",
+      "testFiles": 82,
+      "tests": 1493
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "warnings": 1,
+      "warning": "기존 src/app/api/oncall/alert/route.test.ts의 _omitted 미사용 경고"
+    }
+  },
+  "viewerVerification": {
+    "memberView": "開口補強筋 roleToLayer hidden 및 rebarSegments skip 경로를 기존 golden 테스트로 유지",
+    "buildingView": "buildingLayout이 開口補強筋을 건너뛰고 콘크리트 레이아웃을 유지하는 회귀 테스트 추가",
+    "displayLabel": "xlsx·인쇄는 공통 WorkbookSpec의 line.role을 직접 사용하므로 開口補強筋 라벨 매핑을 별도 추가하지 않음"
+  },
+  "ledgerUpdates": [
+    "docs/RISKS.md R14: 欠除과 開口補強筋 전사 입력을 해소로 기록하고 미전사 開口의 과소 계상은 상시 고지로 명시",
+    "CLAUDE.md·AGENTS.md: R14 갱신 및 부재 확장 잔여에서 開口補強筋 입력 제거",
+    "docs/MILESTONES.md: phase 22 開口補強筋 전사 입력을 완료 항목으로 기록하고 잔여에서 제거"
+  ]
+}

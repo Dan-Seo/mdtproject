@@ -106,6 +106,35 @@ function roleRebar(rebars: Rebar[], role: Rebar['role']): Rebar {
 }
 
 describe('buildingLayout', () => {
+  it('skips 開口補強筋 in the building view without failing the layout', () => {
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')!
+    const reinforcement: Rebar = {
+      id: `${wall.id}|opening-reinforcement`,
+      memberId: wall.id,
+      role: '開口補強筋',
+      size: 'D13',
+      shape: 'straight',
+      points: [
+        [0, 0, 0],
+        [1800, 0, 0],
+      ],
+      closed: false,
+      length: 1800,
+      count: 4,
+      ruleHits: [],
+      formula: '設計図書転記',
+    }
+
+    const layout = buildingLayout(
+      project,
+      [reinforcement],
+      noUnsupportedMembers,
+    )
+
+    expect(layout.rebar).toEqual([])
+    expect(layout.boxes.length).toBeGreaterThan(0)
+  })
+
   it('creates one concrete box per member of the sample project', () => {
     const layout = buildingLayout(project, [], noUnsupportedMembers)
     const { nx, ny } = gridPointCount(project.grid)

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ColumnSection, GirderSection, Member } from './member'
+import type {
+  ColumnSection,
+  GirderSection,
+  Member,
+  OpeningReinforcement,
+} from './member'
 import { createSampleProject } from './sample-project'
 import {
   PROJECT_SCHEMA_VERSION,
@@ -226,6 +231,89 @@ describe('GirderMainRow serialization compatibility', () => {
     )
 
     expect(() => deserializeProject(serialized)).toThrow(
+      'Project shape mismatch',
+    )
+  })
+})
+
+describe('Opening.reinforcements serialization validation', () => {
+  const opening = {
+    id: 'opening-1',
+    xMm: 1000,
+    yMm: 500,
+    widthMm: 1200,
+    heightMm: 800,
+  }
+
+  it('keeps an opening without reinforcements compatible with existing records', () => {
+    const project = createProject([
+      {
+        ...column,
+        openings: [opening],
+      },
+    ])
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it('round-trips transcribed opening reinforcements without changing the schema version', () => {
+    const project = createProject([
+      {
+        ...column,
+        openings: [
+          {
+            ...opening,
+            reinforcements: [
+              { size: 'D13', count: 4, lengthMm: 1800 },
+              { size: 'D10', count: 2, lengthMm: 1200 },
+            ],
+          },
+        ],
+      },
+    ])
+
+    expect(project.schemaVersion).toBe(PROJECT_SCHEMA_VERSION)
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it('round-trips an untranscribed zero-length reinforcement row', () => {
+    const project = createProject([
+      {
+        ...column,
+        openings: [
+          {
+            ...opening,
+            reinforcements: [{ size: 'D13', count: 1, lengthMm: 0 }],
+          },
+        ],
+      },
+    ])
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it.each([
+    ['an unsupported bar size', { size: 'D99' }],
+    ['a high-strength shear bar size', { size: 'K13' }],
+    ['a zero count', { count: 0 }],
+    ['a fractional count', { count: 1.5 }],
+    ['a negative length', { lengthMm: -1 }],
+    ['a non-finite length', { lengthMm: Number.POSITIVE_INFINITY }],
+  ])('rejects %s in a reinforcement transcription', (_label, change) => {
+    const reinforcement = {
+      size: 'D13',
+      count: 1,
+      lengthMm: 1000,
+      ...change,
+    } as unknown as OpeningReinforcement
+    const project = createProject([
+      {
+        ...column,
+        openings: [{ ...opening, reinforcements: [reinforcement] }],
+      },
+    ])
+
+    expect(() => deserializeProject(serializeProject(project))).toThrow(
       'Project shape mismatch',
     )
   })

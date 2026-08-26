@@ -198,6 +198,90 @@ describe('generateWallRebar', () => {
   })
 })
 
+describe('generateWallRebar — 開口補強筋の設計図書転記 (1通則8) なお書き', () => {
+  const reinforcementMember: Member = {
+    ...member,
+    openings: [
+      {
+        id: 'W1-op1',
+        xMm: 2000,
+        yMm: 900,
+        widthMm: 1800,
+        heightMm: 1200,
+        reinforcements: [
+          { size: 'D13', count: 4, lengthMm: 1800 },
+          { size: 'D10', count: 2, lengthMm: 1200 },
+        ],
+      },
+    ],
+  }
+
+  it('emits each transcribed value as a separate straight Rebar', () => {
+    const reinforcements = generateWallRebar(
+      input({ member: reinforcementMember }),
+      jpMlitRulePack,
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcements).toHaveLength(2)
+    expect(reinforcements).toMatchObject([
+      {
+        role: '開口補強筋',
+        size: 'D13',
+        count: 4,
+        length: 1800,
+        shape: 'straight',
+        points: [
+          [0, 0, 0],
+          [1800, 0, 0],
+        ],
+        closed: false,
+        ruleHits: [],
+      },
+      {
+        role: '開口補強筋',
+        size: 'D10',
+        count: 2,
+        length: 1200,
+        shape: 'straight',
+        points: [
+          [0, 0, 0],
+          [1200, 0, 0],
+        ],
+        closed: false,
+        ruleHits: [],
+      },
+    ])
+
+    for (const rebar of reinforcements) {
+      expect(rebar).not.toHaveProperty('zones')
+      expect(rebar).not.toHaveProperty('placement')
+      expect(rebar.formula).toContain('設計図書転記')
+      expect(rebar.formula).toContain('1通則8)')
+      expect(rebar.formula).toContain(`${rebar.length}`)
+      expect(rebar.formula).toContain(`${rebar.count}`)
+    }
+  })
+
+  it('does not emit an untranscribed zero-length row', () => {
+    const reinforcements = generateWallRebar(
+      input({
+        member: {
+          ...reinforcementMember,
+          openings: [
+            {
+              ...reinforcementMember.openings![0],
+              reinforcements: [{ size: 'D13', count: 4, lengthMm: 0 }],
+            },
+          ],
+        },
+      }),
+      jpMlitRulePack,
+    ).filter(({ role }) => role === '開口補強筋')
+
+    expect(reinforcements).toEqual([])
+  })
+})
+
 describe('generateWallRebar — 開口部の欠除 (数量積算基準 1通則8))', () => {
   // 内法 5200×3450、ピッチ 200。縦筋 27本・横筋 19本 (1通則7))。
   // 開口 1800×1200 を (2000, 900) に置くと、縦筋は x (2000,3800) の内側 8本が

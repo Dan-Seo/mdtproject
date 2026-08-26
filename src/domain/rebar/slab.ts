@@ -131,7 +131,38 @@ export function generateSlabRebar(
   return [
     ...buildSlabBars({ ...shared, face: '下端' }),
     ...buildSlabBars({ ...shared, face: '上端' }),
+    ...openingReinforcementRebars(run),
   ]
+}
+
+function openingReinforcementRebars(run: SlabRun): Rebar[] {
+  return run.openings.flatMap((opening) =>
+    (opening.reinforcements ?? []).flatMap((reinforcement, index) => {
+      // A zero length is the UI's persisted 未転記 state. Do not expose it as
+      // a zero-quantity Rebar, which would make the row look transcribed.
+      if (reinforcement.lengthMm === 0) return []
+
+      return [{
+        id: `${run.ownerId}|opening-${opening.id}|reinforcement-${index}`,
+        memberId: run.ownerId,
+        role: '開口補強筋',
+        size: reinforcement.size,
+        count: reinforcement.count,
+        length: reinforcement.lengthMm,
+        shape: 'straight',
+        points: [
+          [0, 0, 0],
+          [reinforcement.lengthMm, 0, 0],
+        ],
+        closed: false,
+        formula:
+          `設計長さ ＝ 設計図書転記 ${reinforcement.lengthMm}mm ／ ` +
+          `本数 ＝ 設計図書転記 ${reinforcement.count}本 ／ 径 ＝ ${reinforcement.size} ` +
+          `（数量積算基準 1通則8) なお書き — 開口補強筋は設計図書により計測・計算）`,
+        ruleHits: [],
+      }]
+    }),
+  )
 }
 
 interface SlabBarInput {
