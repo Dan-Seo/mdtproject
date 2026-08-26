@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "verify-adr033-premises",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 572.747308799997,
+  "stdout_log": "phases\\21-asym-import\\step0-codex.stdout.log",
+  "stderr_log": "phases\\21-asym-import\\step0-codex.stderr.log"
+}
