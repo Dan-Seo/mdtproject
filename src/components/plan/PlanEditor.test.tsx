@@ -5,7 +5,7 @@ import { createSampleProject } from '@/domain/model/sample-project'
 import { gridPointCount } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
 
-import { PlanEditor, StoryTabs } from './PlanEditor'
+import { PlanEditor, placePlanMember, StoryTabs } from './PlanEditor'
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 
@@ -198,6 +198,199 @@ describe('PlanEditor', () => {
       '腰壁 H=900',
     )
     expect(container.querySelectorAll('[data-testid="wall-extent-label"]')).toHaveLength(1)
+  })
+})
+
+describe('PlanEditor 壁・床板の配置と削除 (ADR-038)', () => {
+  beforeEach(() => {
+    capture.mockClear()
+    useAppStore.setState({
+      project: createSampleProject(),
+      sel: { group: null, memberId: null },
+      activeStoryId: '1F',
+      locale: 'ja',
+    })
+  })
+
+  function setProject(project: ReturnType<typeof createSampleProject>) {
+    act(() => useAppStore.setState({ project }))
+  }
+
+  it('offers only an empty, measurable edge and places a selected 耐震壁 section there', () => {
+    const project = createSampleProject()
+    setProject({
+      ...project,
+      members: project.members.filter(({ kind }) => kind !== '耐震壁'),
+    })
+    render(<PlanEditor />)
+
+    fireEvent.click(screen.getByTestId('placement-wall-X-0-0'))
+
+    const placed = useAppStore
+      .getState()
+      .project.members.find(({ id }) => id === '1F-W1-0-0-X')
+    expect(placed).toMatchObject({
+      id: '1F-W1-0-0-X',
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: 'section-W1',
+      storyId: '1F',
+      position: { axis: 'X', ix: 0, iy: 0 },
+    })
+    expect(screen.queryByTestId('placement-wall-X-0-0')).not.toBeInTheDocument()
+  })
+
+  it('places 床板 only in an empty bay surrounded by four 大梁', () => {
+    const project = createSampleProject()
+    setProject({
+      ...project,
+      members: project.members.filter(({ kind }) => kind !== '床板'),
+    })
+    render(<PlanEditor />)
+
+    fireEvent.click(screen.getByTestId('placement-slab-0-0'))
+
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === '1F-S1-0-0'),
+    ).toMatchObject({
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: 'section-S1',
+      position: { ix: 0, iy: 0 },
+    })
+  })
+
+  it('does not offer a wall edge when its 大梁 or endpoint 柱 is absent', () => {
+    const project = createSampleProject()
+    const withoutGirder = project.members.filter(
+      ({ id }) => id !== '1F-G1-X1Y1-X',
+    )
+    setProject({
+      ...project,
+      members: withoutGirder.filter(({ kind }) => kind !== '耐震壁'),
+    })
+    const { rerender } = render(<PlanEditor />)
+    expect(screen.queryByTestId('placement-wall-X-0-0')).not.toBeInTheDocument()
+
+    setProject({
+      ...project,
+      members: project.members.filter(
+        ({ id, kind }) => id !== '1F-X1Y1' && kind !== '耐震壁',
+      ),
+    })
+    rerender(<PlanEditor />)
+    expect(screen.queryByTestId('placement-wall-X-0-0')).not.toBeInTheDocument()
+  })
+
+  it('does not offer a bay when one of its four surrounding 大梁 is absent', () => {
+    const project = createSampleProject()
+    setProject({
+      ...project,
+      members: project.members.filter(
+        ({ id, kind }) => id !== '1F-G1-X1Y1-X' && kind !== '床板',
+      ),
+    })
+    render(<PlanEditor />)
+
+    expect(screen.queryByTestId('placement-slab-0-0')).not.toBeInTheDocument()
+  })
+
+  it('shows only section guidance and no candidates when a section kind is absent', () => {
+    const project = createSampleProject()
+    setProject({
+      ...project,
+      sections: project.sections.filter(({ kind }) => kind !== '耐震壁'),
+      members: project.members.filter(({ kind }) => kind !== '耐震壁'),
+    })
+    render(<PlanEditor />)
+
+    expect(screen.getByTestId('placement-wall-no-section')).toBeInTheDocument()
+    expect(screen.queryByTestId('placement-wall-X-0-0')).not.toBeInTheDocument()
+  })
+
+  it('rejects a second placement with the same position and 符号', () => {
+    const project = createSampleProject()
+    const withoutWalls = {
+      ...project,
+      members: project.members.filter(({ kind }) => kind !== '耐震壁'),
+    }
+    const first = placePlanMember(withoutWalls, '1F', 'section-W1', {
+      axis: 'X',
+      ix: 0,
+      iy: 0,
+    })
+    expect(first.member).toBeDefined()
+
+    const second = placePlanMember(first.project, '1F', 'section-W1', {
+      axis: 'X',
+      ix: 0,
+      iy: 0,
+    })
+    expect(second.reason).toBe('duplicate')
+    expect(second.project.members).toHaveLength(first.project.members.length)
+  })
+
+  it('deletes the selected wall, including its openings and wallExtent, without changing other members', () => {
+    const project = createSampleProject()
+    const wall = project.members.find(({ kind }) => kind === '耐震壁')!
+    const withDetails = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === wall.id
+          ? {
+              ...member,
+              openings: [
+                {
+                  id: 'opening-to-delete',
+                  xMm: 100,
+                  yMm: 100,
+                  widthMm: 800,
+                  heightMm: 800,
+                },
+              ],
+              wallExtent: {
+                vertical: { anchor: '下端' as const, heightMm: 900 },
+              },
+            }
+          : member,
+      ),
+    }
+    setProject(withDetails)
+    act(() => useAppStore.getState().selectMember(wall.id))
+    render(<PlanEditor />)
+
+    const otherIds = withDetails.members
+      .filter(({ id }) => id !== wall.id)
+      .map(({ id }) => id)
+    fireEvent.click(screen.getByTestId('delete-member'))
+
+    const state = useAppStore.getState()
+    expect(state.project.members.find(({ id }) => id === wall.id)).toBeUndefined()
+    expect(state.project.members.map(({ id }) => id)).toEqual(otherIds)
+    expect(state.sel).toEqual({ group: null, memberId: null })
+  })
+
+  it('deletes a selected 床板 and does not expose deletion for a selected 柱', () => {
+    const project = createSampleProject()
+    const slab = project.members.find(({ kind }) => kind === '床板')!
+    setProject(project)
+    act(() => useAppStore.getState().selectMember(slab.id))
+    const { rerender } = render(<PlanEditor />)
+
+    expect(screen.getByTestId('delete-member')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('delete-member'))
+    expect(
+      useAppStore.getState().project.members.find(({ id }) => id === slab.id),
+    ).toBeUndefined()
+
+    const column = useAppStore
+      .getState()
+      .project.members.find(({ kind }) => kind === '柱')!
+    act(() => useAppStore.getState().selectMember(column.id))
+    rerender(<PlanEditor />)
+    expect(screen.queryByTestId('delete-member')).not.toBeInTheDocument()
   })
 })
 

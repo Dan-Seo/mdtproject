@@ -1,0 +1,71 @@
+{
+  "step": 1,
+  "name": "placement-domain-guard",
+  "status": "completed",
+  "changedExceptions": [
+    {
+      "site": "girderDepthAboveWall",
+      "cases": [
+        "벽 위치가 辺이 아님",
+        "상부 大梁 누락",
+        "상부 大梁가 大梁 이외의 断面을 참조"
+      ],
+      "reason": "寸法不成立"
+    },
+    {
+      "site": "wallSpan supportColumnSection",
+      "cases": [
+        "벽 양 끝 柱 누락",
+        "지점 柱가 柱 이외의 断面을 참조"
+      ],
+      "reason": "寸法不成立"
+    },
+    {
+      "site": "slabBay girderSectionAt",
+      "cases": [
+        "床板 네 변 중 大梁 누락",
+        "지지 大梁가 大梁 이외의 断面을 참조"
+      ],
+      "reason": "寸法不成立"
+    }
+  ],
+  "placementFunctions": [
+    {
+      "signature": "canPlaceWall(project: Project, storyId: string, position: GirderPosition): boolean",
+      "basis": "wallSpan과 동일하게 유효한 辺 좌표, 같은 階의 大梁, 양 끝 柱, 각 断面 종류, 양수 내법長さ·내법高さ를 확인한다."
+    },
+    {
+      "signature": "placeableWallPositions(project: Project, storyId: string): GirderPosition[]",
+      "basis": "Grid의 X/Y 辺을 순회해 canPlaceWall을 통과한 위치만 반환한다."
+    },
+    {
+      "signature": "canPlaceSlab(project: Project, storyId: string, position: SlabPosition): boolean",
+      "basis": "slabBay와 동일하게 유효한 ベイ 좌표, 네 변의 大梁와 断面 종류, 양수 clear X/Y를 확인한다."
+    },
+    {
+      "signature": "placeableSlabPositions(project: Project, storyId: string): SlabPosition[]",
+      "basis": "Grid의 모든 ベイ를 순회해 canPlaceSlab을 통과한 위치만 반환한다."
+    }
+  ],
+  "occupancyRule": "배치 판정은 기하·계측 가능성만 담당하고, mark에서 만든 id 중복은 배치 조작에서 별도 판정한다. 따라서 다른 符号의 동일 辺/ベイ를 topology만으로 막지 않는다.",
+  "tests": [
+    "src/domain/model/project.test.ts: 지원재가 모두 있는 위치는 wallSpan/slabBay와 함께 통과",
+    "src/domain/model/project.test.ts: 벽의 大梁·양 끝 柱 누락 및 상부 大梁 断面 불일치",
+    "src/domain/model/project.test.ts: 床板 네 大梁 누락 및 지지 断面 불일치",
+    "src/lib/hooks/useTakeoff.test.tsx: 상부 大梁 없는 벽이 전체 훅을 죽이지 않고 해당 부재만 unsupportedMembers에 기록"
+  ],
+  "gates": {
+    "npm run test": {
+      "status": "passed",
+      "testFiles": 84,
+      "tests": 1550
+    },
+    "npx tsc --noEmit": "passed",
+    "npm run lint": {
+      "status": "passed",
+      "errors": 0,
+      "preExistingWarnings": 1
+    }
+  },
+  "step0": "completed; its executable check now asserts the intended member-level rejection after this remediation"
+}

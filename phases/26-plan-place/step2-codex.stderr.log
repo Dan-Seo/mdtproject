@@ -1,0 +1,7 @@
+2026-08-26T13:56:54.580629Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-26T13:56:54.649140Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-26T14:02:56.463693Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\locales\ja.json:
+  "plan.storyTabs": "階選択",
+  "plan.addSpan": "スパンを追加",
+  "plan.removeSpan": "を削除",
+  "pane.section": "部材断面一覧",

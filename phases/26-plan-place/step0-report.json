@@ -1,0 +1,171 @@
+{
+  "step": 0,
+  "kind": "verify",
+  "verificationCommand": "npx vitest run --project ui src/lib/step0-adr038-verify.test.ts",
+  "premises": [
+    {
+      "id": "plain-error-crash",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts:380-405",
+          "finding": "girderDepthAboveWall searches the same story/edge/axis/indices and throws plain Error('Missing 大梁 above 耐震壁') when no matching 大梁 exists."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts:169-193",
+          "finding": "The 耐震壁 branch catches only MemberUnsupportedError; other errors are rethrown at line 185."
+        },
+        {
+          "execution": {
+            "removedWallTopGirderIds": [
+              "1F-G1-X1Y1-Y"
+            ],
+            "thrownConstructor": "Error",
+            "thrownName": "Error",
+            "thrownMessage": "Missing 大梁 above 耐震壁: 1F-W1-X1Y1-Y",
+            "isMemberUnsupportedError": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "reachable-today",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/lib/import/framing-plan/apply.ts:147-189",
+          "finding": "A 伏図 block containing only a wall 辺 placement creates the wall member without requiring a corresponding 大梁 placement."
+        },
+        {
+          "execution": {
+            "applied": 1,
+            "wallMembersInTargetStory": 1,
+            "importedWallHasTopGirder": false,
+            "serializationRoundTrip": "completed"
+          }
+        },
+        {
+          "source": "src/domain/model/project.ts:1237-1280, 1374-1392",
+          "finding": "deserializeProject validates shape, section/story references, and grid position bounds, but does not validate wall-to-girder topology."
+        }
+      ]
+    },
+    {
+      "id": "slab-needs-four-girders",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts:561-631",
+          "finding": "slabBay resolves four supports: minX and maxX on Y-axis 大梁, plus minY and maxY on X-axis 大梁."
+        },
+        {
+          "source": "src/domain/model/project.ts:579-585",
+          "finding": "A missing edge support throws plain Error from girderSectionAt; the later non-positive-clear-dimension guard at lines 642-647 is MemberUnsupportedError but is not reached for a missing support."
+        },
+        {
+          "source": "src/domain/rebar/slab.ts:206-220, src/domain/rebar/slab-ends.ts:81-102",
+          "finding": "After slabBay succeeds, slab end resolution consumes both run.startSupport and run.endSupport."
+        },
+        {
+          "execution": {
+            "supportIds": {
+              "minX": "1F-G1-X1Y1-Y",
+              "maxX": "1F-G2-X2Y1-Y",
+              "minY": "1F-G1-X1Y1-X",
+              "maxY": "1F-G2-X1Y2-X"
+            },
+            "removedSupport": "1F-G1-X1Y1-Y",
+            "thrownConstructor": "Error",
+            "thrownName": "Error",
+            "thrownMessage": "Missing Y通り大梁 beside 床板: 1F-S1-X1Y1 (0, 0)",
+            "isMemberUnsupportedError": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-member-creation-ui",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/components/plan/PlanEditor.tsx:467-529, 731-740, 1115-1116",
+          "finding": "PlanEditor mutates spans, openings, opening reinforcements, and wallExtent; the verification scan found no free Member collection mutation."
+        },
+        {
+          "source": "src/components/section/SectionTable.tsx:49-59, 954-957",
+          "finding": "SectionTable replaces Section values only and does not add or remove Member objects."
+        },
+        {
+          "source": "src/components/plan/PlanImport.tsx:342-369, 558-564",
+          "finding": "The import path has an explicit candidate-approval 反映 button that calls applyFramingPlan; it is not free placement."
+        },
+        {
+          "execution": {
+            "planEditorHasFreeMemberMutation": false,
+            "sectionTableHasMemberCollectionMutation": false,
+            "planImportHasCandidateApproval": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "id-convention",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/lib/import/framing-plan/apply.ts:180-193",
+          "finding": "Member ids are `${storyId}-${placement.mark}-${placement.ix}-${placement.iy}` with `-${axis}` appended for 辺 placements; duplicate generated ids are deduplicated by Map before returning."
+        },
+        {
+          "source": "src/domain/model/project.ts:1029-1031, 1374-1392",
+          "finding": "serializeProject/deserializeProject round-trip duplicate member ids because uniqueness is not part of the deserialization checks."
+        },
+        {
+          "source": "src/lib/store.ts:42-49, 82-91; src/components/plan/PlanEditor.tsx:707-708",
+          "finding": "Member lookup and selection use the first project.members.find result for a duplicate id."
+        },
+        {
+          "source": "src/domain/quantity/index.ts:247-265, 294-300, 217-230",
+          "finding": "Quantity aggregation maps members by id and counts places from a Set of member ids, so duplicate ids collapse distinct members."
+        },
+        {
+          "execution": {
+            "duplicateId": "1F-X1Y1",
+            "duplicateCountAfterRoundTrip": 2,
+            "samePlacementApplyCount": 1,
+            "lookupReturnsFirstPosition": {
+              "ix": 0,
+              "iy": 0
+            },
+            "healthyPlaces": 6,
+            "duplicatePlaces": 5,
+            "healthyRebarCount": 90,
+            "duplicateRebarCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-undo",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/lib/store.ts:23-40, 123-125",
+          "finding": "AppState exposes updateProject/loadProject but no undo, redo, or history action/stack."
+        },
+        {
+          "source": "src/components/plan/PlanEditor.tsx, src/components/section/SectionTable.tsx",
+          "finding": "UI edits call updateProject directly; no history mechanism is present."
+        },
+        {
+          "execution": {
+            "scannedSourceFiles": 159,
+            "undoRedoHistoryTokenFound": false
+          }
+        }
+      ]
+    }
+  ],
+  "verdict": "upheld",
+  "summary": "ADR-038의 6개 전제 모두 코드와 실행으로 upheld. 大梁 없는 耐震壁 및 4변 지지 미완료 床板은 plain Error 경로로 훅/산정 경계를 벗어나며, 伏図 취입과 직렬화는 이 상태를 도달 가능하게 하고, 중복 ID는 직렬화 후 수량 places를 축소한다."
+}

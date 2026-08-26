@@ -213,6 +213,301 @@ function isGirderPosition(
   return 'axis' in position
 }
 
+function isGridEdgePosition(
+  grid: Grid,
+  position: GirderPosition,
+): boolean {
+  const { nx, ny } = gridPointCount(grid)
+
+  if (position.axis !== 'X' && position.axis !== 'Y') return false
+
+  return (
+    Number.isInteger(position.ix) &&
+    Number.isInteger(position.iy) &&
+    position.ix >= 0 &&
+    position.iy >= 0 &&
+    (position.axis === 'X'
+      ? position.ix < nx - 1 && position.iy < ny
+      : position.ix < nx && position.iy < ny - 1)
+  )
+}
+
+function columnAt(
+  project: Project,
+  storyId: string,
+  ix: number,
+  iy: number,
+): Member | undefined {
+  return project.members.find(
+    (candidate) =>
+      candidate.kind === '柱' &&
+      candidate.storyId === storyId &&
+      isColumnPosition(candidate.position) &&
+      candidate.position.ix === ix &&
+      candidate.position.iy === iy,
+  )
+}
+
+function girderAt(
+  project: Project,
+  storyId: string,
+  position: GirderPosition,
+): Member | undefined {
+  return project.members.find(
+    (candidate) =>
+      candidate.kind === '大梁' &&
+      candidate.storyId === storyId &&
+      isGirderPosition(candidate.position) &&
+      candidate.position.axis === position.axis &&
+      candidate.position.ix === position.ix &&
+      candidate.position.iy === position.iy,
+  )
+}
+
+function sectionHasKind(
+  project: Project,
+  member: Member | undefined,
+  kind: MemberKind,
+): boolean {
+  if (member === undefined) return false
+  return project.sections.some(
+    (section) => section.id === member.sectionId && section.kind === kind,
+  )
+}
+
+/**
+ * 壁を置いたときに wallSpan が内法を決められるかを判定する。
+ *
+ * 既存の部材の有無や符号は見ない。符号から作る id の重複は配置操作側の
+ * 責務であり、別の符号の壁を同じ辺に置くことをここで禁じない (ADR-038)。
+ */
+export function canPlaceWall(
+  project: Project,
+  storyId: string,
+  position: GirderPosition,
+): boolean {
+  if (!isGridEdgePosition(project.grid, position)) return false
+
+  const story = project.stories.find(({ id }) => id === storyId)
+  const endIx = position.axis === 'X' ? position.ix + 1 : position.ix
+  const endIy = position.axis === 'Y' ? position.iy + 1 : position.iy
+  const startColumn = columnAt(project, storyId, position.ix, position.iy)
+  const endColumn = columnAt(project, storyId, endIx, endIy)
+  const upperGirder = girderAt(project, storyId, position)
+
+  if (
+    story === undefined ||
+    startColumn === undefined ||
+    endColumn === undefined ||
+    upperGirder === undefined ||
+    !sectionHasKind(project, startColumn, '柱') ||
+    !sectionHasKind(project, endColumn, '柱') ||
+    !sectionHasKind(project, upperGirder, '大梁')
+  ) {
+    return false
+  }
+
+  const startSection = project.sections.find(
+    (section) => section.id === startColumn.sectionId,
+  )
+  const endSection = project.sections.find(
+    (section) => section.id === endColumn.sectionId,
+  )
+  const upperSection = project.sections.find(
+    (section) => section.id === upperGirder.sectionId,
+  )
+  if (
+    startSection?.kind !== '柱' ||
+    endSection?.kind !== '柱' ||
+    upperSection?.kind !== '大梁'
+  ) {
+    return false
+  }
+
+  const startPoint = gridPoint(project.grid, position.ix, position.iy)
+  const endPoint = gridPoint(project.grid, endIx, endIy)
+  const centerSpan =
+    position.axis === 'X'
+      ? endPoint.x - startPoint.x
+      : endPoint.y - startPoint.y
+  const startSupportLength =
+    position.axis === 'X' ? startSection.b : startSection.d
+  const endSupportLength =
+    position.axis === 'X' ? endSection.b : endSection.d
+  const clearLength =
+    centerSpan - startSupportLength / 2 - endSupportLength / 2
+  const clearHeight = story.height - upperSection.depth
+
+  return clearLength > 0 && clearHeight > 0
+}
+
+/**
+ * 지정한 階에서 실제 내법을 계산할 수 있는 벽 辺 후보를 반환한다.
+ * 반환값은 기하 후보이며, 같은 符号로 만든 id 중복은 이 함수에서 판정하지 않는다.
+ */
+export function placeableWallPositions(
+  project: Project,
+  storyId: string,
+): GirderPosition[] {
+  const { nx, ny } = gridPointCount(project.grid)
+  const positions: GirderPosition[] = []
+
+  for (const axis of ['X', 'Y'] as const) {
+    const ixLimit = axis === 'X' ? nx - 1 : nx
+    const iyLimit = axis === 'Y' ? ny - 1 : ny
+    for (let iy = 0; iy < iyLimit; iy += 1) {
+      for (let ix = 0; ix < ixLimit; ix += 1) {
+        const position = { axis, ix, iy }
+        if (canPlaceWall(project, storyId, position)) {
+          positions.push(position)
+        }
+      }
+    }
+  }
+
+  return positions
+}
+
+function slabSupports(
+  project: Project,
+  storyId: string,
+  position: SlabPosition,
+): {
+  minX: Member
+  maxX: Member
+  minY: Member
+  maxY: Member
+} | undefined {
+  const supports = {
+    minX: girderAt(project, storyId, {
+      axis: 'Y',
+      ix: position.ix,
+      iy: position.iy,
+    }),
+    maxX: girderAt(project, storyId, {
+      axis: 'Y',
+      ix: position.ix + 1,
+      iy: position.iy,
+    }),
+    minY: girderAt(project, storyId, {
+      axis: 'X',
+      ix: position.ix,
+      iy: position.iy,
+    }),
+    maxY: girderAt(project, storyId, {
+      axis: 'X',
+      ix: position.ix,
+      iy: position.iy + 1,
+    }),
+  }
+
+  if (
+    supports.minX === undefined ||
+    supports.maxX === undefined ||
+    supports.minY === undefined ||
+    supports.maxY === undefined ||
+    !sectionHasKind(project, supports.minX, '大梁') ||
+    !sectionHasKind(project, supports.maxX, '大梁') ||
+    !sectionHasKind(project, supports.minY, '大梁') ||
+    !sectionHasKind(project, supports.maxY, '大梁')
+  ) {
+    return undefined
+  }
+
+  return {
+    minX: supports.minX,
+    maxX: supports.maxX,
+    minY: supports.minY,
+    maxY: supports.maxY,
+  }
+}
+
+/**
+ * 床板을 놓았을 때 slabBay가 네 변의 내법을 계산할 수 있는지 판정한다.
+ * 개별 符号에서 유도되는 id 중복은 이 기하 판정의 대상이 아니다 (ADR-038).
+ */
+export function canPlaceSlab(
+  project: Project,
+  storyId: string,
+  position: SlabPosition,
+): boolean {
+  const { nx, ny } = gridPointCount(project.grid)
+  if (!project.stories.some(({ id }) => id === storyId)) return false
+  if (isGirderPosition(position)) return false
+
+  if (
+    !Number.isInteger(position.ix) ||
+    !Number.isInteger(position.iy) ||
+    position.ix < 0 ||
+    position.iy < 0 ||
+    position.ix >= nx - 1 ||
+    position.iy >= ny - 1
+  ) {
+    return false
+  }
+
+  const supports = slabSupports(project, storyId, position)
+  if (supports === undefined) return false
+
+  const supportSections = {
+    minX: project.sections.find(
+      (section) => section.id === supports.minX.sectionId,
+    ),
+    maxX: project.sections.find(
+      (section) => section.id === supports.maxX.sectionId,
+    ),
+    minY: project.sections.find(
+      (section) => section.id === supports.minY.sectionId,
+    ),
+    maxY: project.sections.find(
+      (section) => section.id === supports.maxY.sectionId,
+    ),
+  }
+  if (
+    supportSections.minX?.kind !== '大梁' ||
+    supportSections.maxX?.kind !== '大梁' ||
+    supportSections.minY?.kind !== '大梁' ||
+    supportSections.maxY?.kind !== '大梁'
+  ) {
+    return false
+  }
+
+  const origin = gridPoint(project.grid, position.ix, position.iy)
+  const far = gridPoint(project.grid, position.ix + 1, position.iy + 1)
+  const clearX =
+    far.x -
+    origin.x -
+    supportSections.minX.b / 2 -
+    supportSections.maxX.b / 2
+  const clearY =
+    far.y -
+    origin.y -
+    supportSections.minY.b / 2 -
+    supportSections.maxY.b / 2
+
+  return clearX > 0 && clearY > 0
+}
+
+/** 지정한 階에서 네 변의 大梁가 모두 있는 床板 ベイ 후보를 반환한다. */
+export function placeableSlabPositions(
+  project: Project,
+  storyId: string,
+): SlabPosition[] {
+  const { nx, ny } = gridPointCount(project.grid)
+  const positions: SlabPosition[] = []
+
+  for (let iy = 0; iy < ny - 1; iy += 1) {
+    for (let ix = 0; ix < nx - 1; ix += 1) {
+      const position = { ix, iy }
+      if (canPlaceSlab(project, storyId, position)) {
+        positions.push(position)
+      }
+    }
+  }
+
+  return positions
+}
+
 function touchesColumn(
   girder: GirderPosition,
   column: ColumnPosition,
@@ -273,7 +568,15 @@ function supportColumnSection(
   ix: number,
   iy: number,
   end: 'start' | 'end',
+  unsupported = false,
 ): ColumnSection {
+  const reject = (message: string): never => {
+    if (unsupported) {
+      throw new MemberUnsupportedError('寸法不成立', message)
+    }
+    throw new Error(message)
+  }
+
   const support = project.members.find(
     (candidate) =>
       candidate.kind === '柱' &&
@@ -284,14 +587,14 @@ function supportColumnSection(
   )
 
   if (!support) {
-    throw new Error(
+    return reject(
       `Missing ${end} support 柱 for ${supported.kind}: ${supported.id}`,
     )
   }
 
   const section = findSection(project, support.sectionId)
   if (section.kind !== '柱') {
-    throw new Error(`柱 member references a non-柱 section: ${support.id}`)
+    return reject(`柱 member references a non-柱 section: ${support.id}`)
   }
 
   return section
@@ -380,7 +683,10 @@ export interface WallSpan {
 function girderDepthAboveWall(project: Project, wall: Member): number {
   const position = wall.position
   if (!isGirderPosition(position)) {
-    throw new Error(`girderDepthAboveWall requires an edge position: ${wall.id}`)
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `girderDepthAboveWall requires an edge position: ${wall.id}`,
+    )
   }
 
   const girder = project.members.find(
@@ -394,12 +700,18 @@ function girderDepthAboveWall(project: Project, wall: Member): number {
   )
 
   if (!girder) {
-    throw new Error(`Missing 大梁 above 耐震壁: ${wall.id}`)
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `Missing 大梁 above 耐震壁: ${wall.id}`,
+    )
   }
 
   const section = findSection(project, girder.sectionId)
   if (section.kind !== '大梁') {
-    throw new Error(`大梁 member references a non-大梁 section: ${girder.id}`)
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `大梁 member references a non-大梁 section: ${girder.id}`,
+    )
   }
 
   return section.depth
@@ -420,8 +732,22 @@ export function wallSpan(project: Project, member: Member): WallSpan {
   const endIy = axis === 'Y' ? iy + 1 : iy
   const startPoint = gridPoint(project.grid, ix, iy)
   const endPoint = gridPoint(project.grid, endIx, endIy)
-  const startSection = supportColumnSection(project, member, ix, iy, 'start')
-  const endSection = supportColumnSection(project, member, endIx, endIy, 'end')
+  const startSection = supportColumnSection(
+    project,
+    member,
+    ix,
+    iy,
+    'start',
+    true,
+  )
+  const endSection = supportColumnSection(
+    project,
+    member,
+    endIx,
+    endIy,
+    'end',
+    true,
+  )
 
   const centerSpan =
     axis === 'X' ? endPoint.x - startPoint.x : endPoint.y - startPoint.y
@@ -579,14 +905,18 @@ function girderSectionAt(
   // 四辺のどれかが欠けると内法が決まらない。通り芯間で代用すれば大梁と重なった
   // 床板を計上してしまうので、黙って埋めない — 壁の上部大梁と同じ扱いである。
   if (!girder) {
-    throw new Error(
+    throw new MemberUnsupportedError(
+      '寸法不成立',
       `Missing ${axis}通り大梁 beside 床板: ${requestedBy.id} (${ix}, ${iy})`,
     )
   }
 
   const section = findSection(project, girder.sectionId)
   if (section.kind !== '大梁') {
-    throw new Error(`大梁 member references a non-大梁 section: ${girder.id}`)
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `大梁 member references a non-大梁 section: ${girder.id}`,
+    )
   }
 
   return { member: girder, section }
