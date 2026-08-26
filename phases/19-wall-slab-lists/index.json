@@ -1,0 +1,22 @@
+{
+  "project": "Kijun",
+  "phase": "19-wall-slab-lists",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-transcription",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "parse-wall-slab-lists",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "import-apply-wall-slab",
+      "status": "pending"
+    }
+  ]
+}
