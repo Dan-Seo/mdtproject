@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr038-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-26T22:27:50+0900",
+      "summary": "ADR-038 6개 전제를 코드·실행으로 모두 확인: wall/slab plain Error, 취입·직렬화 도달성, 부재 UI 범위, 중복 ID 수량 축소, undo 부재."
     },
     {
       "step": 1,
@@ -18,5 +20,6 @@
       "name": "plan-place-delete-ui",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T22:27:50+0900"
 }
