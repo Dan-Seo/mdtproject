@@ -1,0 +1,23 @@
+{
+  "project": "Kijun",
+  "phase": "24-wall-class",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr036-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "wall-class-domain-rulepack",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "section-table-input-ledger",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-26T17:20:00+0900"
+}
