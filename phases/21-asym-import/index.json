@@ -26,7 +26,7 @@
       "status": "completed",
       "summary": "비대칭 大梁의 Grid 축 순서 자동·사용자 始端 선택 취입과 断面一覧 좌우 편집을 구현하고 R13 대장을 해소로 갱신했다.",
       "started_at": "2026-08-26T14:23:36+0900",
-      "completed_at": "2026-08-26T14:41:36+0900",
+      "completed_at": "2026-08-26T14:46:27+0900",
       "report": "phases/21-asym-import/step2-report.json"
     }
   ],
