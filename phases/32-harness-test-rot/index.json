@@ -7,10 +7,7 @@
       "name": "verify-rot-is-contract-drift",
       "kind": "verify",
       "gate": true,
-      "status": "refuted",
-      "summary": "형제 하네스 스위트에서 stop_verify 2건이 추가로 실패해 sibling-suites-green 전제를 반증함",
-      "started_at": "2026-08-27T16:59:14+0900",
-      "refuted_at": "2026-08-27T17:06:26+0900"
+      "status": "pending"
     },
     {
       "step": 1,

@@ -4,7 +4,7 @@
 
 ## 배경
 
-`scripts/test_execute.py`의 8건이 실패한다 — `subprocess.run` 부류 **6건**,
+`scripts/test_execute.py`의 8건과 `scripts/test_stop_verify.py`의 2건이 실패한다. 앞의 8건은 — `subprocess.run` 부류 **6건**,
 산출물 이름 **1건**(`test_saves_output_json`), 가드레일 루트 **1건**
 (`TestLoadGuardrails::test_empty_project`)이다. step 0 의 표를 그대로 따르라. step 0이 **테스트가 낡은 것이고
 하네스가 계약을 잃은 것이 아님**을 확인했다. 그러니 **하네스를 고치지 말고
@@ -39,7 +39,21 @@
    깨지는지** 확인하고 원복하라. 예: `--dangerously-bypass-hook-trust`를 argv에서
    빼면 그 테스트가 깨져야 한다. 보고서에 무엇을 흔들었고 어느 테스트가 어떤
    메시지로 깨졌는지 적어라. **「통과한다」는 검증이 아니다.**
-5. 다 고친 뒤 `python -m pytest scripts/ -q`를 돌려 **전 파일 0 failed**를
+6. **`test_stop_verify.py`의 4건도 같이 고쳐라 — 2건은 실패하고 2건은 헛통과다.**
+   step 0이 확인한 대로 `stop-verify.sh`의 `[ ! -d "$ROOT/node_modules" ]` 조기
+   종료는 **의도된 가드**다(주석이 PR #5 재현을 근거로 든다). **훅을 고치지 마라** —
+   고쳐야 통과한다면 `blocked`로 적어라. 고칠 것은 테스트의 전제다.
+   - **실패 2건**(`test_failure_emits_block_json`·`test_failure_reason_carries_npm_output`):
+     임시 프로젝트가 훅의 전제를 만족하게 만들어라(가드가 요구하는 것을 갖추면 된다).
+     **단언은 그대로 둬라** — stdout이 유효한 JSON이고 `decision`이 `block`이며
+     `reason`에 npm 출력이 실린다는 것이 이 테스트가 지키는 계약이다.
+   - **헛통과 2건**(`test_success_emits_nothing`·`test_stdout_never_leaks_plain_text`):
+     지금은 조기 종료가 내는 빈 stdout 때문에 통과한다 — **훅이 통째로 망가져도
+     통과한다.** 같은 전제를 갖춰서 이 둘이 **실제로 훅을 지나가게** 만들어라.
+   - **넷 다 흔들어 보여라**: 훅 본문을 망가뜨리면 넷이 각각 어떤 메시지로 깨지는지
+     적고 원복하라. 헛통과 2건이 흔들었을 때도 통과하면 아직 안 고친 것이다.
+
+7. 다 고친 뒤 `python -m pytest scripts/ -q`를 돌려 **전 파일 0 failed**를
    확인하라. 남은 실패가 있으면 그 목록과 원인을 적고 `blocked`.
 
 ## 하지 말 것
@@ -54,10 +68,10 @@
 ## AC
 
 - `python -m pytest scripts/ -q` 0 failed.
-- 4.의 흔들기 결과가 보고서에 있다.
+- 4.와 6.의 흔들기 결과가 보고서에 있다 — 헛통과 2건이 흔들었을 때 깨지는 것을 포함해서.
 - `npm run test`·`npx tsc --noEmit`·`npm run lint` 전체 통과(회귀 없음 확인).
 
 ## 산출물
 
-`phases/32-harness-test-rot/step1-report.json`: 8건 각각의 전/후, 흔들기 결과,
+`phases/32-harness-test-rot/step1-report.json`: 10건 각각의 전/후, 흔들기 결과,
 지운 것이 있으면 무엇이 대신 지키는지, pytest 최종 결과.

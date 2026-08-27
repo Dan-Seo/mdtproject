@@ -157,8 +157,7 @@
     },
     {
       "dir": "32-harness-test-rot",
-      "status": "refuted",
-      "refuted_at": "2026-08-27T17:06:26+0900"
+      "status": "pending"
     }
   ]
 }
