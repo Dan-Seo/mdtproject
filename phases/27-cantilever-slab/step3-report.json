@@ -1,0 +1,57 @@
+{
+  "step": 3,
+  "name": "ledger-corrections",
+  "status": "completed",
+  "changed_files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/MILESTONES.md",
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "phases/27-cantilever-slab/index.json"
+  ],
+  "changes": [
+    {
+      "files": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "sentence": "片持床板은 ADR-039(phase 27)로 들어왔고, 두 원문에서 0건인 것은 `配力筋`뿐이다."
+    },
+    {
+      "file": "docs/MILESTONES.md",
+      "sentence": "부재 확장(耐震壁·床板)을 2026-08-27 완료로 갱신하고, `片持床板`의 근거를 `数量積算基準` 躯体の区分（４）床板·2（４）床板2) 但書·`標準仕様書` 表5.3.4 L3·表5.3.5 注1·2로 기록했다. L3은 「片持スラブの場合は25d」 예외이며 150mm 하한은 적용하지 않는다고 명시했다."
+    },
+    {
+      "file": "docs/ADR.md",
+      "sentences": [
+        "2026-08-26 정정: 「0건」은 `配力筋`에만 해당한다. `片持床板`은 원문 근거를 확인해 ADR-039로 들어왔다.",
+        "2026-08-27 보충: `標準仕様書` 表5.3.1 注1의 「片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d以上とする。」를 ADR-037의 자유단 판단 근거로 덧붙이고, 4d는 加工 형상이며 `数量積算基準` 1通則1)에 따라 수량에 가산하지 않음을 기록했다."
+      ]
+    },
+    {
+      "file": "docs/RISKS.md",
+      "sentence": "R2에 支持辺과 나란한 철근의 定着 0회 및 5.3.4(5)(ｲ)(c)의 「柱せいの3/4」을 片持床板에 적용하지 않는 읽기를 추가했다."
+    }
+  ],
+  "verification": {
+    "npm run test": {
+      "status": "passed",
+      "test_files": 83,
+      "tests": 1580
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "exit_code": 0,
+      "note": "기존 src/app/api/oncall/alert/route.test.ts의 미사용 변수 경고 1건."
+    }
+  },
+  "scope_check": {
+    "src_unchanged": true,
+    "tests_unchanged": true,
+    "execution_logs_preserved": true
+  }
+}
