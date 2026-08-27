@@ -1,0 +1,48 @@
+{
+  "premises": [
+    {
+      "id": "rot-cause-is-popen",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:46 calls subprocess.Popen and :49 calls communicate; scripts/test_execute.py:431,448,460,471,481,494,514 patch subprocess.run. Safe process-boundary probe reported subprocess.run calls: 0. The narrow pytest run reported test_nonexistent_step_file_exits passed while the invocation path was not intercepted.",
+      "note": "The six tests observe mock_run.call_args even though _invoke_codex reaches run_codex_process/Popen, so their patch target is stale."
+    },
+    {
+      "id": "artifact-rename-deliberate",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:345-347 writes step{N}-invoke.json; scripts/execute_test.py:192-201 asserts invoke/log artifacts and absence of step{N}-output.json; commit f3a2f79 introduced the file-backed process/artifact boundary.",
+      "note": "test_saves_output_json at scripts/test_execute.py:497 still expects the retired step2-output.json name."
+    },
+    {
+      "id": "guardrails-root-moved",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:243-249 reads self._root_path. scripts/test_execute.py:191 constructs via __new__, so :192 raises AttributeError. Actual StepExecutor('dummy', root=temp) with a valid empty phase returned ''.",
+      "note": "The production behavior is correct; only the __new__ test bypasses __init__ and omits _root_path."
+    },
+    {
+      "id": "contracts-still-hold",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:317 resolves shutil.which('codex') or 'codex'; :321-322 passes codex exec, --dangerously-bypass-approvals-and-sandbox, --dangerously-bypass-hook-trust, --json, -; :309-310 builds the prompt for stdin; :326 passes 1800. Safe probe captured ['...codex.CMD', 'exec', '--dangerously-bypass-approvals-and-sandbox', '--dangerously-bypass-hook-trust', '--json', '-'], prompt PREAMBLE\\nUI prompt, timeout 1800.",
+      "note": "All six claimed harness actions remain in the current implementation."
+    },
+    {
+      "id": "ci-runs-neither",
+      "verdict": "upheld",
+      "evidence": ".github/workflows/ci.yml:90, review.yml:185, and oncall.yml:235 invoke only python -m pytest scripts/test_review_verdict.py -q; package.json test:ci-scripts contains no pytest invocation and no test_execute.py/execute_test.py reference.",
+      "note": "The two stale harness suites are not covered by the current CI pytest command."
+    },
+    {
+      "id": "sibling-suites-green",
+      "verdict": "refuted",
+      "evidence": "Command: python -m pytest scripts/test_dangerous_command_guard.py scripts/test_stop_verify.py scripts/test_tdd_guard.py scripts/test_review_verdict.py scripts/execute_test.py -q. Result: 2 failed, 67 passed in 23.87s. Per-file: dangerous 13 passed; stop_verify 6 passed, 2 failed; tdd 13 passed; review 21 passed; execute_test 14 passed.",
+      "note": "The failures are test_failure_emits_block_json and test_failure_reason_carries_npm_output; both parse empty stdout. scripts/hooks/stop-verify.sh:28-30 exits when the temporary project has no node_modules, while scripts/test_stop_verify.py:84-94 expects block JSON. This is an additional stale-test/contract mismatch and the gate premise is false."
+    },
+    {
+      "id": "linux-portability",
+      "verdict": "upheld",
+      "evidence": "scripts/execute_test.py:27-36 and :50-56 guard tasklist/taskkill behind os.name == 'nt'; Linux uses os.kill at :38-44 and :57-60. scripts/test_execute.py:440-460 contains Windows paths only as mocked test data. scripts/test_stop_verify.py:19 skips only if bash is unavailable, which is standard on the Linux CI runner.",
+      "note": "No Windows-only test is required for the Linux path; the current local stop_verify failure is caused by the node_modules guard, not a Linux incompatibility."
+    }
+  ],
+  "linux_incompatible_tests": [],
+  "verdict": "refuted"
+}
