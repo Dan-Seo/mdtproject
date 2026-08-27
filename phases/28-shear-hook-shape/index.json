@@ -9,7 +9,7 @@
       "status": "completed",
       "gate": true,
       "started_at": "2026-08-27T12:32:37+0900",
-      "summary": "ADR-040 정정판의 12개 전제를 원문·코드·런타임 반례로 대조했고 모두 성립함",
+      "summary": "ADR-040 premise verification completed.",
       "completed_at": "2026-08-27T12:42:17+0900"
     },
     {
@@ -17,7 +17,7 @@
       "name": "hook-tail-domain-golden",
       "status": "completed",
       "started_at": "2026-08-27T12:42:17+0900",
-      "summary": "Rebar.hookTails 도메인 필드와 柱·大梁 135°フック余長을 구현하고 골든·수량 불변 회귀를 통과시켰다.",
+      "summary": "Implemented Rebar.hookTails and verified domain and golden regressions.",
       "completed_at": "2026-08-27T13:09:51+0900"
     },
     {
