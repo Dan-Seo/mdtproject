@@ -1,0 +1,114 @@
+{
+  "premises": [
+    {
+      "id": "stated-is-zero",
+      "verdict": "upheld",
+      "evidence": "룰팩 243행 중 confidence=stated 0행; src/rulepack/index.test.ts에 stated 필터와 toHaveLength(0) 고정이 있다.",
+      "note": ""
+    },
+    {
+      "id": "transcribed-count",
+      "verdict": "upheld",
+      "evidence": "confidence 분포를 실제로 집계함: {\"inferred\": 3, \"transcribed\": 240}. ADR-041의 옛 inferred 수치와 혼동하지 않는다.",
+      "note": ""
+    },
+    {
+      "id": "note-pending-review",
+      "verdict": "refuted",
+      "evidence": "transcribed 240행 중 독립검토 대기 문구가 있는 행 211행; 누락 행 29건, 키별={'markup.rate': 1, 'measure.distribution.addition': 1, 'measure.hoop.length.addition': 1, 'measure.opening.deduction.minimum.area': 1, 'measure.splice.column': 1, 'measure.splice.girder.continuous': 3, 'measure.splice.girder.continuous.band.upper': 2, 'measure.splice.interval': 8, 'measure.splice.length.factor': 1, 'measure.splice.slab.continuous': 3, 'measure.splice.slab.continuous.band.upper': 3, 'measure.splice.wall.opening': 1, 'measure.splice.wall.vertical': 1, 'measure.tip.length.addition': 1, 'measure.width-tie.length.addition': 1}.",
+      "note": ""
+    },
+    {
+      "id": "band-structure",
+      "verdict": "upheld",
+      "evidence": "원문 표에서 Fc 밴드 18 / 21 / 24、27 / 30、33、36 및 径 밴드 D16以下 / D19～D38를 확인했고, 룰팩 전개 후 Fc 그룹 24개·径 그룹 3개를 되접었다. Fc 구조 오류=없음, 径 구조 오류=없음.",
+      "note": ""
+    },
+    {
+      "id": "fold-lossless",
+      "verdict": "upheld",
+      "evidence": "帯 내부 값 불일치 0건(Fc=0, 径=0); 전개 누락 0건(Fc=0, 径=0).",
+      "note": "SD390의 Fc18 및 D16以下가 없는 것은 원문 결번이며, 존재하는 밴드 내부 전개 불일치와 구별했다."
+    },
+    {
+      "id": "l1-l1h-identical",
+      "verdict": "upheld",
+      "evidence": "表5.3.2와 表5.3.4의 대응 비교: 원문 밴드 쌍 22개(L1 11 + L1h 11), 룰팩 전개 셀 쌍 40개 전부 일치; 차이=없음.",
+      "note": ""
+    },
+    {
+      "id": "table536-column-equals-girder",
+      "verdict": "upheld",
+      "evidence": "表5.3.6 柱↔大梁 조건 5개(屋内/屋外×仕上げ 4 + 土に接する部分 1) 모두 일치; 차이=없음.",
+      "note": ""
+    },
+    {
+      "id": "missing-cells",
+      "verdict": "upheld",
+      "evidence": "원문에서 확인한 결번: 表5.3.2: SD390 × Fc18 (해당 표에 SD390 21부터만 존재); 表5.3.4: SD390 × Fc18 (해당 표에 SD390 21부터만 존재); 表5.3.5: SD390 × Fc18 (해당 표에 SD390 21부터만 존재); 表5.3.1: SD390 × D16以下 (SD390 열은 D19～D38만 존재).",
+      "note": ""
+    },
+    {
+      "id": "prior-verification-not-independent",
+      "verdict": "upheld",
+      "evidence": "source.verifications 합계 77칸; by=['agent']; PDF SHA-256 일치=True; docs/RISKS.md R6에 77칸·전사자＝승인자·독립 검토 필요가 기재됨.",
+      "note": "기계 대조 77칸은 독립 검토가 아니므로 stated 승격 근거가 아니다."
+    },
+    {
+      "id": "source-per-row",
+      "verdict": "upheld",
+      "evidence": "해결 가능한 source(문서·표·인쇄쪽) 243/243행; 누락=없음.",
+      "note": ""
+    },
+    {
+      "id": "agent-cannot-promote",
+      "verdict": "upheld",
+      "evidence": "ADR-015·ADR-023·ADR-041을 대조했고, 독립 검토는 사람의 별도 검토로 남으며 ADR-041 §4가 이 phase의 stated 승격 0행을 명시한다.",
+      "note": ""
+    }
+  ],
+  "counts": {
+    "byConfidence": {
+      "inferred": 3,
+      "transcribed": 240
+    },
+    "byKey": {
+      "anchorage.L1": 20,
+      "anchorage.L1h": 20,
+      "anchorage.L2": 20,
+      "anchorage.L2h": 20,
+      "anchorage.L3": 2,
+      "anchorage.L3.minimum": 1,
+      "anchorage.La": 20,
+      "anchorage.Lb": 20,
+      "anchorage.bent.projection.minimum": 1,
+      "anchorage.bent.tail.minimum": 1,
+      "bend.hook-tome": 1,
+      "bend.hook135": 1,
+      "bend.hook180": 1,
+      "bend.hook90": 1,
+      "bend.inside-diameter": 21,
+      "cover.fabrication.addition": 1,
+      "cover.minimum": 19,
+      "lap.L1": 20,
+      "lap.L1h": 20,
+      "lap.wall.minimum": 1,
+      "markup.rate": 1,
+      "measure.distribution.addition": 1,
+      "measure.hoop.length.addition": 1,
+      "measure.opening.deduction.minimum.area": 1,
+      "measure.splice.column": 1,
+      "measure.splice.girder.continuous": 3,
+      "measure.splice.girder.continuous.band.upper": 2,
+      "measure.splice.interval": 8,
+      "measure.splice.length.factor": 4,
+      "measure.splice.slab.continuous": 3,
+      "measure.splice.slab.continuous.band.upper": 3,
+      "measure.splice.wall.opening": 1,
+      "measure.splice.wall.vertical": 1,
+      "measure.tip.length.addition": 1,
+      "measure.width-tie.length.addition": 1
+    }
+  },
+  "verdict": "refuted"
+}

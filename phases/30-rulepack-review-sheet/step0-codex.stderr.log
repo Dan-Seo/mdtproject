@@ -1,0 +1,4 @@
+2026-08-27T05:43:28.935981Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T05:43:29.058229Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-27T05:51:02.096113Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\phases\30-rulepack-review-sheet\verify-step0.py:
+        f"표5.3.2와 표5.3.4의 대응 비교: 원문 밴드 쌍 {source_band_pair_count}개(L1 11 + L1h 11), "
