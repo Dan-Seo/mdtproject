@@ -382,7 +382,8 @@ export function generateColumnRebar(
       `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
       `表示される長さ・本数は設計値と一致しない・数量には用いない） ／ ` +
       `135°フック余長 ＝ ${hook135Rule.expr} × ${section.hoop.size} ＝ ` +
-      `${hookTailLength}mm。points[0] から断面内向きの方向を中心に、` +
+      `${hookTailLength}mm（表5.3.1 折曲げ図が原文で画像 — 独立検討待ち）。` +
+      `points[0] から断面内向きの方向を中心に、` +
       `同じ角度で左右対称の二方向へ分けて描く`,
   }
 
