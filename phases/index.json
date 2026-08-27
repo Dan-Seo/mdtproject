@@ -138,6 +138,10 @@
     {
       "dir": "28-shear-hook-shape",
       "status": "pending"
+    },
+    {
+      "dir": "29-harness-verify-gate",
+      "status": "pending"
     }
   ]
 }

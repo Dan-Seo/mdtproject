@@ -1,0 +1,23 @@
+{
+  "project": "Kijun",
+  "phase": "29-harness-verify-gate",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-gate-field",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "refute-gate-claims",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "gate-docs",
+      "status": "pending"
+    }
+  ]
+}
