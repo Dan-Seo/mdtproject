@@ -9,13 +9,18 @@ type PlanarDirection = [number, number]
 
 /**
  * 135°フックの表示用方向を、断面内向きの中心線から左右対称に分ける。
- * 半開き角の 45° は原文の寸法ではなく、このビューアの作図規則である。
+ * 半開き角の 22.5° は原文の寸法ではなく、このビューアの作図規則である。
+ * 45° にすると矩形の角では二等分線±45°が隣接二辺の方向と一致し、
+ * 尾が同半径の辺チューブに埋もれて見えない (ADR-040 세 번째 정정)。
+ * 辺からの分離は 6d×sin(45°−θ)、二本の尾どうしの分離は 6d×sinθ なので、
+ * θ=22.5° が両者を等しくする釣り合い点だ — 広げても狭めても片方が
+ * 最小呼び名 D10 (6d＝60mm) の表示半径 22.4mm を割る。
  * 数量は `Rebar.length` が持つ断面周長を使うため、この角度は数量に影響しない。
  */
 export function symmetricInwardDirections(
   inwardAngleRadians: number,
 ): [PlanarDirection, PlanarDirection] {
-  const halfSpreadRadians = Math.PI / 4
+  const halfSpreadRadians = Math.PI / 8
   return [
     inwardAngleRadians - halfSpreadRadians,
     inwardAngleRadians + halfSpreadRadians,

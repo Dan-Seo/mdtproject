@@ -620,8 +620,16 @@ describe('rebarSegments', () => {
     for (const { from } of tails) {
       expectPointCloseTo(from, [62.4, 0, 62.4])
     }
-    expectPointCloseTo(tails[0].to, [140.4, 0, 62.4])
-    expectPointCloseTo(tails[1].to, [62.4, 0, 140.4])
+    // 꼬리는 clamp가 아니라 시작점 inset만큼의 평행이동으로 그린다 — clamp는
+    // 시작점만 안쪽으로 당겨 길이·방향이 왜곡되고, 과장 표시반경(22.4)의 변
+    // 튜브에 묻힌다. 그려진 꼬리 벡터가 도메인 꼬리 벡터와 같아야 한다.
+    for (const [index, { from, to }] of tails.entries()) {
+      const domainTail = hooked.hookTails![index]
+      expect(to[0] - from[0]).toBeCloseTo(domainTail[0] - hooked.points[0][0])
+      expect(to[2] - from[2]).toBeCloseTo(domainTail[2] - hooked.points[0][2])
+    }
+    expectPointCloseTo(tails[0].to, [162.8, 0, 84.8])
+    expectPointCloseTo(tails[1].to, [84.8, 0, 162.8])
 
     const batches = rebarBatches(
       [{ rowId: 'hooked-rectangle', rebar: hooked }],
@@ -630,6 +638,52 @@ describe('rebarSegments', () => {
     expect(batches.flatMap(({ segments: batchSegments }) => batchSegments)).toEqual(
       segments,
     )
+  })
+  it('keeps generated hook tails clear of the adjacent leg tubes even at D10', () => {
+    // 半開き 22.5°의 여유가 가장 얇은 최소 呼び名 — 余長 6d＝60mm에 표시반경은
+    // 하한 14mm×배율＝22.4mm라 근접 변과의 수직거리가 60·sin22.5°＝22.96mm다.
+    // 반개방각이 어느 쪽으로든 움직이거나 표시반경 하한이 커지면 여기서 걸린다.
+    const d10Section: ColumnSection = {
+      ...section,
+      id: 'section-C1-d10',
+      hoop: { ...section.hoop, size: 'D10' },
+    }
+    const generatedHoop = generateColumnRebar(
+      {
+        member: {
+          id: '1F-X1Y1',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: d10Section.id,
+          storyId: '1F',
+          position: { ix: 0, iy: 0 },
+        },
+        section: d10Section,
+        story: { id: '1F', name: '1階', height: 4200 },
+        beamDepthAbove: 750,
+        ends: { bottom: 'なし', top: '先端' },
+      },
+      jpMlitRulePack,
+    ).find(({ role }) => role === '帯筋')!
+
+    const segments = rebarSegments(generatedHoop, d10Section)
+    const firstPlacement = segments.slice(0, generatedHoop.points.length + 2)
+    const tails = firstPlacement.slice(-2)
+    const corner = tails[0].from
+    for (const tail of tails) {
+      expectPointCloseTo(tail.from, corner)
+      const vx = tail.to[0] - corner[0]
+      const vz = tail.to[2] - corner[2]
+      for (const leg of [firstPlacement[0], firstPlacement[3]]) {
+        const ex = leg.to[0] - leg.from[0]
+        const ez = leg.to[2] - leg.from[2]
+        const legLength = Math.hypot(ex, ez)
+        const perpendicular = Math.abs(
+          (vx * ez - vz * ex) / legLength,
+        )
+        expect(perpendicular).toBeGreaterThan(tail.radius)
+      }
+    }
   })
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
     const segments = rebarSegments(hoopOf(3), section)
@@ -1805,8 +1859,8 @@ describe('円形柱の配筋を円周に沿って描く', () => {
     const firstPlacement = segments.slice(0, circularHoop.points.length + 2)
     expect(segments).toHaveLength(936)
     expectPointCloseTo(firstPlacement.at(-2)!.from, [527.6, 0, 300])
-    expectPointCloseTo(firstPlacement.at(-2)!.to, [473.292526024, 0, 349.0533504261])
+    expectPointCloseTo(firstPlacement.at(-2)!.to, [455.5373964641, 0, 329.8493077245])
     expectPointCloseTo(firstPlacement.at(-1)!.from, [527.6, 0, 300])
-    expectPointCloseTo(firstPlacement.at(-1)!.to, [473.292526024, 0, 250.9466495739])
+    expectPointCloseTo(firstPlacement.at(-1)!.to, [455.5373964641, 0, 270.1506922755])
   })
 })

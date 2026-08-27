@@ -157,6 +157,11 @@ function assertSymmetricInwardTails(rebar: Rebar, inward: Vec3): void {
       2: expect.closeTo(unit(inward)[2], 8),
     }),
   )
+
+  // 「尾が辺チューブ(表示半径)の外へ出るか」は表示半径を持つビューア側で
+  // 固定する (geometry.test.ts) — src/domain のテストは no-restricted-imports
+  // でビューアを import できない。ここは半開き角の正確な値 (π/8) と二等分線
+  // 対称で方向を完全に決める。
 }
 
 function rectangularInward(points: Vec3[]): Vec3 {
@@ -207,11 +212,11 @@ describe('shear-hook direction construction', () => {
     assertSymmetricInwardTails(hoop, inward)
   })
 
-  it('keeps the symmetricInwardDirections half-opening angle at Math.PI / 4', () => {
+  it('keeps the symmetricInwardDirections half-opening angle at Math.PI / 8', () => {
     const [first, second] = symmetricInwardDirections(0)
 
     expect(angleBetween([first[0], 0, first[1]], [second[0], 0, second[1]])).toBeCloseTo(
-      2 * (Math.PI / 4),
+      2 * (Math.PI / 8),
       8,
     )
   })
