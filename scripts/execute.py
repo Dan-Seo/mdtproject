@@ -144,8 +144,24 @@ class StepExecutor:
         self._checkout_branch()
         guardrails = self._load_guardrails()
         self._ensure_created_at()
-        self._execute_all_steps(guardrails)
-        self._finalize()
+        try:
+            self._execute_all_steps(guardrails)
+        except SystemExit as error:
+            # blocked/error 스텝은 각자 top index를 갱신하고 종료한다. 그
+            # 계약은 유지하되, 게이트가 이미 refuted된 뒤의 비정상 종료는
+            # 정상적인 gate-stop의 결과를 커밋한 후 원래 종료 코드를
+            # 다시 전달한다.
+            if error.code not in (1, 2) and self._has_refuted_gate():
+                self._finalize()
+            raise
+        except Exception:
+            # 게이트 반증을 기록한 뒤 하네스 자체에서 예외가 나더라도
+            # 대장을 실제 상태와 맞춘 다음 예외를 다시 올린다.
+            if self._has_refuted_gate():
+                self._finalize()
+            raise
+        else:
+            self._finalize()
 
     # --- timestamps ---
 
@@ -216,6 +232,15 @@ class StepExecutor:
                 print(f"  WARN: housekeeping 커밋 실패: {r.stderr.strip()}")
 
     # --- top-level index ---
+
+    def _has_refuted_gate(self) -> bool:
+        index = self._read_json(self._index_file)
+        return any(
+            step.get("gate") is True
+            and step.get("kind") == "verify"
+            and step.get("status") == "refuted"
+            for step in index["steps"]
+        )
 
     def _update_top_index(self, status: str):
         if not self._top_index_file.exists():
@@ -519,10 +544,7 @@ class StepExecutor:
         index = self._read_json(self._index_file)
         index["completed_at"] = self._stamp()
         self._write_json(self._index_file, index)
-        gate_refuted = any(
-            step.get("gate") is True and step.get("kind") == "verify" and step.get("status") == "refuted"
-            for step in index["steps"]
-        )
+        gate_refuted = self._has_refuted_gate()
         has_pending_steps = any(step.get("status") == "pending" for step in index["steps"])
         self._update_top_index("refuted" if gate_refuted and has_pending_steps else "completed")
 
