@@ -7,7 +7,9 @@
       "name": "verify-adr041-premises",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T14:57:24+0900",
+      "summary": "ADR-041 전제 12개를 룰팩·원문 PDF·ADR/R6와 대조해 모두 upheld; 243행(transcribed 240, inferred 3)의 step0b-report.json을 생성했다."
     },
     {
       "step": 1,
