@@ -24,7 +24,7 @@
       "name": "promotion-procedure-docs",
       "status": "completed",
       "started_at": "2026-08-27T15:32:09+0900",
-      "completed_at": "2026-08-27T15:37:20+0900",
+      "completed_at": "2026-08-27T15:39:39+0900",
       "summary": "R6·M2·AGENTS.md·CLAUDE.md에 243행/135칸/25개 대조 단위와 생성·3단계 검토·원자적 승격 절차를 기록하고 ADR-041 수치 정정을 덧붙였다. stated는 0행, R6은 열림을 유지했다."
     }
   ],
