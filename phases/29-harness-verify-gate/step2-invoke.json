@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "gate-docs",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 250.3153231000001,
+  "stdout_log": "phases\\29-harness-verify-gate\\step2-codex.stdout.log",
+  "stderr_log": "phases\\29-harness-verify-gate\\step2-codex.stderr.log"
+}

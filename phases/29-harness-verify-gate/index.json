@@ -25,7 +25,7 @@
       "name": "gate-docs",
       "status": "completed",
       "summary": "AGENTS.md와 CLAUDE.md에 refuted 기본 진행·step 0 게이트·gate 필드 동작을 같은 문언으로 기록하고, AC 3종을 통과했다.",
-      "completed_at": "2026-08-27T12:22:11+09:00",
+      "completed_at": "2026-08-27T12:24:14+0900",
       "started_at": "2026-08-27T12:20:04+0900"
     }
   ],
