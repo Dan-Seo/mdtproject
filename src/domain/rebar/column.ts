@@ -1,5 +1,10 @@
-import type { BarSize, ColumnSection, Member } from '../model/member'
-import type { Rebar, RebarZone } from '../model/rebar'
+import type {
+  BarSize,
+  ColumnSection,
+  Member,
+  ShearBarSize,
+} from '../model/member'
+import type { Rebar, RebarZone, Vec3 } from '../model/rebar'
 import type { ColumnEnds, Story } from '../model/project'
 import { MemberUnsupportedError } from '../model/unsupported'
 import { coverConditions, lookupRule } from '../rules/lookup'
@@ -22,8 +27,8 @@ export interface ColumnRebarInput {
   ends: ColumnEnds
 }
 
-function barDiameter(size: BarSize): number {
-  const diameter = Number(size.replace(/^D/, ''))
+function barDiameter(size: BarSize | ShearBarSize): number {
+  const diameter = Number(size.replace(/^[A-Z]+/, ''))
 
   if (!Number.isFinite(diameter) || diameter <= 0) {
     throw new Error(`Invalid BarSize: ${size}`)
@@ -65,6 +70,25 @@ function millimetres(rule: RuleHit, diameter?: number): number {
   throw new Error(
     `Rule ${rule.key} must use mm or use d with a supplied bar diameter`,
   )
+}
+
+function hookTailLengthMm(rule: RuleHit, size: ShearBarSize): number {
+  return millimetres(rule, barDiameter(size))
+}
+
+function twoInwardTails(
+  origin: Vec3,
+  lengthMm: number,
+  directions: [[number, number], [number, number]],
+): [Vec3, Vec3] {
+  return directions.map(([first, second]) => {
+    const magnitude = Math.hypot(first, second)
+    return [
+      origin[0] + (lengthMm * first) / magnitude,
+      origin[1],
+      origin[2] + (lengthMm * second) / magnitude,
+    ]
+  }) as [Vec3, Vec3]
 }
 
 export function generateColumnRebar(
@@ -114,6 +138,7 @@ export function generateColumnRebar(
     'measure.distribution.addition',
     {},
   )
+  const hook135Rule = lookupRule(pack, 'bend.hook135', {})
   // 主筋の上端は定着しない — スタック最上端（先端）は 1通則1)「先端で止まる
   // 鉄筋はコンクリートの設計寸法」＋（２）柱1) 但書が最上階柱主筋をこの条項に
   // 明示的に委ねる (R9①)。
@@ -212,6 +237,28 @@ export function generateColumnRebar(
   const hoopLength = circular
     ? circularHoopDesignLengthMm(section.b, hoopLengthAdditionRule)
     : hoopDesignLengthMm(section.b, section.d, hoopLengthAdditionRule)
+  const hoopPoints: Vec3[] = circular
+    ? circularHoopPoints(section.b, fabricationCover)
+    : [
+        [fabricationCover, 0, fabricationCover],
+        [section.b - fabricationCover, 0, fabricationCover],
+        [
+          section.b - fabricationCover,
+          0,
+          section.d - fabricationCover,
+        ],
+        [fabricationCover, 0, section.d - fabricationCover],
+      ]
+  const hookTailLength = hookTailLengthMm(hook135Rule, section.hoop.size)
+  const hookTails = circular
+    ? twoInwardTails(hoopPoints[0], hookTailLength, [
+        [-1, 1],
+        [-1, -1],
+      ])
+    : twoInwardTails(hoopPoints[0], hookTailLength, [
+        [1, 1],
+        [1, 2],
+      ])
 
   // 上部大梁せい가 階高 이상이면 3D 배치 구간이 사라진다. 数量만이라면
   // 階高로 계산되지만(1通則7)), 그런 부재는 梁이 층보다 높다는 뜻이라 형상이
@@ -306,19 +353,9 @@ export function generateColumnRebar(
     role: '帯筋',
     size: section.hoop.size,
     shape: 'hoop',
-    points: circular
-      ? circularHoopPoints(section.b, fabricationCover)
-      : [
-          [fabricationCover, 0, fabricationCover],
-          [section.b - fabricationCover, 0, fabricationCover],
-          [
-            section.b - fabricationCover,
-            0,
-            section.d - fabricationCover,
-          ],
-          [fabricationCover, 0, section.d - fabricationCover],
-        ],
+    points: hoopPoints,
     closed: true,
+    hookTails,
     length: hoopLength,
     count: hoopCount,
     placement: {
@@ -344,7 +381,9 @@ export function generateColumnRebar(
       `設計本数 ＝ ⌈階高 ${story.height} ÷ ピッチ ${section.hoop.pitch}⌉ ＋ 1 ` +
       `＝ ${hoopCount}（同 （２）柱3)・1通則7) — 各階ごと） ／ ` +
       `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
-      `表示される長さ・本数は設計値と一致しない・数量には用いない）`,
+      `表示される長さ・本数は設計値と一致しない・数量には用いない） ／ ` +
+      `135°フック余長 ＝ ${hook135Rule.expr} × ${section.hoop.size} ＝ ` +
+      `${hookTailLength}mm。points[0] から断面内向きの異なる二方向へ分けて描く`,
   }
 
   return [main, hoop]

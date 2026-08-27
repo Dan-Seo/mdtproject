@@ -1,0 +1,65 @@
+{
+  "step": 1,
+  "name": "hook-tail-domain-golden",
+  "status": "completed",
+  "summary": "Rebar.hookTails를 추가하고 柱 帯筋·大梁 あばら筋의 135°フック余長을 3D 전용 형상으로 분리했다.",
+  "golden": {
+    "columnHoop": {
+      "expectedFabricationLengthMm": 2956,
+      "derivation": "직선부 2800 + bend.hook135 6d × D13 13 = 78mm × 양 끝 2 = 2956mm"
+    },
+    "girderStirrup": {
+      "expectedFabricationLengthMm": 2056,
+      "derivation": "직선부 1900 + bend.hook135 6d × D13 13 = 78mm × 양 끝 2 = 2056mm"
+    },
+    "circularColumnHoop": {
+      "expectedHookTailIncrementMm": 156,
+      "derivation": "원형 폴리라인의 절대길이는 다각형 근사이므로, hook tail 증분만 78mm × 양 끝 2로 대조"
+    }
+  },
+  "deviation": {
+    "term": "bendRadius",
+    "status": "deviation-from-source",
+    "narrowed": "기존 hook135 누락 대장을 제거하지 않고 bendRadius 미확정 대장으로 좁혔다. missingMm은 제거하고, 余長은 구현됐으며 表5.3.1 折曲げ図가 이미지라 남은 曲げ部の伸び는 수치화하지 않는다고 기록했다."
+  },
+  "regressions": [
+    {
+      "name": "design-length-and-count",
+      "assertion": "Rebar.length는 1通則2)의 단면 설계 치수周長과 룰팩 가산, count는 1通則7)의 ceil(partLength/pitch)+룰팩 가산으로 대조한다. bend.hook135는 ruleHits에 없다."
+    },
+    {
+      "name": "quantity-line-id",
+      "assertion": "hookTails가 있는 Rebar와 필드를 삭제한 동일 Rebar의 quantityLineId 문자열을 문자 그대로 비교한다."
+    },
+    {
+      "name": "project-note-export",
+      "assertion": "hookTails가 생성된 帯筋 행에 setNote한 값이 xlsx WorkbookSpec의 해당 행 備考 셀에 남는지 확인한다."
+    }
+  ],
+  "mutationChecks": [
+    {
+      "mutation": "柱 帯筋 length를 hoopLength + distributionAdditionRule.value로 변경",
+      "command": "npx vitest run tests/golden/fabrication-length.test.ts -t \"keeps design length and count\"",
+      "result": "실패 확인: expected 3200, received 3201",
+      "restored": true
+    },
+    {
+      "mutation": "quantityLineId의 shapeKey에 hookTails 존재 여부를 추가",
+      "command": "npx vitest run tests/golden/fabrication-length.test.ts -t \"byte-for-byte independent\"",
+      "result": "실패 확인: hookTails가 있는 ID에 |hook가 추가됨",
+      "restored": true
+    },
+    {
+      "mutation": "setNote가 lineId가 아닌 lineId|hook를 저장하도록 변경",
+      "command": "npx vitest run tests/golden/fabrication-length.test.ts -t \"project note\"",
+      "result": "실패 확인: 내보낸 備考가 빈 문자열이 됨",
+      "restored": true
+    }
+  ],
+  "gates": {
+    "targetTest": "npx vitest run tests/golden/fabrication-length.test.ts — 19 passed",
+    "test": "npm run test — 83 files, 1584 tests passed",
+    "typecheck": "npx tsc --noEmit — passed",
+    "lint": "npm run lint — passed; 기존 route.test.ts의 unused-vars warning 1건만 남음"
+  }
+}

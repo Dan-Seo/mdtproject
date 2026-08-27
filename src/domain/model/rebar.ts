@@ -103,6 +103,8 @@ export interface RebarSplice {
   formula: string
 }
 
+export type Vec3 = [number, number, number]
+
 export interface Rebar {
   id: string
   memberId: string
@@ -110,13 +112,20 @@ export interface Rebar {
   /** せん断補強筋には高強度せん断補強筋 (K13・S13) が入る (ADR-026) */
   size: ShearBarSize
   shape: RebarShape
-  /** 加工形状. 3D 표시의 유일한 출처이며 `length`와 일치하지 않을 수 있다. */
-  points: [number, number, number][]
+  /**
+   * 加工形状の主 polyline。135°フック余長は `hookTails` に分離する。
+   * `points` は数量行の形状キーに使うため `length` と一致しないことがある。
+   * 余長を `points` に混ぜると `quantityLineId` が変わり、保存済み `project.notes` が
+   * 行から外れるため、数量キーと3D追加形状を別フィールドにする (ADR-040)。
+   */
+  points: Vec3[]
   closed: boolean
+  /** 135°フック余長の遠端。二つとも `points[0]` から出発する。 */
+  hookTails?: [Vec3, Vec3]
   /**
    * 数量積算基準の**設計長さ** (mm) — 内訳書·kg 산출이 쓰는 값이다.
    * フープ·スタラップ은 1通則2)가 「断面の設計寸法による周長、フックはない
-   * ものとする」로 정하므로 `points`가 그리는 加工長과 어긋난다 (ADR-019).
+   * ものとする」로 정하므로 `points`와 `hookTails`가 그리는 加工長과 어긋난다 (ADR-019).
    */
   length: number
   /**

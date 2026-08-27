@@ -4,7 +4,7 @@ import {
   type Member,
 } from '../model/member'
 import type { GirderRun, GirderSpan } from '../model/project'
-import type { Rebar, RebarZone } from '../model/rebar'
+import type { Rebar, RebarZone, Vec3 } from '../model/rebar'
 import { MemberUnsupportedError } from '../model/unsupported'
 import {
   coverConditions,
@@ -43,6 +43,35 @@ function millimetres(rule: RuleHit, diameter?: number): number {
   throw new Error(
     `Rule ${rule.key} must use mm or use d with a supplied bar diameter`,
   )
+}
+
+function shearBarDiameter(size: GirderSection['stirrup']['size']): number {
+  const diameter = Number(size.replace(/^[A-Z]+/, ''))
+
+  if (!Number.isFinite(diameter) || diameter <= 0) {
+    throw new Error(`Invalid ShearBarSize: ${size}`)
+  }
+
+  return diameter
+}
+
+function hookTailLengthMm(rule: RuleHit, size: GirderSection['stirrup']['size']): number {
+  return millimetres(rule, shearBarDiameter(size))
+}
+
+function twoInwardTails(
+  origin: Vec3,
+  lengthMm: number,
+  directions: [[number, number], [number, number]],
+): [Vec3, Vec3] {
+  return directions.map(([first, second]) => {
+    const magnitude = Math.hypot(first, second)
+    return [
+      origin[0],
+      origin[1] + (lengthMm * first) / magnitude,
+      origin[2] + (lengthMm * second) / magnitude,
+    ]
+  }) as [Vec3, Vec3]
 }
 
 function uniqueRuleHits(hits: RuleHit[]): RuleHit[] {
@@ -688,6 +717,7 @@ function generateStirrup(
   fabricationCoverMm: number,
   hoopLengthAdditionRule: RuleHit,
   distributionAdditionRule: RuleHit,
+  hook135Rule: RuleHit,
 ): Rebar {
   // 規準에 값이 없는 배치값이다 — 断面一覧의 입력을 그대로 쓴다 (ADR-012)
   const startOffsetMm = section.stirrup.startOffsetMm
@@ -729,23 +759,33 @@ function generateStirrup(
     section.stirrup.pitch,
     distributionAdditionRule,
   )
+  const points: Vec3[] = [
+    [0, fabricationCoverMm, fabricationCoverMm],
+    [0, section.depth - fabricationCoverMm, fabricationCoverMm],
+    [
+      0,
+      section.depth - fabricationCoverMm,
+      section.b - fabricationCoverMm,
+    ],
+    [0, fabricationCoverMm, section.b - fabricationCoverMm],
+  ]
+  const hookTailLength = hookTailLengthMm(
+    hook135Rule,
+    section.stirrup.size,
+  )
+  const hookTails = twoInwardTails(points[0], hookTailLength, [
+    [1, 1],
+    [1, 2],
+  ])
   return {
     id: `${member.id}|stirrup`,
     memberId: member.id,
     role: 'あばら筋',
     size: section.stirrup.size,
     shape: 'hoop',
-    points: [
-      [0, fabricationCoverMm, fabricationCoverMm],
-      [0, section.depth - fabricationCoverMm, fabricationCoverMm],
-      [
-        0,
-        section.depth - fabricationCoverMm,
-        section.b - fabricationCoverMm,
-      ],
-      [0, fabricationCoverMm, section.b - fabricationCoverMm],
-    ],
+    points,
     closed: true,
+    hookTails,
     length: stirrupLengthMm,
     count: stirrupCount,
     placement: {
@@ -771,7 +811,9 @@ function generateStirrup(
       `${section.stirrup.pitch}⌉ ＋ 1 ＝ ${stirrupCount}` +
       `（同 （３）梁3)・1通則7) — 各梁ごと、内法長さは代表値） ／ ` +
       `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
-      `表示される長さ・本数は設計値と一致しない・数量には用いない）`,
+      `表示される長さ・本数は設計値と一致しない・数量には用いない） ／ ` +
+      `135°フック余長 ＝ ${hook135Rule.expr} × ${section.stirrup.size} ＝ ` +
+      `${hookTailLength}mm。points[0] から断面内向きの異なる二方向へ分けて描く`,
   }
 }
 
@@ -1095,6 +1137,7 @@ export function generateGirderRebar(
     'measure.distribution.addition',
     {},
   )
+  const hook135Rule = lookupRule(pack, 'bend.hook135', {})
   const stirrups = run.members.map((member, index) =>
     generateStirrup(
       member,
@@ -1105,6 +1148,7 @@ export function generateGirderRebar(
       fabricationCoverMm,
       hoopLengthAdditionRule,
       distributionAdditionRule,
+      hook135Rule,
     ),
   )
   // 幅止め筋・腹筋は断面一覧にある梁にだけ付く。無い梁に製品が足さない (ADR-012)。
