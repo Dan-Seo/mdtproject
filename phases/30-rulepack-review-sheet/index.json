@@ -1,0 +1,23 @@
+{
+  "project": "Kijun",
+  "phase": "30-rulepack-review-sheet",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr041-premises",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "review-sheet-generator",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "promotion-procedure-docs",
+      "status": "pending"
+    }
+  ]
+}
