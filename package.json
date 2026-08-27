@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run tests/golden",
+    "rulepack:review-sheet": "tsx scripts/rulepack/review-sheet.ts",
     "lighthouse": "lhci autorun --config=lighthouserc.cjs",
     "perf:measure": "rm -rf .lighthouseci; LHCI_RUNS=1 lhci autorun --config=lighthouserc.cjs; node scripts/perf/report.mjs",
     "eval": "tsx --env-file-if-exists=.env evals/harness/run.ts",

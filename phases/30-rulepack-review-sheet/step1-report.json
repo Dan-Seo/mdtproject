@@ -1,0 +1,71 @@
+{
+  "step": 1,
+  "name": "review-sheet-generator",
+  "status": "completed",
+  "folded_result": {
+    "total_rulepack_rows": 243,
+    "folded_review_cells": 135,
+    "table_count": 8,
+    "singleton_count": 17,
+    "verification_marked_cells": 77,
+    "by_key": {
+      "anchorage.L1": { "before": 20, "after": 11 },
+      "anchorage.L2": { "before": 20, "after": 11 },
+      "anchorage.L1h": { "before": 20, "after": 11 },
+      "anchorage.L2h": { "before": 20, "after": 11 },
+      "anchorage.La": { "before": 20, "after": 11 },
+      "anchorage.L3": { "before": 2, "after": 2 },
+      "anchorage.L3.minimum": { "before": 1, "after": 1 },
+      "anchorage.Lb": { "before": 20, "after": 11 },
+      "anchorage.bent.tail.minimum": { "before": 1, "after": 1 },
+      "anchorage.bent.projection.minimum": { "before": 1, "after": 1 },
+      "bend.inside-diameter": { "before": 21, "after": 3 },
+      "bend.hook180": { "before": 1, "after": 1 },
+      "bend.hook135": { "before": 1, "after": 1 },
+      "bend.hook90": { "before": 1, "after": 1 },
+      "bend.hook-tome": { "before": 1, "after": 1 },
+      "cover.minimum": { "before": 19, "after": 7 },
+      "cover.fabrication.addition": { "before": 1, "after": 1 },
+      "lap.L1": { "before": 20, "after": 11 },
+      "lap.L1h": { "before": 20, "after": 11 },
+      "lap.wall.minimum": { "before": 1, "after": 1 },
+      "markup.rate": { "before": 1, "after": 1 },
+      "measure.hoop.length.addition": { "before": 1, "after": 1 },
+      "measure.width-tie.length.addition": { "before": 1, "after": 1 },
+      "measure.distribution.addition": { "before": 1, "after": 1 },
+      "measure.tip.length.addition": { "before": 1, "after": 1 },
+      "measure.opening.deduction.minimum.area": { "before": 1, "after": 1 },
+      "measure.splice.interval": { "before": 8, "after": 2 },
+      "measure.splice.column": { "before": 1, "after": 1 },
+      "measure.splice.girder.continuous": { "before": 3, "after": 3 },
+      "measure.splice.girder.continuous.band.upper": { "before": 2, "after": 2 },
+      "measure.splice.length.factor": { "before": 4, "after": 4 },
+      "measure.splice.wall.vertical": { "before": 1, "after": 1 },
+      "measure.splice.slab.continuous": { "before": 3, "after": 3 },
+      "measure.splice.slab.continuous.band.upper": { "before": 3, "after": 3 },
+      "measure.splice.wall.opening": { "before": 1, "after": 1 }
+    }
+  },
+  "lossless_regression": {
+    "test": "tests/rulepack/review-sheet.test.ts",
+    "assertion": "expandFoldedReviewSheet(foldRulePack(jpMlitRulePack)) equals jpMlitRulePack.entries field-for-field",
+    "mutation_guard": "changing a measure.splice.interval band value makes folding fail instead of selecting a representative",
+    "method_specific_factor_guard": "the four measure.splice.length.factor method cells remain separate even when values match"
+  },
+  "band_breaking_rows": {
+    "detected": false,
+    "behavior": "folding rejects incomplete or inconsistent declared bands"
+  },
+  "determinism": {
+    "command": "npx tsx scripts/rulepack/review-sheet.ts",
+    "sequential_runs_identical": true,
+    "generated_output_matches_golden": true,
+    "golden_fixture": "tests/golden/fixtures/rulepack-review-sheet.md"
+  },
+  "gates": {
+    "npm run test": "passed: 85 files, 1598 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts",
+    "npm run rulepack:review-sheet": "passed"
+  }
+}
