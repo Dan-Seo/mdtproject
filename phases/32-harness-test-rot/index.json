@@ -1,0 +1,28 @@
+{
+  "project": "Kijun",
+  "phase": "32-harness-test-rot",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-rot-is-contract-drift",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "repair-rotted-tests",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "wire-into-ci",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "fix-gate-refuted-finalize",
+      "status": "pending"
+    }
+  ]
+}
