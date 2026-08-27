@@ -1,0 +1,101 @@
+{
+  "step": 1,
+  "name": "scope-guard-test",
+  "transcribed": {
+    "umbrellaClause": {
+      "id": "2（５）壁2)",
+      "printedPage": 18,
+      "pdfPage": 23,
+      "scope": "未実装",
+      "guardedBy": [
+        "ADR-042 2) — 壁式構造の壁の役割を3つに限定する",
+        "ADR-042 2)-4 — 現行の横筋割付は1通則7)の＋1である",
+        "ADR-042 2) — MEMBER_KINDSに壁梁を追加しない"
+      ]
+    },
+    "divisions": [
+      {
+        "id": "2（５）壁2)-1",
+        "label": "端部筋 ①②",
+        "printedPage": 18,
+        "pdfPage": 23,
+        "scope": "未実装",
+        "guardedBy": [
+          "ADR-042 2) — 壁式構造の壁の役割を3つに限定する"
+        ]
+      },
+      {
+        "id": "2（５）壁2)-2",
+        "label": "縦筋 ①〜⑦",
+        "printedPage": 18,
+        "pdfPage": 23,
+        "scope": "未実装",
+        "guardedBy": [
+          "ADR-042 2) — 壁式構造の壁の役割を3つに限定する"
+        ]
+      },
+      {
+        "id": "2（５）壁2)-3",
+        "label": "壁梁筋 ①〜④",
+        "printedPage": 18,
+        "pdfPage": 23,
+        "scope": "未実装",
+        "guardedBy": [
+          "ADR-042 2) — 壁式構造の壁の役割を3つに限定する",
+          "ADR-042 2) — MEMBER_KINDSに壁梁を追加しない"
+        ]
+      },
+      {
+        "id": "2（５）壁2)-4",
+        "label": "横筋 ①〜④",
+        "printedPage": 19,
+        "pdfPage": 24,
+        "scope": "未実装",
+        "guardedBy": [
+          "ADR-042 2)-4 — 現行の横筋割付は1通則7)の＋1である"
+        ]
+      },
+      {
+        "id": "2（５）壁2)-5",
+        "label": "補強筋",
+        "printedPage": 19,
+        "pdfPage": 24,
+        "scope": "未実装",
+        "guardedBy": [
+          "ADR-042 2) — 壁式構造の壁の役割を3つに限定する"
+        ]
+      }
+    ]
+  },
+  "guardTests": [
+    {
+      "name": "ADR-042 2) — 壁式構造の壁の役割を3つに限定する",
+      "fixtureClauses": [
+        "2（５）壁2)-1",
+        "2（５）壁2)-2",
+        "2（５）壁2)-5"
+      ],
+      "asserts": "generateWallRebar roles are exactly 縦筋, 横筋, 開口補強筋; 端部筋 and 壁梁筋 are absent; 開口補強筋 has no rule hits"
+    },
+    {
+      "name": "ADR-042 2)-4 — 現行の横筋割付は1通則7)の＋1である",
+      "fixtureClauses": [
+        "2（５）壁2)-4"
+      ],
+      "asserts": "generated 横筋 count equals ceil(clearHeight / pitch) plus the rulepack distribution addition, and is not the 2)-4 minus-one count"
+    },
+    {
+      "name": "ADR-042 2) — MEMBER_KINDSに壁梁を追加しない",
+      "fixtureClauses": [
+        "2（５）壁2)",
+        "2（５）壁2)-3"
+      ],
+      "asserts": "MEMBER_KINDS remains exactly 柱, 大梁, 耐震壁, 床板 and excludes 壁梁"
+    }
+  ],
+  "gates": {
+    "npm run test": "passed — 85 files, 1602 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed — 0 errors, 1 pre-existing warning"
+  }
+}

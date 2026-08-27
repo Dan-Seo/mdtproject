@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { MEMBER_KINDS } from '../../src/domain/model/member'
 import type {
   BarSize,
   ColumnSection,
@@ -2100,5 +2101,171 @@ describe('ADR-037 壁の部分高さ・部分長さ extent ゴールデン', () 
       ['縦筋', 4880, 27],
       ['横筋', 6630, 19],
     ])
+  })
+})
+
+describe('ADR-042 2（５）壁2) transcription and scope guards', () => {
+  const clauseIds = [
+    '2（５）壁2)',
+    '2（５）壁2)-1',
+    '2（５）壁2)-2',
+    '2（５）壁2)-3',
+    '2（５）壁2)-4',
+    '2（５）壁2)-5',
+  ] as const
+  type ClauseId = (typeof clauseIds)[number]
+
+  const guardNames = {
+    roles: 'ADR-042 2) — 壁式構造の壁の役割を3つに限定する',
+    horizontal: 'ADR-042 2)-4 — 現行の横筋割付は1通則7)の＋1である',
+    memberKinds: 'ADR-042 2) — MEMBER_KINDSに壁梁を追加しない',
+  } as const
+
+  const expectedQuotes: Record<ClauseId, string> = {
+    '2（５）壁2)':
+      '壁式構造の壁筋は、端部筋、縦筋、壁梁筋、横筋及び補強筋に区分して計測・計算する。なお、設計図書に鉄筋本数の記載がある場合はその本数とする。',
+    '2（５）壁2)-1':
+      '壁の端部及び壁と壁の接続する箇所のコーナー部配筋は、一般の縦筋と異なる配筋で設計されることが多い。この部分の縦筋を端部筋といい、その長さは各階の壁高さに設計図書による定着長さ及び余長を加えた長さとする。階高全体にわたる開口部縦補強筋は、端部筋として扱う。各階の階高全体にわたる端部筋は、各階ごとに１か所の継手があるものとする。径の異なる鉄筋の継手は原則として１か所とし、その位置は床板上面から１．０ｍとする。なお、重ね継手の長さは、１通則６）による。',
+    '2（５）壁2)-2':
+      '一般階の縦筋の長さは、各階の壁高さによる。最下階の縦筋の長さは、接続する布基礎がスタラップ状配筋の場合は、最下階の壁高さに定着長さを加えるものとする。また、縦筋が布基礎内に通した配筋の場合の布基礎内の縦筋については、３）基礎梁③で計測・計算するため、布基礎上端までとして定着長さは計測しない。最上階の縦筋の長さは、屋上床に定着する。その階でとまり上階に壁がない場合もこれに準ずる。開口部の上下の壁部分の縦筋がスタラップ状配筋の場合は設計図書による。床上からの開口部で上の壁部分のみの場合は、原則としてスタラップ状配筋として計測・計算する。縦筋の継手は、原則として各階ごとに１か所の継手があるものとする。ただし、直上階の縦筋の配筋が異なる場合は、その階の縦筋にさらに１か所の継手があるものとし、直上階の縦筋の継手がないものとする。縦筋の割付本数は、壁の内法長さをもとに１通則７）により割付け本数を求め、壁の内法に含まれる壁の接続部及び縦補強筋の箇所数を差し引いた本数とする。同一配筋の壁がある場合には、適切な計算法による統計値とすることができる。',
+    '2（５）壁2)-3':
+      '主筋の長さは、壁の長さ（内法長さと接続する壁厚さ）に定着長さを加えた長さとする。主筋の定着については設計図書による。壁全長にわたる開口部横補強筋は壁梁主筋と同様とする。原則として設計図書に記載のない場合は、上下主筋とも接続する他の壁に定着する。壁の内法全長にわたる主筋の継手箇所数は、１通則４）による。腹筋は、２）－４横筋による。スタラップ状配筋及び幅止筋の長さ、本数は、１通則２）、３）及び７）により計測・計算する。',
+    '2（５）壁2)-4':
+      '横筋の長さは、壁の内法長さに定着長さを加えた長さとする。また、同一径の横筋が交差する壁を通して連続する場合は、連続する長さの両端の定着を加える。袖壁、開口部等の側壁でフープ状配筋が設計図書に記載のある場合は、１通則２）及び７）により計測・計算する。横筋の割付本数は、１通則７）にかかわらず、壁高さを鉄筋間隔で除し、小数点以下第１位を切り上げた整数から１を差し引いた本数とする。同一配筋の壁がある場合には、適切な計算法による統計値とすることができる。',
+    '2（５）壁2)-5': '補強筋は設計図書による。',
+  }
+
+  const expectedGuards: Record<ClauseId, readonly string[]> = {
+    '2（５）壁2)': [
+      guardNames.roles,
+      guardNames.horizontal,
+      guardNames.memberKinds,
+    ],
+    '2（５）壁2)-1': [guardNames.roles],
+    '2（５）壁2)-2': [guardNames.roles],
+    '2（５）壁2)-3': [guardNames.roles, guardNames.memberKinds],
+    '2（５）壁2)-4': [guardNames.horizontal],
+    '2（５）壁2)-5': [guardNames.roles],
+  }
+
+  function clause(id: ClauseId) {
+    const entry = fixture.clauses.find(({ id: candidateId }) => candidateId === id)
+    expect(entry, `${id} must be present in the quantity fixture`).toBeDefined()
+    return entry!
+  }
+
+  function generateWall(withOpeningReinforcement = false) {
+    const shared = wallClassFixture.shared
+    const section: WallSection = {
+      id: 'section-W-adr042',
+      kind: '耐震壁',
+      mark: shared.mark,
+      thickness: shared.thicknessMm,
+      fc: shared.fc,
+      grade: shared.grade,
+      exposure: shared.exposure,
+      finish: shared.finish,
+      spliceMethod: shared.spliceMethod,
+      layers: shared.layers,
+      vertical: {
+        size: shared.vertical.size,
+        pitch: shared.vertical.pitchMm,
+        startOffsetMm: shared.vertical.startOffsetMm,
+      },
+      horizontal: {
+        size: shared.horizontal.size,
+        pitch: shared.horizontal.pitchMm,
+        startOffsetMm: shared.horizontal.startOffsetMm,
+      },
+    }
+    const member: Member = {
+      id: '1F-W-adr042',
+      kind: '耐震壁',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: STORY.id,
+      position: { axis: 'X', ix: 0, iy: 0 },
+      ...(withOpeningReinforcement
+        ? {
+            openings: [
+              {
+                id: 'opening-adr042',
+                xMm: 1000,
+                yMm: 500,
+                widthMm: 1200,
+                heightMm: 900,
+                reinforcements: [{ size: 'D13', count: 2, lengthMm: 1200 }],
+              },
+            ],
+          }
+        : {}),
+    }
+
+    return generateWallRebar(
+      { member, section, span: shared.span },
+      jpMlitRulePack,
+    )
+  }
+
+  it('transcribes all five 2)-1 through 2)-5 divisions and links every guard', () => {
+    const divisions = clauseIds.slice(1).map((id) => clause(id))
+    expect(divisions).toHaveLength(5)
+
+    for (const id of clauseIds) {
+      const entry = clause(id)
+      expect(entry.printedPage, id).toBe(id === '2（５）壁2)-4' || id === '2（５）壁2)-5' ? 19 : 18)
+      expect(entry.pdfPage, id).toBe(entry.printedPage + 5)
+      expect(entry.quote, id).toBe(expectedQuotes[id])
+      expect(entry.status, id).toBe('deferred')
+      expect(entry.confidence, id).toBe('transcribed')
+      expect(entry.scope, id).toBe('未実装')
+      expect(entry.reason, id).toContain('ADR-042')
+      expect(entry.guardedBy, id).toEqual(expectedGuards[id])
+    }
+  })
+
+  it(guardNames.roles, () => {
+    expect(clause('2（５）壁2)-1').guardedBy).toContain(guardNames.roles)
+    expect(clause('2（５）壁2)-2').guardedBy).toContain(guardNames.roles)
+    expect(clause('2（５）壁2)-5').guardedBy).toContain(guardNames.roles)
+
+    const roles = [...new Set(generateWall(true).map(({ role }) => role))]
+    expect(roles).toEqual(['縦筋', '横筋', '開口補強筋'])
+    expect(roles).toHaveLength(3)
+    expect(roles).not.toContain('端部筋')
+    expect(roles).not.toContain('壁梁筋')
+
+    const openingReinforcement = generateWall(true).find(
+      ({ role }) => role === '開口補強筋',
+    )
+    expect(openingReinforcement?.ruleHits, '開口補強筋 is ADR-029/034 input, not 2)-5').toEqual([])
+  })
+
+  it(guardNames.horizontal, () => {
+    expect(clause('2（５）壁2)-4').guardedBy).toContain(guardNames.horizontal)
+
+    const shared = wallClassFixture.shared
+    const horizontal = generateWall().find(({ role }) => role === '横筋')!
+    const additionRule = lookupRule(
+      jpMlitRulePack,
+      'measure.distribution.addition',
+      {},
+    )
+    const expectedCount =
+      (Math.ceil(shared.span.clearHeightMm / shared.horizontal.pitchMm) + additionRule.value) *
+      shared.layers
+    const wallShikiCount =
+      (Math.ceil(shared.span.clearHeightMm / shared.horizontal.pitchMm) - 1) *
+      shared.layers
+
+    expect(horizontal.count).toBe(expectedCount)
+    expect(horizontal.count).not.toBe(wallShikiCount)
+  })
+
+  it(guardNames.memberKinds, () => {
+    expect(clause('2（５）壁2)').guardedBy).toContain(guardNames.memberKinds)
+    expect(clause('2（５）壁2)-3').guardedBy).toContain(guardNames.memberKinds)
+    expect(MEMBER_KINDS).toEqual(['柱', '大梁', '耐震壁', '床板'])
+    expect((MEMBER_KINDS as readonly string[]).includes('壁梁')).toBe(false)
   })
 })
