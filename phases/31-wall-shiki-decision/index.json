@@ -9,7 +9,7 @@
       "gate": true,
       "status": "completed",
       "started_at": "2026-08-27T16:21:50+0900",
-      "completed_at": "2026-08-27T16:25:52+0900",
+      "completed_at": "2026-08-27T16:27:47+0900",
       "summary": "ADR-042의 9개 전제를 PDF 23-24쪽(인쇄 18-19쪽)과 현재 코드로 대조해 모두 upheld로 확인했으며, 반증은 없었다."
     },
     {
