@@ -154,6 +154,10 @@
       "dir": "31-wall-shiki-decision",
       "status": "completed",
       "completed_at": "2026-08-27T16:50:08+0900"
+    },
+    {
+      "dir": "32-harness-test-rot",
+      "status": "pending"
     }
   ]
 }
