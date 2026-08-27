@@ -1,0 +1,27 @@
+{
+  "project": "Kijun",
+  "phase": "28-shear-hook-shape",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr040-premises",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "hook-tail-domain-golden",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "hook-tail-viewer",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "note1-transcription-ledger",
+      "status": "pending"
+    }
+  ]
+}
