@@ -16,7 +16,10 @@ import {
   spliceCount,
   spliceLengthMm,
 } from './measurement'
-import { stirrupPositions } from './stirrup-layout'
+import {
+  stirrupPositions,
+  symmetricInwardDirections,
+} from './stirrup-layout'
 
 export interface ColumnRebarInput {
   member: Member
@@ -250,15 +253,11 @@ export function generateColumnRebar(
         [fabricationCover, 0, section.d - fabricationCover],
       ]
   const hookTailLength = hookTailLengthMm(hook135Rule, section.hoop.size)
-  const hookTails = circular
-    ? twoInwardTails(hoopPoints[0], hookTailLength, [
-        [-1, 1],
-        [-1, -1],
-      ])
-    : twoInwardTails(hoopPoints[0], hookTailLength, [
-        [1, 1],
-        [1, 2],
-      ])
+  const hookTails = twoInwardTails(
+    hoopPoints[0],
+    hookTailLength,
+    symmetricInwardDirections(circular ? Math.PI : Math.PI / 4),
+  )
 
   // 上部大梁せい가 階高 이상이면 3D 배치 구간이 사라진다. 数量만이라면
   // 階高로 계산되지만(1通則7)), 그런 부재는 梁이 층보다 높다는 뜻이라 형상이
@@ -383,7 +382,8 @@ export function generateColumnRebar(
       `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
       `表示される長さ・本数は設計値と一致しない・数量には用いない） ／ ` +
       `135°フック余長 ＝ ${hook135Rule.expr} × ${section.hoop.size} ＝ ` +
-      `${hookTailLength}mm。points[0] から断面内向きの異なる二方向へ分けて描く`,
+      `${hookTailLength}mm。points[0] から断面内向きの方向を中心に、` +
+      `同じ角度で左右対称の二方向へ分けて描く`,
   }
 
   return [main, hoop]

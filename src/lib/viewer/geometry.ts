@@ -724,6 +724,12 @@ function pathRuns(rebar: Rebar): PathRun[] {
     })
   }
 
+  if (rebar.hookTails !== undefined && rebar.points.length > 0) {
+    for (const tail of rebar.hookTails) {
+      edges.push({ from: rebar.points[0], to: tail })
+    }
+  }
+
   const zones = rebar.zones ?? []
   const boundaries = zones.flatMap(({ pathFromMm, pathToMm }) => [
     pathFromMm,

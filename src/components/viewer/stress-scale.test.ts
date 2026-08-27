@@ -82,7 +82,10 @@ describe('createStressProject at building-view scale (R4)', () => {
     // 필요는 없고, 그동안 미측정이던 자릿수(수천~수만)에 실제로 들어오는지가 목적이다.
     console.log(`building-view rebar instances (1 story): ${layout.rebar.length}`)
     expect(layout.rebar.length).toBeGreaterThanOrEqual(8000)
-    expect(layout.rebar.length).toBeLessThanOrEqual(12000)
+    // ADR-040: 닫힌 帯筋이 4세그먼트에서 6세그먼트가 되어, 같은 스트레스
+    // 입력의 층당 렌더 인스턴스가 13,557까지 늘었다. 이는 성능 예산 완화가
+    // 아니라 의도한 135°フック 余長 형상을 새 대역에 반영한 것이다.
+    expect(layout.rebar.length).toBeLessThanOrEqual(16000)
   })
 
   // dev-browser로 측정한 실제 편집→재렌더 지연(약 120~190ms)이 rebuildScene의

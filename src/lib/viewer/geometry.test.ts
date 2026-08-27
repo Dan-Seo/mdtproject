@@ -603,6 +603,34 @@ describe('rebarPlacements — ADR-032 nesting 分解', () => {
 })
 
 describe('rebarSegments', () => {
+  it('draws both rectangular hook tails from the first point', () => {
+    const hooked: Rebar = {
+      ...hoopOf(2),
+      hookTails: [
+        [140.4, 0, 62.4],
+        [62.4, 0, 140.4],
+      ],
+    }
+
+    const segments = rebarSegments(hooked, section)
+    const firstPlacement = segments.slice(0, hooked.points.length + 2)
+
+    expect(segments).toHaveLength(12)
+    const tails = firstPlacement.slice(-2)
+    for (const { from } of tails) {
+      expectPointCloseTo(from, [62.4, 0, 62.4])
+    }
+    expectPointCloseTo(tails[0].to, [140.4, 0, 62.4])
+    expectPointCloseTo(tails[1].to, [62.4, 0, 140.4])
+
+    const batches = rebarBatches(
+      [{ rowId: 'hooked-rectangle', rebar: hooked }],
+      section,
+    )
+    expect(batches.flatMap(({ segments: batchSegments }) => batchSegments)).toEqual(
+      segments,
+    )
+  })
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
     const segments = rebarSegments(hoopOf(3), section)
 
@@ -1692,7 +1720,16 @@ describe('円形柱の配筋を円周に沿って描く', () => {
   const centre = DIAMETER / 2
 
   function radii(rebar: Rebar): number[] {
-    return rebarSegments(rebar, circularSection).flatMap(({ from, to }) =>
+    const segments = rebarSegments(rebar, circularSection)
+    const tailCount = rebar.hookTails?.length ?? 0
+    const coreCount = rebar.points.length - 1 + (rebar.closed ? 1 : 0)
+    const stride = coreCount + tailCount
+    const coreSegments =
+      tailCount === 0
+        ? segments
+        : segments.filter((_, index) => index % stride < coreCount)
+
+    return coreSegments.flatMap(({ from, to }) =>
       [from, to].map(([x, , z]) => Math.hypot(x - centre, z - centre)),
     )
   }
@@ -1761,5 +1798,15 @@ describe('円形柱の配筋を円周に沿って描く', () => {
         expect(distance + radius).toBeLessThanOrEqual(centre + 1e-9)
       }
     }
+  })
+
+  it('draws both circular hook tails from the first point', () => {
+    const segments = rebarSegments(circularHoop, circularSection)
+    const firstPlacement = segments.slice(0, circularHoop.points.length + 2)
+    expect(segments).toHaveLength(936)
+    expectPointCloseTo(firstPlacement.at(-2)!.from, [527.6, 0, 300])
+    expectPointCloseTo(firstPlacement.at(-2)!.to, [473.292526024, 0, 349.0533504261])
+    expectPointCloseTo(firstPlacement.at(-1)!.from, [527.6, 0, 300])
+    expectPointCloseTo(firstPlacement.at(-1)!.to, [473.292526024, 0, 250.9466495739])
   })
 })

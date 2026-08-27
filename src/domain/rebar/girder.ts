@@ -27,7 +27,10 @@ import {
   widthTieDesignLengthMm,
   type SpliceBand,
 } from './measurement'
-import { stirrupPositions } from './stirrup-layout'
+import {
+  stirrupPositions,
+  symmetricInwardDirections,
+} from './stirrup-layout'
 
 export interface GirderRebarInput {
   run: GirderRun
@@ -773,10 +776,11 @@ function generateStirrup(
     hook135Rule,
     section.stirrup.size,
   )
-  const hookTails = twoInwardTails(points[0], hookTailLength, [
-    [1, 1],
-    [1, 2],
-  ])
+  const hookTails = twoInwardTails(
+    points[0],
+    hookTailLength,
+    symmetricInwardDirections(Math.PI / 4),
+  )
   return {
     id: `${member.id}|stirrup`,
     memberId: member.id,
@@ -813,7 +817,8 @@ function generateStirrup(
       `3D 形状 ＝ 実配筋（かぶりを控除し初期オフセットを見込むため、` +
       `表示される長さ・本数は設計値と一致しない・数量には用いない） ／ ` +
       `135°フック余長 ＝ ${hook135Rule.expr} × ${section.stirrup.size} ＝ ` +
-      `${hookTailLength}mm。points[0] から断面内向きの異なる二方向へ分けて描く`,
+      `${hookTailLength}mm。points[0] から断面内向きの方向を中心に、` +
+      `同じ角度で左右対称の二方向へ分けて描く`,
   }
 }
 

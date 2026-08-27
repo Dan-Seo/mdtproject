@@ -5,6 +5,26 @@ export interface StirrupLayout {
   lastGapMm: number
 }
 
+type PlanarDirection = [number, number]
+
+/**
+ * 135°フックの表示用方向を、断面内向きの中心線から左右対称に分ける。
+ * 半開き角の 45° は原文の寸法ではなく、このビューアの作図規則である。
+ * 数量は `Rebar.length` が持つ断面周長を使うため、この角度は数量に影響しない。
+ */
+export function symmetricInwardDirections(
+  inwardAngleRadians: number,
+): [PlanarDirection, PlanarDirection] {
+  const halfSpreadRadians = Math.PI / 4
+  return [
+    inwardAngleRadians - halfSpreadRadians,
+    inwardAngleRadians + halfSpreadRadians,
+  ].map((angle) => [Math.cos(angle), Math.sin(angle)]) as [
+    PlanarDirection,
+    PlanarDirection,
+  ]
+}
+
 export function stirrupPositions(
   clearMm: number,
   pitchMm: number,
