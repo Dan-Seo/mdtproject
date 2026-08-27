@@ -1,0 +1,49 @@
+{
+  "step": 3,
+  "name": "sheet-legibility-and-m2-scope",
+  "status": "completed",
+  "fixed_expressions": [
+    "조건 열의 JSON 배열을 일본어 원문 문언을 잇는 값 중심 표현으로 바꿨다(예: 屋内・仕上げあり, 土に接する部分, なし).",
+    "셀 안의 긴 ※既存再対照 문구를 * 표식으로 줄이고, 표 아래 각주에 독립 검토가 아니라는 설명과 회신 대상 포함 규칙을 남겼다.",
+    "집계의 기존 재대조 설명을 한국어로 맞췄다."
+  ],
+  "sheet": {
+    "max_line_length_before": 193,
+    "max_line_length_after": 138,
+    "json_array_open_count": 0,
+    "cell_long_marker_count": 0,
+    "verification_marker_count": 77,
+    "verification_footnote_count": 7,
+    "determinism": {
+      "sequential_runs_identical": true,
+      "generated_output_matches_snapshot_after_line_ending_normalization": true
+    }
+  },
+  "preserved_folded_counts": {
+    "rulepack_rows": 243,
+    "review_cells": 135,
+    "table_units": 8,
+    "singleton_units": 17,
+    "verification_marked_cells": 77,
+    "by_key": {
+      "measure.splice.interval": { "before": 8, "after": 2 },
+      "measure.splice.length.factor": { "before": 4, "after": 4 }
+    }
+  },
+  "documentation": [
+    {
+      "paths": ["AGENTS.md", "CLAUDE.md"],
+      "change": "M2 잔량을 標準仕様書 5章·数量積算基準의 stated 승격으로 맞추고, 두 원문 모두 사람의 독립 검토가 필요하다고 명시했다."
+    },
+    {
+      "path": "docs/MILESTONES.md",
+      "change": "M2 상세 대장의 잔량을 標準仕様書 5章 211행과 数量積算基準 29행의 stated 승격 및 25개 단위·135칸으로 갱신했다."
+    }
+  ],
+  "gates": {
+    "npx vitest run tests/rulepack/review-sheet.test.ts": "passed: 1 file, 7 tests",
+    "npm run test": "passed: 85 files, 1598 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+  }
+}

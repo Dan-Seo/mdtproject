@@ -1,0 +1,9 @@
+2026-08-27T06:41:26.748645Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T06:41:26.915460Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-27T06:41:27.052274Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T06:45:52.480592Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\scripts\rulepack\review-sheet.ts:
+  }
+  lines.push('', replyLine())
+  if (group.missingCells.length > 0) {
+    lines.push(`결번: ${group.missingCells.join(' / ')}`)
+  }

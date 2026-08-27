@@ -1,0 +1,49 @@
+{
+  "step": 2,
+  "name": "promotion-procedure-docs",
+  "status": "completed",
+  "documents": [
+    {
+      "path": "docs/RISKS.md",
+      "lines": "13-15",
+      "change": "R6을 243행( transcribed 240, inferred 3), 135칸, 8개 표+17개 단발항=25개 대조 단위로 갱신하고 생성 명령·3단계 검토 순서·사람 승인 후 원자적 승격 절차를 기록했다."
+    },
+    {
+      "path": "docs/MILESTONES.md",
+      "lines": "5",
+      "change": "M2 진행 중 상태를 유지한 채 같은 수치와 검토·승격 절차를 한 줄로 반영하고 이전 198행·94칸 기록을 정정했다."
+    },
+    {
+      "path": "AGENTS.md",
+      "lines": "77",
+      "change": "리스크 대장 R6을 docs/RISKS.md와 같은 현재 수치·절차로 갱신했다."
+    },
+    {
+      "path": "CLAUDE.md",
+      "lines": "74",
+      "change": "리스크 대장 R6을 AGENTS.md와 동일하게 갱신했다."
+    },
+    {
+      "path": "docs/ADR.md",
+      "lines": "789-794",
+      "change": "ADR-041에 phase 30 step 1의 135칸·8개 표·17개 단발항·25개 대조 단위 실측 정정을 날짜와 함께 덧붙였다."
+    }
+  ],
+  "promotion_procedure": {
+    "generation_command": "npm run rulepack:review-sheet",
+    "review_units": "원문 표 8개와 단발항 17개, 총 25개 단위·135칸",
+    "review_order": [
+      "表5.3.2·表5.3.4의 L1/L1h",
+      "表5.3.6의 柱＝大梁 조건",
+      "단발항과 결번(欠番)"
+    ],
+    "promotion_gate": "사람이 단위별 전 칸 일치를 회신한 뒤에만 해당 행의 confidence를 stated로 올리고 note의 「独立検討待ち」를 지우며, src/rulepack/index.test.ts의 stated 0행 고정을 같은 커밋에서 함께 고친다.",
+    "current_state": "사람의 독립 검토 전이므로 stated 0행을 유지하고 R6은 열림이다."
+  },
+  "acceptance_criteria": {
+    "npm run test": "passed: 85 files, 1598 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+  },
+  "scope_check": "src/** 및 tests/** 미변경; 어떤 행도 stated로 승격하지 않음"
+}

@@ -7,17 +7,43 @@
       "name": "verify-adr041-premises",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T14:57:24+0900",
+      "summary": "ADR-041 전제 12개를 룰팩·원문 PDF·ADR/R6와 대조해 모두 upheld; 243행(transcribed 240, inferred 3)의 step0b-report.json을 생성했다."
     },
     {
       "step": 1,
       "name": "review-sheet-generator",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T15:08:00+0900",
+      "completed_at": "2026-08-27T15:32:09+0900",
+      "summary": "jpMlitRulePack 243행을 원문 표 단위 135칸으로 되접고, quantity interval 8→2·bend diameter 21→3 무손실 회귀·결정론 Markdown 스냅샷을 추가했다."
     },
     {
       "step": 2,
       "name": "promotion-procedure-docs",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T15:32:09+0900",
+      "completed_at": "2026-08-27T15:39:39+0900",
+      "summary": "R6·M2·AGENTS.md·CLAUDE.md에 243행/135칸/25개 대조 단위와 생성·3단계 검토·원자적 승격 절차를 기록하고 ADR-041 수치 정정을 덧붙였다. stated는 0행, R6은 열림을 유지했다."
+    },
+    {
+      "step": 3,
+      "name": "sheet-legibility-and-m2-scope",
+      "status": "completed",
+      "started_at": "2026-08-27T15:41:26+0900",
+      "completed_at": "2026-08-27T15:54:54+0900",
+      "summary": "조건 열을 사람이 읽는 문언으로 바꾸고 셀 내 재대조 문구를 *·각주로 줄였으며, M2 대장을 標準仕様書 5章·数量積算基準 범위로 갱신했다."
+    },
+    {
+      "step": 4,
+      "name": "snapshot-newline-robustness",
+      "status": "completed",
+      "started_at": "2026-08-27T16:11:07+0900",
+      "completed_at": "2026-08-27T16:18:30+0900",
+      "summary": "Snapshot 비교에 CRLF/LF 정규화를 적용했다. CRLF와 LF에서는 통과하고 내용 변경은 실패했으며, 룰팩·스냅샷 내용과 src/**는 변경하지 않았다."
     }
-  ]
+  ],
+  "created_at": "2026-08-27T14:43:28+0900",
+  "completed_at": "2026-08-27T16:18:30+0900"
 }

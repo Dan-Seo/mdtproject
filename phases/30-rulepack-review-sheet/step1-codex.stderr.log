@@ -1,0 +1,6 @@
+2026-08-27T06:08:01.527941Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T06:08:01.670216Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-27T06:08:01.698310Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T06:25:08.215747Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\scripts\rulepack\review-sheet.ts:
+  return `${lines.join('\\n').replace(/\\n{3,}/g, '\\n\\n')}\\n`
+}

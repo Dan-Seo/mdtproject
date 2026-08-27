@@ -1,0 +1,94 @@
+{
+  "step": 4,
+  "name": "snapshot-newline-robustness",
+  "status": "completed",
+  "changes": [
+    {
+      "file": "tests/rulepack/review-sheet.test.ts",
+      "lines": "12-14",
+      "description": "Added the existing normalizeNewlines(value) helper using /\\r\\n?/g -> \\n."
+    },
+    {
+      "file": "tests/rulepack/review-sheet.test.ts",
+      "lines": "111-113",
+      "description": "Normalized both generated Markdown and the checked-in snapshot before the exact equality assertion."
+    },
+    {
+      "file": "phases/30-rulepack-review-sheet/index.json",
+      "lines": "40-46",
+      "description": "Marked step 4 completed with its verification summary."
+    }
+  ],
+  "reproduction": [
+    {
+      "label": "before fix: CRLF working copy fails",
+      "command": "npm run test -- tests/rulepack/review-sheet.test.ts",
+      "output": "Test Files 1 failed (1); Tests 1 failed | 6 passed (6). The assertion diff showed expected CRLF (\\r\\n) versus generated LF (\\n). Snapshot bytes were LF=342 and CRLF=342.",
+      "restored": true
+    },
+    {
+      "label": "after fix: CRLF working copy passes",
+      "command": "npm run test -- tests/rulepack/review-sheet.test.ts",
+      "output": "Test Files 1 passed (1); Tests 7 passed (7).",
+      "restored": true
+    },
+    {
+      "label": "after fix: LF working copy passes",
+      "command": "Temporarily replace the snapshot CRLF bytes with LF bytes; run npm run test -- tests/rulepack/review-sheet.test.ts; restore the original bytes.",
+      "output": "Test Files 1 passed (1); Tests 7 passed (7). Snapshot restored byte-identical: True.",
+      "restored": true
+    },
+    {
+      "label": "content mutation still fails",
+      "command": "Temporarily replace snapshot text measure.splice.interval with measure.splice.intervaX; run npm run test -- tests/rulepack/review-sheet.test.ts; restore the original bytes.",
+      "output": "Test Files 1 failed (1); Tests 1 failed | 6 passed (6). The diff identified intervaX versus interval. Snapshot restored byte-identical: True.",
+      "restored": true
+    }
+  ],
+  "file_read_comparison_audit": {
+    "vulnerable_fixed": [
+      "tests/rulepack/review-sheet.test.ts:111-113 — the generated Markdown and checked-in Markdown snapshot were compared byte-for-byte without newline normalization."
+    ],
+    "additional_vulnerable": [],
+    "harmless": [
+      "tests/docs/guardrail-sync.test.ts:26-27 — both files pass through normalizeNewlines before equality checks.",
+      "tests/scaffold.test.ts:7 — JSON is parsed before assertions.",
+      "tests/section-import/parse.test.ts:25,37; tests/plan-import/parse.test.ts:28; tests/plan-import/elevation.test.ts:21; tests/section-import/textitems.test.ts:199; tests/section-import/real-pdf.test.ts:125 — JSON is parsed before assertions.",
+      "tests/section-import/real-pdf.test.ts:75-81 — SOURCES.md is split with /\\r?\\n/ for a lookup, not compared byte-for-byte.",
+      "tests/section-import/real-pdf.test.ts:89-92 — PDF bytes are checked by SHA-256; text line endings are irrelevant.",
+      "tests/golden/spec-fixture.test.ts:236-239 — source files are joined and searched with a regular expression; this is not byte equality.",
+      "tests/e2e/uc12-section-import.js:16-17; tests/e2e/uc17-stress-building.js:19; tests/e2e/uc22-plan-import.js:15 — binary fixture reads are inputs, not newline-sensitive text comparisons."
+    ]
+  },
+  "preserved_counts": {
+    "rulepack_rows": 243,
+    "review_cells": 135,
+    "table_units": 8,
+    "singleton_units": 17,
+    "verification_marked_cells": 77,
+    "folding_by_key": {
+      "measure.splice.interval": { "before": 8, "after": 2 },
+      "lap.L1": { "before": 20, "after": 11 },
+      "cover.minimum": { "before": 19, "after": 7 },
+      "bend.inside-diameter": { "before": 21, "after": 3 },
+      "measure.splice.length.factor": { "before": 4, "after": 4 }
+    }
+  },
+  "gates": {
+    "npm run test": "passed: 85 files, 1598 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed: 0 errors, 1 pre-existing warning at src/app/api/oncall/alert/route.test.ts:161",
+    "git diff --check": "passed",
+    "snapshot_content_unchanged": "passed: only line endings were changed temporarily during tests and the original bytes were restored",
+    "gitattributes": "not present",
+    "src_changes": "none"
+  },
+  "constraints": [
+    "No src/** or src/rulepack/** files were modified.",
+    "scripts/rulepack/review-sheet.ts output was not changed.",
+    "No .gitattributes file was created.",
+    "No rule was promoted to stated.",
+    "The snapshot file was not regenerated or committed with CRLF."
+  ],
+  "summary": "The review-sheet snapshot assertion now ignores only CRLF versus LF differences, while content changes still fail. The step-3 folding counts and 77 existing verification markers remain unchanged."
+}

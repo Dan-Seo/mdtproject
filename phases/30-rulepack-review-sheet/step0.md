@@ -18,7 +18,8 @@
 |---|---|
 | `stated-is-zero` | 룰팩에 `confidence: stated`인 행이 **0행**이고, `src/rulepack/index.test.ts`가 그것을 고정한다. |
 | `transcribed-count` | 지금 룰팩의 `confidence` 분포를 **세어서** 보고하라. 「`inferred` 178행」이라는 옛 기록은 이미 틀렸다 — 실제 수를 보고하는 것이 이 항목이다(수치가 다르면 `refuted`가 아니라 실제 수를 적어라). |
-| `note-pending-review` | `transcribed` 행 전부에 「独立検討待ち」 취지의 `note`가 붙어 있다. 빠진 행이 있으면 그 키를 나열하라. |
+| `confidence-is-the-signal` | 검토 대기의 **권위 있는 신호는 `note` 문자열이 아니라 `confidence: transcribed`**다(ADR-023이 그렇게 정의한다). 「独立検討待ち」 note는 일부 행에만 붙은 장식이다 — 그 분포를 **세어서 보고하라**(수치가 예상과 달라도 `refuted`가 아니다). 반증 조건은 하나다: `transcribed`인데 검토 대기가 **아닌** 행이 있다면 그것을 보여라. |
+| `two-source-populations` | `transcribed` 240행이 **두 원문**으로 갈린다 — `source.ref: spec`(標準仕様書 5章)과 `quantity`(数量積算基準). 각각 몇 행인지 세어 보고하고, **帯 구조로 되접히는 것은 `spec` 쪽뿐**이며 `quantity` 쪽은 単発 조문이라 되접히지 않는다는 것을 확인하라. |
 | `band-structure` | 원문 표가 帯(band) 구조다 — Fc는 `18` / `21` / `24、27` / `30、33、36`, 径은 `D16以下` / `D19〜D38`. 룰팩은 그것을 fc·径으로 전개한 사본이다. |
 | `fold-lossless` | 룰팩을 帯로 되접었을 때 **帯 안의 값이 전부 같다**(전개 불일치 0). 하나라도 다르면 그 키·조건을 나열하고 `refuted`. |
 | `l1-l1h-identical` | `表5.3.2`(重ね継手)의 L1·L1h와 `表5.3.4`(定着)의 L1·L1h가 **한 칸도 빠짐없이 같다**. 같은 칸 수를 세어 보고하라. |
@@ -30,7 +31,7 @@
 
 ## 산출물
 
-`phases/30-rulepack-review-sheet/step0-report.json`:
+`phases/30-rulepack-review-sheet/step0b-report.json`(1차 반증분 `step0a-report.json`을 덮지 않기 위해서다):
 ```json
 {
   "premises": [{"id": "...", "verdict": "upheld|refuted", "evidence": "...", "note": "..."}],
