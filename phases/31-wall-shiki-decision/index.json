@@ -25,7 +25,7 @@
       "name": "ledger-docs",
       "status": "completed",
       "started_at": "2026-08-27T16:43:34+0900",
-      "completed_at": "2026-08-27T16:47:38+0900",
+      "completed_at": "2026-08-27T16:50:07+0900",
       "summary": "壁式構造の壁을 현행 대장에서 만들지 않는 별개 마일스톤으로 정정하고 ADR-042 참조와 R2 미계상 리스크를 AGENTS·CLAUDE·마일스톤·ADR·리스크 문서에 반영했으며 전체 AC를 통과했다."
     }
   ],
