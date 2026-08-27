@@ -1,0 +1,23 @@
+{
+  "project": "Kijun",
+  "phase": "31-wall-shiki-decision",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-adr042-premises",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "scope-guard-test",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "ledger-docs",
+      "status": "pending"
+    }
+  ]
+}
