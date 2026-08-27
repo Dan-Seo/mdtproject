@@ -55,6 +55,16 @@ interface BentConditionEntry {
   imageRead: boolean
 }
 
+interface SlabAnchorageEntry {
+  table: string
+  printedPage: number
+  kind: 'anchorage.L3' | 'anchorage.L3.minimum'
+  conditions: { member: string }
+  value: number
+  unit: string
+  imageRead: boolean
+}
+
 interface CoverEntry {
   table: string
   printedPage: number
@@ -198,7 +208,7 @@ const bentConditionEntries = (
 // 表5.3.4 の L3（スラブ欄）は縦に結合されたセルで、鉄筋の種類・Fc の格子を
 // 持たない。Fc 帯を展開する経路に流すと fcValues が無くて落ちるので別に扱う。
 const slabAnchorageEntries = (
-  fixture.entries as unknown as BentConditionEntry[]
+  fixture.entries as unknown as SlabAnchorageEntry[]
 ).filter(({ kind }) => ['anchorage.L3', 'anchorage.L3.minimum'].includes(kind))
 
 describe('公共建築工事標準仕様書 令和7年版 定着・重ね継手 tables', () => {
@@ -321,6 +331,22 @@ describe('公共建築工事標準仕様書 令和7年版 折曲げ・かぶり 
     expect(perDiameter.unit).toBe('d')
     expect(floor.unit).toBe('mm')
     expect(perDiameter.source.section).toBe(floor.source.section)
+  })
+
+  it('reads the cantilever L3 exception as 25d without a 150mm floor', () => {
+    const cantilever = lookupRule(jpMlitRulePack, 'anchorage.L3', {
+      member: '片持スラブ',
+    })
+
+    expect(cantilever.value).toBe(25)
+    expect(cantilever.unit).toBe('d')
+    expect(cantilever.source.section).toBe('表5.3.4')
+    expect(cantilever.source.page).toBe(30)
+    expect(() =>
+      lookupRule(jpMlitRulePack, 'anchorage.L3.minimum', {
+        member: '片持スラブ',
+      }),
+    ).toThrow(/not found/i)
   })
 
   it('matches the 耐力壁 重ね継手 lower bound as its own rule', () => {

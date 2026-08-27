@@ -21,6 +21,7 @@ import {
   type WallSpan,
 } from '../../src/domain/model/project'
 import { MemberUnsupportedError } from '../../src/domain/model/unsupported'
+import type { Rebar } from '../../src/domain/model/rebar'
 import {
   aggregateQuantity,
   massLines,
@@ -974,6 +975,283 @@ function slabRunFor(
 
   return { project, run: slabRun(project, owner, axis), slab }
 }
+
+type CantileverSlabFixture = {
+  supportAxis: 'X' | 'Y'
+  supportClearMm: number
+  supportWidthMm: number
+  pitchMm: number
+  barSize: BarSize
+  unitMassKgPerM: number
+  cases: Array<{
+    id: string
+    side: '正' | '負'
+    projectionMm: number
+    expected: {
+      projectionAxis: 'X' | 'Y'
+      projectionCount: number
+      parallelCount: number
+      bottomProjectionLengthMm: number
+      topProjectionLengthMm: number
+      parallelLengthMm: number
+      projectionSpliceCountPerBar: number
+      parallelSpliceCountPerBar: number
+      projectionBottomDesignKg: number
+      projectionBottomRequiredKg: number
+      projectionTopDesignKg: number
+      projectionTopRequiredKg: number
+      parallelDesignKg: number
+      parallelRequiredKg: number
+    }
+    handDerivation: string
+  }>
+}
+
+const cantileverSlabFixture =
+  fixture.cases.cantileverSlab as CantileverSlabFixture
+
+function cantileverSlabFor(testCase: CantileverSlabFixture['cases'][number]) {
+  const column = columnSection({
+    id: `section-C-cantilever-${testCase.id}`,
+    mark: `C-${testCase.id}`,
+  })
+  const girder = girderSection({
+    id: `section-G-cantilever-${testCase.id}`,
+    mark: `G-${testCase.id}`,
+    b: cantileverSlabFixture.supportWidthMm,
+  })
+  const slab = slabSection({
+    id: `section-S-cantilever-${testCase.id}`,
+    mark: `S-${testCase.id}`,
+    x: {
+      top: {
+        size: cantileverSlabFixture.barSize,
+        pitch: cantileverSlabFixture.pitchMm,
+        startOffsetMm: 100,
+      },
+      bottom: {
+        size: cantileverSlabFixture.barSize,
+        pitch: cantileverSlabFixture.pitchMm,
+        startOffsetMm: 100,
+      },
+    },
+    y: {
+      top: {
+        size: cantileverSlabFixture.barSize,
+        pitch: cantileverSlabFixture.pitchMm,
+        startOffsetMm: 100,
+      },
+      bottom: {
+        size: cantileverSlabFixture.barSize,
+        pitch: cantileverSlabFixture.pitchMm,
+        startOffsetMm: 100,
+      },
+    },
+  })
+  const support: Member = {
+    id: `1F-G-cantilever-${testCase.id}`,
+    kind: '大梁',
+    memberClass: '躯体',
+    sectionId: girder.id,
+    storyId: STORY.id,
+    position: { axis: cantileverSlabFixture.supportAxis, ix: 0, iy: 0 },
+  }
+  const endPoint =
+    cantileverSlabFixture.supportAxis === 'X'
+      ? { ix: 1, iy: 0 }
+      : { ix: 0, iy: 1 }
+  const slabMember: Member = {
+    id: `1F-S-cantilever-${testCase.id}`,
+    kind: '床板',
+    memberClass: '躯体',
+    sectionId: slab.id,
+    storyId: STORY.id,
+    position: { axis: cantileverSlabFixture.supportAxis, ix: 0, iy: 0 },
+    cantilever: {
+      side: testCase.side,
+      projectionMm: testCase.projectionMm,
+    },
+  }
+  const project: Project = {
+    schemaVersion: PROJECT_SCHEMA_VERSION,
+    name: `片持床板ゴールデン — ${testCase.id}`,
+    grid: { xSpans: [6000], ySpans: [6000] },
+    stories: [STORY],
+    sections: [column, girder, slab],
+    members: [
+      {
+        id: `1F-C-cantilever-start-${testCase.id}`,
+        kind: '柱',
+        memberClass: '躯体',
+        sectionId: column.id,
+        storyId: STORY.id,
+        position: { ix: 0, iy: 0 },
+      },
+      {
+        id: `1F-C-cantilever-end-${testCase.id}`,
+        kind: '柱',
+        memberClass: '躯体',
+        sectionId: column.id,
+        storyId: STORY.id,
+        position: endPoint,
+      },
+      support,
+      slabMember,
+    ],
+    unitMass: {
+      [cantileverSlabFixture.barSize]: cantileverSlabFixture.unitMassKgPerM,
+    },
+  }
+  const projectionAxis =
+    cantileverSlabFixture.supportAxis === 'X' ? 'Y' : 'X'
+  const parallelRun = slabRun(
+    project,
+    slabMember,
+    cantileverSlabFixture.supportAxis,
+  )
+  const projectionRun = slabRun(project, slabMember, projectionAxis)
+  const rebars = [
+    ...generateSlabRebar({ run: parallelRun, section: slab }, jpMlitRulePack),
+    ...generateSlabRebar(
+      { run: projectionRun, section: slab },
+      jpMlitRulePack,
+    ),
+  ]
+
+  return { project, parallelRun, projectionRun, rebars, slab }
+}
+
+function rebarByRole(rebars: Rebar[], role: string): Rebar {
+  const found = rebars.find((rebar) => rebar.role === role)
+  expect(found, `${role} should be generated`).toBeDefined()
+  return found!
+}
+
+describe('片持床板 — ADR-039 ゴールデン', () => {
+  it.each(cantileverSlabFixture.cases)(
+    '$id は支持辺だけに定着し、自由端・連続床板表を使わない',
+    (testCase) => {
+      const generated = cantileverSlabFor(testCase)
+      const { expected } = testCase
+      const projectionAxis = expected.projectionAxis
+      const projectionRun = generated.projectionRun
+      const parallelRun = generated.parallelRun
+      const projectionBottom = rebarByRole(
+        generated.rebars,
+        `${projectionAxis}方向下端筋`,
+      )
+      const projectionTop = rebarByRole(
+        generated.rebars,
+        `${projectionAxis}方向上端筋`,
+      )
+      const parallelBottom = rebarByRole(
+        generated.rebars,
+        `${cantileverSlabFixture.supportAxis}方向下端筋`,
+      )
+      const parallelTop = rebarByRole(
+        generated.rebars,
+        `${cantileverSlabFixture.supportAxis}方向上端筋`,
+      )
+      const mass = massLines(
+        aggregateQuantity(generated.project, generated.rebars, jpMlitRulePack),
+      )
+      const massFor = (role: string) => {
+        const line = mass.find(({ role: lineRole }) => lineRole === role)
+        expect(line, `${role} mass line should be generated`).toBeDefined()
+        return line!
+      }
+
+      expect(projectionRun.bays).toEqual([])
+      expect(parallelRun.bays).toEqual([])
+      expect(projectionRun.members).toHaveLength(1)
+      expect(parallelRun.members).toHaveLength(1)
+      expect(projectionRun.coreLengthMm).toBe(testCase.projectionMm)
+      expect(projectionRun.distributionClearMm).toBe(
+        cantileverSlabFixture.supportClearMm,
+      )
+      expect(parallelRun.coreLengthMm).toBe(
+        cantileverSlabFixture.supportClearMm,
+      )
+      expect(parallelRun.distributionClearMm).toBe(testCase.projectionMm)
+      expect(projectionRun.startSupport === null).toBe(
+        testCase.side === '負',
+      )
+      expect(projectionRun.endSupport === null).toBe(testCase.side === '正')
+      expect(parallelRun.startSupport).toBeNull()
+      expect(parallelRun.endSupport).toBeNull()
+
+      expect(projectionBottom.length).toBe(expected.bottomProjectionLengthMm)
+      expect(projectionTop.length).toBe(expected.topProjectionLengthMm)
+      expect(parallelBottom.length).toBe(expected.parallelLengthMm)
+      expect(parallelTop.length).toBe(expected.parallelLengthMm)
+      expect(projectionBottom.count).toBe(expected.projectionCount)
+      expect(projectionTop.count).toBe(expected.projectionCount)
+      expect(parallelBottom.count).toBe(expected.parallelCount)
+      expect(parallelTop.count).toBe(expected.parallelCount)
+
+      expect(projectionBottom.splice?.countPerBar).toBe(
+        expected.projectionSpliceCountPerBar,
+      )
+      expect(projectionTop.splice?.countPerBar).toBe(
+        expected.projectionSpliceCountPerBar,
+      )
+      expect(parallelBottom.splice?.countPerBar).toBe(
+        expected.parallelSpliceCountPerBar,
+      )
+      expect(parallelTop.splice?.countPerBar).toBe(
+        expected.parallelSpliceCountPerBar,
+      )
+      expect(projectionBottom.splice?.rules.map(({ key }) => key)).toContain(
+        'measure.splice.interval',
+      )
+      expect(
+        projectionBottom.splice?.rules.map(({ key }) => key),
+      ).not.toContain('measure.splice.slab.continuous')
+      expect(parallelBottom.zones).toEqual([])
+      expect(projectionBottom.zones).toHaveLength(1)
+      expect(projectionBottom.ruleHits.map(({ key }) => key)).toContain(
+        'anchorage.L3',
+      )
+      expect(projectionBottom.ruleHits.map(({ key }) => key)).not.toContain(
+        'anchorage.L3.minimum',
+      )
+      expect(projectionTop.ruleHits.map(({ key }) => key)).toContain(
+        'anchorage.La',
+      )
+      expect(projectionTop.ruleHits.map(({ key }) => key)).not.toContain(
+        'anchorage.Lb',
+      )
+      expect(projectionBottom.formula).toContain('自由端')
+      expect(projectionBottom.formula).toContain('1通則1)')
+      expect(projectionBottom.formula).toContain('25d')
+      expect(projectionTop.formula).toContain('La')
+
+      expect(massFor(`${projectionAxis}方向下端筋`).designKg).toBeCloseTo(
+        expected.projectionBottomDesignKg,
+        6,
+      )
+      expect(massFor(`${projectionAxis}方向下端筋`).requiredKg).toBeCloseTo(
+        expected.projectionBottomRequiredKg,
+        6,
+      )
+      expect(massFor(`${projectionAxis}方向上端筋`).designKg).toBeCloseTo(
+        expected.projectionTopDesignKg,
+        6,
+      )
+      expect(massFor(`${projectionAxis}方向上端筋`).requiredKg).toBeCloseTo(
+        expected.projectionTopRequiredKg,
+        6,
+      )
+      expect(
+        massFor(`${cantileverSlabFixture.supportAxis}方向下端筋`).designKg,
+      ).toBeCloseTo(expected.parallelDesignKg, 6)
+      expect(
+        massFor(`${cantileverSlabFixture.supportAxis}方向下端筋`).requiredKg,
+      ).toBeCloseTo(expected.parallelRequiredKg, 6)
+      expect(testCase.handDerivation).toContain('1通則4)')
+    },
+  )
+})
 
 describe('2（４）床板2) 連続する床板の継手箇所数', () => {
   it.each(fixture.cases.spliceCount.continuousSlab)(

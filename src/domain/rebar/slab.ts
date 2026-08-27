@@ -103,6 +103,9 @@ export function generateSlabRebar(
     'measure.distribution.addition',
     {},
   )
+  const tipAdditionRule = run.cantilever
+    ? lookupRule(pack, 'measure.tip.length.addition', {})
+    : null
   const fabricationCoverMm =
     millimetres(coverRule) + millimetres(fabricationCoverAdditionRule)
 
@@ -125,6 +128,7 @@ export function generateSlabRebar(
     fabricationCoverAdditionRule,
     distributionAdditionRule,
     fabricationCoverMm,
+    tipAdditionRule,
   }
 
   // 下端筋を先に出す。板の下から順に積む順序がそのまま内訳の並びになる。
@@ -173,6 +177,7 @@ interface SlabBarInput {
   fabricationCoverAdditionRule: RuleHit
   distributionAdditionRule: RuleHit
   fabricationCoverMm: number
+  tipAdditionRule: RuleHit | null
   face: '上端' | '下端'
 }
 
@@ -190,6 +195,7 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
     fabricationCoverAdditionRule,
     distributionAdditionRule,
     fabricationCoverMm,
+    tipAdditionRule,
     face,
   } = input
 
@@ -203,27 +209,33 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
     grade: section.grade,
     face,
   }
-  const start = resolveSlabEnd(
-    {
-      ...endInput,
-      supportWidthMm: run.startSupport.widthMm,
-      supportCover: run.startSupport.cover,
-    },
-    pack,
-  )
-  const end = resolveSlabEnd(
-    {
-      ...endInput,
-      supportWidthMm: run.endSupport.widthMm,
-      supportCover: run.endSupport.cover,
-    },
-    pack,
-  )
+  const resolveSupport = (
+    support: SlabRun['startSupport'],
+  ): SlabEndDetail | null =>
+    support === null
+      ? null
+      : resolveSlabEnd(
+          {
+            ...endInput,
+            supportWidthMm: support.widthMm,
+            supportCover: support.cover,
+            ...(run.cantilever ? { supportKind: '片持スラブ' as const } : {}),
+          },
+          pack,
+        )
+  const start = resolveSupport(run.startSupport)
+  const end = resolveSupport(run.endSupport)
 
   // 3D に描かれる長さ。継手は位置が決まらないので描かず、設計長さにだけ入る。
   // 開口の欠けもここには現れない — 欠ける位置は本ごとに違うので、表示部が
   // `SlabRun.openings` で切る (ADR-029)。
-  const drawnLengthMm = run.coreLengthMm + start.lengthMm + end.lengthMm
+  const tipAdditionMm =
+    run.cantilever && tipAdditionRule ? millimetres(tipAdditionRule) : 0
+  const drawnLengthMm =
+    run.coreLengthMm +
+    (start?.lengthMm ?? 0) +
+    (end?.lengthMm ?? 0) +
+    tipAdditionMm
   const lapRule = lookupRule(pack, 'lap.L1', {
     fc: section.fc,
     grade: section.grade,
@@ -270,21 +282,25 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
     face === '上端' ? section.thickness - fabricationCoverMm : fabricationCoverMm
 
   const zones: RebarZone[] = [
-    {
-      kind: '定着',
-      ruleKey: start.lengthRule,
-      pathFromMm: 0,
-      pathToMm: start.lengthMm,
-    },
-    {
-      kind: '定着',
-      ruleKey: end.lengthRule,
-      pathFromMm: drawnLengthMm - end.lengthMm,
-      pathToMm: drawnLengthMm,
-    },
+    ...(start
+      ? [{
+          kind: '定着' as const,
+          ruleKey: start.lengthRule,
+          pathFromMm: 0,
+          pathToMm: start.lengthMm,
+        }]
+      : []),
+    ...(end
+      ? [{
+          kind: '定着' as const,
+          ruleKey: end.lengthRule,
+          pathFromMm: drawnLengthMm - end.lengthMm - tipAdditionMm,
+          pathToMm: drawnLengthMm - tipAdditionMm,
+        }]
+      : []),
   ]
 
-  const bent = start.kind === '折曲げ定着' || end.kind === '折曲げ定着'
+  const bent = start?.kind === '折曲げ定着' || end?.kind === '折曲げ定着'
   const points = slabPoints(run.axis, run.coreLengthMm, barZ, start, end)
   const faceKey = face === '上端' ? 'top' : 'bottom'
 
@@ -360,14 +376,15 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
         coverRule,
         fabricationCoverAdditionRule,
         distributionAdditionRule,
-        ...start.usedRules,
-        ...end.usedRules,
+        ...(start ? start.usedRules : []),
+        ...(end ? end.usedRules : []),
+        ...(tipAdditionRule ? [tipAdditionRule] : []),
         ...deduction.rules,
         ...splice.rules,
       ]),
       formula:
-        `設計長さ ＝ ${runCoreFormula(run)}${deductionTerm} ＋ ${endFormula('始端', start)} ` +
-        `＋ ${endFormula('終端', end)} ＋ 継手 ` +
+        `設計長さ ＝ ${runCoreFormula(run)}${deductionTerm} ＋ ${endFormula('始端', start, tipAdditionRule, Boolean(run.cantilever))} ` +
+        `＋ ${endFormula('終端', end, tipAdditionRule, Boolean(run.cantilever))} ＋ 継手 ` +
         `${spliceLengthTerm(splice, section, lapRule, lapLengthMm)} ＝ ${lengthMm} ／ ` +
         `本数 ＝ ⌈割付方向の内法長さ ${run.distributionClearMm} ÷ ピッチ ` +
         `${row.pitch}⌉ ＋ ${distributionAdditionRule.value}` +
@@ -382,6 +399,12 @@ function buildSlabBars(input: SlabBarInput): Rebar[] {
 }
 
 function runCoreFormula(run: SlabRun): string {
+  if (run.cantilever) {
+    const direction =
+      run.axis === run.cantilever.supportAxis ? '支持辺と平行' : '支持辺に直交'
+    return `片持床板 ${direction} の長さ ${run.coreLengthMm}`
+  }
+
   const clearTerms = run.bays
     .map((bay) => (run.axis === 'X' ? bay.clearXMm : bay.clearYMm))
     .join('＋')
@@ -399,23 +422,39 @@ function runCoreFormula(run: SlabRun): string {
         `（2（４）床板1) — 幅の1/2 が両側から来て1本分になる）`
 }
 
-function endFormula(label: string, detail: SlabEndDetail): string {
+function endFormula(
+  label: string,
+  detail: SlabEndDetail | null,
+  tipAdditionRule: RuleHit | null,
+  isCantilever: boolean,
+): string {
+  if (detail === null) {
+    return (
+      `${label} 自由端 定着なし（1通則1) — 先端の加算 ` +
+      `${tipAdditionRule?.value}）`
+    )
+  }
+
   if (detail.kind === '直線定着') {
     const term =
       detail.lengthRule === 'anchorage.L1'
         ? '一般値 L1'
         : detail.lengthRule === 'anchorage.L3'
-          ? 'L3 10d'
+          ? isCantilever
+            ? 'L3 25d（片持スラブ）'
+            : 'L3 10d'
           : 'L3 の下限 150mm'
     return `${label} 直線定着 ${term} ${detail.lengthMm}`
   }
 
   const tailMm = detail.lengthMm - detail.projectionMm
+  const projectionLabel =
+    detail.projectionRule === 'anchorage.La' ? 'La' : 'Lb'
   return (
     `${label} 折曲げ定着 全長 ${detail.lengthMm}` +
     `［(a) 直線定着 L1 ${detail.straightMinimumMm} と ` +
     `(b) 投影＋余長下限 ${detail.tailMinimumMm} の大］` +
-    `（内訳 ＝ 投影 ${detail.projectionMm}［(c) 表5.3.5 Lb］ ＋ 垂直余長 ${tailMm}）`
+    `（内訳 ＝ 投影 ${detail.projectionMm}［(c) 表5.3.5 ${projectionLabel}］ ＋ 垂直余長 ${tailMm}）`
   )
 }
 
@@ -500,14 +539,16 @@ function slabPoints(
   axis: 'X' | 'Y',
   coreLengthMm: number,
   barZ: number,
-  start: SlabEndDetail,
-  end: SlabEndDetail,
+  start: SlabEndDetail | null,
+  end: SlabEndDetail | null,
 ): Rebar['points'] {
   const at = (along: number, z: number): [number, number, number] =>
     axis === 'X' ? [along, 0, z] : [0, along, z]
   const points: Rebar['points'] = []
 
-  if (start.kind === '直線定着') {
+  if (start === null) {
+    points.push(at(0, barZ))
+  } else if (start.kind === '直線定着') {
     points.push(at(-start.lengthMm, barZ))
   } else {
     const tailMm = start.lengthMm - start.projectionMm
@@ -517,7 +558,9 @@ function slabPoints(
     )
   }
 
-  if (end.kind === '直線定着') {
+  if (end === null) {
+    points.push(at(coreLengthMm, barZ))
+  } else if (end.kind === '直線定着') {
     points.push(at(coreLengthMm + end.lengthMm, barZ))
   } else {
     const tailMm = end.lengthMm - end.projectionMm

@@ -327,8 +327,12 @@ assert.ok(completeBay.supports.minX)
 assert.ok(completeBay.supports.maxX)
 assert.ok(completeBay.supports.minY)
 assert.ok(completeBay.supports.maxY)
-assert.equal(completeRun.startSupport.memberId, completeBay.supports.minX.memberId)
-assert.equal(completeRun.endSupport.memberId, completeBay.supports.maxX.memberId)
+const completeRunStartSupport = completeRun.startSupport
+const completeRunEndSupport = completeRun.endSupport
+assert.ok(completeRunStartSupport)
+assert.ok(completeRunEndSupport)
+assert.equal(completeRunStartSupport.memberId, completeBay.supports.minX.memberId)
+assert.equal(completeRunEndSupport.memberId, completeBay.supports.maxX.memberId)
 
 const removedEndSupport = completeBay.supports.maxX.memberId
 const missingSupportProject: Project = {
@@ -378,8 +382,8 @@ const premise7: PremiseResult = {
     {
       completeBaySupports: Object.keys(completeBay.supports),
       completeRunEnds: {
-        startSupport: completeRun.startSupport.memberId,
-        endSupport: completeRun.endSupport.memberId,
+        startSupport: completeRunStartSupport.memberId,
+        endSupport: completeRunEndSupport.memberId,
       },
       removedEndSupport,
       slabBayMissingSupportThrows: true,

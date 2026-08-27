@@ -1,9 +1,9 @@
 {
   "step": 1,
   "name": "cantilever-domain-rulepack-golden",
-  "exitCode": 3221226091,
-  "timedOut": false,
-  "elapsed": 0.06853360001696274,
+  "exitCode": 1,
+  "timedOut": true,
+  "elapsed": 1800.175203199964,
   "stdout_log": "phases\\27-cantilever-slab\\step1-codex.stdout.log",
   "stderr_log": "phases\\27-cantilever-slab\\step1-codex.stderr.log"
 }

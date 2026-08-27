@@ -15,8 +15,11 @@
     {
       "step": 1,
       "name": "cantilever-domain-rulepack-golden",
-      "status": "pending",
-      "failed_at": "2026-08-26T23:30:13+0900"
+      "status": "completed",
+      "started_at": "2026-08-27T09:51:42+0900",
+      "completed_at": "2026-08-27T10:32:18+0900",
+      "summary": "片持床板の optional cantilever モデル、支持辺・自由端を分ける内法算定、L3=25d のルールパック、2件のゴールデンと回帰テストを実装し、全ゲートを通過した。",
+      "report": "phases/27-cantilever-slab/step1-report.json"
     },
     {
       "step": 2,

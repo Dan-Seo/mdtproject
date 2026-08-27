@@ -7,14 +7,15 @@ import type { RuleHit, RulePack } from '../rules/types'
  * 床板主筋が大梁の中でどう定着するか (ADR-028)。
  *
  * 大梁の `resolveGirderEnd` と同じ形だが、引く列が違う。
- *   下端筋 … 表5.3.4 の **L3（スラブ欄）**「10d かつ150mm以上」(注3)
+ *   下端筋 … 通常の床板は表5.3.4 の **L3（スラブ欄）**「10d かつ150mm以上」(注3)。
+ *            片持床板は同じセルの括弧書き「25d」が全体を置き換える。
  *   上端筋 … 表5.3.4 の一般値 **L1**(注1)。入らなければ 5.3.4(5)(ｲ) の折曲げ定着で、
- *            投影は表5.3.5 の **Lb**「小梁及びスラブの上端筋の梁内折曲げ定着」(注2)
+ *            通常の床板の投影は表5.3.5 の **Lb**、片持床板は表5.3.5 の **La**。
  *
  * 梁主筋と違い、投影に「柱せいの3/4 倍以上」の下限は掛からない — 5.3.4(5)(ｲ)(c)
  * のその但書は「梁主筋の柱内定着においては」と対象を限っている。
  *
- * 下端筋には折曲げの逃げ道がない。表5.3.5 の Lb は上端筋の列であり、表5.3.4 の
+ * 下端筋には折曲げの逃げ道がない。表5.3.5 の Lb/La は上端筋の投影列であり、表5.3.4 の
  * L3h はスラブ欄が原文で「─」だ。支点に入らなければ曲げ方を製品が作らず落とす。
  */
 interface UsedRules {
@@ -25,8 +26,8 @@ export type SlabEndDetail =
   | ({
       kind: '直線定着'
       /**
-       * 長さを実際に決めた行。下端筋の L3 は「10d かつ150mm以上」なので、
-       * 細い径では下限が勝つ — L3 と表示すると根拠が事実でなくなる。
+       * 長さを実際に決めた行。通常の床板の L3 は「10d かつ150mm以上」なので、
+       * 細い径では下限が勝つ。片持床板はセル全体の例外値 25d を使う。
        */
       lengthRule: 'anchorage.L1' | 'anchorage.L3' | 'anchorage.L3.minimum'
       lengthMm: number
@@ -35,14 +36,14 @@ export type SlabEndDetail =
       kind: '折曲げ定着'
       /** max(L1, 投影＋余長下限) — 勝った項に根拠が付く */
       lengthRule: 'anchorage.L1' | 'anchorage.bent.tail.minimum'
-      /** 床板の投影は表5.3.5 Lb そのもの。競う下限がない */
-      projectionRule: 'anchorage.Lb'
+      /** 通常の床板は Lb、片持床板は La。どちらも競う下限がない */
+      projectionRule: 'anchorage.La' | 'anchorage.Lb'
       lengthMm: number
       /** 5.3.4(5)(ｲ)(a)「全長は、表5.3.4 の直線定着の長さ以上とする」の L1 */
       straightMinimumMm: number
       /** 同(b)「余長は、8d 以上」を全長の下限に換算したもの */
       tailMinimumMm: number
-      /** 同(c) 投影定着長さ ＝ 表5.3.5 Lb */
+      /** 同(c) 投影定着長さ ＝ 表5.3.5 La または Lb */
       projectionMm: number
     } & UsedRules)
 
@@ -55,6 +56,8 @@ export interface SlabEndInput {
   fc: number
   grade: SteelGrade
   face: '上端' | '下端'
+  /** 片持床板は L3 のセル全体を 25d として読む。 */
+  supportKind?: 'スラブ' | '片持スラブ'
 }
 
 function barDiameter(size: BarSize): number {
@@ -103,9 +106,9 @@ export function resolveSlabEnd(
 }
 
 /**
- * 下端筋 — 表5.3.4 注3 の L3。「10d かつ150mm以上」なので二つの行の大きい方だ。
- * 大きい方を取る計算がここにあり、ルールパックは 10d と 150mm を別々に持つ
- * (ADR-002 — 耐力壁の重ね継手下限と同じ形)。
+ * 下端筋 — 通常の床板は表5.3.4 注3 の「10d かつ150mm以上」なので二つの行の
+ * 大きい方だ。片持床板は同じセルの括弧書き「25d」が全体を置き換えるため、
+ * 下限行を引かない (ADR-039)。
  */
 function resolveBottom(
   input: SlabEndInput,
@@ -114,11 +117,32 @@ function resolveBottom(
   availableMm: number,
   coverRules: RuleHit[],
 ): SlabEndDetail {
-  const perDiameterRule = lookupRule(pack, 'anchorage.L3', { member: 'スラブ' })
-  const floorRule = lookupRule(pack, 'anchorage.L3.minimum', {
-    member: 'スラブ',
+  const supportKind = input.supportKind ?? 'スラブ'
+  const perDiameterRule = lookupRule(pack, 'anchorage.L3', {
+    member: supportKind,
   })
   const perDiameterMm = millimetres(perDiameterRule, diameter)
+
+  if (supportKind === '片持スラブ') {
+    if (perDiameterMm > availableMm) {
+      throw new MemberUnsupportedError(
+        '定着不成立',
+        `片持床板下端筋の支持辺定着が大梁に収まらない: ` +
+          `必要 ${perDiameterMm} mm > 使用可能 ${availableMm} mm`,
+      )
+    }
+
+    return {
+      kind: '直線定着',
+      lengthRule: 'anchorage.L3',
+      lengthMm: perDiameterMm,
+      usedRules: [perDiameterRule, ...coverRules],
+    }
+  }
+
+  const floorRule = lookupRule(pack, 'anchorage.L3.minimum', {
+    member: supportKind,
+  })
   const floorMm = millimetres(floorRule)
   const lengthMm = Math.max(perDiameterMm, floorMm)
 
@@ -168,7 +192,9 @@ function resolveTop(
 
   // anchorage.L1h は引かない — 5.3.4(5)(ｲ) で L1h は**適用条件**であって
   // (a)(b)(c) のどの値も決めない (大梁の resolveGirderEnd と同じ理由)。
-  const projectionRule = lookupRule(pack, 'anchorage.Lb', {
+  const projectionKey =
+    input.supportKind === '片持スラブ' ? 'anchorage.La' : 'anchorage.Lb'
+  const projectionRule = lookupRule(pack, projectionKey, {
     fc: input.fc,
     grade: input.grade,
   })
@@ -192,7 +218,7 @@ function resolveTop(
       straightLengthMm >= tailMinimumMm
         ? 'anchorage.L1'
         : 'anchorage.bent.tail.minimum',
-    projectionRule: 'anchorage.Lb',
+    projectionRule: projectionKey,
     lengthMm,
     straightMinimumMm: straightLengthMm,
     tailMinimumMm,
