@@ -560,6 +560,62 @@
       "expectedCoreLengthMm": 11600,
       "note": "床板の長さ(内法)の和 ＋ 中間大梁の両側それぞれ梁幅の1/2 ＝ 5600＋5600＋200＋200。中間支点に定着は付かない。内法は躯体の区分（４）「柱、梁等に接する水平材の内法部分」による — 通り芯間 6000 から両側の大梁幅 400 の半分ずつを引いて 5600"
     },
+    "cantileverSlab": {
+      "clause": "表5.3.4 注3・2（４）床板1)・2)・1通則1)・4)・7)",
+      "label": "片持スラブは支持辺だけに定着し、自由端には定着しない",
+      "supportAxis": "X",
+      "supportClearMm": 5200,
+      "supportWidthMm": 400,
+      "pitchMm": 200,
+      "barSize": "D13",
+      "unitMassKgPerM": 1,
+      "cases": [
+        {
+          "id": "positive-short",
+          "side": "正",
+          "projectionMm": 1800,
+          "expected": {
+            "projectionAxis": "Y",
+            "projectionCount": 27,
+            "parallelCount": 10,
+            "bottomProjectionLengthMm": 2125,
+            "topProjectionLengthMm": 2320,
+            "parallelLengthMm": 5200,
+            "projectionSpliceCountPerBar": 0,
+            "parallelSpliceCountPerBar": 0,
+            "projectionBottomDesignKg": 57.375,
+            "projectionBottomRequiredKg": 59.67,
+            "projectionTopDesignKg": 62.64,
+            "projectionTopRequiredKg": 65.1456,
+            "parallelDesignKg": 52,
+            "parallelRequiredKg": 54.08
+          },
+          "handDerivation": "支持辺 X の内法は 6000−800/2−800/2＝5200。X と平行な筋は定着0回・割付は projection 1800、⌈1800/200⌉＋1＝10本、設計長さは5200。直交する Y 方向の下端筋は支持辺側の定着1回 25d＝325（表5.3.4 注3「片持スラブの場合は25d」）、自由端は1通則1)で加算0、設計長さ＝1800＋325＝2125、⌈5200/200⌉＋1＝27本。上端筋は支持大梁に直線L1が入らないため表5.3.5 La を投影に使う折曲げで、全長は(a)のL1＝520が支配し、2320。短いので継手は1通則4)で0か所。単位質量1kg/m、躯体4%で設計数量と所要数量を算出する。"
+        },
+        {
+          "id": "negative-long",
+          "side": "負",
+          "projectionMm": 7000,
+          "expected": {
+            "projectionAxis": "Y",
+            "projectionCount": 27,
+            "parallelCount": 36,
+            "bottomProjectionLengthMm": 7845,
+            "topProjectionLengthMm": 8040,
+            "parallelLengthMm": 5200,
+            "projectionSpliceCountPerBar": 1,
+            "parallelSpliceCountPerBar": 0,
+            "projectionBottomDesignKg": 211.815,
+            "projectionBottomRequiredKg": 220.2876,
+            "projectionTopDesignKg": 217.08,
+            "projectionTopRequiredKg": 225.7632,
+            "parallelDesignKg": 187.2,
+            "parallelRequiredKg": 194.688
+          },
+          "handDerivation": "支持辺 X の内法は5200。X と平行な筋は定着0回・割付は projection 7000、⌈7000/200⌉＋1＝36本、設計長さは5200で継手0か所。直交する Y 方向は負側なので支持辺がラン終端、支持辺側の定着だけ1回で自由端側は1通則1)の先端加算0。下端筋のL3は25d＝325のみ（150mm下限は片持スラブに付かない）、設計長さ＝7000＋325＋520（1通則4)のD13以下6.0mごとの継手）＝7845、27本。上端筋はLaを投影にした折曲げで全長L1＝520が支配し、設計長さ＝7000＋520＋520＝8040、27本。単位質量1kg/m、躯体4%で設計数量と所要数量を算出する。"
+        }
+      ]
+    },
     "columnMain": {
       "clause": "2（２）柱1)",
       "label": "柱主筋の柱長さ項は各階床板上面間＝階高",

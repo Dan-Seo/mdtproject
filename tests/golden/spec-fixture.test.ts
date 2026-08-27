@@ -73,10 +73,28 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     // 11マスに展開して転写していたら、原文にない格子を作ったことになる。
     const l3 = entriesFor('anchorage.L3', 'anchorage.L3.minimum')
 
-    expect(l3).toHaveLength(2)
-    for (const entry of l3) {
-      expect(entry.conditions).toEqual({ member: 'スラブ' })
-    }
+    expect(l3).toHaveLength(3)
+    expect(l3.filter((entry) => entry.kind === 'anchorage.L3')).toHaveLength(2)
+    expect(
+      l3.find((entry) => entry.kind === 'anchorage.L3.minimum')?.conditions,
+    ).toEqual({ member: 'スラブ' })
+    expect(
+      l3.find(
+        (entry) => entry.conditions.member === 'スラブ' && entry.kind === 'anchorage.L3',
+      )?.value,
+    ).toBe(10)
+    expect(
+      l3.find(
+        (entry) => entry.conditions.member === '片持スラブ' && entry.kind === 'anchorage.L3',
+      )?.value,
+    ).toBe(25)
+    expect(
+      l3.some(
+        (entry) =>
+          entry.kind === 'anchorage.L3.minimum' &&
+          entry.conditions.member === '片持スラブ',
+      ),
+    ).toBe(false)
   })
 
   it('carries explicit expansion values for every band', () => {

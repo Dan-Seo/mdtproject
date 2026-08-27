@@ -9,6 +9,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import type { Member } from '@/domain/model/member'
 import { girderSpan } from '@/domain/model/project'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import { lookupRule } from '@/domain/rules/lookup'
@@ -250,6 +251,28 @@ describe('Viewer3D', () => {
     expect(mocks.rendererDispose).toHaveBeenCalledOnce()
     expect(mocks.resizeDisconnect).toHaveBeenCalledOnce()
     expect(mocks.envTextureDispose).toHaveBeenCalledOnce()
+  })
+
+  it('builds the selected member scene for a cantilever slab', () => {
+    const project = createSampleProject()
+    const member: Member = {
+      id: '1F-S1-X1Y3-X-cantilever',
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: 'section-S1',
+      storyId: '1F',
+      position: { axis: 'X', ix: 0, iy: 2 },
+      cantilever: { side: '正', projectionMm: 1800 },
+    }
+    act(() =>
+      useAppStore.setState({
+        project: { ...project, members: [...project.members, member] },
+        sel: { group: '1階|S|S1', memberId: member.id },
+      }),
+    )
+
+    expect(() => render(<Viewer3D />)).not.toThrow()
+    expect(latestContent().children.length).toBeGreaterThan(0)
   })
 
   // 컨텍스트 손실은 예외를 던지지 않는다 — 뷰어가 조용히 얼어붙고 경계도 걸리지 않으므로

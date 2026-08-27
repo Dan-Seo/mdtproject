@@ -1022,7 +1022,8 @@
 # ただし、基礎耐圧スラブ及びこれを受ける小梁は除く。」。原文では縦に結合されたセルで、
 # 鉄筋の種類にも Fc にも依らない一つの値である。「10d かつ 150mm 以上」の 150mm は
 # 別行に分ける — 大きい方を取る計算は TS 側だ (ADR-002、lap.wall.minimum と同じ形)。
-# 同じ欄の「（片持スラブの場合は25d）」は片持床板を作らないので載せない。
+# 同じ欄の「（片持スラブの場合は25d）」はセル全体の例外値であり、
+# 10d と 150mm を組み合わせない片持床板専用の行として載せる (ADR-039)。
 # L3h のスラブ欄は原文が「─」であって値がない — フックありの定着長さは無い。
 
 - key: anchorage.L3
@@ -1034,6 +1035,16 @@
   source: { ref: spec, section: 表5.3.4, page: 30 }
   confidence: transcribed
   note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.4 L3 スラブ欄「10d かつ150mm以上」— 縦結合セルなので鉄筋の種類・Fc に依らない）
+
+- key: anchorage.L3
+  label: 片持スラブ下端筋の直線定着長さ L3（注3）
+  expr: 25d
+  conditions: { member: 片持スラブ }
+  value: 25
+  unit: d
+  source: { ref: spec, section: 表5.3.4, page: 30 }
+  confidence: transcribed
+  note: 原文転写（転写者＝承認者・独立検討待ち R6）（表5.3.4 L3 スラブ欄「片持スラブの場合は25d」— 10dかつ150mm以上全体の例外）
 
 - key: anchorage.L3.minimum
   label: スラブ下端筋の直線定着長さ L3 の下限

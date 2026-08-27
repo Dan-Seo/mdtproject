@@ -170,16 +170,19 @@ describe('スラブ下端筋の定着は一般値より短い', () => {
   // L3 は縦結合セルなので Fc・鉄筋の種類の格子を持たない — その一つの値が
   // 表のどのマスの L1 よりも小さいことを見る。逆転していたら列を取り違えている。
   it('L3 < L1 at every cell of 表5.3.4', () => {
-    const l3 = rows('anchorage.L3')
+    const l3 = rows('anchorage.L3').find(
+      (entry) => entry.conditions.member === 'スラブ',
+    )
 
-    expect(l3).toHaveLength(1)
-    expect(l3[0].unit).toBe('d')
+    expect(rows('anchorage.L3')).toHaveLength(2)
+    expect(l3).toBeDefined()
+    expect(l3?.unit).toBe('d')
 
     for (const grade of GRADES) {
       for (const fc of FC_BANDS) {
         const l1 = valueAt('anchorage.L1', grade, fc)
         if (l1 === null) continue
-        expect(l3[0].value, `${grade} Fc${fc}`).toBeLessThan(l1)
+        expect(l3?.value, `${grade} Fc${fc}`).toBeLessThan(l1)
       }
     }
   })
@@ -188,11 +191,19 @@ describe('スラブ下端筋の定着は一般値より短い', () => {
     // 「10d かつ 150mm 以上」の 150mm は、細い径でこそ効く下限だ。10d を
     // 下回る値を書いてしまうと行があっても一度も効かず、転写ミスに気づけない。
     const floor = rows('anchorage.L3.minimum')
-    const perDiameter = rows('anchorage.L3')
+    const perDiameter = rows('anchorage.L3').find(
+      (entry) => entry.conditions.member === 'スラブ',
+    )
 
     expect(floor).toHaveLength(1)
     expect(floor[0].unit).toBe('mm')
-    expect(floor[0].value).toBeGreaterThan(perDiameter[0].value * 13)
+    expect(perDiameter).toBeDefined()
+    expect(floor[0].value).toBeGreaterThan(perDiameter!.value * 13)
+    expect(
+      rows('anchorage.L3.minimum').some(
+        (entry) => entry.conditions.member === '片持スラブ',
+      ),
+    ).toBe(false)
   })
 })
 

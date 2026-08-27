@@ -415,6 +415,13 @@ export type WallPosition = GirderPosition
  */
 export type SlabPosition = ColumnPosition
 
+/** 支持辺が1辺だけの片持床板。projection は支持辺から自由端までの内法長さ。 */
+export interface CantileverSlab {
+  /** 支持辺に直交する通り芯 index が増える向きが「正」。 */
+  side: '正' | '負'
+  projectionMm: number
+}
+
 /**
  * 雑壁（腰壁・下り壁・袖壁）の内法範囲。設計図書からの部材単位の転記であり、
  * 省略した軸は全内法を意味する。範囲を断面に置かないのは、同じ符号でも部材ごと
@@ -472,6 +479,8 @@ export interface Member {
   sectionId: string
   storyId: string
   position: ColumnPosition | GirderPosition | WallPosition | SlabPosition
+  /** 床板の position が GirderPosition のときだけ許される片持条件。 */
+  cantilever?: CantileverSlab
   /**
    * この部材に開いている開口部 (1通則8))。未指定は「開口なし」であって
    * 「未入力」ではない — 製品は開口の有無を推定しないので、内訳書は開口補強筋を

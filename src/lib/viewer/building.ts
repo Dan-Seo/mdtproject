@@ -1,13 +1,16 @@
 import type {
   ColumnShape,
+  Member,
   MemberKind,
   Opening,
   ShearBarSize,
 } from '@/domain/model/member'
 import {
+  cantileverSlabRect,
   findSection,
   girderSpan,
   gridPoint,
+  isCantileverSlabMember,
   slabBay,
   slabRun,
   storyElevation,
@@ -63,6 +66,31 @@ export interface BuildingLayout {
   boxes: ConcreteBox[]
   rebar: RebarInstance[]
   bounds: Bounds
+}
+
+interface CantileverSlabGeometry {
+  originX: number
+  originY: number
+  width: number
+  height: number
+}
+
+/**
+ * 平面での矩形を 3D の原点・寸法に直すだけだ。矩形そのものは
+ * `cantileverSlabRect` が持つ — 平面ペインと同じ一つの出所である。
+ */
+function cantileverSlabGeometry(
+  project: Project,
+  member: Member,
+): CantileverSlabGeometry {
+  const rect = cantileverSlabRect(project, member)
+
+  return {
+    originX: rect.minX,
+    originY: rect.minY,
+    width: rect.maxX - rect.minX,
+    height: rect.maxY - rect.minY,
+  }
 }
 
 function emptyBounds(): Bounds {
@@ -155,38 +183,59 @@ export function buildingLayout(
               size: [section.b, section.depth, end.y - start.y],
             }
     } else if (member.kind === '床板') {
-      if (section.kind !== '床板' || 'axis' in member.position) {
+      if (section.kind !== '床板') {
         throw new Error(`床板 member references a non-床板 section: ${member.id}`)
       }
       // 床板も内法部分そのものだ（躯体の区分（４）「柱、梁等に接する水平材の
       // 内法部分」）。通り芯間で描くと大梁と重なった板になる。
-      const origin = gridPoint(
-        project.grid,
-        member.position.ix,
-        member.position.iy,
-      )
-      const bay = slabBay(project, member)
-      // 板の上面は階の天井 — 大梁の上端と同じ高さで、そこから板厚だけ下がる。
       const topY = elevation + story.height
-      // 床板の局所 x は世界の x（軸0）、局所 y は世界の z（軸2）だ。開口部で
-      // くり抜く — 数量が欠除しているのに板が塞がっていては説明が付かない。
-      const slabOriginX = origin.x + bay.startFaceOffsetXMm
-      const slabOriginZ = origin.y + bay.startFaceOffsetYMm
-      box = {
-        memberId: member.id,
-        kind: '床板',
-        center: [
-          slabOriginX + bay.clearXMm / 2,
-          topY - section.thickness / 2,
-          slabOriginZ + bay.clearYMm / 2,
-        ],
-        size: [bay.clearXMm, section.thickness, bay.clearYMm],
+      if (isCantileverSlabMember(member)) {
+        const geometry = cantileverSlabGeometry(project, member)
+        box = {
+          memberId: member.id,
+          kind: '床板',
+          center: [
+            geometry.originX + geometry.width / 2,
+            topY - section.thickness / 2,
+            geometry.originY + geometry.height / 2,
+          ],
+          size: [geometry.width, section.thickness, geometry.height],
+        }
+        pieces = carveBox(
+          box,
+          [0, 2],
+          boxHoles(member.openings ?? [], geometry.originX, geometry.originY),
+        )
+      } else {
+        if ('axis' in member.position) {
+          throw new Error(`床板 position is invalid: ${member.id}`)
+        }
+        // 床板の局所 x は世界の x（軸0）、局所 y は世界の z（軸2）だ。開口部で
+        // くり抜く — 数量が欠除しているのに板が塞がっていては説明が付かない。
+        const origin = gridPoint(
+          project.grid,
+          member.position.ix,
+          member.position.iy,
+        )
+        const bay = slabBay(project, member)
+        const slabOriginX = origin.x + bay.startFaceOffsetXMm
+        const slabOriginZ = origin.y + bay.startFaceOffsetYMm
+        box = {
+          memberId: member.id,
+          kind: '床板',
+          center: [
+            slabOriginX + bay.clearXMm / 2,
+            topY - section.thickness / 2,
+            slabOriginZ + bay.clearYMm / 2,
+          ],
+          size: [bay.clearXMm, section.thickness, bay.clearYMm],
+        }
+        pieces = carveBox(
+          box,
+          [0, 2],
+          boxHoles(member.openings ?? [], slabOriginX, slabOriginZ),
+        )
       }
-      pieces = carveBox(
-        box,
-        [0, 2],
-        boxHoles(member.openings ?? [], slabOriginX, slabOriginZ),
-      )
     } else {
       if (section.kind !== '耐震壁' || !('axis' in member.position)) {
         throw new Error(
@@ -308,19 +357,13 @@ export function buildingLayout(
               start.y + span.startFaceOffsetMm + x,
             ]
     } else if (member.kind === '床板') {
-      if (section.kind !== '床板' || 'axis' in member.position) {
+      if (section.kind !== '床板') {
         throw new Error(`床板 member references a non-床板 section: ${member.id}`)
       }
       const slabStory = project.stories.find(({ id }) => id === member.storyId)
       if (!slabStory) {
         throw storyNotFound(member.storyId)
       }
-      const origin = gridPoint(
-        project.grid,
-        member.position.ix,
-        member.position.iy,
-      )
-      const bay = slabBay(project, member)
       openings = slabRun(
         project,
         member,
@@ -333,11 +376,29 @@ export function buildingLayout(
         slabStory.height -
         section.thickness
 
-      worldPoint = ([x, y, z]) => [
-        origin.x + bay.startFaceOffsetXMm + x,
-        base + z,
-        origin.y + bay.startFaceOffsetYMm + y,
-      ]
+      if (isCantileverSlabMember(member)) {
+        const geometry = cantileverSlabGeometry(project, member)
+        worldPoint = ([x, y, z]) => [
+          geometry.originX + x,
+          base + z,
+          geometry.originY + y,
+        ]
+      } else {
+        if ('axis' in member.position) {
+          throw new Error(`床板 position is invalid: ${member.id}`)
+        }
+        const origin = gridPoint(
+          project.grid,
+          member.position.ix,
+          member.position.iy,
+        )
+        const bay = slabBay(project, member)
+        worldPoint = ([x, y, z]) => [
+          origin.x + bay.startFaceOffsetXMm + x,
+          base + z,
+          origin.y + bay.startFaceOffsetYMm + y,
+        ]
+      }
     } else {
       if (section.kind !== '耐震壁' || !('axis' in member.position)) {
         throw new Error(

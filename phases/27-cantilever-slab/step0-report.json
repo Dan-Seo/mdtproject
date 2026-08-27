@@ -1,0 +1,459 @@
+{
+  "phase": "27-cantilever-slab",
+  "step": 0,
+  "verificationCommand": "npx tsx phases/27-cantilever-slab/step0-verify.ts",
+  "premises": [
+    {
+      "id": "zero-count-was-wrong",
+      "status": "upheld",
+      "evidence": [
+        {
+          "quantity": {
+            "printedPages": [
+              10,
+              11,
+              16,
+              17,
+              20
+            ],
+            "pdfPages": [
+              15,
+              16,
+              21,
+              22,
+              25
+            ],
+            "count": 6
+          },
+          "standardSpecification": {
+            "printedPages": [
+              27,
+              30,
+              31,
+              54
+            ],
+            "pdfPages": [
+              33,
+              36,
+              37,
+              60
+            ],
+            "count": 8
+          },
+          "distributionRebar": {
+            "quantityPdfPages": [],
+            "specificationPdfPages": [],
+            "count": 0
+          },
+          "hashes": {
+            "quantity": "801d7917e81369dd4eac551af76f00aba6fa7d7e8224703f162a0435b46d9a30",
+            "specification": "8fd3c83ca92b01a26e53071efdb3e871e4b5672583f8473ba062cbcc45759acc"
+          }
+        },
+        "積算基準のPDF本文は、印刷10・11・16・17・20頁で片持を計6件、標準仕様書は印刷27・30・31・54頁で計8件を含む。配力筋は両方0件。"
+      ]
+    },
+    {
+      "id": "clauses-are-sufficient",
+      "status": "upheld",
+      "evidence": [
+        {
+          "id": "definition",
+          "expected": "片持床板等もこれらに準ずる。",
+          "pdfPage": 16,
+          "present": true,
+          "context": {
+            "pdfPage": 16,
+            "text": "式構造については、壁又は壁梁に接する横架材の内法部分をいう。（４）床板（スラブ）床板とは、柱、梁等に接する水平材の内法部分をいう。ただし、壁式構造については、壁、壁梁等に接する水平材の内法部分をいう。片持床板等もこれらに準ずる。（５）壁壁とは、柱、梁、床板等に接する垂直材の内法部分をいい、開口部を除く。ただし、壁式構造については、基礎上面から屋上床板上面までの垂直材をいい、開口部を除く。袖壁、下り壁、腰壁等もこれらに準ずる。"
+          }
+        },
+        {
+          "id": "slabSpliceException",
+          "expected": "単独床板及び片持床板の主筋の継手は、１通則４）による。",
+          "pdfPage": 22,
+          "present": true,
+          "context": {
+            "pdfPage": 22,
+            "text": "板の全長にわたる主筋の継手については、１通則４）の規定にかかわらず、床板の長さ４．５ｍ未満は０．５か所、４．５ｍ以上９．０ｍ未満は１か所、９．０ｍ以上１３．５ｍ未満は１．５か所あるものとする。ただし、単独床板及び片持床板の主筋の継手は、１通則４）による。重ね継手の長さは、１通則６）による。３）同一配筋の床板がある場合には、適切な計算法による統計値とすることができる。（５）壁１）壁（壁式構造以外）①縦筋、横筋の長さは、接続する他の部分に定着するものとし"
+          }
+        },
+        {
+          "id": "l3Cantilever",
+          "expected": "10dかつ150mm以上（片持スラブの場合は25d）",
+          "pdfPage": 36,
+          "present": true,
+          "context": {
+            "pdfPage": 36,
+            "text": "筋の種類コンクリートの設計基準強度(Fc)(N/mm2)直線定着の長さフックありの定着の長さL1L2L3L1hL2hL3h小梁スラブ小梁スラブSD2951845d40d20d（片持小梁の場合は25d）10dかつ150mm以上（片持スラブの場合は25d）35d30d10d─2140d35d30d25d24、2735d30d25d20d30、33、3635d30d25d20dSD3451850d40d35d30d2145d35d30d25d24、274"
+          }
+        },
+        {
+          "id": "laIncludesCantileverSlab",
+          "expected": "片持梁及び片持スラブを含む。",
+          "pdfPage": 37,
+          "present": true,
+          "context": {
+            "pdfPage": 37,
+            "text": "20d20d24、2720d15d30、33、3615d15dSD3902120d20d24、2720d20d30、33、3620d15d(注)１.La：梁主筋の柱内折曲げ定着の投影定着長さ(基礎梁、片持梁及び片持スラブを含む。)２.Lb：小梁及びスラブの上端筋の梁内折曲げ定着の投影定着長さ(片持小梁及び片持スラブを除く。)３.軽量コンクリートの場合は、表の値に5dを加えたものとする。梁主筋の柱内折曲げ定着の投影定着長さ小梁"
+          }
+        },
+        {
+          "id": "lbExcludesCantileverSlab",
+          "expected": "片持小梁及び片持スラブを除く。",
+          "pdfPage": 37,
+          "present": true,
+          "context": {
+            "pdfPage": 37,
+            "text": "2720d20d30、33、3620d15d(注)１.La：梁主筋の柱内折曲げ定着の投影定着長さ(基礎梁、片持梁及び片持スラブを含む。)２.Lb：小梁及びスラブの上端筋の梁内折曲げ定着の投影定着長さ(片持小梁及び片持スラブを除く。)３.軽量コンクリートの場合は、表の値に5dを加えたものとする。梁主筋の柱内折曲げ定着の投影定着長さ小梁及びスラブの上端筋の梁内折曲げ定着の投影定着長さ全長全長La（ただし，柱せいの3/4倍以上）Lb"
+          }
+        },
+        {
+          "id": "tipHook",
+          "expected": "片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d以上とする。",
+          "pdfPage": 33,
+          "present": true,
+          "context": {
+            "pdfPage": 33,
+            "text": "折曲げ図折曲げ内法直径(D)鉄筋の種類SD295、SD345SD390呼び名D16以下D19～D38D19～D38180°3d以上4d以上5d以上135°90°135°及び90°(幅止め筋)(注)１.片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d以上とする。２.90°未満の折曲げの内法直径は特記による。5.3.3組立鉄筋は、鉄筋継手部分及び交差部の要所を径0.8mm以上の鉄線で結束し、適切な位置にスペーサー、吊金物等を使用して、堅固に組み立てる。なお、ス"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l3-cell-structure",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": {
+            "image": ".cache/table-5-3-4.png",
+            "pdfPage": 36,
+            "printedPage": 30,
+            "spansInSlabColumn": [
+              {
+                "text": "10d ",
+                "bbox": [
+                  336.55,
+                  265.319,
+                  354.61,
+                  274.319
+                ]
+              },
+              {
+                "text": "150mm ",
+                "bbox": [
+                  331.99,
+                  293.399,
+                  359.05,
+                  302.399
+                ]
+              },
+              {
+                "text": "（片持 ",
+                "bbox": [
+                  331.27,
+                  336.224,
+                  359.29,
+                  344.264
+                ]
+              },
+              {
+                "text": "は25d） ",
+                "bbox": [
+                  329.35,
+                  377.399,
+                  361.81,
+                  386.399
+                ]
+              }
+            ],
+            "sameColumnEvidence": true,
+            "interpretation": "The parenthetical 片持スラブの場合は25d is the exception value for the single merged L3 スラブ cell; it replaces the base 10dかつ150mm以上 entry rather than retaining an independent 150mm condition."
+          },
+          "cellReading": "The parenthetical 片持スラブの場合は25d is the exception value for the single merged L3 スラブ cell; it replaces the base 10dかつ150mm以上 entry rather than retaining an independent 150mm condition.",
+          "baseEntry": "10dかつ150mm以上",
+          "cantileverEntry": "25d",
+          "d10": 10,
+          "cantileverLengthMm": 250,
+          "nominalMinimumMm": 150,
+          "minimumBindsForD10": false,
+          "practicalImpact": "D10でも25d=250mmなので150mmは結果を変えないが、表の意味として独立した片持下限とは読めない。"
+        },
+        "表5.3.4のL3スラブ欄は縦結合された単一セルで、10d・150mm以上・片持スラブの場合は25dが同じセル列にある。括弧는 그 셀의 예외값으로 전체 기본 기재를 대체한다."
+      ]
+    },
+    {
+      "id": "la-rows-reusable",
+      "status": "upheld",
+      "evidence": [
+        {
+          "rulepackFile": "src/rulepack/jp-mlit/anchorage.yaml",
+          "rowCount": 20,
+          "sampleConditions": [
+            {
+              "fc": 18,
+              "grade": "SD295"
+            },
+            {
+              "fc": 21,
+              "grade": "SD295"
+            },
+            {
+              "fc": 24,
+              "grade": "SD295"
+            }
+          ],
+          "memberConditionRows": 0,
+          "lookup": {
+            "conditions": {
+              "fc": 24,
+              "grade": "SD345",
+              "member": "床板"
+            },
+            "key": "anchorage.La",
+            "value": 20
+          }
+        },
+        {
+          "file": "src/rulepack/jp-mlit/anchorage.yaml",
+          "line": 821,
+          "text": "- key: anchorage.La"
+        }
+      ]
+    },
+    {
+      "id": "tip-rule-exists",
+      "status": "upheld",
+      "evidence": [
+        {
+          "key": "measure.tip.length.addition",
+          "value": 0,
+          "conditions": {},
+          "source": {
+            "short": "数量積算基準",
+            "doc": "公共建築数量積算基準",
+            "edition": "令和5年3月29日改定（国営積第8号）",
+            "publisher": "国土交通省 大臣官房官庁営繕部",
+            "url": "https://www.mlit.go.jp/common/001178206.pdf",
+            "section": "第4編第3章第2節 1通則1)",
+            "page": 15
+          },
+          "confidence": "transcribed"
+        },
+        {
+          "file": "src/rulepack/jp-mlit/measure.yaml",
+          "line": 35,
+          "text": "- key: measure.tip.length.addition"
+        }
+      ]
+    },
+    {
+      "id": "fixture-has-no-cantilever-values",
+      "status": "upheld",
+      "evidence": [
+        {
+          "fixture": "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+          "listKind": "片持スラブリスト",
+          "scope": "対象外",
+          "marks": [
+            "CS51",
+            "CS52"
+          ],
+          "entryCount": 0,
+          "notes": [
+            "片持床板은 제품 스코프 밖이다 (ADR-028) — 対象外로 구분하고 값은 전사 생략",
+            "CS51은 タイプ B·厚 200·備考 「先端 2-D13」, CS52는 タイプ B·厚 150·備考 「先端 2-D13」"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slab-run-assumes-two-supports",
+      "status": "upheld",
+      "evidence": [
+        {
+          "site": "slabBay",
+          "requiredSupports": [
+            "minX",
+            "maxX",
+            "minY",
+            "maxY"
+          ],
+          "source": {
+            "file": "src/domain/model/project.ts",
+            "lines": [
+              956,
+              960
+            ],
+            "text": "  const supports = {\n    minX: edge('Y', ix, iy),\n    maxX: edge('Y', ix + 1, iy),\n    minY: edge('X', ix, iy),\n    maxY: edge('X', ix, iy + 1),"
+          },
+          "runtime": "Removing one edge 大梁 makes slabBay throw MemberUnsupportedError."
+        },
+        {
+          "site": "SlabRun interface and return",
+          "requiredSupports": [
+            "startSupport",
+            "endSupport"
+          ],
+          "source": [
+            {
+              "file": "src/domain/model/project.ts",
+              "lines": [
+                1017,
+                1020
+              ],
+              "text": "  /** 始端で定着していく大梁 */\n  startSupport: SlabEdgeSupport\n  /** 終端で定着していく大梁 */\n  endSupport: SlabEdgeSupport"
+            },
+            {
+              "file": "src/domain/model/project.ts",
+              "lines": [
+                1111,
+                1133
+              ],
+              "text": "  const first = bays[0]\n  const last = bays[bays.length - 1]\n\n  // ベイ局所の開口をラン座標へ移す。走る向きにだけベイのオフセットが乗る —\n  // 直交方向の内法はラン内で共通なので（上でそれを検査している）そのままだ。\n  const openings = members.flatMap((candidate, index) =>\n    (candidate.openings ?? []).map((opening) => ({\n      ...opening,\n      xMm: opening.xMm + (axis === 'X' ? memberOffsetsMm[index] : 0),\n      yMm: opening.yMm + (axis === 'Y' ? memberOffsetsMm[index] : 0),\n    })),\n  )\n\n  return {\n    axis,\n    members,\n    ownerId: members[0].id,\n    bays,\n    memberOffsetsMm,\n    coreLengthMm,\n    distributionClearMm,\n    startSupport: axis === 'X' ? first.supports.minX : first.supports.minY,\n    endSupport: axis === 'X' ? last.supports.maxX : last.supports.maxY,"
+            }
+          ],
+          "runtime": "The complete sample run exposes both support objects; a missing edge prevents run construction."
+        },
+        {
+          "site": "generateSlabRebar",
+          "requiredSupports": [
+            "run.startSupport",
+            "run.endSupport"
+          ],
+          "source": {
+            "file": "src/domain/rebar/slab.ts",
+            "lines": [
+              206,
+              221
+            ],
+            "text": "  const start = resolveSlabEnd(\n    {\n      ...endInput,\n      supportWidthMm: run.startSupport.widthMm,\n      supportCover: run.startSupport.cover,\n    },\n    pack,\n  )\n  const end = resolveSlabEnd(\n    {\n      ...endInput,\n      supportWidthMm: run.endSupport.widthMm,\n      supportCover: run.endSupport.cover,\n    },\n    pack,\n  )"
+          },
+          "runtime": "Both support objects are dereferenced and passed to resolveSlabEnd."
+        },
+        {
+          "site": "slab position geometry",
+          "requiredSupports": [
+            "gridPoint(ix + 1, iy + 1)"
+          ],
+          "source": [
+            {
+              "file": "src/domain/model/member.ts",
+              "line": 416,
+              "text": "export type SlabPosition = ColumnPosition"
+            },
+            {
+              "file": "src/domain/model/project.ts",
+              "lines": [
+                930,
+                932
+              ],
+              "text": "  const { ix, iy } = member.position\n  const origin = gridPoint(project.grid, ix, iy)\n  const far = gridPoint(project.grid, ix + 1, iy + 1)"
+            }
+          ],
+          "runtime": "No one-sided support position can be represented by the current bay/position shape."
+        },
+        {
+          "completeBaySupports": [
+            "minX",
+            "maxX",
+            "minY",
+            "maxY"
+          ],
+          "completeRunEnds": {
+            "startSupport": "1F-G1-X1Y1-Y",
+            "endSupport": "1F-G2-X2Y1-Y"
+          },
+          "removedEndSupport": "1F-G2-X2Y1-Y",
+          "slabBayMissingSupportThrows": true,
+          "slabRunMissingSupportThrows": true
+        }
+      ]
+    }
+  ],
+  "twoSupportSites": [
+    {
+      "site": "slabBay",
+      "requiredSupports": [
+        "minX",
+        "maxX",
+        "minY",
+        "maxY"
+      ],
+      "source": {
+        "file": "src/domain/model/project.ts",
+        "lines": [
+          956,
+          960
+        ],
+        "text": "  const supports = {\n    minX: edge('Y', ix, iy),\n    maxX: edge('Y', ix + 1, iy),\n    minY: edge('X', ix, iy),\n    maxY: edge('X', ix, iy + 1),"
+      },
+      "runtime": "Removing one edge 大梁 makes slabBay throw MemberUnsupportedError."
+    },
+    {
+      "site": "SlabRun interface and return",
+      "requiredSupports": [
+        "startSupport",
+        "endSupport"
+      ],
+      "source": [
+        {
+          "file": "src/domain/model/project.ts",
+          "lines": [
+            1017,
+            1020
+          ],
+          "text": "  /** 始端で定着していく大梁 */\n  startSupport: SlabEdgeSupport\n  /** 終端で定着していく大梁 */\n  endSupport: SlabEdgeSupport"
+        },
+        {
+          "file": "src/domain/model/project.ts",
+          "lines": [
+            1111,
+            1133
+          ],
+          "text": "  const first = bays[0]\n  const last = bays[bays.length - 1]\n\n  // ベイ局所の開口をラン座標へ移す。走る向きにだけベイのオフセットが乗る —\n  // 直交方向の内法はラン内で共通なので（上でそれを検査している）そのままだ。\n  const openings = members.flatMap((candidate, index) =>\n    (candidate.openings ?? []).map((opening) => ({\n      ...opening,\n      xMm: opening.xMm + (axis === 'X' ? memberOffsetsMm[index] : 0),\n      yMm: opening.yMm + (axis === 'Y' ? memberOffsetsMm[index] : 0),\n    })),\n  )\n\n  return {\n    axis,\n    members,\n    ownerId: members[0].id,\n    bays,\n    memberOffsetsMm,\n    coreLengthMm,\n    distributionClearMm,\n    startSupport: axis === 'X' ? first.supports.minX : first.supports.minY,\n    endSupport: axis === 'X' ? last.supports.maxX : last.supports.maxY,"
+        }
+      ],
+      "runtime": "The complete sample run exposes both support objects; a missing edge prevents run construction."
+    },
+    {
+      "site": "generateSlabRebar",
+      "requiredSupports": [
+        "run.startSupport",
+        "run.endSupport"
+      ],
+      "source": {
+        "file": "src/domain/rebar/slab.ts",
+        "lines": [
+          206,
+          221
+        ],
+        "text": "  const start = resolveSlabEnd(\n    {\n      ...endInput,\n      supportWidthMm: run.startSupport.widthMm,\n      supportCover: run.startSupport.cover,\n    },\n    pack,\n  )\n  const end = resolveSlabEnd(\n    {\n      ...endInput,\n      supportWidthMm: run.endSupport.widthMm,\n      supportCover: run.endSupport.cover,\n    },\n    pack,\n  )"
+      },
+      "runtime": "Both support objects are dereferenced and passed to resolveSlabEnd."
+    },
+    {
+      "site": "slab position geometry",
+      "requiredSupports": [
+        "gridPoint(ix + 1, iy + 1)"
+      ],
+      "source": [
+        {
+          "file": "src/domain/model/member.ts",
+          "line": 416,
+          "text": "export type SlabPosition = ColumnPosition"
+        },
+        {
+          "file": "src/domain/model/project.ts",
+          "lines": [
+            930,
+            932
+          ],
+          "text": "  const { ix, iy } = member.position\n  const origin = gridPoint(project.grid, ix, iy)\n  const far = gridPoint(project.grid, ix + 1, iy + 1)"
+        }
+      ],
+      "runtime": "No one-sided support position can be represented by the current bay/position shape."
+    }
+  ],
+  "verdict": "refuted",
+  "summary": "ADR-039 전제 l3-cell-structure 반증. 대상 코드는 수정하지 않았고 step 1은 진행하면 안 된다."
+}

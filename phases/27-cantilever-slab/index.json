@@ -6,22 +6,40 @@
       "step": 0,
       "name": "verify-adr039-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T23:18:13+0900",
+      "completed_at": "2026-08-26T23:30:00+0900",
+      "summary": "ADR-039의 l3-cell-structure 전제를 반증했다. 表5.3.4 L3 スラブ欄은 단일 병합 셀이고 괄호의 25d는 10dかつ150mm以上 전체의 예외값이므로 150mm가 독립 하한으로 딸리지 않는다. 대상 코드는 수정하지 않았고 step 1은 진행하면 안 된다.",
+      "refuted_at": "2026-08-26T23:30:12+0900"
     },
     {
       "step": 1,
       "name": "cantilever-domain-rulepack-golden",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T09:51:42+0900",
+      "completed_at": "2026-08-27T10:32:18+0900",
+      "summary": "片持床板の optional cantilever モデル、支持辺・自由端を分ける内法算定、L3=25d のルールパック、2件のゴールデンと回帰テストを実装し、全ゲートを通過した。",
+      "report": "phases/27-cantilever-slab/step1-report.json"
     },
     {
       "step": 2,
       "name": "cantilever-viewer-plan-place",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T10:41:25+0900",
+      "completed_at": "2026-08-27T11:04:09+0900",
+      "summary": "片持床板の支持辺・side・projectionMm入力、格子外の平面/3D表示、支持条件付き配置と既存削除を実装し、ビューア・PlanEditor回帰を固定した。",
+      "report": "phases/27-cantilever-slab/step2-report.json"
     },
     {
       "step": 3,
       "name": "ledger-corrections",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T11:04:10+0900",
+      "completed_at": "2026-08-27T11:16:40+0900",
+      "summary": "부재 범위 오기·마일스톤 상태·ADR-028/037·R2 문서를 정정하고 전체 게이트를 통과했다.",
+      "report": "phases/27-cantilever-slab/step3-report.json"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T23:18:13+0900",
+  "completed_at": "2026-08-27T11:16:41+0900"
 }

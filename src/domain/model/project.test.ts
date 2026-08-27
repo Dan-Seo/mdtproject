@@ -5,6 +5,7 @@ import type {
   GirderSection,
   Member,
   OpeningReinforcement,
+  SlabSection,
   WallSection,
 } from './member'
 import { createSampleProject } from './sample-project'
@@ -26,6 +27,7 @@ import {
   placeableWallPositions,
   serializeProject,
   slabBay,
+  slabRun,
   setNote,
   storyElevation,
   wallSpan,
@@ -102,6 +104,25 @@ const wallSection: WallSection = {
   horizontal: { size: 'D13', pitch: 200, startOffsetMm: 0 },
 }
 
+const slabSection: SlabSection = {
+  id: 'section-S1',
+  kind: '床板',
+  mark: 'S1',
+  thickness: 200,
+  fc: 24,
+  grade: 'SD345',
+  finish: '仕上げあり',
+  spliceMethod: '重ね継手',
+  x: {
+    top: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+    bottom: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+  },
+  y: {
+    top: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+    bottom: { size: 'D13', pitch: 200, startOffsetMm: 0 },
+  },
+}
+
 function createProject(members: Member[] = [column]): Project {
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
@@ -110,6 +131,50 @@ function createProject(members: Member[] = [column]): Project {
     stories: [{ id: '1F', name: '1階', height: 4200 }],
     sections: [columnSection, shallowGirderSection, deepGirderSection],
     members,
+  }
+}
+
+function createCantileverProject(
+  cantilever: Member['cantilever'] | null = {
+    side: '正',
+    projectionMm: 1800,
+  },
+  position: Member['position'] = { axis: 'X', ix: 0, iy: 0 },
+): Project {
+  const slab: Member = {
+    id: '1F-S1-X1Y1-X',
+    kind: '床板',
+    memberClass: '躯体',
+    sectionId: slabSection.id,
+    storyId: '1F',
+    position,
+    ...(cantilever === null ? {} : { cantilever }),
+  }
+
+  return {
+    ...createProject(),
+    sections: [columnSection, shallowGirderSection, deepGirderSection, slabSection],
+    members: [
+      {
+        ...column,
+        id: '1F-X1Y1',
+        position: { ix: 0, iy: 0 },
+      },
+      {
+        ...column,
+        id: '1F-X2Y1',
+        position: { ix: 1, iy: 0 },
+      },
+      {
+        id: '1F-G1-X1Y1-X',
+        kind: '大梁',
+        memberClass: '躯体',
+        sectionId: shallowGirderSection.id,
+        storyId: '1F',
+        position: { axis: 'X', ix: 0, iy: 0 },
+      },
+      slab,
+    ],
   }
 }
 
@@ -1164,6 +1229,124 @@ describe('project serialization', () => {
     const project = setNote(createProject(), '1階|C|C1|主筋', '要確認')
 
     expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+})
+
+describe('Member.cantilever serialization compatibility', () => {
+  it('round-trips a cantilever slab without changing schemaVersion', () => {
+    const project = createCantileverProject()
+
+    expect(project.schemaVersion).toBe(PROJECT_SCHEMA_VERSION)
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  it('keeps a legacy bay-position slab without cantilever metadata valid', () => {
+    const project = createCantileverProject(null, { ix: 0, iy: 0 })
+
+    expect(project.schemaVersion).toBe(PROJECT_SCHEMA_VERSION)
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  // 外周の辺こそ片持床板が付く場所だ。ここを弾くと案件そのものが読めなくなる
+  // — 部材が「未対応」に落ちるのではなく、全ペインが空になる。
+  it('keeps a cantilever hung off the outer edge girder loadable', () => {
+    const project = createCantileverProject(
+      { side: '正', projectionMm: 1800 },
+      { axis: 'X', ix: 0, iy: 2 },
+    )
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  // 逆に、支持辺そのものがグリッドの外へ出るものは弾く — 支持辺は (ix, iy) から
+  // (ix+1, iy) まで伸びるので、その軸は一つ手前までである。
+  it('rejects a cantilever whose support edge runs past the grid', () => {
+    const project = createCantileverProject(
+      { side: '正', projectionMm: 1800 },
+      { axis: 'X', ix: 2, iy: 0 },
+    )
+
+    expect(() => deserializeProject(serializeProject(project))).toThrow(
+      'Project shape mismatch',
+    )
+  })
+
+  it.each([
+    ['cantilever on a non-slab member', () => {
+      const project = createCantileverProject()
+      return {
+        ...project,
+        members: project.members.map((member) =>
+          member.kind === '柱'
+            ? {
+                ...member,
+                cantilever: { side: '正' as const, projectionMm: 1800 },
+              }
+            : member,
+        ),
+      } as Project
+    }],
+    ['cantilever with a bay position', () =>
+      createCantileverProject({ side: '正', projectionMm: 1800 }, { ix: 0, iy: 0 })],
+    ['slab girder position without cantilever', () =>
+      createCantileverProject(null, { axis: 'X', ix: 0, iy: 0 })],
+    ['zero projection', () =>
+      createCantileverProject({ side: '正', projectionMm: 0 })],
+    ['negative projection', () =>
+      createCantileverProject({ side: '負', projectionMm: -1 })],
+    ['invalid side', () =>
+      createCantileverProject({ side: 'middle' as never, projectionMm: 1800 })],
+  ])('rejects %s', (_label, makeProject) => {
+    expect(() => deserializeProject(serializeProject(makeProject()))).toThrow(
+      'Project shape mismatch',
+    )
+  })
+})
+
+describe('片持床板 geometry', () => {
+  it('uses the support edge and endpoint 柱 for the clear width', () => {
+    const project = createCantileverProject()
+    const slab = project.members.find((member) => member.kind === '床板')!
+
+    const projectionRun = slabRun(project, slab, 'Y')
+
+    expect(projectionRun.coreLengthMm).toBe(1800)
+    expect(projectionRun.distributionClearMm).toBe(5200)
+    expect(projectionRun.cantilever?.support.memberId).toBe(
+      '1F-G1-X1Y1-X',
+    )
+  })
+
+  it.each([
+    ['missing support girder', '1F-G1-X1Y1-X'],
+    ['missing support endpoint 柱', '1F-X2Y1'],
+  ])('rejects a cantilever without %s', (_label, removedId) => {
+    const project = createCantileverProject()
+    const slab = project.members.find((member) => member.kind === '床板')!
+    const missingSupport = {
+      ...project,
+      members: project.members.filter(({ id }) => id !== removedId),
+    }
+
+    try {
+      slabRun(missingSupport, slab, 'Y')
+      throw new Error('expected cantilever geometry to be rejected')
+    } catch (error) {
+      expect(error).toBeInstanceOf(MemberUnsupportedError)
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+    }
+  })
+
+  it('does not let a cantilever enter the two-support slabBay path', () => {
+    const project = createCantileverProject()
+    const slab = project.members.find((member) => member.kind === '床板')!
+
+    expect(() => slabBay(project, slab)).toThrow(MemberUnsupportedError)
+    try {
+      slabBay(project, slab)
+    } catch (error) {
+      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+    }
   })
 })
 

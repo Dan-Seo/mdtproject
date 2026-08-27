@@ -1,0 +1,97 @@
+{
+  "phase": "27-cantilever-slab",
+  "step": 1,
+  "name": "cantilever-domain-rulepack-golden",
+  "status": "completed",
+  "golden": {
+    "fixture": "tests/golden/fixtures/quantity-r5-ch3.json#cases.cantileverSlab",
+    "cases": [
+      {
+        "id": "positive-short",
+        "derivation": "支持辺 X の内法 5200。X方向と平行な筋は定着0回、割付は projection 1800 の10本。直交Y方向は27本で、下端は支持辺の L3=25d=325 の1回だけを加えて2125、上端は折曲げで投影Laを使い全長のL1=520が支配して2320。自由端は1通則1)で加算0、継手は1通則4)で0か所。",
+        "designQuantitiesKg": {
+          "projectionBottom": 57.375,
+          "projectionTop": 62.64,
+          "parallelBottom": 52
+        }
+      },
+      {
+        "id": "negative-long",
+        "derivation": "支持辺 X の内法 5200。負方向では支持辺がYラン終端となり、下端・上端とも支持辺側の定着1回だけ、自由端の加算は0。下端は7000+25d(325)+1通則4)の継手520=7845、上端は7000+Laを含む折曲げでL1=520が支配し、継手520を加えて8040。Y方向の割付は27本、平行X方向は7000幅への36本で継手0か所。",
+        "designQuantitiesKg": {
+          "projectionBottom": 211.815,
+          "projectionTop": 217.08,
+          "parallelBottom": 187.2
+        }
+      }
+    ],
+    "ruleInterpretation": "表5.3.4 L3 スラブ欄の片持スラブ例外は25dだけで、anchorage.L3.minimum の150mm行は片持条件で追加照会しない。"
+  },
+  "rulepack": {
+    "added": [
+      {
+        "key": "anchorage.L3",
+        "conditions": { "member": "片持スラブ" },
+        "value": 25,
+        "unit": "d",
+        "source": "表5.3.4 printedPage 30",
+        "confidence": "transcribed"
+      }
+    ],
+    "unchangedLookups": [
+      "anchorage.La",
+      "measure.tip.length.addition"
+    ],
+    "notAdded": [
+      "anchorage.L3.minimum for 片持スラブ"
+    ]
+  },
+  "modelAndGeometry": [
+    "Member.cantilever is optional and valid only for a 床板 with GirderPosition; existing bay-position slabs remain valid and schemaVersion is unchanged.",
+    "片持床板 uses one support 大梁 and both endpoint 柱 to derive support-edge 内法; missing or non-positive geometry throws MemberUnsupportedError('寸法不成立').",
+    "片持床板 runs are always standalone; the parallel direction has no support and the projection direction has exactly one support according to side 正/負."
+  ],
+  "changedFiles": [
+    "src/domain/model/member.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/domain/rebar/slab-ends.ts",
+    "src/domain/rebar/slab.ts",
+    "src/rulepack/jp-mlit/anchorage.yaml",
+    "tests/golden/fixtures/quantity-r5-ch3.json",
+    "tests/golden/fixtures/spec-r7-ch5.json",
+    "tests/golden/quantity-measurement.test.ts",
+    "tests/golden/rulepack-invariants.test.ts",
+    "tests/golden/spec-fixture.test.ts",
+    "tests/golden/spec-tables.test.ts",
+    "phases/27-cantilever-slab/index.json",
+    "phases/27-cantilever-slab/step1-report.json"
+  ],
+  "constraints": [
+    "src/components/**, src/lib/viewer/**, and src/lib/import/** were not modified.",
+    "MemberKind and schemaVersion were not changed.",
+    "The previous failed-attempt logs and invocation record were retained."
+  ],
+  "gates": {
+    "targeted cantilever and rulepack tests": {
+      "status": "passed",
+      "testFiles": 5,
+      "tests": 476
+    },
+    "npm run test": {
+      "status": "passed",
+      "testFiles": 83,
+      "tests": 1573
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "errors": 0,
+      "warnings": 1,
+      "warning": "pre-existing src/app/api/oncall/alert/route.test.ts:161 (_omitted unused)"
+    }
+  },
+  "summary": "片持床板のモデル・内法幾何・L3=25d/La の算定とゴールデン2件を追加し、schema互換性・不成立ガード・全ゲートを確認した。"
+}

@@ -14,11 +14,14 @@ import {
   type WallExtent,
 } from '@/domain/model/member'
 import {
+  cantileverSlabRect,
   findSection,
   gridPoint,
+  isCantileverSlabMember,
   placeableSlabPositions,
   placeableWallPositions,
   slabBay,
+  slabRun,
   storyNotFound,
   wallSpan,
   type Project,
@@ -54,20 +57,51 @@ interface DrawingTransform {
   y(value: number): number
 }
 
+type CantileverSlab = NonNullable<Member['cantilever']>
+
+interface CantileverSlabGeometry {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
+
+
 function drawingTransform(project: Project): DrawingTransform {
   const xCoordinates = spanCoordinates(project.grid.xSpans)
   const yCoordinates = spanCoordinates(project.grid.ySpans)
   const totalX = xCoordinates[xCoordinates.length - 1]
   const totalY = yCoordinates[yCoordinates.length - 1]
-  const scale = Math.min(plotWidth / totalX, plotHeight / totalY)
-  const drawingWidth = totalX * scale
-  const drawingHeight = totalY * scale
+  let minX = 0
+  let maxX = totalX
+  let minY = 0
+  let maxY = totalY
+  for (const member of project.members) {
+    if (!isCantileverSlabMember(member)) continue
+    try {
+      const geometry = cantileverSlabRect(project, member)
+      minX = Math.min(minX, geometry.minX)
+      maxX = Math.max(maxX, geometry.maxX)
+      minY = Math.min(minY, geometry.minY)
+      maxY = Math.max(maxY, geometry.maxY)
+    } catch {
+      // An invalid member is rendered nowhere; its invalidity belongs to the
+      // calculation pane rather than changing the drawing scale.
+    }
+  }
+
+  const scale = Math.min(
+    plotWidth / (maxX - minX),
+    plotHeight / (maxY - minY),
+  )
+  const drawingWidth = (maxX - minX) * scale
+  const drawingHeight = (maxY - minY) * scale
   const offsetX = plotLeft + (plotWidth - drawingWidth) / 2
   const offsetY = plotTop + (plotHeight - drawingHeight) / 2
 
   return {
-    x: (value) => offsetX + value * scale,
-    y: (value) => offsetY + drawingHeight - value * scale,
+    x: (value) => offsetX + (value - minX) * scale,
+    y: (value) => offsetY + drawingHeight - (value - minY) * scale,
   }
 }
 
@@ -193,6 +227,56 @@ function PlanMember({
           {section.mark}
         </text>
       </>
+    )
+  }
+
+  if (isCantileverSlabMember(member)) {
+    let geometry: CantileverSlabGeometry
+    try {
+      geometry = cantileverSlabRect(project, member)
+    } catch {
+      return null
+    }
+    const left = transform.x(geometry.minX)
+    const right = transform.x(geometry.maxX)
+    const top = transform.y(geometry.maxY)
+    const bottom = transform.y(geometry.minY)
+    const width = Math.abs(right - left)
+    const height = Math.abs(bottom - top)
+    if (width <= 0 || height <= 0) return null
+
+    return (
+      <g
+        className={`${styles.member} ${selected ? styles.memberSelected : ''}`}
+        data-testid={`plan-cantilever-${member.id}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`${section.mark} ${member.id}`}
+        aria-pressed={selected}
+        onClick={select}
+        onKeyDown={(event) => activateMember(event, select)}
+      >
+        <rect
+          className={styles.slab}
+          x={Math.min(left, right)}
+          y={Math.min(top, bottom)}
+          width={width}
+          height={height}
+          rx="3"
+        />
+        {slabOpeningRects(project, member, transform).map(
+          ({ id, x, y, width: openingWidth, height: openingHeight }) => (
+            <rect
+              key={id}
+              className={styles.opening}
+              x={x}
+              y={y}
+              width={openingWidth}
+              height={openingHeight}
+            />
+          ),
+        )}
+      </g>
     )
   }
 
@@ -419,22 +503,35 @@ function slabOpeningRects(
   transform: DrawingTransform,
 ): { id: string; x: number; y: number; width: number; height: number }[] {
   const openings = member.openings ?? []
-  if (openings.length === 0 || 'axis' in member.position) return []
+  if (openings.length === 0) return []
 
-  let bay
-  try {
-    bay = slabBay(project, member)
-  } catch {
-    return []
+  let originXMm: number
+  let originYMm: number
+  if (isCantileverSlabMember(member)) {
+    try {
+      const geometry = cantileverSlabRect(project, member)
+      originXMm = geometry.minX
+      originYMm = geometry.minY
+    } catch {
+      return []
+    }
+  } else {
+    if ('axis' in member.position) return []
+    let bay
+    try {
+      bay = slabBay(project, member)
+    } catch {
+      return []
+    }
+
+    const origin = gridPoint(
+      project.grid,
+      member.position.ix,
+      member.position.iy,
+    )
+    originXMm = origin.x + bay.startFaceOffsetXMm
+    originYMm = origin.y + bay.startFaceOffsetYMm
   }
-
-  const origin = gridPoint(
-    project.grid,
-    member.position.ix,
-    member.position.iy,
-  )
-  const originXMm = origin.x + bay.startFaceOffsetXMm
-  const originYMm = origin.y + bay.startFaceOffsetYMm
 
   return openings.map((opening) => {
     const left = transform.x(originXMm + opening.xMm)
@@ -571,10 +668,93 @@ function samePlacementPosition(
     )
   }
 
-  if ('axis' in member.position || 'axis' in position) return false
+  if ('axis' in member.position || 'axis' in position) {
+    if (!('axis' in member.position) || !('axis' in position)) return false
+    return (
+      member.position.axis === position.axis &&
+      member.position.ix === position.ix &&
+      member.position.iy === position.iy
+    )
+  }
   return (
     member.position.ix === position.ix && member.position.iy === position.iy
   )
+}
+
+function cantileverPosition(
+  storyId: string,
+  sectionId: string,
+  position: GirderPosition,
+  cantilever: CantileverSlab,
+): Member {
+  return {
+    id: `${storyId}-cantilever-candidate-${position.axis}-${position.ix}-${position.iy}`,
+    kind: '床板',
+    memberClass: '躯体',
+    sectionId,
+    storyId,
+    position,
+    cantilever,
+  }
+}
+
+export function placeableCantileverPositions(
+  project: Project,
+  storyId: string,
+  sectionId: string,
+  cantilever: CantileverSlab,
+): GirderPosition[] {
+  if (
+    !Number.isFinite(cantilever.projectionMm) ||
+    cantilever.projectionMm <= 0
+  ) {
+    return []
+  }
+
+  const candidates: GirderPosition[] = []
+  const nx = project.grid.xSpans.length + 1
+  const ny = project.grid.ySpans.length + 1
+  const positions: GirderPosition[] = []
+  for (let iy = 0; iy < ny; iy += 1) {
+    for (let ix = 0; ix < nx - 1; ix += 1) {
+      positions.push({ axis: 'X', ix, iy })
+    }
+  }
+  for (let iy = 0; iy < ny - 1; iy += 1) {
+    for (let ix = 0; ix < nx; ix += 1) {
+      positions.push({ axis: 'Y', ix, iy })
+    }
+  }
+
+  for (const position of positions) {
+    if (
+      project.members.some(
+        (member) =>
+          isCantileverSlabMember(member) &&
+          samePlacementPosition(member, storyId, '床板', position),
+      )
+    ) {
+      continue
+    }
+
+    const candidate = cantileverPosition(
+      storyId,
+      sectionId,
+      position,
+      cantilever,
+    )
+    try {
+      // Both directions must resolve so that the same gate is used by
+      // placement and by the slab quantity/rebar path.
+      slabRun(project, candidate, 'X')
+      slabRun(project, candidate, 'Y')
+    } catch {
+      continue
+    }
+    candidates.push(position)
+  }
+
+  return candidates
 }
 
 function hasMemberAtPlacement(
@@ -601,6 +781,7 @@ export function placePlanMember(
   storyId: string,
   sectionId: string,
   position: PlacementPosition,
+  cantilever?: CantileverSlab,
 ): PlanPlacementResult {
   const section = project.sections.find(({ id }) => id === sectionId)
   if (section === undefined) return { project, reason: 'section' }
@@ -609,14 +790,33 @@ export function placePlanMember(
   if (kind !== '耐震壁' && kind !== '床板') {
     return { project, reason: 'section' }
   }
+  if (cantilever !== undefined && kind !== '床板') {
+    return { project, reason: 'section' }
+  }
+  if (cantilever === undefined && kind === '床板' && 'axis' in position) {
+    return { project, reason: 'unavailable' }
+  }
 
   const id = placementMemberId(storyId, section.mark, position)
   if (project.members.some((member) => member.id === id)) {
     return { project, reason: 'duplicate' }
   }
 
+  const axisPosition = 'axis' in position ? position : undefined
   const placeable =
-    kind === '耐震壁'
+    cantilever !== undefined
+      ? placeableCantileverPositions(
+          project,
+          storyId,
+          section.id,
+          cantilever,
+        ).some(
+          (candidate) =>
+            candidate.axis === axisPosition?.axis &&
+            candidate.ix === axisPosition?.ix &&
+            candidate.iy === axisPosition?.iy,
+        )
+      : kind === '耐震壁'
       ? 'axis' in position &&
         placeableWallPositions(project, storyId).some(
           (candidate) =>
@@ -639,6 +839,7 @@ export function placePlanMember(
     sectionId: section.id,
     storyId,
     position,
+    ...(cantilever === undefined ? {} : { cantilever }),
   }
 
   return {
@@ -684,6 +885,8 @@ function PlacementEditor() {
   const locale = useAppStore(({ locale }) => locale)
   const [wallSectionSelection, setWallSectionSelection] = useState<string>()
   const [slabSectionSelection, setSlabSectionSelection] = useState<string>()
+  const [cantileverSide, setCantileverSide] = useState<CantileverSlab['side']>('正')
+  const [cantileverProjection, setCantileverProjection] = useState('')
   const [placementError, setPlacementError] = useState<PlacementFailure>()
 
   const wallSections = project.sections.filter(
@@ -718,13 +921,38 @@ function PlacementEditor() {
           (position) =>
             !hasMemberAtPlacement(project, activeStoryId, '床板', position),
         )
+  const cantileverProjectionMm = Number(cantileverProjection)
+  const cantileverPositions =
+    slabSectionId === undefined
+      ? []
+      : placeableCantileverPositions(project, activeStoryId, slabSectionId, {
+          side: cantileverSide,
+          projectionMm: cantileverProjectionMm,
+        }).filter(
+          (position) =>
+            !project.members.some(
+              (member) =>
+                isCantileverSlabMember(member) &&
+                samePlacementPosition(member, activeStoryId, '床板', position),
+            ),
+        )
 
-  const place = (sectionId: string | undefined, position: PlacementPosition) => {
+  const place = (
+    sectionId: string | undefined,
+    position: PlacementPosition,
+    cantilever?: CantileverSlab,
+  ) => {
     if (sectionId === undefined) return
 
     let result: PlanPlacementResult | undefined
     useAppStore.setState((state) => {
-      result = placePlanMember(state.project, activeStoryId, sectionId, position)
+      result = placePlanMember(
+        state.project,
+        activeStoryId,
+        sectionId,
+        position,
+        cantilever,
+      )
       return result.member === undefined ? {} : { project: result.project }
     })
 
@@ -864,6 +1092,77 @@ function PlacementEditor() {
                       className={styles.placementCandidate}
                       data-testid={`placement-slab-${position.ix}-${position.iy}`}
                       onClick={() => place(slabSectionId, position)}
+                    >
+                      {placementLabel(project, position)}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </fieldset>
+
+        <fieldset className={styles.placementGroup} data-testid="placement-cantilever">
+          <legend className={styles.spanLegend}>
+            {t(locale, 'plan.placement.cantilever.title')}
+          </legend>
+          {slabSections.length === 0 ? (
+            <p className={styles.openingHint} data-testid="placement-cantilever-no-section">
+              {t(locale, 'plan.placement.slab.sectionMissing')}
+            </p>
+          ) : (
+            <>
+              <label className={styles.placementLabel}>
+                <span>{t(locale, 'plan.placement.cantilever.side')}</span>
+                <select
+                  className={styles.placementSelect}
+                  data-testid="placement-cantilever-side"
+                  value={cantileverSide}
+                  onChange={(event) =>
+                    setCantileverSide(event.currentTarget.value as CantileverSlab['side'])
+                  }
+                >
+                  <option value="正">
+                    {t(locale, 'plan.placement.cantilever.positive')}
+                  </option>
+                  <option value="負">
+                    {t(locale, 'plan.placement.cantilever.negative')}
+                  </option>
+                </select>
+              </label>
+              <label className={styles.placementLabel}>
+                <span>{t(locale, 'plan.placement.cantilever.projection')}</span>
+                <input
+                  className={styles.spanInput}
+                  type="number"
+                  min="1"
+                  step="1"
+                  data-testid="placement-cantilever-projection"
+                  value={cantileverProjection}
+                  onChange={(event) =>
+                    setCantileverProjection(event.currentTarget.value)
+                  }
+                />
+                <span className={styles.unit}>mm</span>
+              </label>
+              <div className={styles.placementCandidates}>
+                {cantileverPositions.length === 0 ? (
+                  <p className={styles.openingHint}>
+                    {t(locale, 'plan.placement.empty')}
+                  </p>
+                ) : (
+                  cantileverPositions.map((position) => (
+                    <button
+                      key={`cantilever-${position.axis}-${position.ix}-${position.iy}`}
+                      type="button"
+                      className={styles.placementCandidate}
+                      data-testid={`placement-cantilever-${position.axis}-${position.ix}-${position.iy}`}
+                      onClick={() =>
+                        place(slabSectionId, position, {
+                          side: cantileverSide,
+                          projectionMm: cantileverProjectionMm,
+                        })
+                      }
                     >
                       {placementLabel(project, position)}
                     </button>

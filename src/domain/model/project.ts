@@ -2,6 +2,7 @@ import {
   BAR_SIZES,
   MEMBER_KINDS,
   type BarSize,
+  type CantileverSlab,
   type ColumnSection,
   type ColumnPosition,
   type GirderPosition,
@@ -878,6 +879,15 @@ export interface SlabEdgeSupport {
   cover: Record<string, string | boolean>
 }
 
+export interface SlabCantileverRun {
+  supportAxis: 'X' | 'Y'
+  side: CantileverSlab['side']
+  supportAt: 'start' | 'end' | 'none'
+  support: SlabEdgeSupport
+  supportClearMm: number
+  projectionMm: number
+}
+
 function isSlabPosition(
   position: ColumnPosition | GirderPosition,
 ): position is SlabPosition {
@@ -923,8 +933,14 @@ function girderSectionAt(
 }
 
 export function slabBay(project: Project, member: Member): SlabBay {
-  if (member.kind !== '床板' || !isSlabPosition(member.position)) {
+  if (member.kind !== '床板') {
     throw new Error(`slabBay requires a 床板: ${member.id}`)
+  }
+  if (!isSlabPosition(member.position)) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `slabBay requires a ベイ position for 床板: ${member.id}`,
+    )
   }
 
   const { ix, iy } = member.position
@@ -1015,9 +1031,11 @@ export interface SlabRun {
   /** 割付方向（主筋と直交する向き）の内法長さ (mm) — ラン内で共通である */
   distributionClearMm: number
   /** 始端で定着していく大梁 */
-  startSupport: SlabEdgeSupport
+  startSupport: SlabEdgeSupport | null
   /** 終端で定着していく大梁 */
-  endSupport: SlabEdgeSupport
+  endSupport: SlabEdgeSupport | null
+  /** 片持床板なら支持辺・内法・向きを保持する。通常のベイは未指定。 */
+  cantilever?: SlabCantileverRun
   /**
    * ランに開いている開口部 (1通則8))、**ラン原点からの座標**に直したもの。
    *
@@ -1028,13 +1046,216 @@ export interface SlabRun {
   openings: Opening[]
 }
 
+export function isCantileverSlabMember(
+  member: Member,
+): member is Member & {
+  position: GirderPosition
+  cantilever: CantileverSlab
+} {
+  return (
+    member.kind === '床板' &&
+    isGirderPosition(member.position) &&
+    member.cantilever !== undefined
+  )
+}
+
+function cantileverError(member: Member, detail: string): MemberUnsupportedError {
+  return new MemberUnsupportedError(
+    '寸法不成立',
+    `片持床板の支持条件を確定できない: ${member.id} (${detail})`,
+  )
+}
+
+/**
+ * 片持床板の支持辺から取れる寸法。3D も平面もこの一つを読む — 同じ矩形を
+ * 二か所で組み立てると、片方だけ直したときに数量と無関係な食い違いが静かに残る。
+ */
+interface CantileverSupport {
+  slabSupport: SlabEdgeSupport
+  supportClearMm: number
+  projectionMm: number
+  /** 支持辺に沿う向きの、始端柱の面の世界座標 (mm) */
+  alongStartMm: number
+  /** 支持辺が乗る通り芯の、直交向きの世界座標 (mm) */
+  supportCoordinateMm: number
+}
+
+function cantileverSupport(
+  project: Project,
+  member: Member & { position: GirderPosition; cantilever: CantileverSlab },
+): CantileverSupport {
+  const position = member.position
+  if (!isGridEdgePosition(project.grid, position)) {
+    throw cantileverError(member, '支持辺がグリッドの辺ではない')
+  }
+
+  const support = girderSectionAt(
+    project,
+    member.storyId,
+    position.axis,
+    position.ix,
+    position.iy,
+    member,
+  )
+  const endIx = position.axis === 'X' ? position.ix + 1 : position.ix
+  const endIy = position.axis === 'Y' ? position.iy + 1 : position.iy
+  const startColumn = columnAt(project, member.storyId, position.ix, position.iy)
+  const endColumn = columnAt(project, member.storyId, endIx, endIy)
+
+  if (startColumn === undefined || endColumn === undefined) {
+    throw cantileverError(member, '支持辺の両端に柱がない')
+  }
+
+  const startSection = findSection(project, startColumn.sectionId)
+  const endSection = findSection(project, endColumn.sectionId)
+  if (startSection.kind !== '柱' || endSection.kind !== '柱') {
+    throw cantileverError(member, '支持辺の両端が柱断面ではない')
+  }
+
+  const startPoint = gridPoint(project.grid, position.ix, position.iy)
+  const endPoint = gridPoint(project.grid, endIx, endIy)
+  const centerSpan =
+    position.axis === 'X'
+      ? endPoint.x - startPoint.x
+      : endPoint.y - startPoint.y
+  const startColumnLength =
+    position.axis === 'X' ? startSection.b : startSection.d
+  const endColumnLength = position.axis === 'X' ? endSection.b : endSection.d
+  const supportClearMm =
+    centerSpan - startColumnLength / 2 - endColumnLength / 2
+  const projectionMm = member.cantilever.projectionMm
+
+  if (
+    !Number.isFinite(projectionMm) ||
+    projectionMm <= 0 ||
+    !Number.isFinite(supportClearMm) ||
+    supportClearMm <= 0
+  ) {
+    throw cantileverError(
+      member,
+      `支持辺の内法 ${supportClearMm} mm または projection ${projectionMm} mm が正でない`,
+    )
+  }
+
+  return {
+    slabSupport: {
+      memberId: support.member.id,
+      widthMm: support.section.b,
+      cover: coverConditions(support.section),
+    },
+    supportClearMm,
+    projectionMm,
+    alongStartMm:
+      (position.axis === 'X' ? startPoint.x : startPoint.y) +
+      startColumnLength / 2,
+    supportCoordinateMm: position.axis === 'X' ? startPoint.y : startPoint.x,
+  }
+}
+
+/**
+ * 片持床板が平面に占める矩形 (mm)。支持辺の面から `side` の向きへ
+ * `projectionMm` だけ出た板そのもので、定着は含まない — 板は内法部分だからだ
+ * (躯体の区分（４）床板)。
+ */
+export function cantileverSlabRect(
+  project: Project,
+  member: Member,
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  if (!isCantileverSlabMember(member)) {
+    throw cantileverError(member, '片持条件のない床板である')
+  }
+
+  const support = cantileverSupport(project, member)
+  const alongEnd = support.alongStartMm + support.supportClearMm
+  const direction = member.cantilever.side === '正' ? 1 : -1
+  const supportFace =
+    support.supportCoordinateMm +
+    direction * (support.slabSupport.widthMm / 2)
+  const freeEdge = supportFace + direction * support.projectionMm
+
+  return member.position.axis === 'X'
+    ? {
+        minX: support.alongStartMm,
+        maxX: alongEnd,
+        minY: Math.min(supportFace, freeEdge),
+        maxY: Math.max(supportFace, freeEdge),
+      }
+    : {
+        minX: Math.min(supportFace, freeEdge),
+        maxX: Math.max(supportFace, freeEdge),
+        minY: support.alongStartMm,
+        maxY: alongEnd,
+      }
+}
+
+function slabCantileverRun(
+  project: Project,
+  member: Member & { position: GirderPosition; cantilever: CantileverSlab },
+  axis: 'X' | 'Y',
+): SlabRun {
+  const position = member.position
+  const { slabSupport, supportClearMm, projectionMm } = cantileverSupport(
+    project,
+    member,
+  )
+  const projectionAxis = position.axis === 'X' ? 'Y' : 'X'
+  const supportAt =
+    axis === position.axis
+      ? 'none'
+      : member.cantilever.side === '正'
+        ? 'start'
+        : 'end'
+  const coreLengthMm = axis === projectionAxis ? projectionMm : supportClearMm
+  const distributionClearMm =
+    axis === projectionAxis ? supportClearMm : projectionMm
+
+  return {
+    axis,
+    members: [member],
+    ownerId: member.id,
+    bays: [],
+    memberOffsetsMm: [0],
+    coreLengthMm,
+    distributionClearMm,
+    startSupport: supportAt === 'start' ? slabSupport : null,
+    endSupport: supportAt === 'end' ? slabSupport : null,
+    cantilever: {
+      supportAxis: position.axis,
+      side: member.cantilever.side,
+      supportAt,
+      support: slabSupport,
+      supportClearMm,
+      projectionMm,
+    },
+    openings: member.openings ?? [],
+  }
+}
+
 export function slabRun(
   project: Project,
   member: Member,
   axis: 'X' | 'Y',
 ): SlabRun {
-  if (member.kind !== '床板' || !isSlabPosition(member.position)) {
+  if (member.kind !== '床板') {
     throw new Error(`slabRun requires a 床板: ${member.id}`)
+  }
+
+  if (member.cantilever !== undefined && !isCantileverSlabMember(member)) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `片持床板の position がベイではない、または条件が不正: ${member.id}`,
+    )
+  }
+
+  if (isCantileverSlabMember(member)) {
+    return slabCantileverRun(project, member, axis)
+  }
+
+  if (!isSlabPosition(member.position)) {
+    throw new MemberUnsupportedError(
+      '寸法不成立',
+      `片持条件のない床板はベイ位置でなければならない: ${member.id}`,
+    )
   }
 
   const { ix, iy } = member.position
@@ -1477,7 +1698,12 @@ const POSITION_FIELDS: Record<
   柱: { ix: isFiniteNumber, iy: isFiniteNumber },
   大梁: { axis: isAxis, ix: isFiniteNumber, iy: isFiniteNumber },
   耐震壁: { axis: isAxis, ix: isFiniteNumber, iy: isFiniteNumber },
-  床板: { ix: isFiniteNumber, iy: isFiniteNumber },
+  床板: {
+    ix: isFiniteNumber,
+    iy: isFiniteNumber,
+    // 通常の床板はベイ、片持床板は支持辺の GirderPosition を取る。
+    axis: (value) => value === undefined || isAxis(value),
+  },
 }
 
 const isOpening = shapedAs({
@@ -1538,6 +1764,28 @@ const isValidMemberWallExtent = (member: unknown): boolean => {
   return member.kind === '耐震壁' && isWallExtent(extent)
 }
 
+const isValidMemberCantilever = (member: unknown): boolean => {
+  if (!isRecord(member)) return false
+
+  const position = member.position
+  const hasGirderPosition = isRecord(position) && isAxis(position.axis)
+  const cantilever = member.cantilever
+
+  if (cantilever === undefined) {
+    // 床板の辺位置は片持条件がないと意味を持たない。ほかの部材の
+    // position はこの下の POSITION_FIELDS で別途検める。
+    return member.kind !== '床板' || !hasGirderPosition
+  }
+
+  return (
+    member.kind === '床板' &&
+    hasGirderPosition &&
+    isRecord(cantilever) &&
+    (cantilever.side === '正' || cantilever.side === '負') &&
+    isPositiveFiniteNumber(cantilever.projectionMm)
+  )
+}
+
 const isMemberKind = (value: unknown): boolean =>
   MEMBER_KINDS.includes(value as MemberKind)
 
@@ -1573,6 +1821,7 @@ function hasIntactReferences(
     sectionId: string
     storyId: string
     position: ReferencedPosition
+    cantilever?: { projectionMm: number }
   }[],
 ): boolean {
   const sectionKinds = new Map(sections.map(({ id, kind }) => [id, kind]))
@@ -1581,12 +1830,19 @@ function hasIntactReferences(
 
   // 大梁・耐震壁は隣の交点まで伸びるので、その軸だけ一つ手前までだ。床板は
   // ベイなので両軸とも一つ手前 — slabBay が (ix+1, iy+1) を引く。
-  const inGrid = (
-    kind: MemberKind,
-    { axis, ix, iy }: ReferencedPosition,
-  ): boolean => {
-    const spansX = kind === '床板' || axis === 'X'
-    const spansY = kind === '床板' || axis === 'Y'
+  const inGrid = (member: {
+    kind: MemberKind
+    position: ReferencedPosition
+    cantilever?: { projectionMm: number }
+  }): boolean => {
+    const { kind, position } = member
+    const { axis, ix, iy } = position
+    // 片持床板の position は支持辺 — 大梁と同じ GirderPosition なので、
+    // 一つ手前までなのはその軸だけだ。projection はグリッド座標ではなく
+    // mm なので、直交軸は交点そのものでよい（外周の辺がまさにそれである）。
+    const isCantilever = kind === '床板' && member.cantilever !== undefined
+    const spansX = isCantilever ? axis === 'X' : kind === '床板' || axis === 'X'
+    const spansY = isCantilever ? axis === 'Y' : kind === '床板' || axis === 'Y'
 
     return (
       Number.isInteger(ix) &&
@@ -1605,7 +1861,7 @@ function hasIntactReferences(
       storyIds.has(member.storyId) &&
       // グリッドの外を指す位置は gridPoint が RangeError で投げ、全ペインが落ちる。
       // その案件を自動保存が書くので、次の訪問でも同じ所で落ちる。
-      inGrid(member.kind, member.position),
+      inGrid(member),
   )
 }
 
@@ -1674,6 +1930,7 @@ function isProjectShape(value: unknown): boolean {
         // 部材の内法範囲は耐震壁にだけ付く。別の部材に通してしまうと、
         // 3Dだけが範囲を持つなど数量と表示の座標契約が種別をまたいで崩れる。
         isValidMemberWallExtent(member) &&
+        isValidMemberCantilever(member) &&
         // 開口は無くてよい (「開口なし」の意) が、有るなら配列でなければ
         // ならない — openingDeduction が中を読んで欠除量を出すからだ。
         ((member as { openings?: unknown }).openings === undefined ||
@@ -1696,6 +1953,7 @@ function isProjectShape(value: unknown): boolean {
         sectionId: string
         storyId: string
         position: ReferencedPosition
+        cantilever?: { projectionMm: number }
       }[],
     )
   )
