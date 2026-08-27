@@ -1,0 +1,71 @@
+{
+  "step": 5,
+  "name": "fix-source-page-citation",
+  "status": "completed",
+  "sourceRead": {
+    "pdf": ".cache/001888816.pdf",
+    "searchText": "片持ちスラブ先端",
+    "pdfPage": 33,
+    "footerPrintedPage": 27,
+    "footerText": "公共建築工事標準仕様書（建築工事編）令和７年版／国土交通省大臣官房官庁営繕部／27",
+    "method": "문구가 있는 페이지를 검색하고, 같은 PDF 페이지의 꼬리말 번호를 직접 읽었다."
+  },
+  "offsetAudit": {
+    "before": {
+      "totalCitations": 115,
+      "entries": 112,
+      "constraints": 3,
+      "offsetCounts": { "6": 114, "5": 1 },
+      "exception": {
+        "table": "表5.3.1 注1",
+        "kind": "bend.free-end-hook.minimum",
+        "pdfPage": 33,
+        "printedPage": 28
+      }
+    },
+    "after": {
+      "totalCitations": 115,
+      "entries": 112,
+      "constraints": 3,
+      "offset": 6,
+      "offsetCounts": { "6": 115 },
+      "exceptions": []
+    }
+  },
+  "changes": [
+    {
+      "file": "tests/golden/fixtures/spec-r7-ch5.json",
+      "change": "表5.3.1 注1 の printedPage を 28 から 27 に修正"
+    },
+    {
+      "file": "tests/golden/spec-fixture.test.ts",
+      "change": "entries と constraints の pdfPage/printedPage を合わせた全115件に pdfPage === printedPage + 6 の検査を適用"
+    }
+  ],
+  "mutationChecks": [
+    {
+      "scope": "entries",
+      "mutation": "表5.3.1 bend.inside-diameter の printedPage を 27 から 26 に変更",
+      "command": "npx vitest run tests/golden/spec-fixture.test.ts",
+      "result": "failed as expected",
+      "failureMessage": "表5.3.1 bend.inside-diameter: PDF 쪽은 인쇄 쪽 + 6이어야 한다: expected 33 to be 32",
+      "restored": true
+    },
+    {
+      "scope": "constraints",
+      "mutation": "5.3.4(1) lap.prohibited.minimum-bar-size の printedPage を 27 から 26 に変更",
+      "command": "npx vitest run tests/golden/spec-fixture.test.ts",
+      "result": "failed as expected",
+      "failureMessage": "5.3.4(1) lap.prohibited.minimum-bar-size: PDF 쪽은 인쇄 쪽 + 6이어야 한다: expected 33 to be 32",
+      "restored": true
+    }
+  ],
+  "verification": {
+    "targeted": "npx vitest run tests/golden/spec-fixture.test.ts — 1 file, 14 tests passed",
+    "npm run test": "84 files, 1591 tests passed",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with 0 errors; existing warning at src/app/api/oncall/alert/route.test.ts:161",
+    "gitStatusAfterMutationRestore": "temporary mutation values restored; only intended fixture/test/index changes and harness logs remain"
+  },
+  "sourceChanges": "src/** 수정 없음"
+}
