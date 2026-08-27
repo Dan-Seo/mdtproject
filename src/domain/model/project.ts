@@ -1768,9 +1768,12 @@ function hasIntactReferences(
   }): boolean => {
     const { kind, position } = member
     const { axis, ix, iy } = position
+    // 片持床板の position は支持辺 — 大梁と同じ GirderPosition なので、
+    // 一つ手前までなのはその軸だけだ。projection はグリッド座標ではなく
+    // mm なので、直交軸は交点そのものでよい（外周の辺がまさにそれである）。
     const isCantilever = kind === '床板' && member.cantilever !== undefined
-    const spansX = isCantilever ? axis === 'Y' : kind === '床板' || axis === 'X'
-    const spansY = isCantilever ? axis === 'X' : kind === '床板' || axis === 'Y'
+    const spansX = isCantilever ? axis === 'X' : kind === '床板' || axis === 'X'
+    const spansY = isCantilever ? axis === 'Y' : kind === '床板' || axis === 'Y'
 
     return (
       Number.isInteger(ix) &&

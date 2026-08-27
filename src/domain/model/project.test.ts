@@ -1247,6 +1247,30 @@ describe('Member.cantilever serialization compatibility', () => {
     expect(deserializeProject(serializeProject(project))).toEqual(project)
   })
 
+  // 外周の辺こそ片持床板が付く場所だ。ここを弾くと案件そのものが読めなくなる
+  // — 部材が「未対応」に落ちるのではなく、全ペインが空になる。
+  it('keeps a cantilever hung off the outer edge girder loadable', () => {
+    const project = createCantileverProject(
+      { side: '正', projectionMm: 1800 },
+      { axis: 'X', ix: 0, iy: 2 },
+    )
+
+    expect(deserializeProject(serializeProject(project))).toEqual(project)
+  })
+
+  // 逆に、支持辺そのものがグリッドの外へ出るものは弾く — 支持辺は (ix, iy) から
+  // (ix+1, iy) まで伸びるので、その軸は一つ手前までである。
+  it('rejects a cantilever whose support edge runs past the grid', () => {
+    const project = createCantileverProject(
+      { side: '正', projectionMm: 1800 },
+      { axis: 'X', ix: 2, iy: 0 },
+    )
+
+    expect(() => deserializeProject(serializeProject(project))).toThrow(
+      'Project shape mismatch',
+    )
+  })
+
   it.each([
     ['cantilever on a non-slab member', () => {
       const project = createCantileverProject()
