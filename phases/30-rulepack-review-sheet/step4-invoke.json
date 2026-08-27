@@ -1,0 +1,9 @@
+{
+  "step": 4,
+  "name": "snapshot-newline-robustness",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 442.75419599999805,
+  "stdout_log": "phases\\30-rulepack-review-sheet\\step4-codex.stdout.log",
+  "stderr_log": "phases\\30-rulepack-review-sheet\\step4-codex.stderr.log"
+}

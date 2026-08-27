@@ -40,7 +40,7 @@
       "name": "snapshot-newline-robustness",
       "status": "completed",
       "started_at": "2026-08-27T16:11:07+0900",
-      "completed_at": "2026-08-27T16:14:43+0900",
+      "completed_at": "2026-08-27T16:18:30+0900",
       "summary": "Snapshot 비교에 CRLF/LF 정규화를 적용했다. CRLF와 LF에서는 통과하고 내용 변경은 실패했으며, 룰팩·스냅샷 내용과 src/**는 변경하지 않았다."
     }
   ],
