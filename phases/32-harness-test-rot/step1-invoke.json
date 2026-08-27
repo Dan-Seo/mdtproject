@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "repair-rotted-tests",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 719.1344616000024,
+  "stdout_log": "phases\\32-harness-test-rot\\step1-codex.stdout.log",
+  "stderr_log": "phases\\32-harness-test-rot\\step1-codex.stderr.log"
+}
