@@ -1,0 +1,71 @@
+{
+  "premises": [
+    {
+      "id": "quantity-excludes-hook",
+      "verdict": "refuted",
+      "evidence": ".cache/001178206.pdf p.20 (printed p.15): 「２）フープ、スタラップの長さは…断面の設計寸法による周長を鉄筋の長さとし、フックはないものとする。」; src/domain/quantity/index.ts:193-201",
+      "note": "The design-length calculation excludes hooks as the source states, but the composite claim that changing points leaves quantity output invariant is false because quantityLineId reads Rebar.points."
+    },
+    {
+      "id": "points-not-read-by-quantity",
+      "verdict": "refuted",
+      "evidence": "src/domain/quantity/index.ts:193-201 uses rebar.points as the shape key; src/domain/quantity/index.ts:242-266 aggregates by that ID; src/domain/quantity/index.test.ts:653-672 keeps two same-length, same-count rebars with different points as two rows",
+      "note": "The quantity and takeoff path does read points, so this premise is directly refuted."
+    },
+    {
+      "id": "hook-mandatory-for-shear-bars",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.32-33 (printed p.27-28), 5.3.2(2)(ｶ): 「帯筋、あばら筋及び幅止め筋」; the clause enumerates these as members whose ends receive hooks",
+      "note": "The standard specification explicitly lists the shear-bar types."
+    },
+    {
+      "id": "hook135-tail-is-6d",
+      "verdict": "upheld",
+      "evidence": "src/rulepack/jp-mlit/bend.yaml:221-229; tests/golden/fixtures/spec-r7-ch5.json:101-108; bend.hook135 has value 6, unit d, and imageRead true",
+      "note": "The typed part of Table 5.3.1 supplies inside diameters; 6d is recorded as a reading of the image drawing, not a typed-cell transcription."
+    },
+    {
+      "id": "note1-text-exists",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.33 (printed p.28), Table 5.3.1 Note 1: 「片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d 以上とする。」",
+      "note": "The note is present in the extractable PDF text."
+    },
+    {
+      "id": "note1-is-conditional",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.33 (printed p.28), Table 5.3.1 Note 1 contains 「用いる場合には」",
+      "note": "The note is conditional on using a 90-degree or 135-degree hook; it does not prescribe that a hook exists at every such location."
+    },
+    {
+      "id": "note1-untranscribed",
+      "verdict": "upheld",
+      "evidence": "docs/ADR.md:546,615-619 records the note; searches of src/rulepack/** and tests/golden/fixtures/spec-r7-ch5.json found no match for the note wording",
+      "note": "The note is documented in ADR-040 context but is absent from the rulepack and spec-r7-ch5 fixture."
+    },
+    {
+      "id": "rect-hoop-closed-today",
+      "verdict": "upheld",
+      "evidence": "src/domain/rebar/column.ts:303-321 constructs rectangular hoops from four points and sets closed: true; src/domain/rebar/girder.ts:732-748 does the same for stirrups; circular hoops use the same closed path",
+      "note": "Rectangular shear bars are four-point closed paths, and circular column hoops are also closed."
+    },
+    {
+      "id": "deviation-ledger-matches",
+      "verdict": "upheld",
+      "evidence": "tests/golden/fixtures/fabrication-length.json:253-260 and :576-583 record missingMm 156, withHookTailMm 2956/2056, and expected 2800/1900; tests/golden/fabrication-length.test.ts:216-228 asserts expected plus missing equals withHookTail",
+      "note": "156mm equals 2 x 6d x 13mm; 2956 = 2800 + 156 and 2056 = 1900 + 156."
+    },
+    {
+      "id": "cantilever-rect-single-source",
+      "verdict": "upheld",
+      "evidence": "src/domain/model/project.ts:1160-1188 contains cantileverSlabRect; PlanEditor.tsx:17,82,236,512 and src/lib/viewer/building.ts:9,80-86 call it; a temporary freeEdge mutation made both PlanEditor.test.tsx and building.test.ts fail, then the original expression was restored",
+      "note": "Plan and 3D have no duplicate rectangle calculation, and the mutation check showed both consumers depend on the shared function."
+    },
+    {
+      "id": "tail-direction-unspecified",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.32-33 (printed p.27-28): 5.3.2(2) lists hook targets and Table 5.3.1 lists angle, inside diameter, and Note 1; neither passage specifies which corner or direction receives the hook",
+      "note": "The source specifies hook applicability and dimensions, but not the corner or orientation of a shear-bar hook."
+    }
+  ],
+  "verdict": "refuted"
+}

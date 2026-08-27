@@ -6,7 +6,9 @@
       "step": 0,
       "name": "verify-adr040-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "summary": "quantityLineId가 Rebar.points를 읽는 기존 경로를 확인해 ADR-040 전제 하나를 반증함.",
+      "started_at": "2026-08-27T11:46:55+0900"
     },
     {
       "step": 1,
@@ -23,5 +25,6 @@
       "name": "note1-transcription-ledger",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-27T11:46:55+0900"
 }
