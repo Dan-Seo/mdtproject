@@ -137,7 +137,8 @@
     },
     {
       "dir": "28-shear-hook-shape",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-27T14:29:30+0900"
     },
     {
       "dir": "29-harness-verify-gate",
