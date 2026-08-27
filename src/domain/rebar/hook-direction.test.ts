@@ -157,6 +157,19 @@ function assertSymmetricInwardTails(rebar: Rebar, inward: Vec3): void {
       2: expect.closeTo(unit(inward)[2], 8),
     }),
   )
+
+  // 半開き45°だと矩形の角では二等分線±45°が隣接二辺の方向と一致し、
+  // 尾が同半径の辺チューブに埋もれて見えない — 方向がどちらの辺とも
+  // 重ならないことを固定する (ADR-040 세 번째 정정)。
+  const edges = [
+    unit(subtract(rebar.points[1], rebar.points[0])),
+    unit(subtract(rebar.points.at(-1)!, rebar.points[0])),
+  ]
+  for (const direction of directions) {
+    for (const edge of edges) {
+      expect(angleBetween(direction, edge)).toBeGreaterThan(0.01)
+    }
+  }
 }
 
 function rectangularInward(points: Vec3[]): Vec3 {
@@ -207,11 +220,11 @@ describe('shear-hook direction construction', () => {
     assertSymmetricInwardTails(hoop, inward)
   })
 
-  it('keeps the symmetricInwardDirections half-opening angle at Math.PI / 4', () => {
+  it('keeps the symmetricInwardDirections half-opening angle at Math.PI / 8', () => {
     const [first, second] = symmetricInwardDirections(0)
 
     expect(angleBetween([first[0], 0, first[1]], [second[0], 0, second[1]])).toBeCloseTo(
-      2 * (Math.PI / 4),
+      2 * (Math.PI / 8),
       8,
     )
   })
