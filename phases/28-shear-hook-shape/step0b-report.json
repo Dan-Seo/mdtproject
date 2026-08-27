@@ -1,0 +1,77 @@
+{
+  "premises": [
+    {
+      "id": "quantity-length-excludes-hook",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf p.20 (printed p.15), 1通則2): 「フープ、スタラップの長さは、それぞれ柱、基礎梁、梁及び壁梁のコンクリートの断面の設計寸法による周長を鉄筋の長さとし、フックはないものとする。」; src/domain/rebar/measurement.ts:29-49,61-70 calculates design perimeter plus measure.hoop.length.addition, and src/rulepack/jp-mlit/measure.yaml:5-12 sets that addition to 0; column.ts:208-214,303-323 and girder.ts:718-750 assign those values to Rebar.length.",
+      "note": "The premise is limited to design-length calculation. The hook tail is not part of Rebar.length."
+    },
+    {
+      "id": "line-id-is-shape-key",
+      "verdict": "upheld",
+      "evidence": "src/domain/quantity/index.ts:193-201 builds shapeKey by joining rebar.points and returns it in quantityLineId; aggregateQuantity uses that id at :264-306 as QuantityLine.id.",
+      "note": "Changing the points changes the returned row id."
+    },
+    {
+      "id": "notes-keyed-by-line-id",
+      "verdict": "upheld",
+      "evidence": "src/domain/model/project.ts:100-108 declares Project.notes as Record<string,string>; :1553-1563 setNote writes by lineId; :1580-1581 serializes with JSON.stringify; :1962-1980 deserializes and validates the Project; src/lib/export/index.ts:405-406 reads project.notes?.[line.id]. Runtime probe: {\"idsDiffer\":true,\"oldNote\":\"memo\",\"newIdNote\":\"\"} after changing only points.",
+      "note": "The serialized project retains the old note, while the changed QuantityLine.id no longer finds it."
+    },
+    {
+      "id": "quantity-ignores-new-field",
+      "verdict": "upheld",
+      "evidence": "src/domain/quantity/index.ts:193-214 explicitly enumerates the fields used to form quantityLineId and spliceLineId; :167-184 and :250-357 show aggregateQuantity's Rebar reads (ruleHits, memberId, role, size, shape, length, count, formula, splice). No spread or Object.keys participates in key construction. Runtime probe adding __probe='hookTails' returned {\"quantityLineIdSame\":true,\"spliceLineIdSame\":true}.",
+      "note": "spliceLineId reads rebar.id only on its missing-splice error path at :211; id is not part of the returned row key."
+    },
+    {
+      "id": "viewer-reads-points0-as-cover",
+      "verdict": "upheld",
+      "evidence": "src/lib/viewer/geometry.ts:163 reads points[0] x/z for column main inset; :237 reads points[0] z for girder main inset; :322 reads points[0] y/z for side-bar placement; :445 reads points[0][2] as wall coverZ; :461 computes slab cover from the maximum z over all points. The path contract is therefore first-point order except for the documented slab maximum-z case.",
+      "note": "The listed code uses the first point or the explicitly documented all-points maximum as the cover/face reference."
+    },
+    {
+      "id": "polyline-consumers-are-two",
+      "verdict": "upheld",
+      "evidence": "Production search found the point-path consumers at src/lib/viewer/geometry.ts:714-725 (edge construction, including the closed last-to-first edge) and src/components/viewer/Viewer3D.tsx:1033-1049 (toBayFrame maps the complete polyline before the geometry path is consumed). Other geometry.ts points references at :163,:237,:322,:445,:461,:977 are placement/reference calculations, not a third polyline renderer; no other production .ts/.tsx point-path consumer was found.",
+      "note": "The Viewer3D reference is the slab polyline translation path; rendering then consumes geometry.ts segments."
+    },
+    {
+      "id": "hook-mandatory-for-shear-bars",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.32-33 (printed p.27-28), 5.3.2(2): 「次の部分に使用する異形鉄筋の末端部にフックを付ける。」 followed by 「(ｶ) 帯筋、あばら筋及び幅止め筋」.",
+      "note": "The standard specification explicitly enumerates all three shear-bar roles in the hook-target list."
+    },
+    {
+      "id": "hook135-tail-is-6d",
+      "verdict": "upheld",
+      "evidence": "src/rulepack/jp-mlit/bend.yaml:221-229 has key bend.hook135, expr 6d, value 6, unit d, source 表5.3.1 折曲げ図 page 27, and image-reading note; tests/golden/fixtures/spec-r7-ch5.json:101-108 records the same entry with pdfPage 33, printedPage 27, imageRead true.",
+      "note": "The typed table text exposes inside diameters; this 6d tail is recorded as a reading of the image drawing."
+    },
+    {
+      "id": "note1-untranscribed",
+      "verdict": "upheld",
+      "evidence": "docs/ADR.md:615-624 records 表5.3.1 注1, including 「片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d 以上とする」. An exact-wording search over src/rulepack/** and tests/golden/fixtures/spec-r7-ch5.json returned NO_MATCH.",
+      "note": "The note is present in ADR-040 but absent from both the rulepack and the spec-r7-ch5 fixture."
+    },
+    {
+      "id": "rect-hoop-closed-today",
+      "verdict": "upheld",
+      "evidence": "src/domain/rebar/column.ts:303-321 constructs rectangular or circular column hoop points and sets closed: true; src/domain/rebar/girder.ts:732-750 constructs stirrup points and sets closed: true.",
+      "note": "Both rectangular shear-bar paths and the circular column-hoop path are currently closed."
+    },
+    {
+      "id": "deviation-ledger-matches",
+      "verdict": "upheld",
+      "evidence": "tests/golden/fixtures/fabrication-length.json:253-260 records column missingMm 156, withHookTailMm 2956, expected 2800; :576-583 records girder missingMm 156, withHookTailMm 2056, expected 1900. Direct calculation for both cases gives 2×6×13=156 and expected+missing=withHookTail. tests/golden/fabrication-length.test.ts:216-228 asserts the latter equality.",
+      "note": "Both deviation records match the stated 6d-per-end, D13 arithmetic."
+    },
+    {
+      "id": "tail-direction-unspecified",
+      "verdict": "upheld",
+      "evidence": ".cache/001888816.pdf p.33 (printed p.28), 5.3.2(2)(ｶ) only names 帯筋・あばら筋・幅止め筋 as hook targets; 表5.3.1 lists bend angles/inside diameters and 注1's conditional 4d tail. Neither passage assigns a hook to a corner, side, left/right direction, or face. The page's other 隅 wording belongs to 5.3.2(2)(ｳ) 梁主筋 and does not specify shear-bar hook placement.",
+      "note": "The corner and diagonal-tail placement remain product drawing rules rather than source-specified placement."
+    }
+  ],
+  "verdict": "upheld"
+}
