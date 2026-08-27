@@ -152,7 +152,8 @@
     },
     {
       "dir": "31-wall-shiki-decision",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-27T16:50:08+0900"
     }
   ]
 }
