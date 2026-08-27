@@ -163,7 +163,7 @@ jobs:
             ci.yml의 실패 게이트는 이 순서의 일곱이고, 이 중 하나 이상이 깨졌다.
             전부 그대로 재현용으로 실행할 수 있다:
               npm run lint / npm run typecheck / npm test / npm run test:ci-scripts /
-              python -m pytest scripts/test_review_verdict.py -q / npm run build / npm run lighthouse
+              python -m pytest scripts/ -q / npm run build / npm run lighthouse
             (lighthouse는 npm run build 뒤에 돈다. 예산과 근거는 lighthouserc.cjs)
 
             사실:
@@ -232,7 +232,7 @@ jobs:
           npm run typecheck
           npm test
           npm run test:ci-scripts
-          python -m pytest scripts/test_review_verdict.py -q
+          python -m pytest scripts/ -q
           npm run build
           npm run lighthouse
 

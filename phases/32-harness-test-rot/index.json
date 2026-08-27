@@ -23,7 +23,10 @@
     {
       "step": 2,
       "name": "wire-into-ci",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:35:27+0900",
+      "completed_at": "2026-08-27T17:40:39+0900",
+      "summary": "ci.yml·review.yml·oncall.yml의 pytest 게이트를 python -m pytest scripts/ -q로 넓히고, oncall 안내문과 마일스톤 문서를 동기화했다."
     },
     {
       "step": 3,
