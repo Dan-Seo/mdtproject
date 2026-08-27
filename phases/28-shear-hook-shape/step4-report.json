@@ -1,0 +1,65 @@
+{
+  "step": 4,
+  "name": "pin-tail-direction-rule",
+  "status": "completed",
+  "tests": [
+    {
+      "file": "src/domain/rebar/hook-direction.test.ts",
+      "line": 184,
+      "coverage": "矩形 柱 帯筋 hookTails의 동일 길이·상이한 방향·inward bisector"
+    },
+    {
+      "file": "src/domain/rebar/hook-direction.test.ts",
+      "line": 190,
+      "coverage": "大梁 あばら筋의 실제 Y/Z 단면 평면에서 동일 길이·상이한 방향·inward bisector"
+    },
+    {
+      "file": "src/domain/rebar/hook-direction.test.ts",
+      "line": 203,
+      "coverage": "円形柱 帯筋의 points 평균 중심 방향으로 유도한 동일 길이·상이한 방향·inward bisector"
+    },
+    {
+      "file": "src/domain/rebar/hook-direction.test.ts",
+      "line": 210,
+      "coverage": "symmetricInwardDirections 반개방각 2 × (Math.PI / 4)"
+    },
+    {
+      "file": "src/domain/rebar/hook-direction.test.ts",
+      "line": 143,
+      "coverage": "세 케이스 공통의 tail 길이·방향 대칭 판정 helper"
+    }
+  ],
+  "directionDerivation": {
+    "rectangular": "실제 points[0]에서 points[1]과 마지막 점으로 향하는 두 변의 단위벡터 합을 inward로 유도했다.",
+    "girder": "大梁 あばら筋의 실제 Y/Z 단면 좌표에서 같은 두 변 벡터를 유도했다.",
+    "circular": "실제 원형 hoop points의 평균을 중심으로 계산하고 points[0]에서 그 중심으로 향하는 벡터를 inward로 유도했다.",
+    "halfOpening": "symmetricInwardDirections(0)의 두 결과 방향 사이 각을 측정해 2 × (Math.PI / 4)로 고정했다."
+  },
+  "mutationChecks": [
+    {
+      "target": "src/domain/rebar/column.ts:259",
+      "mutation": "symmetricInwardDirections(circular ? Math.PI : Math.PI / 4)를 ... : Math.PI / 2로 변경",
+      "command": "npx vitest run src/domain/rebar/hook-direction.test.ts",
+      "result": "failed as expected",
+      "failedTest": "keeps the rectangular 柱 帯筋 tails equal, distinct, and inward-symmetric",
+      "failureMessage": "expected [7.850462293418876e-17, +0, 1] to deeply equal ObjectContaining{...}; expected bisector was [0.7071067811865475, 0, 0.7071067811865475]",
+      "restored": true
+    },
+    {
+      "target": "src/domain/rebar/girder.ts:782",
+      "mutation": "symmetricInwardDirections(Math.PI / 4)를 Math.PI / 2로 변경",
+      "command": "npx vitest run src/domain/rebar/hook-direction.test.ts",
+      "result": "failed as expected",
+      "failedTest": "derives 大梁 あばら筋 symmetry in its Y/Z section plane",
+      "failureMessage": "expected [+0, 7.850462293418876e-17, 1] to deeply equal ObjectContaining{...}; expected bisector was [0, 0.7071067811865475, 0.7071067811865475]",
+      "restored": true
+    }
+  ],
+  "gateResults": {
+    "targeted": "passed: 1 file, 4 tests",
+    "npm run test": "passed: 84 files, 1591 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with 0 errors; existing warning in src/app/api/oncall/alert/route.test.ts:161"
+  },
+  "scope": "테스트만 추가했다. src/domain/rebar/column.ts와 src/domain/rebar/girder.ts의 변이 변경은 모두 원복했으며 docs/**와 src/rulepack/**는 수정하지 않았다."
+}

@@ -39,7 +39,10 @@
     {
       "step": 4,
       "name": "pin-tail-direction-rule",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T14:19:20+0900",
+      "summary": "도메인 hookTails의 矩形·円形 inward 대칭과 symmetricInwardDirections 반개방각을 테스트로 고정하고 두 호출부 변이 실패를 확인했다.",
+      "completed_at": "2026-08-27T14:24:41+0900"
     }
   ],
   "created_at": "2026-08-27T11:46:55+0900"
