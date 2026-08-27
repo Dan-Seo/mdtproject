@@ -5,19 +5,30 @@
     {
       "step": 0,
       "name": "verify-gate-field",
-      "status": "pending"
+      "status": "completed",
+      "summary": "verify 스텝의 gate 필드 검증·반증 시 중단 및 phase refuted 전파를 구현하고 회귀·뮤테이션 검증을 완료했다.",
+      "completed_at": "2026-08-27T12:10:00+0900",
+      "started_at": "2026-08-27T12:05:41+0900"
     },
     {
       "step": 1,
       "name": "refute-gate-claims",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "summary": "게이트 동작과 step 0 뮤테이션 4종을 반증 가능 테스트로 대조했고, 모든 주장을 upheld로 확인했다.",
+      "started_at": "2026-08-27T12:13:41+0900",
+      "completed_at": "2026-08-27T12:17:24+0900"
     },
     {
       "step": 2,
       "name": "gate-docs",
-      "status": "pending"
+      "status": "completed",
+      "summary": "AGENTS.md와 CLAUDE.md에 refuted 기본 진행·step 0 게이트·gate 필드 동작을 같은 문언으로 기록하고, AC 3종을 통과했다.",
+      "completed_at": "2026-08-27T12:24:14+0900",
+      "started_at": "2026-08-27T12:20:04+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-27T12:05:41+0900",
+  "completed_at": "2026-08-27T12:24:14+0900"
 }

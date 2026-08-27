@@ -1,0 +1,51 @@
+{
+  "step": 0,
+  "name": "verify-gate-field",
+  "tests_added": [
+    "test_gate_refuted_stops_before_next_pending_step",
+    "test_gate_refuted_finalizes_phase_as_refuted",
+    "test_gate_completed_allows_next_pending_step",
+    "test_gate_true_on_non_verify_step_exits_before_invocation"
+  ],
+  "mutation_checks": [
+    {
+      "mutation": "게이트 반증 후에도 다음 스텝을 실행",
+      "failing_test": "test_gate_refuted_stops_before_next_pending_step",
+      "observed": "failed",
+      "restored": true
+    },
+    {
+      "mutation": "_finalize가 항상 completed를 기록",
+      "failing_test": "test_gate_refuted_finalizes_phase_as_refuted",
+      "observed": "failed",
+      "restored": true
+    },
+    {
+      "mutation": "completed 게이트도 pending 스텝 전에 정지",
+      "failing_test": "test_gate_completed_allows_next_pending_step",
+      "observed": "failed",
+      "restored": true
+    },
+    {
+      "mutation": "기동 시 gate 검증 제거",
+      "failing_test": "test_gate_true_on_non_verify_step_exits_before_invocation",
+      "observed": "failed",
+      "restored": true
+    }
+  ],
+  "gate_without_gate_field": {
+    "behavior": "무변경",
+    "evidence": [
+      "test_refuted_verify_allows_next_pending_step",
+      "test_finalize_marks_phase_completed_after_refuted"
+    ],
+    "result": "passed"
+  },
+  "validation": {
+    "python_execute_test": "passed",
+    "python_test_execute": "passed",
+    "npm_run_lint": "passed",
+    "npm_run_test": "passed",
+    "npx_tsc_no_emit": "passed"
+  }
+}

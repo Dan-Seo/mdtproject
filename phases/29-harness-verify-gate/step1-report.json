@@ -1,0 +1,47 @@
+{
+  "claims": [
+    {
+      "id": "default-unchanged",
+      "verdict": "upheld",
+      "evidence": "git diff --exit-code -- scripts/execute_test.py -> exit 0; the two gate-less regression tests remain unchanged and the restored implementation/tests are clean",
+      "note": "The phase-13 behavior tests passed in the final python scripts/execute_test.py run."
+    },
+    {
+      "id": "gate-halts",
+      "verdict": "upheld",
+      "evidence": "python scripts/execute_test.py RefutedProtocolTests.test_gate_refuted_stops_before_next_pending_step -> exit 0 after restoration; the test asserts calls_by_step == {0: 1}",
+      "note": "The test counts actual FakeStepExecutor invocations, not only statuses."
+    },
+    {
+      "id": "gate-leaves-pending",
+      "verdict": "upheld",
+      "evidence": "RefutedProtocolTests.test_gate_refuted_stops_before_next_pending_step passed and asserts statuses == [refuted, pending]",
+      "note": "The step after the refuted gate remains pending."
+    },
+    {
+      "id": "top-index-refuted",
+      "verdict": "upheld",
+      "evidence": "RefutedProtocolTests.test_gate_refuted_finalizes_phase_as_refuted and test_finalize_marks_phase_completed_after_refuted both passed",
+      "note": "The first uses gate=true and expects top status refuted; the second omits gate and expects completed."
+    },
+    {
+      "id": "startup-validation",
+      "verdict": "upheld",
+      "evidence": "RefutedProtocolTests.test_gate_true_on_non_verify_step_exits_before_invocation passed; it asserts SystemExit code 1 and calls_by_step == {}",
+      "note": "Validation occurs before any Codex invocation."
+    },
+    {
+      "id": "mutation-report-honest",
+      "verdict": "upheld",
+      "evidence": "Four direct temporary mutations each made the report-named test fail: gate condition mutation produced calls {0: 1, 1: 1}; forced completed top status produced completed != refuted; completed-gate halt mutation produced calls {0: 1} != {0: 1, 1: 1}; removed startup validation produced SystemExit not raised",
+      "note": "Each mutation was immediately restored; final git diff is clean for scripts/execute.py and scripts/execute_test.py."
+    },
+    {
+      "id": "no-collateral",
+      "verdict": "upheld",
+      "evidence": "git diff-tree --no-commit-id --name-only -r aefdf43 listed only scripts/execute.py, scripts/execute_test.py, and phase 29 step-0 artifacts",
+      "note": "No step-0 change occurred outside the harness implementation/tests and its phase artifacts."
+    }
+  ],
+  "verdict": "upheld"
+}

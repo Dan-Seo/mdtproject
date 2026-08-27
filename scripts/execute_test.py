@@ -249,6 +249,100 @@ def make_harness_fixture(root: Path, steps: list[dict], *, top_index: bool = Fal
 
 
 class RefutedProtocolTests(unittest.TestCase):
+    def test_gate_refuted_stops_before_next_pending_step(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "gate", "kind": "verify", "gate": True, "status": "pending"},
+                {"step": 1, "name": "implementation", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture",
+                {
+                    0: [{"status": "refuted", "summary": "전제가 반증됨"}],
+                    1: [{"status": "completed", "summary": "구현 완료"}],
+                },
+                root=root,
+            )
+
+            executor._execute_all_steps("guards")
+
+            saved = json.loads((root / "phases" / "fixture" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(executor.calls_by_step, {0: 1})
+            self.assertEqual([step["status"] for step in saved["steps"]], ["refuted", "pending"])
+
+    def test_gate_refuted_finalizes_phase_as_refuted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "gate", "kind": "verify", "gate": True, "status": "pending"},
+                {"step": 1, "name": "implementation", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps, top_index=True)
+            executor = FakeStepExecutor(
+                "fixture",
+                {0: [{"status": "refuted", "summary": "전제가 반증됨"}]},
+                root=root,
+            )
+
+            executor._execute_all_steps("guards")
+            executor._finalize()
+
+            top = json.loads((root / "phases" / "index.json").read_text(encoding="utf-8"))
+            phase = top["phases"][0]
+            self.assertEqual(phase["status"], "refuted")
+            self.assertIn("refuted_at", phase)
+
+    def test_gate_completed_allows_next_pending_step(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "gate", "kind": "verify", "gate": True, "status": "pending"},
+                {"step": 1, "name": "implementation", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture",
+                {
+                    0: [{"status": "completed", "summary": "전제 확인"}],
+                    1: [{"status": "completed", "summary": "구현 완료"}],
+                },
+                root=root,
+            )
+
+            executor._execute_all_steps("guards")
+
+            self.assertEqual(executor.calls_by_step, {0: 1, 1: 1})
+            saved = json.loads((root / "phases" / "fixture" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual([step["status"] for step in saved["steps"]], ["completed", "completed"])
+
+    def test_gate_true_on_non_verify_step_exits_before_invocation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [{"step": 7, "name": "implementation", "gate": True, "status": "pending"}]
+            make_harness_fixture(root, steps)
+            subprocess.run(["git", "add", "."], cwd=root, capture_output=True, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "fixture"],
+                cwd=root,
+                capture_output=True,
+                check=True,
+            )
+            executor = FakeStepExecutor(
+                "fixture",
+                {7: [{"status": "completed", "summary": "호출되면 안 됨"}]},
+                root=root,
+            )
+
+            with mock.patch("builtins.print") as print_mock, self.assertRaises(SystemExit) as raised:
+                executor.run()
+
+            self.assertEqual(raised.exception.code, 1)
+            self.assertEqual(executor.calls_by_step, {})
+            printed = "\n".join(" ".join(str(part) for part in call.args) for call in print_mock.call_args_list)
+            self.assertIn('"gate": true는 kind "verify" 스텝에서만 유효하다 (step 7)', printed)
+
     def test_refuted_verify_is_terminal_and_preserves_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
