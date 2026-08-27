@@ -35,7 +35,7 @@
       "name": "ledger-corrections",
       "status": "completed",
       "started_at": "2026-08-27T11:04:10+0900",
-      "completed_at": "2026-08-27T11:14:00+0900",
+      "completed_at": "2026-08-27T11:16:40+0900",
       "summary": "부재 범위 오기·마일스톤 상태·ADR-028/037·R2 문서를 정정하고 전체 게이트를 통과했다.",
       "report": "phases/27-cantilever-slab/step3-report.json"
     }
