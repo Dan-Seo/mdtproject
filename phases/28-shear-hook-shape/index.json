@@ -23,11 +23,19 @@
     {
       "step": 2,
       "name": "hook-tail-viewer",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T13:31:17+0900",
+      "summary": "Unified symmetric 135°フック tail drawing, measured same-session A/B cost within 20%, and widened the R4 guard band with evidence.",
+      "completed_at": "2026-08-27T14:02:00+0900"
     },
     {
       "step": 3,
       "name": "note1-transcription-ledger",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "pin-tail-direction-rule",
       "status": "pending"
     }
   ],
