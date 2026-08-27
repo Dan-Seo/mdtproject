@@ -15,7 +15,10 @@
       "name": "refute-gate-claims",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "summary": "게이트 동작과 step 0 뮤테이션 4종을 반증 가능 테스트로 대조했고, 모든 주장을 upheld로 확인했다.",
+      "started_at": "2026-08-27T12:13:41+0900",
+      "completed_at": "2026-08-27T12:17:24+0900"
     },
     {
       "step": 2,
