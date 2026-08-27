@@ -14,8 +14,10 @@ import {
   type WallExtent,
 } from '@/domain/model/member'
 import {
+  cantileverSlabRect,
   findSection,
   gridPoint,
+  isCantileverSlabMember,
   placeableSlabPositions,
   placeableWallPositions,
   slabBay,
@@ -57,101 +59,13 @@ interface DrawingTransform {
 
 type CantileverSlab = NonNullable<Member['cantilever']>
 
-function isCantileverSlab(
-  member: Member,
-): member is Member & {
-  kind: '床板'
-  position: GirderPosition
-  cantilever: CantileverSlab
-} {
-  return (
-    member.kind === '床板' &&
-    'axis' in member.position &&
-    member.cantilever !== undefined
-  )
-}
-
 interface CantileverSlabGeometry {
   minX: number
   maxX: number
   minY: number
   maxY: number
-  originX: number
-  originY: number
-  width: number
-  height: number
 }
 
-function cantileverSlabGeometry(
-  project: Project,
-  member: Member,
-): CantileverSlabGeometry {
-  if (!isCantileverSlab(member)) {
-    throw new Error(`Member is not a cantilever 床板: ${member.id}`)
-  }
-
-  const section = findSection(project, member.sectionId)
-  if (section.kind !== '床板') {
-    throw new Error(`片持床板 references a non-床板 section: ${member.id}`)
-  }
-
-  const parallelRun = slabRun(project, member, member.position.axis)
-  const detail = parallelRun.cantilever
-  if (detail === undefined) {
-    throw new Error(`片持床板 support was not resolved: ${member.id}`)
-  }
-
-  const start = gridPoint(
-    project.grid,
-    member.position.ix,
-    member.position.iy,
-  )
-  const startColumn = project.members.find(
-    (candidate) =>
-      candidate.kind === '柱' &&
-      candidate.storyId === member.storyId &&
-      !('axis' in candidate.position) &&
-      candidate.position.ix === member.position.ix &&
-      candidate.position.iy === member.position.iy,
-  )
-  if (startColumn === undefined) {
-    throw new Error(`片持床板 start column was not found: ${member.id}`)
-  }
-  const columnSection = findSection(project, startColumn.sectionId)
-  if (columnSection.kind !== '柱') {
-    throw new Error(`片持床板 start column section is invalid: ${member.id}`)
-  }
-
-  const alongStart =
-    (member.position.axis === 'X' ? start.x : start.y) +
-    (member.position.axis === 'X'
-      ? columnSection.b / 2
-      : columnSection.d / 2)
-  const alongEnd = alongStart + detail.supportClearMm
-  const supportCoordinate =
-    member.position.axis === 'X' ? start.y : start.x
-  const direction = member.cantilever.side === '正' ? 1 : -1
-  const supportFace =
-    supportCoordinate + direction * (detail.support.widthMm / 2)
-  const freeEdge = supportFace + direction * member.cantilever.projectionMm
-  const minProjection = Math.min(supportFace, freeEdge)
-  const maxProjection = Math.max(supportFace, freeEdge)
-  const minX = member.position.axis === 'X' ? alongStart : minProjection
-  const maxX = member.position.axis === 'X' ? alongEnd : maxProjection
-  const minY = member.position.axis === 'X' ? minProjection : alongStart
-  const maxY = member.position.axis === 'X' ? maxProjection : alongEnd
-
-  return {
-    minX,
-    maxX,
-    minY,
-    maxY,
-    originX: minX,
-    originY: minY,
-    width: maxX - minX,
-    height: maxY - minY,
-  }
-}
 
 function drawingTransform(project: Project): DrawingTransform {
   const xCoordinates = spanCoordinates(project.grid.xSpans)
@@ -163,9 +77,9 @@ function drawingTransform(project: Project): DrawingTransform {
   let minY = 0
   let maxY = totalY
   for (const member of project.members) {
-    if (!isCantileverSlab(member)) continue
+    if (!isCantileverSlabMember(member)) continue
     try {
-      const geometry = cantileverSlabGeometry(project, member)
+      const geometry = cantileverSlabRect(project, member)
       minX = Math.min(minX, geometry.minX)
       maxX = Math.max(maxX, geometry.maxX)
       minY = Math.min(minY, geometry.minY)
@@ -316,10 +230,10 @@ function PlanMember({
     )
   }
 
-  if (isCantileverSlab(member)) {
+  if (isCantileverSlabMember(member)) {
     let geometry: CantileverSlabGeometry
     try {
-      geometry = cantileverSlabGeometry(project, member)
+      geometry = cantileverSlabRect(project, member)
     } catch {
       return null
     }
@@ -593,11 +507,11 @@ function slabOpeningRects(
 
   let originXMm: number
   let originYMm: number
-  if (isCantileverSlab(member)) {
+  if (isCantileverSlabMember(member)) {
     try {
-      const geometry = cantileverSlabGeometry(project, member)
-      originXMm = geometry.originX
-      originYMm = geometry.originY
+      const geometry = cantileverSlabRect(project, member)
+      originXMm = geometry.minX
+      originYMm = geometry.minY
     } catch {
       return []
     }
@@ -816,7 +730,7 @@ export function placeableCantileverPositions(
     if (
       project.members.some(
         (member) =>
-          isCantileverSlab(member) &&
+          isCantileverSlabMember(member) &&
           samePlacementPosition(member, storyId, '床板', position),
       )
     ) {
@@ -1018,7 +932,7 @@ function PlacementEditor() {
           (position) =>
             !project.members.some(
               (member) =>
-                isCantileverSlab(member) &&
+                isCantileverSlabMember(member) &&
                 samePlacementPosition(member, activeStoryId, '床板', position),
             ),
         )

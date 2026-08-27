@@ -1046,7 +1046,7 @@ export interface SlabRun {
   openings: Opening[]
 }
 
-function isCantileverSlabMember(
+export function isCantileverSlabMember(
   member: Member,
 ): member is Member & {
   position: GirderPosition
@@ -1066,11 +1066,24 @@ function cantileverError(member: Member, detail: string): MemberUnsupportedError
   )
 }
 
-function slabCantileverRun(
+/**
+ * 片持床板の支持辺から取れる寸法。3D も平面もこの一つを読む — 同じ矩形を
+ * 二か所で組み立てると、片方だけ直したときに数量と無関係な食い違いが静かに残る。
+ */
+interface CantileverSupport {
+  slabSupport: SlabEdgeSupport
+  supportClearMm: number
+  projectionMm: number
+  /** 支持辺に沿う向きの、始端柱の面の世界座標 (mm) */
+  alongStartMm: number
+  /** 支持辺が乗る通り芯の、直交向きの世界座標 (mm) */
+  supportCoordinateMm: number
+}
+
+function cantileverSupport(
   project: Project,
   member: Member & { position: GirderPosition; cantilever: CantileverSlab },
-  axis: 'X' | 'Y',
-): SlabRun {
+): CantileverSupport {
   const position = member.position
   if (!isGridEdgePosition(project.grid, position)) {
     throw cantileverError(member, '支持辺がグリッドの辺ではない')
@@ -1124,11 +1137,67 @@ function slabCantileverRun(
     )
   }
 
-  const slabSupport: SlabEdgeSupport = {
-    memberId: support.member.id,
-    widthMm: support.section.b,
-    cover: coverConditions(support.section),
+  return {
+    slabSupport: {
+      memberId: support.member.id,
+      widthMm: support.section.b,
+      cover: coverConditions(support.section),
+    },
+    supportClearMm,
+    projectionMm,
+    alongStartMm:
+      (position.axis === 'X' ? startPoint.x : startPoint.y) +
+      startColumnLength / 2,
+    supportCoordinateMm: position.axis === 'X' ? startPoint.y : startPoint.x,
   }
+}
+
+/**
+ * 片持床板が平面に占める矩形 (mm)。支持辺の面から `side` の向きへ
+ * `projectionMm` だけ出た板そのもので、定着は含まない — 板は内法部分だからだ
+ * (躯体の区分（４）床板)。
+ */
+export function cantileverSlabRect(
+  project: Project,
+  member: Member,
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  if (!isCantileverSlabMember(member)) {
+    throw cantileverError(member, '片持条件のない床板である')
+  }
+
+  const support = cantileverSupport(project, member)
+  const alongEnd = support.alongStartMm + support.supportClearMm
+  const direction = member.cantilever.side === '正' ? 1 : -1
+  const supportFace =
+    support.supportCoordinateMm +
+    direction * (support.slabSupport.widthMm / 2)
+  const freeEdge = supportFace + direction * support.projectionMm
+
+  return member.position.axis === 'X'
+    ? {
+        minX: support.alongStartMm,
+        maxX: alongEnd,
+        minY: Math.min(supportFace, freeEdge),
+        maxY: Math.max(supportFace, freeEdge),
+      }
+    : {
+        minX: Math.min(supportFace, freeEdge),
+        maxX: Math.max(supportFace, freeEdge),
+        minY: support.alongStartMm,
+        maxY: alongEnd,
+      }
+}
+
+function slabCantileverRun(
+  project: Project,
+  member: Member & { position: GirderPosition; cantilever: CantileverSlab },
+  axis: 'X' | 'Y',
+): SlabRun {
+  const position = member.position
+  const { slabSupport, supportClearMm, projectionMm } = cantileverSupport(
+    project,
+    member,
+  )
   const projectionAxis = position.axis === 'X' ? 'Y' : 'X'
   const supportAt =
     axis === position.axis

@@ -1,15 +1,16 @@
 import type {
   ColumnShape,
-  GirderPosition,
   Member,
   MemberKind,
   Opening,
   ShearBarSize,
 } from '@/domain/model/member'
 import {
+  cantileverSlabRect,
   findSection,
   girderSpan,
   gridPoint,
+  isCantileverSlabMember,
   slabBay,
   slabRun,
   storyElevation,
@@ -67,20 +68,6 @@ export interface BuildingLayout {
   bounds: Bounds
 }
 
-type CantileverSlab = NonNullable<Member['cantilever']>
-
-function isCantileverSlab(member: Member): member is Member & {
-  kind: '床板'
-  position: GirderPosition
-  cantilever: CantileverSlab
-} {
-  return (
-    member.kind === '床板' &&
-    'axis' in member.position &&
-    member.cantilever !== undefined
-  )
-}
-
 interface CantileverSlabGeometry {
   originX: number
   originY: number
@@ -88,72 +75,22 @@ interface CantileverSlabGeometry {
   height: number
 }
 
+/**
+ * 平面での矩形を 3D の原点・寸法に直すだけだ。矩形そのものは
+ * `cantileverSlabRect` が持つ — 平面ペインと同じ一つの出所である。
+ */
 function cantileverSlabGeometry(
   project: Project,
   member: Member,
 ): CantileverSlabGeometry {
-  if (!isCantileverSlab(member)) {
-    throw new Error(`Member is not a cantilever 床板: ${member.id}`)
-  }
+  const rect = cantileverSlabRect(project, member)
 
-  const section = findSection(project, member.sectionId)
-  if (section.kind !== '床板') {
-    throw new Error(`片持床板 references a non-床板 section: ${member.id}`)
+  return {
+    originX: rect.minX,
+    originY: rect.minY,
+    width: rect.maxX - rect.minX,
+    height: rect.maxY - rect.minY,
   }
-  const detail = slabRun(project, member, member.position.axis).cantilever
-  if (detail === undefined) {
-    throw new Error(`片持床板 support was not resolved: ${member.id}`)
-  }
-
-  const start = gridPoint(
-    project.grid,
-    member.position.ix,
-    member.position.iy,
-  )
-  const startColumn = project.members.find(
-    (candidate) =>
-      candidate.kind === '柱' &&
-      candidate.storyId === member.storyId &&
-      !('axis' in candidate.position) &&
-      candidate.position.ix === member.position.ix &&
-      candidate.position.iy === member.position.iy,
-  )
-  if (startColumn === undefined) {
-    throw new Error(`片持床板 start column was not found: ${member.id}`)
-  }
-  const columnSection = findSection(project, startColumn.sectionId)
-  if (columnSection.kind !== '柱') {
-    throw new Error(`片持床板 start column section is invalid: ${member.id}`)
-  }
-
-  const alongStart =
-    (member.position.axis === 'X' ? start.x : start.y) +
-    (member.position.axis === 'X'
-      ? columnSection.b / 2
-      : columnSection.d / 2)
-  const alongEnd = alongStart + detail.supportClearMm
-  const supportCoordinate =
-    member.position.axis === 'X' ? start.y : start.x
-  const direction = member.cantilever.side === '正' ? 1 : -1
-  const supportFace =
-    supportCoordinate + direction * (detail.support.widthMm / 2)
-  const freeEdge = supportFace + direction * member.cantilever.projectionMm
-  const minProjection = Math.min(supportFace, freeEdge)
-  const maxProjection = Math.max(supportFace, freeEdge)
-
-  return member.position.axis === 'X'
-    ? {
-        originX: alongStart,
-        originY: minProjection,
-        width: alongEnd - alongStart,
-        height: maxProjection - minProjection,
-      }
-    : {
-        originX: minProjection,
-        originY: alongStart,
-        width: maxProjection - minProjection,
-        height: alongEnd - alongStart,
-      }
 }
 
 function emptyBounds(): Bounds {
@@ -252,7 +189,7 @@ export function buildingLayout(
       // 床板も内法部分そのものだ（躯体の区分（４）「柱、梁等に接する水平材の
       // 内法部分」）。通り芯間で描くと大梁と重なった板になる。
       const topY = elevation + story.height
-      if (isCantileverSlab(member)) {
+      if (isCantileverSlabMember(member)) {
         const geometry = cantileverSlabGeometry(project, member)
         box = {
           memberId: member.id,
@@ -439,7 +376,7 @@ export function buildingLayout(
         slabStory.height -
         section.thickness
 
-      if (isCantileverSlab(member)) {
+      if (isCantileverSlabMember(member)) {
         const geometry = cantileverSlabGeometry(project, member)
         worldPoint = ([x, y, z]) => [
           geometry.originX + x,
