@@ -1,0 +1,45 @@
+{
+  "step": 2,
+  "name": "ledger-docs",
+  "status": "completed",
+  "changes": [
+    {
+      "file": "docs/MILESTONES.md",
+      "lines": [18, 20],
+      "summary": "壁式構造の壁을 ‘만들지 않는다 — 별개 마일스톤(ADR-042)’로 정정하고, 이전 ‘남은 것’ 표현은 날짜가 있는 정정 이력으로 보존했다."
+    },
+    {
+      "file": "AGENTS.md",
+      "lines": [25, 61],
+      "summary": "부재 규칙 문단에 ADR-042를 참조하고 일본 고유 형태·제품 마일스톤 행을 정정했다."
+    },
+    {
+      "file": "CLAUDE.md",
+      "lines": [22, 58],
+      "summary": "AGENTS.md와 동일한 ADR-042 참조 및 마일스톤 정정을 반영했다."
+    },
+    {
+      "file": "docs/ADR.md",
+      "lines": [267],
+      "summary": "ADR-025 본문은 유지하고 날짜가 있는 ADR-042 참조 한 줄을 덧붙였다."
+    },
+    {
+      "file": "docs/RISKS.md",
+      "lines": [10],
+      "summary": "R2에 다섯 구분은 조문에 있으나 제품이 내지 않는 미계상임을 추가했다."
+    }
+  ],
+  "scopeCheck": {
+    "srcUnchanged": true,
+    "testsUnchanged": true
+  },
+  "remainingContradictions": {
+    "present": false,
+    "note": "현행 대장·규칙 문구의 모순은 해소했다. 이전 ‘남은 것’ 표현은 변경 경위 보존을 위한 정정 이력으로만 남겼다."
+  },
+  "acceptanceCriteria": {
+    "npm run test": "passed: 85 files, 1602 tests",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed: 0 errors, 1 pre-existing warning"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "premises": [
+    {
+      "id": "five-divisions",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 23쪽(인쇄 18쪽)의 2) 壁（壁式構造）: 「壁式構造の壁筋は、端部筋、縦筋、壁梁筋、横筋及び補強筋に区分して計測・計算する。」"
+    },
+    {
+      "id": "product-has-three",
+      "verdict": "upheld",
+      "evidence": "src/domain/rebar/wall.ts:141-170의 generateWallRebar 반환 배열은 role `縦筋`과 `横筋`만 buildWallBars로 생성하고, src/domain/rebar/wall.ts:173-196은 별도로 role `開口補強筋`을 만든다. src/domain/model/rebar.ts:32-33은 이를 2)-5가 아닌 1通則8) なお書き의 설계도서 전사 입력으로 명시한다."
+    },
+    {
+      "id": "endbar-needs-topology",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 23쪽(인쇄 18쪽): 「壁の端部及び壁と壁の接続する箇所のコーナー部配筋」. 코드는 src/domain/model/member.ts:406에서 壁 위치를 `WallPosition = GirderPosition`(한 변의 axis/ix/iy)으로 두고, src/domain/model/member.ts:475-490의 Member에도 이웃 壁·접속 코너·위상 필드가 없다. generateWallRebar 입력도 src/domain/rebar/wall.ts:77-83의 member·section·span뿐이다."
+    },
+    {
+      "id": "vertical-needs-foundation",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 23쪽(인쇄 18쪽) 2)-2①②: 「最下階の縦筋の長さは、接続する布基礎がスタラップ状配筋の場合は…定着長さを加える」 및 布基礎内 배근 분기. ADR-005는 docs/ADR.md:42에서 `基礎`를 범위 밖으로 두고, 현재 확장 결정도 docs/ADR.md:229에서 `基礎`를 계속 만들지 않는다고 한다. 코드의 MemberKind는 src/domain/model/member.ts:2-4에서 `柱`·`大梁`·`耐震壁`·`床板`뿐이다."
+    },
+    {
+      "id": "vertical-count-needs-topology",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 23쪽(인쇄 18쪽) 2)-2⑥: 「壁の内法長さをもとに１通則７）により割付け本数を求め、壁の内法に含まれる壁の接続部及び縦補強筋の箇所数を差し引いた本数」. 현재 모델에는 접속부를 표현할 위상 정보가 없으며、その入力形は src/domain/model/member.ts:406,475-490에 한 변 위치와 단일 부재 필드만 있다."
+    },
+    {
+      "id": "wallbeam-is-new-member",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 23쪽(인쇄 18쪽)에 독립된 2)-3 壁梁筋 및 「主筋の長さは…」 조문이 있다. 현재 MemberKind는 src/domain/model/member.ts:2-4의 네 값에 `壁梁`가 없고, src/domain/rebar/wall.ts:17-18은 1)「壁式構造以外」만 구현하며 2)「壁式構造」은 구현하지 않는다고 명시한다."
+    },
+    {
+      "id": "horizontal-count-differs",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 24쪽(인쇄 19쪽) 2)-4③: 「横筋の割付本数は、１通則７）にかかわらず、壁高さを鉄筋間隔で除し、小数点以下第１位を切り上げた整数から１を差し引いた本数」. 반면 src/domain/rebar/wall.ts:157-170은 横筋을 `distributionCount`로 계산하고, src/domain/rebar/measurement.ts:222-237은 `Math.ceil(partLengthMm / pitchMm) + additionRule.value`를 사용한다. src/rulepack/jp-mlit/measure.yaml:25-31의 `measure.distribution.addition`은 value `1`이므로 제품 경로는 룰팩 유래 ＋1이며 2)-4③의 −1 식과 다르다."
+    },
+    {
+      "id": "reinforcement-is-design-doc",
+      "verdict": "upheld",
+      "evidence": ".cache/001178206.pdf PDF 24쪽(인쇄 19쪽) 2)-5: 「補強筋は設計図書による。」."
+    },
+    {
+      "id": "no-wall-shiki-today",
+      "verdict": "upheld",
+      "evidence": "src/domain/rebar/wall.ts:17-18은 2)「壁式構造」を実装しない고 명시한다. 실제 반환 경로는 src/domain/rebar/wall.ts:141-170의 `縦筋`·`横筋`과 src/domain/rebar/wall.ts:173-196의 1通則8) 전사 `開口補強筋`뿐이다. src/domain/model/rebar.ts:4-34의 RebarRole에도 `端部筋`·`壁梁筋`·일반 `補強筋` 역할 리터럴이 없으며, 코드 검색에서도 해당 role 생성 리터럴은 0건이다. 따라서 2)-5의 壁 전체 補強筋 행도 나오지 않는다."
+    },
+    {
+      "id": "ledger-contradiction",
+      "verdict": "upheld",
+      "evidence": "ADR-025는 docs/ADR.md:229에서 `壁式構造の壁`을 「나머지는 여전히 만들지 않는다」고 하고 docs/ADR.md:260에서도 「1)만 한다」고 한다. 반면 docs/MILESTONES.md:18은 일본 고유 형태·제품 확장의 **남은 것**으로 `壁式構造の壁`의 端部筋·縦筋·壁梁筋·横筋·補強筋 5구분을 적고 있다."
+    }
+  ],
+  "verdict": "upheld"
+}
