@@ -1,0 +1,54 @@
+{
+  "phase": "28-shear-hook-shape",
+  "step": 3,
+  "name": "note1-transcription-ledger",
+  "status": "completed",
+  "transcription": {
+    "table": "表5.3.1 注1",
+    "pdfPage": 33,
+    "printedPage": 28,
+    "quote": "片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d 以上とする。",
+    "value": 4,
+    "unit": "d",
+    "confidence": "transcribed",
+    "imageRead": false,
+    "storedAs": "spec-r7-ch5.json constraints",
+    "rulePackRow": false,
+    "reason": "「用いる場合には」という設計図書条件なので、製品はフックの有無を推定しない"
+  },
+  "noHookTailRegression": {
+    "file": "tests/golden/quantity-measurement.test.ts",
+    "cases": [
+      "片持床板の projectionBottom・projectionTop・parallelBottom・parallelTop",
+      "壁の自由端で定着なしになる縦筋・横筋"
+    ],
+    "assertion": "対象 Rebar の hookTails が undefined",
+    "mutationThatMustFail": "片持床板先端または壁自由端に hookTails を追加する"
+  },
+  "ledger": {
+    "file": "tests/golden/fabrication-length.test.ts",
+    "assertion": "deviation-from-source は残し、missingMm/withHookTailMm の数値対照は0件であることを明示する",
+    "remainingTerm": "bendRadius"
+  },
+  "documentation": {
+    "files": [
+      "docs/RISKS.md:5-6,18",
+      "docs/MILESTONES.md:5",
+      "AGENTS.md:83",
+      "CLAUDE.md:80"
+    ],
+    "changes": [
+      "R2에 제품 작도 규칙·조건부 4d·Rebar.points와 hookTails의 경계를 추가",
+      "R4에 step 2·2b의 인스턴스·draw call·삼각형·씬 재구축 및 편집 반영 판정 불능을 기록",
+      "R12를 부분 상태로 정정하고 曲げ部の伸び와 幅止め筋の余長을 잔여로 기록",
+      "M3c 보충에 注1 전사와 훅 비추정 회귀를 기록"
+    ]
+  },
+  "verification": {
+    "targetedGolden": "118 passed",
+    "npm run test": "83 files, 1587 tests passed",
+    "npx tsc --noEmit": "passed",
+    "npm run lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+  },
+  "sourceChanges": "src/** 수정 없음"
+}

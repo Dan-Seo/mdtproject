@@ -1037,15 +1037,20 @@ function rebuildMemberScene(
     const shiftY = rebar.role.startsWith('Y方向') ? view.y.offsetMm : 0
     if (shiftX === 0 && shiftY === 0) return rebar
 
+    const shiftPoint = ([pointX, pointY, pointZ]: Point3): Point3 => [
+      pointX - shiftX,
+      pointY - shiftY,
+      pointZ,
+    ]
+
     return {
       ...rebar,
-      points: rebar.points.map(
-        ([pointX, pointY, pointZ]): Point3 => [
-          pointX - shiftX,
-          pointY - shiftY,
-          pointZ,
-        ],
-      ),
+      points: rebar.points.map(shiftPoint),
+      ...(rebar.hookTails === undefined
+        ? {}
+        : {
+            hookTails: rebar.hookTails.map(shiftPoint) as Rebar['hookTails'],
+          }),
     }
   }
 
@@ -1296,12 +1301,13 @@ function geometryKey(view: SelectedSupportedMemberView): string {
     // placement는 배치의 유일한 출처다 — 빼면 本数가 같은 배치 변경(上部大梁せい
     // 미세 조정)이 씬을 옛 위치로 남긴다.
     view.rebars.map(
-      ({ role, size, count, closed, points, zones, placement }) => [
+      ({ role, size, count, closed, points, hookTails, zones, placement }) => [
         role,
         size,
         count,
         closed,
         points,
+        hookTails,
         zones,
         placement,
       ],

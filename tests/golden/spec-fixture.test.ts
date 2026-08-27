@@ -42,6 +42,24 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
       expect(entry.pdfPage).toBeGreaterThan(0)
       expect(entry.printedPage).toBeGreaterThan(0)
     }
+
+    const citedPages = [...fixture.entries, ...fixture.constraints].filter(
+      (entry) =>
+        typeof entry.pdfPage === 'number' &&
+        typeof entry.printedPage === 'number',
+    )
+    expect(citedPages).toHaveLength(fixture.entries.length + fixture.constraints.length)
+    for (const entry of citedPages) {
+      if (typeof entry.pdfPage !== 'number' || typeof entry.printedPage !== 'number') {
+        continue
+      }
+
+      // PDF 앞붙이 6쪽을 제외한 이 판의 PDF 쪽과 인쇄 쪽 대응이다.
+      expect(
+        entry.pdfPage,
+        `${entry.table} ${entry.kind}: PDF 쪽은 인쇄 쪽 + 6이어야 한다`,
+      ).toBe(entry.printedPage + 6)
+    }
   })
 
   it('contains all 22 重ね継手 cells', () => {
@@ -117,10 +135,10 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     }
   })
 
-  it('keeps non-numeric 조문 as constraints, separate from rule-shaped entries', () => {
-    // 수치가 아닌 제약(D35以上 重ね継手 금지)은 룰팩 스키마로 표현할 수 없다 —
-    // entries에 섞으면 value must be a finite number 검사와 충돌하는 죽은 데이터가 된다.
-    expect(fixture.constraints).toHaveLength(2)
+  it('keeps non-rule-shaped clauses in constraints, separate from rule entries', () => {
+    // 제품이 소비하지 않는 제약과 조건부 전사는 룰팩 행과 분리한다 —
+    // entries에 섞으면 소비자가 없는 값이 계산에 기여하는 것처럼 보인다.
+    expect(fixture.constraints).toHaveLength(3)
     expect(fixture.constraints[0]).toMatchObject({
       table: '5.3.4(1)',
       kind: 'lap.prohibited.minimum-bar-size',
@@ -129,6 +147,29 @@ describe('公共建築工事標準仕様書 令和7年版 5章 fixture', () => {
     })
     expect(
       fixture.entries.some(({ kind }) => kind.startsWith('lap.prohibited')),
+    ).toBe(false)
+  })
+
+  it('records 表5.3.1 注1 as a conditional transcription, not a rule-pack row', () => {
+    const note1 = fixture.constraints.find(
+      ({ kind }) => kind === 'bend.free-end-hook.minimum',
+    )
+
+    expect(note1).toMatchObject({
+      table: '表5.3.1 注1',
+      pdfPage: 33,
+      printedPage: 27,
+      quote:
+        '片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d 以上とする。',
+      value: 4,
+      unit: 'd',
+      confidence: 'transcribed',
+      imageRead: false,
+    })
+    expect(
+      jpMlitRulePack.entries.some(
+        ({ key }) => key === 'bend.free-end-hook.minimum',
+      ),
     ).toBe(false)
   })
 

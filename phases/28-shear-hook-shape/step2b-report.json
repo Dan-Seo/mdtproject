@@ -1,0 +1,115 @@
+{
+  "phase": "28-shear-hook-shape",
+  "step": 2,
+  "name": "hook-tail-viewer",
+  "status": "completed",
+  "completed_at": "2026-08-27T14:02:00+0900",
+  "direction_rule": {
+    "helper": "src/domain/rebar/stirrup-layout.ts:symmetricInwardDirections",
+    "rule": "두 135°フック余長 선분을断面内向き 중심선에서 같은 반개방각만큼 좌우로 대칭 분기한다.",
+    "half_spread_radians": "Math.PI / 4",
+    "classification": "원문 치수가 아닌 뷰어 작도 규칙",
+    "documentation": "helper 주석과 column.ts/girder.ts의 3D 形状 formula에 작도 규칙·数量 비영향을 기록했다.",
+    "call_sites": [
+      "src/domain/rebar/column.ts",
+      "src/domain/rebar/girder.ts"
+    ],
+    "preserved": [
+      "hookTails 두 값은 서로 다름",
+      "Rebar.points",
+      "Rebar.closed",
+      "Rebar.length",
+      "Rebar.count",
+      "Rebar.ruleHits"
+    ]
+  },
+  "segment_consistency": {
+    "test": "src/lib/viewer/geometry.test.ts",
+    "assertion": "rebarBatches(...).flatMap(batch => batch.segments) equals rebarSegments(...)",
+    "falsifiable": "hookTails를 제거하면 직사각형·원형 끝점과 세그먼트 수 검사가 실패한다.",
+    "rectangle": {
+      "core_points": 4,
+      "placements": 2,
+      "segments": 12,
+      "tail_edges": [
+        { "from": [62.4, 0, 62.4], "to": [140.4, 0, 62.4] },
+        { "from": [62.4, 0, 62.4], "to": [62.4, 0, 140.4] }
+      ]
+    },
+    "circle": {
+      "core_points": 24,
+      "placements": 36,
+      "segments": 936,
+      "tail_edges": [
+        { "from": [527.6, 0, 300], "to": [473.292526024, 0, 349.0533504261] },
+        { "from": [527.6, 0, 300], "to": [473.292526024, 0, 250.9466495739] }
+      ]
+    }
+  },
+  "viewer_path": {
+    "geometry": "src/lib/viewer/geometry.ts:pathRuns appends both hook-tail edges",
+    "member_view_transform": "src/components/viewer/Viewer3D.tsx transforms hookTails with the same bay-local shift as points",
+    "rebuild_key": "src/components/viewer/Viewer3D.tsx geometryKey includes hookTails"
+  },
+  "stress": {
+    "fixture_command": "npx tsx scripts/perf/stress-fixture.ts 5",
+    "fixture_exit_code": 0,
+    "first_attempt_with_tails": {
+      "rebar_instances": 66825,
+      "per_story_instances": [13557, 13317, 13317, 13317, 13317],
+      "draw_calls": 298,
+      "triangles": 4278530,
+      "scene_rebuild_ms": 28.4,
+      "edit_ms": 262,
+      "instance_delta_from_recorded_baseline": 20940,
+      "instance_delta_percent": 45.64,
+      "source": "preserved phases/28-shear-hook-shape/step2-report.json"
+    },
+    "same_session_ab": {
+      "method": "같은 dev-browser 페이지에서 建物 뷰를 유지하고, hook-tail OFF/ON을 교대로 3회씩 설정한 뒤 같은 피치 편집으로 재구축·내역서 반영을 측정했다.",
+      "off": {
+        "scene_rebuild_ms": [24.9, 24.3, 24.0],
+        "edit_ms": [5998, 11396, 11777],
+        "scene_rebuild_median_ms": 24.3,
+        "edit_median_ms": 11396
+      },
+      "on": {
+        "scene_rebuild_ms": [31.5, 26.9, 27.4],
+        "edit_ms": [10289, 9950, 10015],
+        "scene_rebuild_median_ms": 27.4,
+        "edit_median_ms": 10015
+      },
+      "comparison": {
+        "scene_rebuild_change_percent": 12.76,
+        "edit_change_percent": -12.12,
+        "threshold_percent": 20,
+        "result": "pass"
+      },
+      "note": "편집 값은 rAF가 아닌 내역서 table.textContent 변화까지의 시간이며, 같은 세션 A/B 안에서만 비교했다. 다른 기계의 docs/RISKS.md 수치와 비교하지 않았다."
+    },
+    "guard_band": {
+      "file": "src/components/viewer/stress-scale.test.ts",
+      "lower_instances_per_story": 8000,
+      "upper_instances_per_story": 16000,
+      "reason": "閉合 帯筋이 4세그먼트에서 6세그먼트가 되어 층당 실측 13,557(증분 20,940)이 됐기 때문이다. 8,000 하한은 유지했고, 상한은 의도한 135°フック 余長 형상을 반영하도록 대역만 넓혔다."
+    }
+  },
+  "verification": {
+    "full_test": "passed: npm run test, 83 files / 1586 tests",
+    "typecheck": "passed: npx tsc --noEmit",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161",
+    "build": "passed: npm run build",
+    "e2e": {
+      "command": "npx dev-browser --browser kijun --headless --timeout 90 run tests/e2e/uc10-viewer-features.js",
+      "status": "passed",
+      "result": "ALL CHECKS PASSED"
+    },
+    "temporary_measurement_code": "removed from src/lib/viewer/geometry.ts and tests/e2e/uc17-stress-building.js"
+  },
+  "changes": [
+    "공통 대칭 작도 helper를 추가하고 柱·大梁에 적용했다.",
+    "기존 hook-tail geometry/bay transform/geometryKey 경로를 유지했다.",
+    "직사각형·원형 tail 끝점과 두 geometry 경로 동등성을 기존 테스트에 고정했다.",
+    "R4 층당 상한을 8,000~16,000으로 조정하고 이유를 테스트 주석에 남겼다."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "hook-tail-domain-golden",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1653.4151611000007,
+  "stdout_log": "phases\\28-shear-hook-shape\\step1-codex.stdout.log",
+  "stderr_log": "phases\\28-shear-hook-shape\\step1-codex.stderr.log"
+}

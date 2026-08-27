@@ -1,0 +1,86 @@
+{
+  "phase": "28-shear-hook-shape",
+  "step": 2,
+  "name": "hook-tail-viewer",
+  "status": "blocked",
+  "changes": [
+    {
+      "file": "src/lib/viewer/geometry.ts",
+      "detail": "pathRuns appends one edge from points[0] to each hookTails endpoint after the existing closed edge handling."
+    },
+    {
+      "file": "src/components/viewer/Viewer3D.tsx",
+      "detail": "The bay-local transform now applies to hookTails as well as points, and geometryKey includes hookTails so geometry changes rebuild the scene."
+    },
+    {
+      "file": "src/lib/viewer/geometry.test.ts",
+      "detail": "Added rectangle and circular hook-tail segment-count/endpoint tests; the rectangle case also asserts that rebarBatches flatten to the same segments as rebarSegments."
+    }
+  ],
+  "segment_consistency": {
+    "test": "src/lib/viewer/geometry.test.ts",
+    "assertion": "rebarBatches(...).flatMap(batch => batch.segments) equals rebarSegments(...)",
+    "rectangle": {
+      "core_points": 4,
+      "placements": 2,
+      "segments": 12,
+      "tail_edges": [
+        { "from": [62.4, 0, 62.4], "to": [80, 0, 80] },
+        { "from": [62.4, 0, 62.4], "to": [100, 0, 62.4] }
+      ]
+    },
+    "circle": {
+      "core_points": 24,
+      "placements": 36,
+      "segments": 936,
+      "tail_edges": [
+        { "from": [527.6, 0, 300], "to": [473.292526024, 0, 349.0533504261] },
+        { "from": [527.6, 0, 300], "to": [473.292526024, 0, 250.9466495739] }
+      ]
+    }
+  },
+  "points_origin_review": {
+    "status": "unchanged",
+    "geometry_lines": [163, 237, 322, 445, 461],
+    "detail": "The geometry diff only adds hook-tail edges in pathRuns; the points[0] cover/face-origin paths remain untouched."
+  },
+  "stress": {
+    "fixture_command": "npx tsx scripts/perf/stress-fixture.ts 5",
+    "fixture_exit_code": 0,
+    "recorded_r4_baseline": {
+      "rebar_instances": 45885,
+      "draw_calls": 244,
+      "triangles": 2940000,
+      "source": "docs/RISKS.md R4 recorded measurement"
+    },
+    "after_hook_tails": {
+      "rebar_instances": 66825,
+      "per_story_instances": [13557, 13317, 13317, 13317, 13317],
+      "draw_calls": 298,
+      "triangles": 4278530,
+      "scene_rebuild_ms": 28.4,
+      "edit_ms": 262,
+      "instance_delta": 20940,
+      "instance_delta_percent": 45.64,
+      "draw_call_delta_percent": 22.13,
+      "triangle_delta_percent": 45.53
+    },
+    "budget_result": "blocked",
+    "detail": "The existing one-story R4 guard expects <= 12000 instances and fails at 13557. Hook edges were not removed or otherwise hidden to make the measurement pass."
+  },
+  "verification": {
+    "geometry_test": "passed: 82 tests",
+    "typecheck": "passed: npx tsc --noEmit",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161",
+    "full_test": "blocked by existing R4 budget assertion: 1585 passed, 1 failed; expected 13557 <= 12000",
+    "build": "passed: npm run build",
+    "e2e": {
+      "command": "npx dev-browser --browser kijun --headless --timeout 90 run tests/e2e/uc17-stress-building.js",
+      "status": "passed",
+      "stressed_renderer": { "draw_calls": 298, "triangles": 4278530 },
+      "stressed_rebuild": { "last_rebuild_ms": 28.3999999994, "rebuild_count": 4 },
+      "stressed_edit_ms": 262
+    }
+  },
+  "blocked_reason": "The required 5-story R4 budget is exceeded after adding the mandated two hook-tail edges per closed hoop. The implementation and viewer e2e are valid, but the existing performance guard and recorded R4 baseline need an explicit decision before the step can be completed."
+}

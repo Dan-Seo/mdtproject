@@ -1226,6 +1226,16 @@ describe('片持床板 — ADR-039 ゴールデン', () => {
       expect(projectionBottom.formula).toContain('25d')
       expect(projectionTop.formula).toContain('La')
 
+      // 表5.3.1 注1 は「用いる場合には」という設計図書条件であり、
+      // 片持床板先端のフック有無を製品は推定しない。hookTails をここへ
+      // 足すと、この回帰が失敗する。
+      expect(
+        [projectionBottom, projectionTop, parallelBottom, parallelTop].every(
+          ({ hookTails }) => hookTails === undefined,
+        ),
+        testCase.handDerivation,
+      ).toBe(true)
+
       expect(massFor(`${projectionAxis}方向下端筋`).designKg).toBeCloseTo(
         expected.projectionBottomDesignKg,
         6,
@@ -2012,6 +2022,9 @@ describe('ADR-037 壁の部分高さ・部分長さ extent ゴールデン', () 
       if (expected.anchorageCount !== 2) {
         expect(rebar.formula, entry.handDerivation).toContain('自由端')
         expect(rebar.formula, entry.handDerivation).toContain('定着なし')
+        // 表5.3.1 注1 は設計図書がフックを用いる場合だけの条件。
+        // 壁の自由端に hookTails を推定してはならない。
+        expect(rebar.hookTails, entry.handDerivation).toBeUndefined()
       }
       if (role === '縦筋' && entry.extent?.vertical) {
         expect(rebar.splice?.formula, entry.handDerivation).toContain(

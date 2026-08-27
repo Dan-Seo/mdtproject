@@ -1987,6 +1987,28 @@
       "referencesKind": "anchorage.L1",
       "imageRead": false,
       "note": "折曲げ定着の全長の下限は他の行への参照であって数値ではない — ルールパックに置ける形をしていないので constraints に入れ、組み立ては resolveGirderEnd が行う (ADR-002)。同じ条の (b) 余長8d と (c) 投影 La は数値なので entries 側にある"
+    },
+    {
+      "table": "表5.3.1 注1",
+      "pdfPage": 33,
+      "printedPage": 27,
+      "kind": "bend.free-end-hook.minimum",
+      "conditions": {
+        "locations": [
+          "片持ちスラブ先端",
+          "壁筋の自由端側の先端"
+        ],
+        "hooks": [
+          "90°フック",
+          "135°フック"
+        ]
+      },
+      "quote": "片持ちスラブ先端、壁筋の自由端側の先端で90°フック又は135°フックを用いる場合には、余長は4d 以上とする。",
+      "value": 4,
+      "unit": "d",
+      "confidence": "transcribed",
+      "imageRead": false,
+      "note": "「用いる場合には」という設計図書条件のため、製品はフックの有無を推定せず、4dをルールパックの行にしない"
     }
   ]
 }

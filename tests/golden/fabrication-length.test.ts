@@ -9,14 +9,18 @@ import type {
   ColumnEnds,
   GirderRun,
   GirderSpan,
+  Project,
   Story,
 } from '../../src/domain/model/project'
 import type { Rebar } from '../../src/domain/model/rebar'
+import { PROJECT_SCHEMA_VERSION, setNote } from '../../src/domain/model/project'
 import { MemberUnsupportedError } from '../../src/domain/model/unsupported'
 import { generateColumnRebar } from '../../src/domain/rebar/column'
 import { generateGirderRebar } from '../../src/domain/rebar/girder'
-import { coverConditions } from '../../src/domain/rules/lookup'
+import { coverConditions, lookupRule } from '../../src/domain/rules/lookup'
+import { aggregateQuantity, quantityLineId } from '../../src/domain/quantity'
 import { jpMlitRulePack } from '../../src/rulepack'
+import { buildTakeoffWorkbook } from '../../src/lib/export'
 import fixture from './fixtures/fabrication-length.json'
 
 type Case = (typeof fixture.cases)[number]
@@ -27,7 +31,11 @@ type Deviation = NonNullable<Case['deviation']>
  * その2つが一致しないことこそ ADR-019 の要点だからだ — 設計長さを読むと
  * このテストは数量側の固定と重複し、3D 形状は誰も固定しないままになる。
  */
-function polylineLength(points: Rebar['points'], closed: boolean): number {
+function polylineLength(
+  points: Rebar['points'],
+  closed: boolean,
+  hookTails: Rebar['hookTails'] = undefined,
+): number {
   const pairs = points.slice(1).map((point, index) => [points[index], point])
   if (closed) pairs.push([points.at(-1)!, points[0]])
 
@@ -36,7 +44,17 @@ function polylineLength(points: Rebar['points'], closed: boolean): number {
       total +
       Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]),
     0,
-  )
+  ) +
+    (hookTails?.reduce(
+      (total, tail) =>
+        total +
+        Math.hypot(
+          tail[0] - points[0][0],
+          tail[1] - points[0][1],
+          tail[2] - points[0][2],
+        ),
+      0,
+    ) ?? 0)
 }
 
 function columnSection(given: Case['given']): ColumnSection {
@@ -45,7 +63,7 @@ function columnSection(given: Case['given']): ColumnSection {
     id: 'section-C1',
     kind: '柱',
     mark: 'C1',
-    shape: '矩形',
+    shape: source.shape ?? '矩形',
     b: source.b,
     d: source.d,
     fc: source.fc,
@@ -209,29 +227,37 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
   })
 
   /**
-   * 期待値이 原文 준거값이 아닌 케이스는 그 사실과 차액을 대장에 적는다
-   * (quantity-r5-ch3.json 의 status 대장과 같은 방식). 차액이 맞아떨어지는지
-   * 여기서 확인해야 대장이 구현과 따로 놀지 않는다.
+   * 期待値가 原文 준거값이 아닌 케이스는 그 사실과 이유를 대장에 적는다.
+   * hookTails 실장 후에는 missingMm/withHookTailMm의 수치 대조 대상이 없으므로,
+   * 그 사실을 명시적으로 검사해 죽은 for 루프를 숨기지 않는다.
    */
-  it('原文과 어긋나는 케이스는 차액이 대장과 맞는다', () => {
+  it('keeps the remaining deviation ledger explicit', () => {
     const deviating = fixture.cases.filter(
       (testCase): testCase is Case & { deviation: Deviation } =>
         testCase.deviation !== undefined,
     )
 
     expect(deviating.length).toBeGreaterThan(0)
-    for (const testCase of deviating) {
-      expect(testCase.status, testCase.id).toBe('deviation-from-source')
-      expect(
-        testCase.expectedFabricationLengthMm! + testCase.deviation.missingMm,
-        `${testCase.id} — ${testCase.deviation.note}`,
-      ).toBe(testCase.deviation.withHookTailMm)
-    }
+    expect(
+      deviating.every(({ status }) => status === 'deviation-from-source'),
+    ).toBe(true)
+
+    const numericallyComparable = deviating.filter(
+      ({ deviation }) =>
+        'missingMm' in deviation &&
+        'withHookTailMm' in deviation &&
+        typeof deviation.missingMm === 'number' &&
+        typeof deviation.withHookTailMm === 'number',
+    )
+    expect(
+      numericallyComparable,
+      '余長実装後に missingMm/withHookTailMm の旧対照を復活させない',
+    ).toHaveLength(0)
   })
 
   it.each(
     fixture.cases
-      .filter((testCase) => !('expectation' in testCase))
+      .filter((testCase) => testCase.expectation === undefined)
       .map((testCase) => [testCase.id, testCase] as const),
   )('%s', (_id, testCase) => {
     const candidates = generate(testCase).filter(
@@ -241,14 +267,14 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
 
     expect(rebar, `${testCase.role} should be generated`).toBeDefined()
     expect(
-      polylineLength(rebar!.points, rebar!.closed),
+      polylineLength(rebar!.points, rebar!.closed, rebar!.hookTails),
       `${testCase.title}\n${testCase.derivation}`,
     ).toBe(testCase.expectedFabricationLengthMm)
   })
 
   it.each(
     fixture.cases
-      .filter((testCase) => 'expectation' in testCase)
+      .filter((testCase) => testCase.expectation === 'throw')
       .map((testCase) => [testCase.id, testCase] as const),
   )('%s', (_id, testCase) => {
     let thrown: unknown
@@ -263,5 +289,144 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
       `${testCase.title}\n${testCase.derivation}`,
     ).toBeInstanceOf(MemberUnsupportedError)
     expect((thrown as MemberUnsupportedError).reason).toBe(testCase.reason)
+  })
+
+  it('adds exactly the two rulepack hook tails to a circular hoop', () => {
+    const testCase = fixture.cases.find(
+      (candidate) => candidate.id === 'column-hoop-circular-closed-shape',
+    )!
+    const rebar = generate(testCase).find(
+      (candidate) => candidate.role === testCase.role,
+    )!
+
+    expect(rebar.hookTails).toBeDefined()
+    expect(rebar.hookTails![0]).not.toEqual(rebar.hookTails![1])
+
+    const baseline = polylineLength(rebar.points, rebar.closed)
+    const withTails = polylineLength(
+      rebar.points,
+      rebar.closed,
+      rebar.hookTails,
+    )
+    expect(withTails - baseline).toBe(testCase.expectedHookTailIncrementMm)
+  })
+
+  it('keeps design length and count on the 1通則2) and 1通則7) values', () => {
+    const distributionRule = lookupRule(
+      jpMlitRulePack,
+      'measure.distribution.addition',
+      {},
+    )
+    const hoopRule = lookupRule(
+      jpMlitRulePack,
+      'measure.hoop.length.addition',
+      {},
+    )
+
+    for (const id of [
+      'column-hoop-closed-shape',
+      'girder-stirrup-closed-shape',
+    ]) {
+      const testCase = fixture.cases.find((candidate) => candidate.id === id)!
+      const rebar = generate(testCase).find(
+        (candidate) => candidate.role === testCase.role,
+      )!
+      const section = testCase.given.section as ColumnSection | GirderSection
+      const width = section.b
+      const depth = 'd' in section ? section.d : section.depth
+      const partLength =
+        testCase.given.kind === '柱'
+          ? testCase.given.storyHeightMm!
+          : testCase.given.spans![0].clear
+      const pitch =
+        testCase.given.kind === '柱'
+          ? (section as ColumnSection).hoop.pitch
+          : (section as GirderSection).stirrup.pitch
+
+      expect(rebar.length).toBe(2 * (width + depth) + hoopRule.value)
+      expect(rebar.count).toBe(
+        Math.ceil(partLength / pitch) + distributionRule.value,
+      )
+      expect(rebar.ruleHits.some((rule) => rule.key === 'bend.hook135')).toBe(
+        false,
+      )
+    }
+  })
+
+  it('keeps quantityLineId byte-for-byte independent from hookTails', () => {
+    for (const id of [
+      'column-hoop-closed-shape',
+      'girder-stirrup-closed-shape',
+    ]) {
+      const testCase = fixture.cases.find((candidate) => candidate.id === id)!
+      const rebar = generate(testCase).find(
+        (candidate) => candidate.role === testCase.role,
+      )!
+      const withoutHookTails = { ...rebar }
+      delete withoutHookTails.hookTails
+
+      expect(rebar.hookTails).toBeDefined()
+      expect(quantityLineId('1F|C|C1', rebar)).toBe(
+        quantityLineId('1F|C|C1', withoutHookTails),
+      )
+    }
+  })
+
+  it('keeps a project note on the exported line with hookTails', () => {
+    const testCase = fixture.cases.find(
+      (candidate) => candidate.id === 'column-hoop-closed-shape',
+    )!
+    const section = columnSection(testCase.given)
+    const story: Story = {
+      id: '1F',
+      name: '1階',
+      height: testCase.given.storyHeightMm!,
+    }
+    const member: Member = {
+      id: '1F-X1Y1',
+      kind: '柱',
+      memberClass: '躯体',
+      sectionId: section.id,
+      storyId: story.id,
+      position: { ix: 0, iy: 0 },
+    }
+    const project: Project = {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      name: 'hook-tail-note-test',
+      grid: { xSpans: [6000], ySpans: [6000] },
+      stories: [story],
+      sections: [section],
+      members: [member],
+      unitMass: { D13: 1, D25: 1 },
+    }
+    const rebars = generateColumnRebar(
+      {
+        member,
+        section,
+        story,
+        beamDepthAbove: testCase.given.beamDepthAboveMm!,
+        ends: testCase.given.ends as ColumnEnds,
+      },
+      jpMlitRulePack,
+    )
+    const hoop = rebars.find((rebar) => rebar.role === '帯筋')!
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    const hoopLine = lines.find((line) => line.role === hoop.role)!
+    const notedProject = setNote(
+      project,
+      hoopLine.id,
+      'hook tails remain 3D-only',
+    )
+    const workbook = buildTakeoffWorkbook({
+      project: notedProject,
+      lines,
+      locale: 'ja',
+    })
+    const exportedRow = workbook.sheets[0].rows.find(
+      (row) => row.id === hoopLine.id,
+    )
+
+    expect(hoop.hookTails).toBeDefined()
+    expect(exportedRow?.cells[15].value).toBe('hook tails remain 3D-only')
   })
 })

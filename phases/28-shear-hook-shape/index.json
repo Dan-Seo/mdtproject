@@ -6,24 +6,53 @@
       "step": 0,
       "name": "verify-adr040-premises-corrected",
       "kind": "verify",
-      "status": "pending",
-      "gate": true
+      "status": "completed",
+      "gate": true,
+      "started_at": "2026-08-27T12:32:37+0900",
+      "summary": "ADR-040 premise verification completed.",
+      "completed_at": "2026-08-27T12:42:17+0900"
     },
     {
       "step": 1,
       "name": "hook-tail-domain-golden",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T12:42:17+0900",
+      "summary": "Implemented Rebar.hookTails and verified domain and golden regressions.",
+      "completed_at": "2026-08-27T13:09:51+0900"
     },
     {
       "step": 2,
       "name": "hook-tail-viewer",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T13:31:17+0900",
+      "summary": "Unified symmetric 135°フック tail drawing, measured same-session A/B cost within 20%, and widened the R4 guard band with evidence.",
+      "completed_at": "2026-08-27T14:02:00+0900"
     },
     {
       "step": 3,
       "name": "note1-transcription-ledger",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T14:03:13+0900",
+      "summary": "表5.3.1 注1을 transcribed 전사하고 片持床板·壁自由端의 hookTails 비추정 골든 회귀와 R12/R4/M3c 대장을 갱신했다.",
+      "completed_at": "2026-08-27T14:19:19+0900"
+    },
+    {
+      "step": 4,
+      "name": "pin-tail-direction-rule",
+      "status": "completed",
+      "started_at": "2026-08-27T14:19:20+0900",
+      "summary": "도메인 hookTails의 矩形·円形 inward 대칭과 symmetricInwardDirections 반개방각을 테스트로 고정하고 두 호출부 변이 실패를 확인했다.",
+      "completed_at": "2026-08-27T14:29:29+0900"
+    },
+    {
+      "step": 5,
+      "name": "fix-source-page-citation",
+      "status": "completed",
+      "started_at": "2026-08-27T14:34:00+0900",
+      "summary": "원문 PDF에서 表5.3.1 注1을 PDF 33쪽·인쇄 27쪽으로 재확인하고, entries와 constraints 전체 115건에 +6 오프셋 검사를 추가했으며 두 변이 실패를 확인했다.",
+      "completed_at": "2026-08-27T14:40:11+0900"
     }
   ],
-  "created_at": "2026-08-27T11:46:55+0900"
+  "created_at": "2026-08-27T11:46:55+0900",
+  "completed_at": "2026-08-27T14:40:12+0900"
 }
