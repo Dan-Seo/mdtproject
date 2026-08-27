@@ -297,6 +297,71 @@ describe('PlanEditor 壁・床板の配置と削除 (ADR-038)', () => {
     expect(screen.queryByTestId('placement-slab-0-0')).not.toBeInTheDocument()
   })
 
+  it('offers a cantilever only on a supported edge and places then deletes it', () => {
+    render(<PlanEditor />)
+
+    fireEvent.change(screen.getByTestId('placement-cantilever-projection'), {
+      target: { value: '1800' },
+    })
+    const candidate = screen.getByTestId('placement-cantilever-X-0-0')
+    expect(candidate).toBeInTheDocument()
+
+    fireEvent.click(candidate)
+
+    const placed = useAppStore
+      .getState()
+      .project.members.find(({ id }) => id === '1F-S1-0-0-X')
+    expect(placed).toMatchObject({
+      id: '1F-S1-0-0-X',
+      kind: '床板',
+      position: { axis: 'X', ix: 0, iy: 0 },
+      cantilever: { side: '正', projectionMm: 1800 },
+    })
+
+    fireEvent.click(screen.getByTestId('delete-member'))
+    expect(
+      useAppStore
+        .getState()
+        .project.members.find(({ id }) => id === '1F-S1-0-0-X'),
+    ).toBeUndefined()
+  })
+
+  it('does not offer a cantilever edge without its supporting girder', () => {
+    const project = createSampleProject()
+    setProject({
+      ...project,
+      members: project.members.filter(({ id }) => id !== '1F-G1-X1Y1-X'),
+    })
+    render(<PlanEditor />)
+
+    fireEvent.change(screen.getByTestId('placement-cantilever-projection'), {
+      target: { value: '1800' },
+    })
+
+    expect(
+      screen.queryByTestId('placement-cantilever-X-0-0'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('draws the cantilever projection outside the grid while keeping it in the view', () => {
+    render(<PlanEditor />)
+
+    fireEvent.change(screen.getByTestId('placement-cantilever-projection'), {
+      target: { value: '1800' },
+    })
+    fireEvent.click(screen.getByTestId('placement-cantilever-X-0-2'))
+
+    const group = screen.getByTestId('plan-cantilever-1F-S1-0-2-X')
+    const slab = group.querySelector('rect')
+    const topGridLabel = screen.getByText('Y3')
+    if (!slab) throw new Error('Cantilever slab was not rendered')
+
+    expect(Number(slab.getAttribute('y'))).toBeLessThan(
+      Number(topGridLabel.getAttribute('y')),
+    )
+    expect(Number(slab.getAttribute('y'))).toBeGreaterThanOrEqual(0)
+  })
+
   it('shows only section guidance and no candidates when a section kind is absent', () => {
     const project = createSampleProject()
     setProject({

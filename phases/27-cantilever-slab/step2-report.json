@@ -1,0 +1,42 @@
+{
+  "phase": "27-cantilever-slab",
+  "step": 2,
+  "name": "cantilever-viewer-plan-place",
+  "status": "completed",
+  "summary": "片持床板を支持辺からprojectionMmだけ外側へ表示し、平面配置入力・削除・3D表示を実装した。",
+  "changes": [
+    "buildingLayoutとViewer3Dで、片持床板の支持辺・projectionMmを含むコンクリート箱、鉄筋、境界を生成するようにした。",
+    "PlanEditorのdrawingTransformと選択表示を格子外の片持床板まで拡張した。",
+    "配置UIに支持辺候補、side、projectionMm入力を追加し、slabRunによる支持条件を満たす辺だけを候補にした。既存の床板削除経路はそのまま利用する。",
+    "ja/koロケールに片持床板配置ラベルを追加した。"
+  ],
+  "tests": [
+    "src/lib/viewer/building.test.ts: 片持床板のコンクリート箱・鉄筋が支持格子外へ延びることを固定",
+    "src/components/plan/PlanEditor.test.tsx: 支持条件、格子外描画、配置・削除とMember形状を固定",
+    "src/components/viewer/Viewer3D.test.tsx: 片持床板の部材ビュー生成が失敗しないことを固定"
+  ],
+  "gates": {
+    "npm run test": {
+      "status": "passed",
+      "test_files": 83,
+      "tests": 1580
+    },
+    "npx tsc --noEmit": {
+      "status": "passed"
+    },
+    "npm run lint": {
+      "status": "passed",
+      "errors": 0,
+      "warnings": 1,
+      "warning": "既存のsrc/app/api/oncall/alert/route.test.ts:161:23 _omitted未使用警告"
+    },
+    "git diff --check": {
+      "status": "passed"
+    }
+  },
+  "constraints": [
+    "src/domain/**は変更していない。",
+    "新規e2eテストとdevサーバー起動は行っていない。",
+    "phase実行ログは削除していない。"
+  ]
+}

@@ -177,7 +177,7 @@ interface SelectedSlabView {
   member: Member
   section: SlabSection
   story: Story
-  bay: SlabBay
+  bay: SlabBay | null
   x: SelectedSlabRun
   y: SelectedSlabRun
   rebars: Rebar[]
@@ -369,7 +369,7 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
   if (view.kind === '床板') {
     // 床板も内法部分そのものだ（躯体の区分（４））。X方向のランの各ベイを描き、
     // Y方向のランからは選んだベイの分を除いて足す — 同じ板を二重に描かないため。
-    const { section, bay, x, y } = view
+    const { section, x, y } = view
     const thickness = section.thickness
     // 床板の箱は局所 x が軸0、局所 y が軸2 だ（軸1 は板厚）。開口はベイごとの
     // 入力なので、そのベイの原点に足してくり抜く (1通則8))。
@@ -380,6 +380,24 @@ function concreteBoxes(view: SelectedSupportedMemberView): ConcreteBox[] {
       fromY: number,
     ): ConcreteBox[] =>
       carveBox(box, [0, 2], boxHoles(member.openings ?? [], fromX, fromY))
+
+    if (x.run.cantilever !== undefined || y.run.cantilever !== undefined) {
+      const width = x.run.coreLengthMm
+      const height = y.run.coreLengthMm
+      return carveBox(
+        {
+          size: [width, thickness, height],
+          center: [width / 2, thickness / 2, height / 2],
+        },
+        [0, 2],
+        boxHoles(view.member.openings ?? [], 0, 0),
+      )
+    }
+
+    const bay = view.bay
+    if (bay === null) {
+      throw new Error(`床板 bay is missing: ${view.member.id}`)
+    }
 
     const boxes: ConcreteBox[] = x.run.bays.flatMap((runBay, index) => {
       const fromX = x.run.memberOffsetsMm[index] - x.offsetMm
@@ -1242,8 +1260,8 @@ function geometryKey(view: SelectedSupportedMemberView): string {
           view.y.run.coreLengthMm,
           view.y.offsetMm,
           view.y.run.members.map(({ id }) => id),
-          view.bay.clearXMm,
-          view.bay.clearYMm,
+          view.bay?.clearXMm ?? null,
+          view.bay?.clearYMm ?? null,
         ]
       : view.kind === '耐震壁'
       ? [
@@ -1425,7 +1443,8 @@ function selectedMemberView(
         member,
         section,
         story,
-        bay: slabBay(project, member),
+        bay:
+          member.cantilever === undefined ? slabBay(project, member) : null,
         x: { run: xRun, offsetMm: xRun.memberOffsetsMm[indexIn(xRun)] },
         y: { run: yRun, offsetMm: yRun.memberOffsetsMm[indexIn(yRun)] },
         ...rowsFor(slabRebars, selectedGroup, lines),

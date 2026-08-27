@@ -8,12 +8,14 @@ import {
   girderSpan,
   gridPoint,
   gridPointCount,
+  slabRun,
   storyElevation,
   wallSpan,
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
 import { generateGirderRebar } from '@/domain/rebar/girder'
+import { generateSlabRebar } from '@/domain/rebar/slab'
 import { jpMlitRulePack } from '@/rulepack'
 
 import {
@@ -107,6 +109,54 @@ function roleRebar(rebars: Rebar[], role: Rebar['role']): Rebar {
 }
 
 describe('buildingLayout', () => {
+  it('keeps a cantilever slab concrete box and rebar beyond its supported grid edge', () => {
+    const member: Member = {
+      id: '1F-S1-X1Y3-X-cantilever',
+      kind: '床板',
+      memberClass: '躯体',
+      sectionId: 'section-S1',
+      storyId: '1F',
+      position: { axis: 'X', ix: 0, iy: 2 },
+      cantilever: { side: '正', projectionMm: 1800 },
+    }
+    const cantileverProject = {
+      ...project,
+      members: [...project.members, member],
+    }
+    const section = findSection(cantileverProject, member.sectionId)
+    if (section.kind !== '床板') throw new Error('床板 section not found')
+    const rebars = (['X', 'Y'] as const).flatMap((axis) =>
+      generateSlabRebar(
+        {
+          run: slabRun(cantileverProject, member, axis),
+          section,
+        },
+        jpMlitRulePack,
+      ),
+    )
+
+    const layout = buildingLayout(
+      cantileverProject,
+      rebars,
+      noUnsupportedMembers,
+    )
+    const box = layout.boxes.find(({ memberId }) => memberId === member.id)
+    const support = gridPoint(cantileverProject.grid, 0, 2)
+    const instances = layout.rebar.filter(
+      ({ memberId }) => memberId === member.id,
+    )
+
+    expect(box?.size[2]).toBe(1800)
+    expect(box?.center[2]).toBeGreaterThan(support.y)
+    expect(layout.bounds.max[2]).toBeGreaterThan(support.y)
+    expect(instances).not.toHaveLength(0)
+    expect(
+      instances.some(({ from, to }) =>
+        Math.max(from[2], to[2]) > support.y,
+      ),
+    ).toBe(true)
+  })
+
   it('skips 開口補強筋 in the building view without failing the layout', () => {
     const wall = project.members.find(({ kind }) => kind === '耐震壁')!
     const reinforcement: Rebar = {
