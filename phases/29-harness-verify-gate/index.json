@@ -5,7 +5,10 @@
     {
       "step": 0,
       "name": "verify-gate-field",
-      "status": "pending"
+      "status": "completed",
+      "summary": "verify 스텝의 gate 필드 검증·반증 시 중단 및 phase refuted 전파를 구현하고 회귀·뮤테이션 검증을 완료했다.",
+      "completed_at": "2026-08-27T12:10:00+0900",
+      "started_at": "2026-08-27T12:05:41+0900"
     },
     {
       "step": 1,
@@ -19,5 +22,6 @@
       "name": "gate-docs",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-27T12:05:41+0900"
 }

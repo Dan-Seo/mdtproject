@@ -139,6 +139,7 @@ class StepExecutor:
 
     def run(self):
         self._print_header()
+        self._validate_gate_fields()
         self._check_blockers()
         self._checkout_branch()
         guardrails = self._load_guardrails()
@@ -224,7 +225,12 @@ class StepExecutor:
         for phase in top.get("phases", []):
             if phase.get("dir") == self._phase_dir_name:
                 phase["status"] = status
-                ts_key = {"completed": "completed_at", "error": "failed_at", "blocked": "blocked_at"}.get(status)
+                ts_key = {
+                    "completed": "completed_at",
+                    "refuted": "refuted_at",
+                    "error": "failed_at",
+                    "blocked": "blocked_at",
+                }.get(status)
                 if ts_key:
                     phase[ts_key] = ts
                 break
@@ -351,6 +357,16 @@ class StepExecutor:
         if self._auto_push:
             print(f"  Auto-push: enabled")
         print(f"{'='*60}")
+
+    def _validate_gate_fields(self):
+        index = self._read_json(self._index_file)
+        for step in index["steps"]:
+            if step.get("gate") is True and step.get("kind") != "verify":
+                print(
+                    f'  ERROR: "gate": true는 kind "verify" 스텝에서만 유효하다 '
+                    f'(step {step["step"]})'
+                )
+                sys.exit(1)
 
     def _check_blockers(self):
         index = self._read_json(self._index_file)
@@ -480,11 +496,35 @@ class StepExecutor:
 
             self._execute_single_step(pending, guardrails)
 
+            index = self._read_json(self._index_file)
+            finished = next(
+                (s for s in index["steps"] if s["step"] == step_num),
+                None,
+            )
+            remaining = [s["step"] for s in index["steps"] if s["status"] == "pending"]
+            if (
+                finished is not None
+                and finished["status"] == "refuted"
+                and finished.get("kind") == "verify"
+                and finished.get("gate") is True
+                and remaining
+            ):
+                print(
+                    f"  ⏹ Gate Step {step_num} refuted; "
+                    f"stopping before pending steps: {', '.join(str(step) for step in remaining)}"
+                )
+                return
+
     def _finalize(self):
         index = self._read_json(self._index_file)
         index["completed_at"] = self._stamp()
         self._write_json(self._index_file, index)
-        self._update_top_index("completed")
+        gate_refuted = any(
+            step.get("gate") is True and step.get("kind") == "verify" and step.get("status") == "refuted"
+            for step in index["steps"]
+        )
+        has_pending_steps = any(step.get("status") == "pending" for step in index["steps"])
+        self._update_top_index("refuted" if gate_refuted and has_pending_steps else "completed")
 
         self._run_git("add", "-A")
         if self._run_git("diff", "--cached", "--quiet").returncode != 0:
