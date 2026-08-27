@@ -674,6 +674,8 @@ function translate(point: Point3, offset: Point3): Point3 {
 interface PathSegment {
   from: Point3
   to: Point3
+  /** 135°フック余長 — 表示では clamp せず、始点の inset ぶんの平行移動で描く */
+  hookTail?: boolean
 }
 
 interface PathRun {
@@ -726,7 +728,7 @@ function pathRuns(rebar: Rebar): PathRun[] {
 
   if (rebar.hookTails !== undefined && rebar.points.length > 0) {
     for (const tail of rebar.hookTails) {
-      edges.push({ from: rebar.points[0], to: tail })
+      edges.push({ from: rebar.points[0], to: tail, hookTail: true })
     }
   }
 
@@ -760,6 +762,7 @@ function pathRuns(rebar: Rebar): PathRun[] {
         from: interpolate(edge.from, edge.to, (pathFrom - walked) / length),
         to: interpolate(edge.from, edge.to, (pathTo - walked) / length),
       }
+      if (edge.hookTail) segment.hookTail = true
       const zone = zoneAt(zones, (pathFrom + pathTo) / 2)
       const current = runs[runs.length - 1]
 
@@ -982,6 +985,18 @@ function rebarSegmentRuns(
     rebar.shape === 'hoop'
       ? hoopDisplayPoint(point, rebar.points, radius, section)
       : point
+  // 135°フック余長を端点ごとに clamp すると、角の始点だけ内側へ寄って
+  // 向き・長さが崩れ、誇張表示半径の辺チューブに埋もれる。始点が受ける
+  // inset と同じ平行移動を尾全体にかけ、加工形状の向き・長さを保つ。
+  const hookTailPoint = (point: Point3): Point3 => {
+    const origin = rebar.points[0]
+    const displayed = displayPoint(origin)
+    return [
+      point[0] + displayed[0] - origin[0],
+      point[1] + displayed[1] - origin[1],
+      point[2] + displayed[2] - origin[2],
+    ]
+  }
   const placements = rebarPlacements(rebar, section, radiusOf)
 
   return pathRuns(rebar).map(({ zone, segments }) => ({
@@ -990,9 +1005,9 @@ function rebarSegmentRuns(
     // ので、ここで切っても本数・質量は動かない (ADR-029)。
     segments: clipSegments(
       placements.flatMap((offset) =>
-        segments.map(({ from, to }) => ({
-          from: translate(displayPoint(from), offset),
-          to: translate(displayPoint(to), offset),
+        segments.map(({ from, to, hookTail }) => ({
+          from: translate(hookTail ? hookTailPoint(from) : displayPoint(from), offset),
+          to: translate(hookTail ? hookTailPoint(to) : displayPoint(to), offset),
           radius,
         })),
       ),

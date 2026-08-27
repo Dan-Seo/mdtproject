@@ -620,8 +620,16 @@ describe('rebarSegments', () => {
     for (const { from } of tails) {
       expectPointCloseTo(from, [62.4, 0, 62.4])
     }
-    expectPointCloseTo(tails[0].to, [140.4, 0, 62.4])
-    expectPointCloseTo(tails[1].to, [62.4, 0, 140.4])
+    // 꼬리는 clamp가 아니라 시작점 inset만큼의 평행이동으로 그린다 — clamp는
+    // 시작점만 안쪽으로 당겨 길이·방향이 왜곡되고, 과장 표시반경(22.4)의 변
+    // 튜브에 묻힌다. 그려진 꼬리 벡터가 도메인 꼬리 벡터와 같아야 한다.
+    for (const [index, { from, to }] of tails.entries()) {
+      const domainTail = hooked.hookTails![index]
+      expect(to[0] - from[0]).toBeCloseTo(domainTail[0] - hooked.points[0][0])
+      expect(to[2] - from[2]).toBeCloseTo(domainTail[2] - hooked.points[0][2])
+    }
+    expectPointCloseTo(tails[0].to, [162.8, 0, 84.8])
+    expectPointCloseTo(tails[1].to, [84.8, 0, 162.8])
 
     const batches = rebarBatches(
       [{ rowId: 'hooked-rectangle', rebar: hooked }],
@@ -1805,8 +1813,8 @@ describe('円形柱の配筋を円周に沿って描く', () => {
     const firstPlacement = segments.slice(0, circularHoop.points.length + 2)
     expect(segments).toHaveLength(936)
     expectPointCloseTo(firstPlacement.at(-2)!.from, [527.6, 0, 300])
-    expectPointCloseTo(firstPlacement.at(-2)!.to, [455.8460720184, 0, 326.1434496276])
+    expectPointCloseTo(firstPlacement.at(-2)!.to, [455.5373964641, 0, 329.8493077245])
     expectPointCloseTo(firstPlacement.at(-1)!.from, [527.6, 0, 300])
-    expectPointCloseTo(firstPlacement.at(-1)!.to, [455.8460720184, 0, 273.8565503724])
+    expectPointCloseTo(firstPlacement.at(-1)!.to, [455.5373964641, 0, 270.1506922755])
   })
 })
