@@ -227,27 +227,32 @@ describe('加工長 골든테스트 — 標準仕様書 5章の表から手で�
   })
 
   /**
-   * 期待値이 原文 준거값이 아닌 케이스는 그 사실과 차액을 대장에 적는다
-   * (quantity-r5-ch3.json 의 status 대장과 같은 방식). 차액이 맞아떨어지는지
-   * 여기서 확인해야 대장이 구현과 따로 놀지 않는다.
+   * 期待値가 原文 준거값이 아닌 케이스는 그 사실과 이유를 대장에 적는다.
+   * hookTails 실장 후에는 missingMm/withHookTailMm의 수치 대조 대상이 없으므로,
+   * 그 사실을 명시적으로 검사해 죽은 for 루프를 숨기지 않는다.
    */
-  it('原文과 어긋나는 케이스는 차액이 대장과 맞는다', () => {
+  it('keeps the remaining deviation ledger explicit', () => {
     const deviating = fixture.cases.filter(
       (testCase): testCase is Case & { deviation: Deviation } =>
         testCase.deviation !== undefined,
     )
 
     expect(deviating.length).toBeGreaterThan(0)
-    for (const testCase of deviating) {
-      expect(testCase.status, testCase.id).toBe('deviation-from-source')
-      if (!('missingMm' in testCase.deviation)) continue
-      const missingMm = testCase.deviation.missingMm
-      if (typeof missingMm !== 'number') continue
-      expect(
-        testCase.expectedFabricationLengthMm! + missingMm,
-        `${testCase.id} — ${testCase.deviation.note}`,
-      ).toBe(testCase.deviation.withHookTailMm)
-    }
+    expect(
+      deviating.every(({ status }) => status === 'deviation-from-source'),
+    ).toBe(true)
+
+    const numericallyComparable = deviating.filter(
+      ({ deviation }) =>
+        'missingMm' in deviation &&
+        'withHookTailMm' in deviation &&
+        typeof deviation.missingMm === 'number' &&
+        typeof deviation.withHookTailMm === 'number',
+    )
+    expect(
+      numericallyComparable,
+      '余長実装後に missingMm/withHookTailMm の旧対照を復活させない',
+    ).toHaveLength(0)
   })
 
   it.each(

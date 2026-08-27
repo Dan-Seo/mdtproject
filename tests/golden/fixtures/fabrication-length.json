@@ -267,8 +267,7 @@
       "status": "deviation-from-source",
       "deviation": {
         "term": "bendRadius",
-        "withHookTailMm": 2956,
-        "note": "Hook tails are now drawn: bend.hook135 6d × D13 ＝ 78mm at both ends. The remaining bend-radius extension is unresolved because the 表5.3.1 折曲げ図 is an image."
+        "note": "余長は実装済みで、bend.hook135 6d × D13 ＝ 78mmを両端に描く。表5.3.1 折曲げ図が画像のため、残る曲げ部の伸びは未確定。"
       },
       "expectedFabricationLengthMm": 2956
     },
@@ -630,8 +629,7 @@
       "status": "deviation-from-source",
       "deviation": {
         "term": "bendRadius",
-        "withHookTailMm": 2056,
-        "note": "Hook tails are now drawn: bend.hook135 6d × D13 ＝ 78mm at both ends. The remaining bend-radius extension is unresolved because the 表5.3.1 折曲げ図 is an image."
+        "note": "余長は実装済みで、bend.hook135 6d × D13 ＝ 78mmを両端に描く。表5.3.1 折曲げ図が画像のため、残る曲げ部の伸びは未確定。"
       },
       "expectedFabricationLengthMm": 2056
     },

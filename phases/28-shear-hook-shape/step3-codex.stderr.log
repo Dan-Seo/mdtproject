@@ -1,0 +1,12 @@
+2026-08-27T05:03:15.039028Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-27T05:03:15.185362Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-27T05:07:30.478146Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\golden\fabrication-length.test.ts:
+  /**
+   * ?잌푷?ㅼ씠 ?잍뻼 以嫄곌컪???꾨땶 耳?댁뒪??洹??ъ떎怨?李⑥븸????μ뿉 ?곷뒗??
+   * (quantity-r5-ch3.json ??status ??κ낵 媛숈? 諛⑹떇). 李⑥븸??留욎븘?⑥뼱吏?붿?
+   * ?ш린???뺤씤?댁빞 ??μ씠 援ы쁽怨??곕줈 ?吏 ?딅뒗??
+   */
+  it('?잍뻼怨??닿툔?섎뒗 耳?댁뒪??李⑥븸????κ낵 留욌뒗??, () => {
+    const deviating = fixture.cases.filter(
+      (testCase): testCase is Case & { deviation: Deviation } =>
+        testCase.deviation !== undefined,

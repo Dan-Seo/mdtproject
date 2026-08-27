@@ -31,7 +31,10 @@
     {
       "step": 3,
       "name": "note1-transcription-ledger",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T14:03:13+0900",
+      "summary": "表5.3.1 注1을 transcribed 전사하고 片持床板·壁自由端의 hookTails 비추정 골든 회귀와 R12/R4/M3c 대장을 갱신했다.",
+      "completed_at": "2026-08-27T14:14:29+0900"
     },
     {
       "step": 4,
