@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "note1-transcription-ledger",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 966.1303133999991,
+  "stdout_log": "phases\\28-shear-hook-shape\\step3-codex.stdout.log",
+  "stderr_log": "phases\\28-shear-hook-shape\\step3-codex.stderr.log"
+}
