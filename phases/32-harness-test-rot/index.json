@@ -7,7 +7,10 @@
       "name": "verify-rot-is-contract-drift",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:08:22+0900",
+      "completed_at": "2026-08-27T17:21:18+0900",
+      "summary": "하네스 테스트 8건과 stop-verify 형제 실패 2건을 반증 없이 재현하고 계약 부패·CI 미연결·vacuous pass를 확인했다."
     },
     {
       "step": 1,
