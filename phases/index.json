@@ -131,7 +131,8 @@
     },
     {
       "dir": "27-cantilever-slab",
-      "status": "pending"
+      "status": "error",
+      "failed_at": "2026-08-26T23:30:13+0900"
     }
   ]
 }

@@ -6,12 +6,17 @@
       "step": 0,
       "name": "verify-adr039-premises",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-26T23:18:13+0900",
+      "completed_at": "2026-08-26T23:30:00+0900",
+      "summary": "ADR-039의 l3-cell-structure 전제를 반증했다. 表5.3.4 L3 スラブ欄은 단일 병합 셀이고 괄호의 25d는 10dかつ150mm以上 전체의 예외값이므로 150mm가 독립 하한으로 딸리지 않는다. 대상 코드는 수정하지 않았고 step 1은 진행하면 안 된다.",
+      "refuted_at": "2026-08-26T23:30:12+0900"
     },
     {
       "step": 1,
       "name": "cantilever-domain-rulepack-golden",
-      "status": "pending"
+      "status": "pending",
+      "failed_at": "2026-08-26T23:30:13+0900"
     },
     {
       "step": 2,
@@ -23,5 +28,6 @@
       "name": "ledger-corrections",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-26T23:18:13+0900"
 }

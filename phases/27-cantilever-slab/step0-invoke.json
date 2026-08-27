@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "verify-adr039-premises",
+  "exitCode": 1073807364,
+  "timedOut": false,
+  "elapsed": 718.9125361000188,
+  "stdout_log": "phases\\27-cantilever-slab\\step0-codex.stdout.log",
+  "stderr_log": "phases\\27-cantilever-slab\\step0-codex.stderr.log"
+}
