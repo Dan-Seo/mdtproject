@@ -487,6 +487,28 @@ class StepExecutor:
                 print("\n  All steps completed!")
                 return
 
+            # 게이트 반증은 같은 실행 안에서만이 아니라 재기동 후에도 뒤 스텝을
+            # 막아야 한다 — index에 남은 반증을 스텝 실행 전에 본다. 실행 후에만
+            # 보면 refuted가 저장된 채 execute.py를 다시 띄웠을 때 뒤 스텝이 돈다.
+            refuted_gate = next(
+                (
+                    s
+                    for s in index["steps"]
+                    if s.get("gate") is True
+                    and s.get("kind") == "verify"
+                    and s["status"] == "refuted"
+                    and s["step"] < pending["step"]
+                ),
+                None,
+            )
+            if refuted_gate is not None:
+                remaining = [s["step"] for s in index["steps"] if s["status"] == "pending"]
+                print(
+                    f"  ⏹ Gate Step {refuted_gate['step']} refuted; "
+                    f"stopping before pending steps: {', '.join(str(step) for step in remaining)}"
+                )
+                return
+
             step_num = pending["step"]
             for s in index["steps"]:
                 if s["step"] == step_num and "started_at" not in s:
@@ -495,25 +517,6 @@ class StepExecutor:
                     break
 
             self._execute_single_step(pending, guardrails)
-
-            index = self._read_json(self._index_file)
-            finished = next(
-                (s for s in index["steps"] if s["step"] == step_num),
-                None,
-            )
-            remaining = [s["step"] for s in index["steps"] if s["status"] == "pending"]
-            if (
-                finished is not None
-                and finished["status"] == "refuted"
-                and finished.get("kind") == "verify"
-                and finished.get("gate") is True
-                and remaining
-            ):
-                print(
-                    f"  ⏹ Gate Step {step_num} refuted; "
-                    f"stopping before pending steps: {', '.join(str(step) for step in remaining)}"
-                )
-                return
 
     def _finalize(self):
         index = self._read_json(self._index_file)
