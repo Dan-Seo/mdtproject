@@ -9,7 +9,7 @@
 - 표·조항 단위: 8
 - 단발항: 17
 - 기존 재대조 표식: 77칸
-- source.verifications の既存再対照（by=agent）は転写者と同じ人格による2回目の読みであり、独立検討ではない。
+- source.verifications의 기존 재대조 표식은 전사자와 같은 인격에 의한 2회째 읽기이며, 독립 검토가 아니다.
 
 ## 검토 순서
 
@@ -26,13 +26,13 @@
 
 | 원문 부재帯 | 나머지 조건 | 값 |
 |---|---|---:|
-| 柱・大梁・耐震壁 | [["exposure","屋内"],["finish","仕上げあり"],["soilContact",false]] | △ 30 mm [transcribed] |
-| 柱・大梁・耐震壁 | [["exposure","屋内"],["finish","仕上げなし"],["soilContact",false]] | △ 30 mm [transcribed] |
-| 柱・大梁・耐震壁 | [["exposure","屋外"],["finish","仕上げあり"],["soilContact",false]] | △ 30 mm [transcribed] |
-| 柱・大梁・耐震壁 | [["exposure","屋外"],["finish","仕上げなし"],["soilContact",false]] | △ 40 mm [transcribed] |
-| 柱・大梁・耐震壁 | [["soilContact",true]] | △ 40 mm [transcribed] |
-| 床板・雑壁 | [["finish","仕上げあり"],["soilContact",false]] | △ 20 mm [transcribed] |
-| 床板・雑壁 | [["finish","仕上げなし"],["soilContact",false]] | △ 30 mm [transcribed] |
+| 柱・大梁・耐震壁 | 屋内・仕上げあり | △ 30 mm [transcribed] |
+| 柱・大梁・耐震壁 | 屋内・仕上げなし | △ 30 mm [transcribed] |
+| 柱・大梁・耐震壁 | 屋外・仕上げあり | △ 30 mm [transcribed] |
+| 柱・大梁・耐震壁 | 屋外・仕上げなし | △ 40 mm [transcribed] |
+| 柱・大梁・耐震壁 | 土に接する部分 | △ 40 mm [transcribed] |
+| 床板・雑壁 | 仕上げあり | △ 20 mm [transcribed] |
+| 床板・雑壁 | 仕上げなし | △ 30 mm [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -43,11 +43,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 50 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 50 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 45 d [transcribed]* | △ 40 d [transcribed]* | △ 35 d [transcribed]* | △ 35 d [transcribed]* |
+| SD345 | △ 50 d [transcribed]* | △ 45 d [transcribed]* | △ 40 d [transcribed]* | △ 35 d [transcribed]* |
+| SD390 | — 결번 | △ 50 d [transcribed]* | △ 45 d [transcribed]* | △ 40 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: anchorage.L1: SD390 × Fc18
 
 ### 表5.3.4 — `anchorage.L2`
@@ -57,11 +59,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 40 d [transcribed]* | △ 35 d [transcribed]* | △ 30 d [transcribed]* | △ 30 d [transcribed]* |
+| SD345 | △ 40 d [transcribed]* | △ 35 d [transcribed]* | △ 35 d [transcribed]* | △ 30 d [transcribed]* |
+| SD390 | — 결번 | △ 40 d [transcribed]* | △ 40 d [transcribed]* | △ 35 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: anchorage.L2: SD390 × Fc18
 
 ### 表5.3.4 — `anchorage.L1h`
@@ -71,11 +75,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 35 d [transcribed]* | △ 30 d [transcribed]* | △ 25 d [transcribed]* | △ 25 d [transcribed]* |
+| SD345 | △ 35 d [transcribed]* | △ 30 d [transcribed]* | △ 30 d [transcribed]* | △ 25 d [transcribed]* |
+| SD390 | — 결번 | △ 35 d [transcribed]* | △ 35 d [transcribed]* | △ 30 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: anchorage.L1h: SD390 × Fc18
 
 ### 表5.3.4 — `anchorage.L2h`
@@ -85,11 +91,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 30 d [transcribed]* | △ 25 d [transcribed]* | △ 20 d [transcribed]* | △ 20 d [transcribed]* |
+| SD345 | △ 30 d [transcribed]* | △ 25 d [transcribed]* | △ 25 d [transcribed]* | △ 20 d [transcribed]* |
+| SD390 | — 결번 | △ 30 d [transcribed]* | △ 30 d [transcribed]* | △ 25 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: anchorage.L2h: SD390 × Fc18
 
 ### 表5.3.5 — `anchorage.La`
@@ -99,11 +107,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 15 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 15 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 15 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 15 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 20 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 20 d [transcribed]* | △ 15 d [transcribed]* | △ 15 d [transcribed]* | △ 15 d [transcribed]* |
+| SD345 | △ 20 d [transcribed]* | △ 20 d [transcribed]* | △ 20 d [transcribed]* | △ 15 d [transcribed]* |
+| SD390 | — 결번 | △ 20 d [transcribed]* | △ 20 d [transcribed]* | △ 20 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: anchorage.La: SD390 × Fc18
 
 ### 表5.3.4 — `anchorage.L3`
@@ -113,8 +123,8 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["member","スラブ"]] | △ 10 d [transcribed] |
-| [["member","片持スラブ"]] | △ 25 d [transcribed] |
+| スラブ | △ 10 d [transcribed] |
+| 片持スラブ | △ 25 d [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -125,7 +135,7 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["member","スラブ"]] | △ 150 mm [transcribed] |
+| スラブ | △ 150 mm [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -150,11 +160,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 50 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 50 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 45 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 40 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 45 d [transcribed]* | △ 40 d [transcribed]* | △ 35 d [transcribed]* | △ 35 d [transcribed]* |
+| SD345 | △ 50 d [transcribed]* | △ 45 d [transcribed]* | △ 40 d [transcribed]* | △ 35 d [transcribed]* |
+| SD390 | — 결번 | △ 50 d [transcribed]* | △ 45 d [transcribed]* | △ 40 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: lap.L1: SD390 × Fc18
 
 ### 表5.3.2 — `lap.L1h`
@@ -164,11 +176,13 @@
 
 | grade \ Fc帯 | Fc18 | Fc21 | Fc24、27 | Fc30、33、36 |
 |---|---:|---:|---:|---:|
-| SD295 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD345 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 25 d [transcribed] ※既存再対照（agent・独立検討ではない） |
-| SD390 | — 결번 | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 35 d [transcribed] ※既存再対照（agent・独立検討ではない） | △ 30 d [transcribed] ※既存再対照（agent・独立検討ではない） |
+| SD295 | △ 35 d [transcribed]* | △ 30 d [transcribed]* | △ 25 d [transcribed]* | △ 25 d [transcribed]* |
+| SD345 | △ 35 d [transcribed]* | △ 30 d [transcribed]* | △ 30 d [transcribed]* | △ 25 d [transcribed]* |
+| SD390 | — 결번 | △ 35 d [transcribed]* | △ 35 d [transcribed]* | △ 30 d [transcribed]* |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
+
+※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.
 결번: lap.L1h: SD390 × Fc18
 
 ### 表5.3.1 — `bend.inside-diameter`
@@ -191,7 +205,7 @@
 
 | 조건 | 값 |
 |---|---:|
-| [] | △ 4 d [transcribed] |
+| なし | △ 4 d [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -202,7 +216,7 @@
 
 | 조건 | 값 |
 |---|---:|
-| [] | △ 6 d [transcribed] |
+| なし | △ 6 d [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -213,7 +227,7 @@
 
 | 조건 | 값 |
 |---|---:|
-| [] | △ 8 d [transcribed] |
+| なし | △ 8 d [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -224,7 +238,7 @@
 
 | 조건 | 값 |
 |---|---:|
-| [] | △ 4 d [transcribed] |
+| なし | △ 4 d [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -247,9 +261,9 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["band",1]] | △ 0.5 箇所 [transcribed] |
-| [["band",2]] | △ 1 箇所 [transcribed] |
-| [["band",3]] | △ 2 箇所 [transcribed] |
+| 区分1 | △ 0.5 箇所 [transcribed] |
+| 区分2 | △ 1 箇所 [transcribed] |
+| 区分3 | △ 2 箇所 [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -260,8 +274,8 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["band",1]] | △ 5000 mm [transcribed] |
-| [["band",2]] | △ 10000 mm [transcribed] |
+| 区分1 | △ 5000 mm [transcribed] |
+| 区分2 | △ 10000 mm [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -272,9 +286,9 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["band",1]] | △ 0.5 箇所 [transcribed] |
-| [["band",2]] | △ 1 箇所 [transcribed] |
-| [["band",3]] | △ 1.5 箇所 [transcribed] |
+| 区分1 | △ 0.5 箇所 [transcribed] |
+| 区分2 | △ 1 箇所 [transcribed] |
+| 区分3 | △ 1.5 箇所 [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -285,9 +299,9 @@
 
 | 조건 | 값 |
 |---|---:|
-| [["band",1]] | △ 4500 mm [transcribed] |
-| [["band",2]] | △ 9000 mm [transcribed] |
-| [["band",3]] | △ 13500 mm [transcribed] |
+| 区分1 | △ 4500 mm [transcribed] |
+| 区分2 | △ 9000 mm [transcribed] |
+| 区分3 | △ 13500 mm [transcribed] |
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 
@@ -295,23 +309,23 @@
 
 표·조항帯로 되접지 않는 항은 한 줄씩 검토한다.
 
-- `cover.fabrication.addition` — 10 mm / 조건 [] / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.5(2) / 인쇄쪽 33쪽
-- `anchorage.bent.tail.minimum` — 8 d / 조건 [] / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(5)(ｲ)(b) / 인쇄쪽 31쪽
-- `anchorage.bent.projection.minimum` — 0.75 ratio / 조건 [["detail","梁主筋の柱内定着"]] / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(5)(ｲ)(c) / 인쇄쪽 31쪽
-- `lap.wall.minimum` — 40 d / 조건 [] / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(3)(ｱ) / 인쇄쪽 28쪽
-- `markup.rate` — 0.04 ratio / 조건 [["memberClass","躯体"]] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則9) / 인쇄쪽 15쪽
-- `measure.hoop.length.addition` — 0 mm / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則2) / 인쇄쪽 15쪽
-- `measure.width-tie.length.addition` — 0 mm / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則3) / 인쇄쪽 15쪽
-- `measure.distribution.addition` — 1 本 / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則7) / 인쇄쪽 15쪽
-- `measure.tip.length.addition` — 0 mm / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則1) / 인쇄쪽 15쪽
-- `measure.opening.deduction.minimum.area` — 0.5 ㎡ / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則8) / 인쇄쪽 15쪽
-- `measure.splice.column` — 1 箇所 / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（２）柱2) / 인쇄쪽 16쪽
-- `measure.splice.length.factor` — 1 ratio / 조건 [["method","重ね継手"]] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則5)・6) / 인쇄쪽 15쪽
-- `measure.splice.length.factor` — 0 ratio / 조건 [["method","ガス圧接"]] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則5) / 인쇄쪽 15쪽
-- `measure.splice.length.factor` — 0 ratio / 조건 [["method","機械式"]] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則4)・5) / 인쇄쪽 15쪽
-- `measure.splice.length.factor` — 0 ratio / 조건 [["method","溶接"]] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則4)・5) / 인쇄쪽 15쪽
-- `measure.splice.wall.vertical` — 1 箇所 / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（５）壁1)② / 인쇄쪽 17쪽
-- `measure.splice.wall.opening` — 0 箇所 / 조건 [] / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（５）壁1)② / 인쇄쪽 17쪽
+- `cover.fabrication.addition` — 10 mm / 조건 なし / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.5(2) / 인쇄쪽 33쪽
+- `anchorage.bent.tail.minimum` — 8 d / 조건 なし / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(5)(ｲ)(b) / 인쇄쪽 31쪽
+- `anchorage.bent.projection.minimum` — 0.75 ratio / 조건 梁主筋の柱内定着 / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(5)(ｲ)(c) / 인쇄쪽 31쪽
+- `lap.wall.minimum` — 40 d / 조건 なし / 출처: 公共建築工事標準仕様書（建築工事編）・令和7年版（最終改定 令和7年5月12日） / 5.3.4(3)(ｱ) / 인쇄쪽 28쪽
+- `markup.rate` — 0.04 ratio / 조건 躯体 / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則9) / 인쇄쪽 15쪽
+- `measure.hoop.length.addition` — 0 mm / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則2) / 인쇄쪽 15쪽
+- `measure.width-tie.length.addition` — 0 mm / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則3) / 인쇄쪽 15쪽
+- `measure.distribution.addition` — 1 本 / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則7) / 인쇄쪽 15쪽
+- `measure.tip.length.addition` — 0 mm / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則1) / 인쇄쪽 15쪽
+- `measure.opening.deduction.minimum.area` — 0.5 ㎡ / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則8) / 인쇄쪽 15쪽
+- `measure.splice.column` — 1 箇所 / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（２）柱2) / 인쇄쪽 16쪽
+- `measure.splice.length.factor` — 1 ratio / 조건 重ね継手 / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則5)・6) / 인쇄쪽 15쪽
+- `measure.splice.length.factor` — 0 ratio / 조건 ガス圧接 / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則5) / 인쇄쪽 15쪽
+- `measure.splice.length.factor` — 0 ratio / 조건 機械式 / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則4)・5) / 인쇄쪽 15쪽
+- `measure.splice.length.factor` — 0 ratio / 조건 溶接 / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 1通則4)・5) / 인쇄쪽 15쪽
+- `measure.splice.wall.vertical` — 1 箇所 / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（５）壁1)② / 인쇄쪽 17쪽
+- `measure.splice.wall.opening` — 0 箇所 / 조건 なし / 출처: 公共建築数量積算基準・令和5年3月29日改定（国営積第8号） / 第4編第3章第2節 2（５）壁1)② / 인쇄쪽 17쪽
 
 > 회신란: 전 칸 일치 / 불일치(칸을 적음). 재대조 표식이 있어도 회신 대상에서 제외하지 않는다.
 

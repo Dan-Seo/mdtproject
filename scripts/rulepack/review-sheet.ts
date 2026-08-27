@@ -126,7 +126,7 @@ const VERIFIED_KEYS_BY_TABLE: Readonly<Record<string, readonly string[]>> = {
 }
 
 const VERIFICATION_NOTE =
-  'source.verifications の既存再対照（by=agent）は転写者と同じ人格による2回目の読みであり、独立検討ではない。'
+  'source.verifications의 기존 재대조 표식은 전사자와 같은 인격에 의한 2회째 읽기이며, 독립 검토가 아니다.'
 
 function sourceSignature(source: ResolvedSource): string {
   return JSON.stringify([
@@ -635,8 +635,51 @@ function formatValue(entry: RuleEntry): string {
   return `${String(entry.value)} ${entry.unit}`
 }
 
+function formatConditionValue(name: string, value: Primitive): string | undefined {
+  if (name === 'soilContact') return value === true ? '土に接する部分' : undefined
+  if (name === 'hook') return value === true ? 'フックあり' : 'フックなし'
+  if (name === 'fc') return `Fc${String(value)}`
+  if (name === 'band') return `区分${String(value)}`
+  return String(value)
+}
+
 function formatConditions(conditions: Record<string, unknown>): string {
-  return conditionSignature(conditions).replaceAll('|', '\\|')
+  const values = Object.entries(conditions)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, value]) => {
+      if (
+        typeof value !== 'string' &&
+        typeof value !== 'number' &&
+        typeof value !== 'boolean'
+      ) {
+        return undefined
+      }
+      return formatConditionValue(name, value)
+    })
+    .filter((value): value is string => value !== undefined)
+
+  return values.length > 0 ? values.join('・').replaceAll('|', '\\|') : 'なし'
+}
+
+function formatConditionSignature(signature: string): string {
+  const parsed = JSON.parse(signature) as unknown
+  if (!Array.isArray(parsed)) throw new Error('조건 서명이 배열이 아닙니다')
+
+  const conditions: Record<string, Primitive> = {}
+  for (const pair of parsed) {
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      (typeof pair[1] !== 'string' &&
+        typeof pair[1] !== 'number' &&
+        typeof pair[1] !== 'boolean')
+    ) {
+      throw new Error('조건 서명이 조건 쌍이 아닙니다')
+    }
+    conditions[pair[0]] = pair[1]
+  }
+  return formatConditions(conditions)
 }
 
 function confidenceLabel(cells: readonly FoldedCell[]): string {
@@ -655,11 +698,12 @@ function confidenceMark(confidence: string): string {
 
 function cellValue(cell: FoldedCell): string {
   const confidence = confidenceLabel([cell])
-  const marker = cell.verification
-    ? ' ※既存再対照（agent・独立検討ではない）'
-    : ''
+  const marker = cell.verification ? '*' : ''
   return `${confidenceMark(confidence)} ${formatValue(cell.representative)} [${confidence}]${marker}`
 }
+
+const VERIFICATION_FOOTNOTE =
+  '※既存再対照: source.verifications에 기록된 기존 재대조다. 전사자와 같은 인격의 2회째 읽기이므로 독립 검토가 아니다. 이 표식이 있는 칸도 회신 대상에서 제외하지 않는다.'
 
 function sourceLine(group: FoldedGroup): string {
   const { source } = group
@@ -734,7 +778,7 @@ function renderMemberGroup(group: FoldedGroup): string[] {
     '|---|---|---:|',
     ...group.cells.map(
       (cell) =>
-        `| ${String(cell.displayConditions.memberKinds)} | ${String(cell.displayConditions.conditions)} | ${cellValue(cell)} |`,
+        `| ${String(cell.displayConditions.memberKinds)} | ${formatConditionSignature(String(cell.displayConditions.conditions))} | ${cellValue(cell)} |`,
     ),
   ]
 }
@@ -764,6 +808,9 @@ function renderGroup(group: FoldedGroup): string[] {
   else if (group.kind === 'member-kind') lines.push(...renderMemberGroup(group))
   else lines.push(...renderGenericGroup(group))
   lines.push('', replyLine())
+  if (group.cells.some((cell) => cell.verification)) {
+    lines.push('', VERIFICATION_FOOTNOTE)
+  }
   if (group.missingCells.length > 0) {
     lines.push(`결번: ${group.missingCells.join(' / ')}`)
   }
@@ -802,14 +849,18 @@ export function renderReviewSheet(pack: RulePack): string {
   }
 
   lines.push('## 단발항', '', '표·조항帯로 되접지 않는 항은 한 줄씩 검토한다.', '')
+  let hasVerifiedSingleton = false
   for (const group of sheet.groups.filter((candidate) => candidate.kind === 'single')) {
     const cell = group.cells[0]
     if (!cell) continue
+    if (cell.verification) hasVerifiedSingleton = true
     lines.push(
-      `- \`${group.key}\` — ${formatValue(cell.representative)} / 조건 ${formatConditions(cell.representative.conditions)} / ${sourceLine(group)}${cell.verification ? ' / ※既存再対照（agent・独立検討ではない）' : ''}`,
+      `- \`${group.key}\` — ${formatValue(cell.representative)} / 조건 ${formatConditions(cell.representative.conditions)} / ${sourceLine(group)}${cell.verification ? ' / *' : ''}`,
     )
   }
-  lines.push('', replyLine(), '')
+  lines.push('', replyLine())
+  if (hasVerifiedSingleton) lines.push('', VERIFICATION_FOOTNOTE)
+  lines.push('')
 
   if (sheet.missingCells.length > 0) {
     lines.push('## 결번 대장', '', ...sheet.missingCells.map((missing) => `- ${missing}`), '')

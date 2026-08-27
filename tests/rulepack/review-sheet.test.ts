@@ -70,12 +70,22 @@ describe('룰팩 원문 표 단위 대조 시트', () => {
     const sheet = foldRulePack(jpMlitRulePack)
 
     expect(sheet.verification.reviewCellCount).toBe(77)
-    expect(sheet.verification.note).toContain('独立検討ではない')
+    expect(sheet.verification.note).toContain('독립 검토가 아니다')
 
     const markdown = renderReviewSheet(jpMlitRulePack)
     expect(markdown).toContain('전 칸 일치 / 불일치(칸을 적음)')
     expect(markdown).toContain('재대조 표식이 있어도 회신 대상에서 제외하지 않는다')
     expect(markdown).toContain('measure.splice.interval')
+    expect(markdown).toContain('※既存再対照:')
+    expect(markdown).toContain('독립 검토가 아니다')
+    expect(markdown).toContain('屋内・仕上げあり')
+
+    const tableRows = markdown
+      .split('\n')
+      .filter((line) => line.startsWith('|'))
+    expect(tableRows.some((line) => line.includes('※既存再対照'))).toBe(false)
+    expect(markdown).not.toContain('[[')
+    expect((markdown.match(/\[transcribed\]\*/g) ?? []).length).toBe(77)
   })
 
   it('renders deterministically and keeps the quantity interval at two cells', () => {
