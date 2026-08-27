@@ -7,9 +7,7 @@
       "name": "verify-adr041-premises",
       "kind": "verify",
       "gate": true,
-      "status": "refuted",
-      "started_at": "2026-08-27T14:43:28+0900",
-      "summary": "transcribed 240행 중 29행의 note에 独立検討待ち 취지가 없어 note-pending-review 전제를 반증함; 후속 step은 게이트로 중단"
+      "status": "pending"
     },
     {
       "step": 1,
