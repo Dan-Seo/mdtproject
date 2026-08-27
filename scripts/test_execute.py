@@ -188,7 +188,7 @@ class TestLoadGuardrails:
             phases_dir.mkdir(parents=True)
             idx = {"project": "T", "phase": "t", "steps": []}
             (phases_dir / "index.json").write_text(json.dumps(idx))
-            inst = ex.StepExecutor.__new__(ex.StepExecutor)
+            inst = ex.StepExecutor("dummy", root=tmp_path)
             result = inst._load_guardrails()
         assert result == ""
 
@@ -425,13 +425,14 @@ class TestCommitStep:
 
 class TestInvokeCodex:
     def test_invokes_codex_with_correct_args(self, executor):
-        mock_result = MagicMock(returncode=0, stdout='{"result": "ok"}', stderr="")
         step = {"step": 2, "name": "ui"}
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
+        with patch.object(ex, "run_codex_process", return_value={
+            "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+        }) as mock_run:
             executor._invoke_codex(step, "PREAMBLE\n")
 
-        cmd = mock_run.call_args[0][0]
+        cmd = mock_run.call_args.args[0]
         assert os.path.basename(cmd[0]).lower().startswith("codex")
         assert cmd[1] == "exec"
         assert "--dangerously-bypass-approvals-and-sandbox" in cmd
@@ -440,63 +441,68 @@ class TestInvokeCodex:
     def test_resolves_executable_through_pathext(self, executor):
         """Windows에서 codex는 npm이 깐 셔뱅(codex.CMD)이다. CreateProcess는 PATHEXT를
         적용하지 않으므로 이름만 넘기면 FileNotFoundError로 죽는다."""
-        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
         step = {"step": 2, "name": "ui"}
         resolved = r"C:\Users\x\AppData\Roaming\npm\codex.CMD"
 
         with patch("shutil.which", return_value=resolved) as mock_which, \
-             patch("subprocess.run", return_value=mock_result) as mock_run:
+             patch.object(ex, "run_codex_process", return_value={
+                 "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+             }) as mock_run:
             executor._invoke_codex(step, "preamble")
 
         mock_which.assert_called_once_with("codex")
-        assert mock_run.call_args[0][0][0] == resolved
+        assert mock_run.call_args.args[0][0] == resolved
 
     def test_falls_back_to_bare_name_when_not_resolvable(self, executor):
         """PATH에 없으면 이름 그대로 넘겨 codex가 없다는 에러가 그대로 드러나게 한다."""
-        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
         step = {"step": 2, "name": "ui"}
 
         with patch("shutil.which", return_value=None), \
-             patch("subprocess.run", return_value=mock_result) as mock_run:
+             patch.object(ex, "run_codex_process", return_value={
+                 "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+             }) as mock_run:
             executor._invoke_codex(step, "preamble")
 
-        assert mock_run.call_args[0][0][0] == "codex"
+        assert mock_run.call_args.args[0][0] == "codex"
 
     def test_hooks_are_not_skipped(self, executor):
         """.codex/hooks.json은 파일이 바뀔 때마다 untrusted로 돌아간다.
         trust를 우회하지 않으면 하네스 실행에서 TDD 가드가 조용히 안 걸린다."""
-        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
         step = {"step": 2, "name": "ui"}
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
+        with patch.object(ex, "run_codex_process", return_value={
+            "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+        }) as mock_run:
             executor._invoke_codex(step, "preamble")
 
-        assert "--dangerously-bypass-hook-trust" in mock_run.call_args[0][0]
+        assert "--dangerously-bypass-hook-trust" in mock_run.call_args.args[0]
 
     def test_prompt_goes_through_stdin(self, executor):
         """가드레일(AGENTS.md + docs/*.md)이 수만 자라 argv로는 Windows 길이 제한에 걸린다."""
-        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
         step = {"step": 2, "name": "ui"}
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
+        with patch.object(ex, "run_codex_process", return_value={
+            "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+        }) as mock_run:
             executor._invoke_codex(step, "PREAMBLE\n")
 
-        cmd = mock_run.call_args[0][0]
+        cmd = mock_run.call_args.args[0]
         assert cmd[-1] == "-"
-        stdin_text = mock_run.call_args[1]["input"]
+        stdin_text = mock_run.call_args.args[1]
         assert "PREAMBLE" in stdin_text
         assert "UI를 구현하세요" in stdin_text
 
-    def test_saves_output_json(self, executor):
-        mock_result = MagicMock(returncode=0, stdout='{"ok": true}', stderr="")
+    def test_saves_invoke_metadata(self, executor):
         step = {"step": 2, "name": "ui"}
 
-        with patch("subprocess.run", return_value=mock_result):
+        with patch.object(ex, "run_codex_process", return_value={
+            "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+        }):
             executor._invoke_codex(step, "preamble")
 
-        output_file = executor._phase_dir / "step2-output.json"
-        assert output_file.exists()
-        data = json.loads(output_file.read_text(encoding="utf-8"))
+        # InvokeArtifactTests already owns the artifact filename and legacy-output absence checks.
+        invoke_file = executor._phase_dir / "step2-invoke.json"
+        data = json.loads(invoke_file.read_text(encoding="utf-8"))
         assert data["step"] == 2
         assert data["name"] == "ui"
         assert data["exitCode"] == 0
@@ -508,13 +514,14 @@ class TestInvokeCodex:
         assert exc_info.value.code == 1
 
     def test_timeout_is_1800(self, executor):
-        mock_result = MagicMock(returncode=0, stdout="{}", stderr="")
         step = {"step": 2, "name": "ui"}
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
+        with patch.object(ex, "run_codex_process", return_value={
+            "exitCode": 0, "timedOut": False, "elapsed": 0.01,
+        }) as mock_run:
             executor._invoke_codex(step, "preamble")
 
-        assert mock_run.call_args[1]["timeout"] == 1800
+        assert mock_run.call_args.args[4] == 1800
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,112 @@
+{
+  "phase": "32-harness-test-rot",
+  "step": 1,
+  "name": "repair-rotted-tests",
+  "scope_note": "The repair set is 8 tests in test_execute.py plus 4 tests in test_stop_verify.py; all 12 are listed here.",
+  "changes": [
+    {
+      "test": "TestInvokeCodex.test_invokes_codex_with_correct_args",
+      "before": "Patched subprocess.run, which is not the Codex invocation path.",
+      "after": "Patches execute.run_codex_process and inspects the command argv directly.",
+      "mutation": "Replaced --json with --mutated-json in execute.py.",
+      "mutation_result": "failed as expected: AssertionError: assert '--json' in cmd"
+    },
+    {
+      "test": "TestInvokeCodex.test_resolves_executable_through_pathext",
+      "before": "Expected a subprocess.run call and therefore did not observe the Popen-backed path.",
+      "after": "Patches run_codex_process and verifies shutil.which('codex') and the resolved executable in argv.",
+      "mutation": "Removed the shutil.which result and forced the bare codex name.",
+      "mutation_result": "failed as expected: Expected 'which' to be called once. Called 0 times."
+    },
+    {
+      "test": "TestInvokeCodex.test_falls_back_to_bare_name_when_not_resolvable",
+      "before": "Patched subprocess.run and asserted against a call that no longer occurs.",
+      "after": "Patches run_codex_process and verifies the bare codex fallback in argv.",
+      "mutation": "Changed the fallback from codex to mutated-codex.",
+      "mutation_result": "failed as expected: assert 'mutated-codex' == 'codex'"
+    },
+    {
+      "test": "TestInvokeCodex.test_hooks_are_not_skipped",
+      "before": "Patched subprocess.run instead of the current process wrapper.",
+      "after": "Patches run_codex_process and verifies --dangerously-bypass-hook-trust in argv.",
+      "mutation": "Replaced --dangerously-bypass-hook-trust with --mutated-hook-trust.",
+      "mutation_result": "failed as expected: AssertionError: assert '--dangerously-bypass-hook-trust' in cmd"
+    },
+    {
+      "test": "TestInvokeCodex.test_prompt_goes_through_stdin",
+      "before": "Read input from subprocess.run kwargs, although the wrapper uses communicate(input=...).",
+      "after": "Verifies the final '-' argv marker and the prompt positional argument passed to run_codex_process.",
+      "mutation": "Changed the final '-' argv marker to --prompt.",
+      "mutation_result": "failed as expected: AssertionError: assert '--prompt' == '-'"
+    },
+    {
+      "test": "TestInvokeCodex.test_saves_invoke_metadata",
+      "before": "test_saves_output_json expected the removed step2-output.json artifact.",
+      "after": "Reads step2-invoke.json and retains the non-overlapping step, name, and exitCode checks. InvokeArtifactTests owns the artifact filename and legacy-output absence checks.",
+      "mutation": "Changed execute.py to write step{N}-output.json instead of step{N}-invoke.json.",
+      "mutation_result": "failed as expected: FileNotFoundError for step2-invoke.json"
+    },
+    {
+      "test": "TestLoadGuardrails.test_empty_project",
+      "before": "Used StepExecutor.__new__, so _load_guardrails could not access the initialized root path.",
+      "after": "Creates a real StepExecutor('dummy', root=tmp_path) against an empty temporary project and preserves the empty-string assertion.",
+      "mutation": "Changed the empty guardrail return from an empty string to mutated guardrails.",
+      "mutation_result": "failed as expected: assert 'mutated guardrails' == ''"
+    },
+    {
+      "test": "TestInvokeCodex.test_timeout_is_1800",
+      "before": "Asserted a timeout kwarg on subprocess.run, which no longer owns the timeout.",
+      "after": "Asserts positional timeout argument 1800 on run_codex_process.",
+      "mutation": "Changed the timeout argument passed to run_codex_process from 1800 to 1799.",
+      "mutation_result": "failed as expected: assert 1799 == 1800"
+    },
+    {
+      "test": "TestVerification.test_success_emits_nothing",
+      "before": "The temporary project had no node_modules, so the hook exited before validation.",
+      "after": "The project fixture creates node_modules and write_package_json supplies lint, typecheck, build, and test scripts; the success path is exercised.",
+      "mutation": "Added broken success output before the hook's successful exit.",
+      "mutation_result": "failed as expected: assert 'broken success output' == ''"
+    },
+    {
+      "test": "TestVerification.test_failure_emits_block_json",
+      "before": "The missing dependency/script precondition caused early exit instead of block JSON.",
+      "after": "The real validation path runs and the existing decision == block assertion is preserved.",
+      "mutation": "Changed the failure decision JSON from block to allow.",
+      "mutation_result": "failed as expected: assert 'allow' == 'block'"
+    },
+    {
+      "test": "TestVerification.test_failure_reason_carries_npm_output",
+      "before": "The test did not reach npm output collection because the dependency guard exited first.",
+      "after": "The fixture reaches npm, and the existing LINT_OUTPUT_MARKER assertion remains unchanged.",
+      "mutation": "Replaced the captured failure tail with mutated failure output.",
+      "mutation_result": "failed as expected: assert 'LINT_OUTPUT_MARKER' in reason"
+    },
+    {
+      "test": "TestVerification.test_stdout_never_leaks_plain_text",
+      "before": "The empty stdout assertion could pass solely because of the dependency guard's early exit.",
+      "after": "The fixture reaches the successful hook path and still rejects non-JSON stdout if any is emitted.",
+      "mutation": "Added plain text to the successful hook path.",
+      "mutation_result": "failed as expected: JSONDecodeError: Expecting value"
+    }
+  ],
+  "removed_assertions": [],
+  "verification": {
+    "mutation_runs": "All 12 listed repaired contracts were exercised with an intentional mutation where applicable; every mutation failed its target test, and every mutation was reverted.",
+    "pytest_scripts": {
+      "command": "python -m pytest scripts/ -q",
+      "result": "127 passed in 22.98s"
+    },
+    "npm_test": {
+      "command": "npm run test",
+      "result": "85 test files passed; 1602 tests passed"
+    },
+    "typescript": {
+      "command": "npx tsc --noEmit",
+      "result": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "result": "passed with 0 errors and 1 pre-existing warning in src/app/api/oncall/alert/route.test.ts"
+    }
+  }
+}

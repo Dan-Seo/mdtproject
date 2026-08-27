@@ -15,7 +15,10 @@
     {
       "step": 1,
       "name": "repair-rotted-tests",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:23:27+0900",
+      "completed_at": "2026-08-27T17:32:30+0900",
+      "summary": "현재 Popen·invoke.json·실행 전제에 맞춰 8건과 stop-verify 4건을 수정하고, 12건 변이 반증 및 전체 회귀를 통과했다."
     },
     {
       "step": 2,
