@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "scope-guard-test",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 945.3743942000001,
+  "stdout_log": "phases\\31-wall-shiki-decision\\step1-codex.stdout.log",
+  "stderr_log": "phases\\31-wall-shiki-decision\\step1-codex.stderr.log"
+}
