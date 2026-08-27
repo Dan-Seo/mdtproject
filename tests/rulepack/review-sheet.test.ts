@@ -9,6 +9,10 @@ import {
   renderReviewSheet,
 } from '../../scripts/rulepack/review-sheet'
 
+function normalizeNewlines(value: string): string {
+  return value.replace(/\r\n?/g, '\n')
+}
+
 function clonePack() {
   return {
     ...jpMlitRulePack,
@@ -104,6 +108,8 @@ describe('룰팩 원문 표 단위 대조 시트', () => {
       'utf8',
     )
 
-    expect(renderReviewSheet(jpMlitRulePack)).toBe(snapshot)
+    expect(normalizeNewlines(renderReviewSheet(jpMlitRulePack))).toBe(
+      normalizeNewlines(snapshot),
+    )
   })
 })
