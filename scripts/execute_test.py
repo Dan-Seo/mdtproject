@@ -272,6 +272,26 @@ class RefutedProtocolTests(unittest.TestCase):
             self.assertEqual(executor.calls_by_step, {0: 1})
             self.assertEqual([step["status"] for step in saved["steps"]], ["refuted", "pending"])
 
+    def test_refuted_gate_blocks_pending_steps_after_restart(self) -> None:
+        # refuted가 index에 저장된 채 execute.py를 다시 띄운 상황 — 게이트 검사가
+        # 방금 끝난 스텝만 보면 여기서 뒤 스텝이 돌아 버린다.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "gate", "kind": "verify", "gate": True,
+                 "status": "refuted", "summary": "전제가 반증됨"},
+                {"step": 1, "name": "implementation", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps)
+            executor = FakeStepExecutor(
+                "fixture", {1: [{"status": "completed"}]}, root=root)
+
+            executor._execute_all_steps("guards")
+
+            saved = json.loads((root / "phases" / "fixture" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(executor.calls_by_step, {})
+            self.assertEqual([step["status"] for step in saved["steps"]], ["refuted", "pending"])
+
     def test_gate_refuted_finalizes_phase_as_refuted(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

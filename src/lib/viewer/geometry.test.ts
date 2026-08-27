@@ -639,6 +639,52 @@ describe('rebarSegments', () => {
       segments,
     )
   })
+  it('keeps generated hook tails clear of the adjacent leg tubes even at D10', () => {
+    // 半開き 22.5°의 여유가 가장 얇은 최소 呼び名 — 余長 6d＝60mm에 표시반경은
+    // 하한 14mm×배율＝22.4mm라 근접 변과의 수직거리가 60·sin22.5°＝22.96mm다.
+    // 반개방각이 어느 쪽으로든 움직이거나 표시반경 하한이 커지면 여기서 걸린다.
+    const d10Section: ColumnSection = {
+      ...section,
+      id: 'section-C1-d10',
+      hoop: { ...section.hoop, size: 'D10' },
+    }
+    const generatedHoop = generateColumnRebar(
+      {
+        member: {
+          id: '1F-X1Y1',
+          kind: '柱',
+          memberClass: '躯体',
+          sectionId: d10Section.id,
+          storyId: '1F',
+          position: { ix: 0, iy: 0 },
+        },
+        section: d10Section,
+        story: { id: '1F', name: '1階', height: 4200 },
+        beamDepthAbove: 750,
+        ends: { bottom: 'なし', top: '先端' },
+      },
+      jpMlitRulePack,
+    ).find(({ role }) => role === '帯筋')!
+
+    const segments = rebarSegments(generatedHoop, d10Section)
+    const firstPlacement = segments.slice(0, generatedHoop.points.length + 2)
+    const tails = firstPlacement.slice(-2)
+    const corner = tails[0].from
+    for (const tail of tails) {
+      expectPointCloseTo(tail.from, corner)
+      const vx = tail.to[0] - corner[0]
+      const vz = tail.to[2] - corner[2]
+      for (const leg of [firstPlacement[0], firstPlacement[3]]) {
+        const ex = leg.to[0] - leg.from[0]
+        const ez = leg.to[2] - leg.from[2]
+        const legLength = Math.hypot(ex, ez)
+        const perpendicular = Math.abs(
+          (vx * ez - vz * ex) / legLength,
+        )
+        expect(perpendicular).toBeGreaterThan(tail.radius)
+      }
+    }
+  })
   it('emits segments for every 本 of 帯筋, not just the representative', () => {
     const segments = rebarSegments(hoopOf(3), section)
 

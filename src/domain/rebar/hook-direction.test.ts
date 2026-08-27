@@ -158,18 +158,10 @@ function assertSymmetricInwardTails(rebar: Rebar, inward: Vec3): void {
     }),
   )
 
-  // 半開き45°だと矩形の角では二等分線±45°が隣接二辺の方向と一致し、
-  // 尾が同半径の辺チューブに埋もれて見えない — 方向がどちらの辺とも
-  // 重ならないことを固定する (ADR-040 세 번째 정정)。
-  const edges = [
-    unit(subtract(rebar.points[1], rebar.points[0])),
-    unit(subtract(rebar.points.at(-1)!, rebar.points[0])),
-  ]
-  for (const direction of directions) {
-    for (const edge of edges) {
-      expect(angleBetween(direction, edge)).toBeGreaterThan(0.01)
-    }
-  }
+  // 「尾が辺チューブ(表示半径)の外へ出るか」は表示半径を持つビューア側で
+  // 固定する (geometry.test.ts) — src/domain のテストは no-restricted-imports
+  // でビューアを import できない。ここは半開き角の正確な値 (π/8) と二等分線
+  // 対称で方向を完全に決める。
 }
 
 function rectangularInward(points: Vec3[]): Vec3 {
