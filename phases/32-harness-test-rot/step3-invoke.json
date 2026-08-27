@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "fix-gate-refuted-finalize",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 551.8065686000009,
+  "stdout_log": "phases\\32-harness-test-rot\\step3-codex.stdout.log",
+  "stderr_log": "phases\\32-harness-test-rot\\step3-codex.stderr.log"
+}

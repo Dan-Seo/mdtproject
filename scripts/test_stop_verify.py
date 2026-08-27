@@ -39,13 +39,20 @@ def run_hook(cwd: Path, *, stop_hook_active: bool = False):
 
 def write_package_json(project: Path, lint: str, build: str, test: str):
     (project / "package.json").write_text(
-        json.dumps({"name": "t", "scripts": {"lint": lint, "build": build, "test": test}}),
+        json.dumps({"name": "t", "scripts": {
+            "lint": lint,
+            "typecheck": NOOP,
+            "build": build,
+            "test": test,
+        }}),
         encoding="utf-8",
     )
 
 
 @pytest.fixture
 def project(tmp_path):
+    # stop-verify.sh intentionally exits before validation when dependencies are absent.
+    (tmp_path / "node_modules").mkdir()
     return tmp_path
 
 

@@ -1,0 +1,70 @@
+{
+  "phase": "32-harness-test-rot",
+  "step": 2,
+  "name": "wire-into-ci",
+  "changes": {
+    "workflows": [
+      {
+        "file": ".github/workflows/ci.yml",
+        "line": 90,
+        "pytest": "python -m pytest scripts/ -q"
+      },
+      {
+        "file": ".github/workflows/review.yml",
+        "line": 185,
+        "pytest": "python -m pytest scripts/ -q"
+      },
+      {
+        "file": ".github/workflows/oncall.yml",
+        "lines": [
+          {
+            "line": 166,
+            "context": "에이전트 게이트 목록",
+            "pytest": "python -m pytest scripts/ -q"
+          },
+          {
+            "line": 235,
+            "context": "수정 재검증",
+            "pytest": "python -m pytest scripts/ -q"
+          }
+        ]
+      }
+    ],
+    "docs": {
+      "file": "docs/MILESTONES.md",
+      "line": 5,
+      "note": "하네스 테스트가 CI 게이트임을 기록"
+    },
+    "scripts_unchanged": true
+  },
+  "linux_incompatible_tests": {
+    "from_step0": [
+      "scripts/test_execute.py::TestInvokeCodex::test_resolves_executable_through_pathext"
+    ],
+    "skipif_added": false,
+    "reason": "step 1 이후 해당 테스트는 run_codex_process를 mock하고 실제 프로세스를 실행하지 않으므로 Linux 전용 동작을 호출하지 않는다. step 2의 scripts/** 수정 금지 지침도 유지했다."
+  },
+  "verification": {
+    "pytest_scripts": {
+      "command": "python -m pytest scripts/ -q",
+      "result": "127 passed in 22.56s",
+      "platform": "Windows"
+    },
+    "workflow_wording": {
+      "result": "passed",
+      "detail": "ci.yml·review.yml·oncall.yml의 실제 pytest 실행 단계가 모두 python -m pytest scripts/ -q이며, oncall 에이전트 안내문도 scripts/로 갱신됨"
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    "linux": {
+      "result": "not verified",
+      "detail": "WSL Ubuntu-22.04는 실행했으나 pytest가 설치되어 있지 않아 python3 -m pytest scripts/ -q를 실행하지 못함"
+    },
+    "github_actions": {
+      "result": "not run",
+      "detail": "gh 인증은 확인했지만 현재 브랜치(feat-32-harness-test-rot)가 origin에 없고 변경사항도 push되지 않아, unpushed 워크플로를 검증하지 않는 원격 실행은 수행하지 않음"
+    }
+  }
+}

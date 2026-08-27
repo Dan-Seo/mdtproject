@@ -1,0 +1,55 @@
+{
+  "premises": [
+    {
+      "id": "rot-cause-is-popen",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:46은 subprocess.Popen을 사용하고, scripts/execute.py:301-328의 _invoke_codex는 run_codex_process만 호출한다. subprocess.run은 timeout의 Windows taskkill 경로인 scripts/execute.py:53에서만 사용된다. python -m pytest scripts/test_execute.py -q 결과는 8 failed, 50 passed이며 invocation 6건이 subprocess.run mock의 call_args 부재 또는 Popen 실패로 재현됐다.",
+      "note": "현재 Windows 실행에서는 4건이 TypeError(call_args=None), PATHEXT 관련 2건이 WinError 2였지만 공통 원인은 테스트가 패치한 subprocess.run을 _invoke_codex가 거치지 않는 것이다."
+    },
+    {
+      "id": "artifact-rename-deliberate",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:345-347은 step{N}-invoke.json을 기록한다. phase 13의 c709c22 diff는 기존 step{N}-output.json을 invoke.json과 stdout/stderr 로그로 바꾼 의도를 보인다. scripts/execute_test.py:192-201은 invoke.json 존재와 output.json 부재를 고정하며, 이 스위트는 14 tests OK였다. 구식 기대는 scripts/test_execute.py:497-498의 step2-output.json이다."
+    },
+    {
+      "id": "guardrails-root-moved",
+      "verdict": "upheld",
+      "evidence": "scripts/execute.py:118-123이 self._root_path를 초기화하고 scripts/execute.py:243-249가 이를 사용한다. scripts/test_execute.py:184-193은 __new__로 __init__을 건너뛰므로 line 192에서 AttributeError를 재현했다. 반대로 실제 StepExecutor(root=임시 프로젝트) 인스턴스는 동일한 빈 프로젝트에서 _load_guardrails() == ''을 반환했다."
+    },
+    {
+      "id": "contracts-still-hold",
+      "verdict": "upheld",
+      "evidence": "codex exec: scripts/execute.py:321; --json: line 322; --dangerously-bypass-approvals-and-sandbox: line 321; --dangerously-bypass-hook-trust: line 322; shutil.which('codex')와 실패 시 bare codex: lines 317-317; stdin prompt와 trailing '-': lines 309-323 및 run_codex_process lines 32,49; timeout 1800: line 326."
+    },
+    {
+      "id": "ci-runs-neither",
+      "verdict": "upheld",
+      "evidence": "정확한 pytest 실행은 .github/workflows/ci.yml:90, review.yml:185, oncall.yml:235의 scripts/test_review_verdict.py -q뿐이다. package.json:19의 test:ci-scripts는 bash/node 테스트만 호출하고 test_execute.py·execute_test.py·test_stop_verify.py를 호출하지 않는다."
+    },
+    {
+      "id": "sibling-suites-green",
+      "verdict": "upheld",
+      "evidence": "실행 결과: scripts/test_dangerous_command_guard.py 13 passed; scripts/test_tdd_guard.py 13 passed; scripts/test_review_verdict.py 21 passed; scripts/execute_test.py 14 tests OK; scripts/test_stop_verify.py 6 passed, 2 failed. stop_verify 실패는 test_failure_emits_block_json 및 test_failure_reason_carries_npm_output이다."
+    },
+    {
+      "id": "stop-verify-guard-is-deliberate",
+      "verdict": "upheld",
+      "evidence": "scripts/hooks/stop-verify.sh:25-29 주석과 가드가 CI 또는 node_modules 부재 시 exit 0을 의도한다: CI 검증을 걸지 않는 이유를 리뷰·트리아지 체크아웃의 node_modules 부재와 exit 127, PR #5 재현으로 명시한다."
+    },
+    {
+      "id": "vacuous-passers",
+      "verdict": "upheld",
+      "evidence": "stop-verify.sh의 실제 OUTPUT 실행문을 검증 중 INTENTIONAL_VACUOUS_PASS_MUTATION으로 바꾼 뒤 python -m pytest scripts/test_stop_verify.py -q -k 'test_success_emits_nothing or test_stdout_never_leaks_plain_text'는 2 passed, 6 deselected였다. 두 테스트가 node_modules 조기 종료를 지나지 않아 망가진 본문을 감지하지 못했다. 변형은 원복했고 hook의 내용 diff는 없다."
+    },
+    {
+      "id": "linux-portability",
+      "verdict": "upheld",
+      "evidence": "scripts/execute_test.py:27-35의 tasklist와 :50-55의 taskkill은 os.name == 'nt' 분기 안에만 있고 Linux 경로는 os.kill/os.killpg를 사용한다. WSL Ubuntu-22.04에서 python3 scripts/execute_test.py는 14 tests OK였다. scripts/test_execute.py의 Windows 전용 하드코딩은 :440-445의 C:\\Users\\x...\\codex.CMD 1건이며 현재 Popen 구현에서는 Linux에서 실행할 수 없다.",
+      "note": "WSL에는 pytest가 설치되어 있지 않아 pytest 기반 Linux 교차 실행은 하지 못했다. CI 연결 시 execute_test.py는 Linux에서 실행 가능하고, Windows 절대경로 테스트는 step 1에서 portable mock으로 고쳐야 한다."
+    }
+  ],
+  "linux_incompatible_tests": [
+    "scripts/test_execute.py::TestInvokeCodex::test_resolves_executable_through_pathext"
+  ],
+  "verdict": "upheld"
+}

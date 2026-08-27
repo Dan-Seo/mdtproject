@@ -229,6 +229,14 @@ class FakeStepExecutor(execute.StepExecutor):
         return {"step": step_num}
 
 
+class ExitAfterRefutedExecutor(FakeStepExecutor):
+    """Simulate Codex leaving a refuted gate behind with a non-zero exit code."""
+
+    def _execute_all_steps(self, guardrails: str) -> None:
+        super()._execute_all_steps(guardrails)
+        raise SystemExit(127)
+
+
 def make_harness_fixture(root: Path, steps: list[dict], *, top_index: bool = False) -> None:
     phase_dir = root / "phases" / "fixture"
     phase_dir.mkdir(parents=True)
@@ -249,6 +257,43 @@ def make_harness_fixture(root: Path, steps: list[dict], *, top_index: bool = Fal
 
 
 class RefutedProtocolTests(unittest.TestCase):
+    def test_gate_refuted_finalizes_before_propagating_abnormal_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            steps = [
+                {"step": 0, "name": "gate", "kind": "verify", "gate": True, "status": "pending"},
+                {"step": 1, "name": "implementation", "status": "pending"},
+            ]
+            make_harness_fixture(root, steps, top_index=True)
+            subprocess.run(["git", "add", "."], cwd=root, capture_output=True, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "fixture"],
+                cwd=root,
+                capture_output=True,
+                check=True,
+            )
+            executor = ExitAfterRefutedExecutor(
+                "fixture",
+                {0: [{"status": "refuted", "summary": "전제가 반증됨"}]},
+                root=root,
+            )
+
+            with self.assertRaises(SystemExit) as raised:
+                executor.run()
+
+            self.assertEqual(raised.exception.code, 127)
+            top = json.loads((root / "phases" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(top["phases"][0]["status"], "refuted")
+            self.assertIn("refuted_at", top["phases"][0])
+            commits = subprocess.run(
+                ["git", "log", "--format=%s"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.splitlines()
+            self.assertIn("chore(fixture): mark phase completed", commits)
+
     def test_gate_refuted_stops_before_next_pending_step(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -52,6 +52,7 @@ index는 `pending`이라, 다음 사람이 「아직 안 돌린 phase」로 읽�
 - 실패를 삼켜서 초록으로 만들지 마라.
 - `phases/**/step*-codex.*.log`·`step*-invoke.json`·`step*-report.json`을 지우지 마라.
 - `scripts/execute.py`를 **실행**하지 마라 — 재귀다. 편집은 이 스텝의 대상이다.
+- `scripts/execute.py` **프로세스를 죽이지 마라.** 지금 너를 부른 것이 그 프로세스다 — `taskkill /T`는 자식인 너까지 끊는다(2026-08-27 step 2 실측, 남은 스텝이 통째로 유실됐다). 로그 파일이 더러운 것은 하네스가 쓰고 있어서 정상이니 커밋에서 빼고 두면 된다.
 
 ## AC
 

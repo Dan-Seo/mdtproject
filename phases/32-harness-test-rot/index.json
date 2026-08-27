@@ -7,22 +7,36 @@
       "name": "verify-rot-is-contract-drift",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:08:22+0900",
+      "completed_at": "2026-08-27T17:23:26+0900",
+      "summary": "하네스 테스트 8건과 stop-verify 형제 실패 2건을 반증 없이 재현하고 계약 부패·CI 미연결·vacuous pass를 확인했다."
     },
     {
       "step": 1,
       "name": "repair-rotted-tests",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:23:27+0900",
+      "completed_at": "2026-08-27T17:35:26+0900",
+      "summary": "현재 Popen·invoke.json·실행 전제에 맞춰 8건과 stop-verify 4건을 수정하고, 12건 변이 반증 및 전체 회귀를 통과했다."
     },
     {
       "step": 2,
       "name": "wire-into-ci",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:35:27+0900",
+      "completed_at": "2026-08-27T17:40:39+0900",
+      "summary": "ci.yml·review.yml·oncall.yml의 pytest 게이트를 python -m pytest scripts/ -q로 넓히고, oncall 안내문과 마일스톤 문서를 동기화했다."
     },
     {
       "step": 3,
       "name": "fix-gate-refuted-finalize",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-27T17:46:14+0900",
+      "completed_at": "2026-08-27T17:55:25+0900",
+      "summary": "게이트 반증 뒤 비정상 종료도 top index와 마무리 커밋을 먼저 남기고 원래 종료 코드를 전파하도록 고쳤으며, 변이 테스트와 하네스 전체 128건을 통과시켰다."
     }
-  ]
+  ],
+  "created_at": "2026-08-27T16:59:14+0900",
+  "completed_at": "2026-08-27T17:55:26+0900"
 }

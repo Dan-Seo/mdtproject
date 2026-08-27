@@ -87,7 +87,7 @@ jobs:
         with:
           python-version: '3.13'
       - run: pip install --quiet pytest
-      - run: python -m pytest scripts/test_review_verdict.py -q
+      - run: python -m pytest scripts/ -q
       - run: npm run build
       # three が `/` の遮断経路に戻っていないか (ADR-024 §5)。Lighthouse 予算は
       # これを通してしまう — 転送量が動かないからだ。build 直後にしか見られない。
