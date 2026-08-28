@@ -1,0 +1,180 @@
+{
+  "verdict": "upheld",
+  "premises": [
+    {
+      "id": "apply-is-pure",
+      "verdict": "upheld",
+      "evidence": "npx vitest run --project domain tests/stb-import/apply.test.ts passed 1 file and 15 tests. The non-test apply source imports only Project and local ST-Bridge types; no React, DOM, three.js, Next, zustand, or node:fs import is present.",
+      "note": "The final full npm run test also passed this node-environment suite."
+    },
+    {
+      "id": "no-framing-plan-coupling",
+      "verdict": "upheld",
+      "evidence": "The scan over the five non-test .ts files in src/lib/import/stb returned NO_COUPLING for every file. scope-guard.test.ts still declares applyFramingPlan, applyElevation, and framing-plan as forbidden terms.",
+      "note": "The test file is intentionally excluded from the source scan because it contains the guard vocabulary itself."
+    },
+    {
+      "id": "no-domain-drift",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --stat -- src/domain/ src/rulepack/ produced no output."
+    },
+    {
+      "id": "no-rulepack-territory",
+      "verdict": "upheld",
+      "evidence": "The required rule-term scan over every non-test .ts file in src/lib/import/stb returned NO_RULE_TERMS for apply.ts, candidates.ts, decode.ts, document.ts, and types.ts. The numeric-literal review found only parser/application mechanics and supported-version strings, not rule values. scope-guard.test.ts still declares the complete rule-term list.",
+      "note": "No source file reads StbSec/StbApply or rulepack fields; no rule DSL or rule lookup was added."
+    },
+    {
+      "id": "no-escaped-identifiers",
+      "verdict": "upheld",
+      "evidence": "No literal Unicode escape remains in non-test STB source. The only remaining escape in the STB tree is real-decode.test.ts:48's intentional replacement-character literal. The temporary escaped StbApplyResult identifier mutation failed scope-guard.test.ts on the unicode-decoded source, then was reverted.",
+      "note": "The decoded-source guard and its falsifiability mutation both worked."
+    },
+    {
+      "id": "name-not-overwritten",
+      "verdict": "upheld",
+      "evidence": "The full test run passed the executable name assertions in tests/stb-import/apply.test.ts (including 'discards members only when explicitly requested and preserves unrelated project data') and src/components/stb/StbImport.test.tsx (including the independent grid/story approval flow). The project-name overwrite mutation failed 3 tests.",
+      "note": "The result was checked through test execution, not a code-only assertion."
+    },
+    {
+      "id": "refusal-preserves-project",
+      "verdict": "upheld",
+      "evidence": "The full test run passed the changed-grid and changed-story refusal tests, which assert applied:false and preservation of the original project reference. Removing the changed-grid refusal failed 2 tests.",
+      "note": "Both refusal paths remain fail-closed unless discardMembers is explicitly true."
+    },
+    {
+      "id": "same-span-keeps-members",
+      "verdict": "upheld",
+      "evidence": "The full test run passed tests/stb-import/apply.test.ts > applyStbGrid > keeps members when only labels change on an otherwise equal grid. Removing same-span member preservation failed that test.",
+      "note": "The candidate grid direction mapping is still independent of input order."
+    },
+    {
+      "id": "issues-survive-approval",
+      "verdict": "upheld",
+      "evidence": "The full test run passed src/components/stb/StbImport.test.tsx > StbImport > keeps issues and unsupported elements visible after approval. A temporary state-clearing mutation removed candidate.issues after the grid action and caused that test to fail because stb-import-issues disappeared.",
+      "note": "An initial next.applied-only mutation did not reach this fixture because its existing members force the refusal path; the broader state-clearing neutralization did fail the required assertion, and the production code was restored."
+    },
+    {
+      "id": "no-network-in-import",
+      "verdict": "upheld",
+      "evidence": "The required fetch/XMLHttpRequest/sendBeacon/axios/WebSocket scan returned NO_NETWORK for all five non-test STB .ts files and src/components/stb/StbImport.tsx. No telemetry import or file-name/file-content capture handling is present in those files. scope-guard.test.ts still declares fetch, XMLHttpRequest, WebSocket, and sendBeacon as forbidden terms.",
+      "note": "The test file is excluded from the source scan because it contains the guard vocabulary."
+    },
+    {
+      "id": "no-new-dependency",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD -- package.json package-lock.json produced NO_PACKAGE_DIFF."
+    },
+    {
+      "id": "mismatch-issue-still-bites",
+      "verdict": "upheld",
+      "evidence": "The mismatch assertion remains in src/lib/import/stb/candidates.test.ts and the expected issue remains in tests/fixtures/stb-import/expected/diffchecker-filea.json. Removing the addIssue line in candidates.ts caused 2 full-test failures: the mismatch unit test and the diffchecker-filea candidate fixture test. The line was restored.",
+      "note": "The issue is retained without discarding the grid candidate."
+    },
+    {
+      "id": "ledgers-consistent",
+      "verdict": "upheld",
+      "evidence": "Direct counts match the step 5/7 ledger claims: rulepack 243 rows (transcribed 240, inferred 3); spec source.verifications 77 cells; document/expected/applied fixture directories 5 each; synthetic fixtures 2; STB_ISSUES 18; STB_SKELETON_APPLY_REFUSALS 4; R16 appears in docs/RISKS.md, CLAUDE.md, and AGENTS.md. tests/docs/guardrail-sync.test.ts passed. docs diff contains only MILESTONES.md and RISKS.md, with no ADR.md, PRD.md, ARCHITECTURE.md, or SOURCES.md change.",
+      "note": "The rulepack review report also records 135 folded cells, 8 table units, and 17 singleton units; stated remains fixed at zero."
+    },
+    {
+      "id": "applied-fixtures-are-oracles",
+      "verdict": "upheld",
+      "evidence": "Independent expected-to-applied derivation returned ORACLE_OK for diffchecker-filea.json, diffchecker-mini210.json, dotnet-sample1.json, hoaryfox-sample.json, and mini.json; _derivedFrom points to the same-named expected file for all five. The derived X/Y spans, labels, and story ids/heights matched every applied value, including the refused empty mini210 candidate.",
+      "note": "The applied-fixture numeric mutation failed the mini fixture oracle test and was reverted."
+    }
+  ],
+  "mutation_sweep": [
+    {
+      "mutation": "1. Swap applyStbGrid xSpans and ySpans.",
+      "broke": [
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > diffchecker-filea.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > hoaryfox-sample.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > applyStbGrid > keeps members when only labels change on an otherwise equal grid",
+        "tests/stb-import/apply.test.ts > application result invariants > maps exactly one X and one Y grid without assuming their input order"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "2. Reverse applyStbStories story IDs.",
+      "broke": [
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > dotnet-sample1.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > diffchecker-filea.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > hoaryfox-sample.json matches its independently derived applied fixture",
+        "tests/stb-import/apply.test.ts > applyStbStories > applies the real candidate from bottom to top and leaves the grid unchanged"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "3. Keep existing members instead of clearing them after successful story application.",
+      "broke": [
+        "src/components/stb/StbImport.test.tsx > StbImport > does not change the project until story discard is explicitly confirmed"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "4. Remove the changed-grid refusal while members exist.",
+      "broke": [
+        "src/components/stb/StbImport.test.tsx > StbImport > does not change the project until grid discard is explicitly confirmed",
+        "tests/stb-import/apply.test.ts > applyStbGrid > rejects a changed grid while members exist, preserving the original reference"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "5. Remove same-span member preservation.",
+      "broke": [
+        "tests/stb-import/apply.test.ts > applyStbGrid > keeps members when only labels change on an otherwise equal grid"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "6. Overwrite project.name from candidate.projectName.",
+      "broke": [
+        "src/components/stb/StbImport.test.tsx > StbImport > shows the candidate and independently applies its grid and stories",
+        "src/components/stb/StbImport.test.tsx > StbImport > does not change the project until grid discard is explicitly confirmed",
+        "tests/stb-import/apply.test.ts > applyStbGrid > discards members only when explicitly requested and preserves unrelated project data"
+      ],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "7. StbImport clears candidate issues after a grid action.",
+      "broke": [
+        "src/components/stb/StbImport.test.tsx > StbImport > keeps issues and unsupported elements visible after approval"
+      ],
+      "note": "Temporary mutation reverted; the issue-bearing UI assertion is active."
+    },
+    {
+      "mutation": "8. Add one to applied/mini.json xSpans.",
+      "broke": [
+        "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture"
+      ],
+      "note": "Temporary fixture mutation reverted."
+    },
+    {
+      "mutation": "9. Escape the A in a temporary StbApplyResult type identifier as \\u0041.",
+      "broke": [
+        "src/lib/import/stb/scope-guard.test.ts > ST-Bridge document import scope > keeps the IR parser free of rule, section, network, and store concerns"
+      ],
+      "note": "The failure specifically reported unicode-decoded source containing forbidden term StbApply; temporary mutation reverted."
+    }
+  ],
+  "test_counts": {
+    "files": 97,
+    "tests": 1680,
+    "delta_files": 0,
+    "delta_tests": 0
+  },
+  "diffstat": " AGENTS.md                                          |   2 +\n CLAUDE.md                                          |   2 +\n docs/MILESTONES.md                                 |   1 +\n docs/RISKS.md                                      |   1 +\n phases/34-stbridge-apply/index.json                |  53 +-\n phases/34-stbridge-apply/step0-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step0-codex.stdout.log    | 119 +++++++\n phases/34-stbridge-apply/step0-invoke.json         |   9 +\n phases/34-stbridge-apply/step0-report.json         | 239 ++++++++++++++\n phases/34-stbridge-apply/step1-codex.stderr.log    |   3 +\n phases/34-stbridge-apply/step1-codex.stdout.log   | 132 ++++++++\n phases/34-stbridge-apply/step1-invoke.json         |   9 +\n phases/34-stbridge-apply/step2-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step2-codex.stdout.log   | 155 +++++++++\n phases/34-stbridge-apply/step2-invoke.json         |   9 +\n phases/34-stbridge-apply/step3-codex.stderr.log    |  13 +\n phases/34-stbridge-apply/step3-codex.stdout.log   |  95 ++++++\n phases/34-stbridge-apply/step3-invoke.json         |   9 +\n phases/34-stbridge-apply/step4-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step4-codex.stdout.log   |  80 +++++\n phases/34-stbridge-apply/step4-invoke.json         |   9 +\n phases/34-stbridge-apply/step5-codex.stderr.log    |   3 +\n phases/34-stbridge-apply/step5-codex.stdout.log   |  49 +++\n phases/34-stbridge-apply/step5-invoke.json         |   9 +\n phases/34-stbridge-apply/step6-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step6-codex.stdout.log   | 144 ++++++++\n phases/34-stbridge-apply/step6-invoke.json         |   9 +\n phases/34-stbridge-apply/step6-report.json         | 130 ++++++++\n phases/34-stbridge-apply/step7-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step7-codex.stdout.log   |  62 ++++\n phases/34-stbridge-apply/step7-invoke.json         |   9 +\n phases/34-stbridge-apply/step7-report.json         |  30 ++\n phases/34-stbridge-apply/step7.md                  |  74 +++++\n phases/34-stbridge-apply/step8.md                  |  82 +++++\n src/app/page.tsx                                   |   2 +\n src/components/stb/StbImport.module.css            | 127 +++++++\n src/components/stb/StbImport.test.tsx              | 210 +++++++++++\n src/components/stb/StbImport.tsx                   | 364 +++++++++++++++++++++\n src/lib/import/stb/apply.ts                        | 163 +++++++++\n src/lib/import/stb/scope-guard.test.ts             |  27 +-\n src/lib/import/stb/types.ts                        |  18 +\n src/locales/ja.json                                |  29 +-\n src/locales/ko.json                                |  29 +-\n tests/e2e/uc23-stb-import.js                       | 164 ++++++++++\n .../stb-import/applied/diffchecker-filea.json      |  23 ++\n .../stb-import/applied/diffchecker-mini210.json    |  13 ++\n tests/fixtures/stb-import/applied/dotnet-sample1.json |  21 ++\n tests/fixtures/stb-import/applied/hoaryfox-sample.json |  24 ++\n tests/fixtures/stb-import/applied/mini.json        |  21 ++\n tests/fixtures/stb-import/document/mini.json       | 122 +++++--\n tests/fixtures/stb-import/expected/mini.json       |   4 +-\n tests/fixtures/stb-import/synthetic/mini-sjis.stb  |   6 +-\n tests/fixtures/stb-import/synthetic/mini-utf8.stb  |   6 +-\n tests/stb-import/apply.test.ts                     | 335 +++++++++++++++++++\n 54 files changed, 3210 insertions(+), 49 deletions(-)",
+  "unexpected_files": [],
+  "stb_importers": [
+    "src/components/stb/StbImport.tsx"
+  ],
+  "noticed": [
+    "The first success-only form of the issue-clearing mutation did not reach the existing issue fixture because its sample members forced the refusal path; the broader UI state-clearing mutation did break the issue-survival assertion. This test-setup limitation is recorded without changing tests.",
+    "Final npm run test passed 97 files and 1680 tests. No target source, test, fixture, docs, or dependency mutation remains after restoration.",
+    "git diff main...HEAD --stat lists the phase implementation and prior phase artifacts only; no out-of-scope changed path was identified. The only direct STB importer outside tests/scripts is src/components/stb/StbImport.tsx.",
+    "Harness-created phases/34-stbridge-apply/step8-codex.stdout.log and step8-codex.stderr.log are intentionally left uncommitted per AGENTS.md; they are not mutation residue."
+  ]
+}
