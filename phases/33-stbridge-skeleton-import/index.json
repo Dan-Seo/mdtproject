@@ -49,7 +49,10 @@
     {
       "step": 5,
       "name": "record-corpus-limits",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T13:37:40+0900",
+      "completed_at": "2026-08-28T13:45:41+0900",
+      "summary": "코퍼스의 한계를 실측으로 SOURCES.md에 박았다 — RC 柱 17건·RC 断面/배근 4건, 耐震壁 6건, StbColumn@name은 断面 符号와 불일치, 축 검산 가능 비율 24/32."
     }
   ],
   "created_at": "2026-08-28T12:07:46+0900"
