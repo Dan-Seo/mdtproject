@@ -1,0 +1,127 @@
+{
+  "verdict": "refuted",
+  "premises": [
+    {
+      "id": "sync-test-is-falsifiable",
+      "verdict": "upheld",
+      "evidence": "뮤테이션 1~5를 각각 한 번씩 적용했을 때 모두 tests/docs/ledger-sync.test.ts가 실패했고, 각 변경을 즉시 되돌린 뒤 동기화 테스트가 다시 통과했다.",
+      "note": "1·2는 마일스톤 상태 불일치, 3·4는 R번호 집합 불일치, 5는 매핑표 밖 마일스톤 행으로 실패했다."
+    },
+    {
+      "id": "guardrail-test-still-bites",
+      "verdict": "upheld",
+      "evidence": "AGENTS.md 제목의 Kijun을 KijunX로 바꾸자 tests/docs/guardrail-sync.test.ts > AGENTS.md가 자체 헤더 뒤에 CLAUDE.md 본문 전체를 그대로 담는다가 실패했고, 변경 후 원복했다.",
+      "note": "원복 후 guardrail-sync.test.ts가 통과했다."
+    },
+    {
+      "id": "no-code-change",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --stat -- src/ tests/ 출력은 tests/docs/ledger-sync.test.ts | 213 +++++++++++++++++++++++++++++++++++++++++ 한 파일뿐이다.",
+      "note": "현재 Step 3 작업으로 src/ 또는 tests/ 파일을 수정하지 않았다."
+    },
+    {
+      "id": "risks-untouched",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD -- docs/RISKS.md가 빈 출력이고, 작업 중 임시 R1 삭제도 원복 후 HEAD와 일치한다.",
+      "note": "docs/RISKS.md는 커밋 대상 변경이 아니다."
+    },
+    {
+      "id": "closed-tracks-really-closed",
+      "verdict": "refuted",
+      "evidence": "パネルゾーン·溶接閉鎖·機械式定着·免震은 src/와 tests/에서 각각 0건이었다. スパイラル은 2건 모두 주석이었고, ST-Bridge의 원호/방사·비직교·BASEMENT·미지원階種別 가드를 각각 무력화한 변이에서 candidates.test.ts의 해당 거부 테스트가 실패했다. 그러나 壁式構造는 24건 중 15건이 tests/golden/quantity-measurement.test.ts와 tests/golden/fixtures/quantity-r5-ch3.json의 비주석 전사·검증 데이터였다.",
+      "note": "전제의 ‘スパイラル·壁式構造 매칭 줄이 전부 주석’ 조건이 성립하지 않아 반증이다. 대상 파일·문서는 고치지 않았다."
+    },
+    {
+      "id": "open-tracks-untouched",
+      "verdict": "upheld",
+      "evidence": "CLAUDE.md의 M2 룰팩·도면 인식(로컬)·M5 행과 docs/MILESTONES.md의 대응 체크박스 행을 각각 main과 직접 비교해 모두 동일했다. src/rulepack/index.test.ts의 stated 0행 고정과 6개 테스트가 통과했고 YAML stated 행도 0건이었다.",
+      "note": "M2·도면 인식(로컬)은 진행 중, M5는 미착수로 유지된다."
+    },
+    {
+      "id": "decisions-preserved",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD -- docs/MILESTONES.md의 삭제 줄은 M3c와 ST-Bridge의 기존 체크박스 행 교체뿐이며, 새 완료 행에는 각각 パネルゾーン·溶接閉鎖와 ST-Bridge의 미지원 범위·거부 사유가 남아 있다.",
+      "note": "부재 확장 완료 행에도 免震·ブレース·配力筋 등 만들지 않는 결정의 서술이 남아 있다."
+    },
+    {
+      "id": "ledgers-agree",
+      "verdict": "upheld",
+      "evidence": "ledger-sync.test.ts 2개 테스트와 guardrail-sync.test.ts가 통과했고, CLAUDE.md 리스크 표와 docs/RISKS.md의 직접 추출 집합이 양방향으로 R1~R16으로 같았다.",
+      "note": "상태 문언은 대장마다 다를 수 있으므로 R번호 집합만 비교했다."
+    },
+    {
+      "id": "test-count-not-reduced",
+      "verdict": "upheld",
+      "evidence": "전체 npm test를 직접 실행해 98개 파일·1,682개 테스트가 모두 통과했다. Step 0 기준선 97개 파일·1,680개 테스트보다 파일 1개·테스트 2개가 늘었다.",
+      "note": "현재 테스트 실행은 98/1682이며 실패·pending은 0건이다."
+    }
+  ],
+  "mutation_sweep": [
+    {
+      "mutation": "1. CLAUDE.md 마일스톤 표의 완료 상태 M0 스파이크를 진행 중으로 변경",
+      "broke": [
+        "tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"
+      ],
+      "note": "M0 스파이크: 체크된 항목은 CLAUDE.md에서 완료여야 한다."
+    },
+    {
+      "mutation": "2. docs/MILESTONES.md의 M0 체크박스를 [x]에서 [ ]로 변경",
+      "broke": [
+        "tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"
+      ],
+      "note": "M0 스파이크: 체크되지 않은 항목은 진행 중 또는 미착수여야 한다."
+    },
+    {
+      "mutation": "3. docs/RISKS.md의 R1 행 삭제",
+      "broke": [
+        "tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 두 리스크 대장이 같은 번호 집합을 가진다"
+      ],
+      "note": "docs/RISKS.md와 CLAUDE.md 열린 리스크 표의 R번호가 다르다."
+    },
+    {
+      "mutation": "4. CLAUDE.md 열린 리스크 표의 R1 행 삭제",
+      "broke": [
+        "tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 두 리스크 대장이 같은 번호 집합을 가진다"
+      ],
+      "note": "docs/RISKS.md와 CLAUDE.md 열린 리스크 표의 R번호가 다르다."
+    },
+    {
+      "mutation": "5. CLAUDE.md 마일스톤 표에 매핑되지 않은 검증 행 추가",
+      "broke": [
+        "tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"
+      ],
+      "note": "CLAUDE.md 마일스톤 행이 매핑표와 다르다."
+    },
+    {
+      "mutation": "6. AGENTS.md 본문 제목의 Kijun을 KijunX로 변경",
+      "broke": [
+        "tests/docs/guardrail-sync.test.ts > AGENTS.md가 자체 헤더 뒤에 CLAUDE.md 본문 전체를 그대로 담는다"
+      ],
+      "note": "AGENTS.md 제목이 CLAUDE.md 제목과 다르다."
+    }
+  ],
+  "test_counts": {
+    "files": 98,
+    "tests": 1682,
+    "delta_files": 1,
+    "delta_tests": 2
+  },
+  "mapping_counts": {
+    "pairs": 12,
+    "claude_rows": 12,
+    "milestones_checkboxes": 12
+  },
+  "still_open": [
+    "M2 룰팩 — 룰팩 stated 0행이며 표·단발항의 사람 독립 검토가 필요하다(R6).",
+    "도면 인식(로컬) — 표 형식 커버리지와 kani p40 등 포맷 리스크가 남아 있다(R10·R15).",
+    "일본 고유 형태·제품 — 高強度せん断補強筋·円形柱 외에 壁式構造の壁은 별도 마일스톤으로 만들지 않는다(ADR-042).",
+    "M5 — 한국 실무자 UX 리뷰는 미착수다."
+  ],
+  "diffstat": " AGENTS.md                                          |   6 +-\n CLAUDE.md                                          |   6 +-\n docs/MILESTONES.md                                 |   4 +-\n phases/35-ledger-reconciliation/index.json         |  20 +-\n .../step0-codex.stderr.log                         |   4 +\n .../step0-codex.stdout.log                         | 253 +++++++++++++++++++++\n phases/35-ledger-reconciliation/step0-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step0-report.json  | 102 +++++++++\n .../step1-codex.stderr.log                         |   2 +\n .../step1-codex.stdout.log                         | 152 +++++++++++++\n phases/35-ledger-reconciliation/step1-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step1-report.json  |  51 +++++\n .../step2-codex.stderr.log                         |   4 +\n .../step2-codex.stdout.log                         |  44 ++++\n phases/35-ledger-reconciliation/step2-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step2-report.json  |  41 ++++\n tests/docs/ledger-sync.test.ts                     | 213 +++++++++++++++++\n 17 files changed, 916 insertions(+), 13 deletions(-)",
+  "unexpected_files": [],
+  "noticed": [
+    "현재 작업 중인 phases/35-ledger-reconciliation/step3-codex.stdout.log와 step3-codex.stderr.log는 하네스 로그이며 AGENTS.md 규칙에 따라 커밋하지 않는다.",
+    "전체 직접 실행 기준선은 98개 테스트 파일·1,682개 테스트이며 모두 통과했다.",
+    "closed-tracks-really-closed의 ST-Bridge 거부 분기는 원호/방사·비직교·BASEMENT·미지원階種別 변이에서 각각 테스트가 실패했지만, 壁式構造 비주석 전사 데이터 조건 때문에 전제 전체는 refuted다."
+  ]
+}

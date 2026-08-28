@@ -1,0 +1,154 @@
+{
+  "verdict": "upheld",
+  "premises": [
+    {
+      "id": "sync-test-is-falsifiable",
+      "verdict": "upheld",
+      "evidence": "뮤테이션 1~5를 각각 한 번씩 적용하고 tests/docs/ledger-sync.test.ts를 실행했다. 완료 상태 변경, 체크박스 변경, docs/RISKS.md의 R1 삭제, CLAUDE.md 리스크 표의 R1 삭제, 매핑표 밖 마일스톤 행 추가가 각각 해당 동기화 단언을 실패시켰다.",
+      "note": "각 변이는 즉시 원복했고 최종 동기화 테스트는 통과했다."
+    },
+    {
+      "id": "guardrail-test-still-bites",
+      "verdict": "upheld",
+      "evidence": "AGENTS.md 본문 첫 설명 줄을 임시로 바꾼 뒤 tests/docs/guardrail-sync.test.ts가 ‘AGENTS.md와 CLAUDE.md의 본문이 다릅니다’로 실패했다.",
+      "note": "AGENTS.md 변이는 원복했고 최종 가드 테스트는 통과했다."
+    },
+    {
+      "id": "m3c-closed-correctly",
+      "verdict": "upheld",
+      "evidence": "src/와 tests/에서 정확한 금지 용어 パネルゾーン 및 溶接閉鎖의 매칭이 각각 0건이었다.",
+      "note": "결정 기록은 이 전제의 구현 매칭에 포함하지 않았다."
+    },
+    {
+      "id": "stbridge-closed-correctly",
+      "verdict": "upheld",
+      "evidence": "src/lib/import/stb/candidates.ts가 非直交通り芯·未対応通り芯種別·地下レベル未対応·対応外の階種別을 issue로 만들고 후보를 비우며, candidates.test.ts의 관련 12개 테스트가 통과했다. hasArcOrRadial 거부 반환을 임시로 if(false)로 바꾸자 ‘rejects parallel axes and arc/radial axes, but ignores drawing axes while continuing’ 테스트가 grids 불일치로 실패했다.",
+      "note": "가드 변이는 원복했다."
+    },
+    {
+      "id": "japan-closed-correctly",
+      "verdict": "upheld",
+      "evidence": "src/·tests/의 26개 매칭 줄을 직접 분류한 결과 comment 11건, quote 4건, decision 11건, implementation 0건이었다. 機械式定着과 免震은 매칭 0건이다.",
+      "note": "모든 매칭 줄을 아래 japan_classification에 파일·행·범주로 열거했다."
+    },
+    {
+      "id": "open-tracks-untouched",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --unified=0에서 CLAUDE.md와 docs/MILESTONES.md의 M2 룰팩·도면 인식(로컬)·M5 한국 실무자 UX 리뷰 행 변경이 0건이었다. src/rulepack/index.test.ts를 포함한 최종 테스트가 통과했고 src/rulepack에 confidence: stated 매칭도 0건이다.",
+      "note": "닫힌 트랙의 이전 대장 변경은 이 전제의 보호 범위가 아니다."
+    },
+    {
+      "id": "no-code-change",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --stat -- src/ tests/에는 tests/docs/ledger-sync.test.ts 하나만 나타났다. 현재 작업트리의 src/·tests/ diff는 0건이며 tests/golden/ 변경도 0건이다.",
+      "note": "step5의 변이와 복원은 최종 diff에 남지 않았다."
+    },
+    {
+      "id": "risks-untouched",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD -- docs/RISKS.md의 출력이 비어 있었다.",
+      "note": "현재 작업트리에서도 docs/RISKS.md 변경은 없다."
+    },
+    {
+      "id": "decisions-preserved",
+      "verdict": "upheld",
+      "evidence": "docs/MILESTONES.md의 main...HEAD 삭제 줄은 M3c·ST-Bridge·일본 고유 형태의 체크박스 행 3개뿐이고 모두 대응하는 [x] 행으로 교체됐다. 만들지 않기로 한 내용은 교체 행 안에 그대로 보존됐다.",
+      "note": "체크박스 행 외 결정 문단 삭제는 확인되지 않았다."
+    },
+    {
+      "id": "ledgers-agree",
+      "verdict": "upheld",
+      "evidence": "최종 tests/docs/ledger-sync.test.ts와 tests/docs/guardrail-sync.test.ts가 통과했다. docs/RISKS.md의 고유 R번호 집합과 CLAUDE.md 열린 리스크 표의 집합이 양쪽 모두 R1~R16이었다.",
+      "note": "문서 상태 문언이 아니라 동기화 테스트가 정의한 번호 집합과 매핑을 대조했다."
+    },
+    {
+      "id": "test-count-not-reduced",
+      "verdict": "upheld",
+      "evidence": "현재 npm 테스트 JSON 집계는 testResults 98개 파일·1,682개 테스트·전부 통과였다. step0 기준선 97개 파일·1,680개 테스트보다 파일 1개, 테스트 2개가 늘었다.",
+      "note": "추가로 npm run test:golden은 7개 파일·393개 테스트 전부 통과했다."
+    }
+  ],
+  "japan_classification": [
+    { "term": "壁式構造", "file": "tests/golden/quantity-measurement.test.ts", "line": 2119, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/quantity-measurement.test.ts", "line": 2126, "category": "quote" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 32, "category": "quote" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 33, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 39, "category": "quote" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 40, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 233, "category": "quote" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 237, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 239, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 254, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 267, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 280, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 292, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 305, "category": "decision" },
+    { "term": "壁式構造", "file": "tests/golden/fixtures/quantity-r5-ch3.json", "line": 307, "category": "decision" },
+    { "term": "スパイラル", "file": "src/domain/rebar/wall.ts", "line": 17, "category": "comment" },
+    { "term": "スパイラル", "file": "src/domain/rebar/wall.ts", "line": 18, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/project.ts", "line": 47, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/project.ts", "line": 48, "category": "comment" },
+    { "term": "スパイラル", "file": "src/domain/model/member.ts", "line": 81, "category": "comment" },
+    { "term": "スパイラル", "file": "src/domain/model/member.ts", "line": 84, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/member.ts", "line": 265, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/member.ts", "line": 267, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/member.ts", "line": 269, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/member.test.ts", "line": 24, "category": "comment" },
+    { "term": "壁式構造", "file": "src/domain/model/sample-project.ts", "line": 96, "category": "comment" }
+  ],
+  "mutation_sweep": [
+    {
+      "mutation": "CLAUDE.md 마일스톤 표의 M0 상태를 완료에서 진행 중으로 변경",
+      "broke": ["tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"],
+      "note": "완료 상태 기대값이 진행 중과 불일치했다. 원복 완료."
+    },
+    {
+      "mutation": "docs/MILESTONES.md의 M0 체크박스를 [x]에서 [ ]로 변경",
+      "broke": ["tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"],
+      "note": "체크되지 않은 항목에 완료 상태가 남은 것을 검출했다. 원복 완료."
+    },
+    {
+      "mutation": "docs/RISKS.md에서 R1 행을 삭제",
+      "broke": ["tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 두 리스크 대장이 같은 번호 집합을 가진다"],
+      "note": "위험 번호 집합의 길이가 15 대 16으로 달라졌다. 원복 완료."
+    },
+    {
+      "mutation": "CLAUDE.md 열린 리스크 표에서 R1 행을 삭제",
+      "broke": ["tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 두 리스크 대장이 같은 번호 집합을 가진다"],
+      "note": "위험 번호 집합의 길이가 16 대 15로 달라졌다. 원복 완료."
+    },
+    {
+      "mutation": "CLAUDE.md 마일스톤 표에 매핑표에 없는 검증용 임시 항목을 추가",
+      "broke": ["tests/docs/ledger-sync.test.ts > 문서 대장 동기화 > 마일스톤 표와 체크박스가 명시적 매핑 및 상태를 공유한다"],
+      "note": "CLAUDE.md 행 수가 13 대 매핑 12로 달라졌다. 원복 완료."
+    },
+    {
+      "mutation": "AGENTS.md 본문의 첫 설명 줄을 임시로 변경",
+      "broke": ["tests/docs/guardrail-sync.test.ts > AGENTS.md가 자체 헤더 뒤에 CLAUDE.md 본문 전체를 그대로 담는다"],
+      "note": "AGENTS.md 본문 suffix가 CLAUDE.md 본문과 달라졌다. 원복 완료."
+    }
+  ],
+  "test_counts": {
+    "files": 98,
+    "tests": 1682,
+    "delta_files": 1,
+    "delta_tests": 2
+  },
+  "mapping_counts": {
+    "pairs": 12,
+    "claude_rows": 12,
+    "milestones_checkboxes": 12
+  },
+  "still_open": [
+    "M2 룰팩 — confidence: transcribed 240행과 inferred 3행의 사람 독립 검토가 남아 stated는 0행이다.",
+    "도면 인식(로컬) — 표 형식 커버리지, 주기형 壁リスト, 위치 없는 カットオフ, kani p40 등 R10 잔여가 남아 있다.",
+    "M5 한국 실무자 UX 리뷰 — 아직 착수하지 않았다."
+  ],
+  "diffstat": " AGENTS.md                                          |   8 +-\n CLAUDE.md                                          |   8 +-\n docs/MILESTONES.md                                 |   6 +-\n phases/35-ledger-reconciliation/index.json         |  37 ++-\n .../step0-codex.stderr.log                         |   4 +\n .../step0-codex.stdout.log                         | 253 +++++++++++++++++++++\n phases/35-ledger-reconciliation/step0-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step0-report.json  | 102 +++++++++\n .../step1-codex.stderr.log                         |   2 +\n .../step1-codex.stdout.log                         | 152 +++++++++++++\n phases/35-ledger-reconciliation/step1-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step1-report.json  |  51 +++++\n .../step2-codex.stderr.log                         |   4 +\n .../step2-codex.stdout.log                         |  44 ++++\n phases/35-ledger-reconciliation/step2-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step2-report.json  |  41 ++++\n .../step3-codex.stderr.log                         |   6 +\n .../step3-codex.stdout.log                         | 173 ++++++++++++++\n phases/35-ledger-reconciliation/step3-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step3-report.json  | 127 +++++++++++\n .../step4-codex.stderr.log                         |   6 +\n .../step4-codex.stdout.log                         |  56 +++++\n phases/35-ledger-reconciliation/step4-invoke.json  |   9 +\n phases/35-ledger-reconciliation/step4-report.json  |  45 ++++\n phases/35-ledger-reconciliation/step4.md           |  75 ++++++\n phases/35-ledger-reconciliation/step5.md           |  84 +++++++\n tests/docs/ledger-sync.test.ts                     | 213 +++++++++++++++++\n 27 files changed, 1526 insertions(+), 16 deletions(-)",
+  "unexpected_files": [],
+  "noticed": [
+    "git diff main...HEAD --stat의 27개 파일은 step0~4가 남긴 phase 산출물·대장·ledger sync 테스트다. step5가 추가한 대상 변경은 report와 index뿐이며 src/·tests/ 대상 코드는 없다.",
+    "step5-codex.stdout.log와 step5-codex.stderr.log는 하네스가 생성한 미추적 로그이며 AGENTS.md 규칙에 따라 커밋에서 제외한다.",
+    "최종 작업트리의 변이 대상 문서·코드에는 미복원 변경이 없다."
+  ]
+}

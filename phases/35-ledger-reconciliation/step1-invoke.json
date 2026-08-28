@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "ledger-sync-test",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 514.9979628000001,
+  "stdout_log": "phases\\35-ledger-reconciliation\\step1-codex.stdout.log",
+  "stderr_log": "phases\\35-ledger-reconciliation\\step1-codex.stderr.log"
+}

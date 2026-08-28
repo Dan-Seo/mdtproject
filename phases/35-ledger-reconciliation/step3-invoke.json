@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "refute-ledger-reconciliation",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 832.8946264999977,
+  "stdout_log": "phases\\35-ledger-reconciliation\\step3-codex.stdout.log",
+  "stderr_log": "phases\\35-ledger-reconciliation\\step3-codex.stderr.log"
+}

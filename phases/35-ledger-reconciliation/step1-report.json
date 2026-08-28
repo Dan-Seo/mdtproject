@@ -1,0 +1,51 @@
+{
+  "test_file": "tests/docs/ledger-sync.test.ts",
+  "first_failure": {
+    "ran": true,
+    "failed": true,
+    "message": "부재 확장(耐震壁·床板): 체크된 항목은 CLAUDE.md에서 완료여야 한다. expected '진행 중' to be '완료'"
+  },
+  "ledger_fixes": [
+    {
+      "file": "CLAUDE.md",
+      "row": "부재 확장(耐震壁·床板)",
+      "before": "**진행 중** | 平面 뷰의 벽·床板 배치·삭제 입력, 片持床板",
+      "after": "완료 | —",
+      "basis": "step 0의 wall-slab-placement-exists 및 cantilever-slab-exists가 모두 upheld"
+    },
+    {
+      "file": "AGENTS.md",
+      "row": "부재 확장(耐震壁·床板)",
+      "before": "**진행 중** | 平面 뷰의 벽·床板 배치·삭제 입력, 片持床板",
+      "after": "완료 | —",
+      "basis": "CLAUDE.md 본문 재생성에 따른 사본 동기화"
+    }
+  ],
+  "falsifiability_checks": [
+    {
+      "mutation": "CLAUDE.md의 부재 확장 상태를 진행 중으로 되돌림",
+      "failed": true,
+      "reverted": true
+    },
+    {
+      "mutation": "CLAUDE.md에 매핑표에 없는 가상 마일스톤 행을 추가",
+      "failed": true,
+      "reverted": true
+    },
+    {
+      "mutation": "docs/MILESTONES.md에 매핑표에 없는 가상 체크박스 행을 추가",
+      "failed": true,
+      "reverted": true
+    }
+  ],
+  "test_counts": {
+    "files": 98,
+    "tests": 1682
+  },
+  "diffstat": "AGENTS.md | 2 +-, CLAUDE.md | 2 +-, tests/docs/ledger-sync.test.ts | 213 +, 3 files changed, 215 insertions(+), 2 deletions(-)",
+  "noticed": [
+    "npm run lint는 오류 0건이며 기존 src/app/api/oncall/alert/route.test.ts의 미사용 변수 경고 1건이 있다.",
+    "기준선 97 files / 1680 tests 대비 테스트 파일 1개와 테스트 2개가 추가되었다.",
+    "step 0 보고서 verdict는 refuted이지만 두 대장 ID 집합은 R1–R16으로 일치했다."
+  ]
+}

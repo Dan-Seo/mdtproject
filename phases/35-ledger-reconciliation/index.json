@@ -6,23 +6,55 @@
       "step": 0,
       "name": "measure-ledger-claims",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-28T22:24:55+0900",
+      "summary": "7개 전제를 실행·변이 검증한 결과, 壁式構造 문자열이 주석 아닌 골든 픽스처·테스트 데이터에 있어 japan-remainder-is-decision-only를 반증했다.",
+      "refuted_at": "2026-08-28T22:39:05+0900"
     },
     {
       "step": 1,
       "name": "ledger-sync-test",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T22:39:05+0900",
+      "completed_at": "2026-08-28T22:47:40+0900",
+      "summary": "명시적 12쌍 매핑표와 양방향 신규 항목 감시를 포함한 마일스톤·리스크 대장 동기화 테스트를 추가하고, step 0 근거에 따라 CLAUDE.md와 AGENTS.md의 부재 확장 상태를 완료로 맞췄다."
     },
     {
       "step": 2,
       "name": "close-decision-only-tracks",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T22:47:41+0900",
+      "completed_at": "2026-08-28T22:53:41+0900",
+      "summary": "step 0에서 upheld인 M3c와 ST-Bridge를 대장 양쪽에 완료로 반영하고, refuted인 일본 고유 형태·제품은 열린 상태로 유지했다."
     },
     {
       "step": 3,
       "name": "refute-ledger-reconciliation",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-28T22:53:42+0900",
+      "refuted_at": "2026-08-28T23:07:34+0900",
+      "summary": "뮤테이션 6건과 ST-Bridge 거부 가드를 직접 검증했으나, src/tests의 壁式構造 비주석 매칭 15건으로 closed-tracks-really-closed 전제를 반증했다."
+    },
+    {
+      "step": 4,
+      "name": "close-japan-specific-track",
+      "status": "completed",
+      "started_at": "2026-08-28T23:08:49+0900",
+      "completed_at": "2026-08-28T23:16:34+0900",
+      "summary": "src/tests의 네 용어 26개 매칭을 전부 주석·원문 전사·결정 기록으로 분류해 구현 0건을 확인하고, MILESTONES.md·CLAUDE.md를 완료로 갱신한 뒤 AGENTS.md를 동기화했다."
+    },
+    {
+      "step": 5,
+      "name": "refute-ledger-reconciliation-2",
+      "kind": "verify",
+      "status": "completed",
+      "started_at": "2026-08-28T23:16:34+0900",
+      "completed_at": "2026-08-28T23:29:23+0900",
+      "summary": "11개 전제를 직접 재검증해 모두 upheld로 확인했고, 6개 뮤테이션이 각각 동기화·가드 테스트를 깨뜨린 뒤 모두 원복했다."
     }
-  ]
+  ],
+  "created_at": "2026-08-28T22:24:55+0900",
+  "completed_at": "2026-08-28T23:35:00+0900",
+  "status": "completed"
 }

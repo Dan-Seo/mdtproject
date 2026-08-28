@@ -1,0 +1,41 @@
+{
+  "closed": [
+    {
+      "track": "M3c 고유 상세",
+      "basis_premise": "m3c-remainder-is-decision-only=upheld",
+      "milestones_line": "[x] 완료 (2026-08-28, ADR-022); パネルゾーン帯筋·溶接閉鎖フープ는 두 원문 0건이거나 제품이 형상·本数를 지어내야 하므로 만들지 않기로 한 결정임을 명시",
+      "claude_row": "완료; パネルゾーン帯筋·溶接閉鎖フープ는 두 원문 0건이거나 제품이 형상·本数를 지어내야 하므로 만들지 않음 (ADR-022)",
+      "not_built": "パネルゾーン帯筋·溶接閉鎖フープ. 두 원문 0건이며, 溶接閉鎖フープ는 1通則2)에 따라 제작방식과 무관하게 断面周長으로 산정되어 수량도 변하지 않는다."
+    },
+    {
+      "track": "ST-Bridge 취입",
+      "basis_premise": "stbridge-refusals-are-implemented=upheld",
+      "milestones_line": "[x] 완료 (2026-08-28, ADR-043·ADR-044); 사용자·실물 코퍼스 결손은 R16, 비직교·원호·방사 通り芯 및 미대응 階는 의도적 거부임을 명시",
+      "claude_row": "완료; 코퍼스 결손은 R16에 남기고 비직교·원호·방사 通り芯 및 BASEMENT·ISOLATION·DEPENDENCE 階는 ADR-043 결정 5에 따라 거부하며 만들지 않음",
+      "not_built": "사용자 .stb와 ver 2.1 계열 현실 규모 파일은 코퍼스 대표성 문제로 R16에 남긴다. 비직교·원호·방사 通り芯과 BASEMENT·ISOLATION·DEPENDENCE 階는 ADR-043 결정 5에 따라 근사하지 않고 거부한다."
+    }
+  ],
+  "left_open": [
+    {
+      "track": "일본 고유 형태·제품 확장",
+      "why": "japan-remainder-is-decision-only=refuted. 壁式構造이 주석이 아닌 골든 픽스처와 테스트 데이터에 존재하므로, step 2에서 이 트랙을 닫지 않았다."
+    }
+  ],
+  "untouched": [
+    "M2 룰팩",
+    "도면 인식(로컬)",
+    "M5 한국 실무자 UX 리뷰",
+    "docs/RISKS.md"
+  ],
+  "test_counts": {
+    "files": 98,
+    "tests": 1682
+  },
+  "diffstat": "AGENTS.md 4줄, CLAUDE.md 2행, docs/MILESTONES.md 2항목, phases/35-ledger-reconciliation/index.json 1 step status, step2-report.json 1개 추가; src/·tests/·docs/RISKS.md 변경 없음",
+  "noticed": [
+    "지정 문서 동기화 테스트는 2개 파일·3개 테스트가 통과했다.",
+    "npm run lint는 오류 없이 통과했으며 기존 @typescript-eslint/no-unused-vars 경고 1건이 남아 있다.",
+    "npm run test는 98개 파일·1682개 테스트가 모두 통과했다.",
+    "step 0 전체 verdict는 refuted이며, 이번 step은 개별 게이트가 upheld인 트랙만 닫았다."
+  ]
+}
