@@ -7,7 +7,7 @@
 ## 1차 실행 기록 (2026-08-28)
 step 6이 한 번 `refuted`로 끝났다. 반증된 둘(`no-framing-plan-coupling`·`no-network-in-import`)은 **전제의 grep 범위가 `scope-guard.test.ts`를 포함해 구조적으로 성립 불가능**했던 것이고 코드의 결함이 아니었다 — 그 파일은 `applyFramingPlan`·`applyElevation`·`fetch`·`XMLHttpRequest`·`sendBeacon`을 **금지어 문자열로 선언**하므로 테스트를 포함하면 0건이 될 수 없다. 1차 보고서는 `step6-report.json`에 그대로 남아 있다. 아래에서 그 둘은 **비테스트 소스로 범위를 좁히고, 가드 목록이 비지 않았는지를 함께 요구하도록** 고쳤다 — 완화가 아니라 강화다.
 
-그리고 step 6이 놓친 것이 하나 있었다. `no-rulepack-territory`가 `upheld`였는데 실제로는 `apply.ts`·`types.ts`의 식별자가 유니코드 이스케이프로 쓰여 grep을 통과하고 있었다. step 7이 그것을 고쳤고, 아래 `no-escaped-identifiers`가 그것을 지킨다.
+그리고 step 6이 놓친 것이 하나 있었다. `no-rulepack-territory`가 `upheld`였는데 실제로는 `apply.ts`·`types.ts`의 식별자가 유니코드 이스케이프로 쓰여 grep을 통과하고 있었다. step 7이 이름을 바꾸고, 금지어 검사를 **이스케이프 해독본에도** 걸어 그 기법 자체를 무력화했다(금지가 아니라 무력화다 — 정당한 문자 리터럴은 그대로 통과한다). 아래 `no-escaped-identifiers`가 그것을 지킨다.
 
 **1차 결과를 근거로 판정을 완화하지 마라 — 전부 다시 확인하라.** 뮤테이션 스윕도 다시 돌린다.
 
@@ -19,7 +19,7 @@ step 6이 한 번 `refuted`로 끝났다. 반증된 둘(`no-framing-plan-couplin
 | `no-framing-plan-coupling` | **대상은 `src/lib/import/stb/`의 비테스트 `.ts`뿐이다** — `scope-guard.test.ts`가 이 이름들을 금지어 문자열로 선언하므로 테스트를 포함하면 코드가 아무리 깨끗해도 성립할 수 없다(1차 실행에서 실측). 비테스트 파일 각각에 `grep -Hn -e applyFramingPlan -e applyElevation -e framing-plan <파일>` 이 전부 0건이다. **그리고** `scope-guard.test.ts`가 `applyFramingPlan`·`applyElevation`을 **여전히** 금지어로 선언하고 있다 — 하나라도 빠졌으면 **`refuted`**(가드를 비우는 우회다). |
 | `no-domain-drift` | `git diff main...HEAD --stat -- src/domain/ src/rulepack/` 이 **빈 출력**이다. 하나라도 있으면 **`refuted`**. |
 | `no-rulepack-territory` | `src/lib/import/stb/`의 **비테스트 `.ts`** 각각에 `grep -Hn -e 定着 -e 重ね継手 -e 折曲 -e かぶり -e depth_cover -e anchorage -e cut_off -e center_ -e StbSec -e StbApply <파일>` 이 전부 0건이고, 그 파일들에 규준 수치로 읽힐 숫자 리터럴이 없다. **그리고** `scope-guard.test.ts`가 그 열 문자열을 **여전히 전부** 금지어로 선언하고 있다. 어느 쪽이든 어긋나면 **`refuted`**. |
-| `no-escaped-identifiers` | `grep -rn` 으로 `src/lib/import/stb/`의 **모든** `.ts`(테스트 포함)에 유니코드 이스케이프 시퀀스가 0건이고, `scope-guard.test.ts`에 그것을 금지하는 검사가 실재한다. **그리고 그 검사가 항진명제가 아니다** — `apply.ts`의 식별자 하나를 이스케이프 표기로 되돌리면 그 검사가 실제로 실패해야 한다(확인 뒤 되돌려라). 실패하지 않으면 **`refuted`**. 이것이 이 스텝에서 가장 중요한 항목이다: 이 검사가 헐거우면 위의 두 grep 전제가 통째로 무의미해진다. |
+| `no-escaped-identifiers` | `scope-guard.test.ts`가 금지어 검사를 **이스케이프를 해독한 사본에도** 걸고 있다. **그리고 그 장치가 항진명제가 아니다** — `apply.ts`의 식별자 하나를 이스케이프 표기(`StbApplyResult`의 `A`를 `\u0041`로)로 되돌리면 그 검사가 실제로 실패해야 한다(확인 뒤 되돌려라). 실패하지 않으면 **`refuted`**. 이것이 이 스텝에서 가장 중요한 항목이다: 이 장치가 헐거우면 위의 두 grep 전제가 통째로 무의미해진다. 덧붙여 `src/lib/import/stb/`에 남은 유니코드 이스케이프가 `real-decode.test.ts:48`의 문자 리터럴 하나뿐임을 확인하라 — 그것은 문자化け 검출용이며 정당하고, 가드의 스캔 대상(비테스트 `.ts`)도 아니다. **식별자** 안의 이스케이프가 하나라도 있으면 **`refuted`**. |
 | `name-not-overwritten` | `applyStbGrid`·`applyStbStories`가 `project.name`을 바꾸지 않는다 (ADR-044 결정 5). **코드를 읽어 확인하지 말고 실행해 확인하라.** 그리고 그것을 고정하는 단언이 `apply.test.ts`에 실재하는지 적어라. 어긋나면 **`refuted`**. |
 | `refusal-preserves-project` | 부재가 있는 案件에 `discardMembers` 없이 두 함수를 부르면 `applied: false`이고 돌아온 `project`가 **입력과 참조까지 같다**. 어긋나면 **`refuted`**. |
 | `same-span-keeps-members` | 스팬이 같고 라벨만 다른 후보를 `applyStbGrid`에 넣으면 부재가 살아남고 `xLabels`·`yLabels`만 바뀐다. 어긋나면 **`refuted`**. |
@@ -41,7 +41,7 @@ step 6이 한 번 `refuted`로 끝났다. 반증된 둘(`no-framing-plan-couplin
 6. `applyStbGrid`가 `project.name`을 `candidate.projectName`으로 덮어쓰게 한다.
 7. `StbImport`가 승인 성공 시 `issues` 표시를 지우게 한다.
 8. `tests/fixtures/stb-import/applied/` 중 아무 파일의 숫자 한 칸을 1 더한다.
-9. **`apply.ts`의 타입 이름 하나를 유니코드 이스케이프 표기로 되돌린다** — step 7이 더한 검사가 이것을 잡아야 한다.
+9. **`apply.ts`의 타입 이름 하나를 유니코드 이스케이프 표기로 되돌린다**(\u0041 같은 표기로) — step 7이 더한 해독본 검사가 이것을 잡아야 한다.
 
 **아무 테스트도 깨뜨리지 못한 뮤테이션이 하나라도 있으면** 그 지점은 오라클이 비어 있는 것이다 — `broke: []`로 적고, 그것이 어느 전제의 근거를 무너뜨리는지 판단해 해당 전제를 **`refuted`**로 두어라.
 
