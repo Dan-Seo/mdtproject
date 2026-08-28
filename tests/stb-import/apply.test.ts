@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { toSkeletonCandidate } from '@/lib/import/stb/candidates'
 import { applyStbGrid, applyStbStories } from '@/lib/import/stb/apply'
 import type {
-  StbApplyRefusal,
-  StbApplyResult,
+  StbSkeletonApplyRefusal,
+  StbSkeletonApplyResult,
   StbDocument,
   StbGridCandidate,
   StbSkeletonCandidate,
@@ -35,7 +35,7 @@ interface AppliedFixture {
   _derivedFrom: string
   grid: {
     applied: boolean
-    refusal: StbApplyRefusal | null
+    refusal: StbSkeletonApplyRefusal | null
     value: {
       xSpans: number[]
       ySpans: number[]
@@ -45,14 +45,14 @@ interface AppliedFixture {
   }
   stories: {
     applied: boolean
-    refusal: StbApplyRefusal | null
+    refusal: StbSkeletonApplyRefusal | null
     value: { id: string; name: string; height: number }[] | null
   }
 }
 
 interface RefusedFixture {
   applied: boolean
-  refusal: StbApplyRefusal | null
+  refusal: StbSkeletonApplyRefusal | null
   value: null
 }
 
@@ -79,7 +79,7 @@ function candidateFor(file: (typeof fixtureFiles)[number]): StbSkeletonCandidate
 }
 
 function resultShape(
-  result: StbApplyResult,
+  result: StbSkeletonApplyResult,
 ): RefusedFixture {
   return {
     applied: result.applied,

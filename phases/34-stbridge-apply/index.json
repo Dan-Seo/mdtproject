@@ -65,7 +65,10 @@
     {
       "step": 7,
       "name": "fix-guard-evasion-and-risk-ledger",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T21:30:43+0900",
+      "summary": "Renamed escaped ST-Bridge apply identifiers, added original/decoded scope checks, added the R16 summary row, and passed all AC tests.",
+      "completed_at": "2026-08-28T21:35:17+0900"
     },
     {
       "step": 8,

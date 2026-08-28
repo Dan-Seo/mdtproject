@@ -3,7 +3,7 @@ import type { Project } from '@/domain/model/project'
 import type {
   StbGridCandidate,
   StbSkeletonCandidate,
-  Stb\u0041pplyResult,
+  StbSkeletonApplyResult,
 } from './types'
 
 function sameNumbers(left: number[], right: number[]): boolean {
@@ -82,7 +82,7 @@ export function applyStbGrid(
   project: Project,
   candidate: StbSkeletonCandidate,
   options: { discardMembers?: boolean } = {},
-): Stb\u0041pplyResult {
+): StbSkeletonApplyResult {
   const xGrid = gridFor(candidate.grids, 'X')
   const yGrid = gridFor(candidate.grids, 'Y')
   if (xGrid === undefined || yGrid === undefined) {
@@ -125,7 +125,7 @@ export function applyStbStories(
   project: Project,
   candidate: StbSkeletonCandidate,
   options: { discardMembers?: boolean } = {},
-): Stb\u0041pplyResult {
+): StbSkeletonApplyResult {
   if (candidate.stories.length === 0) {
     return {
       project,

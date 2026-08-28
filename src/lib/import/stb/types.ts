@@ -93,17 +93,18 @@ export interface StbSkeletonCandidate {
   issues: StbIssue[]
 }
 
-export const STB_APPLY_REFUSALS = [
+export const STB_SKELETON_APPLY_REFUSALS = [
   '通り芯候補なし',
   '階候補なし',
   '部材あり通り芯置換不可',
   '部材あり階置換不可',
 ] as const
 
-export type Stb\u0041pplyRefusal = (typeof STB_APPLY_REFUSALS)[number]
+export type StbSkeletonApplyRefusal =
+  (typeof STB_SKELETON_APPLY_REFUSALS)[number]
 
-export interface Stb\u0041pplyResult {
+export interface StbSkeletonApplyResult {
   project: Project
   applied: boolean
-  refusal?: Stb\u0041pplyRefusal
+  refusal?: StbSkeletonApplyRefusal
 }
