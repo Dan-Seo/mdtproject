@@ -9,7 +9,8 @@
       "gate": true,
       "status": "completed",
       "started_at": "2026-08-28T19:40:01+0900",
-      "summary": "6개 반영 전제를 모두 upheld로 확인하고 mini 좌표 결함 및 뒤 스텝용 11개 기록 항목을 step0-report.json에 남겼다."
+      "summary": "6개 반영 전제를 모두 upheld로 확인하고 mini 좌표 결함 및 뒤 스텝용 11개 기록 항목을 step0-report.json에 남겼다.",
+      "completed_at": "2026-08-28T19:56:08+0900"
     },
     {
       "step": 1,
