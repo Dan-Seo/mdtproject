@@ -167,7 +167,8 @@
     },
     {
       "dir": "34-stbridge-apply",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-28T21:52:37+0900"
     }
   ]
 }
