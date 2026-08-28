@@ -3,7 +3,7 @@
   "name": "refute-stb-skeleton",
   "exitCode": 0,
   "timedOut": false,
-  "elapsed": 726.4005364999903,
+  "elapsed": 495.2992719000031,
   "stdout_log": "phases\\33-stbridge-skeleton-import\\step4-codex.stdout.log",
   "stderr_log": "phases\\33-stbridge-skeleton-import\\step4-codex.stderr.log"
 }
