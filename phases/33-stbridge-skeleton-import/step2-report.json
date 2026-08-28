@@ -1,0 +1,318 @@
+{
+  "step": 2,
+  "name": "stb-document-ir",
+  "status": "completed",
+  "files": [
+    "src/lib/import/stb/types.ts",
+    "src/lib/import/stb/document.ts",
+    "src/lib/import/stb/document.test.ts",
+    "src/lib/import/stb/scope-guard.test.ts",
+    "scripts/stb/extract-stb-document.mjs",
+    "tests/fixtures/stb-import/document/mini.json",
+    "tests/fixtures/stb-import/document/dotnet-sample1.json",
+    "tests/fixtures/stb-import/document/diffchecker-filea.json",
+    "tests/fixtures/stb-import/document/hoaryfox-sample.json",
+    "tests/fixtures/stb-import/document/diffchecker-mini210.json",
+    "tests/stb-import/document-fixture.test.ts",
+    "phases/33-stbridge-skeleton-import/step2-report.json"
+  ],
+  "ir_fixtures": [
+    {
+      "file": "dotnet-sample1.json",
+      "source": {
+        "file": "dotnet-sample1.stb",
+        "sha256": "50df079abaf5514d88129b7e0ad194fb959d6bd2757126baebab650072ff391a"
+      },
+      "version": "2.0.1",
+      "encoding": "utf-8",
+      "axisGroupCount": 2,
+      "axisCount": 6,
+      "axisGroups": [
+        { "groupName": "Y", "angle": "0.0", "axisCount": 3, "names": ["Y1", "Y2", "Y3"], "distances": ["0.0", "6000.0", "12000.0"] },
+        { "groupName": "X", "angle": "270.0", "axisCount": 3, "names": ["X1", "X2", "X3"], "distances": ["0.0", "6000.0", "12000.0"] }
+      ],
+      "storyCount": 3,
+      "stories": [
+        { "name": "1FL", "height": "0.0", "kind": "GENERAL" },
+        { "name": "2FL", "height": "5000.0", "kind": "GENERAL" },
+        { "name": "RFL", "height": "9200.0", "kind": "ROOF" }
+      ],
+      "nodeCount": 50,
+      "unreadElements": [
+        { "name": "StbApplyConditionsList", "count": 1 },
+        { "name": "StbColumn_RC_RebarPositionApply", "count": 1 },
+        { "name": "StbColumn_RC_BarSpacingApply", "count": 1 },
+        { "name": "StbColumn_SRC_RebarPositionApply", "count": 1 },
+        { "name": "StbColumn_SRC_BarSpacingApply", "count": 1 },
+        { "name": "StbBeam_RC_RebarPositionApply", "count": 1 },
+        { "name": "StbBeam_RC_BarWebApply", "count": 1 },
+        { "name": "StbBeam_RC_BarSpacingApply", "count": 1 },
+        { "name": "StbBeam_SRC_RebarPositionApply", "count": 1 },
+        { "name": "StbBeam_SRC_BarWebApply", "count": 1 },
+        { "name": "StbBeam_SRC_BarSpacingApply", "count": 1 },
+        { "name": "StbColumns", "count": 1 },
+        { "name": "StbColumn", "count": 17 },
+        { "name": "StbGirders", "count": 1 },
+        { "name": "StbGirder", "count": 34 },
+        { "name": "StbBeams", "count": 1 },
+        { "name": "StbBeam", "count": 11 },
+        { "name": "StbSlabs", "count": 1 },
+        { "name": "StbSlab", "count": 27 },
+        { "name": "StbNodeIdOrder", "count": 33 },
+        { "name": "StbSlabOffsetList", "count": 4 },
+        { "name": "StbSlabOffset", "count": 16 },
+        { "name": "StbWalls", "count": 1 },
+        { "name": "StbWall", "count": 6 },
+        { "name": "StbFootings", "count": 1 },
+        { "name": "StbFooting", "count": 9 },
+        { "name": "StbParapets", "count": 1 },
+        { "name": "StbParapet", "count": 8 },
+        { "name": "StbSections", "count": 1 },
+        { "name": "StbSecColumn_RC", "count": 4 },
+        { "name": "StbSecFigureColumn_RC", "count": 4 },
+        { "name": "StbSecColumn_RC_Rect", "count": 4 },
+        { "name": "StbSecBarArrangementColumn_RC", "count": 4 },
+        { "name": "StbSecBarColumn_RC_RectSame", "count": 4 },
+        { "name": "StbSecBeam_RC", "count": 7 },
+        { "name": "StbSecFigureBeam_RC", "count": 7 },
+        { "name": "StbSecBeam_RC_Straight", "count": 7 },
+        { "name": "StbSecBarArrangementBeam_RC", "count": 7 },
+        { "name": "StbSecBarBeam_RC_Same", "count": 3 },
+        { "name": "StbSecBarBeam_RC_ThreeTypes", "count": 12 },
+        { "name": "StbSecSlab_RC", "count": 4 },
+        { "name": "StbSecFigureSlab_RC", "count": 4 },
+        { "name": "StbSecSlab_RC_Straight", "count": 4 },
+        { "name": "StbSecBarArrangementSlab_RC", "count": 4 },
+        { "name": "StbSecBarSlab_RC_Standard", "count": 24 },
+        { "name": "StbSecBarSlab_RC_1Way2", "count": 6 },
+        { "name": "StbSecWall_RC", "count": 2 },
+        { "name": "StbSecFigureWall_RC", "count": 2 },
+        { "name": "StbSecWall_RC_Straight", "count": 2 },
+        { "name": "StbSecBarArrangementWall_RC", "count": 2 },
+        { "name": "StbSecBarWall_RC_DoubleNet", "count": 4 },
+        { "name": "StbSecFoundation_RC", "count": 1 },
+        { "name": "StbSecFigureFoundation_RC", "count": 1 },
+        { "name": "StbSecFoundation_RC_Rect", "count": 1 },
+        { "name": "StbSecBarArrangementFoundation_RC", "count": 1 },
+        { "name": "StbSecBarFoundation_RC_Rect", "count": 2 },
+        { "name": "StbSecParapet_RC", "count": 8 },
+        { "name": "StbSecFigureParapet_RC", "count": 8 },
+        { "name": "StbSecParapet_RC_TypeI", "count": 8 },
+        { "name": "StbSecBarArrangementParapet_RC", "count": 8 },
+        { "name": "StbSecBarParapet_RC_Single", "count": 16 },
+        { "name": "StbSecSteel", "count": 1 },
+        { "name": "StbJoints", "count": 1 }
+      ]
+    },
+    {
+      "file": "diffchecker-filea.json",
+      "source": {
+        "file": "diffchecker-filea.stb",
+        "sha256": "fb350d0efcec007219ccc73d975175f4f694f422619dbc416ba133b18433ebe2"
+      },
+      "version": "2.0.2",
+      "encoding": "shift_jis",
+      "axisGroupCount": 2,
+      "axisCount": 16,
+      "axisGroups": [
+        { "groupName": "Y", "angle": "0.0", "axisCount": 9, "names": ["Y0", "Y1", "Y1a", "Y2", "Y2a", "Y3", "Y3a", "Y4", "Y5"], "distances": ["0.0", "1000.0", "4200.0", "7400.0", "10600.0", "13800.0", "17000.0", "20200.0", "21200.0"] },
+        { "groupName": "X", "angle": "270.0", "axisCount": 7, "names": ["X0", "X1", "X1a", "X2", "X2a", "X3", "X4"], "distances": ["0.0", "1000.0", "3000.0", "5000.0", "9400.0", "13800.0", "14800.0"] }
+      ],
+      "storyCount": 5,
+      "stories": [
+        { "name": "1FL", "height": "200.0", "kind": "GENERAL" },
+        { "name": "2FL", "height": "4700.0", "kind": "GENERAL" },
+        { "name": "3FL", "height": "8700.0", "kind": "GENERAL" },
+        { "name": "RFL", "height": "12700.0", "kind": "PENTHOUSE" },
+        { "name": "PHRFL", "height": "16500.0", "kind": "ROOF" }
+      ],
+      "nodeCount": 166,
+      "unreadElements": [
+        { "name": "StbApplyConditionsList", "count": 1 },
+        { "name": "StbColumn_RC_RebarPositionApply", "count": 1 },
+        { "name": "StbColumn_RC_BarSpacingApply", "count": 1 },
+        { "name": "StbColumn_SRC_RebarPositionApply", "count": 1 },
+        { "name": "StbColumn_SRC_BarSpacingApply", "count": 1 },
+        { "name": "StbBeam_RC_RebarPositionApply", "count": 1 },
+        { "name": "StbBeam_RC_BarWebApply", "count": 1 },
+        { "name": "StbBeam_RC_BarSpacingApply", "count": 1 },
+        { "name": "StbBeam_SRC_RebarPositionApply", "count": 1 },
+        { "name": "StbBeam_SRC_BarWebApply", "count": 1 },
+        { "name": "StbBeam_SRC_BarSpacingApply", "count": 1 },
+        { "name": "StbColumns", "count": 1 },
+        { "name": "StbColumn", "count": 40 },
+        { "name": "StbGirders", "count": 1 },
+        { "name": "StbGirder", "count": 75 },
+        { "name": "StbBeams", "count": 1 },
+        { "name": "StbBeam", "count": 56 },
+        { "name": "StbSlabs", "count": 1 },
+        { "name": "StbSlab", "count": 82 },
+        { "name": "StbNodeIdOrder", "count": 82 },
+        { "name": "StbSections", "count": 1 },
+        { "name": "StbSecColumn_S", "count": 8 },
+        { "name": "StbSecSteelFigureColumn_S", "count": 8 },
+        { "name": "StbSecSteelColumn_S_Same", "count": 8 },
+        { "name": "StbSecBeam_RC", "count": 4 },
+        { "name": "StbSecFigureBeam_RC", "count": 4 },
+        { "name": "StbSecBeam_RC_Straight", "count": 4 },
+        { "name": "StbSecBarArrangementBeam_RC", "count": 4 },
+        { "name": "StbSecBarBeam_RC_Same", "count": 4 },
+        { "name": "StbSecBeam_S", "count": 18 },
+        { "name": "StbSecSteelFigureBeam_S", "count": 18 },
+        { "name": "StbSecSteelBeam_S_Straight", "count": 18 },
+        { "name": "StbSecSlab_RC", "count": 2 },
+        { "name": "StbSecFigureSlab_RC", "count": 2 },
+        { "name": "StbSecSlab_RC_Straight", "count": 2 },
+        { "name": "StbSecSlabDeck", "count": 9 },
+        { "name": "StbSecFigureSlabDeck", "count": 9 },
+        { "name": "StbSecSlabDeckStraight", "count": 9 },
+        { "name": "StbSecProductSlabDeck", "count": 9 },
+        { "name": "StbSecSteel", "count": 1 },
+        { "name": "StbSecRoll-H", "count": 5 },
+        { "name": "StbSecRoll-BOX", "count": 2 },
+        { "name": "StbJoints", "count": 1 }
+      ]
+    },
+    {
+      "file": "hoaryfox-sample.json",
+      "source": {
+        "file": "hoaryfox-sample.stb",
+        "sha256": "83d35a8eeb57177d409766804e36288ff325d141d05a7cba4b58fff221257629"
+      },
+      "version": "2.0.2",
+      "encoding": "utf-8",
+      "axisGroupCount": 2,
+      "axisCount": 10,
+      "axisGroups": [
+        { "groupName": "X", "angle": "270", "axisCount": 7, "names": ["X1", "X2", "X3", "X4", "X5", "X6", "X7"], "distances": ["0", "3600", "7200", "10800", "14400", "18000", "21600"] },
+        { "groupName": "Y", "angle": "0", "axisCount": 3, "names": ["Y1", "Y2", "Y3"], "distances": ["0", "10800", "14400"] }
+      ],
+      "storyCount": 6,
+      "stories": [
+        { "name": "1F", "height": "0", "kind": "GENERAL" },
+        { "name": "2F", "height": "4000", "kind": "GENERAL" },
+        { "name": "3F", "height": "8000", "kind": "GENERAL" },
+        { "name": "4F", "height": "12000", "kind": "GENERAL" },
+        { "name": "5F", "height": "16000", "kind": "GENERAL" },
+        { "name": "RF", "height": "20000", "kind": "GENERAL" }
+      ],
+      "nodeCount": 126,
+      "unreadElements": [
+        { "name": "StbColumns", "count": 1 },
+        { "name": "StbColumn", "count": 105 },
+        { "name": "StbGirders", "count": 1 },
+        { "name": "StbGirder", "count": 192 },
+        { "name": "StbBraces", "count": 1 },
+        { "name": "StbBrace", "count": 10 },
+        { "name": "StbSections", "count": 1 },
+        { "name": "StbSecColumn_S", "count": 26 },
+        { "name": "StbSecSteelFigureColumn_S", "count": 26 },
+        { "name": "StbSecSteelColumn_S_Same", "count": 26 },
+        { "name": "StbSecBeam_RC", "count": 1 },
+        { "name": "StbSecFigureBeam_RC", "count": 1 },
+        { "name": "StbSecBeam_RC_Straight", "count": 1 },
+        { "name": "StbSecBeam_S", "count": 27 },
+        { "name": "StbSecSteelFigureBeam_S", "count": 27 },
+        { "name": "StbSecSteelBeam_S_Straight", "count": 27 },
+        { "name": "StbSecBrace_S", "count": 6 },
+        { "name": "StbSecSteelFigureBrace_S", "count": 6 },
+        { "name": "StbSecSteelBrace_S_Same", "count": 6 },
+        { "name": "StbSecSteel", "count": 1 },
+        { "name": "StbSecRoll-H", "count": 33 },
+        { "name": "StbSecRoll-BOX", "count": 26 },
+        { "name": "StbJoints", "count": 1 },
+        { "name": "StbCalData", "count": 1 },
+        { "name": "StbAnaModels", "count": 1 }
+      ]
+    },
+    {
+      "file": "diffchecker-mini210.json",
+      "source": {
+        "file": "diffchecker-mini210.stb",
+        "sha256": "9bf2b7b628d801f87d6d348b53b7628dfc0cc8a05989ace7787e727c697e80c5"
+      },
+      "version": "2.1.0",
+      "encoding": "utf-8",
+      "axisGroupCount": 0,
+      "axisCount": 0,
+      "axisGroups": [],
+      "storyCount": 1,
+      "stories": [{ "name": "1FL", "height": "0", "kind": "GENERAL" }],
+      "nodeCount": 2,
+      "unreadElements": [
+        { "name": "StbGirders", "count": 1 },
+        { "name": "StbGirder", "count": 1 },
+        { "name": "StbSections", "count": 1 },
+        { "name": "StbSecBeam_RC", "count": 1 },
+        { "name": "StbSecFigureBeam_RC", "count": 1 },
+        { "name": "StbSecBeamStraight", "count": 1 },
+        { "name": "StbSecBarArrangementBeam_RC", "count": 1 },
+        { "name": "StbSecBarBeamSimple", "count": 1 },
+        { "name": "StbSecBarBeamSimpleMain", "count": 2 }
+      ]
+    }
+  ],
+  "step0_mismatches": [],
+  "mutations": {
+    "A": {
+      "changed": "document.ts: missing distance was assigned distance ?? '0'",
+      "failed_tests": ["document.test.ts > keeps omitted attributes undefined and preserves raw strings"],
+      "failure_message": "expected '0' to be undefined",
+      "restored": true
+    },
+    "B": {
+      "changed": "document.ts: Object.assign(documentData, { dom: root })",
+      "failed_tests": [
+        "document.test.ts > treats namespaced and namespace-free XML the same",
+        "document.test.ts > contains only JSON data",
+        "document.test.ts > round-trips the hand-transcribed mini IR apart from encoding metadata"
+      ],
+      "failure_message": "JSON round-trip received dom: {} while the original contained a DOM element",
+      "restored": true
+    },
+    "C": {
+      "changed": "document.ts: const x = 'depth_cover_start_X'",
+      "failed_tests": ["scope-guard.test.ts > keeps the IR parser free of rule, section, network, and store concerns"],
+      "failure_message": "document.ts contains forbidden term depth_cover",
+      "restored": true
+    },
+    "D": {
+      "changed": "hoaryfox-sample.json: first axis distance 3600 changed to 3601",
+      "failed_tests": ["document-fixture.test.ts > hoaryfox-sample.json matches the step 0 skeleton measurements"],
+      "failure_message": "expected ['0', '3601', ...] to deeply equal ['0', '3600', ...]",
+      "restored": true
+    }
+  },
+  "scope_guard": {
+    "scanned_files": 3,
+    "actual_non_test_typescript_files": 3,
+    "files": [
+      "src/lib/import/stb/decode.ts",
+      "src/lib/import/stb/document.ts",
+      "src/lib/import/stb/types.ts"
+    ],
+    "forbidden_matches": []
+  },
+  "untouched_tracks": {
+    "command": "git diff main --stat -- src/domain src/rulepack src/lib/import/framing-plan src/lib/import/section-list src/components .github/workflows docs/ADR.md package.json",
+    "output": ""
+  },
+  "verification": {
+    "targeted": "19 tests passed before final type-only cleanup; 20 tests passed after the plural-container regression was added",
+    "npm_test": "92 files, 1639 tests passed",
+    "tsc": "passed",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161",
+    "extraction": "4 committed IR files generated from .cache/stb with SHA-256 metadata"
+  },
+  "untouched_tracks_detail": [
+    "src/domain",
+    "src/rulepack",
+    "src/lib/import/framing-plan",
+    "src/lib/import/section-list",
+    "src/components",
+    ".github/workflows",
+    "docs/ADR.md",
+    "package.json"
+  ],
+  "summary": ".stb → StbDocument 중간표현이 서고 실물 4건의 IR을 커밋했다. 부재·断面은 건수만 세며, 값 미채움·DOM 누출·규준 용어 유입을 흔들면 실패한다."
+}

@@ -23,7 +23,10 @@
     {
       "step": 2,
       "name": "stb-document-ir",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T12:38:25+0900",
+      "completed_at": "2026-08-28T12:52:10+0900",
+      "summary": ".stb → StbDocument 중간표현이 서고 실물 4건의 IR을 커밋했다. 부재·断面은 건수만 세며, 값 미채움·DOM 누출·규준 용어 유입을 흔들면 실패한다."
     },
     {
       "step": 3,

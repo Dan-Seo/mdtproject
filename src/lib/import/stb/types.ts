@@ -23,3 +23,45 @@ export const STB_ISSUES = [
 ] as const
 
 export type StbIssue = (typeof STB_ISSUES)[number]
+
+export interface StbAxisRaw {
+  id?: string
+  name?: string
+  distance?: string
+  nodeIds: string[]
+}
+
+export interface StbAxisGroupRaw {
+  groupName?: string
+  angle?: string
+  originX?: string
+  originY?: string
+  axes: StbAxisRaw[]
+}
+
+export interface StbStoryRaw {
+  id?: string
+  name?: string
+  height?: string
+  kind?: string
+}
+
+export interface StbNodeRaw {
+  id?: string
+  x?: string
+  y?: string
+  z?: string
+  kind?: string
+}
+
+export interface StbDocument {
+  version: string
+  projectName?: string
+  encoding: StbEncoding
+  axisGroups: StbAxisGroupRaw[]
+  stories: StbStoryRaw[]
+  nodes: StbNodeRaw[]
+  unsupportedAxisKinds: { name: string; count: number }[]
+  unreadElements: { name: string; count: number }[]
+  issues: StbIssue[]
+}

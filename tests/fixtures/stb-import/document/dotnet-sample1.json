@@ -1,0 +1,749 @@
+{
+  "_source": {
+    "file": "dotnet-sample1.stb",
+    "sha256": "50df079abaf5514d88129b7e0ad194fb959d6bd2757126baebab650072ff391a"
+  },
+  "version": "2.0.1",
+  "encoding": "utf-8",
+  "axisGroups": [
+    {
+      "axes": [
+        {
+          "nodeIds": [
+            "10",
+            "11",
+            "12",
+            "19",
+            "20",
+            "21",
+            "28",
+            "29",
+            "30"
+          ],
+          "id": "1",
+          "name": "Y1",
+          "distance": "0.0"
+        },
+        {
+          "nodeIds": [
+            "13",
+            "14",
+            "15",
+            "22",
+            "23",
+            "24",
+            "31",
+            "32",
+            "33"
+          ],
+          "id": "2",
+          "name": "Y2",
+          "distance": "6000.0"
+        },
+        {
+          "nodeIds": [
+            "16",
+            "17",
+            "18",
+            "25",
+            "26",
+            "27",
+            "34",
+            "35"
+          ],
+          "id": "3",
+          "name": "Y3",
+          "distance": "12000.0"
+        }
+      ],
+      "groupName": "Y",
+      "angle": "0.0",
+      "originX": "0.0",
+      "originY": "0.0"
+    },
+    {
+      "axes": [
+        {
+          "nodeIds": [
+            "10",
+            "13",
+            "16",
+            "19",
+            "22",
+            "25",
+            "28",
+            "31"
+          ],
+          "id": "4",
+          "name": "X1",
+          "distance": "0.0"
+        },
+        {
+          "nodeIds": [
+            "11",
+            "14",
+            "17",
+            "20",
+            "23",
+            "26",
+            "29",
+            "32",
+            "34"
+          ],
+          "id": "5",
+          "name": "X2",
+          "distance": "6000.0"
+        },
+        {
+          "nodeIds": [
+            "12",
+            "15",
+            "18",
+            "21",
+            "24",
+            "27",
+            "30",
+            "33",
+            "35"
+          ],
+          "id": "6",
+          "name": "X3",
+          "distance": "12000.0"
+        }
+      ],
+      "groupName": "X",
+      "angle": "270.0",
+      "originX": "0.0",
+      "originY": "0.0"
+    }
+  ],
+  "stories": [
+    {
+      "id": "7",
+      "name": "1FL",
+      "height": "0.0",
+      "kind": "GENERAL"
+    },
+    {
+      "id": "8",
+      "name": "2FL",
+      "height": "5000.0",
+      "kind": "GENERAL"
+    },
+    {
+      "id": "9",
+      "name": "RFL",
+      "height": "9200.0",
+      "kind": "ROOF"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "10",
+      "x": "0.0",
+      "y": "0.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "11",
+      "x": "6000.0",
+      "y": "0.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "12",
+      "x": "12000.0",
+      "y": "0.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "13",
+      "x": "0.0",
+      "y": "6000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "14",
+      "x": "6000.0",
+      "y": "6000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "15",
+      "x": "12000.0",
+      "y": "6000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "16",
+      "x": "0.0",
+      "y": "12000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "17",
+      "x": "6000.0",
+      "y": "12000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "18",
+      "x": "12000.0",
+      "y": "12000.0",
+      "z": "0.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "19",
+      "x": "0.0",
+      "y": "0.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "20",
+      "x": "6000.0",
+      "y": "0.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "21",
+      "x": "12000.0",
+      "y": "0.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "22",
+      "x": "0.0",
+      "y": "6000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "23",
+      "x": "6000.0",
+      "y": "6000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "24",
+      "x": "12000.0",
+      "y": "6000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "25",
+      "x": "0.0",
+      "y": "12000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "26",
+      "x": "6000.0",
+      "y": "12000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "27",
+      "x": "12000.0",
+      "y": "12000.0",
+      "z": "5000.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "28",
+      "x": "0.0",
+      "y": "0.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "29",
+      "x": "6000.0",
+      "y": "0.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "30",
+      "x": "12000.0",
+      "y": "0.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "31",
+      "x": "0.0",
+      "y": "6000.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "32",
+      "x": "6000.0",
+      "y": "6000.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "33",
+      "x": "12000.0",
+      "y": "6000.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "34",
+      "x": "6000.0",
+      "y": "12000.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "35",
+      "x": "12000.0",
+      "y": "12000.0",
+      "z": "9200.0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "36",
+      "x": "-1500.0",
+      "y": "6000.0",
+      "z": "5000.0",
+      "kind": "OTHER"
+    },
+    {
+      "id": "37",
+      "x": "-1500.0",
+      "y": "0.0",
+      "z": "5000.0",
+      "kind": "OTHER"
+    },
+    {
+      "id": "38",
+      "x": "0.0",
+      "y": "3000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "39",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "40",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "41",
+      "x": "12000.0",
+      "y": "3000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "42",
+      "x": "6000.0",
+      "y": "9000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "43",
+      "x": "12000.0",
+      "y": "9000.0",
+      "z": "9200.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "44",
+      "x": "0.0",
+      "y": "3000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "45",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "46",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "47",
+      "x": "12000.0",
+      "y": "3000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "48",
+      "x": "0.0",
+      "y": "9000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "49",
+      "x": "6000.0",
+      "y": "9000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "50",
+      "x": "6000.0",
+      "y": "9000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "51",
+      "x": "12000.0",
+      "y": "9000.0",
+      "z": "5000.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "52",
+      "x": "0.0",
+      "y": "3000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "53",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "54",
+      "x": "6000.0",
+      "y": "3000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "55",
+      "x": "12000.0",
+      "y": "3000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "56",
+      "x": "0.0",
+      "y": "9000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "57",
+      "x": "6000.0",
+      "y": "9000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "58",
+      "x": "6000.0",
+      "y": "9000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    },
+    {
+      "id": "59",
+      "x": "12000.0",
+      "y": "9000.0",
+      "z": "0.0",
+      "kind": "ON_GIRDER"
+    }
+  ],
+  "unsupportedAxisKinds": [],
+  "unreadElements": [
+    {
+      "name": "StbApplyConditionsList",
+      "count": 1
+    },
+    {
+      "name": "StbColumn_RC_RebarPositionApply",
+      "count": 1
+    },
+    {
+      "name": "StbColumn_RC_BarSpacingApply",
+      "count": 1
+    },
+    {
+      "name": "StbColumn_SRC_RebarPositionApply",
+      "count": 1
+    },
+    {
+      "name": "StbColumn_SRC_BarSpacingApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_RC_RebarPositionApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_RC_BarWebApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_RC_BarSpacingApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_SRC_RebarPositionApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_SRC_BarWebApply",
+      "count": 1
+    },
+    {
+      "name": "StbBeam_SRC_BarSpacingApply",
+      "count": 1
+    },
+    {
+      "name": "StbColumns",
+      "count": 1
+    },
+    {
+      "name": "StbColumn",
+      "count": 17
+    },
+    {
+      "name": "StbGirders",
+      "count": 1
+    },
+    {
+      "name": "StbGirder",
+      "count": 34
+    },
+    {
+      "name": "StbBeams",
+      "count": 1
+    },
+    {
+      "name": "StbBeam",
+      "count": 11
+    },
+    {
+      "name": "StbSlabs",
+      "count": 1
+    },
+    {
+      "name": "StbSlab",
+      "count": 27
+    },
+    {
+      "name": "StbNodeIdOrder",
+      "count": 33
+    },
+    {
+      "name": "StbSlabOffsetList",
+      "count": 4
+    },
+    {
+      "name": "StbSlabOffset",
+      "count": 16
+    },
+    {
+      "name": "StbWalls",
+      "count": 1
+    },
+    {
+      "name": "StbWall",
+      "count": 6
+    },
+    {
+      "name": "StbFootings",
+      "count": 1
+    },
+    {
+      "name": "StbFooting",
+      "count": 9
+    },
+    {
+      "name": "StbParapets",
+      "count": 1
+    },
+    {
+      "name": "StbParapet",
+      "count": 8
+    },
+    {
+      "name": "StbSections",
+      "count": 1
+    },
+    {
+      "name": "StbSecColumn_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecFigureColumn_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecColumn_RC_Rect",
+      "count": 4
+    },
+    {
+      "name": "StbSecBarArrangementColumn_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecBarColumn_RC_RectSame",
+      "count": 4
+    },
+    {
+      "name": "StbSecBeam_RC",
+      "count": 7
+    },
+    {
+      "name": "StbSecFigureBeam_RC",
+      "count": 7
+    },
+    {
+      "name": "StbSecBeam_RC_Straight",
+      "count": 7
+    },
+    {
+      "name": "StbSecBarArrangementBeam_RC",
+      "count": 7
+    },
+    {
+      "name": "StbSecBarBeam_RC_Same",
+      "count": 3
+    },
+    {
+      "name": "StbSecBarBeam_RC_ThreeTypes",
+      "count": 12
+    },
+    {
+      "name": "StbSecSlab_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecFigureSlab_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecSlab_RC_Straight",
+      "count": 4
+    },
+    {
+      "name": "StbSecBarArrangementSlab_RC",
+      "count": 4
+    },
+    {
+      "name": "StbSecBarSlab_RC_Standard",
+      "count": 24
+    },
+    {
+      "name": "StbSecBarSlab_RC_1Way2",
+      "count": 6
+    },
+    {
+      "name": "StbSecWall_RC",
+      "count": 2
+    },
+    {
+      "name": "StbSecFigureWall_RC",
+      "count": 2
+    },
+    {
+      "name": "StbSecWall_RC_Straight",
+      "count": 2
+    },
+    {
+      "name": "StbSecBarArrangementWall_RC",
+      "count": 2
+    },
+    {
+      "name": "StbSecBarWall_RC_DoubleNet",
+      "count": 4
+    },
+    {
+      "name": "StbSecFoundation_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecFigureFoundation_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecFoundation_RC_Rect",
+      "count": 1
+    },
+    {
+      "name": "StbSecBarArrangementFoundation_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecBarFoundation_RC_Rect",
+      "count": 2
+    },
+    {
+      "name": "StbSecParapet_RC",
+      "count": 8
+    },
+    {
+      "name": "StbSecFigureParapet_RC",
+      "count": 8
+    },
+    {
+      "name": "StbSecParapet_RC_TypeI",
+      "count": 8
+    },
+    {
+      "name": "StbSecBarArrangementParapet_RC",
+      "count": 8
+    },
+    {
+      "name": "StbSecBarParapet_RC_Single",
+      "count": 16
+    },
+    {
+      "name": "StbSecSteel",
+      "count": 1
+    },
+    {
+      "name": "StbJoints",
+      "count": 1
+    }
+  ],
+  "issues": [],
+  "projectName": "RC_sample"
+}
