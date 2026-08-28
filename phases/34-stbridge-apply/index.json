@@ -18,7 +18,7 @@
       "status": "completed",
       "started_at": "2026-08-28T19:56:09+0900",
       "summary": "mini 합성 ST-Bridge의 n21~n23 좌표를 step 0 실측값으로 복구하고 CP932·문서·기대 후보를 갱신했다.",
-      "completed_at": "2026-08-28T20:02:30+0900"
+      "completed_at": "2026-08-28T20:03:46+0900"
     },
     {
       "step": 2,
