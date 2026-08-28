@@ -1,0 +1,19 @@
+{
+  "_derivedFrom": "phases/33-stbridge-skeleton-import/step0-report.json",
+  "version": "2.1.0",
+  "projectName": "TestProject",
+  "grids": [],
+  "stories": [],
+  "unsupported": [
+    { "name": "StbGirders", "count": 1 },
+    { "name": "StbGirder", "count": 1 },
+    { "name": "StbSections", "count": 1 },
+    { "name": "StbSecBeam_RC", "count": 1 },
+    { "name": "StbSecFigureBeam_RC", "count": 1 },
+    { "name": "StbSecBeamStraight", "count": 1 },
+    { "name": "StbSecBarArrangementBeam_RC", "count": 1 },
+    { "name": "StbSecBarBeamSimple", "count": 1 },
+    { "name": "StbSecBarBeamSimpleMain", "count": 2 }
+  ],
+  "issues": ["通り芯未検出", "階不足"]
+}

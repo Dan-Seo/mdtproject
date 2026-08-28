@@ -65,3 +65,28 @@ export interface StbDocument {
   unreadElements: { name: string; count: number }[]
   issues: StbIssue[]
 }
+
+export interface StbAxisCandidate {
+  label: string
+}
+
+export interface StbGridCandidate {
+  direction: 'X' | 'Y'
+  groupName?: string
+  axes: StbAxisCandidate[]
+  spansMm: number[]
+}
+
+export interface StbStoryCandidate {
+  name: string
+  heightMm: number
+}
+
+export interface StbSkeletonCandidate {
+  version: string
+  projectName?: string
+  grids: StbGridCandidate[]
+  stories: StbStoryCandidate[]
+  unsupported: { name: string; count: number }[]
+  issues: StbIssue[]
+}
