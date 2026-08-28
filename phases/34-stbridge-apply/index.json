@@ -47,7 +47,10 @@
     {
       "step": 5,
       "name": "update-ledgers",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:55:16+0900",
+      "summary": "Updated ST-Bridge milestone and risk ledgers, synchronized CLAUDE.md with AGENTS.md, and verified directly counted corpus and code totals.",
+      "completed_at": "2026-08-28T21:01:03+0900"
     },
     {
       "step": 6,
