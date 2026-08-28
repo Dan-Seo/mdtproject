@@ -61,8 +61,18 @@
       "summary": "Refuted no-framing-plan-coupling and no-network-in-import as written: their test-inclusive scans match forbidden vocabulary in scope-guard.test.ts. All 8 mutations broke targeted tests and were reverted; the mismatch issue mutation also broke 2 tests.",
       "completed_at": "2026-08-28T21:15:50+0900",
       "refuted_at": "2026-08-28T21:18:17+0900"
+    },
+    {
+      "step": 7,
+      "name": "fix-guard-evasion-and-risk-ledger",
+      "status": "pending"
+    },
+    {
+      "step": 8,
+      "name": "refute-stb-apply-2",
+      "kind": "verify",
+      "status": "pending"
     }
   ],
-  "created_at": "2026-08-28T19:40:01+0900",
-  "completed_at": "2026-08-28T21:18:18+0900"
+  "created_at": "2026-08-28T19:40:01+0900"
 }
