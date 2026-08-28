@@ -169,6 +169,10 @@
       "dir": "34-stbridge-apply",
       "status": "completed",
       "completed_at": "2026-08-28T22:00:00+0900"
+    },
+    {
+      "dir": "35-ledger-reconciliation",
+      "status": "pending"
     }
   ]
 }

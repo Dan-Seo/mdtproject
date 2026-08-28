@@ -1,0 +1,28 @@
+{
+  "project": "Kijun",
+  "phase": "35-ledger-reconciliation",
+  "steps": [
+    {
+      "step": 0,
+      "name": "measure-ledger-claims",
+      "kind": "verify",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "ledger-sync-test",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "close-decision-only-tracks",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "refute-ledger-reconciliation",
+      "kind": "verify",
+      "status": "pending"
+    }
+  ]
+}
