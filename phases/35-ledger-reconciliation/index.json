@@ -8,7 +8,8 @@
       "kind": "verify",
       "status": "refuted",
       "started_at": "2026-08-28T22:24:55+0900",
-      "summary": "7개 전제를 실행·변이 검증한 결과, 壁式構造 문자열이 주석 아닌 골든 픽스처·테스트 데이터에 있어 japan-remainder-is-decision-only를 반증했다."
+      "summary": "7개 전제를 실행·변이 검증한 결과, 壁式構造 문자열이 주석 아닌 골든 픽스처·테스트 데이터에 있어 japan-remainder-is-decision-only를 반증했다.",
+      "refuted_at": "2026-08-28T22:39:05+0900"
     },
     {
       "step": 1,
