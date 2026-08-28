@@ -14,7 +14,10 @@
     {
       "step": 1,
       "name": "ledger-sync-test",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T22:39:05+0900",
+      "completed_at": "2026-08-28T22:44:00+0900",
+      "summary": "명시적 12쌍 매핑표와 양방향 신규 항목 감시를 포함한 마일스톤·리스크 대장 동기화 테스트를 추가하고, step 0 근거에 따라 CLAUDE.md와 AGENTS.md의 부재 확장 상태를 완료로 맞췄다."
     },
     {
       "step": 2,
