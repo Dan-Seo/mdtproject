@@ -1,0 +1,40 @@
+{
+  "project": "Kijun",
+  "phase": "33-stbridge-skeleton-import",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-stbridge-premises",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "stb-corpus-and-decode",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "stb-document-ir",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "stb-skeleton-candidates",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "refute-stb-skeleton",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "record-corpus-limits",
+      "status": "pending"
+    }
+  ]
+}

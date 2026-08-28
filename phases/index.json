@@ -159,6 +159,10 @@
       "dir": "32-harness-test-rot",
       "status": "completed",
       "completed_at": "2026-08-27T17:55:26+0900"
+    },
+    {
+      "dir": "33-stbridge-skeleton-import",
+      "status": "pending"
     }
   ]
 }
