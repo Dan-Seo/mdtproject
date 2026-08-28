@@ -41,7 +41,10 @@
       "name": "refute-stb-skeleton",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-28T13:15:17+0900",
+      "refuted_at": "2026-08-28T13:25:59+0900",
+      "summary": "전제 13건 중 11건 upheld·2건 refuted(candidates-are-inert·no-rulepack-territory의 exact grep이 scope-guard.test.ts 자체를 검출); 뮤테이션 6곳은 모두 테스트를 깨뜨려 미검출 지점 0건."
     },
     {
       "step": 5,
