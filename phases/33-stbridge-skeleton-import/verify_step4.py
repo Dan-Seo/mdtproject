@@ -175,6 +175,10 @@ def static_checks() -> dict[str, Any]:
     all_files = source_files()
     production_files = source_files(include_tests=False)
     texts = {str(path.relative_to(ROOT)): path.read_text(encoding="utf-8") for path in all_files}
+    production_texts = {
+        str(path.relative_to(ROOT)): path.read_text(encoding="utf-8")
+        for path in production_files
+    }
     forbidden_inert = re.compile(
         r"applyFramingPlan|applyElevation|updateProject|loadProject|useAppStore|createSampleProject"
     )
@@ -192,9 +196,12 @@ def static_checks() -> dict[str, Any]:
         "parseFloat(": re.compile(r"\bparseFloat\("),
     }
 
-    def matches(pattern: re.Pattern[str]) -> list[dict[str, Any]]:
+    def matches(
+        pattern: re.Pattern[str],
+        haystacks: dict[str, str] = texts,
+    ) -> list[dict[str, Any]]:
         found = []
-        for file, text in texts.items():
+        for file, text in haystacks.items():
             for line_no, line in enumerate(text.splitlines(), 1):
                 if pattern.search(line):
                     found.append({"file": file, "line": line_no, "text": line.strip()})
@@ -209,11 +216,40 @@ def static_checks() -> dict[str, Any]:
             if "lib/import/stb" in text or "import/stb" in text:
                 outside_imports.append(str(path.relative_to(ROOT)))
 
+    guard_path = STB_SOURCE / "scope-guard.test.ts"
+    guard_text = guard_path.read_text(encoding="utf-8")
+    inert_terms = [
+        "applyFramingPlan",
+        "applyElevation",
+        "updateProject",
+        "loadProject",
+        "useAppStore",
+        "createSampleProject",
+    ]
+    rulepack_terms = [
+        "定着",
+        "重ね継手",
+        "折曲",
+        "かぶり",
+        "depth_cover",
+        "anchorage",
+        "cut_off",
+        "center_",
+        "StbSec",
+        "StbApply",
+    ]
+
     return {
         "actual_non_test_ts": [str(path.relative_to(ROOT)) for path in production_files],
         "all_ts_count": len(all_files),
-        "inert_matches_all_ts": matches(forbidden_inert),
-        "rulepack_matches_all_ts": matches(forbidden_rules),
+        "inert_matches_non_test_ts": matches(forbidden_inert, production_texts),
+        "rulepack_matches_non_test_ts": matches(forbidden_rules, production_texts),
+        "scope_guard_missing_inert_terms": [
+            term for term in inert_terms if term not in guard_text
+        ],
+        "scope_guard_missing_rulepack_terms": [
+            term for term in rulepack_terms if term not in guard_text
+        ],
         "fabrication_patterns": {
             name: matches(pattern) for name, pattern in fabrication_patterns.items()
         },

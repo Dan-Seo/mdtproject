@@ -32,15 +32,15 @@
     },
     {
       "id": "candidates-are-inert",
-      "verdict": "upheld",
-      "evidence": "비테스트 소스 4개 각각의 applyFramingPlan·applyElevation·updateProject·loadProject·useAppStore·createSampleProject grep은 0건이고, components/store의 stb·st-bridge grep도 0건이다. ST-Bridge 소스 importer는 자기 테스트와 scripts/stb 밖에 0건이다. scope-guard.test.ts는 여섯 금지 문자열을 전부 그대로 선언한다.",
-      "note": "1차 실행의 구조적 오탐을 제거하도록 검증 범위를 비테스트 소스로 좁혔고, 가드 목록 자체가 비지 않았음도 별도로 확인했다. 승인 없는 Project 반영 경로는 없다."
+      "verdict": "refuted",
+      "evidence": "명세의 첫 번째 exact grep이 0건이 아니다: src/lib/import/stb/scope-guard.test.ts:53-59가 applyFramingPlan, applyElevation, updateProject, loadProject, useAppStore, createSampleProject 문자열을 가드 목록으로 선언한다.",
+      "note": "비테스트 소스의 실제 반영 호출은 0건이고 components/store의 stb 검색과 자기 테스트 밖 importer도 0건이다. 그러나 전제는 테스트를 제외하지 않은 디렉터리 grep에서 하나라도 나오면 refuted라고 명시했으므로 그대로 반증 판정했다. 승인 없는 반영 경로가 열린 것은 아니다."
     },
     {
       "id": "no-rulepack-territory",
-      "verdict": "upheld",
-      "evidence": "비테스트 소스 4개 각각의 定着·重ね継手·折曲·かぶり·depth_cover·anchorage·cut_off·center_·StbSec·StbApply grep은 0건이다. 숫자 리터럴은 XML 선언 탐색 범위, 버전, 직교각·허용오차·개수 판정뿐이고 규준 mm 값·배수는 없다. scope-guard.test.ts는 열 금지 문자열을 전부 그대로 선언한다.",
-      "note": "1차 실행에서 금지어 선언 자체를 검출하던 테스트 포함 범위를 제거했다. ST-Bridge 비테스트 소스는 룰팩 영역을 읽지 않는다."
+      "verdict": "refuted",
+      "evidence": "명세의 exact grep이 0건이 아니다: src/lib/import/stb/scope-guard.test.ts:31-40가 定着, 重ね継手, 折曲, かぶり, depth_cover, anchorage, cut_off, center_, StbSec, StbApply를 금지어 목록으로 선언한다.",
+      "note": "비테스트 소스 4개에는 해당 문자열도 규준 수치 리터럴도 없다. 그러나 전제의 명령은 테스트 파일을 포함하고 0건을 요구하므로 문언대로 refuted다."
     },
     {
       "id": "greps-are-not-vacuous",
@@ -219,5 +219,5 @@
   },
   "untouched_tracks_diff": "",
   "git_status_clean": true,
-  "verdict": "upheld"
+  "verdict": "refuted"
 }
