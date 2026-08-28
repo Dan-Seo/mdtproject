@@ -1,0 +1,102 @@
+{
+  "verdict": "refuted",
+  "premises": [
+    {
+      "id": "wall-slab-placement-exists",
+      "verdict": "upheld",
+      "evidence": "src/components/plan/PlanEditor.test.tsx의 배치·삭제 테스트를 포함한 39개 테스트가 통과했다. 耐震壁·床板 배치와 삭제, 開口·wallExtent 보존, 선택된 柱에는 삭제 UI를 내지 않는 경로가 고정되어 있다. 삭제 호출을 임시로 state.project 그대로 두었을 때 벽·床板·片持床板 삭제 단언 3개가 실패했다.",
+      "note": "임시 변이는 즉시 복구했다."
+    },
+    {
+      "id": "cantilever-slab-exists",
+      "verdict": "upheld",
+      "evidence": "같은 PlanEditor 테스트에서 지지 大梁이 있는 변에만 片持床板 후보를 내고, 배치 후 삭제하는 경로가 통과했다. 지지 大梁이 없는 변에는 후보를 내지 않는 테스트도 통과했으며, 삭제 분기 변이에서 해당 삭제 단언이 실패했다.",
+      "note": "배치·삭제와 지지 변 가드 모두 실행으로 확인했다."
+    },
+    {
+      "id": "m3c-remainder-is-decision-only",
+      "verdict": "upheld",
+      "evidence": "src/와 tests/에서 정확한 용어 パネルゾーン帯筋 및 溶接閉鎖フープ의 매칭이 0건이었다.",
+      "note": "미구현 결정의 흔적을 나타내는 다른 문구는 이 전제의 exact-term 0건 판정을 바꾸지 않는다."
+    },
+    {
+      "id": "japan-remainder-is-decision-only",
+      "verdict": "refuted",
+      "evidence": "機械式定着과 免震은 src/·tests/에서 0건이고, スパイラル 매칭은 주석/JSDoc뿐이다. 그러나 壁式構造은 주석이 아닌 tests/golden/fixtures/quantity-r5-ch3.json의 JSON 문자열(예: 32, 39, 233, 237행 및 후속 reason/role 항목)과 tests/golden/quantity-measurement.test.ts의 문자열(2119, 2126행)에 존재한다.",
+      "note": "전제의 엄격한 조건인 ‘모든 매칭 줄이 // 또는 *로 시작하는 주석’이 성립하지 않으므로 refuted다. 대상 코드·픽스처는 고치지 않았다."
+    },
+    {
+      "id": "stbridge-refusals-are-implemented",
+      "verdict": "upheld",
+      "evidence": "ST-Bridge 후보 테스트 12개가 통과했다. 비직교 guard를 false로 바꾸면 해당 테스트가 실패했고, 같은 fixture의 unsupportedAxisKinds를 임시로 StbRadialAxes로 바꾼 뒤 원호/방사 guard를 false로 바꾸어도 실패했다. hasBasement guard를 false로 바꾸면 BASEMENT 테스트가 실패했고, hasUnsupportedKind guard를 false로 바꾸면 ISOLATION/임시 DEPENDENCE 테스트가 실패했다. 모든 변이는 복구했다.",
+      "note": "거부 사유 코드와 전체 후보 폐기 동작이 구현·테스트 양쪽에 있다."
+    },
+    {
+      "id": "drawing-track-really-open",
+      "verdict": "upheld",
+      "evidence": "tests/plan-import/elevation.test.ts의 11개 테스트가 통과했다. kani-p40 케이스는 elevations=[] 및 issues=['寸法列未検出']를 고정해 값을 지어내지 않는다.",
+      "note": "kani p40 미지원 전제가 현재 테스트로 유지된다."
+    },
+    {
+      "id": "m2-really-open",
+      "verdict": "upheld",
+      "evidence": "src/rulepack/index.test.ts의 6개 테스트가 통과했고, stated 행 0개를 고정하는 테스트가 통과했다. YAML confidence 집계는 transcribed 240행, inferred 3행, stated 0행이었다.",
+      "note": "독립 검토 전 승격 금지 상태가 유지된다."
+    }
+  ],
+  "claude_md_milestones": [
+    { "row": "M0 스파이크", "status": "완료", "remaining": "—" },
+    { "row": "M1 워킹 스켈레톤", "status": "완료", "remaining": "—" },
+    { "row": "M2 룰팩", "status": "**진행 중**", "remaining": "標準仕様書 5章·数量積算基準의 `stated` 승격. **두 원문 모두 사람의 독립 검토**라 에이전트가 코드로 닫을 수 없다 (R6)" },
+    { "row": "M3a 단일 스팬 大梁·뷰어", "status": "완료", "remaining": "—" },
+    { "row": "M3b 다스팬·継手", "status": "완료", "remaining": "—" },
+    { "row": "M3c 고유 상세", "status": "**진행 중**", "remaining": "幅止め筋·腹筋 완료. パネルゾーン帯筋·溶接閉鎖フープ는 두 원문 0건이라 만들지 않는다" },
+    { "row": "도면 인식(로컬)", "status": "**진행 중**", "remaining": "断面リスト 트랙(값)·형상 트랙(伏図·軸組図) 둘. 잔여: 표 형식 커버리지, 주기형(스케치 인출선) 壁リスト 미지원, 위치 없는 `カットオフ` 표기 반영, kani p40 미지원(R10). ADR-018·ADR-030" },
+    { "row": "ST-Bridge 취입", "status": "**진행 중**", "remaining": "사용자 `.stb` 0건, ver 2.1 계열 현실 규모 파일 0건, 비직교·원호·방사 通り芯과 `BASEMENT`·`ISOLATION`·`DEPENDENCE` 階는 거부로 남음 (ADR-043·ADR-044)" },
+    { "row": "부재 확장(耐震壁·床板)", "status": "**진행 중**", "remaining": "平面 뷰의 벽·床板 배치·삭제 입력, 片持床板" },
+    { "row": "일본 고유 형태·제품", "status": "**진행 중**", "remaining": "高強度せん断補強筋·円形柱 완료. 壁式構造の壁은 만들지 않는다 — 별개 마일스톤(ADR-042)" },
+    { "row": "M4 재방문·내역서·PDF·glTF", "status": "완료", "remaining": "—" },
+    { "row": "M5 한국 실무자 UX 리뷰", "status": "미착수", "remaining": "—" }
+  ],
+  "milestones_md_checkboxes": [
+    { "checked": true, "name": "M0" },
+    { "checked": true, "name": "M1" },
+    { "checked": false, "name": "M2" },
+    { "checked": true, "name": "M3a" },
+    { "checked": true, "name": "M3b" },
+    { "checked": false, "name": "M3c" },
+    { "checked": false, "name": "도면 인식(로컬)" },
+    { "checked": false, "name": "ST-Bridge 취입" },
+    { "checked": true, "name": "부재 확장(耐震壁·床板)" },
+    { "checked": false, "name": "일본 고유 형태·제품 확장" },
+    { "checked": true, "name": "M4" },
+    { "checked": false, "name": "M5" }
+  ],
+  "mapping": [
+    { "claude_row": "M0 스파이크", "milestones_name": "M0", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "M1 워킹 스켈레톤", "milestones_name": "M1", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "M2 룰팩", "milestones_name": "M2", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "M3a 단일 스팬 大梁·뷰어", "milestones_name": "M3a", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "M3b 다스팬·継手", "milestones_name": "M3b", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "M3c 고유 상세", "milestones_name": "M3c", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "도면 인식(로컬)", "milestones_name": "도면 인식(로컬)", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "ST-Bridge 취입", "milestones_name": "ST-Bridge 취입", "agrees": true, "note": "상태 대응" },
+    { "claude_row": "부재 확장(耐震壁·床板)", "milestones_name": "부재 확장(耐震壁·床板)", "agrees": false, "note": "CLAUDE.md는 진행 중이며 平面 뷰 배치·삭제와 片持床板을 남은 것으로 적지만, docs/MILESTONES.md 체크박스는 [x] 완료이고 본문은 phase 26·27 완료를 적는다." },
+    { "claude_row": "일본 고유 형태·제품", "milestones_name": "일본 고유 형태·제품 확장", "agrees": true, "note": "이름에 ‘확장’이 추가됐지만 상태는 모두 미완료/진행 중으로 대응한다." },
+    { "claude_row": "M4 재방문·내역서·PDF·glTF", "milestones_name": "M4", "agrees": true, "note": "CLAUDE.md의 세부 명칭과 docs/MILESTONES.md의 축약 명칭을 대응했다." },
+    { "claude_row": "M5 한국 실무자 UX 리뷰", "milestones_name": "M5", "agrees": true, "note": "상태 대응" }
+  ],
+  "risk_ids": {
+    "risks_md": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "R16"],
+    "claude_md": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "R16"],
+    "only_in_risks_md": [],
+    "only_in_claude_md": []
+  },
+  "tests_docs_files": ["tests/docs/guardrail-sync.test.ts"],
+  "test_counts": { "files": 97, "tests": 1680 },
+  "noticed": [
+    "npm run test의 JSON 집계는 testResults 97개 파일, 346개 suite, 1680개 테스트였고 모두 통과했다.",
+    "최종 git status 확인 대상은 phase index.json의 기존 harness 변경, 새 step0-report.json, harness stdout/stderr 로그이며 src/·tests/에는 임시 변경이 남지 않았다.",
+    "japan-remainder-is-decision-only 반증은 구현 결함 수정 요청이 아니라 대장의 주장과 전제 조건에 대한 검증 결과다."
+  ]
+}
