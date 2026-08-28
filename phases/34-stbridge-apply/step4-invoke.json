@@ -1,0 +1,9 @@
+{
+  "step": 4,
+  "name": "mount-and-e2e",
+  "exitCode": 1,
+  "timedOut": true,
+  "elapsed": 1800.263213600003,
+  "stdout_log": "phases\\34-stbridge-apply\\step4-codex.stdout.log",
+  "stderr_log": "phases\\34-stbridge-apply\\step4-codex.stderr.log"
+}
