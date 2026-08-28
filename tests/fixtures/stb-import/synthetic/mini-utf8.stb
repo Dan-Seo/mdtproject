@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ST_BRIDGE version="2.0.2">
+  <StbCommon project_name="基準階サンプル" />
+  <StbAxes>
+    <StbParallelAxes group_name="Y" angle="0.0">
+      <StbParallelAxis id="y1" name="Y1" distance="0.0">
+        <StbNodeIdList>
+          <StbNodeId id="n11" />
+          <StbNodeId id="n12" />
+          <StbNodeId id="n13" />
+        </StbNodeIdList>
+      </StbParallelAxis>
+      <StbParallelAxis id="y2" name="Y2" distance="5000.0">
+        <StbNodeIdList>
+          <StbNodeId id="n21" />
+          <StbNodeId id="n22" />
+          <StbNodeId id="n23" />
+        </StbNodeIdList>
+      </StbParallelAxis>
+    </StbParallelAxes>
+    <StbParallelAxes group_name="X" angle="270.0">
+      <StbParallelAxis id="x1" name="X1" distance="0.0">
+        <StbNodeIdList>
+          <StbNodeId id="n11" />
+          <StbNodeId id="n21" />
+        </StbNodeIdList>
+      </StbParallelAxis>
+      <StbParallelAxis id="x2" name="X2" distance="6000.0">
+        <StbNodeIdList>
+          <StbNodeId id="n12" />
+          <StbNodeId id="n22" />
+        </StbNodeIdList>
+      </StbParallelAxis>
+      <StbParallelAxis id="x3" name="X3" distance="12000.0">
+        <StbNodeIdList>
+          <StbNodeId id="n13" />
+          <StbNodeId id="n23" />
+        </StbNodeIdList>
+      </StbParallelAxis>
+    </StbParallelAxes>
+  </StbAxes>
+  <StbNodes>
+    <StbNode id="n11" X="0.0" Y="0.0" Z="0.0" kind="ON_GRID" />
+    <StbNode id="n12" X="6000.0" Y="0.0" Z="0.0" kind="ON_GRID" />
+    <StbNode id="n13" X="12000.0" Y="0.0" Z="0.0" kind="ON_GRID" />
+    <StbNode id="n21" X="0.0" Y="0.0" Z="5000.0" kind="ON_GRID" />
+    <StbNode id="n22" X="6000.0" Y="0.0" Z="5000.0" kind="ON_GRID" />
+    <StbNode id="n23" X="12000.0" Y="0.0" Z="5000.0" kind="ON_GRID" />
+  </StbNodes>
+  <StbStories>
+    <StbStory id="s1" name="1FL" height="0.0" kind="GENERAL" />
+    <StbStory id="s2" name="2FL" height="4000.0" kind="GENERAL" />
+    <StbStory id="sr" name="RFL" height="7500.0" kind="ROOF" />
+  </StbStories>
+</ST_BRIDGE>
