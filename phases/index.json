@@ -162,7 +162,8 @@
     },
     {
       "dir": "33-stbridge-skeleton-import",
-      "status": "pending"
+      "status": "refuted",
+      "refuted_at": "2026-08-28T13:27:24+0900"
     }
   ]
 }
