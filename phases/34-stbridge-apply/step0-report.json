@@ -1,0 +1,239 @@
+{
+  "verdict": "upheld",
+  "premises": [
+    {
+      "id": "elevation-precedent",
+      "verdict": "upheld",
+      "evidence": "docs/ADR.md:897은 applyElevation이 project.stories를 통째로 교체하고 members를 비우며 부재가 있으면 거부하는 선례라고 명시한다. src/lib/import/framing-plan/apply.ts:262-266은 project.members.length > 0 && !discardMembers일 때 원본 project와 部材あり階置換不可를 반환하고, :268-285는 candidate로 새 stories 배열을 만든 뒤 members: []와 함께 반환한다. src/lib/import/framing-plan/apply.test.ts:682-703은 거부 시 result.project가 base와 동일함을, :705-727은 동의 시 members가 비고 stories 2개가 됨을 단언한다. `npx vitest run src/lib/import/framing-plan/apply.test.ts src/lib/import/stb/scope-guard.test.ts src/lib/import/stb/types.test.ts tests/docs/guardrail-sync.test.ts` 결과는 Test Files 4 passed, Tests 36 passed다.",
+      "note": "apply.test.ts는 거부 경로의 원본 identity와 성공 경로의 members/stories 내용을 고정하지만 성공 경로에서 stories 배열 identity를 별도로 toBe 단언하지는 않는다. 이는 코드의 반환식과 전제의 세 성질을 반증하지 않는다."
+    },
+    {
+      "id": "heightmm-is-storey-height",
+      "verdict": "upheld",
+      "evidence": "읽기 전용 JSON 대조 결과, 실물 dotnet-sample1.stb의 expected heightMm [5000,4200] = phase33 step0-report stories.adjacent_diffs [5000,4200], story count 2 = levels 3 - 1, 전부 양수였다. diffchecker-filea.stb는 [4500,4000,4000,3800] = 같은 adjacent_diffs, count 4 = 5 - 1, 양수였다. hoaryfox-sample.stb는 [4000,4000,4000,4000,4000] = 같은 adjacent_diffs, count 5 = 6 - 1, 양수였다. src/lib/import/stb/candidates.ts:248-251도 정렬된 인접 레벨 차분을 heightMm로 만든다.",
+      "note": "diffchecker-mini210.stb는 expected stories가 빈 배열이라 대조 대상이 아니다. mini.json은 합성 fixture이고 phase33 step0-report의 stories에 같은 파일 항목이 없으므로 실물 파일 대조에서 제외했다. mini의 현재 합성 좌표 문제는 mini_fixture에 별도로 기록했다."
+    },
+    {
+      "id": "label-arity",
+      "verdict": "upheld",
+      "evidence": "커밋된 expected 5건의 모든 grid를 JSON으로 대조했다: diffchecker-filea X 7=6+1, Y 9=8+1; dotnet-sample1 X 3=2+1, Y 3=2+1; hoaryfox X 7=6+1, Y 3=2+1; mini X 3=2+1, Y 2=1+1; diffchecker-mini210은 grid가 없다. src/domain/model/project.ts:82-91의 isGridLabels도 labels.length === spanCount + 1을 요구한다.",
+      "note": "5개 후보의 8개 grid 모두 axes와 spansMm의 arity가 맞아 refuted 조건이 없다."
+    },
+    {
+      "id": "direction-is-measured-axis",
+      "verdict": "upheld",
+      "evidence": "파서를 실행하지 않고 document/*.json nodes의 고유 x/y를 정렬해 인접 차분 열을 만들었다. X grid의 결과는 diffchecker-filea measured=false/opposite=false, dotnet-sample1 measured=true/opposite=false, hoaryfox measured=true/opposite=false, mini measured=true/opposite=false였다. 따라서 X spansMm가 y 쪽에서만 성립한 파일은 0건이다. Y도 같은 방식으로 확인했으며 diffchecker-filea는 false/false, dotnet-sample1은 false/true, hoaryfox는 true/false, mini는 false/false였다. .cache/stb의 실물 4건을 원본 XML에서 같은 방식으로 재계산한 결과는 document 결과와 동일했고, tests/fixtures/stb-import/synthetic/mini-utf8.stb 원본은 X 차분 [6000,6000], Y 차분 []이었다. src/lib/import/stb/candidates.ts:35-37은 angle 0/180을 Y, 90/270을 X로 정규화하고, :56-58은 X에서 node.x, Y에서 node.y를 읽는다.",
+      "note": "diffchecker-filea는 노드가 通り芯 밖에도 있어 양축 모두 expected span을 확인하지 못했고, mini Y는 현재 n21-n23의 Y가 모두 0이라 확인하지 못했다. dotnet-sample1 Y의 [6000,6000]은 x 쪽에도 우연히 나타나지만 measured-axis 확인은 되지 않는 관찰이다. 사용자 지정 반증 조건인 X spansMm의 y-only 성립은 발생하지 않았으므로 이 항목을 refute하지 않는다."
+    },
+    {
+      "id": "still-inert",
+      "verdict": "upheld",
+      "evidence": "비테스트 src/lib/import/stb/*.ts 4개(types.ts, document.ts, decode.ts, candidates.ts)에 대해 applyFramingPlan/applyElevation/updateProject/loadProject/useAppStore/createSampleProject를 grep한 결과 NO_MATCHES였다. src/components 및 src/lib/store.ts에서 비테스트 TS/TSX만 대상으로 stb|st-bridge를 grep한 결과 NO_COMPONENT_STORE_MATCHES였다.",
+      "note": "tests는 scope-guard.test.ts가 금지어를 가드 목록으로 선언하므로 사용자 범위대로 제외했다."
+    },
+    {
+      "id": "rulepack-territory-clean",
+      "verdict": "upheld",
+      "evidence": "비테스트 src/lib/import/stb/*.ts 4개에 대해 定着/重ね継手/折曲/かぶり/depth_cover/anchorage/cut_off/center_/StbSec/StbApply를 grep한 결과 NO_RULE_TERRITORY_MATCHES였다. src/lib/import/stb/scope-guard.test.ts:30-59에는 해당 10개 금지어와 StbColumn/StbGirder/StbBeam/StbWall/StbSlab/StbBrace/StbPile/StbFooting 및 store/network 금지어가 여전히 전부 선언돼 있다.",
+      "note": "검증 대상은 사용자 지정대로 비테스트 .ts이며, 대상 코드나 가드를 수정하지 않았다."
+    }
+  ],
+  "refusal_vocab": {
+    "plan": ["階未指定", "他階部材あり通り芯変更不可"],
+    "elevation": ["階範囲不正", "部材あり階置換不可"],
+    "declared_at": "src/lib/import/framing-plan/types.ts:118-124, 136-143"
+  },
+  "plan_import_ui": {
+    "store_write": "updateProject",
+    "store_write_at": "src/components/plan/PlanImport.tsx:252, 365-373, 384-392",
+    "discard_flow": "Plan은 result와 discardOtherStories 상태를 쓰며, result.refusal === 他階部材あり通り芯変更不可일 때만 :603-615의 plan-import-discard를 낸다. 階高는 elevationResults와 discardMembers 상태를 쓰며, result.refusal === 部材あり階置換不可일 때만 :220-229의 plan-import-discard-members-${index}를 낸다.",
+    "testids": [
+      "plan-import-file",
+      "plan-import-result",
+      "plan-import-discard",
+      "plan-import-elevation-${index}",
+      "plan-import-apply-elevation-${index}",
+      "plan-import-level-top-${index}",
+      "plan-import-level-bottom-${index}",
+      "plan-import-discard-members-${index}",
+      "plan-import-elevation-result-${index}"
+    ],
+    "result_markup": "Plan 결과는 src/components/plan/PlanImport.tsx:617-630의 p[data-testid=plan-import-result]에서 refusal을 번역하거나 applied와 skipped를 표시한다. 階高 결과는 :231-239의 p[data-testid=plan-import-elevation-result-${index}]에서 refusal 또는 appliedStories를 표시한다."
+  },
+  "mini_fixture": {
+    "axes": [
+      {
+        "group_name": "Y",
+        "angle": 0.0,
+        "measured_coordinate": "Y",
+        "axes": [
+          {
+            "id": "y1",
+            "name": "Y1",
+            "distance": 0.0,
+            "node_ids": ["n11", "n12", "n13"],
+            "node_coordinates": [
+              {"id": "n11", "X": 0.0, "Y": 0.0, "Z": 0.0},
+              {"id": "n12", "X": 6000.0, "Y": 0.0, "Z": 0.0},
+              {"id": "n13", "X": 12000.0, "Y": 0.0, "Z": 0.0}
+            ]
+          },
+          {
+            "id": "y2",
+            "name": "Y2",
+            "distance": 5000.0,
+            "node_ids": ["n21", "n22", "n23"],
+            "node_coordinates": [
+              {"id": "n21", "X": 0.0, "Y": 0.0, "Z": 5000.0},
+              {"id": "n22", "X": 6000.0, "Y": 0.0, "Z": 5000.0},
+              {"id": "n23", "X": 12000.0, "Y": 0.0, "Z": 5000.0}
+            ]
+          }
+        ]
+      },
+      {
+        "group_name": "X",
+        "angle": 270.0,
+        "measured_coordinate": "X",
+        "axes": [
+          {
+            "id": "x1",
+            "name": "X1",
+            "distance": 0.0,
+            "node_ids": ["n11", "n21"],
+            "node_coordinates": [
+              {"id": "n11", "X": 0.0, "Y": 0.0, "Z": 0.0},
+              {"id": "n21", "X": 0.0, "Y": 0.0, "Z": 5000.0}
+            ]
+          },
+          {
+            "id": "x2",
+            "name": "X2",
+            "distance": 6000.0,
+            "node_ids": ["n12", "n22"],
+            "node_coordinates": [
+              {"id": "n12", "X": 6000.0, "Y": 0.0, "Z": 0.0},
+              {"id": "n22", "X": 6000.0, "Y": 0.0, "Z": 5000.0}
+            ]
+          },
+          {
+            "id": "x3",
+            "name": "X3",
+            "distance": 12000.0,
+            "node_ids": ["n13", "n23"],
+            "node_coordinates": [
+              {"id": "n13", "X": 12000.0, "Y": 0.0, "Z": 0.0},
+              {"id": "n23", "X": 12000.0, "Y": 0.0, "Z": 5000.0}
+            ]
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {"id": "n11", "X": 0.0, "Y": 0.0, "Z": 0.0, "kind": "ON_GRID"},
+      {"id": "n12", "X": 6000.0, "Y": 0.0, "Z": 0.0, "kind": "ON_GRID"},
+      {"id": "n13", "X": 12000.0, "Y": 0.0, "Z": 0.0, "kind": "ON_GRID"},
+      {"id": "n21", "X": 0.0, "Y": 0.0, "Z": 5000.0, "kind": "ON_GRID"},
+      {"id": "n22", "X": 6000.0, "Y": 0.0, "Z": 5000.0, "kind": "ON_GRID"},
+      {"id": "n23", "X": 12000.0, "Y": 0.0, "Z": 5000.0, "kind": "ON_GRID"}
+    ],
+    "defect_present": true,
+    "should_be": [
+      {"id": "n11", "current": {"X": 0.0, "Y": 0.0, "Z": 0.0}, "should_be": {"X": 0.0, "Y": 0.0, "Z": 0.0}},
+      {"id": "n12", "current": {"X": 6000.0, "Y": 0.0, "Z": 0.0}, "should_be": {"X": 6000.0, "Y": 0.0, "Z": 0.0}},
+      {"id": "n13", "current": {"X": 12000.0, "Y": 0.0, "Z": 0.0}, "should_be": {"X": 12000.0, "Y": 0.0, "Z": 0.0}},
+      {"id": "n21", "current": {"X": 0.0, "Y": 0.0, "Z": 5000.0}, "should_be": {"X": 0.0, "Y": 5000.0, "Z": 0.0}},
+      {"id": "n22", "current": {"X": 6000.0, "Y": 0.0, "Z": 5000.0}, "should_be": {"X": 6000.0, "Y": 5000.0, "Z": 0.0}},
+      {"id": "n23", "current": {"X": 12000.0, "Y": 0.0, "Z": 5000.0}, "should_be": {"X": 12000.0, "Y": 5000.0, "Z": 0.0}
+      }
+    ]
+  },
+  "mini_expected_cells": {
+    "document": [
+      {"path": "nodes[3].y", "value": "0.0"},
+      {"path": "nodes[3].z", "value": "5000.0"},
+      {"path": "nodes[4].y", "value": "0.0"},
+      {"path": "nodes[4].z", "value": "5000.0"},
+      {"path": "nodes[5].y", "value": "0.0"},
+      {"path": "nodes[5].z", "value": "5000.0"}
+    ],
+    "expected": [
+      {"path": "issues", "value": ["通り芯位置と節点の不一致"]},
+      {"path": "_derivedFrom", "value": "phases/33-stbridge-skeleton-import/step0-report.json"}
+    ],
+    "issues_now": ["通り芯位置と節点の不一致"],
+    "derived_from_now": "phases/33-stbridge-skeleton-import/step0-report.json"
+  },
+  "fixture_scripts": {
+    "make_sjis": "python scripts/stb/make-sjis-fixture.py tests/fixtures/stb-import/synthetic/mini-utf8.stb tests/fixtures/stb-import/synthetic/mini-sjis.stb. scripts/stb/make-sjis-fixture.py:16-27은 source와 destination 두 positional 인자를 읽고 UTF-8 XML 선언을 Shift_JIS로 바꾼 cp932 bytes를 destination에 쓴다.",
+    "extract_document": "npx tsx scripts/stb/extract-stb-document.mjs. 인자는 없고, scripts/stb/extract-stb-document.mjs:15-25의 .cache/stb 아래 dotnet-sample1.stb, diffchecker-filea.stb, hoaryfox-sample.stb, diffchecker-mini210.stb를 읽어 :16-19의 tests/fixtures/stb-import/document에 같은 basename의 .json을 :46-64에서 쓴다."
+  },
+  "locale_keys": {
+    "ja": [
+      "stbImport.issue.対応外バージョン",
+      "stbImport.issue.未対応エンコーディング",
+      "stbImport.issue.XML解析不能",
+      "stbImport.issue.ST-Bridge形式でない",
+      "stbImport.issue.非直交通り芯",
+      "stbImport.issue.未対応通り芯種別",
+      "stbImport.issue.通り芯グループ数不一致",
+      "stbImport.issue.通り芯方向不明",
+      "stbImport.issue.通り芯距離解釈不能",
+      "stbImport.issue.通り芯位置重複",
+      "stbImport.issue.通り芯ラベル欠落",
+      "stbImport.issue.通り芯未検出",
+      "stbImport.issue.通り芯位置と節点の不一致",
+      "stbImport.issue.階レベル解釈不能",
+      "stbImport.issue.階レベル重複",
+      "stbImport.issue.地下レベル未対応",
+      "stbImport.issue.対応外の階種別",
+      "stbImport.issue.階不足"
+    ],
+    "ko": [
+      "stbImport.issue.対応外バージョン",
+      "stbImport.issue.未対応エンコーディング",
+      "stbImport.issue.XML解析不能",
+      "stbImport.issue.ST-Bridge形式でない",
+      "stbImport.issue.非直交通り芯",
+      "stbImport.issue.未対応通り芯種別",
+      "stbImport.issue.通り芯グループ数不一致",
+      "stbImport.issue.通り芯方向不明",
+      "stbImport.issue.通り芯距離解釈不能",
+      "stbImport.issue.通り芯位置重複",
+      "stbImport.issue.通り芯ラベル欠落",
+      "stbImport.issue.通り芯未検出",
+      "stbImport.issue.通り芯位置と節点の不一致",
+      "stbImport.issue.階レベル解釈不能",
+      "stbImport.issue.階レベル重複",
+      "stbImport.issue.地下レベル未対応",
+      "stbImport.issue.対応外の階種別",
+      "stbImport.issue.階不足"
+    ],
+    "matches_STB_ISSUES": true,
+    "guard_test": "src/lib/import/stb/types.test.ts:9-11은 STB_ISSUES가 18개이고 unique하다고 고정하며, :14-23은 ja·ko에 STB_ISSUES 각 항의 stbImport.issue.* 키가 빠지지 않았는지 검사한다."
+  },
+  "file_input": {
+    "plan": "src/components/plan/PlanImport.tsx:411-418 — data-testid=plan-import-file, type=file, accept=application/pdf.",
+    "section": "src/components/section/SectionImport.tsx:900-907 — data-testid=section-import-file, type=file, accept=application/pdf.",
+    "test_injection": "PlanImport는 initialPages prop으로 TextPage를 주입하는 open helper(src/components/plan/PlanImport.test.tsx:54-55)를 주로 사용하고, 비동기 실패 케이스는 new File과 fireEvent.change를 :415-422에서 사용한다. SectionImport는 initialPages(:62)와 new File(['pdf'])를 file input에 주입하는 :68-82를 모두 사용하며 extractPages가 같은 File 객체로 호출됐음을 확인한다."
+  },
+  "e2e_shape": {
+    "head": "// UC-22: 伏図·軸組図 PDF에서 형상(通り芯·부재 배치·階高)을 읽고, 승인해야만\n// 案件에 들어간다 (ADR-030). 断面リスト 취입(uc12)과 같은 규약이되 가드가 하나 더\n// 있다 — 格子 index는 스팬 배열에 매여 있어서, 通り芯을 바꾸면 손대지 않은 층의\n// 부재가 조용히 다른 자리로 옮겨간다. 그래서 다른 층에 부재가 있으면 통째로\n// 거부하고, 거부를 한 번 보여준 뒤에만 「다른 층을 버린다」는 동의 칸을 낸다.\n// 이 실측 p7의 두 블록은 Y 스팬·라벨이 동일하므로 블록별 Y 그리드 귀속은\n// 여기서 검증되지 않는다. 그것은 단위 테스트 「한 페이지의 스팬이 다른 伏図\n// 두 장은 각 블록의 X·Y 通り芯으로 취입한다」가 덮는다.\nconst pdfPath = \".cache/dwg-yokohama.pdf\";\nconst sandboxFixture = \"uc22-dwg-yokohama.pdf.b64\";\nlet pdfBase64;\ntry {\n  // dev-browser는 QuickJS에서 호스트 경로를 직접 열 수 없다. AC 실행 전에 로컬\n  // .cache PDF를 격리 temp에 base64로 미러링하며, 없으면 첫머리에서 명시적으로 실패한다.\n  pdfBase64 = await readFile(sandboxFixture);\n} catch (error) {\n  throw new Error(\n    `LOCAL FIXTURE MISSING: ${pdfPath} — 먼저 실행: ` +\n      `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture} ` +\n      `(재현 절차: tests/fixtures/section-import/SOURCES.md) (${String(error)})`,\n",
+    "tail": "console.log(JSON.stringify({ read, refused, applied, spanNames, storyRefused, stories, checks }, null, 2));\nconsole.log(\n  \"SHOT \" + (await saveScreenshot(await page.screenshot(), \"uc22-plan-import.png\")),\n);\n\nconst failed = Object.entries(checks)\n  .filter(([, ok]) => !ok)\n  .map(([name]) => name);\nif (failed.length) throw new Error(\"FAILED CHECKS: \" + failed.join(\", \"));\nconsole.log(\"ALL CHECKS PASSED\");",
+    "file_injection": "tests/e2e/uc22-plan-import.js:55-59 uses page.setInputFiles([data-testid='plan-import-file'], { name: dwg-yokohama.pdf, mimeType: application/pdf, buffer: Buffer.from(pdfBase64, base64) }); the same pattern is used for section-import-file at :179-183 and plan-import-file again at :200-204."
+  },
+  "app_shell": {
+    "slots": ["plan", "planActions", "section", "sectionActions", "viewer", "viewerActions", "takeoff", "takeoffActions"],
+    "plan_actions": ["StoryTabs", "PlanImport"]
+  },
+  "ledgers": {
+    "milestones_line_form": "docs/MILESTONES.md:17 — - [ ] **도면 인식(로컬)** — 진행 중 …",
+    "claude_table_row_form": "CLAUDE.md:56 및 AGENTS.md:59 — | 도면 인식(로컬) | **진행 중** | … |",
+    "agents_sync": "tests/docs/guardrail-sync.test.ts:47-49는 AGENTS.md가 CLAUDE.md 첫 제목 다음의 본문 전체로 끝나는지 검사한다. :55-82는 AGENTS의 제목, 빈 줄, > 인용문 형식의 CLAUDE.md 사본 고지, 본문 앞 빈 줄을 검사한다. 즉 AGENTS.md는 자체 사본 고지 헤더 뒤에 CLAUDE.md 본문 전체를 그대로 담아야 한다.",
+    "max_risk_number": "R15 (docs/RISKS.md:24)"
+  },
+  "test_counts": {
+    "files": 95,
+    "tests": 1659
+  }
+}

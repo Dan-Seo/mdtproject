@@ -7,7 +7,9 @@
       "name": "verify-apply-premises",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T19:40:01+0900",
+      "summary": "6개 반영 전제를 모두 upheld로 확인하고 mini 좌표 결함 및 뒤 스텝용 11개 기록 항목을 step0-report.json에 남겼다."
     },
     {
       "step": 1,
@@ -40,5 +42,6 @@
       "kind": "verify",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-08-28T19:40:01+0900"
 }
