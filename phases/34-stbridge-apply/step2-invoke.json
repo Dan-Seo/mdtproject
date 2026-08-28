@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "stb-apply",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 702.2963091999991,
+  "stdout_log": "phases\\34-stbridge-apply\\step2-codex.stdout.log",
+  "stderr_log": "phases\\34-stbridge-apply\\step2-codex.stderr.log"
+}
