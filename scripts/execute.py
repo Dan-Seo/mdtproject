@@ -343,8 +343,13 @@ class StepExecutor:
         stdout_path = self._phase_dir / f"step{step_num}-codex.stdout.log"
         stderr_path = self._phase_dir / f"step{step_num}-codex.stderr.log"
         result = run_codex_process(
+            # 모델·추론강도는 ~/.codex/config.toml에 맡기지 않고 여기서 못박는다.
+            # 하네스가 무엇으로 돌았는지가 phase 기록에서 읽혀야 하고, 사용자의
+            # 전역 설정이 바뀌어도 phase 재현이 흔들리지 않아야 한다.
             [codex_bin, "exec", "--dangerously-bypass-approvals-and-sandbox",
-             "--dangerously-bypass-hook-trust", "--json", "-"],
+             "--dangerously-bypass-hook-trust",
+             "-m", "gpt-5.6-luna", "-c", 'model_reasoning_effort="xhigh"',
+             "--json", "-"],
             prompt,
             stdout_path,
             stderr_path,

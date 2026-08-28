@@ -164,6 +164,10 @@
       "dir": "33-stbridge-skeleton-import",
       "status": "completed",
       "completed_at": "2026-08-28T13:46:32+0900"
+    },
+    {
+      "dir": "34-stbridge-apply",
+      "status": "pending"
     }
   ]
 }

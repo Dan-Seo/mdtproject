@@ -1,0 +1,44 @@
+{
+  "project": "Kijun",
+  "phase": "34-stbridge-apply",
+  "steps": [
+    {
+      "step": 0,
+      "name": "verify-apply-premises",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "fix-mini-fixture-nodes",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "stb-apply",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "stb-import-panel",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "mount-and-e2e",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "update-ledgers",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "refute-stb-apply",
+      "kind": "verify",
+      "status": "pending"
+    }
+  ]
+}
