@@ -1,0 +1,45 @@
+{
+  "classification": [
+    {"term":"壁式構造","file":"src/domain/rebar/wall.ts","line":17,"category":"comment","excerpt":"* 耐震壁（ラーメン構造の壁）の配筋。数量積算基準 2（５）壁**1)**「壁式構造以外」"},
+    {"term":"壁式構造","file":"src/domain/rebar/wall.ts","line":18,"category":"comment","excerpt":"* だけを実装する — 2)「壁式構造」は端部筋・壁梁筋まで区分が増える別の条文である。"},
+    {"term":"壁式構造","file":"src/domain/model/member.test.ts","line":24,"category":"comment","excerpt":"// 耐震壁は ADR-025、床板は ADR-028 で加わった。壁式構造の壁・基礎・小梁・"},
+    {"term":"スパイラル","file":"src/domain/model/member.ts","line":81,"category":"comment","excerpt":"* スパイラル筋は扱わない。標準仕様書 5.3.4(6)(ｲ) が「スパイラル筋の継手及び定着は"},
+    {"term":"スパイラル","file":"src/domain/model/member.ts","line":84,"category":"comment","excerpt":"* スパイラルと読み替えることはしない (ADR-012)。"},
+    {"term":"壁式構造","file":"src/domain/model/member.ts","line":265,"category":"comment","excerpt":"* 耐震壁 — ラーメン構造の壁である。壁式構造の壁ではない。"},
+    {"term":"壁式構造","file":"src/domain/model/member.ts","line":267,"category":"comment","excerpt":"* 数量積算基準 2（５）壁 は 1)「壁式構造以外」と 2)「壁式構造」を別条文で扱い、"},
+    {"term":"壁式構造","file":"src/domain/model/member.ts","line":269,"category":"comment","excerpt":"* ここが実装するのは 1) だけで、壁式構造は扱わない。"},
+    {"term":"壁式構造","file":"src/domain/model/project.ts","line":47,"category":"comment","excerpt":"//   2（５）壁1)（壁式構造以外）と、躯体の区分（５）壁「柱、梁、床板等に接する垂直材の"},
+    {"term":"壁式構造","file":"src/domain/model/project.ts","line":48,"category":"comment","excerpt":"//   内法部分」に対応する — 壁式構造の壁（2）は扱わない (ADR-025)。"},
+    {"term":"壁式構造","file":"src/domain/model/sample-project.ts","line":96,"category":"comment","excerpt":"// 耐震壁 (ADR-025)。ラーメン構造の壁なので数量積算基準 2（５）壁1)「壁式構造以外」"},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":32,"category":"quote","excerpt":"\"quote\": \"床板とは、柱、梁等に接する水平材の内法部分をいう。ただし、壁式構造については、壁、壁梁等に接する水平材の内法部分をいう。片持床板等もこれらに準ずる。\","},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":33,"category":"decision","excerpt":"\"usedFor\": \"2（４）床板1) の「床板の長さ」…ただし書きの壁式構造は扱わない (ADR-025)\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":39,"category":"quote","excerpt":"\"quote\": \"壁とは、柱、梁、床板等に接する垂直材の内法部分をいい、開口部を除く。ただし、壁式構造については、基礎上面から屋上床板上面までの垂直材をいい、開口部を除く。袖壁、下り壁、腰壁等もこれらに準ずる。\","},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":40,"category":"decision","excerpt":"\"usedFor\": \"2（５）壁1)① … 壁式構造以外の壁は内法部分なので…\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":233,"category":"quote","excerpt":"\"quote\": \"壁式構造の壁筋は、端部筋、縦筋、壁梁筋、横筋及び補強筋に区分して計測・計算する。なお、設計図書に鉄筋本数の記載がある場合はその本数とする。\","},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":237,"category":"decision","excerpt":"\"reason\": \"ADR-042 §1-2。壁式構造の壁は5区分と布基礎・壁梁を伴う別のマイルストーンであり…\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":239,"category":"decision","excerpt":"\"ADR-042 2) — 壁式構造の壁の役割を3つに限定する\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":254,"category":"decision","excerpt":"\"ADR-042 2) — 壁式構造の壁の役割を3つに限定する\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":267,"category":"decision","excerpt":"\"ADR-042 2) — 壁式構造の壁の役割を3つに限定する\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":280,"category":"decision","excerpt":"\"ADR-042 2) — 壁式構造の壁の役割を3つに限定する\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":292,"category":"decision","excerpt":"\"reason\": \"ADR-042 §1-4。壁式構造専用の横筋は連続壁の位相と設計図書によるフープ状配筋を必要とし…作らない。\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":305,"category":"decision","excerpt":"\"reason\": \"ADR-042 §1-5。壁式構造の壁全体の補強筋は設計図書に委ねられており…代用しない。\""},
+    {"term":"壁式構造","file":"tests/golden/fixtures/quantity-r5-ch3.json","line":307,"category":"decision","excerpt":"\"ADR-042 2) — 壁式構造の壁の役割を3つに限定する\""},
+    {"term":"壁式構造","file":"tests/golden/quantity-measurement.test.ts","line":2119,"category":"decision","excerpt":"roles: 'ADR-042 2) — 壁式構造の壁の役割を3つに限定する',"},
+    {"term":"壁式構造","file":"tests/golden/quantity-measurement.test.ts","line":2126,"category":"quote","excerpt":"'壁式構造の壁筋は、端部筋、縦筋、壁梁筋、横筋及び補強筋に区分して計測・計算する。なお、設計図書に鉄筋本数の記載がある場合はその本数とする。',"}
+  ],
+  "implementation_count": 0,
+  "closed": {
+    "milestones_line": "docs/MILESTONES.md:21 — [x] 日本 고유 형태·제품 확장 — 완료 (2026-08-28, ADR-026·ADR-027·ADR-036·ADR-037·ADR-039·ADR-042)",
+    "claude_row": "| 일본 고유 형태·제품 | 완료 | 壁式構造の壁은 ADR-042의 별개 마일스톤, スパイラル筋의 継手·定着은 図5.3.5가 이미지, 機械式定着은 전부 「特記による」 |",
+    "not_built": "壁式構造の壁은 ADR-042의 별개 마일스톤, スパイラル筋의 継手·定着은 図5.3.5가 이미지, 機械式定着은 전부 「特記による」"
+  },
+  "test_counts": {"files":98,"tests":1682},
+  "diffstat": "AGENTS.md | 2 +-, CLAUDE.md | 2 +-, docs/MILESTONES.md | 2 +-, phases/35-ledger-reconciliation/index.json | 1 +-, phases/35-ledger-reconciliation/step4-report.json | new",
+  "noticed": [
+    "src/와 tests/에서 スパイラル 2건, 壁式構造 24건을 매칭했다.",
+    "src/와 tests/에서 機械式定着 0건, 免震 0건을 확인했다.",
+    "구현 범주 0건이며, 매칭된 줄은 주석 11건·원문 전사 4건·결정 기록 11건이다.",
+    "M2 룰팩·도면 인식(로컬)·M5 행과 docs/RISKS.md는 변경하지 않았다.",
+    "지정 동기화 테스트 3건, npm run lint, npm run test가 모두 통과했다."
+  ]
+}
