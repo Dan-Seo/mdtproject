@@ -1,0 +1,127 @@
+.control {
+  display: inline-flex;
+}
+
+.fileInput {
+  display: none;
+}
+
+.openButton,
+.chooseButton,
+.closeButton,
+.applyButton {
+  min-height: var(--space-xl);
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-body);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.panel {
+  position: absolute;
+  z-index: 20;
+  right: var(--space-sm);
+  width: min(560px, calc(100vw - 2 * var(--space-sm)));
+  max-height: 70vh;
+  overflow-y: auto;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--border-hairline);
+}
+
+.panelActions {
+  display: inline-flex;
+  gap: var(--space-2xs, 4px);
+}
+
+.panelBody {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  font-size: var(--type-caption-size);
+}
+
+.metadata,
+.storyList,
+.discardOption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: baseline;
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2xs, 4px);
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs, 4px);
+  align-items: baseline;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.axis {
+  font-weight: 600;
+}
+
+.span {
+  color: var(--text-muted);
+}
+
+.applyButton {
+  justify-self: start;
+}
+
+.discardOption {
+  justify-self: start;
+}
+
+.storyList,
+.issues {
+  margin: 0;
+  padding: 0;
+}
+
+.storyList {
+  list-style: none;
+}
+
+.issues {
+  display: grid;
+  gap: var(--space-2xs, 4px);
+  padding-left: var(--space-md);
+  color: var(--text-warning, var(--text-muted));
+}
+
+.muted,
+.result {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.result {
+  font-weight: 600;
+}

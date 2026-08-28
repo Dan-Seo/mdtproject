@@ -16,6 +16,14 @@ function nonTestTypeScriptFiles(directory: string): string[] {
   })
 }
 
+function decodeUnicodeEscapes(source: string): string {
+  return source.replace(
+    /\\u\{([0-9a-fA-F]+)\}|\\u([0-9a-fA-F]{4})/g,
+    (_match, codePoint: string | undefined, codeUnit: string | undefined) =>
+      String.fromCodePoint(parseInt(codePoint ?? codeUnit!, 16)),
+  )
+}
+
 describe('ST-Bridge document import scope', () => {
   it('keeps the IR parser free of rule, section, network, and store concerns', () => {
     const actualFiles = nonTestTypeScriptFiles(stbDirectory).sort()
@@ -60,10 +68,21 @@ describe('ST-Bridge document import scope', () => {
     ]
 
     for (const { file, source } of scannedFiles) {
-      for (const term of forbidden) {
-        expect(source, `${file} contains forbidden term ${term}`).not.toContain(
-          term,
-        )
+      const sourceVariants = [
+        { label: 'original source', source },
+        {
+          label: 'unicode-decoded source',
+          source: decodeUnicodeEscapes(source),
+        },
+      ]
+
+      for (const { label, source: variant } of sourceVariants) {
+        for (const term of forbidden) {
+          expect(
+            variant,
+            `${file} (${label}) contains forbidden term ${term}; unicode escapes in identifiers can bypass this check, so the same check also runs on a decoded copy`,
+          ).not.toContain(term)
+        }
       }
     }
   })

@@ -1,0 +1,23 @@
+{
+  "_derivedFrom": "tests/fixtures/stb-import/expected/diffchecker-filea.json",
+  "grid": {
+    "applied": true,
+    "refusal": null,
+    "value": {
+      "xSpans": [1000, 2000, 2000, 4400, 4400, 1000],
+      "ySpans": [1000, 3200, 3200, 3200, 3200, 3200, 3200, 1000],
+      "xLabels": ["X0", "X1", "X1a", "X2", "X2a", "X3", "X4"],
+      "yLabels": ["Y0", "Y1", "Y1a", "Y2", "Y2a", "Y3", "Y3a", "Y4", "Y5"]
+    }
+  },
+  "stories": {
+    "applied": true,
+    "refusal": null,
+    "value": [
+      { "id": "story-1", "name": "1FL", "height": 4500 },
+      { "id": "story-2", "name": "2FL", "height": 4000 },
+      { "id": "story-3", "name": "3FL", "height": 4000 },
+      { "id": "story-4", "name": "RFL", "height": 3800 }
+    ]
+  }
+}

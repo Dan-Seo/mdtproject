@@ -1,0 +1,13 @@
+2026-08-28T11:15:30.537197Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-28T11:15:30.594754Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-28T11:22:04.998116Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\stb\StbImport.test.tsx:
+      'stbImport.chooseAnother',
+      'stbImport.close',
+      'stbImport.applyGrid',
+      'stbImport.applyStories',
+      'stbImport.discardMembersGrid',
+      'stbImport.discardMembersStories',
+      'stbImport.appliedGrid',
+      'stbImport.appliedStories',
+      'stbImport.unsupported',
+      'stbImport.none',

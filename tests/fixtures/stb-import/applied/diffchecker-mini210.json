@@ -1,0 +1,13 @@
+{
+  "_derivedFrom": "tests/fixtures/stb-import/expected/diffchecker-mini210.json",
+  "grid": {
+    "applied": false,
+    "refusal": "通り芯候補なし",
+    "value": null
+  },
+  "stories": {
+    "applied": false,
+    "refusal": "階候補なし",
+    "value": null
+  }
+}

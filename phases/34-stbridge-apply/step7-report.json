@@ -1,0 +1,30 @@
+{
+  "renamed": [
+    "StbApplyResult → StbSkeletonApplyResult",
+    "StbApplyRefusal → StbSkeletonApplyRefusal",
+    "STB_APPLY_REFUSALS → STB_SKELETON_APPLY_REFUSALS"
+  ],
+  "guard_change": "scope-guard.test.ts now checks each non-test ST-Bridge source in both its original form and a locally decoded \\uXXXX/\\u{...} form, with the variant named in failures.",
+  "falsifiability_check": {
+    "mutation": "Temporarily changed the apply.ts import identifier to Stb\\u0041pplyResult.",
+    "failed": true,
+    "which_test": "src/lib/import/stb/scope-guard.test.ts: unicode-decoded source contains forbidden term StbApply",
+    "reverted": true
+  },
+  "remaining_escapes": [
+    "src/lib/import/stb/real-decode.test.ts:48 — '\\uFFFD' replacement-character literal; intentionally unchanged."
+  ],
+  "ledger": {
+    "claude_md_row": "| R16 | 열림 | ST-Bridge 코퍼스는 오픈소스 테스트 픽스처이고 사용자 .stb는 0건이며, RC 배근 파일·현실 규모 ver 2.1 파일이 부족하다 |",
+    "agents_md_synced": true
+  },
+  "test_counts": {
+    "files": 97,
+    "tests": 1680
+  },
+  "diffstat": "7 tracked files changed, 42 insertions(+), 19 deletions(-) before this report.",
+  "noticed": [
+    "src/components/stb/StbImport.tsx and src/components/stb/StbImport.test.tsx had no old identifier references and were unchanged.",
+    "npm run lint passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161."
+  ]
+}

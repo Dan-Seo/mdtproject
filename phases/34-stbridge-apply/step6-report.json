@@ -1,0 +1,130 @@
+{
+  "verdict": "refuted",
+  "premises": [
+    {
+      "id": "apply-is-pure",
+      "verdict": "upheld",
+      "evidence": "src/lib/import/stb/apply.ts imports only the Project type and local ST-Bridge types; no React, DOM, three.js, Next, zustand, or node:fs import was found. vitest.config.ts includes tests/**/*.test.ts in the domain project, and npx vitest run --project domain tests/stb-import/apply.test.ts passed 1 file / 15 tests.",
+      "note": "The source uses a unicode escape for the StbApplyResult type name; this does not create a runtime dependency."
+    },
+    {
+      "id": "no-framing-plan-coupling",
+      "verdict": "refuted",
+      "evidence": "A test-inclusive scan of src/lib/import/stb matched src/lib/import/stb/scope-guard.test.ts:53 ('applyFramingPlan') and :54 ('applyElevation').",
+      "note": "These are forbidden-name strings in the guard test rather than runtime coupling, but the premise explicitly requires tests to be included and the required scan is therefore not zero. Target code was not changed."
+    },
+    {
+      "id": "no-domain-drift",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --stat -- src/domain/ src/rulepack/ produced empty output."
+    },
+    {
+      "id": "no-rulepack-territory",
+      "verdict": "upheld",
+      "evidence": "The required rule-term scan over every non-test .ts file in src/lib/import/stb produced NO_RULE_TERMS_NON_TEST_SOURCE. The source-only numeric review found only parser/application mechanics; scope-guard.test.ts still declares the complete forbidden term list."
+    },
+    {
+      "id": "name-not-overwritten",
+      "verdict": "upheld",
+      "evidence": "apply.test.ts asserts result.project.name is unchanged and StbImport.test.tsx asserts the store project name is unchanged in the approval flows. The temporary project-name overwrite mutation broke 3 tests."
+    },
+    {
+      "id": "refusal-preserves-project",
+      "verdict": "upheld",
+      "evidence": "apply.test.ts asserts changed-grid and changed-story refusals return applied:false and preserve the original project reference. Removing a refusal temporarily broke 2 tests."
+    },
+    {
+      "id": "same-span-keeps-members",
+      "verdict": "upheld",
+      "evidence": "apply.test.ts contains the explicit 'keeps members when only labels change on an otherwise equal grid' case. Removing the same-span preservation branch temporarily broke that test."
+    },
+    {
+      "id": "issues-survive-approval",
+      "verdict": "upheld",
+      "evidence": "StbImport.test.tsx passes the issue-bearing candidate through approval and asserts the issue remains visible. Temporarily clearing candidate.issues after approval broke 'keeps issues and unsupported elements visible after approval'."
+    },
+    {
+      "id": "no-network-in-import",
+      "verdict": "refuted",
+      "evidence": "The required test-inclusive scan matched src/lib/import/stb/scope-guard.test.ts:49 ('fetch'), :50 ('XMLHttpRequest'), and :52 ('sendBeacon'). Runtime import sources contain no network call and telemetry contains no file-name or file-content payload handling.",
+      "note": "The matches are guard vocabulary strings, not runtime network calls, but the premise's stated scan includes tests and is not zero. Target code was not changed."
+    },
+    {
+      "id": "no-new-dependency",
+      "verdict": "upheld",
+      "evidence": "git diff main...HEAD --stat -- package.json package-lock.json produced empty output."
+    },
+    {
+      "id": "mismatch-issue-still-bites",
+      "verdict": "upheld",
+      "evidence": "The mismatch issue is asserted by src/lib/import/stb/candidates.test.ts:268 and tests/fixtures/stb-import/expected/diffchecker-filea.json, and candidates.ts:127 adds it. Temporarily suppressing that line caused 2 failing tests: the UI candidate mismatch test and the diffchecker-filea candidate fixture test. The line was restored."
+    },
+    {
+      "id": "ledgers-not-fabricated",
+      "verdict": "upheld",
+      "evidence": "The step-5 docs diff contains only docs/MILESTONES.md and docs/RISKS.md; ADR.md, PRD.md, ARCHITECTURE.md, and SOURCES.md are unchanged. Direct inventory found document=5, expected=5, applied=5, synthetic=2; STB_ISSUES=18 and STB_APPLY_REFUSALS=4; SOURCES.md records 4 real fixtures, RC real sample version 2.0.1, no realistic 2.1 corpus, and code-search total_count 9. These match the ledger values and the CLAUDE.md/AGENTS.md ST-Bridge summary."
+    },
+    {
+      "id": "applied-fixtures-are-oracles",
+      "verdict": "upheld",
+      "evidence": "All 5 applied fixtures exist and each _derivedFrom points to the same-named expected fixture. Independent expected-to-applied derivation matched: diffchecker-filea X=1000,2000,2000,4400,4400,1000; Y=1000,3200,3200,3200,3200,3200,3200,1000; heights=4500,4000,4000,3800; dotnet X/Y=6000,6000 and 6000,6000; heights=5000,4200; hoaryfox X=3600×6, Y=10800,3600, heights=4000×5; mini X=6000,6000, Y=5000, heights=4000,3500; mini210 correctly has no applied grid/story values because both candidates are refused. The applied-fixture numeric mutation broke its fixture test."
+    }
+  ],
+  "mutation_sweep": [
+    {
+      "mutation": "1. Swap applyStbGrid xSpans and ySpans.",
+      "broke": ["tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > diffchecker-filea.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > hoaryfox-sample.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > applyStbGrid > keeps members when only labels change on an otherwise equal grid", "tests/stb-import/apply.test.ts > application result invariants > maps exactly one X and one Y grid without assuming their input order"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "2. Reverse applyStbStories story IDs.",
+      "broke": ["tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > dotnet-sample1.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > diffchecker-filea.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > hoaryfox-sample.json matches its independently derived applied fixture", "tests/stb-import/apply.test.ts > applyStbStories > applies the real candidate from bottom to top and leaves the grid unchanged"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "3. Keep existing members instead of clearing them after successful story application.",
+      "broke": ["src/components/stb/StbImport.test.tsx > StbImport > does not change the project until story discard is explicitly confirmed"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "4. Remove the changed-grid refusal while members exist.",
+      "broke": ["src/components/stb/StbImport.test.tsx > StbImport > does not change the project until grid discard is explicitly confirmed", "tests/stb-import/apply.test.ts > applyStbGrid > rejects a changed grid while members exist, preserving the original reference"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "5. Remove same-span member preservation.",
+      "broke": ["tests/stb-import/apply.test.ts > applyStbGrid > keeps members when only labels change on an otherwise equal grid"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "6. Overwrite project.name from candidate.projectName.",
+      "broke": ["src/components/stb/StbImport.test.tsx > StbImport > shows the candidate and independently applies its grid and stories", "src/components/stb/StbImport.test.tsx > StbImport > does not change the project until grid discard is explicitly confirmed", "tests/stb-import/apply.test.ts > applyStbGrid > discards members only when explicitly requested and preserves unrelated project data"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "7. Clear candidate issues after successful approval.",
+      "broke": ["src/components/stb/StbImport.test.tsx > StbImport > keeps issues and unsupported elements visible after approval"],
+      "note": "Temporary mutation reverted."
+    },
+    {
+      "mutation": "8. Add one to applied/mini.json xSpans.",
+      "broke": ["tests/stb-import/apply.test.ts > ST-Bridge candidate application fixtures > mini.json matches its independently derived applied fixture"],
+      "note": "Temporary fixture mutation reverted."
+    }
+  ],
+  "test_counts": {
+    "files": 97,
+    "tests": 1680,
+    "delta_files": 2,
+    "delta_tests": 21
+  },
+  "diffstat": " AGENTS.md                                          |   1 +\n CLAUDE.md                                          |   1 +\n docs/MILESTONES.md                                 |   1 +\n docs/RISKS.md                                      |   1 +\n phases/34-stbridge-apply/index.json                |  35 +-\n phases/34-stbridge-apply/step0-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step0-codex.stdout.log    | 119 +++++++\n phases/34-stbridge-apply/step0-invoke.json         |   9 +\n phases/34-stbridge-apply/step0-report.json         | 239 ++++++++++++++\n phases/34-stbridge-apply/step1-codex.stderr.log    |   3 +\n phases/34-stbridge-apply/step1-codex.stdout.log    | 132 ++++++++\n phases/34-stbridge-apply/step1-invoke.json         |   9 +\n phases/34-stbridge-apply/step2-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step2-codex.stdout.log    | 155 +++++++++\n phases/34-stbridge-apply/step2-invoke.json         |   9 +\n phases/34-stbridge-apply/step3-codex.stderr.log    |  13 +\n phases/34-stbridge-apply/step3-codex.stdout.log    |  95 ++++++\n phases/34-stbridge-apply/step3-invoke.json         |   9 +\n phases/34-stbridge-apply/step4-codex.stderr.log    |   2 +\n phases/34-stbridge-apply/step4-codex.stdout.log    |  80 +++++\n phases/34-stbridge-apply/step4-invoke.json         |   9 +\n phases/34-stbridge-apply/step5-codex.stderr.log    |   3 +\n phases/34-stbridge-apply/step5-codex.stdout.log    |  49 +++\n phases/34-stbridge-apply/step5-invoke.json         |   9 +\n src/app/page.tsx                                   |   2 +\n src/components/stb/StbImport.module.css            | 127 +++++++\n src/components/stb/StbImport.test.tsx              | 210 ++++++++++++\n src/components/stb/StbImport.tsx                   | 364 +++++++++++++++++++++\n src/lib/import/stb/apply.ts                        | 163 +++++++++\n src/lib/import/stb/types.ts                        |  17 +\n src/locales/ja.json                                |  29 +-\n src/locales/ko.json                                |  29 +-\n tests/e2e/uc23-stb-import.js                       | 164 ++++++++++\n tests/fixtures/stb-import/applied/diffchecker-filea.json |  23 ++\n tests/fixtures/stb-import/applied/diffchecker-mini210.json |  13 +\n tests/fixtures/stb-import/applied/dotnet-sample1.json |  21 ++\n tests/fixtures/stb-import/applied/hoaryfox-sample.json |  24 ++\n tests/fixtures/stb-import/applied/mini.json        |  21 ++\n tests/fixtures/stb-import/document/mini.json       | 122 +++++--\n tests/fixtures/stb-import/expected/mini.json       |   4 +-\n tests/fixtures/stb-import/synthetic/mini-sjis.stb  |   6 +-\n tests/fixtures/stb-import/synthetic/mini-utf8.stb  |   6 +-\n tests/stb-import/apply.test.ts                     | 335 +++++++++++++++++++\n 43 files changed, 2622 insertions(+), 45 deletions(-)",
+  "unexpected_files": [],
+  "stb_importers": ["src/components/stb/StbImport.tsx"],
+  "noticed": [
+    "The exact coupling and network scans are refuted only because the test-inclusive scans see forbidden-term literals in scope-guard.test.ts; no runtime coupling or network call was found.",
+    "Step 5 added R16 to docs/RISKS.md, while the CLAUDE.md and AGENTS.md summary tables still end at R15; this stale summary was not changed because docs were out of scope.",
+    "Final full test, lint, and typecheck passed. Lint has one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161.",
+    "After reverting all mutations, target source is clean. The working tree remains non-clean only for the phase index/report being recorded and harness-created step6-codex.stdout.log and step6-codex.stderr.log, which are intentionally left uncommitted per AGENTS.md."
+  ]
+}

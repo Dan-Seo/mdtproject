@@ -1,0 +1,21 @@
+{
+  "_derivedFrom": "tests/fixtures/stb-import/expected/dotnet-sample1.json",
+  "grid": {
+    "applied": true,
+    "refusal": null,
+    "value": {
+      "xSpans": [6000, 6000],
+      "ySpans": [6000, 6000],
+      "xLabels": ["X1", "X2", "X3"],
+      "yLabels": ["Y1", "Y2", "Y3"]
+    }
+  },
+  "stories": {
+    "applied": true,
+    "refusal": null,
+    "value": [
+      { "id": "story-1", "name": "1FL", "height": 5000 },
+      { "id": "story-2", "name": "2FL", "height": 4200 }
+    ]
+  }
+}

@@ -7,38 +7,80 @@
       "name": "verify-apply-premises",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T19:40:01+0900",
+      "summary": "6개 반영 전제를 모두 upheld로 확인하고 mini 좌표 결함 및 뒤 스텝용 11개 기록 항목을 step0-report.json에 남겼다.",
+      "completed_at": "2026-08-28T19:56:08+0900"
     },
     {
       "step": 1,
       "name": "fix-mini-fixture-nodes",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T19:56:09+0900",
+      "summary": "mini 합성 ST-Bridge의 n21~n23 좌표를 step 0 실측값으로 복구하고 CP932·문서·기대 후보를 갱신했다.",
+      "completed_at": "2026-08-28T20:03:46+0900"
     },
     {
       "step": 2,
       "name": "stb-apply",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:03:47+0900",
+      "summary": "Added pure ST-Bridge grid/story application with refusal guards, immutable copies, five applied fixtures, and 15 node tests.",
+      "completed_at": "2026-08-28T20:15:29+0900"
     },
     {
       "step": 3,
       "name": "stb-import-panel",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:15:30+0900",
+      "summary": "Added the local .stb candidate panel with independent grid/story approval, refusal discard guards, persistent issues/unsupported notices, TDD coverage, and ja/ko copy.",
+      "completed_at": "2026-08-28T20:25:14+0900"
     },
     {
       "step": 4,
       "name": "mount-and-e2e",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:25:15+0900",
+      "summary": "Mounted StbImport in planActions, added the synthetic mini-utf8 browser flow, and passed build, e2e, tests, lint, typecheck, and blocking-graph checks.",
+      "completed_at": "2026-08-28T20:55:15+0900"
     },
     {
       "step": 5,
       "name": "update-ledgers",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:55:16+0900",
+      "summary": "Updated ST-Bridge milestone and risk ledgers, synchronized CLAUDE.md with AGENTS.md, and verified directly counted corpus and code totals.",
+      "completed_at": "2026-08-28T21:01:58+0900"
     },
     {
       "step": 6,
       "name": "refute-stb-apply",
       "kind": "verify",
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-08-28T21:01:59+0900",
+      "summary": "Refuted no-framing-plan-coupling and no-network-in-import as written: their test-inclusive scans match forbidden vocabulary in scope-guard.test.ts. All 8 mutations broke targeted tests and were reverted; the mismatch issue mutation also broke 2 tests.",
+      "completed_at": "2026-08-28T21:15:50+0900",
+      "refuted_at": "2026-08-28T21:18:17+0900"
+    },
+    {
+      "step": 7,
+      "name": "fix-guard-evasion-and-risk-ledger",
+      "status": "completed",
+      "started_at": "2026-08-28T21:30:43+0900",
+      "summary": "Renamed escaped ST-Bridge apply identifiers, added original/decoded scope checks, added the R16 summary row, and passed all AC tests.",
+      "completed_at": "2026-08-28T21:38:04+0900"
+    },
+    {
+      "step": 8,
+      "name": "refute-stb-apply-2",
+      "kind": "verify",
+      "status": "completed",
+      "started_at": "2026-08-28T21:38:05+0900",
+      "summary": "All 14 verification premises upheld; all 9 mutation-sweep cases plus the mismatch mutation broke tests and were reverted; npm run test passed 97 files and 1680 tests.",
+      "completed_at": "2026-08-28T21:52:37+0900"
     }
-  ]
+  ],
+  "created_at": "2026-08-28T19:40:01+0900",
+  "completed_at": "2026-08-28T22:00:00+0900",
+  "status": "completed"
 }

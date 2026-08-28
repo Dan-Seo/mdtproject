@@ -10,6 +10,7 @@ import {
 } from '@/components/quantity/TakeoffPane'
 import { SectionTable } from '@/components/section/SectionTable'
 import { PlanImport } from '@/components/plan/PlanImport'
+import { StbImport } from '@/components/stb/StbImport'
 import { SectionImport } from '@/components/section/SectionImport'
 import { ViewerExportButton } from '@/components/viewer/ViewerExportButton'
 import { ViewerTabs } from '@/components/viewer/ViewerTabs'
@@ -34,6 +35,7 @@ export default function Home() {
         <>
           <StoryTabs />
           <PlanImport />
+          <StbImport />
         </>
       }
       section={<SectionTable />}
