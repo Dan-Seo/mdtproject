@@ -22,7 +22,10 @@
     {
       "step": 2,
       "name": "close-decision-only-tracks",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T22:47:41+0900",
+      "completed_at": "2026-08-28T22:52:16+09:00",
+      "summary": "step 0에서 upheld인 M3c와 ST-Bridge를 대장 양쪽에 완료로 반영하고, refuted인 일본 고유 형태·제품은 열린 상태로 유지했다."
     },
     {
       "step": 3,
