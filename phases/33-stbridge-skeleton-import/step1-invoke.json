@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "stb-corpus-and-decode",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 984.6672264999943,
+  "stdout_log": "phases\\33-stbridge-skeleton-import\\step1-codex.stdout.log",
+  "stderr_log": "phases\\33-stbridge-skeleton-import\\step1-codex.stderr.log"
+}

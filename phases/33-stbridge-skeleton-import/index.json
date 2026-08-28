@@ -17,7 +17,7 @@
       "name": "stb-corpus-and-decode",
       "status": "completed",
       "started_at": "2026-08-28T12:21:59+0900",
-      "completed_at": "2026-08-28T12:32:48+0900",
+      "completed_at": "2026-08-28T12:38:23+0900",
       "summary": "코퍼스 4건을 SOURCES.md에 등록하고 인코딩 판정을 세웠다. Shift_JIS 픽스처가 실제 CP932 바이트임을 바이트 단언으로 고정했고, 인코딩 분기를 흔들면 실패함을 확인했다."
     },
     {
