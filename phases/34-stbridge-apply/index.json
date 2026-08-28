@@ -31,7 +31,10 @@
     {
       "step": 3,
       "name": "stb-import-panel",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T20:15:30+0900",
+      "summary": "Added the local .stb candidate panel with independent grid/story approval, refusal discard guards, persistent issues/unsupported notices, TDD coverage, and ja/ko copy.",
+      "completed_at": "2026-08-28T20:24:00+0900"
     },
     {
       "step": 4,
