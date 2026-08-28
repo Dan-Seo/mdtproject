@@ -1,0 +1,326 @@
+{
+  "step": 3,
+  "name": "stb-skeleton-candidates",
+  "files": [
+    "src/lib/import/stb/types.ts",
+    "src/lib/import/stb/candidates.ts",
+    "src/lib/import/stb/candidates.test.ts",
+    "tests/fixtures/stb-import/expected/mini.json",
+    "tests/fixtures/stb-import/expected/dotnet-sample1.json",
+    "tests/fixtures/stb-import/expected/diffchecker-filea.json",
+    "tests/fixtures/stb-import/expected/hoaryfox-sample.json",
+    "tests/fixtures/stb-import/expected/diffchecker-mini210.json",
+    "tests/stb-import/candidates.test.ts",
+    "phases/33-stbridge-skeleton-import/step3-report.json"
+  ],
+  "grid_rules": [
+    {
+      "rule": "axisGroups가 비어 있음",
+      "test": "rejects missing or non-pair axis groups without inventing a grid",
+      "expected_issue": "通り芯未検出"
+    },
+    {
+      "rule": "axisGroups가 2개가 아님",
+      "test": "rejects missing or non-pair axis groups without inventing a grid",
+      "expected_issue": "通り芯グループ数不一致"
+    },
+    {
+      "rule": "Arc/Radial 축",
+      "test": "rejects parallel axes and arc/radial axes, but ignores drawing axes while continuing",
+      "expected_issue": "非直交通り芯"
+    },
+    {
+      "rule": "Drawing 축",
+      "test": "rejects parallel axes and arc/radial axes, but ignores drawing axes while continuing",
+      "expected_issue": "未対応通り芯種別; 평행축 후보는 계속 출력"
+    },
+    {
+      "rule": "허용오차 밖의 angle 또는 숫자가 아님",
+      "test": "rejects the whole grid when either group is non-orthogonal and recovers when fixed",
+      "expected_issue": "非直交通り芯"
+    },
+    {
+      "rule": "두 축군이 같은 방향",
+      "test": "rejects parallel axes and arc/radial axes, but ignores drawing axes while continuing",
+      "expected_issue": "通り芯方向不明"
+    },
+    {
+      "rule": "distance 해석 불능",
+      "test": "rejects invalid, missing, duplicate, and insufficient axis positions without inventing labels; deduplicates issue codes when both axis groups fail the same rule",
+      "expected_issue": "通り芯距離解釈不能"
+    },
+    {
+      "rule": "name 누락",
+      "test": "rejects invalid, missing, duplicate, and insufficient axis positions without inventing labels",
+      "expected_issue": "通り芯ラベル欠落"
+    },
+    {
+      "rule": "distance 중복 또는 비증가",
+      "test": "rejects invalid, missing, duplicate, and insufficient axis positions without inventing labels",
+      "expected_issue": "通り芯位置重複"
+    },
+    {
+      "rule": "한 방향 축이 2본 미만",
+      "test": "rejects invalid, missing, duplicate, and insufficient axis positions without inventing labels",
+      "expected_issue": "通り芯未検出"
+    },
+    {
+      "rule": "nodeIds 좌표 불일치",
+      "test": "reports node mismatches without discarding the grid and includes the group origin",
+      "expected_issue": "通り芯位置と節点の不一致; grids는 유지"
+    },
+    {
+      "rule": "같은 issue의 중복",
+      "test": "deduplicates issue codes when both axis groups fail the same rule",
+      "expected_issue": "두 비직교 축군 → ['非直交通り芯']; 두 거리 오류 축군 → ['通り芯距離解釈不能']"
+    }
+  ],
+  "contrast_case": {
+    "test": "rejects the whole grid when either group is non-orthogonal and recovers when fixed",
+    "angle_45": {
+      "changed_group": "X",
+      "input_angle": "45.0",
+      "grids_count": 0,
+      "issues": ["非直交通り芯"]
+    },
+    "angle_270": {
+      "changed_group": "X",
+      "input_angle": "270.0",
+      "grids_count": 2,
+      "issues": []
+    },
+    "result": "통짜 거부와 복구 대비가 모두 통과"
+  },
+  "story_rules": [
+    {
+      "rule": "stories가 비어 있음",
+      "test": "accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "階不足",
+      "stories": []
+    },
+    {
+      "rule": "height 해석 불능",
+      "test": "accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "階レベル解釈不能",
+      "stories": []
+    },
+    {
+      "rule": "BASEMENT 또는 음수 표고",
+      "test": "rejects an incomplete story stack as a whole and derives adjacent heights; accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "地下レベル未対応",
+      "stories": []
+    },
+    {
+      "rule": "ISOLATION 등 미대응 kind",
+      "test": "rejects an incomplete story stack as a whole and derives adjacent heights",
+      "expected_issue": "対応外の階種別",
+      "stories": []
+    },
+    {
+      "rule": "BASEMENT와 다른 미대응 kind 동시 발생",
+      "test": "rejects an incomplete story stack as a whole and derives adjacent heights",
+      "expected_issue": "地下レベル未対応, 対応外の階種別",
+      "stories": []
+    },
+    {
+      "rule": "같은 표고",
+      "test": "accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "階レベル重複",
+      "stories": []
+    },
+    {
+      "rule": "레벨 2개 미만",
+      "test": "accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "階不足",
+      "stories": []
+    },
+    {
+      "rule": "레벨 name 누락",
+      "test": "accepts ROOF and PENTHOUSE, rejects invalid heights/names/duplicates/short stacks",
+      "expected_issue": "階レベル解釈不能",
+      "stories": []
+    },
+    {
+      "rule": "통과한 레벨의 인접 차분",
+      "test": "rejects an incomplete story stack as a whole and derives adjacent heights",
+      "input_heights": [200, 4700, 8700],
+      "stories": [
+        { "name": "1FL", "heightMm": 4500 },
+        { "name": "2FL", "heightMm": 4000 }
+      ]
+    }
+  ],
+  "expected_fixtures": [
+    {
+      "file": "mini.json",
+      "x_labels": ["X1", "X2", "X3"],
+      "x_spansMm": [6000, 6000],
+      "y_labels": ["Y1", "Y2"],
+      "y_spansMm": [5000],
+      "stories": [
+        { "name": "1FL", "heightMm": 4000 },
+        { "name": "2FL", "heightMm": 3500 }
+      ],
+      "issues": ["通り芯位置と節点の不一致"]
+    },
+    {
+      "file": "dotnet-sample1.json",
+      "x_labels": ["X1", "X2", "X3"],
+      "x_spansMm": [6000, 6000],
+      "y_labels": ["Y1", "Y2", "Y3"],
+      "y_spansMm": [6000, 6000],
+      "stories": [
+        { "name": "1FL", "heightMm": 5000 },
+        { "name": "2FL", "heightMm": 4200 }
+      ],
+      "issues": []
+    },
+    {
+      "file": "diffchecker-filea.json",
+      "x_labels": ["X0", "X1", "X1a", "X2", "X2a", "X3", "X4"],
+      "x_spansMm": [1000, 2000, 2000, 4400, 4400, 1000],
+      "y_labels": ["Y0", "Y1", "Y1a", "Y2", "Y2a", "Y3", "Y3a", "Y4", "Y5"],
+      "y_spansMm": [1000, 3200, 3200, 3200, 3200, 3200, 3200, 1000],
+      "stories": [
+        { "name": "1FL", "heightMm": 4500 },
+        { "name": "2FL", "heightMm": 4000 },
+        { "name": "3FL", "heightMm": 4000 },
+        { "name": "RFL", "heightMm": 3800 }
+      ],
+      "issues": ["通り芯位置と節点の不一致"]
+    },
+    {
+      "file": "hoaryfox-sample.json",
+      "x_labels": ["X1", "X2", "X3", "X4", "X5", "X6", "X7"],
+      "x_spansMm": [3600, 3600, 3600, 3600, 3600, 3600],
+      "y_labels": ["Y1", "Y2", "Y3"],
+      "y_spansMm": [10800, 3600],
+      "stories": [
+        { "name": "1F", "heightMm": 4000 },
+        { "name": "2F", "heightMm": 4000 },
+        { "name": "3F", "heightMm": 4000 },
+        { "name": "4F", "heightMm": 4000 },
+        { "name": "5F", "heightMm": 4000 }
+      ],
+      "issues": []
+    },
+    {
+      "file": "diffchecker-mini210.json",
+      "x_labels": [],
+      "x_spansMm": [],
+      "y_labels": [],
+      "y_spansMm": [],
+      "stories": [],
+      "issues": ["通り芯未検出", "階不足"]
+    }
+  ],
+  "step0_mismatches": [
+    {
+      "file": "mini.json",
+      "field": "axis-node consistency",
+      "step0": "step0-report.json에는 합성 mini가 포함되지 않음",
+      "step2_ir": "Y2의 nodeIds가 StbNode@Y=0을 가리키고 distance=5000",
+      "candidate": "grids는 유지하고 通り芯位置と節点の不一致를 기록"
+    },
+    {
+      "file": "dotnet-sample1.json",
+      "field": "all measured skeleton values",
+      "step0": "axis/stories/element census와 일치",
+      "candidate": "불일치 없음"
+    },
+    {
+      "file": "diffchecker-filea.json",
+      "field": "all measured skeleton values",
+      "step0": "X1a node mismatch를 기록",
+      "candidate": "동일 mismatch issue를 기록하고 grid 유지"
+    },
+    {
+      "file": "hoaryfox-sample.json",
+      "field": "all measured skeleton values",
+      "step0": "axis/stories/element census와 일치",
+      "candidate": "불일치 없음"
+    },
+    {
+      "file": "diffchecker-mini210.json",
+      "field": "axes and story height",
+      "step0": "axes 없음·story 1개라는 측정과 일치",
+      "candidate": "通り芯未検出·階不足"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "A",
+      "changed": "direction 판정을 angle 대신 group.groupName === 'X' ? 'X' : 'Y'로 임시 변경",
+      "failed_tests": ["src/lib/import/stb/candidates.test.ts > maps directions from angles, never from group names"],
+      "message": "expected [] to deeply equal [ 'X', 'Y' ]",
+      "restored": true,
+      "restored_verification": "ui candidates 10 tests passed"
+    },
+    {
+      "id": "B",
+      "changed": "미대응 kind 레벨만 filter한 뒤 남은 레벨을 인접 차분하도록 임시 변경",
+      "failed_tests": ["src/lib/import/stb/candidates.test.ts > rejects an incomplete story stack as a whole and derives adjacent heights"],
+      "message": "expected [ { name: '1FL', heightMm: 4000 } ] to deeply equal []",
+      "restored": true,
+      "restored_verification": "ui candidates 10 tests passed"
+    },
+    {
+      "id": "C",
+      "changed": "heightMm를 sortedLevels[i+1].height - level.height 대신 level.height로 임시 변경",
+      "failed_tests": [
+        "tests/stb-import/candidates.test.ts > mini.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > dotnet-sample1.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > diffchecker-filea.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > hoaryfox-sample.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > keeps absolute regression values independent from the expected fixtures"
+      ],
+      "message": "diffchecker-filea expected [4500, 4000, 4000, 3800], received [200, 4700, 8700, 12700]",
+      "restored": true,
+      "restored_verification": "domain candidates 6 tests passed"
+    },
+    {
+      "id": "D",
+      "changed": "비직교 판정을 angle !== 0에 해당하는 절대각 조건으로 임시 변경",
+      "failed_tests": [
+        "tests/stb-import/candidates.test.ts > mini.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > dotnet-sample1.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > diffchecker-filea.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > hoaryfox-sample.json matches its independently derived candidate fixture",
+        "tests/stb-import/candidates.test.ts > keeps absolute regression values independent from the expected fixtures"
+      ],
+      "message": "received grids=[] with issue '非直交通り芯' for real 270-degree axis fixtures",
+      "restored": true,
+      "restored_verification": "domain candidates 6 tests passed"
+    },
+    {
+      "id": "E",
+      "changed": "expected/hoaryfox-sample.json의 첫 x spansMm를 3600에서 3601로 임시 변경",
+      "failed_tests": ["tests/stb-import/candidates.test.ts > hoaryfox-sample.json matches its independently derived candidate fixture"],
+      "message": "expected 3601, received 3600",
+      "restored": true,
+      "restored_verification": "domain candidates 6 tests passed"
+    }
+  ],
+  "vitest": {
+    "domain": { "test_files": 47, "passed": 983 },
+    "ui": { "test_files": 47, "passed": 672 },
+    "stb_domain_subset": { "test_files": 3, "passed": 14 },
+    "stb_ui_candidate_subset": { "test_files": 1, "passed": 12 }
+  },
+  "pt_field_grep": {
+    "command": "rg -n 'scalePtPerMm|positionPt|totalConfirmed' src/lib/import/stb/",
+    "matches": 0
+  },
+  "untouched_tracks": {
+    "command": "git diff main --stat -- src/domain src/rulepack src/lib/import/framing-plan src/lib/import/section-list src/components src/lib/store.ts .github/workflows docs/ADR.md package.json",
+    "output": "",
+    "empty": true
+  },
+  "full_ac": {
+    "npm_test": { "test_files": 94, "passed": 1655 },
+    "typecheck": "passed",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161",
+    "git_diff_check": "passed"
+  },
+  "summary": "通り芯·階 후보가 서고 실물 4건을 전 칸 대조로 고정했다. angle 판정·통짜 거부·값 미채움을 흔들면 실패하며, 방향을 groupName으로 정하는 구현은 모순 케이스에서 깨진다."
+}

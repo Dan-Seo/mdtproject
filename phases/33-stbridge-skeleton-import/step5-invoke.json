@@ -1,0 +1,9 @@
+{
+  "step": 5,
+  "name": "record-corpus-limits",
+  "exitCode": 1,
+  "timedOut": false,
+  "elapsed": 480.8314892999915,
+  "stdout_log": "phases\\33-stbridge-skeleton-import\\step5-codex.stdout.log",
+  "stderr_log": "phases\\33-stbridge-skeleton-import\\step5-codex.stderr.log"
+}

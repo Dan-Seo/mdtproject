@@ -30,8 +30,8 @@ ADR-018의 2단 분리를 그대로 적용한다 — 「파일 → 중간표현�
    ```
    `unreadElements`는 **읽지 않은 요소를 이름별로 센 것**이다. 조용히 버리지 않는다 — 사용자가 「왜 절반만 들어왔나」를 알 수 있어야 한다.
    **다만 두 가지로 접는다. 접지 않으면 `{name:'ST_BRIDGE',count:1}` 같은 항목이 목록을 채워 이 필드의 목적이 무너진다.**
-   - **컨테이너 제외**: `ST_BRIDGE`·`StbCommon`·`StbModel`·`StbNodes`·`StbAxes`·`StbStories`·`StbMembers`는 세지 않는다(읽는 요소이거나 그 부모다). 이 이름들을 **상수 배열 하나**로 두어라.
-   - **조상 규칙**: 이미 센 요소의 자손은 세지 않는다. 그러면 断面 트리가 통째로 `{name:'StbSections',count:1}` 한 줄로 접힌다. **컨테이너 목록에 `StbSec`로 시작하는 이름을 넣지 마라** — `scope-guard.test.ts`가 그 문자열을 막으며, 그 트리는 조상 규칙으로 이미 접힌다.
+   - **컨테이너 제외**: `ST_BRIDGE`·`StbCommon`·`StbModel`·`StbNodes`·`StbAxes`·`StbStories`·`StbMembers` 일곱만 세지 않는다(읽는 요소이거나 그 직접 부모다). 이 이름들을 **상수 배열 하나**로 두어라. 이 일곱 밖의 요소는 **문서에서 만난 이름을 그대로** 센다.
+   - **「이미 센 요소의 자손은 세지 않는다」 같은 조상 규칙을 넣지 마라.** step 0의 실측(`element_census`)에서 `StbMembers` 아래에 `StbColumns`·`StbGirders`·`StbBraces` 같은 **복수형 컨테이너**가 한 겹 더 있음이 확인됐다 — 조상 규칙을 걸면 `StbColumn: 105`가 `StbColumns: 1`로 접혀 목록 전체가 `count: 1`이 되고, 「무엇이 얼마나 안 들어왔나」라는 이 필드의 목적이 사라진다. 그 복수형들을 제외 목록에 넣어 해결하려고도 하지 마라 — `StbColumns`가 `scope-guard.test.ts`의 금지 문자열 `StbColumn`을 포함해 가드와 충돌한다. 복수형 컨테이너가 `{name:'StbColumns',count:1}`로 목록에 함께 실리는 것은 **감수한다**(부재별 실수는 옆에 그대로 남는다).
 2. `src/lib/import/stb/document.test.ts`를 **먼저** 쓰고 `document.ts`를 구현하라.
    `parseStbDocument(text: string, encoding: StbEncoding): StbDocument`
    - `new DOMParser().parseFromString(text, 'application/xml')`. 결과에 `parsererror` 요소가 있으면 `issues: ['XML解析不能']`과 나머지 전부 빈 배열.

@@ -1,0 +1,74 @@
+{
+  "_source": {
+    "file": "diffchecker-mini210.stb",
+    "sha256": "9bf2b7b628d801f87d6d348b53b7628dfc0cc8a05989ace7787e727c697e80c5"
+  },
+  "version": "2.1.0",
+  "encoding": "utf-8",
+  "axisGroups": [],
+  "stories": [
+    {
+      "id": "101",
+      "name": "1FL",
+      "height": "0",
+      "kind": "GENERAL"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "1",
+      "x": "0",
+      "y": "0",
+      "z": "0",
+      "kind": "ON_GRID"
+    },
+    {
+      "id": "2",
+      "x": "6000",
+      "y": "0",
+      "z": "0",
+      "kind": "ON_GRID"
+    }
+  ],
+  "unsupportedAxisKinds": [],
+  "unreadElements": [
+    {
+      "name": "StbGirders",
+      "count": 1
+    },
+    {
+      "name": "StbGirder",
+      "count": 1
+    },
+    {
+      "name": "StbSections",
+      "count": 1
+    },
+    {
+      "name": "StbSecBeam_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecFigureBeam_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecBeamStraight",
+      "count": 1
+    },
+    {
+      "name": "StbSecBarArrangementBeam_RC",
+      "count": 1
+    },
+    {
+      "name": "StbSecBarBeamSimple",
+      "count": 1
+    },
+    {
+      "name": "StbSecBarBeamSimpleMain",
+      "count": 2
+    }
+  ],
+  "issues": [],
+  "projectName": "TestProject"
+}

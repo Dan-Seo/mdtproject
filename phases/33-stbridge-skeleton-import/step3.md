@@ -74,7 +74,7 @@
    - `kind: 'PENTHOUSE'`·`'ROOF'`는 통과한다.
    - 레벨 `[200, 4700, 8700]` → `stories`가 `[{name:'1FL',heightMm:4500},{name:'2FL',heightMm:4000}]` **2개**다(`[{heightMm:200}, ...]`가 아니다).
    - 반환값이 순수 JSON이다(`JSON.parse(JSON.stringify(...))` 왕복 `toEqual`).
-7. `tests/fixtures/stb-import/expected/*.json` 5건을 만들어 커밋하라 — 합성 `mini` 1건 + 실물 4건. **값은 step0-report.json의 실측에서 유도하라. 파서 출력을 붙여넣지 마라.** 유도 경로는 이렇다 — 축 라벨·`spansMm`은 `axes`에서, `stories`는 `stories`의 표고 차분에서, **`unsupported`는 `element_census`(step 0 기록항목 13)에 step 2가 정한 컨테이너 제외·조상 규칙을 손으로 적용해** 얻는다. `element_census`에 없어서 유도할 수 없는 값이 있으면 **지어내지도 베끼지도 말고 `blocked`로 멈춰라.** 각 파일 첫 키로 `"_derivedFrom": "phases/33-stbridge-skeleton-import/step0-report.json"`을 넣어라.
+7. `tests/fixtures/stb-import/expected/*.json` 5건을 만들어 커밋하라 — 합성 `mini` 1건 + 실물 4건. **값은 step0-report.json의 실측에서 유도하라. 파서 출력을 붙여넣지 마라.** 유도 경로는 이렇다 — 축 라벨·`spansMm`은 `axes`에서, `stories`는 `stories`의 표고 차분에서, **`unsupported`는 `element_census`(step 0 기록항목 13)에서 step 2가 정한 컨테이너 7개와 step 2가 읽는 요소들을 빼서** 얻는다(조상 규칙은 없다 — 남은 이름과 건수를 그대로 옮긴다). `element_census`에 없어서 유도할 수 없는 값이 있으면 **지어내지도 베끼지도 말고 `blocked`로 멈춰라.** 각 파일 첫 키로 `"_derivedFrom": "phases/33-stbridge-skeleton-import/step0-report.json"`을 넣어라.
    **참고 — planner의 사전 실측이다. step0-report.json과 다르면 step0을 정본으로 하고 두 값을 report에 나란히 적어라.**
    - `hoaryfox-sample`: X 라벨 `X1..X7` 스팬 `[3600,3600,3600,3600,3600,3600]`; Y 라벨 `Y1,Y2,Y3` 스팬 `[10800,3600]`. stories 5개 `1F/2F/3F/4F/5F` 전부 `4000`. issues `[]`.
    - `diffchecker-filea`: X 라벨 `X0,X1,X1a,X2,X2a,X3,X4` 스팬 `[1000,2000,2000,4400,4400,1000]`; Y 라벨 `Y0,Y1,Y1a,Y2,Y2a,Y3,Y3a,Y4,Y5` 스팬 `[1000,3200,3200,3200,3200,3200,3200,1000]`. stories 4개 `1FL 4500 / 2FL 4000 / 3FL 4000 / RFL 3800`. issues에 `通り芯位置と節点の不一致`.

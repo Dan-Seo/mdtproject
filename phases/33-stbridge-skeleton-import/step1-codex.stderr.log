@@ -1,0 +1,9 @@
+2026-08-28T03:21:59.636757Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-08-28T03:21:59.672244Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-08-28T03:34:57.171473Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\phases\33-stbridge-skeleton-import\index.json:
+    {
+        "step": 1,
+        "name": "stb-corpus-and-decode",
+        "status": "pending",
+        "started_at": "2026-08-28T12:21:59+0900"
+    }

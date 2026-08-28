@@ -1,0 +1,44 @@
+{
+  "_derivedFrom": "phases/33-stbridge-skeleton-import/step0-report.json",
+  "version": "2.0.2",
+  "projectName": "ExportOptimizedOfficeBuilding2STB.gh",
+  "grids": [
+    { "direction": "X", "groupName": "X", "axes": [{ "label": "X1" }, { "label": "X2" }, { "label": "X3" }, { "label": "X4" }, { "label": "X5" }, { "label": "X6" }, { "label": "X7" }], "spansMm": [3600, 3600, 3600, 3600, 3600, 3600] },
+    { "direction": "Y", "groupName": "Y", "axes": [{ "label": "Y1" }, { "label": "Y2" }, { "label": "Y3" }], "spansMm": [10800, 3600] }
+  ],
+  "stories": [
+    { "name": "1F", "heightMm": 4000 },
+    { "name": "2F", "heightMm": 4000 },
+    { "name": "3F", "heightMm": 4000 },
+    { "name": "4F", "heightMm": 4000 },
+    { "name": "5F", "heightMm": 4000 }
+  ],
+  "unsupported": [
+    { "name": "StbColumns", "count": 1 },
+    { "name": "StbColumn", "count": 105 },
+    { "name": "StbGirders", "count": 1 },
+    { "name": "StbGirder", "count": 192 },
+    { "name": "StbBraces", "count": 1 },
+    { "name": "StbBrace", "count": 10 },
+    { "name": "StbSections", "count": 1 },
+    { "name": "StbSecColumn_S", "count": 26 },
+    { "name": "StbSecSteelFigureColumn_S", "count": 26 },
+    { "name": "StbSecSteelColumn_S_Same", "count": 26 },
+    { "name": "StbSecBeam_RC", "count": 1 },
+    { "name": "StbSecFigureBeam_RC", "count": 1 },
+    { "name": "StbSecBeam_RC_Straight", "count": 1 },
+    { "name": "StbSecBeam_S", "count": 27 },
+    { "name": "StbSecSteelFigureBeam_S", "count": 27 },
+    { "name": "StbSecSteelBeam_S_Straight", "count": 27 },
+    { "name": "StbSecBrace_S", "count": 6 },
+    { "name": "StbSecSteelFigureBrace_S", "count": 6 },
+    { "name": "StbSecSteelBrace_S_Same", "count": 6 },
+    { "name": "StbSecSteel", "count": 1 },
+    { "name": "StbSecRoll-H", "count": 33 },
+    { "name": "StbSecRoll-BOX", "count": 26 },
+    { "name": "StbJoints", "count": 1 },
+    { "name": "StbCalData", "count": 1 },
+    { "name": "StbAnaModels", "count": 1 }
+  ],
+  "issues": []
+}

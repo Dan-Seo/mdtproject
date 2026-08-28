@@ -7,34 +7,54 @@
       "name": "verify-stbridge-premises",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T12:07:46+0900",
+      "completed_at": "2026-08-28T12:21:58+0900",
+      "summary": "전제 7건 중 7건 upheld·0건 refuted; 반증 id 없음. 4개 .stb의 축·階 실측과 원점·노드 불일치·빈 NodeIdList·전 요소 인구조사를 모두 기록했다."
     },
     {
       "step": 1,
       "name": "stb-corpus-and-decode",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T12:21:59+0900",
+      "completed_at": "2026-08-28T12:38:23+0900",
+      "summary": "코퍼스 4건을 SOURCES.md에 등록하고 인코딩 판정을 세웠다. Shift_JIS 픽스처가 실제 CP932 바이트임을 바이트 단언으로 고정했고, 인코딩 분기를 흔들면 실패함을 확인했다."
     },
     {
       "step": 2,
       "name": "stb-document-ir",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T12:38:25+0900",
+      "completed_at": "2026-08-28T12:55:49+0900",
+      "summary": ".stb → StbDocument 중간표현이 서고 실물 4건의 IR을 커밋했다. 부재·断面은 건수만 세며, 값 미채움·DOM 누출·규준 용어 유입을 흔들면 실패한다."
     },
     {
       "step": 3,
       "name": "stb-skeleton-candidates",
-      "status": "pending"
+      "started_at": "2026-08-28T12:55:50+0900",
+      "completed_at": "2026-08-28T13:10:00+0900",
+      "status": "completed",
+      "summary": "通り芯·階 후보가 서고 실물 4건을 전 칸 대조로 고정했다. angle 판정·통짜 거부·값 미채움을 흔들면 실패하며, 방향을 groupName으로 정하는 구현은 모순 케이스에서 깨진다."
     },
     {
       "step": 4,
       "name": "refute-stb-skeleton",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "summary": "전제 13건 중 13건 upheld·0건 refuted; 뮤테이션 6곳은 모두 테스트를 깨뜨려 아무 테스트도 깨뜨리지 못한 지점 0건.",
+      "started_at": "2026-08-28T13:29:24+0900",
+      "completed_at": "2026-08-28T13:37:39+0900"
     },
     {
       "step": 5,
       "name": "record-corpus-limits",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-28T13:37:40+0900",
+      "completed_at": "2026-08-28T13:45:41+0900",
+      "summary": "코퍼스의 한계를 실측으로 SOURCES.md에 박았다 — RC 柱 17건·RC 断面/배근 4건, 耐震壁 6건, StbColumn@name은 断面 符号와 불일치, 축 검산 가능 비율 24/32."
     }
-  ]
+  ],
+  "created_at": "2026-08-28T12:07:46+0900",
+  "completed_at": "2026-08-28T13:46:32+0900"
 }

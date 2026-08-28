@@ -1,0 +1,66 @@
+{
+  "_derivedFrom": "tests/fixtures/stb-import/synthetic/mini-utf8.stb (손으로 전사)",
+  "version": "2.0.2",
+  "projectName": "基準階サンプル",
+  "encoding": "utf-8",
+  "axisGroups": [
+    {
+      "groupName": "Y",
+      "angle": "0.0",
+      "axes": [
+        {
+          "id": "y1",
+          "name": "Y1",
+          "distance": "0.0",
+          "nodeIds": ["n11", "n12", "n13"]
+        },
+        {
+          "id": "y2",
+          "name": "Y2",
+          "distance": "5000.0",
+          "nodeIds": ["n21", "n22", "n23"]
+        }
+      ]
+    },
+    {
+      "groupName": "X",
+      "angle": "270.0",
+      "axes": [
+        {
+          "id": "x1",
+          "name": "X1",
+          "distance": "0.0",
+          "nodeIds": ["n11", "n21"]
+        },
+        {
+          "id": "x2",
+          "name": "X2",
+          "distance": "6000.0",
+          "nodeIds": ["n12", "n22"]
+        },
+        {
+          "id": "x3",
+          "name": "X3",
+          "distance": "12000.0",
+          "nodeIds": ["n13", "n23"]
+        }
+      ]
+    }
+  ],
+  "stories": [
+    { "id": "s1", "name": "1FL", "height": "0.0", "kind": "GENERAL" },
+    { "id": "s2", "name": "2FL", "height": "4000.0", "kind": "GENERAL" },
+    { "id": "sr", "name": "RFL", "height": "7500.0", "kind": "ROOF" }
+  ],
+  "nodes": [
+    { "id": "n11", "x": "0.0", "y": "0.0", "z": "0.0", "kind": "ON_GRID" },
+    { "id": "n12", "x": "6000.0", "y": "0.0", "z": "0.0", "kind": "ON_GRID" },
+    { "id": "n13", "x": "12000.0", "y": "0.0", "z": "0.0", "kind": "ON_GRID" },
+    { "id": "n21", "x": "0.0", "y": "0.0", "z": "5000.0", "kind": "ON_GRID" },
+    { "id": "n22", "x": "6000.0", "y": "0.0", "z": "5000.0", "kind": "ON_GRID" },
+    { "id": "n23", "x": "12000.0", "y": "0.0", "z": "5000.0", "kind": "ON_GRID" }
+  ],
+  "unsupportedAxisKinds": [],
+  "unreadElements": [],
+  "issues": []
+}

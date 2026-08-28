@@ -1,0 +1,206 @@
+{
+  "limits_section": {
+    "version_distribution": {
+      "values": [
+        { "file": "dotnet-sample1.stb", "version": "2.0.1", "bytes": 63177 },
+        { "file": "diffchecker-filea.stb", "version": "2.0.2", "bytes": 117138 },
+        { "file": "hoaryfox-sample.stb", "version": "2.0.2", "bytes": 83288 },
+        { "file": "diffchecker-mini210.stb", "version": "2.1.0", "bytes": 1606 }
+      ],
+      "derived": { "version_2_1_files": 1, "version_2_1_bytes": 1606 },
+      "source_paths": [
+        "step0-report.json.corpus[0].{file,version,bytes}",
+        "step0-report.json.corpus[1].{file,version,bytes}",
+        "step0-report.json.corpus[2].{file,version,bytes}",
+        "step0-report.json.corpus[3].{file,version,bytes}"
+      ]
+    },
+    "github_search": {
+      "values": { "version_query_total": 9, "element_query_total": 0 },
+      "source_paths": [
+        "step0-report.json.gh_search.version_query_total",
+        "step0-report.json.gh_search.element_query_total"
+      ]
+    },
+    "structure_and_rc_elements": {
+      "values": "rc_coverage",
+      "source_path": "step0-report.json.next_phase_facts[*].{column_kind_structure,element_counts}"
+    },
+    "member_counts": {
+      "values": "member_coverage.by_file",
+      "source_paths": [
+        "step0-report.json.next_phase_facts[*].element_counts.{StbWall,StbSlab,StbBeam,StbBrace,StbFooting,StbPile}",
+        "step0-report.json.element_census[0].counts.StbGirder"
+      ]
+    },
+    "marks": {
+      "values": "mark_vs_section_mark",
+      "source_path": "step0-report.json.next_phase_facts[*].{column_names,sec_column_rc_names}"
+    },
+    "depth_cover_elements": {
+      "values": {
+        "dotnet-sample1.stb": [
+          "StbSecBarArrangementBeam_RC",
+          "StbSecBarArrangementColumn_RC",
+          "StbSecBarArrangementFoundation_RC",
+          "StbSecBarArrangementSlab_RC",
+          "StbSecBarArrangementWall_RC"
+        ],
+        "diffchecker-filea.stb": ["StbSecBarArrangementBeam_RC"],
+        "hoaryfox-sample.stb": [],
+        "diffchecker-mini210.stb": ["StbSecBarBeamSimple"]
+      },
+      "source_path": "step0-report.json.next_phase_facts[*].elements_with_depth_cover"
+    },
+    "axis_and_node_limits": {
+      "values": "axis_check_coverage",
+      "source_paths": [
+        "step0-report.json.axes[*].{file,labels,node_id_counts}",
+        "step0-report.json.empty_node_list_axes[*]",
+        "step0-report.json.nodes[*]",
+        "step0-report.json.axis_node_mismatch"
+      ]
+    },
+    "story_limits": {
+      "values": [
+        { "file": "dotnet-sample1.stb", "kind": { "GENERAL": 2, "ROOF": 1 }, "base_height": 0 },
+        { "file": "diffchecker-filea.stb", "kind": { "GENERAL": 3, "PENTHOUSE": 1, "ROOF": 1 }, "base_height": 200 },
+        { "file": "hoaryfox-sample.stb", "kind": { "GENERAL": 6 }, "base_height": 0 },
+        { "file": "diffchecker-mini210.stb", "kind": { "GENERAL": 1 }, "base_height": 0 }
+      ],
+      "source_path": "step0-report.json.stories[*].levels"
+    },
+    "local_only_gap": {
+      "value": ".cache/stb가 없으면 src/lib/import/stb/real-decode.test.ts가 스킵되어 파일 bytes에서 StbDocument까지는 CI가 덮지 못한다. 커밋된 document/expected JSON으로 StbDocument에서 후보까지는 상시 검증한다.",
+      "source_paths": [
+        "step1-report.json.cache_absent_run.skipped_test_names",
+        "step3-report.json.expected_fixtures"
+      ]
+    }
+  },
+  "rc_coverage": [
+    {
+      "file": "dotnet-sample1.stb",
+      "rc_columns": 17,
+      "s_columns": 0,
+      "rc_sections": 4,
+      "rc_bar_rect_same": 4,
+      "rc_bar_rect_simple_2_1": 0
+    },
+    {
+      "file": "diffchecker-filea.stb",
+      "rc_columns": 0,
+      "s_columns": 40,
+      "rc_sections": 0,
+      "rc_bar_rect_same": 0,
+      "rc_bar_rect_simple_2_1": 0
+    },
+    {
+      "file": "hoaryfox-sample.stb",
+      "rc_columns": 0,
+      "s_columns": 105,
+      "rc_sections": 0,
+      "rc_bar_rect_same": 0,
+      "rc_bar_rect_simple_2_1": 0
+    },
+    {
+      "file": "diffchecker-mini210.stb",
+      "rc_columns": 0,
+      "s_columns": 0,
+      "rc_sections": 0,
+      "rc_bar_rect_same": 0,
+      "rc_bar_rect_simple_2_1": 0
+    }
+  ],
+  "mark_vs_section_mark": [
+    {
+      "file": "dotnet-sample1.stb",
+      "column_names": ["1C1", "1C2", "2C1", "2C2"],
+      "sec_column_rc_names": ["C1", "C2"],
+      "same_strings": false
+    },
+    {
+      "file": "diffchecker-filea.stb",
+      "column_names": ["1C1", "1C2", "2C1", "2C2", "3C1", "3C2", "PH1C2", "PH1C3"],
+      "sec_column_rc_names": [],
+      "same_strings": false
+    },
+    {
+      "file": "hoaryfox-sample.stb",
+      "column_names": ["Column"],
+      "sec_column_rc_names": [],
+      "same_strings": false
+    },
+    {
+      "file": "diffchecker-mini210.stb",
+      "column_names": [],
+      "sec_column_rc_names": [],
+      "same_strings": true,
+      "note": "빈 집합끼리의 자명한 일치일 뿐 매칭 근거가 아니다."
+    }
+  ],
+  "member_coverage": {
+    "by_file": [
+      { "file": "dotnet-sample1.stb", "StbWall": 6, "StbSlab": 27, "StbBeam": 11, "StbBrace": 0, "StbFooting": 9, "StbPile": 0 },
+      { "file": "diffchecker-filea.stb", "StbWall": 0, "StbSlab": 82, "StbBeam": 56, "StbBrace": 0, "StbFooting": 0, "StbPile": 0 },
+      { "file": "hoaryfox-sample.stb", "StbWall": 0, "StbSlab": 0, "StbBeam": 0, "StbBrace": 10, "StbFooting": 0, "StbPile": 0 },
+      { "file": "diffchecker-mini210.stb", "StbWall": 0, "StbSlab": 0, "StbBeam": 0, "StbBrace": 0, "StbFooting": 0, "StbPile": 0 }
+    ],
+    "kijun_members_with_format_evidence": ["柱", "大梁", "耐震壁", "床板"],
+    "kijun_members_without_second_publisher_or_realistic_2_1_evidence": ["柱", "大梁", "耐震壁", "床板"],
+    "note": "네 부재의 형식상 근거가 dotnet-sample1.stb 한 건에 몰려 있다. StbBeam은 小梁이고, 같은 파일의 大梁 근거는 StbGirder 34건이다."
+  },
+  "axis_check_coverage": {
+    "by_file": [
+      { "file": "dotnet-sample1.stb", "checkable_axes": 6, "total_axes": 6, "empty_node_id_list_axes": 0, "node_kinds": { "ON_GIRDER": 22, "ON_GRID": 26, "OTHER": 2 } },
+      { "file": "diffchecker-filea.stb", "checkable_axes": 8, "total_axes": 16, "empty_node_id_list_axes": 8, "node_kinds": { "ON_BEAM": 20, "ON_GIRDER": 92, "ON_GRID": 54 } },
+      { "file": "hoaryfox-sample.stb", "checkable_axes": 10, "total_axes": 10, "empty_node_id_list_axes": 0, "node_kinds": { "ON_GIRDER": 126 } },
+      { "file": "diffchecker-mini210.stb", "checkable_axes": 0, "total_axes": 0, "empty_node_id_list_axes": 0, "node_kinds": { "ON_GRID": 2 } }
+    ],
+    "total": { "checkable_axes": 24, "total_axes": 32, "ratio": "24/32" },
+    "axis_node_mismatch_count": 1,
+    "mismatch": { "file": "diffchecker-filea.stb", "label": "X1a", "axis_distance": 3000, "node_x": 3500 }
+  },
+  "mutations": [
+    {
+      "name": "limits section loses one real filename",
+      "change": "한계 절의 diffchecker-mini210.stb 표기를 모두 제거",
+      "command": "npx vitest run tests/stb-import/sources-limits.test.ts",
+      "exit_code": 1,
+      "failure": "AssertionError: 코퍼스 한계 절에 diffchecker-mini210.stb이 없다",
+      "restored_same_turn": true
+    },
+    {
+      "name": "placeholder is restored",
+      "change": "step 5에서 실측으로 채운다 문구를 한계 절에 재삽입",
+      "command": "npx vitest run tests/stb-import/sources-limits.test.ts",
+      "exit_code": 1,
+      "failure": "AssertionError: step 5 자리표시가 남아 있다",
+      "restored_same_turn": true
+    }
+  ],
+  "verification": {
+    "npm_run_test": "passed: 95 files, 1659 tests",
+    "npx_tsc_noEmit": "passed",
+    "npm_run_lint": "passed with one pre-existing warning at src/app/api/oncall/alert/route.test.ts:161",
+    "targeted_after_restore": "passed: 1 file, 2 tests"
+  },
+  "untouched_tracks": {
+    "requested_command": "git diff main --stat -- src/lib/import/stb src/domain src/rulepack src/components docs/ADR.md CLAUDE.md AGENTS.md docs/MILESTONES.md docs/RISKS.md .github/workflows package.json",
+    "requested_output": " src/lib/import/stb/candidates.test.ts  | 443 +++++++++++++++++++++++++++++++++\n src/lib/import/stb/candidates.ts       | 286 +++++++++++++++++++++\n src/lib/import/stb/decode.test.ts      | 113 +++++++++\n src/lib/import/stb/decode.ts           |  53 ++++\n src/lib/import/stb/document.test.ts    | 175 +++++++++++++\n src/lib/import/stb/document.ts         | 223 +++++++++++++++++\n src/lib/import/stb/real-decode.test.ts |  85 +++++++\n src/lib/import/stb/scope-guard.test.ts |  70 ++++++\n src/lib/import/stb/types.test.ts       |  25 ++\n src/lib/import/stb/types.ts            |  92 +++++++\n 10 files changed, 1565 insertions(+)",
+    "requested_output_note": "main(79a205f)은 phase 시작점이고, 출력은 이미 커밋된 step 1~4의 변경이다. step 5가 만든 변경이 아니다.",
+    "step_start_command": "git diff 88d3356 --stat -- src/lib/import/stb src/domain src/rulepack src/components docs/ADR.md CLAUDE.md AGENTS.md docs/MILESTONES.md docs/RISKS.md .github/workflows package.json",
+    "step_start_output": "",
+    "step_start_assessment": "step 5의 보호 경로 변경 0건"
+  },
+  "pre_commit_status": [
+    "M docs/SOURCES.md",
+    "M phases/33-stbridge-skeleton-import/index.json",
+    "M tests/fixtures/stb-import/SOURCES.md",
+    "?? phases/33-stbridge-skeleton-import/step5-codex.stderr.log",
+    "?? phases/33-stbridge-skeleton-import/step5-codex.stdout.log",
+    "?? phases/33-stbridge-skeleton-import/step5-report.json",
+    "?? tests/stb-import/sources-limits.test.ts"
+  ],
+  "summary": "코퍼스의 한계를 실측으로 SOURCES.md에 박았다 — RC 柱 17건·RC 断面/배근 4건, 耐震壁 6건, StbColumn@name은 断面 符号와 불일치, 축 검산 가능 비율 24/32."
+}

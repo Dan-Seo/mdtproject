@@ -1,0 +1,213 @@
+{
+  "step": 1,
+  "name": "stb-corpus-and-decode",
+  "status": "completed",
+  "files": [
+    ".gitattributes",
+    "tests/fixtures/stb-import/SOURCES.md",
+    "tests/fixtures/stb-import/synthetic/mini-utf8.stb",
+    "tests/fixtures/stb-import/synthetic/mini-sjis.stb",
+    "tests/stb-import/fixture-bytes.test.ts",
+    "scripts/stb/make-sjis-fixture.py",
+    "src/lib/import/stb/types.ts",
+    "src/lib/import/stb/types.test.ts",
+    "src/lib/import/stb/decode.ts",
+    "src/lib/import/stb/decode.test.ts",
+    "src/lib/import/stb/real-decode.test.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "sources_md": [
+    {
+      "kind": "stb",
+      "file": "dotnet-sample1.stb",
+      "url": "https://raw.githubusercontent.com/hrntsm/STBDotNet/2e742685700456ac10a3ed326ca99be75acd6b33/TestStbFiles/ver2/Sample1.stb",
+      "sha256": "50df079abaf5514d88129b7e0ad194fb959d6bd2757126baebab650072ff391a"
+    },
+    {
+      "kind": "stb",
+      "file": "diffchecker-filea.stb",
+      "url": "https://raw.githubusercontent.com/NS-NS/STB-DiffChecker/bd9a6eb09d82e58f033e3ee542bf6874196ae924/TestData/FileA.stb",
+      "sha256": "fb350d0efcec007219ccc73d975175f4f694f422619dbc416ba133b18433ebe2"
+    },
+    {
+      "kind": "stb",
+      "file": "hoaryfox-sample.stb",
+      "url": "https://raw.githubusercontent.com/hrntsm/HoaryFox/f991f97df99e307c449c4c0bc0cb85b514cc5e8c/Samples/SampleBuilding.stb",
+      "sha256": "83d35a8eeb57177d409766804e36288ff325d141d05a7cba4b58fff221257629"
+    },
+    {
+      "kind": "stb",
+      "file": "diffchecker-mini210.stb",
+      "url": "https://raw.githubusercontent.com/NS-NS/STB-DiffChecker/bd9a6eb09d82e58f033e3ee542bf6874196ae924/TestData/Mini210_FileA.stb",
+      "sha256": "9bf2b7b628d801f87d6d348b53b7628dfc0cc8a05989ace7787e727c697e80c5"
+    },
+    {
+      "kind": "xsd",
+      "version": "2.0.1",
+      "url": "https://www.building-smart.or.jp/wp-content/uploads/2022/03/ST-Bridge_v201_20220316.zip",
+      "zip_sha256": "e9294763477a18f0bc0e19aab629be4d8b1ea7ade085a688766a94dcfa5e4913",
+      "file": "ST-Bridge_v201_20220316.xsd",
+      "sha256": "3eac9a71b08c6be02fcc514b821937d24305fe0662500047108316c88a98005b"
+    },
+    {
+      "kind": "xsd",
+      "version": "2.0.2",
+      "url": "https://www.building-smart.or.jp/wp-content/uploads/2026/04/ST-Bridge_v202.zip",
+      "zip_sha256": "f69d4ee1c4b162f50a1a05ba13c948996d743924f1eeebd7016de866a5b4da8d",
+      "file": "ST-Bridge_v202.xsd",
+      "sha256": "56cc1b80062c2385c15f8ab0745f4e96ac5b9400a4743307031e813d0253a1fa"
+    },
+    {
+      "kind": "xsd",
+      "version": "2.1.0",
+      "url": "https://www.building-smart.or.jp/wp-content/uploads/2023/05/ST-Bridge210.zip",
+      "zip_sha256": "b694b2675001b1ac6d894cac66b7e0f357d611fb793f6dedd3d90b6aab07771e",
+      "file": "ST-Bridge210.xsd",
+      "sha256": "9f2038b7b308f411b6397e6cd2d1b0fe82169dd20c1e98cbf7d478a9d7b3583c"
+    },
+    {
+      "kind": "xsd",
+      "version": "2.1.1",
+      "url": "https://www.building-smart.or.jp/wp-content/uploads/2026/07/ST-Bridge_v211.zip",
+      "zip_sha256": "e4690298e3233e77049633a26a05de3633b7272b5220447f60446591c4cb17fd",
+      "file": "ST-Bridge_v211.xsd",
+      "sha256": "73ab69075c2b8d5d480b40aa34f3b62d34a3d3f3099792afd34a71274343a089"
+    }
+  ],
+  "issues": {
+    "count": 18,
+    "codes": [
+      "対応外バージョン",
+      "未対応エンコーディング",
+      "XML解析不能",
+      "ST-Bridge形式でない",
+      "非直交通り芯",
+      "未対応通り芯種別",
+      "通り芯グループ数不一致",
+      "通り芯方向不明",
+      "通り芯距離解釈不能",
+      "通り芯位置重複",
+      "通り芯ラベル欠落",
+      "通り芯未検出",
+      "通り芯位置と節点の不一致",
+      "階レベル解釈不能",
+      "階レベル重複",
+      "地下レベル未対応",
+      "対応外の階種別",
+      "階不足"
+    ],
+    "locale_keys": {
+      "ja": 18,
+      "ko": 18,
+      "missing": []
+    }
+  },
+  "fixtures": [
+    {
+      "file": "mini-utf8.stb",
+      "bytes": 2025,
+      "declared_encoding": "UTF-8",
+      "valid_utf8": true
+    },
+    {
+      "file": "mini-sjis.stb",
+      "bytes": 2022,
+      "declared_encoding": "Shift_JIS",
+      "actual_encoding": "CP932",
+      "valid_utf8": false,
+      "generated_by": "scripts/stb/make-sjis-fixture.py"
+    }
+  ],
+  "real_decode": [
+    {
+      "file": "dotnet-sample1.stb",
+      "encoding": "utf-8",
+      "replacement_chars": 1,
+      "skipped": false,
+      "sha256_verified": true
+    },
+    {
+      "file": "diffchecker-filea.stb",
+      "encoding": "shift_jis",
+      "replacement_chars": 0,
+      "skipped": false,
+      "sha256_verified": true
+    },
+    {
+      "file": "hoaryfox-sample.stb",
+      "encoding": "utf-8",
+      "replacement_chars": 0,
+      "skipped": false,
+      "sha256_verified": true
+    },
+    {
+      "file": "diffchecker-mini210.stb",
+      "encoding": "utf-8",
+      "replacement_chars": 0,
+      "skipped": false,
+      "sha256_verified": true
+    }
+  ],
+  "mutations": {
+    "A": {
+      "changed": "decode.ts의 shift_jis 정규화 분기를 utf-8 반환으로 변경",
+      "test_file": "src/lib/import/stb/decode.test.ts",
+      "failed_tests": 3,
+      "failure_messages": [
+        "AssertionError: expected 'utf-8' to be 'shift_jis' // Object.is equality",
+        "AssertionError: expected ... project_name ... to contain '基準階サンプル' / normalized decoded text differed",
+        "AssertionError: expected 'utf-8' to be 'shift_jis' // Object.is equality"
+      ],
+      "restored": true
+    },
+    "B": {
+      "changed": "mini-sjis.stb를 mini-utf8.stb의 UTF-8 바이트로 임시 덮어씀",
+      "test_file": "tests/stb-import/fixture-bytes.test.ts",
+      "failed_tests": 1,
+      "failure_messages": [
+        "AssertionError: expected [Function] to throw an error"
+      ],
+      "restored": true,
+      "restoration": "make-sjis-fixture.py로 CP932 fixture 재생성"
+    },
+    "C": {
+      "changed": "STB_ISSUES에 임시 'テストコード' 19번째 코드를 추가하고 로케일 키는 추가하지 않음",
+      "test_file": "src/lib/import/stb/types.test.ts",
+      "failed_tests": 2,
+      "failure_messages": [
+        "AssertionError: expected ... to have a length of 18 but got 19",
+        "AssertionError: expected [ 'ja:stbImport.issue.テストコード', 'ko:stbImport.issue.テストコード' ] to deeply equal []"
+      ],
+      "restored": true
+    }
+  },
+  "cache_absent_run": {
+    "command": "npm test -- --reporter=verbose",
+    "passed": true,
+    "test_files_passed": 88,
+    "test_files_skipped": 1,
+    "tests_passed": 1615,
+    "tests_skipped": 4,
+    "skipped_test_names": [
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > diffchecker-filea.stb uses declared Shift_JIS without replacement characters",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > dotnet-sample1.stb decodes with the declared UTF-8 encoding",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > hoaryfox-sample.stb decodes with the declared UTF-8 encoding",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > diffchecker-mini210.stb decodes with the declared UTF-8 encoding"
+    ],
+    "cache_restored": true
+  },
+  "untouched_tracks": {
+    "command": "git diff main --stat -- src/domain src/rulepack src/lib/import/framing-plan src/lib/import/section-list src/components .github/workflows docs/ADR.md package.json",
+    "output": "",
+    "cache_commit_count_command": "git log main..HEAD --stat | grep -c '^ .cache/'",
+    "cache_commit_count": 0
+  },
+  "verification": {
+    "npm_test": "passed: 89 files, 1619 tests",
+    "tsc": "passed",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts:161",
+    "targeted_real_decode": "passed: 1 file, 4 tests"
+  },
+  "summary": "코퍼스 4건을 SOURCES.md에 등록하고 인코딩 판정을 세웠다. Shift_JIS 픽스처가 실제 CP932 바이트임을 바이트 단언으로 고정했고, 인코딩 분기를 흔들면 실패함을 확인했다."
+}

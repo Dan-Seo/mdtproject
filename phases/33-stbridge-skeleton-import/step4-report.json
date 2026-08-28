@@ -1,0 +1,223 @@
+{
+  "premises": [
+    {
+      "id": "expected-independently-recomputed",
+      "verdict": "upheld",
+      "evidence": "verify_step4.py가 TypeScript 파서를 import·실행하지 않고 원본 4개 .stb 바이트를 선언 인코딩으로 디코드한 뒤 Python 정규식으로 StbParallelAxes@angle, StbParallelAxis@name/@distance, StbStory@name/@height/@kind를 추출·정렬·차분했다. expected 4건과 비교한 mismatch는 0건이다.",
+      "note": ".cache/stb 원본 4건이 모두 있었으며 재계산 전 칸은 recomputed에 기록했다."
+    },
+    {
+      "id": "expected-matches-step0",
+      "verdict": "upheld",
+      "evidence": "같은 독립 재계산값을 step0-report.json의 axes·stories에 대조한 mismatch는 0건이다.",
+      "note": "방향은 group_name이 아니라 step 0의 angle로 X/Y를 재판정했다."
+    },
+    {
+      "id": "mutation-sweep-bites",
+      "verdict": "upheld",
+      "evidence": "지정된 6개 뮤테이션 모두 최소 1개 테스트를 실패시켰다. 실패 표면은 decode.test/real-decode.test, document.test, UI candidates.test, domain candidates.test로 갈렸고 6개가 같은 테스트 하나에만 걸린 경우는 없었다. 매 주입 뒤 대상 경로 git diff가 0임을 확인했다.",
+      "note": "아무 테스트도 깨뜨리지 못한 뮤테이션은 0개다."
+    },
+    {
+      "id": "no-fabrication-on-missing",
+      "verdict": "upheld",
+      "evidence": "합성 StbDocument의 height·distance·axis name·story name 누락은 기존 반례 2건을 직접 실행해 모두 후보를 버리고 階レベル解釈不能·通り芯距離解釈不能·通り芯ラベル欠落을 냈다. Number(undefined)는 angle/distance/node/story에서 NaN이 되지만 각 경로의 Number.isFinite 또는 명시적 누락 검사 뒤 후보에서 제거된다.",
+      "note": "origin 누락의 0은 절점 일치 검사의 내부 원점일 뿐 candidate 숫자 필드에 실리지 않는다. decode.ts의 declared ?? ''도 미지원 인코딩 오류 메타데이터이며 candidate 경로가 아니다."
+    },
+    {
+      "id": "scope-guard-nonvacuous",
+      "verdict": "upheld",
+      "evidence": "scope-guard가 재귀 스캔한 비테스트 TypeScript는 4개이고 실제 파일도 4개다. candidates.ts의 depth_cover_start_X와 document.ts의 applyFramingPlan 주입은 각각 scope-guard.test.ts를 실제 실패시켰다.",
+      "note": "두 주입은 같은 턴 안에서 원복했다."
+    },
+    {
+      "id": "candidates-are-inert",
+      "verdict": "upheld",
+      "evidence": "비테스트 소스 4개 각각의 applyFramingPlan·applyElevation·updateProject·loadProject·useAppStore·createSampleProject grep은 0건이고, components/store의 stb·st-bridge grep도 0건이다. ST-Bridge 소스 importer는 자기 테스트와 scripts/stb 밖에 0건이다. scope-guard.test.ts는 여섯 금지 문자열을 전부 그대로 선언한다.",
+      "note": "1차 실행의 구조적 오탐을 제거하도록 검증 범위를 비테스트 소스로 좁혔고, 가드 목록 자체가 비지 않았음도 별도로 확인했다. 승인 없는 Project 반영 경로는 없다."
+    },
+    {
+      "id": "no-rulepack-territory",
+      "verdict": "upheld",
+      "evidence": "비테스트 소스 4개 각각의 定着·重ね継手·折曲·かぶり·depth_cover·anchorage·cut_off·center_·StbSec·StbApply grep은 0건이다. 숫자 리터럴은 XML 선언 탐색 범위, 버전, 직교각·허용오차·개수 판정뿐이고 규준 mm 값·배수는 없다. scope-guard.test.ts는 열 금지 문자열을 전부 그대로 선언한다.",
+      "note": "1차 실행에서 금지어 선언 자체를 검출하던 테스트 포함 범위를 제거했다. ST-Bridge 비테스트 소스는 룰팩 영역을 읽지 않는다."
+    },
+    {
+      "id": "greps-are-not-vacuous",
+      "verdict": "upheld",
+      "evidence": "grep -rni -e stb -e st-bridge src/lib/import/stb/ 는 다수 파일을, grep -rni -e 定着 src/rulepack/ 는 jp-mlit/anchorage.yaml:2부터 다수 행을 검출했다. 둘 다 exit 0이다.",
+      "note": "이 스텝의 스크립트·명령에는 grep -E와 escaped literal pipe를 함께 쓴 명령이 0건이다."
+    },
+    {
+      "id": "env-split-holds",
+      "verdict": "upheld",
+      "evidence": "domain tests/stb-import는 3파일 14테스트 통과, UI src/lib/import/stb는 6파일 40테스트 통과다. tests/stb-import의 DOMParser 검색은 0건이고 candidates.test.ts는 domain에서 6테스트 모두 통과했다.",
+      "note": "node 환경의 candidate 대조가 jsdom 없이 실행됐다."
+    },
+    {
+      "id": "local-only-not-load-bearing",
+      "verdict": "upheld",
+      "evidence": ".cache/stb를 검증된 workspace 내부의 .cache/stb-step4-hidden으로 이름 변경한 동안 npm run test가 93파일 통과·1파일 스킵, 1653테스트 통과·4테스트 스킵으로 성공했다. verbose 재실행에서 네 스킵 모두 real-decode: .cache/stb の実物 .stb（ローカル限定） 아래에 나타났다.",
+      "note": "finally에서 .cache/stb를 원래 이름으로 복구했다."
+    },
+    {
+      "id": "untouched-tracks",
+      "verdict": "upheld",
+      "evidence": "지정된 domain/rulepack/framing-plan/section-list/import 공용층/components/store/workflows/docs ADR/package.json에 대한 git diff main --stat 출력은 비어 있다.",
+      "note": "src/locales는 이 비교 대상에서 제외했다."
+    },
+    {
+      "id": "i18n-complete",
+      "verdict": "upheld",
+      "evidence": "STB_ISSUES 18개 전부가 ja.json·ko.json에 있어 양쪽 missing 0이다. 検証用未翻訳 코드를 키 없이 주입하자 types.test.ts가 길이 19와 ja/ko 누락 2건으로 실제 실패했다.",
+      "note": "주입은 즉시 원복했다."
+    },
+    {
+      "id": "adr043-scope-matches-code",
+      "verdict": "upheld",
+      "evidence": "비테스트 소스는 인코딩·XML IR·通り芯/階 후보·issue/type만 구현한다. 断面·배근·부재 배치·開口·かぶり·定着·벽식·재취입·UI·Project 반영·network/export 코드는 없다. 비직교/원호/방사와 미대응 階 통짜 거부는 코드와 반례에 있다.",
+      "note": "ADR이 허용하지만 아직 만들지 않은 것은 파일 선택/승인 UI, Project 반영, 재취입, LOAD를 kind_structure 수준에서 식별하는 표시다. 현재 unread census는 StbWall 건수만 보존하며 LOAD를 해석하지 않는다. 이들은 금지 위반이 아니라 이번 candidate-only 범위 밖이다."
+    }
+  ],
+  "recomputed": [
+    {
+      "file": "dotnet-sample1.stb",
+      "x_labels": ["X1", "X2", "X3"],
+      "x_spans": [6000, 6000],
+      "y_labels": ["Y1", "Y2", "Y3"],
+      "y_spans": [6000, 6000],
+      "story_names": ["1FL", "2FL"],
+      "story_heights": [5000, 4200]
+    },
+    {
+      "file": "diffchecker-filea.stb",
+      "x_labels": ["X0", "X1", "X1a", "X2", "X2a", "X3", "X4"],
+      "x_spans": [1000, 2000, 2000, 4400, 4400, 1000],
+      "y_labels": ["Y0", "Y1", "Y1a", "Y2", "Y2a", "Y3", "Y3a", "Y4", "Y5"],
+      "y_spans": [1000, 3200, 3200, 3200, 3200, 3200, 3200, 1000],
+      "story_names": ["1FL", "2FL", "3FL", "RFL"],
+      "story_heights": [4500, 4000, 4000, 3800]
+    },
+    {
+      "file": "hoaryfox-sample.stb",
+      "x_labels": ["X1", "X2", "X3", "X4", "X5", "X6", "X7"],
+      "x_spans": [3600, 3600, 3600, 3600, 3600, 3600],
+      "y_labels": ["Y1", "Y2", "Y3"],
+      "y_spans": [10800, 3600],
+      "story_names": ["1F", "2F", "3F", "4F", "5F"],
+      "story_heights": [4000, 4000, 4000, 4000, 4000]
+    },
+    {
+      "file": "diffchecker-mini210.stb",
+      "x_labels": [],
+      "x_spans": [],
+      "y_labels": [],
+      "y_spans": [],
+      "story_names": [],
+      "story_heights": []
+    }
+  ],
+  "mutations": [
+    {
+      "id": "encoding-always-utf8",
+      "what": "decode.ts의 인코딩 판별 결과를 항상 utf-8로 고정",
+      "failing_tests": ["src/lib/import/stb/decode.test.ts (4)", "src/lib/import/stb/real-decode.test.ts (1)"],
+      "message": "expected 'utf-8' to be 'shift_jis' // Object.is equality",
+      "reverted": true
+    },
+    {
+      "id": "accept-version-2.0.3",
+      "what": "document.ts SUPPORTED_VERSIONS에 2.0.3 추가",
+      "failing_tests": ["src/lib/import/stb/document.test.ts > rejects unsupported versions without collecting any document data"],
+      "message": "expected [] to deeply equal [ '対応外バージョン' ]",
+      "reverted": true
+    },
+    {
+      "id": "direction-from-group-name",
+      "what": "candidates.ts 방향을 groupName === 'X' ? 'X' : 'Y'로 결정",
+      "failing_tests": ["src/lib/import/stb/candidates.test.ts > maps directions from angles, never from group names", "src/lib/import/stb/candidates.test.ts > rejects the whole grid when either group is non-orthogonal and recovers when fixed", "src/lib/import/stb/candidates.test.ts > deduplicates issue codes when both axis groups fail the same rule"],
+      "message": "expected swapped X/Y candidate grids; received groupName-based labels and spans",
+      "reverted": true
+    },
+    {
+      "id": "nonorthogonal-angle-not-zero",
+      "what": "candidates.ts 비직교 판정을 Number(group.angle) !== 0으로 교체",
+      "failing_tests": ["src/lib/import/stb/candidates.test.ts (9)"],
+      "message": "expected [] to have a length of 2 but got +0",
+      "reverted": true
+    },
+    {
+      "id": "drop-unsupported-story-before-diff",
+      "what": "ISOLATION/DEPENDENCE 레벨만 제거한 뒤 인접 차분",
+      "failing_tests": ["src/lib/import/stb/candidates.test.ts > rejects an incomplete story stack as a whole and derives adjacent heights"],
+      "message": "expected [ { name: '1FL', heightMm: 8000 } ] to deeply equal []",
+      "reverted": true
+    },
+    {
+      "id": "expected-span-cell",
+      "what": "expected/diffchecker-filea.json의 첫 X spansMm 1000을 1001로 변경",
+      "failing_tests": ["tests/stb-import/candidates.test.ts > diffchecker-filea.json matches its independently derived candidate fixture"],
+      "message": "Expected spansMm[0] 1001; received 1000",
+      "reverted": true
+    }
+  ],
+  "fabrication_candidates": [
+    {
+      "file": "src/lib/import/stb/decode.ts",
+      "line": 44,
+      "pattern": "declared ?? ''",
+      "what_happens_when_absent": "인코딩 선언이 없으면 normalizeEncoding이 utf-8을 반환해 이 오류 payload 분기에 오지 않는다. 미지원 선언 오류의 declared 문자열용이며 후보에 실리지 않는다."
+    },
+    {
+      "file": "src/lib/import/stb/candidates.ts",
+      "line": 26,
+      "pattern": "Number(angle)",
+      "what_happens_when_absent": "undefined는 NaN이 되고 즉시 Number.isFinite에서 거절되어 grid 후보가 비워진다."
+    },
+    {
+      "file": "src/lib/import/stb/candidates.ts",
+      "line": 43,
+      "pattern": "rawOrigin === undefined ? 0 : Number(rawOrigin)",
+      "what_happens_when_absent": "누락 원점은 절점 일치 검사의 내부 0으로만 쓰이고 StbGridCandidate에는 원점 필드가 없다. 비수치 원점의 NaN도 mismatch issue에만 영향을 주며 후보 숫자로 실리지 않는다."
+    },
+    {
+      "file": "src/lib/import/stb/candidates.ts",
+      "line": 56,
+      "pattern": "Number(node.x|node.y)",
+      "what_happens_when_absent": "undefined는 NaN이고 Number.isFinite가 false라 절점 일치로 인정되지 않는다. 숫자 후보에 실리지 않는다."
+    },
+    {
+      "file": "src/lib/import/stb/candidates.ts",
+      "line": 70,
+      "pattern": "Number(axis.distance)",
+      "what_happens_when_absent": "undefined는 NaN이고 parsedAxes 전수 Number.isFinite 검사에서 그 방향 grid를 거절한다."
+    },
+    {
+      "file": "src/lib/import/stb/candidates.ts",
+      "line": 199,
+      "pattern": "Number(story.height)",
+      "what_happens_when_absent": "undefined는 NaN이고 levels 전수 Number.isFinite 검사에서 階 스택 전체를 거절한다."
+    }
+  ],
+  "scope_guard": {
+    "scanned": 4,
+    "actual": 4,
+    "injected_violation_failed": true
+  },
+  "vitest_projects": [
+    { "project": "domain", "files": 3, "passed": 14, "failed": 0 },
+    { "project": "ui", "files": 6, "passed": 40, "failed": 0 }
+  ],
+  "cache_absent_run": {
+    "skipped_names": [
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > diffchecker-filea.stb uses declared Shift_JIS without replacement characters",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > dotnet-sample1.stb decodes with the declared UTF-8 encoding",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > hoaryfox-sample.stb decodes with the declared UTF-8 encoding",
+      "real-decode: .cache/stb の実物 .stb（ローカル限定） > diffchecker-mini210.stb decodes with the declared UTF-8 encoding"
+    ],
+    "passed": true
+  },
+  "untouched_tracks_diff": "",
+  "git_status_clean": true,
+  "verdict": "upheld"
+}

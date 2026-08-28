@@ -118,3 +118,12 @@ https://www.mlit.go.jp/common/001157902.pdf
 
 골든테스트가 판정하는 것은 "엔진 출력이 픽스처와 일치하는가"까지이고 "픽스처가 원문을 옳게 옮겼는가"는
 판정하지 못한다(ADR-010). 쪽·표 기록이 그 층의 유일한 방어선이다.
+
+## ST-Bridge
+
+- 공식 `ST-Bridge XML ファイル仕様書（ver.2.1.1）` PDF:
+  https://www.building-smart.or.jp/wp-content/uploads/2026/07/ST-Bridge_XML%E4%BB%95%E6%A7%98%E8%AA%AC%E6%98%8E%E6%9B%B8%EF%BC%88ver.2.1.1%EF%BC%89.pdf
+- 공식 XSD 배포 페이지:
+  https://www.building-smart.or.jp/meeting/buildall/structural-design/
+- `.stb` 코퍼스의 출처·커밋 고정 URL·SHA-256·대표성 한계의 정본은
+  `tests/fixtures/stb-import/SOURCES.md`다.
