@@ -33,7 +33,7 @@
       "kind": "verify",
       "status": "refuted",
       "started_at": "2026-08-28T22:53:42+0900",
-      "refuted_at": "2026-08-28T23:05:21+0900",
+      "refuted_at": "2026-08-28T23:07:34+0900",
       "summary": "뮤테이션 6건과 ST-Bridge 거부 가드를 직접 검증했으나, src/tests의 壁式構造 비주석 매칭 15건으로 closed-tracks-really-closed 전제를 반증했다."
     }
   ],
