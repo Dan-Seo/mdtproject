@@ -1,3 +1,5 @@
+import type { Project } from '@/domain/model/project'
+
 export type StbEncoding = 'utf-8' | 'shift_jis'
 
 // ST-Bridge 취입 각 단계가 내는 사유 코드는 이 목록으로만 표현한다.
@@ -89,4 +91,19 @@ export interface StbSkeletonCandidate {
   stories: StbStoryCandidate[]
   unsupported: { name: string; count: number }[]
   issues: StbIssue[]
+}
+
+export const STB_APPLY_REFUSALS = [
+  '通り芯候補なし',
+  '階候補なし',
+  '部材あり通り芯置換不可',
+  '部材あり階置換不可',
+] as const
+
+export type Stb\u0041pplyRefusal = (typeof STB_APPLY_REFUSALS)[number]
+
+export interface Stb\u0041pplyResult {
+  project: Project
+  applied: boolean
+  refusal?: Stb\u0041pplyRefusal
 }
