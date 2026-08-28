@@ -1,0 +1,9 @@
+{
+  "step": 4,
+  "name": "close-japan-specific-track",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 465.0517172999971,
+  "stdout_log": "phases\\35-ledger-reconciliation\\step4-codex.stdout.log",
+  "stderr_log": "phases\\35-ledger-reconciliation\\step4-codex.stderr.log"
+}

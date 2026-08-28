@@ -41,7 +41,7 @@
       "name": "close-japan-specific-track",
       "status": "completed",
       "started_at": "2026-08-28T23:08:49+0900",
-      "completed_at": "2026-08-28T23:14:20+0900",
+      "completed_at": "2026-08-28T23:16:34+0900",
       "summary": "src/tests의 네 용어 26개 매칭을 전부 주석·원문 전사·결정 기록으로 분류해 구현 0건을 확인하고, MILESTONES.md·CLAUDE.md를 완료로 갱신한 뒤 AGENTS.md를 동기화했다."
     },
     {
