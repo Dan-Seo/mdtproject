@@ -31,7 +31,10 @@
     {
       "step": 3,
       "name": "stb-skeleton-candidates",
-      "status": "pending"
+      "started_at": "2026-08-28T12:55:50+0900",
+      "completed_at": "2026-08-28T13:10:00+0900",
+      "status": "completed",
+      "summary": "通り芯·階 후보가 서고 실물 4건을 전 칸 대조로 고정했다. angle 판정·통짜 거부·값 미채움을 흔들면 실패하며, 방향을 groupName으로 정하는 구현은 모순 케이스에서 깨진다."
     },
     {
       "step": 4,
