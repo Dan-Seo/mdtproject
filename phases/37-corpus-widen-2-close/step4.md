@@ -27,6 +27,10 @@ phase 36 step 3·4의 `src/lib/import/section-list/parse.ts` Claude 검토:
 3. `kindFromMark`를 「층 접두(`R`·`\d+`·`B\d*`)를 벗긴 뒤 `G`로 시작」으로 좁혀라.
 4. 기존 골든 12개(section-import expected 전부)와 step 1이 더한 ojkk-p4 対象外 테스트가
    그대로 통과해야 한다. 어느 골든 면이 1·2의 fallback을 실제로 쓰는지 report에 적어라.
+5. **step 1이 남긴 타입 우회를 고쳐라** — `tests/section-import/parse.test.ts` ≈1207의
+   `(listSpec.entries ?? []) as unknown as ExpectedOutOfScopeEntry[]`는 TS2352(`{ mark }[] &
+   (ExpectedWallEntry | ExpectedSlabEntry)[]`와 겹치지 않음)를 `unknown` 경유로 뭉갠 것이다.
+   골든 `lists[]` 타입을 `listKind`별 판별 유니언으로 좁혀 캐스트 없이 통과시켜라. vitest는 타입을 검사하지 않으므로 **`npm run typecheck`를 직접 돌려** 0 오류를 확인하라.
 
 ## 하지 말 것
 
@@ -37,7 +41,8 @@ phase 36 step 3·4의 `src/lib/import/section-list/parse.ts` Claude 검토:
 
 ## AC
 
-- `npm run test` 통과. 새 단위 테스트 5건 이상이 위 두 규칙을 반증 가능하게 고정한다.
+- `npm run test`·`npm run typecheck`·`npm run lint`(경고 0건 — `_omitted`는 main 기존이라 제외) 통과.
+  새 단위 테스트 5건 이상이 위 두 규칙을 반증 가능하게 고정한다.
 
 ## 산출물
 

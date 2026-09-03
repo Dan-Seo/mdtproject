@@ -26,6 +26,8 @@ step 2〜4는 codex 구현이고 골든은 Claude 전사다. 고치지 않는다
    (부재 부호)나 `▽|▲|△`가 있으면 성립.
 7. **표제란** — 36면 `/TEL|FAX|℡|電話|一級建築士|設計事務所|株式会社|共同体/` 0건 재확인.
 8. **2段筋·特記** — saiki 2段 셀 본수 0, ina 빈 STP 기본값 0 재확인.
+9. **타입·린트** — `npm run typecheck`가 0 오류, `npm run lint`가 0 오류(경고는 main 기존 `_omitted`
+   1건만)여야 한다. vitest는 타입을 보지 않으므로 별도 실행이 필수다. 어긋나면 성립.
 
 ## 하지 말 것
 
@@ -48,7 +50,8 @@ step 2〜4는 codex 구현이고 골든은 Claude 전사다. 고치지 않는다
     "5_specialization": { "holds": false, "evidence": [] },
     "6_level_labels": { "holds": false, "evidence": [] },
     "7_title_block": { "holds": false, "matches": 0 },
-    "8_two_layer_and_defaults": { "holds": false, "evidence": [] }
+    "8_two_layer_and_defaults": { "holds": false, "evidence": [] },
+    "9_typecheck_lint": { "holds": false, "typecheck_errors": 0, "lint_errors": 0 }
   },
   "git_status_clean": true,
   "summary": "index.json summary와 같은 요지"
