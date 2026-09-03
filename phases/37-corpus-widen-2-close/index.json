@@ -23,15 +23,17 @@
     {
       "step": 2,
       "name": "grid-axis-order-contract",
-      "status": "pending",
-      "summary": "",
+      "status": "completed",
+      "summary": "도면별 축 뒤집기와 DEBUG_PARSE를 제거하고 strict 축척·후보별 전체합·기하 기반 부분합·이슈 보존 규칙을 확정했다. Karatsu 후쿠즈의 행 baseline과 세그먼트 원시 중심 불일치를 validationPositionsPt로 분리해 7면 골든·positionPt 단조·기존 14면 회귀를 모두 통과시켰다.",
       "previous_attempt": {
         "status": "blocked",
         "blocked_at": "2026-09-03T16:17:26+0900",
         "blocked_reason": "AC 골든 2건이 실패했다. Fuji p17은 골든의 라벨 A→E와 현재 페이지 좌표의 E→A가 충돌하고, Karatsu 후쿠즈 p1은 Y축 Y6-Y5/Y5-Y4가 중앙 축척 0.020052980132450337 대비 각각 0.020893829401088974(+4.20%), 0.01811624784053152(-9.66%)로 strict outlier다. 픽스처 수정·도면별 reverse 분기·strict 완화는 step 사양상 금지되어 있다.",
         "summary": "축 순서 정규화·DEBUG_PARSE를 제거하고 strict 축척·후보별 전체합·부분합 규칙을 정리했으나 Fuji p17과 Karatsu 후쿠즈 골든이 금지된 예외 없이 성립하지 않아 차단했다.",
         "note": "Claude가 fuji 골든 정정 오류를 되돌리고 karatsu 위치 출처 조사 지시를 step2.md에 추기한 뒤 재개"
-      }
+      },
+      "started_at": "2026-09-03T16:19:58+0900",
+      "completed_at": "2026-09-03T16:26:58+0900"
     },
     {
       "step": 3,

@@ -86,6 +86,8 @@ interface LabelToken {
   simpleKind?: 'numeric' | 'alpha'
   x: number
   y: number
+  /** 세그먼트의 원시 바운딩 박스 중심. strict 축척 검증에만 사용한다. */
+  rawY: number
 }
 
 interface PositionedToken {
@@ -112,6 +114,8 @@ interface AxisSequence {
   /** 같은 라벨이 여러 밴드에 있었을 때 치수 열을 시도할 좌표 */
   axisAcrossOptions: number[][]
   axes: AxisCandidate[]
+  /** 라벨 세그먼트의 원시 중심으로 잰 축 위치 — 공개 후보 좌표와 분리한다 */
+  validationPositionsPt: number[]
 }
 
 /** 치수·축척까지 확인이 끝난 축 열. 그리드 정의와 블록이 둘 다 여기서 나온다 */
@@ -178,6 +182,7 @@ function splitAxisLabels(
         letter: match[0].includes('X') ? 'X' : 'Y',
         x: (minX + maxX) / 2,
         y,
+        rawY: segment.centerY,
       })
     }
   }
@@ -218,6 +223,7 @@ function splitAxisLabels(
           simpleKind: 'numeric',
           x: item.x + item.w / 2,
           y,
+          rawY: segment.centerY,
         }
       })
     }
@@ -229,6 +235,7 @@ function splitAxisLabels(
       simpleKind: /^[0-9]+$/.test(simple) ? 'numeric' : 'alpha',
       x: segment.centerX,
       y,
+      rawY: segment.centerY,
     },
   ]
 }
@@ -348,6 +355,7 @@ function collectTokens(page: TextPage): CollectedTokens {
         letter: normalizedText.includes('X') ? 'X' : 'Y',
         x: run.x,
         y: run.y,
+        rawY: run.y,
       })
       continue
     }
@@ -413,6 +421,9 @@ function axisSequences(
             label: token.label,
             positionPt: token[along],
           })),
+          validationPositionsPt: current.map((token) =>
+            along === 'x' ? token.x : token.rawY,
+          ),
         })
       }
       current = []
@@ -518,6 +529,10 @@ function mergeAxisSequences(sequences: AxisSequence[]): AxisSequence[] {
             axisAcross,
             axisAcrossOptions,
             axes,
+            validationPositionsPt: [
+              ...first.validationPositionsPt,
+              ...second.validationPositionsPt.slice(1),
+            ],
           }
         }
 
@@ -535,6 +550,10 @@ function mergeAxisSequences(sequences: AxisSequence[]): AxisSequence[] {
           const entries = [...left.axes, ...right.axes]
             .map((axis, index) => ({
               axis,
+              validationPositionPt:
+                index < left.axes.length
+                  ? left.validationPositionsPt[index]
+                  : right.validationPositionsPt[index - left.axes.length],
               acrossOptions:
                 index < left.axes.length
                   ? left.axisAcrossOptions[index]
@@ -576,6 +595,9 @@ function mergeAxisSequences(sequences: AxisSequence[]): AxisSequence[] {
             axisAcross,
             axisAcrossOptions,
             axes: unique.map((entry) => entry.axis),
+            validationPositionsPt: unique.map(
+              (entry) => entry.validationPositionPt,
+            ),
           }
         }
 
@@ -665,7 +687,8 @@ function dimensionSolutions(
     if (index === choices.length) {
       const scales = selected.map(
         (span, i) =>
-          (sequence.axes[i + 1].positionPt - sequence.axes[i].positionPt) /
+          (sequence.validationPositionsPt[i + 1] -
+            sequence.validationPositionsPt[i]) /
           span.valueMm,
       )
       const medianScale = median(scales)

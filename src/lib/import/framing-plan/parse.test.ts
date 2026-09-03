@@ -13,6 +13,10 @@ function h(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 0, h: 8 }
 }
 
+function hs(str: string, x: number, y: number, height: number): TextItem {
+  return { str, x, y, w: 0, h: height }
+}
+
 /** 세로쓰기(rot=-90) 토큰 하나. verticalRuns가 단독 런으로 복원한다. */
 function v(str: string, x: number, y: number): TextItem {
   return { str, x, y, w: 8, h: 0, rot: -90 }
@@ -65,6 +69,22 @@ describe('parseFramingPlan — 通り芯グリッド', () => {
         totalConfirmed: false,
       },
     ])
+  })
+
+  it('strict 축척 검증은 라벨 행 baseline이 아닌 원시 중심을 사용한다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        hs('Y1', 50, 105, 10),
+        hs('Y2', 50, 202, 4),
+        hs('Y3', 50, 305, 10),
+        h('5000', 80, 153.5),
+        h('5000', 80, 253.5),
+      ]),
+    )
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.grids[0]?.spansMm).toEqual([5000, 5000])
+    expect(parsed.grids[0]?.scalePtPerMm).toBeCloseTo(0.02, 12)
   })
 
   it('회전 글리프 한 글자 열을 2,500 치수로 재조립한다', () => {
