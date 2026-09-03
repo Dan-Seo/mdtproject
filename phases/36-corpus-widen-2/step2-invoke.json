@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "elevation-generalize",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1000.8399258999852,
+  "stdout_log": "phases\\36-corpus-widen-2\\step2-codex.stdout.log",
+  "stderr_log": "phases\\36-corpus-widen-2\\step2-codex.stderr.log"
+}

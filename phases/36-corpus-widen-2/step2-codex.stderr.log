@@ -1,0 +1,8 @@
+2026-09-03T03:52:40.883335Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T03:52:40.885385Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T04:01:38.813163Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\elevation.ts:
+const LABEL_WINDOW_PT = 80
+/** 怨꾩뿴???댁뿴?붿? 蹂대뒗 異뺤쿃 ?몄감. 鴉뤷쎋 ?뚯꽌? 媛숈? 媛믪씠??*/
+const SCALE_TOLERANCE_RATIO = 0.03
+/** ?쇰꺼??遺숇? ?덈꺼???대낫???곸쑝硫?怨꾩뿴濡?蹂댁? ?딅뒗????遺遺?移섏닔 ?닿낵???좎씪??援щ텇 */
+const MINIMUM_LABELLED_LEVELS = 2
