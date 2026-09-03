@@ -1,0 +1,9 @@
+{
+  "step": 4,
+  "name": "list-ina-fuji-karatsu",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1764.3039295999333,
+  "stdout_log": "phases\\36-corpus-widen-2\\step4-codex.stdout.log",
+  "stderr_log": "phases\\36-corpus-widen-2\\step4-codex.stderr.log"
+}
