@@ -1,0 +1,26 @@
+{
+  "updated_files": [
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "docs/ADR.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "tests/fixtures/section-import/SOURCES.md",
+    "phases/37-corpus-widen-2-close/index.json"
+  ],
+  "adr_added": "ADR-045",
+  "numbers_used": {
+    "2차 코퍼스 22면": "tests/fixtures/section-import/SOURCES.md.제2차 수집 도면의 특성",
+    "발주처 3→10곳": "tests/fixtures/section-import/SOURCES.md.왜 이 코퍼스인가",
+    "격자 골든 7/7면": "phases/36-corpus-widen-2/step1-report.json.goldens",
+    "階高 골든 3/3면": "phases/36-corpus-widen-2/step2-report.json.goldens",
+    "リスト 골든 5/5면": "phases/36-corpus-widen-2/step3-report.json.goldens + step4-report.json.goldens",
+    "saiki 최대 7겹·약 0.5pt": "tests/fixtures/section-import/SOURCES.md.제2차 수집 도면의 특성",
+    "T=4 gridPages=23": "phases/37-corpus-widen-2-close/step5-report.json.items.4_sweep.midpoint_sweep.4",
+    "T=6 gridPages=23": "phases/37-corpus-widen-2-close/step5-report.json.items.4_sweep.midpoint_sweep.6",
+    "T=15/30/40 gridPages=26": "phases/37-corpus-widen-2-close/step5-report.json.items.4_sweep.midpoint_sweep",
+    "T=6→15의 3면": "phases/36-corpus-widen-2/step5-adjudication.json.items.5_sweep.note",
+    "伏図 발주처 2→8곳": "tests/fixtures/section-import/SOURCES.md.발주처·사용 페이지 표"
+  },
+  "summary": "2차 코퍼스 22면의 골든 7/7·3/3·5/5 결과와 R10·R15 열린 잔여를 기록하고, ADR-018·030 결과 및 ADR-045(2段筋·빈 셀 기본값 금지)를 추가했다."
+}
