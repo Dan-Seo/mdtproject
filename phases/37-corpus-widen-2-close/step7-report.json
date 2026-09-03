@@ -1,0 +1,45 @@
+{
+  "verdict": "refuted",
+  "numbers": [
+    {
+      "value": "90",
+      "file": "docs/ADR.md",
+      "source": "phases/37-corpus-widen-2-close/step0-report.json.items.1_rotated_glyphs.method; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "150·100",
+      "file": "docs/ADR.md",
+      "source": "phases/36-corpus-widen-2/step2-report.json.summary; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "fuji 스라브 후보 3건",
+      "file": "docs/MILESTONES.md",
+      "source": "phases/36-corpus-widen-2/step5-adjudication.json.additional_checks.e2e_uc12; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "2段筋 본수 0",
+      "file": "docs/ADR.md",
+      "source": "phases/36-corpus-widen-2/step5-adjudication.json.items.8_two_layer_and_defaults.note; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "ojkk 대상외 12칸",
+      "file": "docs/RISKS.md",
+      "source": "phases/36-corpus-widen-2/step5-adjudication.json.items.4_regression.follow_up; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "36면·4면·14면",
+      "file": "docs/RISKS.md",
+      "source": "phases/37-corpus-widen-2-close/step5-report.json.items.5_sweep 및 phases/36-corpus-widen-2/step5-adjudication.json.items.5_sweep; step6-report.json.numbers_used에 없음"
+    },
+    {
+      "value": "phase 8",
+      "file": "docs/ADR.md",
+      "source": "허용된 phase 보고서·SOURCES.md에 대응 항목이 없고 step6-report.json.numbers_used에도 없음"
+    }
+  ],
+  "table_identity": true,
+  "scope_ok": true,
+  "risks_open": true,
+  "adr_number_ok": true,
+  "summary": "step 6 문서의 새 숫자 일부가 step6-report.json numbers_used에 없어 출처 추적 반증이 성립했다. 표 동일성·범위·R10/R15 개방·ADR-045 형식·R15 미측정 표기는 모두 성립한다."
+}

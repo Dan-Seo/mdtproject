@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "elevation-golden-tests",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1457.4102078999858,
+  "stdout_log": "phases\\37-corpus-widen-2-close\\step3-codex.stdout.log",
+  "stderr_log": "phases\\37-corpus-widen-2-close\\step3-codex.stderr.log"
+}

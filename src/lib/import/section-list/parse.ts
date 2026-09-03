@@ -27,6 +27,9 @@ import type {
 interface MarkColumn {
   mark: string
   centerX: number
+  /** 같은 원문 셀에서 펼쳐진 부호를 값 배정 시 하나로 묶는다. */
+  groupKey: string
+  rawCell: string
 }
 
 interface PositionColumn {
@@ -61,8 +64,8 @@ const shearBarSizes = new Set<ShearBarSize>(SHEAR_BAR_SIZES)
 
 const TITLE_PATTERN =
   /(柱断面リスト|大梁断面リスト|小梁断面リスト|小梁リスト|片持梁リスト|片持スラブリスト|耐圧版リスト|壁リスト|スラブリスト|地中梁リスト|柱リスト|大梁リスト|梁リスト)/
-const STORY_PATTERN = /^(?:RF|R階|\d+F|\d+階)$/
-const MARK_PATTERN = /^(?:(?:FCG|CG|EW|BW|FS|CS|FC|FG|FB|CB|C|G|B|S|W)\d+[A-Z]?|fg)$/i
+const STORY_PATTERN = /^(?:RF|R階|\d+F|\d+階|地階)$/
+const MARK_PATTERN = /^(?:(?:[A-Z]?\d*)?(?:FCG|CG|EW|BW|FS|CS|FC|FG|FB|CB|C|G|B|S|W)(?:\d+[A-Z]?|[A-Z])?|fg)$/i
 
 /** 세로 런을 층 슬라이스에 배정할 때의 거리 상한 = 슬라이스 폭 × 이 값.
  *  배정 앵커가 층 라벨이던 동안에는 이 검사가 중간 층에서 항상 참이었다 —
@@ -83,21 +86,51 @@ const SLICE_DISTANCE_LIMIT_RATIO = 0.5
  * 행 전체를 보지는 않는다: 표제란 띠는 도면 폭을 가로지르므로(ojkk 실측 x=893~1150)
  * 같은 y에 놓인 진짜 타이틀까지 함께 지워진다.
  */
-function isTitleBlockField(segments: TextSegment[], index: number): boolean {
-  return (
-    segments[index].compact.includes('図面名称') ||
-    segments[index - 1]?.compact.endsWith('図面名称') === true
-  )
+const TITLE_BLOCK_LABELS = ['図面名称', '図面種別'] as const
+
+function isTitleBlockField(
+  rows: TextRow[],
+  rowIndex: number,
+  segmentIndex: number,
+): boolean {
+  const row = rows[rowIndex]
+  const segment = row.segments[segmentIndex]
+  if (
+    TITLE_BLOCK_LABELS.some((label) => segment.compact.includes(label)) ||
+    row.segments[segmentIndex - 1]?.compact.endsWith('図面名称') === true
+  ) {
+    return true
+  }
+
+  // 표제란은 도면 형식에 따라 「図面名称」·「図面種別」 라벨과 값이 서로 다른
+  // 행으로 분리된다. 같은 y 행만 보면 값 안의 「スラブリスト」를 실제 리스트
+  // 타이틀로 오인하므로, 바로 위의 가까운 라벨과 같은 표제란 열인지 확인한다.
+  for (let index = rowIndex - 1; index >= 0; index -= 1) {
+    const labelRow = rows[index]
+    const distance = row.y - labelRow.y
+    const rowBand = Math.max(row.height, labelRow.height) * 3
+    if (distance > rowBand) break
+    if (
+      labelRow.segments.some(
+        (label) =>
+          TITLE_BLOCK_LABELS.includes(label.compact as (typeof TITLE_BLOCK_LABELS)[number]) &&
+          segment.x >= label.x,
+      )
+    ) {
+      return true
+    }
+  }
+  return false
 }
 
 function titleAnchors(rows: TextRow[]): TitleAnchor[] {
   const anchors: TitleAnchor[] = []
 
   // 한 행에 타이틀이 여러 개면(좌우 병치) 전부 앵커로 잡는다
-  for (const row of rows) {
+  for (const [rowIndex, row] of rows.entries()) {
     for (const [index, segment] of row.segments.entries()) {
       const match = segment.compact.match(TITLE_PATTERN)
-      if (!match || isTitleBlockField(row.segments, index)) continue
+      if (!match || isTitleBlockField(rows, rowIndex, index)) continue
       anchors.push({
         listKind: match[1],
         titleText: segment.compact,
@@ -114,6 +147,70 @@ function titleAnchors(rows: TextRow[]): TitleAnchor[] {
 
 function exactLabel(row: TextRow, aliases: readonly string[]): TextSegment | undefined {
   const normalizedAliases = aliases.map(compact)
+  const direct = row.segments.find((segment) =>
+    normalizedAliases.includes(segment.compact),
+  )
+  if (direct) return direct
+
+  // 표 형식이 아닌 PDF에서는 「腹筋2-D10」처럼 라벨과 값을 한 세그먼트에
+  // 붙여 출력한다. 라벨을 못 찾았다고 행 전체를 버리지 않도록 라벨 접두만
+  // 인식하고, 실제 값은 dataSegments가 접미를 따로 만든다.
+  for (const segment of row.segments) {
+    const alias = normalizedAliases.find(
+      (candidate) =>
+        segment.compact.startsWith(candidate) &&
+        segment.compact.length > candidate.length,
+    )
+    if (alias) {
+      return {
+        ...segment,
+        text: segment.text.slice(alias.length),
+        compact: alias,
+        endX: segment.x,
+      }
+    }
+  }
+
+  // PDF마다 「符号」·「箇所」·「STP.」가 인접 글리프 세그먼트로 갈라진다.
+  // 행 복원 단계에서 무리하게 붙이면 다른 셀까지 합쳐질 수 있으므로, 여기서만
+  // 인접 세그먼트의 라벨 후보를 조합하고 실제 셀 값의 배정은 기존 좌표를 쓴다.
+  for (let start = 0; start < row.segments.length; start += 1) {
+    let value = ''
+    for (let end = start; end < row.segments.length; end += 1) {
+      value += row.segments[end].compact
+      if (normalizedAliases.includes(value)) {
+        const first = row.segments[start]
+        const last = row.segments[end]
+        return {
+          text: row.segments
+            .slice(start, end + 1)
+            .map((segment) => segment.text)
+            .join(''),
+          compact: value,
+          items: row.segments
+            .slice(start, end + 1)
+            .flatMap((segment) => segment.items),
+          x: first.x,
+          endX: last.endX,
+          centerX: (first.x + last.endX) / 2,
+          centerY: (first.centerY + last.centerY) / 2,
+        }
+      }
+      if (value.length >= Math.max(...normalizedAliases.map((alias) => alias.length))) {
+        break
+      }
+    }
+  }
+  return undefined
+}
+
+/** 값이 같은 세그먼트에 붙은 「幅止め筋は…」 같은 備考를 구조화된 폭止め筋
+ * 행으로 오인하지 않도록, 이 헬퍼는 행 안의 독립 라벨만 찾는다. */
+function standaloneLabel(
+  row: TextRow,
+  aliases: readonly string[],
+): TextSegment | undefined {
+  const normalizedAliases = aliases.map(compact)
   return row.segments.find((segment) =>
     normalizedAliases.includes(segment.compact),
   )
@@ -125,23 +222,89 @@ function canonicalMark(value: string): string | undefined {
   return mark === 'fg' ? mark : mark.toUpperCase()
 }
 
+function markParts(value: string): string[] {
+  return compact(value)
+    .split(/[,、]/u)
+    .map((part) => canonicalMark(part))
+    .filter((part): part is string => part !== undefined)
+}
+
 function markColumns(row: TextRow): MarkColumn[] {
   const label = exactLabel(row, ['符号'])
   if (!label) return []
 
   return row.segments
     .filter((segment) => segment.centerX > label.endX)
-    .map((segment) => ({
-      mark: canonicalMark(segment.text),
-      centerX: segment.centerX,
-    }))
-    .filter((entry): entry is MarkColumn => entry.mark !== undefined)
+    .flatMap((segment) => {
+      const marks = markParts(segment.text)
+      const groupKey = `${segment.x}:${segment.endX}`
+      return marks.map((mark) => ({
+        mark,
+        centerX: segment.centerX,
+        groupKey,
+        rawCell: segment.text,
+      }))
+    })
 }
 
 function storyFromRow(row: TextRow): string | undefined {
   return row.segments
     .map((segment) => segment.compact)
     .find((value) => STORY_PATTERN.test(value))
+}
+
+/**
+ * 회전된 리스트에서는 「R」·「2」와 「階」가 같은 행이 아니라 같은 열의
+ * 연속 행으로 복원된다. 두 조각을 하나의 story 행으로만 합치고, 그 밖의
+ * 숫자·문자는 층으로 승격하지 않는다 — 표의 치수나 범례를 층으로 만들면
+ * 아래 데이터가 다른 층에 조용히 귀속된다.
+ */
+function storyRows(rows: TextRow[]): StoryRow[] {
+  const result: StoryRow[] = []
+  const seen = new Set<number>()
+
+  rows.forEach((row, index) => {
+    const direct = storyFromRow(row)
+    if (direct !== undefined) {
+      result.push({ label: direct, row })
+      seen.add(index)
+      return
+    }
+
+    const fragment = row.segments.find((segment) => /^(?:R|\d+)$/.test(segment.compact))
+    // 스케치와 주기 텍스트가 같은 열 사이에 끼어도, 같은 x 열에서 가장 가까운
+    // 「階」 조각만 결합한다. 다음 행만 보는 방식은 saiki 柱リスト처럼
+    // 接合部帯筋·범위 표기가 층 조각과 suffix 사이에 놓인 형식을 놓친다.
+    const suffixIndex = rows.findIndex(
+      (candidate, candidateIndex) =>
+        candidateIndex > index &&
+        candidate.segments.some(
+          (segment) =>
+            segment.compact === '階' &&
+            fragment !== undefined &&
+            Math.abs(fragment.x - segment.x) <= 1,
+        ),
+    )
+    const suffix =
+      suffixIndex >= 0
+        ? rows[suffixIndex].segments.find((segment) => segment.compact === '階')
+        : undefined
+    if (
+      fragment === undefined ||
+      suffix === undefined ||
+      Math.abs(fragment.x - suffix.x) > 1
+    ) {
+      return
+    }
+
+    const label = `${fragment.compact}階`
+    if (!STORY_PATTERN.test(label) || seen.has(suffixIndex)) return
+    result.push({ label, row })
+    seen.add(index)
+    seen.add(suffixIndex)
+  })
+
+  return result.sort((left, right) => left.row.y - right.row.y)
 }
 
 /**
@@ -156,8 +319,13 @@ function isOutOfScopeList(titleText: string): boolean {
 
 function kindFromMark(mark: string, titleText: string): SectionCandidate['kind'] {
   if (isOutOfScopeList(titleText)) return '対象外'
-  if (/^C\d/i.test(mark)) return '柱'
-  if (/^G\d/i.test(mark)) return '大梁'
+  // C1 계열은 층 접두(2C1, B1C1)까지 허용하되, FC1 같은 基礎柱 부호는
+  // 기존 범위 판정처럼 柱候補로 승격하지 않는다.
+  if (/^(?:C\d|\d+C\d|[A-EG-Z]\d+C\d)/i.test(mark)) return '柱'
+  // 大梁은 허용된 층 접두만 벗긴 뒤 G로 시작하는 부호다. FG1·FCG1처럼
+  // 부호 중간에 G가 있는 基礎系 부호를 大梁으로 승격하지 않는다.
+  const markWithoutStoryPrefix = mark.replace(/^(?:R|\d+|B\d*)/i, '')
+  if (/^G/i.test(markWithoutStoryPrefix)) return '大梁'
   return '対象外'
 }
 
@@ -170,6 +338,15 @@ function median(values: number[]): number {
 function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
   const label = exactLabel(row, ['位置'])
   if (!label || marks.length === 0) return []
+
+  // 符号セルを複数の符号へ展開しても、位置列の割当単位は原文セルのまま。
+  // 6符号を3列へ DP に渡すと空列を3つ作り、値を FG2/FG4/FB にだけ寄せて
+  // FG1/FG3 の主筋を別値として扱うため、同じ groupKey を一列に戻す。
+  const markGroups = marks.filter(
+    (mark, index) =>
+      marks.findIndex((candidate) => candidate.groupKey === mark.groupKey) ===
+      index,
+  )
 
   const positions = row.segments
     .filter((segment) => segment.centerX > label.endX)
@@ -187,22 +364,22 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
     .map((position, index) => position.centerX - positions[index].centerX)
     .filter((spacing) => spacing > 0)
   const emptyPenalty = Math.pow(median(spacings) * 0.75, 2)
-  const costs = Array.from({ length: marks.length + 1 }, () =>
+  const costs = Array.from({ length: markGroups.length + 1 }, () =>
     Array<number>(positions.length + 1).fill(Number.POSITIVE_INFINITY),
   )
-  const choices = Array.from({ length: marks.length + 1 }, () =>
+  const choices = Array.from({ length: markGroups.length + 1 }, () =>
     Array<number>(positions.length + 1).fill(0),
   )
   costs[0][0] = 0
 
-  for (let markIndex = 0; markIndex < marks.length; markIndex += 1) {
+  for (let markIndex = 0; markIndex < markGroups.length; markIndex += 1) {
     for (let used = 0; used <= positions.length; used += 1) {
       if (!Number.isFinite(costs[markIndex][used])) continue
       for (let count = 0; used + count <= positions.length; count += 1) {
         const group = positions.slice(used, used + count)
         const mean =
           count === 0
-            ? marks[markIndex].centerX
+            ? markGroups[markIndex].centerX
             : group.reduce((total, position) => total + position.centerX, 0) /
               count
         const spread =
@@ -215,7 +392,7 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
         const groupCost =
           count === 0
             ? emptyPenalty
-            : Math.pow(mean - marks[markIndex].centerX, 2) + spread * 0.1
+            : Math.pow(mean - markGroups[markIndex].centerX, 2) + spread * 0.1
         const nextCost = costs[markIndex][used] + groupCost
         if (nextCost < costs[markIndex + 1][used + count]) {
           costs[markIndex + 1][used + count] = nextCost
@@ -225,9 +402,9 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
     }
   }
 
-  const counts = Array<number>(marks.length).fill(0)
+  const counts = Array<number>(markGroups.length).fill(0)
   let used = positions.length
-  for (let markIndex = marks.length; markIndex > 0; markIndex -= 1) {
+  for (let markIndex = markGroups.length; markIndex > 0; markIndex -= 1) {
     const count = choices[markIndex][used]
     counts[markIndex - 1] = count
     used -= count
@@ -238,7 +415,7 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
   counts.forEach((count, markIndex) => {
     for (let index = 0; index < count; index += 1) {
       const position = positions[positionIndex]
-      result.push({ ...position, mark: marks[markIndex].mark })
+      result.push({ ...position, mark: markGroups[markIndex].mark })
       positionIndex += 1
     }
   })
@@ -248,7 +425,60 @@ function positionColumns(row: TextRow, marks: MarkColumn[]): PositionColumn[] {
 function dataSegments(row: TextRow, aliases: readonly string[]): TextSegment[] {
   const label = exactLabel(row, aliases)
   if (!label) return []
-  return row.segments.filter((segment) => segment.centerX > label.endX)
+  const normalizedAliases = aliases.map(compact)
+  const inlineSegments = row.segments.flatMap((segment) => {
+    const alias = normalizedAliases.find(
+      (candidate) =>
+        segment.compact.startsWith(candidate) &&
+        segment.compact.length > candidate.length,
+    )
+    if (!alias) return []
+    const value = segment.compact.slice(alias.length)
+    return [{ source: segment, value: { ...segment, text: value, compact: value } }]
+  })
+  return [
+    ...row.segments
+      .filter((segment) => segment.centerX > label.endX)
+      .filter(
+        (segment) => !inlineSegments.some(({ source }) => source === segment),
+      ),
+    ...inlineSegments.map(({ value }) => value),
+  ]
+}
+
+function isDimensionRow(
+  row: TextRow,
+  aliases: readonly string[],
+  marks: MarkColumn[],
+): boolean {
+  const label = exactLabel(row, aliases)
+  const cells = dataSegments(row, aliases)
+  if (label === undefined || cells.length === 0) return false
+
+  // 도면 오른쪽의 단면도·철골 표가 같은 y행에 걸쳐 있어도, 현재 부호 열의
+  // 거리 상한 안에서 배정되는 셀만 断面 행의 값으로 본다. 이를 생략하면
+  // 「B.PL-36*460*460」 같은 다른 도면의 치수가 한 행으로 오인되어 층 블록이
+  // 중복으로 판정된다.
+  const targets = [
+    ...new Map(
+      marks.map(({ groupKey, centerX }) => [groupKey, { id: groupKey, centerX }]),
+    ).values(),
+  ]
+  const scopedCells = [...valuesAtTargets(cells, targets).values()]
+  if (scopedCells.length === 0) return false
+
+  // 「断面」은 스케치의 제목으로도 쓰인다. 실제 단면 행은 符号 열 수만큼
+  // 셀을 가지지만, 스케치의 X/Y·直交梁 표기는 일부 셀만 가지므로 그 행을
+  // 断面 데이터로 세지 않는다. 값 자체가 불명확해도 원문을 raw로 보존해야
+  // 하므로, 이 판정은 값의 파싱 성공 여부와 분리한다.
+  if (label.compact !== '断面') return true
+  return (
+    scopedCells.some(
+      (cell) =>
+        parseDimension(cell) !== undefined ||
+        parseCircularDimension(cell) !== undefined,
+    ) || scopedCells.length >= targets.length
+  )
 }
 
 function valuesAtTargets(
@@ -292,9 +522,18 @@ function valuesByMark(
   aliases: readonly string[],
   marks: MarkColumn[],
 ): Map<string, string> {
-  return valuesAtTargets(
+  const groups = [...new Map(
+    marks.map(({ groupKey, centerX }) => [groupKey, { id: groupKey, centerX }]),
+  ).values()]
+  const values = valuesAtTargets(
     dataSegments(row, aliases),
-    marks.map(({ mark, centerX }) => ({ id: mark, centerX })),
+    groups,
+  )
+  return new Map(
+    marks.flatMap(({ mark, groupKey }) => {
+      const value = values.get(groupKey)
+      return value === undefined ? [] : [[mark, value] as const]
+    }),
   )
 }
 
@@ -356,9 +595,18 @@ function valuesByPosition(
   )
 }
 
-/** 후프 형상 기호(□·▤·▦)와 이음 하이픈 등 셀 머리의 장식만 벗긴다. */
+/** 후프 형상 기호(□·▤·▦·▥)와 이음 하이픈 등 셀 머리의 장식만 벗긴다. */
 function stripDecoration(value: string): string {
-  return compact(value).replace(/^[-□▤▦]+/, '')
+  return compact(value).replace(/^[-□▤▦▥⊟⊞]+/, '')
+}
+
+function decorationPrefix(value: string): string | undefined {
+  return compact(value).match(/^([□▤▦▥⊟⊞]+)/)?.[1]
+}
+
+function isTwoLayerBar(value: string): boolean {
+  const match = stripDecoration(value).match(/^\d+\/\d+-?(D\d+)$/i)
+  return match !== null && barSizes.has(match[1].toUpperCase() as BarSize)
 }
 
 function parseBar(value: string): ParsedBar | undefined {
@@ -381,13 +629,18 @@ function parsePitch(
   // 組数 접두사(「2-D13@100」)가 조용히 떨어져 1組로 절반 계상된다.
   // 呼び名의 접두 영문자를 D로 한정하지 않는 것은 高強度せん断補強筋 때문이고,
   // 목록에 없는 呼び名은 아래 집합 검사에서 빈칸+원문으로 떨어진다 (R10)
-  const match = stripDecoration(value).match(/^([A-Z]\d+(?:\.\d+)?)-?@(\d+)$/i)
+  const match = stripDecoration(value).match(
+    /^([A-Z]\d+(?:\.\d+)?)(?:-?@([\d,]+)|-?([\d,]+)@)$/i,
+  )
   if (!match) return undefined
   const size = match[1].toUpperCase() as ShearBarSize
   if (!shearBarSizes.has(size)) return undefined
-  const pitchMm = Number(match[2])
-  // 4자리 피치는 인접 세그먼트가 붙은 잔재다(「D13@100」+「2」) — 확정하지 않는다
-  return pitchMm > 999 || pitchMm <= 0 ? undefined : { size, pitchMm }
+  const pitchText = match[2] ?? match[3]
+  const pitchMm = Number(pitchText.replace(/,/g, ''))
+  // 쉼표가 있는 네 자리 피치는 명시적인 자릿수 구분(예: 1,000)이다. 쉼표 없는
+  // 네 자리 값은 기존과 같이 인접 세그먼트가 붙은 잔재로 보아 확정하지 않는다.
+  if (pitchMm <= 0 || (pitchMm > 999 && !pitchText.includes(','))) return undefined
+  return { size, pitchMm }
 }
 
 /**
@@ -472,11 +725,12 @@ function parseDimension(value: string): { b: number; depth: number } | undefined
   // 이웃 셀이 붙은 「800×800 900×900」에서 첫 매치를 취하면 두 번째 그룹이
   // 공백 너머 숫자까지 삼켜 b=800·depth=800900이 된다 — 다중 매치는 거부한다
   const matches = [
-    ...normalized(value).matchAll(/(\d[\d,]*)\s*[x×]\s*(\d[\d,]*)/gi),
+    ...normalized(value).matchAll(/[\d,]+\s*[x×*]\s*[\d,]+/gi),
   ]
   if (matches.length !== 1) return undefined
-  const b = Number(matches[0][1].replace(/,/g, ''))
-  const depth = Number(matches[0][2].replace(/,/g, ''))
+  const [bText, depthText] = matches[0][0].split(/[x×*]/i)
+  const b = Number(bText.replace(/,/g, '').trim())
+  const depth = Number(depthText.replace(/,/g, '').trim())
   return inDimensionRange(b, depth) ? { b, depth } : undefined
 }
 
@@ -582,7 +836,13 @@ function setColumnMain(
   }
   addIssue(
     candidate,
-    !allParsed ? '主筋解釈不能' : !complete ? '主筋位置欠落' : '主筋位置相違',
+    !allParsed
+      ? cells.some(({ raw }) => isTwoLayerBar(raw))
+        ? '2段筋未対応'
+        : '主筋解釈不能'
+      : !complete
+        ? '主筋位置欠落'
+        : '主筋位置相違',
   )
 }
 
@@ -834,6 +1094,9 @@ function setGirderMain(
   for (const cell of bottomCells) {
     candidate.raw[`${bottomLabel}(${cell.position})`] = cleanedRebarRaw(cell.raw)
   }
+  const twoLayerMain = [...topCells, ...bottomCells].some(({ raw }) =>
+    isTwoLayerBar(raw),
+  )
   addIssue(
     candidate,
     positionalIssue ??
@@ -842,7 +1105,9 @@ function setGirderMain(
         : allParsed && complete
           ? '主筋位置相違'
           : !allParsed
-            ? '主筋解釈不能'
+            ? twoLayerMain
+              ? '2段筋未対応'
+              : '主筋解釈不能'
             : '主筋位置欠落'),
   )
 }
@@ -868,6 +1133,8 @@ function setPitch(
   if (!raw) return
   const parsed = parsePitch(raw)
   if (parsed) {
+    const shape = decorationPrefix(raw)
+    if (shape !== undefined) candidate.raw[`${label}形状`] = shape
     candidate[key] = parsed
     return
   }
@@ -894,6 +1161,24 @@ function setSideBar(
 
   candidate.raw['腹筋'] = cleanedRebarRaw(raw)
   addIssue(candidate, '腹筋解釈不能')
+}
+
+function setWidthTie(
+  candidate: SectionCandidate,
+  label: string,
+  raw: string | undefined,
+): void {
+  if (raw === undefined) return
+  const parsed = parsePitch(raw)
+  if (parsed && barSizes.has(parsed.size as BarSize)) {
+    candidate.widthTie = {
+      size: parsed.size as BarSize,
+      pitchMm: parsed.pitchMm,
+    }
+    return
+  }
+  candidate.raw[label] = cleanedRebarRaw(raw)
+  addIssue(candidate, '幅止め筋解釈不能')
 }
 
 interface WallMarkGroup {
@@ -1256,6 +1541,8 @@ const ROW_LABELS = [
   '主筋',
   '帯筋',
   'HOOP',
+  'フープ',
+  '接合部帯筋',
   '断面',
   '位置',
   '上筋',
@@ -1264,9 +1551,18 @@ const ROW_LABELS = [
   '下端筋',
   'ST',
   'STP',
+  'STP.',
   'あばら筋',
+  'スターラップ',
+  'B×D',
   'b×D',
+  '形状断面',
+  '寸法',
   '腹筋',
+  '幅止筋',
+  '巾止筋',
+  '幅止め筋',
+  '備考',
 ] as const
 
 /** 本数-径 토큰(主筋 셀)과 径@ピッチ 토큰(帯筋·あばら筋 셀)을 구분해 접힘을 찾는다. */
@@ -1355,12 +1651,36 @@ function markAnchors(
   marks: MarkColumn[],
   positions: PositionColumn[],
 ): MarkColumn[] {
-  return marks.flatMap(({ mark, centerX }) => {
+  const seenGroups = new Set<string>()
+  return marks.flatMap(({ mark, centerX, groupKey, rawCell }) => {
+    if (seenGroups.has(groupKey)) return []
+    seenGroups.add(groupKey)
     const own = positions.filter((position) => position.mark === mark)
     return own.length > 0
-      ? own.map((position) => ({ mark, centerX: position.centerX }))
-      : [{ mark, centerX }]
+      ? own.map((position) => ({ mark, centerX: position.centerX, groupKey, rawCell }))
+      : [{ mark, centerX, groupKey, rawCell }]
   })
+}
+
+/** 同じ符号セルから 펼친 부호는 스케치 치수의 하나의 앵커를 공유한다. 앵커 함수가
+ * 첫 부호 하나만 반환하므로, 그 결과를 실제 후보 전부へ 복제한다. 표 셀을 읽는
+ * valuesByMark는 이미 이 전개를 수행하므로 스케치 경로에만 적용한다.
+ */
+function expandMarkGroups(
+  values: Map<string, string>,
+  marks: MarkColumn[],
+): Map<string, string> {
+  const firstByGroup = new Map<string, string>()
+  for (const { mark, groupKey } of marks) {
+    if (!firstByGroup.has(groupKey)) firstByGroup.set(groupKey, mark)
+  }
+  return new Map(
+    marks.flatMap(({ mark, groupKey }) => {
+      const first = firstByGroup.get(groupKey)
+      const value = first === undefined ? undefined : values.get(first)
+      return value === undefined ? [] : [[mark, value] as const]
+    }),
+  )
 }
 
 /**
@@ -1471,6 +1791,73 @@ function verticalsByMark(
     [...perMark.entries()].flatMap(([mark, values]) =>
       values.length === 1 ? [[mark, values[0]] as const] : [],
     ),
+  )
+}
+
+/**
+ * 「形状断面」だけを見出しにしたスケッチ型の柱表から、横に並ぶ b 寸法を拾う。
+ * 通常の scalarDimensions はラベル行と主筋・フープ行の間を読むため、形状断面
+ * が独立した行にある表では寸法を捨ててしまう。値は各符号の最近接かつ隣列の
+ * 境界内に限り、同じ列の別寸法を連結しない。
+ */
+function sketchColumnHorizontalValues(
+  rows: TextRow[],
+  startY: number,
+  endY: number,
+  anchors: MarkColumn[],
+): Map<string, string> {
+  const numeric = rows
+    .filter((row) => row.y > startY && row.y <= endY)
+    .flatMap((row) => row.segments)
+    .filter((segment) => /^\d[\d,]*$/.test(normalized(segment.text)))
+
+  return new Map(
+    boundedAnchors(anchors).flatMap((anchor) => {
+      const candidates = numeric.filter(
+        (segment) => Math.abs(segment.centerX - anchor.centerX) <= anchor.limit,
+      )
+      const nearest = candidates.sort(
+        (left, right) =>
+          Math.abs(left.centerX - anchor.centerX) -
+          Math.abs(right.centerX - anchor.centerX),
+      )[0]
+      if (!nearest) return []
+      return [[anchor.mark, normalized(nearest.text).replace(/,/g, '')] as const]
+    }),
+  )
+}
+
+/**
+ * Fuji の柱スケッチは縦寸法が「形状断面」行の直上に立つ。横寸法と同じ列に
+ * 置かれた数値のうち、形状断面に最も近い水平ランだけを符号へ対応させる。
+ * 別の寸法列を同じ d に使わないため、y の最近接を先に固定する。
+ */
+function sketchColumnVerticalValues(
+  verticals: VerticalRun[],
+  shapeY: number,
+  anchors: MarkColumn[],
+): Map<string, string> {
+  const numeric = verticals.filter((run) => /^\d[\d,]*$/.test(run.text))
+  if (numeric.length === 0) return new Map()
+  const nearestDistance = Math.min(
+    ...numeric.map((run) => Math.abs(run.y - shapeY)),
+  )
+  const nearestRows = numeric.filter(
+    (run) => Math.abs(Math.abs(run.y - shapeY) - nearestDistance) < 0.01,
+  )
+
+  return new Map(
+    boundedAnchors(anchors).flatMap((anchor) => {
+      const candidates = nearestRows.filter(
+        (run) => Math.abs(run.x - anchor.centerX) <= anchor.limit,
+      )
+      const nearest = candidates.sort(
+        (left, right) =>
+          Math.abs(left.x - anchor.centerX) - Math.abs(right.x - anchor.centerX),
+      )[0]
+      if (!nearest) return []
+      return [[anchor.mark, nearest.text.replace(/,/g, '')] as const]
+    }),
   )
 }
 
@@ -1586,9 +1973,7 @@ function parseColumnBlock(
   const marks = markColumns(header)
   if (marks.length === 0) return []
   const blockRows = rowsBetween(rows, header.y, endY)
-  const stories: StoryRow[] = blockRows
-    .map((row) => ({ label: storyFromRow(row), row }))
-    .filter((entry): entry is StoryRow => entry.label !== undefined)
+  const stories = storyRows(blockRows)
   // 平屋 등 階 라벨이 없는 표는 大梁 블록과 같은 폴백으로 한 슬라이스 처리한다 —
   // 조기 반환하면 표가 통째로 「인식 불가」로 사라진다
   const slices: Array<{
@@ -1618,15 +2003,37 @@ function parseColumnBlock(
   )
 
   const candidates: SectionCandidate[] = []
+  const preTableRows =
+    stories.length > 0
+      ? rows.filter(
+          (row) => row.y > header.y && row.y < stories[0].row.y,
+        )
+      : []
   for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
+    const shapeRow =
+      preTableRows
+        .filter((row) => exactLabel(row, ['形状断面']))
+        .at(-1) ??
+      dataRows.find((row) => exactLabel(row, ['形状断面']))
     const mainRows = dataRows.filter((row) => exactLabel(row, ['主筋']))
-    const hoopRows = dataRows.filter((row) => exactLabel(row, ['帯筋', 'HOOP']))
+    const hoopRows = dataRows.filter((row) =>
+      exactLabel(row, ['帯筋', 'HOOP', 'フープ']),
+    )
     // 라벨 존재만 보면 값 세그먼트가 없는 라벨 행이 scalarDimensions 폴백까지
     // 막아 원문 참고 표시가 통째로 사라진다 — 大梁 블록과 같은 조건을 쓴다
-    const dimensionRows = dataRows.filter(
-      (row) => exactLabel(row, ['断面']) && dataSegments(row, ['断面']).length > 0,
+    const inSliceDimensionRows = dataRows.filter(
+      (row) => isDimensionRow(row, ['断面', 'B×D', 'b×D'], marks),
     )
+    // 일부 발주처는 階 행보다 먼저 공통 断面 행을 둔다. 해당 행을 놓치면
+    // 3.5k 수치만 남아 b×d가 조용히 사라지므로, 슬라이스 직전의 가장 가까운
+    // 断面 행을 쓰되 이전 층의 행을 여러 개 섞어 확정하지 않는다.
+    const dimensionRows =
+      inSliceDimensionRows.length > 0
+        ? inSliceDimensionRows
+        : preTableRows
+            .filter((row) => isDimensionRow(row, ['断面', 'B×D', 'b×D'], marks))
+            .slice(-1)
     // 한 슬라이스에 같은 라벨 행이 겹으로 있으면 여러 층 블록이 합쳐진 것이다 —
     // 階 라벨이 하나도 인식되지 않은 표(「一般階」)든 일부만 인식된 표(「1F」+「B1F」)든
     // 첫 행 값을 확정하면 나머지 층 값이 사유도 원문도 없이 사라진다
@@ -1648,21 +2055,36 @@ function parseColumnBlock(
     // 스케치 치수는 가로·세로 모두 같은 열 앵커로 배정한다 — 한쪽만 符号 중심이면
     // 그쪽에서만 좁은 이웃 칸이 값을 가져간다
     const anchors = markAnchors(marks, positions)
-    const dimensionValues = storyAmbiguous
+    const rawDimensionValues = storyAmbiguous
       ? new Map<string, string>()
       : dimensionRow
-        ? valuesByMark(dimensionRow, ['断面'], marks)
-        : sketchDimensions(
-            rows,
-            slice.startY,
-            [mainRow, hoopRow],
-            anchors,
-          )
+        ? valuesByMark(dimensionRow, ['断面', 'B×D', 'b×D'], marks)
+        : shapeRow
+          ? sketchColumnHorizontalValues(
+              rows,
+              header.y,
+              shapeRow.y,
+              anchors,
+            )
+          : sketchDimensions(
+              rows,
+              slice.startY,
+              [mainRow, hoopRow],
+              anchors,
+            )
+    const dimensionValues = expandMarkGroups(rawDimensionValues, marks)
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
-    const verticalValues =
+    const rawVerticalValues =
       storyAmbiguous || dimensionRow
         ? new Map<string, string>()
-        : verticalsByMark(blockVerticals[sliceIndex], anchors)
+        : shapeRow
+          ? sketchColumnVerticalValues(
+              verticals,
+              shapeRow.y,
+              anchors,
+            )
+          : verticalsByMark(blockVerticals[sliceIndex], anchors)
+    const verticalValues = expandMarkGroups(rawVerticalValues, marks)
     const mainByPosition =
       mainRow && positions.length > 0
         ? valuesByPosition(mainRow, ['主筋'], positions, marks)
@@ -1673,12 +2095,12 @@ function parseColumnBlock(
       ? valuesByMark(mainRow, ['主筋'], marks)
       : new Map<string, string>()
     const hoopLabel = hoopRow
-      ? exactLabel(hoopRow, ['帯筋', 'HOOP'])?.compact
+      ? exactLabel(hoopRow, ['帯筋', 'HOOP', 'フープ'])?.compact
       : undefined
     const hoopValues =
       hoopRow && hoopLabel ? valuesByMark(hoopRow, [hoopLabel], marks) : new Map()
 
-    marks.forEach(({ mark }) => {
+    marks.forEach(({ mark, rawCell }) => {
       if (storyAmbiguous) {
         // 값 없이 사유만 실은 후보를 남긴다 — 표가 조용히 사라지면 사용자는
         // 인식 실패와 구분할 수 없다. 階를 못 읽은 것과 階는 읽었으나 행이 겹인 것은
@@ -1687,7 +2109,7 @@ function parseColumnBlock(
           kind: kindFromMark(mark, titleText),
           mark,
           storyLabel: slice.storyLabel,
-          raw: {},
+          raw: { 符号: rawCell },
           issues: [slice.storyLabel === undefined ? '階不明' : '項目行重複'],
         })
         return
@@ -1727,7 +2149,7 @@ function parseColumnBlock(
         kind: kindFromMark(mark, titleText),
         mark,
         storyLabel: slice.storyLabel,
-        raw: {},
+        raw: { 符号: rawCell },
         issues: [],
       }
       setDimension(result, dimension, true, verticalValues.get(mark))
@@ -1867,9 +2289,7 @@ function parseGirderBlock(
   const marks = markColumns(header)
   if (marks.length === 0) return []
   const blockRows = rowsBetween(rows, header.y, endY)
-  const stories: StoryRow[] = blockRows
-    .map((row) => ({ label: storyFromRow(row), row }))
-    .filter((entry): entry is StoryRow => entry.label !== undefined)
+  const stories = storyRows(blockRows)
   const slices =
     stories.length > 0
       ? stories.map((story, index) => ({
@@ -1889,34 +2309,62 @@ function parseGirderBlock(
     rowsWithinTable(blockRows, marks),
   )
   const candidates: SectionCandidate[] = []
+  const preTableRows =
+    stories.length > 0
+      ? rows.filter(
+          (row) => row.y > header.y && row.y < stories[0].row.y,
+        )
+      : []
 
   for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
-    const dimensionRows = dataRows.filter(
-      (row) =>
-        exactLabel(row, ['断面', 'b×D']) &&
-        dataSegments(row, ['断面', 'b×D']).length > 0,
+    const inSliceDimensionRows = dataRows.filter(
+      (row) => isDimensionRow(row, ['断面', 'B×D', 'b×D', '寸法'], marks),
     )
+    const dimensionRows =
+      inSliceDimensionRows.length > 0
+        ? inSliceDimensionRows
+        : preTableRows
+            .filter((row) =>
+              isDimensionRow(row, ['断面', 'B×D', 'b×D', '寸法'], marks),
+            )
+            .slice(-1)
     const topRows = dataRows.filter((row) => exactLabel(row, ['上筋', '上端筋']))
     const bottomRows = dataRows.filter((row) =>
       exactLabel(row, ['下筋', '下端筋']),
     )
     const stirrupRows = dataRows.filter((row) =>
-      exactLabel(row, ['ST', 'STP', 'あばら筋']),
+      exactLabel(row, ['ST', 'STP', 'STP.', 'あばら筋', 'スターラップ']),
     )
-    const sideBarRows = dataRows.filter((row) => exactLabel(row, ['腹筋']))
+    const inSliceSideBarRows = dataRows.filter((row) =>
+      exactLabel(row, ['腹筋']),
+    )
+    const sideBarRows =
+      inSliceSideBarRows.length > 0
+        ? inSliceSideBarRows
+        : preTableRows
+            .filter((row) => exactLabel(row, ['腹筋']))
+            .slice(-1)
+    const widthTieRows = dataRows.filter((row) =>
+      standaloneLabel(row, ['幅止筋', '巾止筋', '幅止め筋']),
+    )
+    const remarkRows = dataRows.filter((row) => exactLabel(row, ['備考']))
     // 柱 블록과 같은 방어 — 라벨 행이 겹이면 여러 층 블록이 합쳐진 것이다
     const storyAmbiguous =
       topRows.length > 1 ||
       bottomRows.length > 1 ||
       stirrupRows.length > 1 ||
       sideBarRows.length > 1 ||
+      widthTieRows.length > 1 ||
+      remarkRows.length > 1 ||
       dimensionRows.length > 1
     const dimensionRow = storyAmbiguous ? undefined : dimensionRows[0]
     const topRow = storyAmbiguous ? undefined : topRows[0]
     const bottomRow = storyAmbiguous ? undefined : bottomRows[0]
     const stirrupRow = storyAmbiguous ? undefined : stirrupRows[0]
     const sideBarRow = storyAmbiguous ? undefined : sideBarRows[0]
+    const widthTieRow = storyAmbiguous ? undefined : widthTieRows[0]
+    const remarkRow = storyAmbiguous ? undefined : remarkRows[0]
     const positionRow =
       lastPositionRow(rows, header.y, slice.startY) ??
       dataRows.find((row) => exactLabel(row, ['位置']))
@@ -1927,12 +2375,12 @@ function parseGirderBlock(
     }))
     const cutoffCells = cutoffCellsByMark(dataRows, positions, marks)
     const dimensionLabel = dimensionRow
-      ? exactLabel(dimensionRow, ['断面', 'b×D'])?.compact
+      ? exactLabel(dimensionRow, ['断面', 'B×D', 'b×D', '寸法'])?.compact
       : undefined
     // 断面 라벨 행이 없는 표(ojkk 大梁リスト)의 근거는 스케치 치수뿐이다 — 柱 블록과
     // 같은 폴백으로 가로 치수를 줍고, 세로(회전 문자열)와 짝지어야 b×D가 나온다
     const anchors = markAnchors(marks, positions)
-    const dimensionValues = storyAmbiguous
+    const rawDimensionValues = storyAmbiguous
       ? new Map<string, string>()
       : dimensionRow && dimensionLabel
         ? valuesByMark(dimensionRow, [dimensionLabel], marks)
@@ -1942,11 +2390,13 @@ function parseGirderBlock(
             [topRow, bottomRow, stirrupRow],
             anchors,
           )
+    const dimensionValues = expandMarkGroups(rawDimensionValues, marks)
     // 断面 라벨 행이 있으면 세로 치수는 보지 않는다 — 라벨 행 값이 더 확실한 근거다
-    const verticalValues =
+    const rawVerticalValues =
       storyAmbiguous || dimensionRow
         ? new Map<string, string>()
         : verticalsByMark(blockVerticals[sliceIndex], anchors)
+    const verticalValues = expandMarkGroups(rawVerticalValues, marks)
     const topLabel = topRow
       ? exactLabel(topRow, ['上筋', '上端筋'])?.compact
       : undefined
@@ -1971,7 +2421,7 @@ function parseGirderBlock(
         ? valuesByMark(bottomRow, [bottomLabel], marks)
         : new Map<string, string>()
     const stirrupLabel = stirrupRow
-      ? exactLabel(stirrupRow, ['ST', 'STP', 'あばら筋'])?.compact
+      ? exactLabel(stirrupRow, ['ST', 'STP', 'STP.', 'あばら筋', 'スターラップ'])?.compact
       : undefined
     const stirrupValues =
       stirrupRow && stirrupLabel
@@ -1979,6 +2429,16 @@ function parseGirderBlock(
         : new Map<string, string>()
     const sideBarValues = sideBarRow
       ? valuesByMark(sideBarRow, ['腹筋'], marks)
+      : new Map<string, string>()
+    const widthTieLabel = widthTieRow
+      ? standaloneLabel(widthTieRow, ['幅止筋', '巾止筋', '幅止め筋'])?.compact
+      : undefined
+    const widthTieValues =
+      widthTieRow && widthTieLabel
+        ? valuesByMark(widthTieRow, [widthTieLabel], marks)
+        : new Map<string, string>()
+    const remarkValues = remarkRow
+      ? valuesByMark(remarkRow, ['備考'], marks)
       : new Map<string, string>()
     // 접힌 셀(줄바꿈) 감지 — 柱 블록과 같은 방어를 上筋/下筋/あばら筋에도 건다
     const topContinuations = topRow
@@ -1997,13 +2457,13 @@ function parseGirderBlock(
         )
       : new Map<string, string>()
 
-    for (const { mark } of marks) {
+    for (const { mark, rawCell } of marks) {
       if (storyAmbiguous) {
         candidates.push({
           kind: kindFromMark(mark, titleText),
           mark,
           storyLabel: slice.storyLabel,
-          raw: {},
+          raw: { 符号: rawCell },
           issues: [slice.storyLabel === undefined ? '階不明' : '項目行重複'],
         })
         continue
@@ -2045,7 +2505,7 @@ function parseGirderBlock(
         kind: kindFromMark(mark, titleText),
         mark,
         storyLabel: slice.storyLabel,
-        raw: {},
+        raw: { 符号: rawCell },
         issues: [],
       }
       const cutoffMm = cutoffFromSupportFace(
@@ -2111,6 +2571,9 @@ function parseGirderBlock(
         )
       }
       setSideBar(result, sideBar)
+      setWidthTie(result, widthTieLabel ?? '幅止筋', widthTieValues.get(mark))
+      const remark = remarkValues.get(mark)
+      if (remark !== undefined) result.raw.備考 = compact(remark)
       for (const cell of cutoffCells.get(mark) ?? []) {
         const key = cell.position
           ? `カットオフ(${cell.position})`
@@ -2195,20 +2658,53 @@ function parseTableRegion(
   )
   headerIndexes.forEach((headerIndex, index) => {
     const blockEnd = tableRows[headerIndexes[index + 1]]?.y ?? endY
+    const headerMarks = markColumns(tableRows[headerIndex])
+    const rightmostMark = Math.max(
+      ...headerMarks.map(({ centerX }) => centerX),
+    )
+    const sortedMarkCenters = headerMarks
+      .map(({ centerX }) => centerX)
+      .sort((left, right) => left - right)
+    const trailingGap =
+      sortedMarkCenters.length >= 2
+        ? sortedMarkCenters.at(-1)! - sortedMarkCenters.at(-2)!
+        : undefined
+    // 다음 표의 왼쪽 라벨이 같은 y행에 끼어들어도, 현재 표의 마지막 부호와
+    // 다음 표 제목 사이 중점 밖이면 현재 블록에 포함하지 않는다. 이웃 표가 없을
+    // 때는 페이지 끝을 열어 두어 넓은 마지막 열의 스케치 치수를 보존한다.
+    const localEnd = Number.isFinite(xEnd)
+      ? (rightmostMark + xEnd) / 2
+      : trailingGap === undefined
+        ? Number.POSITIVE_INFINITY
+        : rightmostMark + trailingGap
+    const localRows = tableRows
+      .slice(headerIndex)
+      .map((row) => {
+        const items = row.items.filter(
+          (item) => item.x + item.w >= xStart && item.x < localEnd,
+        )
+        return items.length > 0
+          ? { ...row, items, segments: makeSegments(items) }
+          : undefined
+      })
+      .filter((row): row is TextRow => row !== undefined)
+    const localVerticals = tableVerticals.filter(
+      (run) => run.x < localEnd,
+    )
     const parsed = anchor.listKind.includes('柱')
       ? parseColumnBlock(
-          tableRows,
-          headerIndex,
+          localRows,
+          0,
           blockEnd,
           anchor.titleText,
-          tableVerticals,
+          localVerticals,
         )
       : parseGirderBlock(
-          tableRows,
-          headerIndex,
+          localRows,
+          0,
           blockEnd,
           anchor.titleText,
-          tableVerticals,
+          localVerticals,
         )
     candidates.push(...parsed)
   })
@@ -2271,20 +2767,21 @@ export function parseSectionLists(page: TextPage): ParsedSectionList[] {
           other.x > anchor.x,
       )
       .sort((left, right) => left.x - right.x)[0]
-    // 우측 경계도 중점 — 「이웃 x−40」 고정이면 중앙 정렬 타이틀을 가진 오른쪽 표의
-    // 라벨열이 왼쪽 대역에 새어 들어와 셀 값에 이어붙는다
-    const xEnd = rightNeighbor
-      ? isOutOfScopeList(anchor.titleText)
-        ? rightNeighbor.x
-        : (anchor.x + rightNeighbor.x) / 2
-      : Number.POSITIVE_INFINITY
+    // 우측 경계는 이웃 표 제목의 시작점이다. 제목이 표의 중앙에 놓인 경우에는
+    // 제목 사이 중점이 실제 열 경계보다 왼쪽으로 들어와 마지막 부호(ina の GA,
+    // Fuji の B1C2)를 잘라낸다. 제목의 왼쪽 대역은 이미 xStart로 분리했으므로,
+    // 오른쪽은 이웃 제목 자체만 제외하면 표의 마지막 열을 온전히 받을 수 있다.
+    const xEnd = rightNeighbor ? rightNeighbor.x : Number.POSITIVE_INFINITY
     // 블록 끝은 이 x대역 안에서 아래에 오는 다음 타이틀
+    const belowEnd = rightNeighbor
+      ? (anchor.x + rightNeighbor.x) / 2
+      : Number.POSITIVE_INFINITY
     const below = anchors
       .filter(
         (other) =>
           other.row.y - anchor.row.y > sameBand &&
           other.x >= xStart &&
-          other.x < xEnd,
+          other.x < belowEnd,
       )
       .sort((left, right) => left.row.y - right.row.y)[0]
     const endY = below?.row.y ?? page.heightPt

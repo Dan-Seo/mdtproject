@@ -18,6 +18,7 @@ export interface TextPage {
  */
 export const CANDIDATE_ISSUES = [
   '主筋解釈不能',
+  '2段筋未対応',
   '主筋位置欠落',
   '主筋位置相違',
   '主筋端部左右相違',

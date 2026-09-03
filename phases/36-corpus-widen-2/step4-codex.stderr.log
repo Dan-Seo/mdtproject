@@ -1,0 +1,14 @@
+2026-09-03T05:04:54.557563Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T05:04:54.651937Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T05:04:55.081671Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T05:04:55.116753Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T05:22:48.905080Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+    const rightmostMark = Math.max(
+      ...headerMarks.map(({ centerX }) => centerX),
+    )
+    // 다음 표의 왼쪽 라벨이 같은 y행에 끼어들어도, 현재 부호 열의 마지막 부호와
+    // 다음 표 제목 사이 중점 밖이면 현재 블록에 포함하지 않는다. 이웃 표가 없을
+    // 때는 페이지 끝을 열어 두어 넓은 마지막 열의 스케치 치수를 보존한다.
+    const localEnd = Number.isFinite(xEnd)
+      ? (rightmostMark + xEnd) / 2
+      : Number.POSITIVE_INFINITY

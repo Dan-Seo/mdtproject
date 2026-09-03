@@ -7,7 +7,7 @@ vi.mock('pdfjs-dist', () => ({
   getDocument,
 }))
 
-import { extractTextPages } from './pdf-text'
+import { extractTextPages, pdfDocumentOptions } from './pdf-text'
 
 const pageCleanup = vi.fn()
 const taskDestroy = vi.fn().mockResolvedValue(undefined)
@@ -49,8 +49,26 @@ describe('extractTextPages', () => {
     await extractTextPages(file)
 
     expect(getDocument).toHaveBeenCalledWith(
-      expect.objectContaining({ useWorkerFetch: false }),
+      expect.objectContaining({
+        useWorkerFetch: false,
+        cMapUrl: '/pdfjs/cmaps/',
+        cMapPacked: true,
+        standardFontDataUrl: '/pdfjs/standard_fonts/',
+      }),
     )
+  })
+
+  it('builds CMap and standard-font URLs from the supplied asset base', () => {
+    const data = new Uint8Array([1, 2, 3])
+
+    expect(pdfDocumentOptions(data, 'C:/project/node_modules/pdfjs-dist/')).toEqual({
+      data,
+      useWorkerFetch: false,
+      cMapUrl: 'C:/project/node_modules/pdfjs-dist/cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl:
+        'C:/project/node_modules/pdfjs-dist/standard_fonts/',
+    })
   })
 
   it('releases pdf.js resources even though extraction succeeded', async () => {

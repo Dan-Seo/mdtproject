@@ -1,0 +1,50 @@
+{
+  "goldens": {
+    "saiki-fire-p1-girders.json": {
+      "main": 24,
+      "stirrup": 24,
+      "dimension": 24
+    },
+    "saiki-fire-p2-columns.json": {
+      "cells": 10
+    }
+  },
+  "two_layer_cells": [
+    "G2 2階 上端筋 全断面 5/3-D25",
+    "G4 R階 上端筋 両端 6/3-D25",
+    "G4 R階 下端筋 中央 6/2-D25",
+    "G7 R階 上端筋 全断面 5/1-D25",
+    "G8 R階 上端筋 両端 5/2-D25",
+    "G8 2階 上端筋 全断面 6/3-D25",
+    "G8 2階 下端筋 全断面 6/1-D25",
+    "G9 R階 上端筋 両端 5/1-D25",
+    "G9 2階 上端筋 両端 6/2-D25",
+    "G9 2階 下端筋 中央 6/2-D25",
+    "G12 2階 上端筋 全断面 5/1-D25"
+  ],
+  "joint_hoop_handling": "柱の接合部帯筋行は独立した行ラベルとして扱い、フープ行の値・継続セルに混ぜず、専用の候補フィールドを追加せずに無視した。",
+  "rules_added": [
+    {
+      "rule": "同一x列に分割されたR／数字と階を連結してR階・2階を復元する。",
+      "pages_exercised": ["saiki-p1", "saiki-p2"]
+    },
+    {
+      "rule": "B×Dを断面ラベルとして扱い、スケッチ内のX／Y・直交梁行を断面行に昇格しない。",
+      "pages_exercised": ["saiki-p1", "saiki-p2"]
+    },
+    {
+      "rule": "スターラップ／フープの別名、□・⊟・⊞の装飾除去とshape raw保存を扱う。",
+      "pages_exercised": ["saiki-p1", "saiki-p2"]
+    },
+    {
+      "rule": "2段筋の本数を確定せず、rawと2段筋未対応を保持する。",
+      "pages_exercised": ["saiki-p1"]
+    },
+    {
+      "rule": "図面種別ラベルから離れた表題欄のリスト名をタイトルアンカーにしない。",
+      "pages_exercised": ["saiki-p2"]
+    }
+  ],
+  "existing_goldens_unchanged": true,
+  "summary": "saiki p1/p2의 층 분할·B×D·スターラップ／フープ·2段筋·接合部帯筋 형식을 일반 규칙으로 처리했고, 기존 골든과 실물 PDF 통합 테스트를 유지했다."
+}

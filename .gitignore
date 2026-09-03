@@ -1,6 +1,7 @@
 node_modules/
 __pycache__/
 .next/
+public/pdfjs/
 out/
 next-env.d.ts
 tsconfig.tsbuildinfo

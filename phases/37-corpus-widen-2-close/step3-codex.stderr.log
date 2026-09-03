@@ -1,0 +1,87 @@
+2026-09-03T07:29:44.172204Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T07:29:44.403890Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T07:29:44.423151Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T07:34:09.238890Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\plan-import\corpus2-elevation.test.ts:
+  ) as ElevationFixture
+}
+
+function labelsFrom(
+  parsed: ReturnType<typeof parseFrameElevations>,
+  wanted: string[],
+): string[][] {
+  const wantedSet = new Set(wanted)
+  return parsed.elevations.map((elevation) =>
+    elevation.levels.flatMap((level) =>
+      level.labels.filter((label) => wantedSet.has(label)),
+    ),
+  )
+}
+
+describe('階高 corpus 2 골든', () => {
+  it('karatsu: 짧은 150mm 구간과 원문 레벨 라벨을 모든 공유 계열에서 보존한다', () => {
+    const golden = readGolden('karatsu-jikugumi1-p1-elevation.json')
+    const parsed = parseFrameElevations(readPage('karatsu-jikugumi1-p1.json'))
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.elevations).toHaveLength(2)
+    expect(parsed.elevations.map((entry) => entry.heightsMm)).toEqual(
+      parsed.elevations.map(() => golden.heightsMm),
+    )
+    expect(labelsFrom(parsed, ['RFL水上', '2FL', '1FL', 'GL'])).toEqual([
+      ['RFL水上', '2FL', '1FL', 'GL'],
+      ['RFL水上', '2FL', '1FL', 'GL'],
+    ])
+  })
+
+  it('tsu: 아래쪽 확정 구간 3500·150·1170을 연쇄 끝에서 보존한다', () => {
+    const golden = readGolden('tsu-kanritou-p21-elevation.json')
+    const parsed = parseFrameElevations(readPage('tsu-p21.json'))
+    const expectedHeights = golden.elevations[0]?.heightsBottomMm
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.elevations).toHaveLength(2)
+    expect(
+      parsed.elevations.map((entry) => entry.heightsMm.slice(-3)),
+    ).toEqual([expectedHeights, expectedHeights])
+    expect(labelsFrom(parsed, ['2FL', '1FL', '設計GL', '基礎下端'])).toEqual([
+      ['2FL', '1FL', '設計GL', '基礎下端'],
+      ['2FL', '1FL', '設計GL', '基礎下端'],
+    ])
+  })
+
+  it('hirosaki: 100mm 레벨과 그 아래 2310mm 구간을 각 계열에 보존한다', () => {
+    const golden = readGolden('hirosaki-kikyono-p25-elevation.json')
+    const parsed = parseFrameElevations(readPage('hirosaki-p25.json'))
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.elevations).toHaveLength(3)
+    expect(parsed.elevations.map((entry) => entry.heightsMm)).toEqual([
+      golden.elevations[0]?.heightsMm,
+      golden.elevations[0]?.heightsMm,
+      golden.elevations[1]?.heightsMm,
+    ])
+    expect(
+      labelsFrom(parsed, [
+        'RFL',
+        'PHFL',
+        '3FL',
+        '2FL',
+        '1FL',
+        '設計GL',
+        '△基礎下端',
+      ]),
+    ).toEqual([
+      ['RFL', 'PHFL', '3FL', '2FL', '1FL', '設計GL', '△基礎下端'],
+      ['RFL', 'PHFL', '3FL', '3FL', '1FL', '設計GL', '△基礎下端'],
+      ['PHFL', '3FL', '2FL', '1FL', '設計GL', '△基礎下端'],
+    ])
+  })
+})
+2026-09-03T07:34:42.273639Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\Users\emper\mdtproject\tests\plan-import\corpus2-elevation.test.ts
+2026-09-03T07:40:02.060522Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\elevation.ts:
+
+  return columns.map((column) => [...column].sort((a, b) => a.y - b.y))
+}
+
+/**
+ * 壓組図에서 계열의 높이 범위를 비교해, 같은 구간에 서로 다른 길이로 잡힌 계열을

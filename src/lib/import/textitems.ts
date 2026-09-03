@@ -8,6 +8,8 @@ export interface PdfTextItemLike {
   transform: number[]
 }
 
+const DEDUPE_TOLERANCE_PT = 0.5
+
 /** pdf.js Util.transform과 동일한 2×3 행렬 합성. */
 function multiplyTransform(m1: number[], m2: number[]): number[] {
   return [
@@ -42,7 +44,7 @@ export function toTextItems(
   items: readonly PdfTextItemLike[],
   viewportTransform: number[],
 ): TextItem[] {
-  return items.flatMap((item) => {
+  const extracted = items.flatMap((item) => {
     if (typeof item.str !== 'string' || item.str.trim() === '') {
       return []
     }
@@ -71,4 +73,41 @@ export function toTextItems(
       return rot === undefined ? [extracted] : [{ ...extracted, rot }]
     })
   })
+
+  // 일부 CAD/PDF 생성기는 굵은 글자를 같은 위치에 여러 번 그린다. 먼저
+  // 나온 글자를 남기되, 모든 후보를 비교하는 O(n²) 대신 0.5pt 공간 버킷을
+  // 사용해 인쇄 위치가 많은 페이지에서도 추출 정규화 비용을 선형에 가깝게
+  // 유지한다.
+  const buckets = new Map<string, Map<string, TextItem[]>>()
+  const deduplicated: TextItem[] = []
+
+  for (const item of extracted) {
+    const rotationKey = item.rot === undefined ? 'undefined' : String(item.rot)
+    const groupKey = `${item.str}\u0000${rotationKey}`
+    const group = buckets.get(groupKey) ?? new Map<string, TextItem[]>()
+    buckets.set(groupKey, group)
+
+    const bucketX = Math.floor(item.x / DEDUPE_TOLERANCE_PT)
+    const bucketY = Math.floor(item.y / DEDUPE_TOLERANCE_PT)
+    let duplicate = false
+
+    for (let dx = -1; dx <= 1 && !duplicate; dx += 1) {
+      for (let dy = -1; dy <= 1 && !duplicate; dy += 1) {
+        const candidates = group.get(`${bucketX + dx},${bucketY + dy}`) ?? []
+        duplicate = candidates.some(
+          (candidate) =>
+            Math.abs(candidate.x - item.x) <= DEDUPE_TOLERANCE_PT &&
+            Math.abs(candidate.y - item.y) <= DEDUPE_TOLERANCE_PT,
+        )
+      }
+    }
+
+    if (duplicate) continue
+
+    const bucketKey = `${bucketX},${bucketY}`
+    group.set(bucketKey, [...(group.get(bucketKey) ?? []), item])
+    deduplicated.push(item)
+  }
+
+  return deduplicated
 }

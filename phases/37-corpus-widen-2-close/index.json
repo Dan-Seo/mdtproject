@@ -1,0 +1,84 @@
+{
+  "project": "Kijun",
+  "phase": "37-corpus-widen-2-close",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refute-adjudication",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "네 반증 항목 모두 불성립: fuji 회전 글리프 5개 확인, ojkk-p4 小梁 9건·片持梁 3건 84칸 일치, 14면 회귀에서 그 12건 외 변경 없음, 스윕 3면은 伏図가 아님.",
+      "started_at": "2026-09-03T15:33:05+0900",
+      "completed_at": "2026-09-03T15:49:23+0900"
+    },
+    {
+      "step": 1,
+      "name": "pin-ojkk-p4-scope-out-cells",
+      "status": "completed",
+      "summary": "ojkk-p4 小梁リスト 9칸·片持梁リスト 3칸의 対象外 断面寸法·配筋을 골든 전 셀 대조 테스트로 고정하고 FB3.depth 변조 실패·복원을 확인했다.",
+      "started_at": "2026-09-03T15:49:24+0900",
+      "completed_at": "2026-09-03T15:57:41+0900"
+    },
+    {
+      "step": 2,
+      "name": "grid-axis-order-contract",
+      "status": "completed",
+      "summary": "도면별 축 뒤집기와 DEBUG_PARSE를 제거하고 strict 축척·후보별 전체합·기하 기반 부분합·이슈 보존 규칙을 확정했다. Karatsu 후쿠즈의 행 baseline과 세그먼트 원시 중심 불일치를 validationPositionsPt로 분리해 7면 골든·positionPt 단조·기존 14면 회귀를 모두 통과시켰다.",
+      "previous_attempt": {
+        "status": "blocked",
+        "blocked_at": "2026-09-03T16:17:26+0900",
+        "blocked_reason": "AC 골든 2건이 실패했다. Fuji p17은 골든의 라벨 A→E와 현재 페이지 좌표의 E→A가 충돌하고, Karatsu 후쿠즈 p1은 Y축 Y6-Y5/Y5-Y4가 중앙 축척 0.020052980132450337 대비 각각 0.020893829401088974(+4.20%), 0.01811624784053152(-9.66%)로 strict outlier다. 픽스처 수정·도면별 reverse 분기·strict 완화는 step 사양상 금지되어 있다.",
+        "summary": "축 순서 정규화·DEBUG_PARSE를 제거하고 strict 축척·후보별 전체합·부분합 규칙을 정리했으나 Fuji p17과 Karatsu 후쿠즈 골든이 금지된 예외 없이 성립하지 않아 차단했다.",
+        "note": "Claude가 fuji 골든 정정 오류를 되돌리고 karatsu 위치 출처 조사 지시를 step2.md에 추기한 뒤 재개"
+      },
+      "started_at": "2026-09-03T16:19:58+0900",
+      "completed_at": "2026-09-03T16:29:40+0900"
+    },
+    {
+      "step": 3,
+      "name": "elevation-golden-tests",
+      "status": "completed",
+      "summary": "hirosaki 3·karatsu 2(X4 라벨 열 없음 제외)·tsu 1을 제목 기반 골든 블록으로 대조하고, 레벨 라벨을 라벨 열 후보와 레벨 형식으로 제한했으며 짧은 꼬리 허용오차를 0.49로 축소했다.",
+      "started_at": "2026-09-03T16:29:43+0900",
+      "completed_at": "2026-09-03T16:54:01+0900"
+    },
+    {
+      "step": 4,
+      "name": "list-fallback-and-kind",
+      "status": "completed",
+      "summary": "5개 합성 회귀 테스트로 표 머리 fallback의 층간 전파와 이전 층 행 누수를 각각 断面·腹筋에 고정하고, 大梁 부호 판정을 허용된 층 접두 뒤 G 시작으로 좁혔다. 기존 전체 테스트·타입체크·lint를 통과했다.",
+      "started_at": "2026-09-03T16:54:02+0900",
+      "completed_at": "2026-09-03T17:08:10+0900"
+    },
+    {
+      "step": 5,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "골든 16개 변조 전부 실패, main 대비 기존 결과 차이 없음(허용된 ojkk-p4 대상외 12칸 제외), 문턱·순도·타입/린트·短い尾根 반증을 통과했다.",
+      "completed_at": "2026-09-03T18:02:30+0900",
+      "started_at": "2026-09-03T17:08:11+0900"
+    },
+    {
+      "step": 6,
+      "name": "docs-corpus-widen-2",
+      "status": "completed",
+      "summary": "2차 코퍼스 22면의 골든 7/7·3/3·5/5 결과와 R10·R15 열린 잔여를 기록하고, ADR-018·030 결과 및 ADR-045(2段筋·빈 셀 기본값 금지)를 추가했다.",
+      "started_at": "2026-09-03T18:02:31+0900",
+      "completed_at": "2026-09-03T18:20:39+0900"
+    },
+    {
+      "step": 7,
+      "name": "refute-docs",
+      "kind": "verify",
+      "status": "refuted",
+      "summary": "step 6 문서의 새 숫자 일부가 step6-report.json numbers_used에 없어 출처 추적 반증이 성립했다. 표 동일성·범위·R10/R15 개방·ADR-045 형식·R15 미측정 표기는 모두 성립한다.",
+      "started_at": "2026-09-03T18:20:40+0900",
+      "refuted_at": "2026-09-03T18:28:17+0900"
+    }
+  ],
+  "created_at": "2026-09-03T15:30:00+0900",
+  "completed_at": "2026-09-03T18:28:17+0900"
+}

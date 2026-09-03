@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "name": "register-corpus-and-cmap",
+  "exitCode": 1,
+  "timedOut": true,
+  "elapsed": 1800.2691867999965,
+  "stdout_log": "phases\\36-corpus-widen-2\\step0-codex.stdout.log",
+  "stderr_log": "phases\\36-corpus-widen-2\\step0-codex.stderr.log"
+}

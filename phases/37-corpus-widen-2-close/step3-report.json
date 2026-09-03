@@ -1,0 +1,26 @@
+{
+  "blocks_checked": {
+    "hirosaki": 3,
+    "karatsu": 2,
+    "tsu": 1
+  },
+  "series_to_block_rule": "golden.elevations[].title를 compact()한 뒤 제목과 정확히 일치하는 candidate.titles가 유일한 계열을 대응시킨다. S= 축척 접미사는 허용하되 X2通り+5765처럼 다른 제목은 X2와 합치지 않는다.",
+  "label_rule": "치수 연쇄 중심의 후보 x 대역에서 텍스트 바운더리 군집을 만들고 레벨 위치를 가장 많이 설명하는 라벨 열을 우선한다. FL/GL/RCL/天端·下端·上端 계열만 남기고 ▽△▲▼ 접두 기호와 기호만 제거한다. Tsu처럼 같은 레벨 라벨이 인접 군집으로 분리된 레이아웃은 후보 대역과 레벨 위치가 모두 맞는 레벨 토큰만 보완한다. Karatsu X4通り는 텍스트에 라벨 열이 없어 제외했다.",
+  "short_tail_tolerance": {
+    "measured": {
+      "tsu_1170mm": {
+        "actualGapPt": 19.199983515103554,
+        "expectedGapPt": 12.903796881980362,
+        "absoluteErrorRatio": 0.4879328689616593
+      },
+      "hirosaki_2310mm": {
+        "actualGapPt": 11.391016757400052,
+        "expectedGapPt": 11.384612351761499,
+        "absoluteErrorRatio": 0.0005625492937897381
+      }
+    },
+    "value": 0.49
+  },
+  "existing4_unchanged": true,
+  "summary": "hirosaki 3·karatsu 2(X4 라벨 열 없음 제외)·tsu 1을 제목 기반 골든 블록으로 대조하고, 레벨 라벨을 라벨 열 후보와 레벨 형식으로 제한했으며 짧은 꼬리 허용오차를 0.49로 축소했다."
+}

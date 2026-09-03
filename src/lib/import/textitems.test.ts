@@ -39,4 +39,43 @@ describe('toTextItems', () => {
       ),
     ).toEqual([])
   })
+
+  it('folds overlapped copies of the same glyph and keeps the first item', () => {
+    const items = toTextItems(
+      Array.from({ length: 7 }, (_, index) => ({
+        str: 'A',
+        width: 10,
+        height: 10,
+        transform: [1, 0, 0, 1, index === 0 ? 100 : 100 + index * 0.08, 200],
+      })),
+      [1, 0, 0, -1, 0, 400],
+    )
+
+    expect(items).toHaveLength(1)
+    expect(items[0]).toMatchObject({ str: 'A', x: 100, y: 200 })
+  })
+
+  it('does not fold glyphs more than 0.5pt apart', () => {
+    const items = toTextItems(
+      [
+        { str: 'A', width: 10, height: 10, transform: [1, 0, 0, 1, 100, 200] },
+        { str: 'A', width: 10, height: 10, transform: [1, 0, 0, 1, 100.6, 200] },
+      ],
+      [1, 0, 0, -1, 0, 400],
+    )
+
+    expect(items).toHaveLength(2)
+  })
+
+  it('does not fold different glyphs at the same position', () => {
+    const items = toTextItems(
+      [
+        { str: 'A', width: 10, height: 10, transform: [1, 0, 0, 1, 100, 200] },
+        { str: 'B', width: 10, height: 10, transform: [1, 0, 0, 1, 100, 200] },
+      ],
+      [1, 0, 0, -1, 0, 400],
+    )
+
+    expect(items).toHaveLength(2)
+  })
 })

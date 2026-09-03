@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 
+import { pdfDocumentOptions } from '../src/lib/import/pdf-text.ts'
 import { toTextItems } from '../src/lib/import/textitems.ts'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
@@ -31,6 +32,7 @@ const outputDirectory = resolve(
   repositoryRoot,
   'tests/fixtures/section-import/textitems',
 )
+const pdfjsAssetDirectory = `${resolve(repositoryRoot, 'node_modules/pdfjs-dist')}/`
 
 // 표제란(도면 우하단 블록) 제외 사각형은 생성기와 검증 테스트가 한 파일을 본다 —
 // 여기에만 적으면 재생성 때 경계가 바뀌어도 픽스처 검증이 눈치채지 못한다.
@@ -54,6 +56,28 @@ const targets = [
   { cacheFile: 'dwg-ojkk-zumen6.pdf', page: 4, output: 'ojkk-p4.json' },
   { cacheFile: 'dwg-kani-kids.pdf', page: 39, output: 'kani-p39.json' },
   { cacheFile: 'dwg-kani-kids.pdf', page: 41, output: 'kani-p41.json' },
+  { cacheFile: 'dwg-karatsu-fukuzu.pdf', page: 1, output: 'karatsu-fukuzu-p1.json' },
+  { cacheFile: 'dwg-karatsu-shousai.pdf', page: 1, output: 'karatsu-shousai-p1.json' },
+  { cacheFile: 'dwg-karatsu-hashirashin.pdf', page: 1, output: 'karatsu-hashirashin-p1.json' },
+  { cacheFile: 'dwg-karatsu-jikugumi1.pdf', page: 1, output: 'karatsu-jikugumi1-p1.json' },
+  { cacheFile: 'dwg-karatsu-jikugumi2.pdf', page: 1, output: 'karatsu-jikugumi2-p1.json' },
+  { cacheFile: 'dwg-fuji-kanritou.pdf', page: 15, output: 'fuji-p15.json' },
+  { cacheFile: 'dwg-fuji-kanritou.pdf', page: 17, output: 'fuji-p17.json' },
+  { cacheFile: 'dwg-fuji-kanritou.pdf', page: 18, output: 'fuji-p18.json' },
+  { cacheFile: 'dwg-fuji-kanritou.pdf', page: 20, output: 'fuji-p20.json' },
+  { cacheFile: 'dwg-ina-pump.pdf', page: 6, output: 'ina-p6.json' },
+  { cacheFile: 'dwg-ina-pump.pdf', page: 7, output: 'ina-p7.json' },
+  { cacheFile: 'dwg-saiki-fire.pdf', page: 1, output: 'saiki-p1.json' },
+  { cacheFile: 'dwg-saiki-fire.pdf', page: 2, output: 'saiki-p2.json' },
+  { cacheFile: 'dwg-tsu-kanritou.pdf', page: 16, output: 'tsu-p16.json' },
+  { cacheFile: 'dwg-tsu-kanritou.pdf', page: 20, output: 'tsu-p20.json' },
+  { cacheFile: 'dwg-tsu-kanritou.pdf', page: 21, output: 'tsu-p21.json' },
+  { cacheFile: 'dwg-tsu-kanritou.pdf', page: 22, output: 'tsu-p22.json' },
+  { cacheFile: 'dwg-hirosaki-kikyono.pdf', page: 21, output: 'hirosaki-p21.json' },
+  { cacheFile: 'dwg-hirosaki-kikyono.pdf', page: 25, output: 'hirosaki-p25.json' },
+  { cacheFile: 'dwg-shibata-fire.pdf', page: 1, output: 'shibata-p1.json' },
+  { cacheFile: 'dwg-shibata-fire.pdf', page: 7, output: 'shibata-p7.json' },
+  { cacheFile: 'dwg-shibata-fire.pdf', page: 13, output: 'shibata-p13.json' },
 ]
 
 async function titleBlockExclusions() {
@@ -123,10 +147,9 @@ async function extractFixtures(sources, exclusions) {
     // pdfjs-dist 6.x legacy builds disable Web Workers automatically in Node
     // and use the in-process fake-worker path. useWorkerFetch additionally
     // prevents worker-side resource fetching for this local-only extraction.
-    const loadingTask = getDocument({
-      data: new Uint8Array(source.data),
-      useWorkerFetch: false,
-    })
+    const loadingTask = getDocument(
+      pdfDocumentOptions(new Uint8Array(source.data), pdfjsAssetDirectory),
+    )
     const pdfDocument = await loadingTask.promise
 
     try {

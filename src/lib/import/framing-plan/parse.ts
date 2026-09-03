@@ -1,4 +1,11 @@
-import { compact, recoverRows, verticalRuns, type TextSegment } from '../runs'
+import {
+  compact,
+  recoverRows,
+  verticalRuns,
+  VERTICAL_RUN_GAP_RATIO,
+  type TextSegment,
+  type VerticalRun,
+} from '../runs'
 import type { TextItem } from '../types'
 import type { TextPage } from '../section-list/types'
 
@@ -30,6 +37,8 @@ import type {
  * 위한 것이다 — 부분 일치를 라벨로 받으면 枝番 축이 조용히 본번으로 둔갑한다.
  */
 const AXIS_LABEL_PATTERN = /[a-z]?[XY]\d+/y
+const SIMPLE_AXIS_LABEL_PATTERN = /^(?:[A-Z](?:')?|\d{1,2})$/
+const SIMPLE_NUMERIC_LABEL_PATTERN = /^\d$/
 /** 치수 문자열 — 쉼표 구분(6,000)과 무구분(8700) 둘 다 실물에 있다 */
 export const DIMENSION_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d{2,})$/
 /**
@@ -38,7 +47,7 @@ export const DIMENSION_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d{2,})$/
  */
 const MARK_PATTERN = /^(?:C|G|FC|FG|B|CB|S|W)\d+[A-Z]?$/
 /** 블록 제목. 「2階床伏図1/100」처럼 축척이 붙어 오므로 부분 일치로 본다 */
-const BLOCK_TITLE_PATTERN = /伏図/
+const BLOCK_TITLE_PATTERN = /伏図|柱芯線図/
 
 // 실측 기반 허용오차. 근거는 스파이크 실측값이고 ADR-030에 적었다.
 /** 라벨을 같은 밴드로 보는 고정 좌표 허용오차. 실측 편차는 1pt 미만이다 */
@@ -72,9 +81,13 @@ const GRID_PAIRING_DISTANCE_RATIO = 1.5
 
 interface LabelToken {
   label: string
-  letter: 'X' | 'Y'
+  letter?: 'X' | 'Y'
+  /** prefix가 없는 숫자·알파벳 라벨은 방향을 이름만으로 알 수 없다 */
+  simpleKind?: 'numeric' | 'alpha'
   x: number
   y: number
+  /** 세그먼트의 원시 바운딩 박스 중심. strict 축척 검증에만 사용한다. */
+  rawY: number
 }
 
 interface PositionedToken {
@@ -91,20 +104,29 @@ interface DimensionToken {
 
 interface AxisSequence {
   letters: Set<'X' | 'Y'>
+  simpleKinds: Set<'numeric' | 'alpha'>
   /** positionPt가 어느 좌표인가 — 치수 매칭이 같은 좌표를 봐야 한다 */
   alongKey: 'x' | 'y'
   /** 밴드의 고정 좌표(평균) — 치수 창의 기준 */
   across: number
+  /** 밴드가 끊겨 같은 축을 이어 붙인 경우 구간별 원래 밴드 좌표 */
+  axisAcross: number[]
+  /** 같은 라벨이 여러 밴드에 있었을 때 치수 열을 시도할 좌표 */
+  axisAcrossOptions: number[][]
   axes: AxisCandidate[]
+  /** 라벨 세그먼트의 원시 중심으로 잰 축 위치 — 공개 후보 좌표와 분리한다 */
+  validationPositionsPt: number[]
 }
 
 /** 치수·축척까지 확인이 끝난 축 열. 그리드 정의와 블록이 둘 다 여기서 나온다 */
 interface ValidatedSequence extends AxisSequence {
-  direction: 'X' | 'Y'
+  direction?: 'X' | 'Y'
   spansMm: number[]
   scalePtPerMm: number
   totalConfirmed: boolean
 }
+
+type DirectedSequence = ValidatedSequence & { direction: 'X' | 'Y' }
 
 /**
  * 세그먼트 하나를 라벨의 연속으로 되가른다. `makeSegments`는 표의 칸을 묶으려고
@@ -117,7 +139,11 @@ interface ValidatedSequence extends AxisSequence {
  *
  * 세그먼트 전체가 라벨로 남김없이 설명될 때만 받는다.
  */
-function splitAxisLabels(segment: TextSegment, y: number): LabelToken[] {
+function splitAxisLabels(
+  segment: TextSegment,
+  y: number,
+  rowSegments: TextSegment[],
+): LabelToken[] {
   // NFKC가 한 글자를 여러 글자로 펴는 경우가 있으므로 1:1을 가정하지 않고
   // 문자마다 텍스트상의 구간을 기록해 되찾는다
   let text = ''
@@ -131,34 +157,87 @@ function splitAxisLabels(segment: TextSegment, y: number): LabelToken[] {
   if (text === '') return []
 
   const tokens: LabelToken[] = []
-  AXIS_LABEL_PATTERN.lastIndex = 0
-  while (AXIS_LABEL_PATTERN.lastIndex < text.length) {
-    const start = AXIS_LABEL_PATTERN.lastIndex
-    const match = AXIS_LABEL_PATTERN.exec(text)
-    if (!match) return []
-    const end = AXIS_LABEL_PATTERN.lastIndex
+  if (/^[a-z]?[XY]/.test(text)) {
+    AXIS_LABEL_PATTERN.lastIndex = 0
+    while (AXIS_LABEL_PATTERN.lastIndex < text.length) {
+      const start = AXIS_LABEL_PATTERN.lastIndex
+      const match = AXIS_LABEL_PATTERN.exec(text)
+      if (!match) return []
+      const end = AXIS_LABEL_PATTERN.lastIndex
 
-    const owned = spans
-      .filter((span) => span.start < end && span.end > start)
-      .map((span) => span.item)
-    if (owned.length === 0) return []
+      const owned = spans
+        .filter((span) => span.start < end && span.end > start)
+        .map((span) => span.item)
+      if (owned.length === 0) return []
 
-    let minX = Number.POSITIVE_INFINITY
-    let maxX = Number.NEGATIVE_INFINITY
-    for (const item of owned) {
-      if (item.x < minX) minX = item.x
-      if (item.x + item.w > maxX) maxX = item.x + item.w
+      let minX = Number.POSITIVE_INFINITY
+      let maxX = Number.NEGATIVE_INFINITY
+      for (const item of owned) {
+        if (item.x < minX) minX = item.x
+        if (item.x + item.w > maxX) maxX = item.x + item.w
+      }
+
+      tokens.push({
+        label: match[0],
+        letter: match[0].includes('X') ? 'X' : 'Y',
+        x: (minX + maxX) / 2,
+        y,
+        rawY: segment.centerY,
+      })
     }
-
-    tokens.push({
-      label: match[0],
-      letter: match[0].includes('X') ? 'X' : 'Y',
-      x: (minX + maxX) / 2,
-      y,
-    })
   }
 
-  return tokens
+  if (tokens.length > 0) return tokens
+
+  const simple = compact(text)
+  if (!SIMPLE_AXIS_LABEL_PATTERN.test(simple)) return []
+
+  // `56`처럼 하나의 pdf.js 세그먼트에 두 개의 한 자리 라벨이 붙는 경우만
+  // 실제 문자 좌표로 되가른다. 10·11 같은 두 자리 라벨은 주변에 연속된 한
+  // 자리 라벨이 있을 때만 쪼개므로, 일반 치수 문자열을 축으로 오인하지 않는다.
+  if (
+    simple.length === 2 &&
+    /^[0-9]{2}$/.test(simple) &&
+    segment.items.length === 2 &&
+    segment.items.every((item) => SIMPLE_NUMERIC_LABEL_PATTERN.test(compact(item.str)))
+  ) {
+    const nearbyNumbers = rowSegments
+      .filter((candidate) => candidate !== segment)
+      .map((candidate) => compact(candidate.text))
+      .filter((candidate) => SIMPLE_NUMERIC_LABEL_PATTERN.test(candidate))
+      .map((candidate) => Number(candidate))
+    const first = Number(simple[0])
+    const second = Number(simple[1])
+    const min = Math.min(...nearbyNumbers)
+    const max = Math.max(...nearbyNumbers)
+    const fillsGap =
+      nearbyNumbers.length > 0 &&
+      first + 1 === second &&
+      min < first &&
+      max > second
+    if (fillsGap) {
+      return segment.items.map((item) => {
+        const piece = compact(item.str)
+        return {
+          label: piece,
+          simpleKind: 'numeric',
+          x: item.x + item.w / 2,
+          y,
+          rawY: segment.centerY,
+        }
+      })
+    }
+  }
+
+  return [
+    {
+      label: simple,
+      simpleKind: /^[0-9]+$/.test(simple) ? 'numeric' : 'alpha',
+      x: segment.centerX,
+      y,
+      rawY: segment.centerY,
+    },
+  ]
 }
 
 interface CollectedTokens {
@@ -168,6 +247,69 @@ interface CollectedTokens {
   titles: PositionedToken[]
 }
 
+/**
+ * CMap이 글자마다 별도 아이템을 만든 세로 치수를 보완한다. `verticalRuns`의
+ * 공개 문턱은 바꾸지 않고, 그 결과가 한 글자씩 남은 경우에만 같은 열의 인접
+ * 조각을 다시 이어 붙인다. 조각 안쪽의 최소 간격을 기준으로 삼고 기존 세로
+ * 런의 배수(`VERTICAL_RUN_GAP_RATIO`)를 그대로 사용하므로, 페이지 크기나
+ * 발주처에 종속된 절대 좌표 문턱을 만들지 않는다.
+ */
+function mergeVerticalFragments(items: TextItem[]): VerticalRun[] {
+  const runs = verticalRuns(items)
+  const columns = new Map<number, VerticalRun[]>()
+  for (const run of runs) {
+    const column = columns.get(run.x)
+    if (column) column.push(run)
+    else columns.set(run.x, [run])
+  }
+
+  const merged: VerticalRun[] = []
+  for (const column of columns.values()) {
+    const ordered = [...column].sort((left, right) => right.y - left.y)
+    const oneCharGaps = ordered
+      .slice(1)
+      .map((run, index) => ordered[index].y - run.y)
+      .filter(
+        (gap, index) =>
+          gap > 0 &&
+          ordered[index].text.length === 1 &&
+          ordered[index + 1].text.length === 1,
+      )
+    const baseGap = Math.min(...oneCharGaps)
+    if (!Number.isFinite(baseGap)) {
+      merged.push(...ordered)
+      continue
+    }
+
+    let current: VerticalRun[] = []
+    const flush = () => {
+      if (current.length === 0) return
+      merged.push({
+        text: current.map((run) => run.text).join(''),
+        x: current[0].x,
+        y:
+          current.reduce((total, run) => total + run.y, 0) / current.length,
+      })
+      current = []
+    }
+
+    for (const run of ordered) {
+      const previous = current.at(-1)
+      const gap = previous ? previous.y - run.y : Number.POSITIVE_INFINITY
+      const adjacent =
+        previous !== undefined &&
+        previous.text.length === 1 &&
+        run.text.length === 1 &&
+        gap <= baseGap * VERTICAL_RUN_GAP_RATIO
+      if (!adjacent) flush()
+      current.push(run)
+    }
+    flush()
+  }
+
+  return merged
+}
+
 function collectTokens(page: TextPage): CollectedTokens {
   const labels: LabelToken[] = []
   const dimensions: DimensionToken[] = []
@@ -175,41 +317,49 @@ function collectTokens(page: TextPage): CollectedTokens {
   const titles: PositionedToken[] = []
 
   const classify = (text: string, x: number, y: number) => {
-    if (DIMENSION_PATTERN.test(text)) {
+    const normalizedText = compact(text)
+    if (
+      DIMENSION_PATTERN.test(normalizedText) &&
+      !SIMPLE_AXIS_LABEL_PATTERN.test(normalizedText)
+    ) {
       dimensions.push({
-        valueMm: Number.parseInt(text.replaceAll(',', ''), 10),
+        valueMm: Number.parseInt(normalizedText.replaceAll(',', ''), 10),
         x,
         y,
       })
       return
     }
-    if (MARK_PATTERN.test(text)) {
-      marks.push({ text, x, y })
+    if (MARK_PATTERN.test(normalizedText)) {
+      marks.push({ text: normalizedText, x, y })
       return
     }
-    if (BLOCK_TITLE_PATTERN.test(text)) titles.push({ text, x, y })
+    if (BLOCK_TITLE_PATTERN.test(normalizedText)) {
+      titles.push({ text: normalizedText, x, y })
+    }
   }
 
   for (const row of recoverRows(page.items)) {
     for (const segment of row.segments) {
-      labels.push(...splitAxisLabels(segment, row.y))
+      labels.push(...splitAxisLabels(segment, row.y, row.segments))
       classify(segment.compact, segment.centerX, row.y)
     }
   }
 
   // 세로쓰기는 문자 좌표가 세로로 흐르므로 되가르기를 걸지 않는다 — 실측 코퍼스의
   // 세로 런은 치수뿐이고, 세로 라벨이 붙어 나오는 도면은 빈 후보로 실패한다 (R10)
-  for (const run of verticalRuns(page.items)) {
-    if (/^[a-z]?[XY]\d+$/.test(run.text)) {
+  for (const run of mergeVerticalFragments(page.items)) {
+    const normalizedText = compact(run.text)
+    if (/^[a-z]?[XY]\d+$/.test(normalizedText)) {
       labels.push({
-        label: run.text,
-        letter: run.text.includes('X') ? 'X' : 'Y',
+        label: normalizedText,
+        letter: normalizedText.includes('X') ? 'X' : 'Y',
         x: run.x,
         y: run.y,
+        rawY: run.y,
       })
       continue
     }
-    classify(run.text, run.x, run.y)
+    classify(normalizedText, run.x, run.y)
   }
 
   return { labels, dimensions, marks, titles }
@@ -251,21 +401,51 @@ function axisSequences(
     const flush = () => {
       if (current.length >= 2) {
         sequences.push({
-          letters: new Set(current.map((token) => token.letter)),
+          letters: new Set(
+            current.flatMap((token) =>
+              token.letter === undefined ? [] : [token.letter],
+            ),
+          ),
+          simpleKinds: new Set(
+            current.flatMap((token) =>
+              token.simpleKind === undefined ? [] : [token.simpleKind],
+            ),
+          ),
           alongKey: along,
           across:
             current.reduce((total, token) => total + token[across], 0) /
             current.length,
+          axisAcross: current.map((token) => token[across]),
+          axisAcrossOptions: current.map((token) => [token[across]]),
           axes: current.map((token) => ({
             label: token.label,
             positionPt: token[along],
           })),
+          validationPositionsPt: current.map((token) =>
+            along === 'x' ? token.x : token.rawY,
+          ),
         })
       }
       current = []
     }
 
     for (const token of ordered) {
+      const currentHasNamedLabels = current.some(
+        (seen) => seen.letter !== undefined,
+      )
+      const tokenHasNamedLabel = token.letter !== undefined
+      const currentSimpleKinds = new Set(
+        current.flatMap((seen) =>
+          seen.simpleKind === undefined ? [] : [seen.simpleKind],
+        ),
+      )
+      const tokenChangesLabelForm =
+        current.length > 0 &&
+        (currentHasNamedLabels !== tokenHasNamedLabel ||
+          (currentSimpleKinds.size > 0 &&
+            token.simpleKind !== undefined &&
+            !currentSimpleKinds.has(token.simpleKind)))
+      if (tokenChangesLabelForm) flush()
       if (current.some((seen) => seen.label === token.label)) flush()
       current.push(token)
     }
@@ -275,34 +455,373 @@ function axisSequences(
   return sequences
 }
 
-/** 인접 축 쌍의 중점에서, 라벨 밴드의 치수 창 안에 있는 치수를 찾는다 */
-function dimensionAt(
+/**
+ * 라벨 하나가 다른 대역으로 밀려도, 같은 축의 끝 라벨이 같은 위치에서
+ * 이어지면 한 열로 접는다. Karatsu 후쿠즈에서는 Y6~Y2가 한쪽 대역에,
+ * Y2~Y0가 다른 대역에 있어 Y1만 한쪽에 빠져 있다. 대역 전체를 넓혀 버리면
+ * 옆 도면을 삼키므로, 끝 라벨·좌표가 모두 겹치는 경우에만 접는다.
+ */
+function mergeAxisSequences(sequences: AxisSequence[]): AxisSequence[] {
+  const merged = [...sequences]
+  let changed = true
+
+  while (changed) {
+    changed = false
+    outer: for (let leftIndex = 0; leftIndex < merged.length; leftIndex++) {
+      for (
+        let rightIndex = leftIndex + 1;
+        rightIndex < merged.length;
+        rightIndex++
+      ) {
+        const left = merged[leftIndex]
+        const right = merged[rightIndex]
+        if (left.alongKey !== right.alongKey) continue
+        if (
+          left.letters.size !== right.letters.size ||
+          [...left.letters].some((letter) => !right.letters.has(letter)) ||
+          left.simpleKinds.size !== right.simpleKinds.size ||
+          [...left.simpleKinds].some((kind) => !right.simpleKinds.has(kind))
+        ) {
+          continue
+        }
+
+        const joins = (
+          first: AxisSequence,
+          second: AxisSequence,
+        ): AxisSequence | undefined => {
+          const firstAxis = first.axes.at(-1)
+          const secondAxis = second.axes[0]
+          if (
+            !firstAxis ||
+            !secondAxis ||
+            firstAxis.label !== secondAxis.label ||
+            Math.abs(firstAxis.positionPt - secondAxis.positionPt) >
+              MIDPOINT_TOLERANCE_PT
+          ) {
+            return undefined
+          }
+          const axes = [...first.axes, ...second.axes.slice(1)]
+          if (
+            axes.length <= Math.max(first.axes.length, second.axes.length) ||
+            axes.some(
+              (axis, index) =>
+                index > 0 &&
+                axis.positionPt <= axes[index - 1].positionPt,
+            )
+          ) {
+            return undefined
+          }
+          const axisAcross = [
+            ...first.axisAcross,
+            ...second.axisAcross.slice(1),
+          ]
+          const axisAcrossOptions = [
+            ...first.axisAcrossOptions,
+            ...second.axisAcrossOptions.slice(1),
+          ]
+          return {
+            letters: new Set(first.letters),
+            simpleKinds: new Set(first.simpleKinds),
+            alongKey: first.alongKey,
+            across:
+              axisAcross.reduce((total, value) => total + value, 0) /
+              axisAcross.length,
+            axisAcross,
+            axisAcrossOptions,
+            axes,
+            validationPositionsPt: [
+              ...first.validationPositionsPt,
+              ...second.validationPositionsPt.slice(1),
+            ],
+          }
+        }
+
+        const union = (): AxisSequence | undefined => {
+          const shared = left.axes.some((leftAxis) =>
+            right.axes.some(
+              (rightAxis) =>
+                rightAxis.label === leftAxis.label &&
+                Math.abs(rightAxis.positionPt - leftAxis.positionPt) <=
+                  MIDPOINT_TOLERANCE_PT,
+            ),
+          )
+          if (!shared) return undefined
+
+          const entries = [...left.axes, ...right.axes]
+            .map((axis, index) => ({
+              axis,
+              validationPositionPt:
+                index < left.axes.length
+                  ? left.validationPositionsPt[index]
+                  : right.validationPositionsPt[index - left.axes.length],
+              acrossOptions:
+                index < left.axes.length
+                  ? left.axisAcrossOptions[index]
+                  : right.axisAcrossOptions[index - left.axes.length],
+            }))
+            .sort((firstEntry, secondEntry) =>
+              firstEntry.axis.positionPt - secondEntry.axis.positionPt,
+            )
+          const unique: typeof entries = []
+          for (const entry of entries) {
+            const duplicate = unique.find(
+              (seen) =>
+                seen.axis.label === entry.axis.label &&
+                Math.abs(seen.axis.positionPt - entry.axis.positionPt) <=
+                  MIDPOINT_TOLERANCE_PT,
+            )
+            if (duplicate) {
+              duplicate.acrossOptions = [
+                ...new Set([...duplicate.acrossOptions, ...entry.acrossOptions]),
+              ]
+            } else {
+              unique.push(entry)
+            }
+          }
+          if (unique.length <= Math.max(left.axes.length, right.axes.length)) {
+            return undefined
+          }
+          const axisAcrossOptions = unique.map((entry) => entry.acrossOptions)
+          const axisAcross = axisAcrossOptions.map(
+            (options) => options[0] ?? left.across,
+          )
+          return {
+            letters: new Set(left.letters),
+            simpleKinds: new Set(left.simpleKinds),
+            alongKey: left.alongKey,
+            across:
+              axisAcross.reduce((total, value) => total + value, 0) /
+              axisAcross.length,
+            axisAcross,
+            axisAcrossOptions,
+            axes: unique.map((entry) => entry.axis),
+            validationPositionsPt: unique.map(
+              (entry) => entry.validationPositionPt,
+            ),
+          }
+        }
+
+        const joined = joins(left, right) ?? joins(right, left) ?? union()
+        if (!joined) continue
+        merged.splice(rightIndex, 1)
+        merged.splice(leftIndex, 1, joined)
+        changed = true
+        break outer
+      }
+    }
+  }
+
+  return merged
+}
+
+/** 인접 축 쌍의 중점에서, 라벨 밴드의 치수 창 안에 있는 치수를 모은다 */
+function dimensionCandidatesAt(
   dimensions: DimensionToken[],
   used: Set<DimensionToken>,
   along: 'x' | 'y',
   across: 'x' | 'y',
   midpoint: number,
   bandAcross: number,
-): DimensionToken | undefined {
-  let best: DimensionToken | undefined
-  let bestDistance = Number.POSITIVE_INFINITY
-
-  for (const token of dimensions) {
-    if (used.has(token)) continue
+): DimensionToken[] {
+  return dimensions
+    .filter((token) => {
+      if (used.has(token)) return false
     const alongDistance = Math.abs(token[along] - midpoint)
-    if (alongDistance > MIDPOINT_TOLERANCE_PT) continue
-    if (Math.abs(token[across] - bandAcross) > DIMENSION_WINDOW_PT) continue
-    if (alongDistance < bestDistance) {
-      best = token
-      bestDistance = alongDistance
-    }
-  }
-
-  return best
+      return (
+        alongDistance <= MIDPOINT_TOLERANCE_PT &&
+        Math.abs(token[across] - bandAcross) <= DIMENSION_WINDOW_PT
+      )
+    })
+    .sort(
+      (left, right) =>
+        Math.abs(left[along] - midpoint) - Math.abs(right[along] - midpoint),
+    )
 }
 
 function median(values: number[]): number {
   return [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]
+}
+
+interface DimensionSolution {
+  spans: DimensionToken[]
+  scalePtPerMm: number
+  scaleValid: boolean
+  midpointDistance: number
+}
+
+/**
+ * 같은 중점에 여러 치수 열이 놓인 경우를 최근접 하나로 자르지 않는다. 각
+ * 조합을 축척 검증까지 통과시킨 뒤, 값 배열이 하나로 수렴할 때만 후보를
+ * 만든다. 이로써 Fuji의 벽면 열과 스팬 열을 구별하고, Hirosaki의 전체
+ * 치수가 한 인접 중점과 겹치는 경우에도 전체 치수를 스팬으로 소비하지 않는다.
+ */
+function dimensionSolutions(
+  sequence: AxisSequence,
+  dimensions: DimensionToken[],
+): DimensionSolution[] {
+  const choices: DimensionToken[][] = []
+  for (let i = 0; i + 1 < sequence.axes.length; i++) {
+    const midpoint =
+      (sequence.axes[i].positionPt + sequence.axes[i + 1].positionPt) / 2
+    const candidates = dimensionCandidatesAtAcrossOptions(
+      dimensions,
+      new Set(),
+      sequence.alongKey,
+      sequence.alongKey === 'y' ? 'x' : 'y',
+      midpoint,
+      [
+        ...(sequence.axisAcrossOptions[i] ?? []),
+        ...(sequence.axisAcrossOptions[i + 1] ?? []),
+      ],
+    )
+    if (candidates.length === 0) return []
+    choices.push(candidates)
+  }
+
+  const solutions: DimensionSolution[] = []
+  const selected: DimensionToken[] = []
+  const used = new Set<DimensionToken>()
+
+  const visit = (index: number) => {
+    if (solutions.length >= 4096) return
+    if (index === choices.length) {
+      const scales = selected.map(
+        (span, i) =>
+          (sequence.validationPositionsPt[i + 1] -
+            sequence.validationPositionsPt[i]) /
+          span.valueMm,
+      )
+      const medianScale = median(scales)
+      const outlierCount = scales.filter(
+        (scale) => Math.abs(scale / medianScale - 1) > SCALE_TOLERANCE_RATIO,
+      ).length
+      solutions.push({
+        spans: [...selected],
+        scalePtPerMm: medianScale,
+        midpointDistance: selected.reduce(
+          (total, span, spanIndex) =>
+            total +
+              Math.abs(
+                span[sequence.alongKey] -
+                  (sequence.axes[spanIndex].positionPt +
+                    sequence.axes[spanIndex + 1].positionPt) /
+                    2,
+              ),
+          0,
+        ),
+        scaleValid: outlierCount === 0,
+      })
+      return
+    }
+
+    for (const candidate of choices[index]) {
+      if (used.has(candidate)) continue
+      used.add(candidate)
+      selected.push(candidate)
+      visit(index + 1)
+      selected.pop()
+      used.delete(candidate)
+      if (solutions.length >= 4096) return
+    }
+  }
+
+  visit(0)
+  const unique = new Map<string, DimensionSolution>()
+  for (const solution of solutions) {
+    const key = solution.spans.map((span) => span.valueMm).join(',')
+    if (!unique.has(key)) unique.set(key, solution)
+  }
+  return [...unique.values()]
+}
+
+function totalCandidates(
+  sequence: AxisSequence,
+  dimensions: DimensionToken[],
+  used: Set<DimensionToken>,
+  firstIndex: number,
+  lastIndex: number,
+): DimensionToken[] {
+  const midpoint =
+    (sequence.axes[firstIndex].positionPt +
+      sequence.axes[lastIndex].positionPt) /
+    2
+  return dimensionCandidatesAtAcrossOptions(
+    dimensions,
+    used,
+    sequence.alongKey,
+    sequence.alongKey === 'y' ? 'x' : 'y',
+    midpoint,
+    [
+      ...(sequence.axisAcrossOptions[firstIndex] ?? []),
+      ...(sequence.axisAcrossOptions[lastIndex] ?? []),
+    ],
+  )
+}
+
+interface PartialTotal {
+  firstIndex: number
+  lastIndex: number
+  token: DimensionToken
+}
+
+/**
+ * 축의 한쪽 끝에서 시작하는 연속 구간의 부분 합만 쓴다. 부분 합이 확인하는
+ * 스팬보다 미확정 스팬이 많으면 작은 국소 합을 전체 축의 근거로 오인하기
+ * 쉬우므로 무시한다(예: Karatsu의 4,010·4,165). 내부 구간은 부분합과
+ * 축을 혼동하기 쉽기 때문에 쓰지 않는다.
+ */
+function partialTotal(
+  sequence: AxisSequence,
+  solution: DimensionSolution,
+  dimensions: DimensionToken[],
+): PartialTotal | undefined {
+  const spanCount = solution.spans.length
+  const used = new Set(solution.spans)
+
+  const hasMoreConfirmedThanUnresolved = (coveredSpanCount: number) => {
+    const unresolvedSpanCount = spanCount - coveredSpanCount
+    return coveredSpanCount > unresolvedSpanCount
+  }
+
+  for (let lastIndex = sequence.axes.length - 2; lastIndex >= 1; lastIndex--) {
+    const coveredSpanCount = lastIndex
+    const covered = solution.spans
+      .slice(0, lastIndex)
+      .reduce((sum, span) => sum + span.valueMm, 0)
+    if (!hasMoreConfirmedThanUnresolved(coveredSpanCount)) continue
+    const match = totalCandidates(
+      sequence,
+      dimensions,
+      used,
+      0,
+      lastIndex,
+    ).find((candidate) => candidate.valueMm === covered)
+    if (match) return { firstIndex: 0, lastIndex, token: match }
+  }
+
+  for (let firstIndex = 1; firstIndex < sequence.axes.length - 1; firstIndex++) {
+    const coveredSpanCount = sequence.axes.length - 1 - firstIndex
+    const covered = solution.spans
+      .slice(firstIndex)
+      .reduce((sum, span) => sum + span.valueMm, 0)
+    if (!hasMoreConfirmedThanUnresolved(coveredSpanCount)) continue
+    const match = totalCandidates(
+      sequence,
+      dimensions,
+      used,
+      firstIndex,
+      sequence.axes.length - 1,
+    ).find((candidate) => candidate.valueMm === covered)
+    if (match) {
+      return {
+        firstIndex,
+        lastIndex: sequence.axes.length - 1,
+        token: match,
+      }
+    }
+  }
+
+  return undefined
 }
 
 function validateSequence(
@@ -314,78 +833,362 @@ function validateSequence(
     issue('ラベル文字混在')
     return undefined
   }
-  const alongKey = sequence.alongKey
-  const acrossKey: 'x' | 'y' = alongKey === 'y' ? 'x' : 'y'
-
-  const used = new Set<DimensionToken>()
-  const spans: DimensionToken[] = []
-  for (let i = 0; i + 1 < sequence.axes.length; i++) {
-    const midpoint =
-      (sequence.axes[i].positionPt + sequence.axes[i + 1].positionPt) / 2
-    const dimension = dimensionAt(
-      dimensions,
-      used,
-      alongKey,
-      acrossKey,
-      midpoint,
-      sequence.across,
-    )
-    if (!dimension) break
-    used.add(dimension)
-    spans.push(dimension)
-  }
-  if (spans.length < sequence.axes.length - 1) {
-    issue('寸法欠落')
+  const solutions = dimensionSolutions(sequence, dimensions)
+  if (solutions.length === 0) {
+    const hasEverySpanCandidate = sequence.axes
+      .slice(0, -1)
+      .every((axis, index) => {
+        const midpoint =
+          (axis.positionPt + sequence.axes[index + 1].positionPt) / 2
+        return (
+          dimensionCandidatesAtAcrossOptions(
+            dimensions,
+            new Set(),
+            sequence.alongKey,
+            sequence.alongKey === 'y' ? 'x' : 'y',
+            midpoint,
+            [
+              ...(sequence.axisAcrossOptions[index] ?? []),
+              ...(sequence.axisAcrossOptions[index + 1] ?? []),
+            ],
+          ).length > 0
+        )
+      })
+    issue(hasEverySpanCandidate ? '縮尺不整合' : '寸法欠落')
     return undefined
   }
 
-  // 스팬별 실측 축척이 갈리면 치수 오배정이다 — 조용한 그리드를 내느니 실패한다
-  const scales = spans.map(
-    (span, i) =>
-      (sequence.axes[i + 1].positionPt - sequence.axes[i].positionPt) /
-      span.valueMm,
+  const fullTotals = solutions.map((solution) => {
+    const used = new Set(solution.spans)
+    const spanSum = solution.spans.reduce((sum, span) => sum + span.valueMm, 0)
+    const candidates =
+      sequence.axes.length >= 3
+        ? totalCandidates(
+            sequence,
+            dimensions,
+            used,
+            0,
+            sequence.axes.length - 1,
+          )
+        : []
+    return {
+      solution,
+      spanSum,
+      candidates,
+      matching: candidates.some((candidate) => candidate.valueMm === spanSum),
+    }
+  })
+  const matchingTotals = fullTotals.filter((candidate) => candidate.matching)
+  if (matchingTotals.length > 0) {
+    const unique = new Map<string, (typeof matchingTotals)[number]>()
+    for (const candidate of matchingTotals) {
+      const key = candidate.solution.spans.map((span) => span.valueMm).join(',')
+      if (!unique.has(key)) unique.set(key, candidate)
+    }
+    if (unique.size > 1) {
+      issue('寸法列曖昧')
+      return undefined
+    }
+    const selected = [...unique.values()][0]
+    return {
+      ...sequence,
+      direction: [...sequence.letters][0],
+      spansMm: selected.solution.spans.map((span) => span.valueMm),
+      scalePtPerMm: selected.solution.scalePtPerMm,
+      totalConfirmed: true,
+    }
+  }
+
+  const scaleValidTotals = fullTotals.filter(
+    ({ solution }) => solution.scaleValid,
   )
-  const medianScale = median(scales)
-  if (
-    scales.some(
-      (scale) => Math.abs(scale / medianScale - 1) > SCALE_TOLERANCE_RATIO,
-    )
-  ) {
+  if (scaleValidTotals.length === 0) {
     issue('縮尺不整合')
     return undefined
   }
 
-  // 전체 치수(첫-끝 중점)가 있으면 합계 검증식으로 쓴다 — 불일치는 오독 신호다
-  const spanSum = spans.reduce((sum, span) => sum + span.valueMm, 0)
-  const first = sequence.axes[0].positionPt
-  const last = sequence.axes.at(-1)?.positionPt ?? first
-  const total = dimensionAt(
-    dimensions,
-    used,
-    alongKey,
-    acrossKey,
-    (first + last) / 2,
-    sequence.across,
+  const closestDistance = Math.min(
+    ...scaleValidTotals.map(({ solution }) => solution.midpointDistance),
   )
-  if (total && total.valueMm !== spanSum) {
+  const closestScaleValidTotals = scaleValidTotals.filter(
+    ({ solution }) => solution.midpointDistance === closestDistance,
+  )
+
+  const maximumSpan = Math.max(
+    ...closestScaleValidTotals.flatMap((candidate) =>
+      candidate.solution.spans.map((span) => span.valueMm),
+    ),
+  )
+  const conflictingTotals = closestScaleValidTotals.some(
+    ({ candidates, spanSum }) =>
+      candidates.some(
+        (candidate) =>
+          candidate.valueMm >= maximumSpan && candidate.valueMm !== spanSum,
+      ),
+  )
+  if (conflictingTotals) {
     issue('合計不一致')
     return undefined
   }
 
+  const partials = closestScaleValidTotals
+    .map(({ solution }) => partialTotal(sequence, solution, dimensions))
+    .filter((candidate): candidate is PartialTotal => candidate !== undefined)
+  if (partials.length > 0) {
+    const first = partials[0]
+    const same = partials.every(
+      (candidate) =>
+        candidate.firstIndex === first.firstIndex &&
+        candidate.lastIndex === first.lastIndex &&
+        candidate.token.valueMm === first.token.valueMm,
+    )
+    if (!same) {
+      issue('寸法列曖昧')
+      return undefined
+    }
+    const solution = closestScaleValidTotals[0]?.solution
+    if (!solution) return undefined
+    return {
+      ...sequence,
+      direction: [...sequence.letters][0],
+      axes: sequence.axes.slice(first.firstIndex, first.lastIndex + 1),
+      spansMm: solution.spans
+        .slice(first.firstIndex, first.lastIndex)
+        .map((span) => span.valueMm),
+      scalePtPerMm: solution.scalePtPerMm,
+      totalConfirmed: true,
+    }
+  }
+
+  const unique = new Map<string, DimensionSolution>()
+  for (const solution of closestScaleValidTotals.map(
+    ({ solution }) => solution,
+  )) {
+    const key = solution.spans.map((span) => span.valueMm).join(',')
+    if (!unique.has(key)) unique.set(key, solution)
+  }
+  if (unique.size > 1) {
+    issue('寸法列曖昧')
+    return undefined
+  }
+  const selected = [...unique.values()][0]
+
   return {
     ...sequence,
     direction: [...sequence.letters][0],
-    spansMm: spans.map((span) => span.valueMm),
-    scalePtPerMm: medianScale,
-    totalConfirmed: total !== undefined,
+    spansMm: selected.spans.map((span) => span.valueMm),
+    scalePtPerMm: selected.scalePtPerMm,
+    totalConfirmed: false,
   }
 }
 
-function extent(axes: AxisCandidate[]): { min: number; max: number } {
-  return {
-    min: axes[0].positionPt,
-    max: axes[axes.length - 1].positionPt,
+function dimensionCandidatesAtAcrossOptions(
+  dimensions: DimensionToken[],
+  used: Set<DimensionToken>,
+  along: 'x' | 'y',
+  across: 'x' | 'y',
+  midpoint: number,
+  acrossOptions: number[],
+): DimensionToken[] {
+  const candidates = new Map<DimensionToken, number>()
+  for (const bandAcross of acrossOptions) {
+    for (const candidate of dimensionCandidatesAt(
+      dimensions,
+      used,
+      along,
+      across,
+      midpoint,
+      bandAcross,
+    )) {
+      const distance = Math.abs(candidate[along] - midpoint)
+      const previous = candidates.get(candidate)
+      if (previous === undefined || distance < previous) {
+        candidates.set(candidate, distance)
+      }
+    }
   }
+  return [...candidates.entries()]
+    .sort((left, right) => left[1] - right[1])
+    .map(([candidate]) => candidate)
+}
+
+/**
+ * 접두가 없는 라벨은 문자열만으로 X·Y를 결정할 수 없다. 같은 페이지의
+ * 서로 직교한 두 축이 모두 있으면, 두 축의 실측 총 길이가 긴 쪽을 X로
+ * 정한다. 축의 이름을 발주처 관행으로 추측하지 않고, 이미 검증한 치수와
+ * 기하만 사용한다. 한 축만 남은 경우에는 숫자/알파벳 표기의 관례를
+ * 보조적으로 사용하되, 기존처럼 두 축 후보를 모두 검사한 뒤에만 낸다.
+ */
+function directSequences(
+  sequences: ValidatedSequence[],
+): DirectedSequence[] {
+  const directed = sequences.filter(
+    (sequence): sequence is DirectedSequence => sequence.direction !== undefined,
+  )
+  const undirected = sequences.filter(
+    (sequence) => sequence.direction === undefined,
+  )
+  if (undirected.length === 0) return directed
+
+  const alongX = undirected.filter((sequence) => sequence.alongKey === 'x')
+  const alongY = undirected.filter((sequence) => sequence.alongKey === 'y')
+
+  // 같은 방향으로 놓인 숫자·알파벳 축은 숫자를 X, 알파벳을 Y로 읽는다.
+  // 이 판정은 단순한 표기 관례가 아니라 실제로 두 축이 서로 짝지어지는지
+  // 확인한 뒤에만 적용한다. Ina에서는 A·B 대역 하나가 숫자 1·2·3 대역의
+  // 옆에 있고, 다른 A·B 대역은 별도 표의 잡음이라 거리 검사가 그것을 고른다.
+  const numeric = undirected.filter((sequence) =>
+    sequence.simpleKinds.has('numeric'),
+  )
+  const alpha = undirected.filter((sequence) =>
+    sequence.simpleKinds.has('alpha'),
+  )
+  const hasPairedParallelAxes = numeric.some((numericSequence) =>
+    alpha.some(
+      (alphaSequence) =>
+        numericSequence.alongKey === alphaSequence.alongKey &&
+        distanceToRange(
+          alphaSequence.across,
+          extent(numericSequence.axes).min,
+          extent(numericSequence.axes).max,
+        ) <=
+          median(spanLengths(numericSequence.axes)) *
+            GRID_PAIRING_DISTANCE_RATIO,
+    ),
+  )
+  if (hasPairedParallelAxes) {
+    return [
+      ...directed,
+      ...undirected.map((sequence) => ({
+        ...sequence,
+        direction: (sequence.simpleKinds.has('numeric') ? 'X' : 'Y') as
+          | 'X'
+          | 'Y',
+      })),
+    ]
+  }
+
+  if (alongX.length > 0 && alongY.length > 0) {
+    const sum = (sequence: ValidatedSequence) =>
+      sequence.spansMm.reduce((total, span) => total + span, 0)
+    const xLength = median(alongX.map(sum))
+    const yLength = median(alongY.map(sum))
+    const xAlong: 'x' | 'y' = xLength >= yLength ? 'x' : 'y'
+    return [
+      ...directed,
+      ...undirected.map((sequence) => ({
+        ...sequence,
+        direction: (sequence.alongKey === xAlong ? 'X' : 'Y') as 'X' | 'Y',
+      })),
+    ]
+  }
+
+  return [
+    ...directed,
+    ...undirected.map((sequence) => ({
+      ...sequence,
+      direction: (sequence.simpleKinds.has('numeric') ? 'X' : 'Y') as 'X' | 'Y',
+    })),
+  ]
+}
+
+function sameAxisTail(
+  candidate: AxisSequence,
+  other: AxisSequence,
+): boolean {
+  if (candidate === other || candidate.alongKey !== other.alongKey) return false
+  if (candidate.axes.length >= other.axes.length) return false
+  return candidate.axes.every((axis) =>
+    other.axes.some(
+      (otherAxis) =>
+        otherAxis.label === axis.label &&
+        Math.abs(otherAxis.positionPt - axis.positionPt) <=
+          MIDPOINT_TOLERANCE_PT,
+    ),
+  )
+}
+
+function sameAxes(left: AxisCandidate[], right: AxisCandidate[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((axis, index) => {
+      const other = right[index]
+      return (
+        other !== undefined &&
+        axis.label === other.label &&
+        Math.abs(axis.positionPt - other.positionPt) <= MIDPOINT_TOLERANCE_PT
+      )
+    })
+  )
+}
+
+/**
+ * A broken label band can expose the same run three times (for example
+ * E-D-C-B-A, D-C-B-A and C-B-A).  The middle run has no independent
+ * evidence: it is enclosed by two longer/shorter copies of the same tail.
+ * Keep the two boundary runs and discard only that redundant middle copy.
+ */
+function suppressIntermediateSequences<T extends AxisSequence>(
+  sequences: T[],
+): T[] {
+  return sequences.filter((candidate) => {
+    const firstPosition = candidate.axes[0]?.positionPt
+    if (firstPosition === undefined) return true
+    const hasLongerPrefix = sequences.some((other) =>
+      sameAxisTail(candidate, other) &&
+      sameAxes(other.axes.slice(-candidate.axes.length), candidate.axes),
+    )
+    const hasShorterSuffix = sequences.some((other) =>
+      sameAxes(candidate.axes.slice(1), other.axes),
+    )
+    if (hasLongerPrefix && hasShorterSuffix) return false
+
+    const matchingStarts = sequences
+      .filter((other) => sameAxisTail(candidate, other))
+      .map((other) => other.axes[0]?.positionPt)
+      .filter((position): position is number => position !== undefined)
+    return !(
+      matchingStarts.some((position) => position < firstPosition) &&
+      matchingStarts.some((position) => position > firstPosition)
+    )
+  })
+}
+
+function suppressEndpointSubsets<T extends AxisSequence>(sequences: T[]): T[] {
+  return sequences.filter((candidate) => {
+    const first = candidate.axes[0]
+    const last = candidate.axes.at(-1)
+    if (!first || !last) return true
+
+    return !sequences.some((other) => {
+      if (other === candidate || other.alongKey !== candidate.alongKey) {
+        return false
+      }
+      if (other.axes.length <= candidate.axes.length) return false
+      const otherFirst = other.axes[0]
+      const otherLast = other.axes.at(-1)
+      return (
+        otherFirst?.label === first.label &&
+        otherLast?.label === last.label &&
+        otherFirst !== undefined &&
+        otherLast !== undefined &&
+        Math.abs(otherFirst.positionPt - first.positionPt) <=
+          MIDPOINT_TOLERANCE_PT &&
+        Math.abs(otherLast.positionPt - last.positionPt) <=
+          MIDPOINT_TOLERANCE_PT
+      )
+    })
+  })
+}
+
+function extent(axes: AxisCandidate[]): { min: number; max: number } {
+  let min = Number.POSITIVE_INFINITY
+  let max = Number.NEGATIVE_INFINITY
+  for (const axis of axes) {
+    if (axis.positionPt < min) min = axis.positionPt
+    if (axis.positionPt > max) max = axis.positionPt
+  }
+  return { min, max }
 }
 
 /** 점에서 구간까지의 거리. 구간 안이면 0 */
@@ -413,7 +1216,7 @@ function snapTargets(axes: AxisCandidate[]): number[] {
 function spanLengths(axes: AxisCandidate[]): number[] {
   return axes
     .slice(1)
-    .map((axis, i) => axis.positionPt - axes[i].positionPt)
+    .map((axis, i) => Math.abs(axis.positionPt - axes[i].positionPt))
 }
 
 interface Snap {
@@ -457,7 +1260,7 @@ function placementFor(
   return { mark, role: 'ベイ', ix: x.index, iy: y.index }
 }
 
-function gridCandidate(sequence: ValidatedSequence): PlanGridCandidate {
+function gridCandidate(sequence: DirectedSequence): PlanGridCandidate {
   return {
     direction: sequence.direction,
     axes: sequence.axes,
@@ -477,8 +1280,8 @@ function gridCandidate(sequence: ValidatedSequence): PlanGridCandidate {
  * 같은 블록의 위·아래 라벨 띠는 축 위치가 같으므로 그 자리에서 하나로 접힌다.
  */
 function buildBlocks(
-  xSequences: ValidatedSequence[],
-  ySequences: ValidatedSequence[],
+  xSequences: DirectedSequence[],
+  ySequences: DirectedSequence[],
   marks: PositionedToken[],
   titles: PositionedToken[],
   issue: (code: PlanGridIssue) => void,
@@ -488,24 +1291,29 @@ function buildBlocks(
 
   const seen = new Set<string>()
   const claimedY = new Map<ValidatedSequence, string>()
+  const enforceUniqueY = ySequences.length > 1 || xSequences.length > 1
 
   for (const xSequence of xSequences) {
-    const xExtent = extent(xSequence.axes)
+    const xSequenceExtent = extent(xSequence.axes)
     const xKey = xSequence.axes
       .map((axis) => `${axis.label}@${Math.round(axis.positionPt)}`)
       .join(',')
-    const pairingLimit =
-      median(spanLengths(xSequence.axes)) * GRID_PAIRING_DISTANCE_RATIO
-    let paired: ValidatedSequence | undefined
+    let paired: DirectedSequence | undefined
     let pairedDistance = Number.POSITIVE_INFINITY
     let tied = false
     for (const ySequence of ySequences) {
       const claimedBy = claimedY.get(ySequence)
-      if (claimedBy !== undefined && claimedBy !== xKey) continue
-      const distance = distanceToRange(
-        ySequence.across,
-        xExtent.min,
-        xExtent.max,
+      if (enforceUniqueY && claimedBy !== undefined && claimedBy !== xKey) {
+        continue
+      }
+      const yExtent = extent(ySequence.axes)
+      const distance = Math.max(
+        distanceToRange(
+          ySequence.across,
+          xSequenceExtent.min,
+          xSequenceExtent.max,
+        ),
+        distanceToRange(xSequence.across, yExtent.min, yExtent.max),
       )
       if (distance < pairedDistance) {
         paired = ySequence
@@ -515,16 +1323,24 @@ function buildBlocks(
         tied = true
       }
     }
+    const pairingLimit = paired
+      ? Math.max(
+          median(spanLengths(xSequence.axes)),
+          median(spanLengths(paired.axes)),
+        ) * GRID_PAIRING_DISTANCE_RATIO
+      : Number.POSITIVE_INFINITY
     if (!paired || tied || pairedDistance > pairingLimit) {
       issue('通り芯対応不明')
       continue
     }
-    claimedY.set(paired, xKey)
+    if (enforceUniqueY) claimedY.set(paired, xKey)
 
     const xGrid = gridCandidate(xSequence)
     const yGrid = gridCandidate(paired)
-    const xAxes = xGrid.axes
-    const yAxes = yGrid.axes
+    const xAxes = xSequence.alongKey === 'x' ? xGrid.axes : yGrid.axes
+    const yAxes = xSequence.alongKey === 'y' ? xGrid.axes : yGrid.axes
+    const xExtent = extent(xAxes)
+    const yExtent = extent(yAxes)
     const key = [xAxes, yAxes]
       .map((axes) =>
         axes
@@ -537,7 +1353,6 @@ function buildBlocks(
 
     const xLimit = median(spanLengths(xAxes)) * SNAP_RATIO
     const yLimit = median(spanLengths(yAxes)) * SNAP_RATIO
-    const yExtent = extent(yAxes)
 
     const placements: MemberPlacement[] = []
     const unplacedMarks: string[] = []
@@ -579,10 +1394,13 @@ function buildBlocks(
     })
   }
 
-  return blocks.sort(
+  const titledBlocks = blocks.filter((block) => block.title !== undefined)
+  const selectedBlocks = titledBlocks.length > 0 ? titledBlocks : blocks
+
+  return selectedBlocks.sort(
     (a, b) =>
-      a.xGrid.axes[0].positionPt - b.xGrid.axes[0].positionPt ||
-      a.yGrid.axes[0].positionPt - b.yGrid.axes[0].positionPt,
+      extent(a.xGrid.axes).min - extent(b.xGrid.axes).min ||
+      extent(a.yGrid.axes).min - extent(b.yGrid.axes).min,
   )
 }
 
@@ -600,17 +1418,51 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
 
   // 라벨 문자열이 가로로 놓여도 밴드(축의 늘어선 방향)는 세로일 수 있다 —
   // 두 방향 다 묶어 보고, 검증(중점 치수·축척)이 가짜 밴드를 걸러낸다.
-  const validated = [
+  const rawSequences = mergeAxisSequences([
     ...axisSequences(labels, 'x'),
     ...axisSequences(labels, 'y'),
-  ].flatMap((sequence) => {
+  ])
+  const validated = rawSequences.flatMap((sequence) => {
     const result = validateSequence(sequence, dimensions, issue)
     return result ? [result] : []
   })
+  const namedSequences = validated.filter((sequence) => sequence.letters.size > 0)
+  const filteredValidated = validated.filter((sequence) => {
+    if (!sequence.simpleKinds.has('numeric') || sequence.letters.size > 0) {
+      return true
+    }
+    // Section-list pages can contain two numeric values in a band that look
+    // like axes. If the same positions are already occupied by a named axis,
+    // the numeric pair is a duplicate annotation, not a second grid.
+    return !namedSequences.some(
+      (named) =>
+        named.alongKey === sequence.alongKey &&
+        sequence.axes.every((axis) =>
+          named.axes.some(
+            (namedAxis) =>
+              Math.abs(namedAxis.positionPt - axis.positionPt) <=
+              MIDPOINT_TOLERANCE_PT,
+          ),
+        ),
+    )
+  })
+  if (filteredValidated.length === 0) {
+    const hasPrefixedAxisLabel = labels.some(
+      (label) => label.letter !== undefined,
+    )
+    return {
+      grids: [],
+      blocks: [],
+      issues: hasPrefixedAxisLabel ? issues : ['通り芯ラベル未検出'],
+    }
+  }
+  const directed = suppressEndpointSubsets(
+    suppressIntermediateSequences(directSequences(filteredValidated)),
+  )
 
   const grids: PlanGridCandidate[] = []
   const seen = new Set<string>()
-  for (const sequence of validated) {
+  for (const sequence of directed) {
     const candidate = gridCandidate(sequence)
     const key = [
       candidate.direction,
@@ -628,12 +1480,11 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
   )
 
   const blocks = buildBlocks(
-    validated.filter((sequence) => sequence.direction === 'X'),
-    validated.filter((sequence) => sequence.direction === 'Y'),
+    directed.filter((sequence) => sequence.direction === 'X'),
+    directed.filter((sequence) => sequence.direction === 'Y'),
     marks,
     titles,
     issue,
   )
-
   return { grids, blocks, issues }
 }

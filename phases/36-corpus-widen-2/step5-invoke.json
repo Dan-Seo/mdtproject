@@ -1,0 +1,9 @@
+{
+  "step": 5,
+  "name": "refute-corpus-widen-2",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1546.2033468999434,
+  "stdout_log": "phases\\36-corpus-widen-2\\step5-codex.stdout.log",
+  "stderr_log": "phases\\36-corpus-widen-2\\step5-codex.stderr.log"
+}

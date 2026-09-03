@@ -471,7 +471,9 @@ interface ExpectedColumnCell {
   断面raw?: string
   主筋: string | Record<string, string>
   帯筋?: string
+  帯筋形状?: string
   HOOP?: string
+  HOOP形状?: string
 }
 
 interface ExpectedColumnsDoc {
@@ -520,23 +522,78 @@ interface ExpectedSlabEntry {
   下筋?: Record<string, string>
 }
 
-interface ExpectedList {
-  listKind: string
+interface ExpectedOutOfScopeEntry {
+  mark: string
+  b?: number
+  depth?: number
+  上端筋: string | Record<string, string>
+  下端筋: string | Record<string, string>
+  あばら筋: string
+  腹筋?: string
+  腹筋raw?: string
+  expected?: {
+    b: null
+    depth: null
+    issues: string[]
+    '断面raw_contains': string[]
+  }
+}
+
+interface ExpectedListBase {
   scope?: string
-  entries?: Array<{ mark: string }>
   outOfScopeMarks?: string[]
   marks?: string[]
 }
 
+interface ExpectedWallList extends ExpectedListBase {
+  listKind: '壁リスト'
+  entries: ExpectedWallEntry[]
+}
+
+interface ExpectedSlabList extends ExpectedListBase {
+  listKind: 'スラブリスト'
+  entries: ExpectedSlabEntry[]
+}
+
+interface ExpectedOutOfScopeList extends ExpectedListBase {
+  listKind: '小梁リスト' | '片持梁リスト'
+  scope: '対象外'
+  entries: ExpectedOutOfScopeEntry[]
+}
+
+interface ExpectedNonMemberList extends ExpectedListBase {
+  listKind: '屋内階段・屋外階段 配筋図'
+  scope: '対象外'
+  entries?: never[]
+}
+
+type ExpectedList =
+  | ExpectedWallList
+  | ExpectedSlabList
+  | ExpectedOutOfScopeList
+  | ExpectedNonMemberList
+
 interface ExpectedWallSlabDoc {
-  lists: Array<ExpectedList & {
-    entries?: Array<ExpectedWallEntry | ExpectedSlabEntry>
-  }>
+  lists: ExpectedList[]
+}
+
+function expectedList<K extends ExpectedList['listKind']>(
+  lists: ExpectedList[],
+  listKind: K,
+): Extract<ExpectedList, { listKind: K }> {
+  const found = lists.find(
+    (entry): entry is Extract<ExpectedList, { listKind: K }> =>
+      entry.listKind === listKind,
+  )
+  if (!found) throw new Error(`missing expected list: ${listKind}`)
+  return found
 }
 
 /** 「D13-@100」·「D10@200」 표기 차를 흡수한다 — 하이픈은 장식이다 */
 function normPitch(text: string): string {
-  return text.replace('-@', '@')
+  const match = text.match(/^([A-Z]\d+(?:\.\d+)?)(?:-?@([\d,]+)|-?([\d,]+)@)$/i)
+  if (!match) return text
+  return `${match[1].toUpperCase()}@${(match[2] ?? match[3]).replace(/,/g, '')}`
 }
 
 function sweepColumns(
@@ -597,6 +654,16 @@ function sweepColumns(
             expect(normPitch(raw), label).toBe(normPitch(hoopText))
           }
         }
+      }
+      const hoopShape = cell.帯筋形状 ?? cell.HOOP形状
+      if (hoopShape !== undefined) {
+        const parsedShape = Object.entries(c.raw).find(([key]) =>
+          /(?:帯筋|HOOP|フープ|スターラップ)形状/.test(key),
+        )?.[1]
+        // saiki TextItem 전사에서는 일부 도형 글리프가 「-」로 추출되어
+        // 시각 전사의 ⊟·⊞와 같다고 단정할 수 없다. 실제 기호가 텍스트로
+        // 들어온 경우에만 원문 shape를 대조한다 — 없는 shape를 지어내지 않는다.
+        if (parsedShape !== undefined) expect(parsedShape, label).toBe(hoopShape)
       }
     }
   }
@@ -714,6 +781,10 @@ function sweepGirders(
         }
         counts.main += 1
       } else {
+        const twoLayerMain = [
+          ...Object.values(topCells),
+          ...Object.values(bottomCells),
+        ].some((text) => text.includes('/'))
         for (const [position, text] of Object.entries(topCells)) {
           const raw = c.raw[`${labels.top}(${position})`]
           expect(raw, `${label} ${labels.top}(${position}) 원문 소실`).toBeDefined()
@@ -726,6 +797,10 @@ function sweepGirders(
             `${label} ${labels.bottom}(${position}) 원문 소실`,
           ).toBeDefined()
           expect(raw, label).toBe(text)
+        }
+        if (twoLayerMain) {
+          expect(c.issues, `${label} 2段筋 issue`).toContain('2段筋未対応')
+          counts.main += 1
         }
       }
       if (c.stirrup) {
@@ -822,6 +897,226 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
     }
   })
 
+  it('saiki 大梁リスト — 両端·スターラップ·2段筋을 전사 대조한다', () => {
+    expect(
+      sweepGirders(
+        'saiki-p1.json',
+        'saiki-fire-p1-girders.json',
+        '大梁リスト',
+        { top: '上端筋', bottom: '下端筋', stirrup: 'スターラップ' },
+      ),
+    ).toEqual({ main: 24, stirrup: 24, dimension: 24 })
+  })
+
+  it('saiki 柱リスト — 主筋·フープ·断面을 전사 대조한다', () => {
+    expect(
+      sweepColumns(
+        'saiki-p2.json',
+        'saiki-fire-p2-columns.json',
+        '柱リスト',
+      ),
+    ).toEqual({ main: 10, hoop: 10, dimension: 10 })
+  })
+
+  it('ina 大梁·地中梁·小梁·柱リスト — 축척 제목과 빈 셀을 전 셀 대조한다', () => {
+    const doc = readExpected<{
+      lists: Array<{
+        listKind: string
+        scopeOut?: boolean
+        form?: string
+        entries?: Array<Record<string, unknown>>
+      }>
+    }>('ina-pump-p7-lists.json')
+    const parsed = parseSectionLists(readPage('ina-p7.json'))
+
+    const girderList = list(parsed, '大梁リスト')
+    const girderEntries = doc.lists.find(({ listKind }) => listKind === '大梁リスト')!
+      .entries!
+    for (const entry of girderEntries) {
+      const c = candidate(girderList, entry.mark as string, entry.階 as string)
+      expect(c.kind, entry.mark as string).toBe('大梁')
+      expect({ b: c.b, depth: c.depth }, entry.mark as string).toEqual({
+        b: entry.b,
+        depth: entry.depth,
+      })
+      expect(c.girderMain, entry.mark as string).toEqual({
+        size: 'D22',
+        topCount: 3,
+        bottomCount: 3,
+      })
+      // 頭注の既定値は空セルへ遡及しない — 特記反映は別の判断である
+      expect(c.stirrup, entry.mark as string).toBeUndefined()
+      expect(c.sideBar, entry.mark as string).toBeUndefined()
+      expect(c.issues, entry.mark as string).toEqual([])
+    }
+
+    for (const listSpec of doc.lists.filter(({ scopeOut }) => scopeOut)) {
+      const parsedList = list(parsed, listSpec.listKind)
+      for (const entry of listSpec.entries ?? []) {
+        const mark = entry.mark as string
+        const c = candidate(parsedList, mark, entry.階 as string | undefined)
+        expect(c.kind, mark).toBe('対象外')
+        expect({ b: c.b, depth: c.depth }, mark).toEqual({
+          b: entry.b,
+          depth: entry.depth,
+        })
+        expect(
+          c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`,
+          mark,
+        ).toBe(entry.上端筋)
+        expect(
+          c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+          mark,
+        ).toBe(entry.下端筋)
+        if (entry.STP) {
+          expect(c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`, mark).toBe(
+            normPitch(entry.STP as string),
+          )
+        }
+        if (entry.腹筋) {
+          const sidebar = entry.腹筋 as string
+          const match = sidebar.match(/^(\d+)-(D\d+)$/)
+          expect(c.sideBar, mark).toEqual({
+            count: Number(match?.[1]),
+            size: match?.[2],
+          })
+        } else {
+          expect(c.sideBar, mark).toBeUndefined()
+        }
+      }
+    }
+
+    const columns = list(parsed, '柱リスト')
+    expect(columns.candidates, 'ina 柱リスト는 스케치 주기형').toEqual([])
+  })
+
+  it('fuji 柱·梁リスト — 층 접두·한 셀 다중 부호·피치 표기를 전 셀 대조한다', () => {
+    const doc = readExpected<{
+      lists: Array<{
+        listKind: string
+        entries?: Array<Record<string, unknown>>
+      }>
+    }>('fuji-kanritou-p20-lists.json')
+    const parsed = parseSectionLists(readPage('fuji-p20.json'))
+
+    const columns = list(parsed, '柱リスト')
+    const columnEntries = doc.lists.find(({ listKind }) => listKind === '柱リスト')!
+      .entries!
+    for (const entry of columnEntries) {
+      const c = candidate(columns, entry.mark as string, entry.階 as string)
+      expect(c.kind, entry.mark as string).toBe('柱')
+      expect({ b: c.b, d: c.d }, entry.mark as string).toEqual({
+        b: entry.b,
+        d: entry.d,
+      })
+      expect(c.main && `${c.main.count}-${c.main.size}`, entry.mark as string).toBe(
+        entry.主筋,
+      )
+      expect(c.hoop && `${c.hoop.size}@${c.hoop.pitchMm}`, entry.mark as string).toBe(
+        normPitch(entry.フープ as string),
+      )
+    }
+
+    const girders = list(parsed, '梁リスト')
+    const girderEntries = doc.lists.find(({ listKind }) => listKind === '梁リスト')!
+      .entries!
+    const mainEntry = girderEntries[0]
+    for (const mark of mainEntry.marks as string[]) {
+      const c = candidate(girders, mark)
+      expect(c.kind, mark).toBe('大梁')
+      expect({ b: c.b, depth: c.depth }, mark).toEqual({ b: 350, depth: 600 })
+      expect(c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`, mark).toBe(
+        mainEntry.上端筋,
+      )
+      expect(c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`, mark).toBe(
+        mainEntry.下端筋,
+      )
+      expect(c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`, mark).toBe(
+        normPitch(mainEntry.スターラップ as string),
+      )
+      expect(c.sideBar, mark).toEqual({ size: 'D10', count: 2 })
+      expect(c.widthTie, mark).toEqual({ size: 'D10', pitchMm: 1000 })
+      expect(c.raw['符号']?.normalize('NFKC').replace(/\s/g, ''), mark).toBe(
+        (mainEntry.headerCell as string).normalize('NFKC').replace(/\s/g, ''),
+      )
+    }
+
+    for (const entry of girderEntries.slice(1)) {
+      const c = candidate(girders, entry.mark as string)
+      expect(c.kind, entry.mark as string).toBe('対象外')
+      expect({ b: c.b, depth: c.depth }, entry.mark as string).toEqual({
+        b: entry.b,
+        depth: entry.depth,
+      })
+      expect(
+        c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`,
+        entry.mark as string,
+      ).toBe(entry.上端筋)
+      if (entry.スターラップ) {
+        expect(
+          c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`,
+          entry.mark as string,
+        ).toBe(normPitch(entry.スターラップ as string))
+      }
+    }
+  })
+
+  it('karatsu 地中梁リスト — 세로형·별표 치수·다중 부호를 전 셀 대조한다', () => {
+    const doc = readExpected<{
+      entries: Array<Record<string, unknown>>
+    }>('karatsu-karayaku-s4-foundation-girders.json')
+    const parsed = parseSectionLists(readPage('karatsu-shousai-p1.json'))
+    const girders = list(parsed, '地中梁リスト')
+
+    for (const entry of doc.entries) {
+      const mark = entry.mark as string
+      const c = candidate(girders, mark)
+      expect(c.kind, mark).toBe('対象外')
+      expect({ b: c.b, depth: c.depth }, mark).toEqual({
+        b: entry.b,
+        depth: entry.depth,
+      })
+      expect(c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`, mark).toBe(
+        entry.上筋,
+      )
+      expect(c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`, mark).toBe(
+        entry.下筋,
+      )
+      expect(c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`, mark).toBe(
+        normPitch(entry['STP.'] as string),
+      )
+      if (entry.腹筋) {
+        expect(c.sideBar, mark).toEqual({ size: 'D13', count: 2 })
+      } else {
+        expect(c.sideBar, mark).toBeUndefined()
+      }
+      if (entry.備考) expect(c.raw['備考'], mark).toBe(entry.備考)
+      expect(c.raw['符号']?.normalize('NFKC').replace(/\s/g, ''), mark).toBe(
+        (entry.headerCell as string).normalize('NFKC').replace(/\s/g, ''),
+      )
+      expect(c.issues, mark).toEqual([])
+    }
+  })
+
+  it('textual フープ shape를 raw로 보존하면서 피치만 정규화한다', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: 'フープ', x: 10, y: 44, w: 20, h: 8 },
+        { str: '⊟-D13@100', x: 100, y: 44, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.hoop).toEqual({ size: 'D13', pitchMm: 100 })
+    expect(c1.raw['フープ形状']).toBe('⊟')
+  })
+
   it('ojkk 壁リスト·スラブリスト — 벽 5칸과 床板 6칸을 전사 대조한다', () => {
     const doc = readExpected<ExpectedWallSlabDoc>(
       'ojkk-akamichi-p4-walls-slabs.json',
@@ -845,10 +1140,8 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
       ].sort()
       expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
     }
-    const wallEntries = doc.lists.find(({ listKind }) => listKind === '壁リスト')!
-      .entries as ExpectedWallEntry[]
-    const slabEntries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
-      .entries as ExpectedSlabEntry[]
+    const wallEntries = expectedList(doc.lists, '壁リスト').entries
+    const slabEntries = expectedList(doc.lists, 'スラブリスト').entries
 
     const counts = { wallThickness: 0, wallVertical: 0, wallHorizontal: 0, slabThickness: 0, slabBars: 0 }
     for (const entry of wallEntries) {
@@ -933,6 +1226,110 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
     }
   })
 
+  it('ojkk 小梁·片持梁リスト — 対象外 셀의 断面寸法·配筋을 전 셀 대조한다', () => {
+    const doc = readExpected<ExpectedWallSlabDoc>(
+      'ojkk-akamichi-p4-walls-slabs.json',
+    )
+    const parsed = parseSectionLists(readPage('ojkk-p4.json'))
+    const scopeOutLists = doc.lists.filter(
+      (listSpec): listSpec is ExpectedOutOfScopeList =>
+        listSpec.scope === '対象外' &&
+        (listSpec.listKind === '小梁リスト' ||
+          listSpec.listKind === '片持梁リスト'),
+    )
+    let entriesChecked = 0
+
+    for (const listSpec of scopeOutLists) {
+      const parsedList = list(parsed, listSpec.listKind)
+      const entries = listSpec.entries
+      expect(parsedList.candidates.map(({ mark }) => mark).sort(), listSpec.listKind).toEqual(
+        entries.map(({ mark }) => mark).sort(),
+      )
+
+      for (const entry of entries) {
+        entriesChecked += 1
+        const c = candidate(parsedList, entry.mark)
+        expect(c.kind, entry.mark).toBe('対象外')
+
+        if (entry.expected) {
+          expect({ b: c.b, depth: c.depth }, entry.mark).toEqual({
+            b: undefined,
+            depth: undefined,
+          })
+          expect(c.issues, entry.mark).toContain('断面矩形不成立')
+          const rawDimension = c.raw['断面']?.normalize('NFKC') ?? ''
+          for (const rawPart of entry.expected['断面raw_contains']) {
+            expect(rawDimension, `${entry.mark} 断面`).toContain(
+              rawPart.normalize('NFKC'),
+            )
+          }
+        } else {
+          expect({ b: c.b, depth: c.depth }, entry.mark).toEqual({
+            b: entry.b,
+            depth: entry.depth,
+          })
+        }
+
+        const top = entry.上端筋
+        const bottom = entry.下端筋
+        if (typeof top === 'string' && typeof bottom === 'string') {
+          expect(c.girderMain, `${entry.mark} 主筋`).toBeDefined()
+          expect(
+            c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`,
+            `${entry.mark} 上端筋`,
+          ).toBe(top)
+          expect(
+            c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+            `${entry.mark} 下端筋`,
+          ).toBe(bottom)
+        } else {
+          expect(typeof top, `${entry.mark} 上端筋`).toBe('object')
+          expect(typeof bottom, `${entry.mark} 下端筋`).toBe('object')
+          expect(c.girderMain, `${entry.mark} 主筋`).toBeDefined()
+          const main = c.girderMain!
+          const topByPosition = top as Record<string, string>
+          const bottomByPosition = bottom as Record<string, string>
+          expect(
+            `${main.topCount}-${main.size}`,
+            `${entry.mark} 上端筋 中央`,
+          ).toBe(topByPosition.中央)
+          expect(
+            `${main.bottomCount}-${main.size}`,
+            `${entry.mark} 下端筋 中央`,
+          ).toBe(bottomByPosition.中央)
+          if ('端部' in topByPosition && '端部' in bottomByPosition) {
+            expect(
+              `${main.endTopCount}-${main.size}`,
+              `${entry.mark} 上端筋 端部`,
+            ).toBe(topByPosition.端部)
+            expect(
+              `${main.endBottomCount}-${main.size}`,
+              `${entry.mark} 下端筋 端部`,
+            ).toBe(bottomByPosition.端部)
+          }
+        }
+
+        expect(
+          c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`,
+          `${entry.mark} あばら筋`,
+        ).toBe(normPitch(entry.あばら筋))
+
+        if (entry.腹筋) {
+          const match = entry.腹筋.match(/^(\d+)-(D\d+)$/)
+          expect(match, `${entry.mark} 腹筋`).not.toBeNull()
+          expect(c.sideBar, `${entry.mark} 腹筋`).toEqual({
+            count: Number(match?.[1]),
+            size: match?.[2],
+          })
+        } else {
+          expect(c.sideBar, `${entry.mark} 腹筋`).toBeUndefined()
+        }
+      }
+    }
+
+    expect(entriesChecked).toBe(12)
+  })
+
   it('yokohama スラブリスト — 上筋/下筋 별칭과 床板 실패 경로를 대조한다', () => {
     const doc = readExpected<ExpectedWallSlabDoc>(
       'yokohama-kanazawa-p15-slabs-walls.json',
@@ -953,8 +1350,7 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
             ].sort()
       expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
     }
-    const entries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
-      .entries as ExpectedSlabEntry[]
+    const entries = expectedList(doc.lists, 'スラブリスト').entries
     let thickness = 0
     let bars = 0
     for (const entry of entries) {

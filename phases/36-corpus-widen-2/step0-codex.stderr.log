@@ -1,0 +1,18 @@
+2026-09-03T01:46:42.478517Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T01:46:42.646840Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T01:59:05.985538Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\e2e\uc12-section-import.js:
+  pdfBase64 = await readFile(sandboxFixture);
+  ojkkPdfBase64 = await readFile(ojkkSandboxFixture);
+} catch (error) {
+  throw new Error(
+    `LOCAL FIXTURE MISSING: ${pdfPath} / ${ojkkPdfPath} — 먼저 실행: ` +
+      `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture}; ` +
+      `base64 -w0 ${ojkkPdfPath} > ~/.dev-browser/tmp/${ojkkSandboxFixture} ` +
+      `(출처: tests/fixtures/section-import/SOURCES.md) (${String(error)})`,
+  );
+}
+2026-09-03T02:08:27.945547Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\fixtures\section-import\SOURCES.md:
+- **pdf.js CMap 미탑재면 텍스트 0건** — fuji(Acrobat Distiller 6, 비내장 MS-Gothic Identity-H)·shibata(iText/ARCDRAW, 90msp-RKSJ-H)는 `getDocument`에 `cMapUrl`·`cMapPacked`·`standardFontDataUrl`를 주지 않으면 모든 페이지가 0건이다. 경고도 없다. Node에서는 `cMapUrl`이 `file://` URL이 아니라 **파일시스템 경로 문자열**(`node_modules/pdfjs-dist/cmaps/`)이어야 한다(실측). 제품 `src/lib/import/pdf-text.ts`도 같은 옵션이 없어 브라우저에서도 같은 도면이 조용히 빈 결과가 됐다 — phase 36 step 0에서 고친다
+2026-09-03T02:09:06.295021Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\fixtures\section-import\SOURCES.md:
+- **pdf.js CMap 미탑재면 텍스트 0건** — fuji(Acrobat Distiller 6, 비내장 MS-Gothic Identity-H)·shibata(iText/ARCDRAW, 90msp-RKSJ-H)는 `getDocument`에 `cMapUrl`·`cMapPacked`·`standardFontDataUrl`를 주지 않으면 모든 페이지가 0건이다. 경고도 없다. Node에서는 `cMapUrl`이 `file://` URL이 아니라 **파일시스템 경로 문자열**(`node_modules/pdfjs-dist/cmaps/`)이어야 한다(실측). 제품 `src/lib/import/pdf-text.ts`도 같은 옵션이 없어 브라우저에서도 같은 도면이 조용히 빈 결과가 됐다 — phase 36 step 0에서 고친다
+2026-09-03T02:12:44.225391Z ERROR codex_core::session: failed to record rollout items: thread 01a064f2-62ec-7521-adc8-c2e5e3018070 not found

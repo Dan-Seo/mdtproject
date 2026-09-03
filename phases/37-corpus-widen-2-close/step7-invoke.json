@@ -1,0 +1,9 @@
+{
+  "step": 7,
+  "name": "refute-docs",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 456.5147870000219,
+  "stdout_log": "phases\\37-corpus-widen-2-close\\step7-codex.stdout.log",
+  "stderr_log": "phases\\37-corpus-widen-2-close\\step7-codex.stderr.log"
+}

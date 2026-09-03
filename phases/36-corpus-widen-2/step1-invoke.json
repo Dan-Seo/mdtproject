@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "grid-generalize",
+  "exitCode": 1,
+  "timedOut": true,
+  "elapsed": 1800.1571000000695,
+  "stdout_log": "phases\\36-corpus-widen-2\\step1-codex.stdout.log",
+  "stderr_log": "phases\\36-corpus-widen-2\\step1-codex.stderr.log"
+}

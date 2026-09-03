@@ -2,13 +2,65 @@
   "project": "Kijun",
   "phase": "36-corpus-widen-2",
   "steps": [
-    { "step": 0, "name": "register-corpus-and-cmap", "status": "pending", "summary": "" },
-    { "step": 1, "name": "grid-generalize", "status": "pending", "summary": "" },
-    { "step": 2, "name": "elevation-generalize", "status": "pending", "summary": "" },
-    { "step": 3, "name": "list-saiki", "status": "pending", "summary": "" },
-    { "step": 4, "name": "list-ina-fuji-karatsu", "status": "pending", "summary": "" },
-    { "step": 5, "name": "refute-corpus-widen-2", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
-    { "step": 6, "name": "docs-corpus-widen-2", "status": "pending", "summary": "" }
+    {
+      "step": 0,
+      "name": "register-corpus-and-cmap",
+      "status": "completed",
+      "summary": "CMap 자산 경로와 0.5pt 겹침 접기를 적용해 2차 22면을 생성하고 기존 14면 바이트 동일성·36면 실태표를 기록했다.",
+      "started_at": "2026-09-03T10:46:41+0900",
+      "completed_at": "2026-09-03T11:16:41+0900"
+    },
+    {
+      "step": 1,
+      "name": "grid-generalize",
+      "status": "completed",
+      "summary": "通り芯 라벨을 접두 없는 숫자·문자로 넓히고, 나란한 치수 열은 축척 검증으로 수렴할 때만 채택(아니면 寸法列曖昧), 부분 合計 규약, 柱芯線図 제목, 갈라진 축열 병합을 더해 2차 7면 격자 골든과 기존 14면 회귀가 통과한다(118 tests). hirosaki 원인은 全体寸法이 중앙 인접 중점과 겹친 치수 위치. (report·status는 codex 타임아웃 후 Claude가 검증해 기록)",
+      "started_at": "2026-09-03T11:16:42+0900",
+      "failed_at": "2026-09-03T12:46:42+0900",
+      "completed_at": "2026-09-03T12:52:30+09:00"
+    },
+    {
+      "step": 2,
+      "name": "elevation-generalize",
+      "status": "completed",
+      "summary": "발주처 3곳 軸組図의 150·100mm 짧은 구간과 후속 치수를 공통 연쇄 규칙으로 보존하고, 신규 3면 골든·기존 4면 회귀 및 전체 1,754개 테스트를 통과했다.",
+      "started_at": "2026-09-03T12:52:39+0900",
+      "completed_at": "2026-09-03T13:09:20+0900"
+    },
+    {
+      "step": 3,
+      "name": "list-saiki",
+      "status": "completed",
+      "summary": "saiki p1/p2의 층 분할·B×D·スターラップ／フープ·2段筋·接合部帯筋 형식을 일반 규칙으로 처리하고, 기존 골든·실물 PDF 통합 및 전체 1,761개 테스트를 통과했다.",
+      "started_at": "2026-09-03T13:09:21+0900",
+      "completed_at": "2026-09-03T13:34:52+0900"
+    },
+    {
+      "step": 4,
+      "name": "list-ina-fuji-karatsu",
+      "status": "completed",
+      "summary": "ina·fuji·karatsu 3면의 제목·階 접두·다중 符号·피치 표기·세로형 행을 일반 규칙으로 처리하고, 스코프 밖 후보와 ina 스케치 柱를 정직하게 구분했다. 신규 3면 골든·실물 PDF 통합 및 기존 전체 1,770개 테스트가 통과했다.",
+      "started_at": "2026-09-03T13:34:53+0900",
+      "completed_at": "2026-09-03T14:34:18+0900"
+    },
+    {
+      "step": 5,
+      "name": "refute-corpus-widen-2",
+      "kind": "verify",
+      "gate": true,
+      "status": "refuted",
+      "summary": "fuji-p15에서 TextItem 원문에 없는 격자 치수가 생성되고 기존 14면 ojkk-p4 상태표도 한 칸 어긋나 corpus widening 산출을 반증했다. 골든 15건 변조는 모두 실패했고 임시 변경은 복원했다.",
+      "started_at": "2026-09-03T14:34:19+0900",
+      "completed_at": "2026-09-03T14:59:22+0900",
+      "refuted_at": "2026-09-03T15:00:05+0900"
+    },
+    {
+      "step": 6,
+      "name": "docs-corpus-widen-2",
+      "status": "pending",
+      "summary": ""
+    }
   ],
-  "created_at": "2026-09-03T00:45:00+0900"
+  "created_at": "2026-09-03T00:45:00+0900",
+  "completed_at": "2026-09-03T15:00:07+0900"
 }

@@ -25,6 +25,49 @@ type TextItemFixture = {
   }>
 }
 
+const SECOND_CORPUS_FILES = new Set([
+  'karatsu-fukuzu-p1.json',
+  'karatsu-shousai-p1.json',
+  'karatsu-hashirashin-p1.json',
+  'karatsu-jikugumi1-p1.json',
+  'karatsu-jikugumi2-p1.json',
+  'fuji-p15.json',
+  'fuji-p17.json',
+  'fuji-p18.json',
+  'fuji-p20.json',
+  'ina-p6.json',
+  'ina-p7.json',
+  'saiki-p1.json',
+  'saiki-p2.json',
+  'tsu-p16.json',
+  'tsu-p20.json',
+  'tsu-p21.json',
+  'tsu-p22.json',
+  'hirosaki-p21.json',
+  'hirosaki-p25.json',
+  'shibata-p1.json',
+  'shibata-p7.json',
+  'shibata-p13.json',
+])
+
+const ROTATED_SECOND_CORPUS_FILES = new Set([
+  'karatsu-fukuzu-p1.json',
+  'karatsu-shousai-p1.json',
+  'karatsu-hashirashin-p1.json',
+  'karatsu-jikugumi1-p1.json',
+  'karatsu-jikugumi2-p1.json',
+  'fuji-p15.json',
+  'fuji-p17.json',
+  'fuji-p18.json',
+  'fuji-p20.json',
+  'saiki-p1.json',
+  'saiki-p2.json',
+  'tsu-p16.json',
+  'tsu-p20.json',
+  'tsu-p21.json',
+  'tsu-p22.json',
+])
+
 const fixtures = [
   {
     file: 'ojkk-p2.json',
@@ -153,6 +196,182 @@ const fixtures = [
     // 実測 399 件 × 0.8 の切り捨て。
     minimumItems: 319,
     needles: [['Y2通り軸組図'], ['Y1通り軸組図'], ['X4'], ['20,000']],
+  },
+  {
+    file: 'karatsu-fukuzu-p1.json',
+    cacheFile: 'dwg-karatsu-fukuzu.pdf',
+    sha256: 'a6712f907e4b17d787e9b1add3e726d960d31340846139269127e9b3aceb068e',
+    page: 1,
+    minimumItems: 876,
+    needles: [['床配筋リスト'], ['D13＠200']],
+  },
+  {
+    file: 'karatsu-shousai-p1.json',
+    cacheFile: 'dwg-karatsu-shousai.pdf',
+    sha256: '9b41afc2706874535a0bfaa90c73bca87a2d4781fd2a03c15be4cae77fa81e75',
+    page: 1,
+    minimumItems: 951,
+    needles: [['地中梁リスト'], ['D13＠200'], ['CS1']],
+  },
+  {
+    file: 'karatsu-hashirashin-p1.json',
+    cacheFile: 'dwg-karatsu-hashirashin.pdf',
+    sha256: 'f2a33838a377b9c072a643333cbbad1a9c775b13335772598068b14dc11a8792',
+    page: 1,
+    minimumItems: 428,
+    needles: [['１階柱芯線図'], ['Ｘ４'], ['C2']],
+  },
+  {
+    file: 'karatsu-jikugumi1-p1.json',
+    cacheFile: 'dwg-karatsu-jikugumi1.pdf',
+    sha256: '88cc5a750569d6c4e2e3517b3553c25ad123fe4647504f9417a0ea72b9e87ac9',
+    page: 1,
+    minimumItems: 537,
+    needles: [['軸組図'], ['Ｙ０'], ['C1']],
+  },
+  {
+    file: 'karatsu-jikugumi2-p1.json',
+    cacheFile: 'dwg-karatsu-jikugumi2.pdf',
+    sha256: '82789e1ea94b707d3ea8b6aa5bee0c949abcb61f775b9ea950dcb06ec69302a3',
+    page: 1,
+    minimumItems: 490,
+    needles: [['軸組図'], ['Ｘ４'], ['Ｙ１']],
+  },
+  {
+    file: 'fuji-p15.json',
+    cacheFile: 'dwg-fuji-kanritou.pdf',
+    sha256: '5cf1575f4b596b3e070257f1cc386abc98731d116b4b3f5891c12874684d9e0d',
+    page: 15,
+    minimumItems: 312,
+    needles: [['基礎伏図'], ['W250'], ['5,150']],
+  },
+  {
+    file: 'fuji-p17.json',
+    cacheFile: 'dwg-fuji-kanritou.pdf',
+    sha256: '5cf1575f4b596b3e070257f1cc386abc98731d116b4b3f5891c12874684d9e0d',
+    page: 17,
+    minimumItems: 940,
+    needles: [['梁・床伏図'], ['G1'], ['W200']],
+  },
+  {
+    file: 'fuji-p18.json',
+    cacheFile: 'dwg-fuji-kanritou.pdf',
+    sha256: '5cf1575f4b596b3e070257f1cc386abc98731d116b4b3f5891c12874684d9e0d',
+    page: 18,
+    minimumItems: 612,
+    needles: [['軸組図'], ['ＦＧ１'], ['Ｆ３']],
+  },
+  {
+    file: 'fuji-p20.json',
+    cacheFile: 'dwg-fuji-kanritou.pdf',
+    sha256: '5cf1575f4b596b3e070257f1cc386abc98731d116b4b3f5891c12874684d9e0d',
+    page: 20,
+    minimumItems: 1038,
+    needles: [['柱リスト'], ['W200'], ['D10-200＠']],
+  },
+  {
+    file: 'ina-p6.json',
+    cacheFile: 'dwg-ina-pump.pdf',
+    sha256: '7caf348f1b590f68bcd8efe70efef4e63c7693ebe3fc05df7b5a5cb0e00aabca',
+    page: 6,
+    minimumItems: 570,
+    needles: [['軸組図1/100'], ['RSL'], ['6,400']],
+  },
+  {
+    file: 'ina-p7.json',
+    cacheFile: 'dwg-ina-pump.pdf',
+    sha256: '7caf348f1b590f68bcd8efe70efef4e63c7693ebe3fc05df7b5a5cb0e00aabca',
+    page: 7,
+    minimumItems: 858,
+    needles: [['大梁リスト'], ['スラブリスト'], ['D13']],
+  },
+  {
+    file: 'saiki-p1.json',
+    cacheFile: 'dwg-saiki-fire.pdf',
+    sha256: '0c74b592bf9c4bf20f196645596dc3c64c24cfa4ccce0e5ec8fe95b96710ce20',
+    page: 1,
+    minimumItems: 1643,
+    needles: [['大梁'], ['D22'], ['腹筋']],
+  },
+  {
+    file: 'saiki-p2.json',
+    cacheFile: 'dwg-saiki-fire.pdf',
+    sha256: '0c74b592bf9c4bf20f196645596dc3c64c24cfa4ccce0e5ec8fe95b96710ce20',
+    page: 2,
+    minimumItems: 1576,
+    needles: [['柱'], ['開口部'], ['腹筋']],
+  },
+  {
+    file: 'tsu-p16.json',
+    cacheFile: 'dwg-tsu-kanritou.pdf',
+    sha256: 'e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f',
+    page: 16,
+    minimumItems: 849,
+    needles: [['基礎・１階伏図'], ['Ｘ１'], ['22,000']],
+  },
+  {
+    file: 'tsu-p20.json',
+    cacheFile: 'dwg-tsu-kanritou.pdf',
+    sha256: 'e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f',
+    page: 20,
+    minimumItems: 780,
+    needles: [['屋根伏図'], ['Ｘ１'], ['22,000']],
+  },
+  {
+    file: 'tsu-p21.json',
+    cacheFile: 'dwg-tsu-kanritou.pdf',
+    sha256: 'e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f',
+    page: 21,
+    minimumItems: 748,
+    needles: [['軸組図'], ['Ｙ３'], ['FG3']],
+  },
+  {
+    file: 'tsu-p22.json',
+    cacheFile: 'dwg-tsu-kanritou.pdf',
+    sha256: 'e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f',
+    page: 22,
+    minimumItems: 740,
+    needles: [['軸組図'], ['Ｘ４'], ['13,000']],
+  },
+  {
+    file: 'hirosaki-p21.json',
+    cacheFile: 'dwg-hirosaki-kikyono.pdf',
+    sha256: 'f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8',
+    page: 21,
+    minimumItems: 2239,
+    needles: [['1階床梁伏図'], ['1FL'], ['S18']],
+  },
+  {
+    file: 'hirosaki-p25.json',
+    cacheFile: 'dwg-hirosaki-kikyono.pdf',
+    sha256: 'f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8',
+    page: 25,
+    minimumItems: 1235,
+    needles: [['軸組図'], ['X3'], ['Y6']],
+  },
+  {
+    file: 'shibata-p1.json',
+    cacheFile: 'dwg-shibata-fire.pdf',
+    sha256: 'e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985',
+    page: 1,
+    minimumItems: 996,
+    needles: [['１階柱壁床梁基礎伏図'], ['FG1'], ['C3']],
+  },
+  {
+    file: 'shibata-p7.json',
+    cacheFile: 'dwg-shibata-fire.pdf',
+    sha256: 'e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985',
+    page: 7,
+    minimumItems: 505,
+    needles: [['柱リスト'], ['22-D25'], ['D13@100']],
+  },
+  {
+    file: 'shibata-p13.json',
+    cacheFile: 'dwg-shibata-fire.pdf',
+    sha256: 'e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985',
+    page: 13,
+    minimumItems: 892,
+    needles: [['軸組図'], ['5通り軸組図'], ['8,000']],
   },
 ] as const
 
@@ -389,6 +608,9 @@ describe('section-import TextItem fixtures', () => {
     })
     expect(fixture.page.widthPt).toBeGreaterThan(0)
     expect(fixture.page.heightPt).toBeGreaterThan(0)
+    if (ROTATED_SECOND_CORPUS_FILES.has(spec.file)) {
+      expect(fixture.page.widthPt).toBeGreaterThan(fixture.page.heightPt)
+    }
     // 표제란(개인 실명·연락처)은 추출 시점에 제외한다. 페이지별 밀도 차이를
     // 전체 하한 하향으로 숨기지 않고, 각 실측값의 80%를 내림한 하한을 쓴다.
     expect(fixture.items.length).toBeGreaterThanOrEqual(spec.minimumItems)
@@ -436,6 +658,20 @@ describe('section-import TextItem fixtures', () => {
       ).toBe(true)
     }
   })
+
+  it.each([...SECOND_CORPUS_FILES])(
+    '%s has no title-block marker in adjacent extracted text',
+    (file) => {
+      const fixture = readFixture(file)
+      const marker = /TEL|FAX|℡|電話|一級建築士|設計事務所|株式会社|共同体/u
+      const scanned = [
+        ...joinedRows(fixture.items),
+        ...joinedColumns(fixture.items),
+      ].map(normalizedForScan)
+
+      expect(scanned.filter((text) => marker.test(text))).toEqual([])
+    },
+  )
 
   it('reconstructs 縦書き text so the PII scan is not bypassed by rotation', () => {
     // 마커 0건은 「세로도 봤다」의 증거가 못 된다 — 세로 채널이 실제로 글자를

@@ -1,0 +1,9 @@
+{
+  "step": 6,
+  "name": "docs-corpus-widen-2",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1088.620245099999,
+  "stdout_log": "phases\\37-corpus-widen-2-close\\step6-codex.stdout.log",
+  "stderr_log": "phases\\37-corpus-widen-2-close\\step6-codex.stderr.log"
+}
