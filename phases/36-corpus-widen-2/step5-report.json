@@ -1,0 +1,142 @@
+{
+  "verdict": "refuted",
+  "items": {
+    "1_fabrication": {
+      "holds": true,
+      "evidence": [
+        {
+          "page": "tests/fixtures/section-import/textitems/fuji-p15.json",
+          "path": "grids[0].spansMm[0]",
+          "value": 2500,
+          "source_present": false
+        },
+        {
+          "page": "tests/fixtures/section-import/textitems/fuji-p15.json",
+          "path": "grids[0].spansMm[1]",
+          "value": 3000,
+          "source_present": false
+        },
+        {
+          "page": "tests/fixtures/section-import/textitems/fuji-p15.json",
+          "path": "grids[0].spansMm[2]",
+          "value": 4150,
+          "source_present": false
+        },
+        {
+          "page": "tests/fixtures/section-import/textitems/fuji-p15.json",
+          "path": "grids[0].total",
+          "value": 12150,
+          "source_present": false
+        }
+      ],
+      "method": "36면의 TextItem 원문·recoverRows 세그먼트·verticalRuns의 인접 문자열을 대조했다. fuji-p15의 파서는 이 값들을 후보로 반환했지만 해당 페이지 원문에는 어느 값도 없다."
+    },
+    "2_transcription": {
+      "holds": true,
+      "evidence": [
+        {
+          "expected": "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+          "source": "tests/fixtures/section-import/textitems/fuji-p17.json",
+          "path": "blocks[0].x.spansMm[0]",
+          "value": 2500,
+          "source_present": false,
+          "detail": "인접 TextItem 문자열에 2,500 또는 2500이 없다."
+        }
+      ],
+      "method": "지정된 신규 section 5개와 plan 10개 골든의 후보 셀·스팬·합계·階高·레벨 라벨을 원문 TextItem 인접 문자열과 대조했다."
+    },
+    "3_falsifiability": {
+      "holds": false,
+      "evidence": [
+        {
+          "goldens_checked": 15,
+          "mutated_tests_failed": 15,
+          "restored": true,
+          "files": [
+            "karatsu-karayaku-s4-foundation-girders.json",
+            "ina-pump-p7-lists.json",
+            "saiki-fire-p1-girders.json",
+            "saiki-fire-p2-columns.json",
+            "fuji-kanritou-p20-lists.json",
+            "fuji-kanritou-p17-grid.json",
+            "hirosaki-kikyono-p21-grid.json",
+            "ina-pump-p6-grid.json",
+            "karatsu-fukuzu-p1-grid.json",
+            "karatsu-hashirashin-p1-grid.json",
+            "shibata-fire-p1-grid.json",
+            "tsu-kanritou-p16-grid.json",
+            "hirosaki-kikyono-p25-elevation.json",
+            "karatsu-jikugumi1-p1-elevation.json",
+            "tsu-kanritou-p21-elevation.json"
+          ]
+        }
+      ]
+    },
+    "4_regression": {
+      "holds": true,
+      "evidence": [
+        {
+          "file": "ojkk-p4.json",
+          "expected": {
+            "listKind": "小梁リスト",
+            "cells": 9,
+            "issues": ["断面矩形不成立"]
+          },
+          "actual": {
+            "listKind": "小梁リスト",
+            "cells": 9,
+            "issues": []
+          },
+          "detail": "step0-report.json의 기존 14면 상태표와 현재 parseSectionLists 결과를 비교했을 때 이 한 칸이 다르다."
+        }
+      ],
+      "compared_pages": 14
+    },
+    "5_sweep": {
+      "holds": false,
+      "midpoint_sweep": {
+        "4": "kani-p38/p39/yokohama-p6/p7 모두 grids=1, issues=寸法欠落; 36면, gridPages=23",
+        "6": "요구 4면 모두 grids=2, issues=[]; 36면, gridPages=23",
+        "15": "요구 4면 모두 grids=2, issues=[]; 36면, gridPages=26",
+        "30": "요구 4면 모두 grids=2, issues=[]; 36면, gridPages=26",
+        "40": "요구 4면 모두 grids=2, issues=[]; 36면, gridPages=26"
+      },
+      "window_kept": false,
+      "window_note": "T=4의 지정된 寸法欠落은 재현되어 상수가 실행 경로에 닿았다. T=6과 T=15 사이에 36면 전체 gridPages가 23→26으로 변해 2차 코퍼스의 문턱 안정성은 R15 기록 사항으로 남긴다. 이는 Step 5의 refuted 판정 근거로 세지 않았다."
+    },
+    "6_specialization": {
+      "holds": false,
+      "evidence": [],
+      "added_branch_matches": 0,
+      "detail": "git diff main...HEAD -- src/lib/import의 추가 코드에서 파일명·발주처·시트번호 조건 분기를 확인하지 못했다. 코퍼스명은 주석·테스트 설명에만 나타난다."
+    },
+    "7_title_block": {
+      "holds": false,
+      "matches": 0,
+      "files_scanned": 36,
+      "pattern": "TEL|FAX|℡|電話|一級建築士|設計事務所|株式会社|共同体"
+    },
+    "8_two_layer_and_defaults": {
+      "holds": false,
+      "evidence": [
+        {
+          "saiki_two_layer_cells": 8,
+          "normal_main_count_fields": 0,
+          "issue_present_on_all": true,
+          "issue": "2段筋未対応"
+        },
+        {
+          "ina_empty_stp_cells": 2,
+          "default_stirrup_candidates": 0
+        }
+      ]
+    }
+  },
+  "git_status_clean": false,
+  "git_status_note": "임시 골든·문턱 변조 대상은 원본으로 복원됐다. 종료 시 남은 것은 하네스가 갱신한 index.json과 정상적인 step5-codex stdout/stderr 로그뿐이다.",
+  "tests": {
+    "current_targeted": "3 files, 54 tests passed",
+    "full_suite": "100 files, 1770 tests passed"
+  },
+  "summary": "fuji-p15에서 TextItem 원문에 없는 격자 치수가 생성되고 기존 14면 ojkk-p4 상태표도 한 칸 어긋나므로 corpus widening 산출을 반증한다. 골든 15건의 변조 테스트는 모두 실패했고 임시 변경은 복원했다."
+}

@@ -48,8 +48,10 @@
       "name": "refute-corpus-widen-2",
       "kind": "verify",
       "gate": true,
-      "status": "pending",
-      "summary": ""
+      "status": "refuted",
+      "summary": "fuji-p15에서 TextItem 원문에 없는 격자 치수가 생성되고 기존 14면 ojkk-p4 상태표도 한 칸 어긋나 corpus widening 산출을 반증했다. 골든 15건 변조는 모두 실패했고 임시 변경은 복원했다.",
+      "started_at": "2026-09-03T14:34:19+0900",
+      "completed_at": "2026-09-03T14:59:22+0900"
     },
     {
       "step": 6,
