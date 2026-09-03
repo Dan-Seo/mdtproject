@@ -7,6 +7,7 @@ export const PLAN_GRID_ISSUES = [
   '寸法欠落',
   '縮尺不整合',
   '合計不一致',
+  '寸法列曖昧',
   'ラベル文字混在',
   '通り芯対応不明',
 ] as const
