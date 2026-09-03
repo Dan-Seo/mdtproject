@@ -75,7 +75,8 @@
       "kind": "verify",
       "status": "refuted",
       "summary": "step 6 문서의 새 숫자 일부가 step6-report.json numbers_used에 없어 출처 추적 반증이 성립했다. 표 동일성·범위·R10/R15 개방·ADR-045 형식·R15 미측정 표기는 모두 성립한다.",
-      "started_at": "2026-09-03T18:20:40+0900"
+      "started_at": "2026-09-03T18:20:40+0900",
+      "refuted_at": "2026-09-03T18:28:17+0900"
     }
   ],
   "created_at": "2026-09-03T15:30:00+0900"
