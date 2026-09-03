@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "grid-axis-order-contract",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 582.4705420000246,
+  "stdout_log": "phases\\37-corpus-widen-2-close\\step2-codex.stdout.log",
+  "stderr_log": "phases\\37-corpus-widen-2-close\\step2-codex.stderr.log"
+}
