@@ -1,6 +1,21 @@
 import type { TextPage } from '@/lib/import/section-list/types'
 import { toTextItems, type PdfTextItemLike } from '@/lib/import/textitems'
 
+/**
+ * pdf.js 문서 로딩 옵션은 브라우저와 로컬 픽스처 추출기가 공유한다.
+ * assetBaseUrl은 브라우저에서는 public 경로, Node에서는 pdfjs-dist의
+ * 파일시스템 경로이며 호출부가 각각의 실행 환경에 맞게 준다.
+ */
+export function pdfDocumentOptions(data: Uint8Array, assetBaseUrl: string) {
+  return {
+    data,
+    useWorkerFetch: false,
+    cMapUrl: `${assetBaseUrl}cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${assetBaseUrl}standard_fonts/`,
+  }
+}
+
 /** File → TextPage[] (좌상 원점, +y 아래, pt 좌표 — toTextItems 규약). */
 export async function extractTextPages(file: File): Promise<TextPage[]> {
   const pdfjs = await import('pdfjs-dist')
@@ -14,10 +29,7 @@ export async function extractTextPages(file: File): Promise<TextPage[]> {
   // 신뢰할 수 없는 도면 PDF를 연다. 구버전의 isEvalSupported는 지정하지 않는다 —
   // eval 기반 PostScript 컴파일러가 상류에서 제거되어 6.x에는 옵션 자체가 없다
   // (pdf.worker.mjs에 new Function 경로 없음을 확인).
-  const loadingTask = pdfjs.getDocument({
-    data,
-    useWorkerFetch: false,
-  })
+  const loadingTask = pdfjs.getDocument(pdfDocumentOptions(data, '/pdfjs/'))
   const pages: TextPage[] = []
 
   // 「別のPDFを選択」을 반복해도 파싱 버퍼·워커 자원이 탭에 누적되지 않도록

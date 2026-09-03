@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 
+import { pdfDocumentOptions } from '@/lib/import/pdf-text'
 import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { toTextItems } from '@/lib/import/textitems'
@@ -21,6 +22,7 @@ import { toTextItems } from '@/lib/import/textitems'
  */
 
 const cacheDirectory = resolve(process.cwd(), '.cache')
+const pdfjsAssetDirectory = `${resolve(process.cwd(), 'node_modules/pdfjs-dist')}/`
 
 interface RealPage {
   cacheFile: string
@@ -92,7 +94,9 @@ async function realTextPage(cacheFile: string, page: number): Promise<TextPage> 
     expectedSha256(cacheFile),
   )
 
-  const task = getDocument({ data: new Uint8Array(data), useWorkerFetch: false })
+  const task = getDocument(
+    pdfDocumentOptions(new Uint8Array(data), pdfjsAssetDirectory),
+  )
   const document = await task.promise
 
   try {

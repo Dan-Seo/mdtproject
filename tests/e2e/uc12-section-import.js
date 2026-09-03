@@ -8,18 +8,23 @@ const pdfPath = ".cache/dwg-yokohama.pdf";
 const sandboxFixture = "uc12-dwg-yokohama.pdf.b64";
 const ojkkPdfPath = ".cache/dwg-ojkk-zumen6.pdf";
 const ojkkSandboxFixture = "uc12-dwg-ojkk.pdf.b64";
+const fujiPdfPath = ".cache/dwg-fuji-kanritou.pdf";
+const fujiSandboxFixture = "uc12-dwg-fuji.pdf.b64";
 let pdfBase64;
 let ojkkPdfBase64;
+let fujiPdfBase64;
 try {
   // dev-browser는 QuickJS에서 호스트 경로를 직접 열 수 없다. AC 실행 전에 로컬
   // .cache PDF를 격리 temp에 base64로 미러링하며, 없으면 첫머리에서 명시적으로 실패한다.
   pdfBase64 = await readFile(sandboxFixture);
   ojkkPdfBase64 = await readFile(ojkkSandboxFixture);
+  fujiPdfBase64 = await readFile(fujiSandboxFixture);
 } catch (error) {
   throw new Error(
     `LOCAL FIXTURE MISSING: ${pdfPath} / ${ojkkPdfPath} — 먼저 실행: ` +
       `base64 -w0 ${pdfPath} > ~/.dev-browser/tmp/${sandboxFixture}; ` +
-      `base64 -w0 ${ojkkPdfPath} > ~/.dev-browser/tmp/${ojkkSandboxFixture} ` +
+      `base64 -w0 ${ojkkPdfPath} > ~/.dev-browser/tmp/${ojkkSandboxFixture}; ` +
+      `base64 -w0 ${fujiPdfPath} > ~/.dev-browser/tmp/${fujiSandboxFixture} ` +
       `(재현 절차: tests/fixtures/section-import/SOURCES.md) (${String(error)})`,
   );
 }
@@ -179,6 +184,22 @@ const ojkkAfter = await page.evaluate(() => {
   };
 });
 
+// Fuji p20 requires the public pdf.js CMap assets and should expose at least
+// one supported スラブ candidate in the browser.
+await page.setInputFiles("[data-testid='section-import-file']", {
+  name: "dwg-fuji-kanritou.pdf",
+  mimeType: "application/pdf",
+  buffer: Buffer.from(fujiPdfBase64, "base64"),
+});
+await page.waitForSelector("[data-testid='section-import-candidate-CS1-none']", {
+  timeout: 120000,
+});
+const fujiSlabCandidateCount = await page.evaluate(
+  () =>
+    [...document.querySelectorAll("[data-testid='section-import-candidate-CS1-none']")]
+      .filter((node) => !node.hidden).length,
+);
+
 const checks = {
   approvalWasRequired: before.c51ExistsInTable === false,
   outOfScopeListed: before.b51VisibleInOutOfScope === true,
@@ -211,9 +232,12 @@ const checks = {
   importedSideBarInTakeoff: ojkkAfter.sideBarInTakeoff === true,
   viewerSurvivesGirderDetailApply: ojkkAfter.canvasLabel === "選択部材の配筋3D",
   noPaneFailureAfterGirderDetailApply: ojkkAfter.paneFailures.length === 0,
+  fujiSlabCandidate: fujiSlabCandidateCount >= 1,
 };
 
-console.log(JSON.stringify({ before, after, ojkkBefore, ojkkAfter, checks }, null, 2));
+console.log(
+  JSON.stringify({ before, after, ojkkBefore, ojkkAfter, fujiSlabCandidateCount, checks }, null, 2),
+);
 console.log(
   "SHOT " +
     (await saveScreenshot(await page.screenshot(), "uc12-section-import.png")),

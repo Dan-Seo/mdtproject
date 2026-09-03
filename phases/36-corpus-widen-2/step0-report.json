@@ -1,0 +1,2393 @@
+{
+  "fixtures": [
+    {
+      "file": "fuji-p15.json",
+      "items": 390,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 1000,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "fuji-p17.json",
+      "items": 1176,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 1000,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "fuji-p18.json",
+      "items": 765,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 1000,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "fuji-p20.json",
+      "items": 1298,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 1000,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "hirosaki-p21.json",
+      "items": 2799,
+      "widthPt": 1190.552,
+      "heightPt": 841.89,
+      "exclusion": {
+        "x": 720,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "hirosaki-p25.json",
+      "items": 1544,
+      "widthPt": 1190.552,
+      "heightPt": 841.89,
+      "exclusion": {
+        "x": 720,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "ina-p6.json",
+      "items": 713,
+      "widthPt": 1190.52002,
+      "heightPt": 841.92004,
+      "exclusion": {
+        "x": 980,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "ina-p7.json",
+      "items": 1073,
+      "widthPt": 1190.52002,
+      "heightPt": 841.92004,
+      "exclusion": {
+        "x": 980,
+        "y": 720
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "kani-p38.json",
+      "items": 863,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 440,
+        "y": 1040
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "kani-p39.json",
+      "items": 513,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 440,
+        "y": 1040
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "kani-p40.json",
+      "items": 833,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 440,
+        "y": 1040
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "kani-p41.json",
+      "items": 399,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 440,
+        "y": 1040
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "karatsu-fukuzu-p1.json",
+      "items": 1095,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 580,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "karatsu-hashirashin-p1.json",
+      "items": 535,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 580,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "karatsu-jikugumi1-p1.json",
+      "items": 672,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 580,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "karatsu-jikugumi2-p1.json",
+      "items": 613,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 580,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "karatsu-shousai-p1.json",
+      "items": 1189,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 580,
+        "y": 770
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "ojkk-p2.json",
+      "items": 707,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 660,
+        "y": 700
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "ojkk-p3.json",
+      "items": 1447,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 660,
+        "y": 700
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "ojkk-p4.json",
+      "items": 2301,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 660,
+        "y": 700
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "saiki-p1.json",
+      "items": 2054,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 470,
+        "y": 785
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "saiki-p2.json",
+      "items": 1970,
+      "widthPt": 1191,
+      "heightPt": 842,
+      "exclusion": {
+        "x": 470,
+        "y": 785
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "shibata-p1.json",
+      "items": 1246,
+      "widthPt": 2383.93701,
+      "heightPt": 1683.77954,
+      "exclusion": {
+        "x": 1660,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "shibata-p13.json",
+      "items": 1115,
+      "widthPt": 2383.93701,
+      "heightPt": 1683.77954,
+      "exclusion": {
+        "x": 1660,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "shibata-p7.json",
+      "items": 632,
+      "widthPt": 2383.93701,
+      "heightPt": 1683.77954,
+      "exclusion": {
+        "x": 1660,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "tsu-p16.json",
+      "items": 1062,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 590,
+        "y": 1115
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "tsu-p20.json",
+      "items": 975,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 590,
+        "y": 1115
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "tsu-p21.json",
+      "items": 935,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 590,
+        "y": 1115
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "tsu-p22.json",
+      "items": 926,
+      "widthPt": 1684,
+      "heightPt": 1191,
+      "exclusion": {
+        "x": 590,
+        "y": 1115
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p13.json",
+      "items": 1229,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p14.json",
+      "items": 1026,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p15.json",
+      "items": 1545,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p6.json",
+      "items": 1330,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p7.json",
+      "items": 1649,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p8.json",
+      "items": 723,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    },
+    {
+      "file": "yokohama-p9.json",
+      "items": 830,
+      "widthPt": 2384,
+      "heightPt": 1684,
+      "exclusion": {
+        "x": 1800,
+        "y": 1500
+      },
+      "titleBlockMatches": 0
+    }
+  ],
+  "dedupe": {
+    "saiki-p1.json": {
+      "before": 16289,
+      "after": 2267
+    },
+    "saiki-p2.json": {
+      "before": 15267,
+      "after": 2197
+    }
+  },
+  "existing14_byte_identical": true,
+  "status_table": {
+    "fuji-p15.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "fuji-p17.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "fuji-p18.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "fuji-p20.json": {
+      "lists": [
+        {
+          "listKind": "柱リスト",
+          "cells": 0,
+          "issues": [
+            "符号行未認識"
+          ]
+        },
+        {
+          "listKind": "梁リスト",
+          "cells": 0,
+          "issues": [
+            "符号行未認識"
+          ]
+        },
+        {
+          "listKind": "スラブリスト",
+          "cells": 6,
+          "issues": []
+        },
+        {
+          "listKind": "壁リスト",
+          "cells": 0,
+          "issues": [
+            "項目行未認識"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "hirosaki-p21.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y10",
+                "positionPt": 99.67534999999998
+              },
+              {
+                "label": "Y9",
+                "positionPt": 175.25784
+              },
+              {
+                "label": "Y8",
+                "positionPt": 250.84032
+              },
+              {
+                "label": "Y7",
+                "positionPt": 326.42283
+              },
+              {
+                "label": "Y6",
+                "positionPt": 430.34875999999997
+              },
+              {
+                "label": "Y5",
+                "positionPt": 505.93125
+              },
+              {
+                "label": "Y4",
+                "positionPt": 581.51376
+              },
+              {
+                "label": "Y3",
+                "positionPt": 657.09625
+              },
+              {
+                "label": "Y2",
+                "positionPt": 732.67873
+              },
+              {
+                "label": "Y1",
+                "positionPt": 808.26122
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              11000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": [
+          "縮尺不整合"
+        ]
+      },
+      "elevations": {
+        "count": 1,
+        "series": [
+          {
+            "titles": [
+              "(水平スリット配置は軸組図参照)"
+            ],
+            "heightsMm": [
+              2000,
+              8000,
+              8000,
+              8000,
+              11000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "hirosaki-p25.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 165.66644499999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 241.24893499999993
+              },
+              {
+                "label": "Y3",
+                "positionPt": 316.8314249999999
+              },
+              {
+                "label": "Y4",
+                "positionPt": 392.4139149999999
+              },
+              {
+                "label": "Y5",
+                "positionPt": 467.9963949999999
+              },
+              {
+                "label": "Y6",
+                "positionPt": 543.5788849999999
+              },
+              {
+                "label": "Y7",
+                "positionPt": 647.504825
+              },
+              {
+                "label": "Y8",
+                "positionPt": 723.087315
+              },
+              {
+                "label": "Y9",
+                "positionPt": 798.669805
+              },
+              {
+                "label": "Y10",
+                "positionPt": 874.2564275
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              11000,
+              8000,
+              8000,
+              8000
+            ],
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 168.37344499999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 243.95593499999998
+              },
+              {
+                "label": "Y3",
+                "positionPt": 319.53845499999994
+              },
+              {
+                "label": "Y4",
+                "positionPt": 395.12091499999997
+              },
+              {
+                "label": "Y5",
+                "positionPt": 470.7034049999999
+              },
+              {
+                "label": "Y6",
+                "positionPt": 546.2859149999999
+              },
+              {
+                "label": "Y7",
+                "positionPt": 650.211835
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              11000
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": [
+          "縮尺不整合"
+        ]
+      },
+      "elevations": {
+        "count": 3,
+        "series": [
+          {
+            "titles": [
+              "X1通り軸組図",
+              "X2通り+5765軸組図"
+            ],
+            "heightsMm": [
+              3400,
+              4000,
+              4000,
+              4500,
+              100
+            ]
+          },
+          {
+            "titles": [
+              "X2通り軸組図"
+            ],
+            "heightsMm": [
+              3400,
+              4000,
+              4000,
+              4500,
+              100
+            ]
+          },
+          {
+            "titles": [
+              "X3通り軸組図"
+            ],
+            "heightsMm": [
+              4000,
+              4000,
+              4500,
+              100
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "ina-p6.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 1,
+        "series": [
+          {
+            "titles": [
+              "軸組図"
+            ],
+            "heightsMm": [
+              6400,
+              6400,
+              6400
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "ina-p7.json": {
+      "lists": [
+        {
+          "listKind": "大梁リスト",
+          "cells": 1,
+          "issues": []
+        },
+        {
+          "listKind": "小梁リスト",
+          "cells": 1,
+          "issues": []
+        },
+        {
+          "listKind": "地中梁リスト",
+          "cells": 0,
+          "issues": []
+        },
+        {
+          "listKind": "壁リスト",
+          "cells": 0,
+          "issues": [
+            "項目行未認識"
+          ]
+        },
+        {
+          "listKind": "スラブリスト",
+          "cells": 0,
+          "issues": [
+            "項目行未認識"
+          ]
+        },
+        {
+          "listKind": "柱リスト",
+          "cells": 0,
+          "issues": [
+            "符号行未認識"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "kani-p38.json": {
+      "lists": [
+        {
+          "listKind": "地中梁リスト",
+          "cells": 1,
+          "issues": []
+        }
+      ],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 363.9412911528
+              },
+              {
+                "label": "X2",
+                "positionPt": 534.0414272328001
+              },
+              {
+                "label": "X3",
+                "positionPt": 704.1415633128001
+              },
+              {
+                "label": "X4",
+                "positionPt": 930.8217446568001
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 325.080260064
+              },
+              {
+                "label": "Y2",
+                "positionPt": 495.12039609600004
+              },
+              {
+                "label": "Y1",
+                "positionPt": 792.7566342048001
+              }
+            ],
+            "spansMm": [
+              6000,
+              10500
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "kani-p39.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 363.9412911528
+              },
+              {
+                "label": "X2",
+                "positionPt": 534.0414272328001
+              },
+              {
+                "label": "X3",
+                "positionPt": 704.1415633128001
+              },
+              {
+                "label": "X4",
+                "positionPt": 930.8217446568001
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 325.080260064
+              },
+              {
+                "label": "Y2",
+                "positionPt": 495.12039609600004
+              },
+              {
+                "label": "Y1",
+                "positionPt": 792.7714034473846
+              }
+            ],
+            "spansMm": [
+              6000,
+              10500
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "kani-p40.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 246.3411970728
+              },
+              {
+                "label": "Y2",
+                "positionPt": 543.9414351528001
+              },
+              {
+                "label": "Y3",
+                "positionPt": 714.0415712328
+              }
+            ],
+            "spansMm": [
+              10500,
+              6000
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "kani-p41.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 303.0412424328
+              },
+              {
+                "label": "X2",
+                "positionPt": 473.08137846479997
+              },
+              {
+                "label": "X3",
+                "positionPt": 643.1815145448
+              },
+              {
+                "label": "X4",
+                "positionPt": 869.8616958888
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "karatsu-fukuzu-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "合計不一致",
+          "縮尺不整合"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "karatsu-hashirashin-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 326.33802
+              },
+              {
+                "label": "X2",
+                "positionPt": 372.44777999999997
+              },
+              {
+                "label": "X3",
+                "positionPt": 439.58778
+              },
+              {
+                "label": "X4",
+                "positionPt": 544.82768
+              },
+              {
+                "label": "X5",
+                "positionPt": 628.94768
+              },
+              {
+                "label": "X6",
+                "positionPt": 769.76768
+              },
+              {
+                "label": "X7",
+                "positionPt": 869.96778
+              }
+            ],
+            "spansMm": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y6",
+                "positionPt": 235.44
+              },
+              {
+                "label": "Y5",
+                "positionPt": 279.6
+              },
+              {
+                "label": "Y4",
+                "positionPt": 315.84
+              },
+              {
+                "label": "Y3",
+                "positionPt": 397.38
+              },
+              {
+                "label": "Y2",
+                "positionPt": 517.5599
+              },
+              {
+                "label": "Y1",
+                "positionPt": 563.479964
+              },
+              {
+                "label": "Y0",
+                "positionPt": 601.2800000000001
+              }
+            ],
+            "spansMm": [
+              2204,
+              1806,
+              4069,
+              6000,
+              2265,
+              1900
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "karatsu-jikugumi1-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 166.40777999999997
+              },
+              {
+                "label": "Y1",
+                "positionPt": 204.50778
+              },
+              {
+                "label": "Y2",
+                "positionPt": 249.89802
+              },
+              {
+                "label": "Y3",
+                "positionPt": 370.16778
+              },
+              {
+                "label": "Y6",
+                "positionPt": 532.1077799999999
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              8079
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 718.1077799999999
+              },
+              {
+                "label": "Y1",
+                "positionPt": 756.1780200000001
+              },
+              {
+                "label": "Y2",
+                "positionPt": 801.56778
+              },
+              {
+                "label": "Y3",
+                "positionPt": 921.83802
+              },
+              {
+                "label": "Y5",
+                "positionPt": 1039.58768
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              5875
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 803.45802
+              },
+              {
+                "label": "Y1",
+                "positionPt": 841.52778
+              },
+              {
+                "label": "Y2",
+                "positionPt": 886.94778
+              },
+              {
+                "label": "Y3",
+                "positionPt": 1007.18768
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": [
+          "寸法欠落",
+          "縮尺不整合"
+        ]
+      },
+      "elevations": {
+        "count": 2,
+        "series": [
+          {
+            "titles": [
+              "X1,D通り軸組図",
+              "X2通り軸組図"
+            ],
+            "heightsMm": [
+              3500,
+              3500,
+              150
+            ]
+          },
+          {
+            "titles": [
+              "X3通り軸組図",
+              "X4通り軸組図"
+            ],
+            "heightsMm": [
+              3500,
+              3500,
+              150
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "karatsu-jikugumi2-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 165.32778
+              },
+              {
+                "label": "X2",
+                "positionPt": 211.43802
+              },
+              {
+                "label": "X3",
+                "positionPt": 278.60778
+              },
+              {
+                "label": "X4",
+                "positionPt": 383.84778
+              },
+              {
+                "label": "X5",
+                "positionPt": 468.02778
+              },
+              {
+                "label": "X6",
+                "positionPt": 608.75802
+              },
+              {
+                "label": "X7",
+                "positionPt": 708.9877799999999
+              }
+            ],
+            "spansMm": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 165.32778
+              },
+              {
+                "label": "Y1",
+                "positionPt": 203.42777999999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 248.84777999999997
+              },
+              {
+                "label": "Y3",
+                "positionPt": 369.08778
+              },
+              {
+                "label": "Y4",
+                "positionPt": 450.65801999999996
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              4069
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 636.56768
+              },
+              {
+                "label": "Y1",
+                "positionPt": 674.63802
+              },
+              {
+                "label": "Y2",
+                "positionPt": 720.02778
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": [
+          "ラベル文字混在",
+          "寸法欠落",
+          "通り芯対応不明"
+        ]
+      },
+      "elevations": {
+        "count": 1,
+        "series": [
+          {
+            "titles": [
+              "X5通り軸組図",
+              "X6通り軸組図",
+              "X7通り軸組図",
+              "Y0通り軸組図",
+              "Y1通り軸組図"
+            ],
+            "heightsMm": [
+              3500,
+              3500,
+              150
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "karatsu-shousai-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "ojkk-p2.json": {
+      "lists": [
+        {
+          "listKind": "柱リスト",
+          "cells": 19,
+          "issues": []
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "ojkk-p3.json": {
+      "lists": [
+        {
+          "listKind": "大梁リスト",
+          "cells": 32,
+          "issues": []
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "ojkk-p4.json": {
+      "lists": [
+        {
+          "listKind": "小梁リスト",
+          "cells": 9,
+          "issues": [
+            "断面矩形不成立"
+          ]
+        },
+        {
+          "listKind": "スラブリスト",
+          "cells": 12,
+          "issues": [
+            "床板筋解釈不能"
+          ]
+        },
+        {
+          "listKind": "片持梁リスト",
+          "cells": 3,
+          "issues": [
+            "断面矩形不成立"
+          ]
+        },
+        {
+          "listKind": "壁リスト",
+          "cells": 5,
+          "issues": [
+            "壁厚相違"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "saiki-p1.json": {
+      "lists": [
+        {
+          "listKind": "大梁リスト",
+          "cells": 15,
+          "issues": [
+            "階不明",
+            "幅止め筋解釈不能"
+          ]
+        },
+        {
+          "listKind": "小梁リスト",
+          "cells": 4,
+          "issues": [
+            "階不明"
+          ]
+        },
+        {
+          "listKind": "大梁リスト",
+          "cells": 0,
+          "issues": [
+            "符号行未認識"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "saiki-p2.json": {
+      "lists": [
+        {
+          "listKind": "柱リスト",
+          "cells": 5,
+          "issues": [
+            "階不明"
+          ]
+        },
+        {
+          "listKind": "壁リスト",
+          "cells": 9,
+          "issues": [
+            "壁厚相違",
+            "壁筋解釈不能"
+          ]
+        },
+        {
+          "listKind": "スラブリスト",
+          "cells": 5,
+          "issues": []
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "shibata-p1.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 517.2935160000001
+              },
+              {
+                "label": "X2",
+                "positionPt": 829.1045495999999
+              }
+            ],
+            "spansMm": [
+              11000
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y2",
+                "positionPt": 493.0566896
+              },
+              {
+                "label": "Y1",
+                "positionPt": 805.0633088
+              }
+            ],
+            "spansMm": [
+              11000
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "shibata-p13.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 1,
+        "series": [
+          {
+            "titles": [
+              "[本体棟]B通り軸組図S=1/100",
+              "[本体棟]1通り軸組図S=1/100",
+              "[本体棟]3-2通り軸組図S=1/100",
+              "[本体棟]5通り軸組図S=1/100"
+            ],
+            "heightsMm": [
+              2100,
+              1150,
+              1300,
+              2100
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "shibata-p7.json": {
+      "lists": [
+        {
+          "listKind": "柱リスト",
+          "cells": 13,
+          "issues": [
+            "主筋解釈不能",
+            "断面矩形不成立",
+            "主筋ラベル行外",
+            "帯筋解釈不能"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "tsu-p16.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 344.5008798093929
+              },
+              {
+                "label": "X2",
+                "positionPt": 459.10083396939297
+              },
+              {
+                "label": "X3",
+                "positionPt": 559.9607936260163
+              },
+              {
+                "label": "X4",
+                "positionPt": 700.4807374180164
+              },
+              {
+                "label": "X5",
+                "positionPt": 775.3607074660163
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 328.19986872000004
+              },
+              {
+                "label": "Y2",
+                "positionPt": 442.19982312
+              },
+              {
+                "label": "Y1",
+                "positionPt": 582.359767056
+              }
+            ],
+            "spansMm": [
+              5825,
+              7175
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": [
+          "寸法欠落",
+          "通り芯対応不明"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "tsu-p20.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 429.5208458020163
+              },
+              {
+                "label": "X2",
+                "positionPt": 544.060799985393
+              },
+              {
+                "label": "X3",
+                "positionPt": 644.9207596420163
+              },
+              {
+                "label": "X4",
+                "positionPt": 785.4407034340162
+              },
+              {
+                "label": "X5",
+                "positionPt": 860.260673505393
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 328.19986872000004
+              },
+              {
+                "label": "Y2",
+                "positionPt": 442.19982312
+              },
+              {
+                "label": "Y1",
+                "positionPt": 582.7197669120001
+              }
+            ],
+            "spansMm": [
+              5825,
+              7175
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": [
+          "通り芯対応不明"
+        ]
+      },
+      "elevations": {
+        "count": 1,
+        "series": [
+          {
+            "titles": [
+              "・特記なき梁天端は、軸組図参照とする。"
+            ],
+            "heightsMm": [
+              1300,
+              3115,
+              2710,
+              2330,
+              2335,
+              2510
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "tsu-p21.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 452.74083651339294
+              },
+              {
+                "label": "X2",
+                "positionPt": 567.2807906980164
+              },
+              {
+                "label": "X3",
+                "positionPt": 668.1407503533931
+              },
+              {
+                "label": "X4",
+                "positionPt": 808.660694145393
+              },
+              {
+                "label": "X5",
+                "positionPt": 883.4206642413931
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 2,
+        "series": [
+          {
+            "titles": [
+              "Y1通り軸組図S=1/100",
+              "Y2通り軸組図S=1/100"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500
+            ]
+          },
+          {
+            "titles": [
+              "Y3通り軸組図S=1/100"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "tsu-p22.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 475.0008276100163
+              },
+              {
+                "label": "Y2",
+                "positionPt": 615.5211910946836
+              },
+              {
+                "label": "Y3",
+                "positionPt": 729.6413882933849
+              }
+            ],
+            "spansMm": [
+              7175,
+              5825
+            ],
+            "totalConfirmed": true
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 2,
+        "series": [
+          {
+            "titles": [
+              "X1通り軸組図S=1/100",
+              "X2通り軸組図S=1/100",
+              "X3通り軸組図S=1/100"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500
+            ]
+          },
+          {
+            "titles": [
+              "X4通り軸組図S=1/100",
+              "X5通り軸組図S=1/100"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "yokohama-p13.json": {
+      "lists": [
+        {
+          "listKind": "柱断面リスト",
+          "cells": 15,
+          "issues": []
+        },
+        {
+          "listKind": "小梁断面リスト",
+          "cells": 13,
+          "issues": [
+            "主筋端部左右相違"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "yokohama-p14.json": {
+      "lists": [
+        {
+          "listKind": "大梁断面リスト",
+          "cells": 16,
+          "issues": [
+            "主筋端部左右相違"
+          ]
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "yokohama-p15.json": {
+      "lists": [
+        {
+          "listKind": "壁リスト",
+          "cells": 0,
+          "issues": [
+            "項目行未認識"
+          ]
+        },
+        {
+          "listKind": "スラブリスト",
+          "cells": 6,
+          "issues": [
+            "床板筋解釈不能"
+          ]
+        },
+        {
+          "listKind": "片持スラブリスト",
+          "cells": 2,
+          "issues": []
+        },
+        {
+          "listKind": "耐圧版リスト",
+          "cells": 2,
+          "issues": []
+        }
+      ],
+      "grids": {
+        "candidates": [],
+        "issues": [
+          "通り芯ラベル未検出"
+        ]
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "yokohama-p6.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 509.605092
+              },
+              {
+                "label": "bX2",
+                "positionPt": 756.236892
+              },
+              {
+                "label": "bX3",
+                "positionPt": 1002.836124
+              },
+              {
+                "label": "cX1",
+                "positionPt": 1036.8569400000001
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700,
+              1200
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY6",
+                "positionPt": 216.35941999999991
+              },
+              {
+                "label": "bY5",
+                "positionPt": 358.13925199999994
+              },
+              {
+                "label": "bY4",
+                "positionPt": 528.1796119999999
+              },
+              {
+                "label": "bY3",
+                "positionPt": 811.6798039999999
+              },
+              {
+                "label": "bY2",
+                "positionPt": 981.720164
+              },
+              {
+                "label": "bY1",
+                "positionPt": 1123.4405239999999
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "yokohama-p7.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 509.60714400000006
+              },
+              {
+                "label": "bX2",
+                "positionPt": 756.2389440000001
+              },
+              {
+                "label": "bX3",
+                "positionPt": 1002.8381760000001
+              },
+              {
+                "label": "cX1",
+                "positionPt": 1036.858992
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700,
+              1200
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY6",
+                "positionPt": 216.35800400000002
+              },
+              {
+                "label": "bY5",
+                "positionPt": 358.13783600000005
+              },
+              {
+                "label": "bY4",
+                "positionPt": 528.1781959999998
+              },
+              {
+                "label": "bY3",
+                "positionPt": 811.6783879999999
+              },
+              {
+                "label": "bY2",
+                "positionPt": 981.7187479999999
+              },
+              {
+                "label": "bY1",
+                "positionPt": 1123.4384
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 0,
+        "series": [],
+        "issues": [
+          "寸法列未検出"
+        ]
+      }
+    },
+    "yokohama-p8.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 361.49217199999987
+              },
+              {
+                "label": "bX2",
+                "positionPt": 608.1381319999998
+              },
+              {
+                "label": "bX3",
+                "positionPt": 854.72462
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 2,
+        "series": [
+          {
+            "titles": [
+              "bY1通り軸組図1/100",
+              "bY2通り軸組図1/100",
+              "bY3通り軸組図1/100"
+            ],
+            "heightsMm": [
+              1400,
+              4100,
+              4480,
+              2690
+            ]
+          },
+          {
+            "titles": [
+              "bY4通り軸組図1/100",
+              "bY5通り軸組図1/100",
+              "bY6通り軸組図1/100"
+            ],
+            "heightsMm": [
+              1400,
+              4100,
+              4480,
+              2690
+            ]
+          }
+        ],
+        "issues": []
+      }
+    },
+    "yokohama-p9.json": {
+      "lists": [],
+      "grids": {
+        "candidates": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY1",
+                "positionPt": 695.039112
+              },
+              {
+                "label": "bY2",
+                "positionPt": 836.787792
+              },
+              {
+                "label": "bY3",
+                "positionPt": 1006.859304
+              },
+              {
+                "label": "bY4",
+                "positionPt": 1290.3524159999997
+              },
+              {
+                "label": "bY5",
+                "positionPt": 1460.4395039999995
+              },
+              {
+                "label": "bY6",
+                "positionPt": 1602.1457039999991
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY1",
+                "positionPt": 1791.959088
+              },
+              {
+                "label": "bY2",
+                "positionPt": 1933.6794479999999
+              },
+              {
+                "label": "bY3",
+                "positionPt": 2103.7792799999997
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000
+            ],
+            "totalConfirmed": false
+          }
+        ],
+        "issues": []
+      },
+      "elevations": {
+        "count": 2,
+        "series": [
+          {
+            "titles": [
+              "bX1通り軸組図1/100",
+              "bX2A通り軸組図1/100"
+            ],
+            "heightsMm": [
+              1400,
+              4100,
+              4480,
+              2490
+            ]
+          },
+          {
+            "titles": [
+              "bX2通り軸組図1/100",
+              "bX3通り軸組図1/100"
+            ],
+            "heightsMm": [
+              1400,
+              4100,
+              4480,
+              2690
+            ]
+          }
+        ],
+        "issues": []
+      }
+    }
+  },
+  "e2e": {
+    "status": "not-run",
+    "detail": "Error: Daemon failed to start within 5 seconds"
+  },
+  "summary": "CMap/standard-font ?? ??? ?????Node ???? ?? ????, ?? ??? 0.5pt ???? ???? 2? 22?? ????. ?? 14?? ??? ???? 36? ??? e2e ?? ???? ????."
+}
