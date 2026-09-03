@@ -1,0 +1,26 @@
+2026-09-03T03:16:42.993970Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T03:16:43.127300Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T03:16:44.076157Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T03:16:44.130806Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T03:22:48.881540Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\parse.ts:
+    const candidates = dimensionCandidatesAt(
+      dimensions,
+      new Set(),
+      sequence.alongKey,
+      sequence.alongKey === 'y' ? 'x' : 'y',
+      midpoint,
+      sequence.axisAcross[i] ?? sequence.across,
+    )
+2026-09-03T03:23:13.560450Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\parse.ts:
+    const candidates = dimensionCandidatesAt(
+      dimensions,
+      new Set(),
+      sequence.alongKey,
+      sequence.alongKey === 'y' ? 'x' : 'y',
+      midpoint,
+      sequence.axisAcross[i] ?? sequence.across,
+    )
+2026-09-03T03:38:36.136963Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\parse.ts:
+ * A plain Y1..Y3 band is deliberately left alone: that is the older corpus format and
+ * changing it would change the existing 14-page result.
+2026-09-03T03:44:22.794146Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\Users\emper\mdtproject\src\lib\import\framing-plan\parse.ts
