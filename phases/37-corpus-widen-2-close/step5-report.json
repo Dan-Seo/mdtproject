@@ -1,0 +1,70 @@
+{
+  "verdict": "completed",
+  "items": {
+    "1_falsifiability": {
+      "holds": false,
+      "goldens_checked": 16,
+      "mutated_tests_failed": 16
+    },
+    "2_label_position": {
+      "holds": false,
+      "evidence": [
+        "CASES 7 + EXISTING_14 14개 페이지, 33개 grid를 raw TextItem 입력으로 확인했다.",
+        "모든 grid에서 axes[i].positionPt가 엄격히 증가했고, 독립 전사 골든의 label 순서(X 왼쪽→오른쪽, Y 위→아래)와 일치했다. nonMonotonic=0."
+      ]
+    },
+    "3_regression": {
+      "holds": false,
+      "evidence": [
+        "parseSectionLists를 main worktree와 14개 기존 페이지에서 cell-level 필드로 비교: 예상된 ojkk-p4 12개 대상외 셀만 차이, 그 밖의 차이 0.",
+        "기존 grid 14개와 기존 階高 6개를 main과 비교: 양쪽 모두 차이 0."
+      ]
+    },
+    "4_sweep": {
+      "holds": false,
+      "midpoint_sweep": {
+        "4": "36면, gridPages=23; kani-p38·kani-p39·yokohama-p6·yokohama-p7 모두 寸法欠落 재현.",
+        "6": "36면, gridPages=23; T=4에서만 사라지는 4면이 복원됨.",
+        "15": "36면, gridPages=26; 기준값.",
+        "30": "36면, gridPages=26; T=15 대비 gridPages 변화 없음.",
+        "40": "36면, gridPages=26; 넓은 문턱에서만 fuji-p17의 寸法列曖昧이 추가됨."
+      }
+    },
+    "5_specialization": {
+      "holds": false,
+      "evidence": [
+        "git diff main...HEAD -- src/lib/import에서 file/issuer/sheet 분기·process.env·labels/spansMm reverse 분기·단일 면 전용 상수를 찾지 못했다.",
+        "현재 소스의 reverse() 2건은 section-list의 wall mark/value 탐색이며 grid labels/spansMm를 뒤집지 않는다."
+      ]
+    },
+    "6_level_labels": {
+      "holds": false,
+      "evidence": [
+        "階高 corpus 3면 + 기존 elevation 4개 계열(실제 7개 페이지)을 확인했고 /^(?:[A-Z]{1,3}\\d)|▽|▲|△/ 위반 labels=0."
+      ]
+    },
+    "7_title_block": {
+      "holds": false,
+      "matches": 0
+    },
+    "8_two_layer_and_defaults": {
+      "holds": false,
+      "evidence": [
+        "saiki 2段筋 후보 8개 모두 girderMain 본수 필드가 없고 2段筋未対応로 남아, 확정 본수 0.",
+        "ina G1·GA의 빈 STP 셀은 stirrup/default를 만들지 않고 raw에도 STP 기본값을 주지 않는 것을 확인했다. targeted 3 tests passed."
+      ]
+    },
+    "9_typecheck_lint": {
+      "holds": false,
+      "typecheck_errors": 0,
+      "lint_errors": 0
+    },
+    "10_short_tail_constant": {
+      "holds": false,
+      "only_tsu_breaks_at_0_25": true,
+      "tsu_1170_layout": "SHORT_TAIL...=0.25에서 corpus2-elevation 3건 + 기존 elevation 6건 중 tsu만 실패했다. raw VerticalRun은 마지막 150mm를 x=180.100928,y=753.419685, 1170mm를 별도 왼쪽 치수열 x=160.540936,y=772.619669에 둔다. 따라서 실제 gap은 19.199984pt이고, 앞선 chain의 median scale과 ((150+1170)/2)×scale 모델이 기대하는 gap은 12.903797pt이다. 1170 문자열은 인접 레벨 구간의 중점이 아니라 왼쪽 치수열의 별도 치수선 위치에 놓여 있어 6.296187pt 아래로 어긋난다."
+    }
+  },
+  "git_status_clean": true,
+  "summary": "Step 5 반증 항목 1~10이 모두 불성립했다. 16개 골든 변조가 모두 실패했고, main 대비 기존 결과·문턱 회귀·레벨/표제란 순도·타입체크/린트를 통과했으며 SHORT_TAIL 0.25에서는 tsu만 깨졌다."
+}
