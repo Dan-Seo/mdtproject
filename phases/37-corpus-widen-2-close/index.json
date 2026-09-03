@@ -38,8 +38,10 @@
     {
       "step": 3,
       "name": "elevation-golden-tests",
-      "status": "pending",
-      "summary": ""
+      "status": "completed",
+      "summary": "hirosaki 3·karatsu 2(X4 라벨 열 없음 제외)·tsu 1을 제목 기반 골든 블록으로 대조하고, 레벨 라벨을 라벨 열 후보와 레벨 형식으로 제한했으며 짧은 꼬리 허용오차를 0.49로 축소했다.",
+      "started_at": "2026-09-03T16:29:43+0900",
+      "completed_at": "2026-09-03T16:48:27+0900"
     },
     {
       "step": 4,

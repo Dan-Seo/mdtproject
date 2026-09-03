@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { parseFrameElevations } from '@/lib/import/framing-plan/elevation'
+import { compact } from '@/lib/import/runs'
 import type { TextPage } from '@/lib/import/section-list/types'
 
 type TextItemFixture = {
@@ -13,7 +14,10 @@ type TextItemFixture = {
 
 type ElevationFixture = {
   heightsMm?: number[]
+  levels?: string[]
+  levelTexts?: string[]
   elevations: Array<{
+    title?: string
     levels?: string[]
     levelsBottom?: string[]
     heightsMm?: number[]
@@ -43,75 +47,86 @@ function readGolden(file: string): ElevationFixture {
   ) as ElevationFixture
 }
 
-function labelsFrom(
+function elevationForTitle(
   parsed: ReturnType<typeof parseFrameElevations>,
-  wanted: string[],
-): string[][] {
-  const wantedSet = new Set(wanted)
-  return parsed.elevations.map((elevation) =>
-    elevation.levels.flatMap((level) =>
-      level.labels.filter((label) => wantedSet.has(label)),
+  title: string,
+): ReturnType<typeof parseFrameElevations>['elevations'][number] {
+  const normalized = compact(title)
+  const expectedTitle = normalized.includes('軸組図')
+    ? normalized
+    : `${normalized}軸組図`
+  const matches = parsed.elevations.filter((elevation) =>
+    elevation.titles.some(
+      (candidateTitle) =>
+        candidateTitle === expectedTitle ||
+        candidateTitle.startsWith(`${expectedTitle}S=`),
     ),
   )
+  expect(matches).toHaveLength(1)
+  return matches[0]!
+}
+
+function labelsByLevel(
+  elevation: ReturnType<typeof parseFrameElevations>['elevations'][number],
+): string[][] {
+  return elevation.levels.map((level) => level.labels)
 }
 
 describe('階高 corpus 2 골든', () => {
-  it('karatsu: 짧은 150mm 구간과 원문 레벨 라벨을 모든 공유 계열에서 보존한다', () => {
+  it('karatsu: 제목으로 대응한 X2·X3 두 블록의 높이와 레벨 라벨을 골든과 대조한다', () => {
     const golden = readGolden('karatsu-jikugumi1-p1-elevation.json')
     const parsed = parseFrameElevations(readPage('karatsu-jikugumi1-p1.json'))
 
     expect(parsed.issues).toEqual([])
     expect(parsed.elevations).toHaveLength(2)
-    expect(parsed.elevations.map((entry) => entry.heightsMm)).toEqual(
-      parsed.elevations.map(() => golden.heightsMm),
+    const expectedElevations = golden.elevations.filter((entry) =>
+      entry.title === 'X2通り' || entry.title === 'X3通り',
     )
-    expect(labelsFrom(parsed, ['RFL水上', '2FL', '1FL', 'GL'])).toEqual([
-      ['RFL水上', '2FL', '1FL', 'GL'],
-      ['RFL水上', '2FL', '1FL', 'GL'],
-    ])
+
+    // X4通り는 텍스트에 레벨 라벨 열이 없어 골든 대조에서 제외한다.
+    // X2·X3은 제목의 정확한 軸組図 세그먼트로 계열을 대응한다.
+    expect(expectedElevations).toHaveLength(2)
+    for (const expected of expectedElevations) {
+      const actual = elevationForTitle(parsed, expected.title!)
+      expect(actual.heightsMm).toEqual(golden.heightsMm)
+      expect(labelsByLevel(actual)).toEqual(
+        golden.levelTexts!.map((label) => [label]),
+      )
+    }
   })
 
-  it('tsu: 아래쪽 확정 구간 3500·150·1170을 연쇄 끝에서 보존한다', () => {
+  it('tsu: 제목으로 대응한 Y3 블록의 골든 부분 전사 높이와 라벨 열을 대조한다', () => {
     const golden = readGolden('tsu-kanritou-p21-elevation.json')
     const parsed = parseFrameElevations(readPage('tsu-p21.json'))
-    const expectedHeights = golden.elevations[0]?.heightsBottomMm
+    const expected = golden.elevations[0]!
+    const actual = elevationForTitle(parsed, expected.title!)
+    const expectedHeights = expected.heightsBottomMm!
+    const expectedLabels = expected.levelsBottom!.map((label) => [label])
 
     expect(parsed.issues).toEqual([])
-    expect(parsed.elevations).toHaveLength(2)
-    expect(
-      parsed.elevations.map((entry) => entry.heightsMm.slice(-3)),
-    ).toEqual([expectedHeights, expectedHeights])
-    expect(labelsFrom(parsed, ['2FL', '1FL', '設計GL', '基礎下端'])).toEqual([
-      ['2FL', '1FL', '設計GL', '基礎下端'],
-      ['2FL', '1FL', '設計GL', '基礎下端'],
-    ])
+    // 2FL 위쪽은 최상단 레벨 라벨을 확정하지 않은 골든 부분 전사이므로
+    // 높이와 라벨 모두 아래쪽 골든 구간만 대조한다.
+    expect(actual.heightsMm.slice(-expectedHeights.length)).toEqual(
+      expectedHeights,
+    )
+    expect(labelsByLevel(actual).slice(-expectedLabels.length)).toEqual(
+      expectedLabels,
+    )
   })
 
-  it('hirosaki: 100mm 레벨과 그 아래 2310mm 구간을 각 계열에 보존한다', () => {
+  it('hirosaki: 제목으로 대응한 X1·X2·X3 세 블록의 높이와 레벨 라벨을 골든과 대조한다', () => {
     const golden = readGolden('hirosaki-kikyono-p25-elevation.json')
     const parsed = parseFrameElevations(readPage('hirosaki-p25.json'))
 
     expect(parsed.issues).toEqual([])
     expect(parsed.elevations).toHaveLength(3)
-    expect(parsed.elevations.map((entry) => entry.heightsMm)).toEqual([
-      golden.elevations[0]?.heightsMm,
-      golden.elevations[0]?.heightsMm,
-      golden.elevations[1]?.heightsMm,
-    ])
-    expect(
-      labelsFrom(parsed, [
-        'RFL',
-        'PHFL',
-        '3FL',
-        '2FL',
-        '1FL',
-        '設計GL',
-        '△基礎下端',
-      ]),
-    ).toEqual([
-      ['RFL', 'PHFL', '3FL', '2FL', '1FL', '設計GL', '△基礎下端'],
-      ['RFL', 'PHFL', '3FL', '2FL', '1FL', '設計GL', '△基礎下端'],
-      ['PHFL', '3FL', '2FL', '1FL', '設計GL', '△基礎下端'],
-    ])
+    expect(golden.elevations).toHaveLength(3)
+    for (const expected of golden.elevations) {
+      const actual = elevationForTitle(parsed, expected.title!)
+      expect(actual.heightsMm).toEqual(expected.heightsMm)
+      expect(labelsByLevel(actual)).toEqual(
+        expected.levels!.map((label) => [label]),
+      )
+    }
   })
 })

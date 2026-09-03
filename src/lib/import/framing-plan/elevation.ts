@@ -27,12 +27,12 @@ const COLUMN_TOLERANCE_PT = 4
 /** 레벨 라벨과 푼 레벨 위치의 어긋남 허용(pt). 실물 최대 4.1pt */
 const LEVEL_TOLERANCE_PT = 15
 /**
- * 레벨 라벨을 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
+ * 레벨 라벨 열 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
  *
- * **이 창이 계열의 검증 장치다.** 치수 두 개만으로는 축척을 유도할 수는 있어도
- * 대조할 수가 없다(유도한 축척이 자기 자신과 어긋날 수는 없다). 계열이 옳다는
- * 증거는 「푼 레벨 위치에 실제로 라벨이 서 있다」는 독립된 사실 하나뿐이고,
- * 창이 넓으면 그 증거가 가짜가 된다.
+ * 이 창은 넓은 후보 수집용이고, 실제 라벨 열은 후보를 x 방향 군집으로 나눈 뒤
+ * 레벨 위치를 가장 많이 설명하는 군집 하나로 좁힌다. 치수 두 개만으로는 축척을
+ * 유도할 수는 있어도 대조할 수가 없으므로, 넓은 창 전체를 라벨 열로 취급하면
+ * 부재 부호를 레벨 라벨로 오인하게 된다.
  *
  * 실물 kani p40에서 그 일이 일어났다 — 위·아래 두 軸組図의 **전체 치수**
  * 5,535 둘이 한 열로 이어져 축척이 3배로 나왔는데, 창이 150pt이던 동안에는
@@ -42,6 +42,8 @@ const LEVEL_TOLERANCE_PT = 15
  * 그 위이고 128 아래다. 더 벌어지는 도면은 빈 후보로 실패한다 (R10).
  */
 const LABEL_WINDOW_PT = 80
+/** 같은 레벨 라벨 열로 묶는 텍스트 바운더리 사이의 최대 간격(pt) */
+const LABEL_COLUMN_GAP_PT = COLUMN_TOLERANCE_PT * 4
 /** 계열이 이어지는지 보는 축척 편차. 伏図 파서와 같은 값이다 */
 const SCALE_TOLERANCE_RATIO = 0.03
 /** 라벨이 붙은 레벨이 이보다 적으면 계열로 보지 않는다 — 부분 치수 열과의 유일한 구분 */
@@ -58,7 +60,11 @@ const SHORT_DIMENSION_RATIO = 0.25
  */
 const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4
 /** 짧은 치수의 텍스트 위치 편차를 허용하되, 가까운 잡음 치수는 거절한다. */
-const SHORT_TAIL_SCALE_TOLERANCE_RATIO = 0.5
+/**
+ * 실제 짧은 꼬리 오차는 tsu 1170mm가 0.4879329, hirosaki 2310mm가 0.0005626이다.
+ * 최대값을 포함하되 50% 창보다 좁히기 위해 0.49를 쓴다.
+ */
+const SHORT_TAIL_SCALE_TOLERANCE_RATIO = 0.49
 /**
  * 계열이 되려면 치수가 이만큼 있어야 한다.
  *
@@ -79,6 +85,8 @@ interface Token {
   text: string
   x: number
   y: number
+  leftX: number
+  rightX: number
 }
 
 interface DimensionToken extends Token {
@@ -93,11 +101,19 @@ function tokens(page: TextPage): Token[] {
         text: segment.compact,
         x: segment.centerX,
         y: segment.centerY,
+        leftX: segment.x,
+        rightX: segment.endX,
       })
     }
   }
   for (const run of verticalRuns(page.items)) {
-    collected.push({ text: run.text, x: run.x, y: run.y })
+    collected.push({
+      text: run.text,
+      x: run.x,
+      y: run.y,
+      leftX: run.x,
+      rightX: run.x,
+    })
   }
   return collected
 }
@@ -145,6 +161,111 @@ function dimensionColumns(dimensions: DimensionToken[]): DimensionToken[][] {
   }
 
   return columns.map((column) => [...column].sort((a, b) => a.y - b.y))
+}
+
+function horizontalDistance(token: Token, x: number): number {
+  if (token.rightX < x) return x - token.rightX
+  if (token.leftX > x) return token.leftX - x
+  return 0
+}
+
+function labelText(token: Token): string | undefined {
+  const text = token.text.replace(/^[▽△▲▼]+/, '')
+  return text.length > 0 ? text : undefined
+}
+
+function isLevelLabel(text: string): boolean {
+  return /(?:FL|GL|RCL|(?:天端|下端|上端)$)/.test(text)
+}
+
+function labelColumns(labels: Token[], axisX: number): Token[][] {
+  const candidates = labels
+    .filter((label) => horizontalDistance(label, axisX) <= LABEL_WINDOW_PT)
+    .sort(
+      (left, right) =>
+        left.leftX - right.leftX ||
+        left.y - right.y ||
+        left.rightX - right.rightX,
+    )
+  const columns: Token[][] = []
+
+  for (const candidate of candidates) {
+    const column = columns.at(-1)
+    const columnRight = column?.reduce(
+      (right, token) => Math.max(right, token.rightX),
+      Number.NEGATIVE_INFINITY,
+    )
+    if (
+      column &&
+      candidate.leftX - columnRight! <= LABEL_COLUMN_GAP_PT
+    ) {
+      column.push(candidate)
+    } else {
+      columns.push([candidate])
+    }
+  }
+
+  return columns
+}
+
+function nearestLevelIndex(
+  levels: ElevationLevel[],
+  y: number,
+): { index: number; distance: number } {
+  let index = -1
+  let distance = Number.POSITIVE_INFINITY
+  for (let i = 0; i < levels.length; i++) {
+    const candidateDistance = Math.abs(levels[i].positionPt - y)
+    if (candidateDistance < distance) {
+      index = i
+      distance = candidateDistance
+    }
+  }
+  return { index, distance }
+}
+
+function selectLabelColumn(
+  labels: Token[],
+  levels: ElevationLevel[],
+  axisX: number,
+): Token[] {
+  const ranked = labelColumns(labels, axisX)
+    .map((column) => {
+      const usable = column.filter((token) => {
+        const text = labelText(token)
+        return text !== undefined && isLevelLabel(text)
+      })
+      const labelledLevels = new Set(
+        usable
+          .map((token) => nearestLevelIndex(levels, token.y))
+          .filter(({ distance }) => distance <= LEVEL_TOLERANCE_PT)
+          .map(({ index }) => index),
+      )
+      const distance = Math.min(
+        ...column.map((token) => horizontalDistance(token, axisX)),
+      )
+      return { column, labelledLevels, usable, distance }
+    })
+    .sort(
+      (left, right) =>
+        right.labelledLevels.size - left.labelledLevels.size ||
+        right.usable.length - left.usable.length ||
+        left.distance - right.distance,
+    )
+
+  const selected = ranked[0]?.column ?? []
+  const selectedSet = new Set(selected)
+  const displaced = ranked.flatMap(({ column }) =>
+    column.filter((token) => {
+      if (selectedSet.has(token)) return false
+      const text = labelText(token)
+      if (text === undefined || !isLevelLabel(text)) return false
+      const nearest = nearestLevelIndex(levels, token.y)
+      return nearest.distance <= LEVEL_TOLERANCE_PT
+    }),
+  )
+
+  return [...selected, ...displaced]
 }
 
 /**
@@ -338,19 +459,15 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
         positionPt,
       }))
       const labelsAtLevels: Token[][] = levels.map(() => [])
-      for (const label of labels) {
-        if (Math.abs(label.x - chain[0].x) > LABEL_WINDOW_PT) continue
-        let nearest = -1
-        let nearestDistance = Number.POSITIVE_INFINITY
-        for (let i = 0; i < levels.length; i++) {
-          const distance = Math.abs(levels[i].positionPt - label.y)
-          if (distance < nearestDistance) {
-            nearest = i
-            nearestDistance = distance
-          }
+      const labelColumn = selectLabelColumn(labels, levels, chain[0].x)
+      for (const label of labelColumn) {
+        const text = labelText(label)
+        if (text === undefined || !isLevelLabel(text)) continue
+        const nearest = nearestLevelIndex(levels, label.y)
+        if (nearest.index < 0 || nearest.distance > LEVEL_TOLERANCE_PT) {
+          continue
         }
-        if (nearest < 0 || nearestDistance > LEVEL_TOLERANCE_PT) continue
-        labelsAtLevels[nearest].push(label)
+        labelsAtLevels[nearest.index].push(label)
       }
 
       // 짧은 치수가 실제로 적혀 있으면, 그 사이의 두 레벨을 같은 위치로 접지
@@ -376,7 +493,10 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
       for (let i = 0; i < levels.length; i++) {
         levels[i].labels = (labelsAtLevels[i] ?? [])
           .sort((left, right) => left.y - right.y || left.x - right.x)
-          .map((label) => label.text)
+          .flatMap((label) => {
+            const text = labelText(label)
+            return text === undefined ? [] : [text]
+          })
       }
 
       const labelled = levels.filter((level) => level.labels.length > 0).length
