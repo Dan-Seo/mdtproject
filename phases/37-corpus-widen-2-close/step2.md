@@ -56,7 +56,9 @@ phase 36 step 1의 `src/lib/import/framing-plan/parse.ts`를 Claude가 검토해
 
 ## AC
 
-- `npm run test` 통과: 7면 격자 골든(페이지 순서)＋positionPt 단조＋`EXISTING_14` 불변.
+- `npx vitest run tests/plan-import/corpus2.test.ts src/lib/import/framing-plan tests/section-import` 통과:
+  7면 격자 골든(페이지 순서)＋positionPt 단조＋`EXISTING_14` 불변. **주의**: `corpus2-elevation.test.ts`는
+  step 3이 고칠 階高 블록 대응 문제로 지금 실패 상태다 — 이 스텝의 AC 밖이고 `blocked` 사유가 아니다.
 - `grep -n "DEBUG_PARSE\|normalizeAxisOrientation" src/lib/import/framing-plan/parse.ts` 0건.
 - `git diff`에 도면명 리터럴 분기 없음.
 

@@ -39,7 +39,10 @@ phase 36에서 断面リスト 파서가 넓어지며 ojkk-p4 小梁リスト 9�
 
 ## AC
 
-- `npm run test` 통과, 추가 테스트가 12 entry를 전부 순회한다(루프 카운트를 report에).
+- `npx vitest run tests/section-import src/lib/import/section-list` 통과, 추가 테스트가 12 entry를 전부
+  순회한다(루프 카운트를 report에). **주의**: `tests/plan-import/corpus2*.test.ts`는 step 2·3이 고칠
+  골든 축 순서·階高 블록 문제로 지금 의도적으로 실패 상태다 — 그 실패는 이 스텝의 AC 밖이고
+  `blocked` 사유가 아니다.
 - 골든 변조 시 실패 확인(report에 어느 값을 바꿨는지).
 
 ## 산출물
