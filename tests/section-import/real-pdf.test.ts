@@ -67,6 +67,26 @@ const pages: RealPage[] = [
     fixture: 'kani-p38.json',
     lists: [['地中梁リスト', 1]],
   },
+  {
+    cacheFile: 'dwg-saiki-fire.pdf',
+    page: 1,
+    fixture: 'saiki-p1.json',
+    lists: [
+      ['大梁リスト', 24],
+      ['小梁リスト', 4],
+      ['大梁リスト', 0],
+    ],
+  },
+  {
+    cacheFile: 'dwg-saiki-fire.pdf',
+    page: 2,
+    fixture: 'saiki-p2.json',
+    lists: [
+      ['柱リスト', 10],
+      ['壁リスト', 9],
+      ['スラブリスト', 5],
+    ],
+  },
 ]
 
 const available = pages.filter(({ cacheFile }) =>

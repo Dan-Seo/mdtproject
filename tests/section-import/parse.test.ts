@@ -471,7 +471,9 @@ interface ExpectedColumnCell {
   断面raw?: string
   主筋: string | Record<string, string>
   帯筋?: string
+  帯筋形状?: string
   HOOP?: string
+  HOOP形状?: string
 }
 
 interface ExpectedColumnsDoc {
@@ -598,6 +600,16 @@ function sweepColumns(
           }
         }
       }
+      const hoopShape = cell.帯筋形状 ?? cell.HOOP形状
+      if (hoopShape !== undefined) {
+        const parsedShape = Object.entries(c.raw).find(([key]) =>
+          /(?:帯筋|HOOP|フープ|スターラップ)形状/.test(key),
+        )?.[1]
+        // saiki TextItem 전사에서는 일부 도형 글리프가 「-」로 추출되어
+        // 시각 전사의 ⊟·⊞와 같다고 단정할 수 없다. 실제 기호가 텍스트로
+        // 들어온 경우에만 원문 shape를 대조한다 — 없는 shape를 지어내지 않는다.
+        if (parsedShape !== undefined) expect(parsedShape, label).toBe(hoopShape)
+      }
     }
   }
 
@@ -714,6 +726,10 @@ function sweepGirders(
         }
         counts.main += 1
       } else {
+        const twoLayerMain = [
+          ...Object.values(topCells),
+          ...Object.values(bottomCells),
+        ].some((text) => text.includes('/'))
         for (const [position, text] of Object.entries(topCells)) {
           const raw = c.raw[`${labels.top}(${position})`]
           expect(raw, `${label} ${labels.top}(${position}) 원문 소실`).toBeDefined()
@@ -726,6 +742,10 @@ function sweepGirders(
             `${label} ${labels.bottom}(${position}) 원문 소실`,
           ).toBeDefined()
           expect(raw, label).toBe(text)
+        }
+        if (twoLayerMain) {
+          expect(c.issues, `${label} 2段筋 issue`).toContain('2段筋未対応')
+          counts.main += 1
         }
       }
       if (c.stirrup) {
@@ -820,6 +840,46 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
         entry.mark,
       ).toBe(normPitch(entry.STP))
     }
+  })
+
+  it('saiki 大梁リスト — 両端·スターラップ·2段筋을 전사 대조한다', () => {
+    expect(
+      sweepGirders(
+        'saiki-p1.json',
+        'saiki-fire-p1-girders.json',
+        '大梁リスト',
+        { top: '上端筋', bottom: '下端筋', stirrup: 'スターラップ' },
+      ),
+    ).toEqual({ main: 24, stirrup: 24, dimension: 24 })
+  })
+
+  it('saiki 柱リスト — 主筋·フープ·断面을 전사 대조한다', () => {
+    expect(
+      sweepColumns(
+        'saiki-p2.json',
+        'saiki-fire-p2-columns.json',
+        '柱リスト',
+      ),
+    ).toEqual({ main: 10, hoop: 10, dimension: 10 })
+  })
+
+  it('textual フープ shape를 raw로 보존하면서 피치만 정규화한다', () => {
+    const parsed = parseSectionLists({
+      widthPt: 300,
+      heightPt: 180,
+      items: [
+        { str: '柱リスト', x: 10, y: 5, w: 40, h: 8 },
+        { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+        { str: 'C1', x: 120, y: 20, w: 12, h: 8 },
+        { str: '1F', x: 10, y: 32, w: 10, h: 8 },
+        { str: 'フープ', x: 10, y: 44, w: 20, h: 8 },
+        { str: '⊟-D13@100', x: 100, y: 44, w: 48, h: 8 },
+      ],
+    })
+    const c1 = candidate(list(parsed, '柱リスト'), 'C1', '1F')
+
+    expect(c1.hoop).toEqual({ size: 'D13', pitchMm: 100 })
+    expect(c1.raw['フープ形状']).toBe('⊟')
   })
 
   it('ojkk 壁リスト·スラブリスト — 벽 5칸과 床板 6칸을 전사 대조한다', () => {
