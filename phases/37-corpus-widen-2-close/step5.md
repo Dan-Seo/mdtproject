@@ -26,6 +26,12 @@ step 2〜4는 codex 구현이고 골든은 Claude 전사다. 고치지 않는다
    (부재 부호)나 `▽|▲|△`가 있으면 성립.
 7. **표제란** — 36면 `/TEL|FAX|℡|電話|一級建築士|設計事務所|株式会社|共同体/` 0건 재확인.
 8. **2段筋·特記** — saiki 2段 셀 본수 0, ina 빈 STP 기본값 0 재확인.
+10. **한 면 상수 — `SHORT_TAIL_SCALE_TOLERANCE_RATIO`** — step 3이 0.5→0.49로 줄였는데 tsu 1170mm의
+   실측 오차가 0.488이라 사실상 tsu 한 면에 맞춘 값이다. 반증 절차: 이 상수를 0.25로 낮춘 사본으로
+   階高 3면＋기존 4면을 돌려 **tsu만** 깨지고 나머지가 그대로면 「한 면 상수」로 성립. 아울러
+   `extendShortTail`의 기대 간격 모델((last+candidate)/2×scale)이 tsu의 1170 치수 배치(실측 19.2pt,
+   기대 12.9pt)와 왜 어긋나는지 — 치수 문자열이 구간 중점이 아니라 어디에 놓였는지 — 원시 좌표로
+   적어라. 상수는 원복.
 9. **타입·린트** — `npm run typecheck`가 0 오류, `npm run lint`가 0 오류(경고는 main 기존 `_omitted`
    1건만)여야 한다. vitest는 타입을 보지 않으므로 별도 실행이 필수다. 어긋나면 성립.
 
@@ -51,7 +57,8 @@ step 2〜4는 codex 구현이고 골든은 Claude 전사다. 고치지 않는다
     "6_level_labels": { "holds": false, "evidence": [] },
     "7_title_block": { "holds": false, "matches": 0 },
     "8_two_layer_and_defaults": { "holds": false, "evidence": [] },
-    "9_typecheck_lint": { "holds": false, "typecheck_errors": 0, "lint_errors": 0 }
+    "9_typecheck_lint": { "holds": false, "typecheck_errors": 0, "lint_errors": 0 },
+    "10_short_tail_constant": { "holds": false, "only_tsu_breaks_at_0_25": null, "tsu_1170_layout": "" }
   },
   "git_status_clean": true,
   "summary": "index.json summary와 같은 요지"
