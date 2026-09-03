@@ -1,0 +1,9 @@
+{
+  "entries_checked": 12,
+  "mutation": {
+    "field": "小梁リスト.FB3.depth",
+    "failed": true,
+    "restored": true
+  },
+  "summary": "tests/section-import/parse.test.ts에 ojkk 小梁リスト 9칸과 片持梁リスト 3칸의 対象外 断面寸法·配筋 전 셀 대조를 추가했고, AC 명령이 5개 파일·197개 테스트로 통과했다."
+}

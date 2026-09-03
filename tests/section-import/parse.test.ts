@@ -1175,6 +1175,124 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
     }
   })
 
+  it('ojkk 小梁·片持梁リスト — 対象外 셀의 断面寸法·配筋을 전 셀 대조한다', () => {
+    type ExpectedOutOfScopeEntry = {
+      mark: string
+      b?: number
+      depth?: number
+      上端筋: string | Record<string, string>
+      下端筋: string | Record<string, string>
+      あばら筋: string
+      腹筋?: string
+      腹筋raw?: string
+      expected?: {
+        b: null
+        depth: null
+        issues: string[]
+        '断面raw_contains': string[]
+      }
+    }
+
+    const doc = readExpected<ExpectedWallSlabDoc>(
+      'ojkk-akamichi-p4-walls-slabs.json',
+    )
+    const parsed = parseSectionLists(readPage('ojkk-p4.json'))
+    const scopeOutLists = doc.lists.filter(({ listKind }) =>
+      ['小梁リスト', '片持梁リスト'].includes(listKind),
+    )
+    let entriesChecked = 0
+
+    for (const listSpec of scopeOutLists) {
+      const parsedList = list(parsed, listSpec.listKind)
+      const entries = (listSpec.entries ?? []) as unknown as ExpectedOutOfScopeEntry[]
+      expect(parsedList.candidates.map(({ mark }) => mark).sort(), listSpec.listKind).toEqual(
+        entries.map(({ mark }) => mark).sort(),
+      )
+
+      for (const entry of entries) {
+        entriesChecked += 1
+        const c = candidate(parsedList, entry.mark)
+        expect(c.kind, entry.mark).toBe('対象外')
+
+        if (entry.expected) {
+          expect({ b: c.b, depth: c.depth }, entry.mark).toEqual({
+            b: undefined,
+            depth: undefined,
+          })
+          expect(c.issues, entry.mark).toContain('断面矩形不成立')
+          const rawDimension = c.raw['断面']?.normalize('NFKC') ?? ''
+          for (const rawPart of entry.expected['断面raw_contains']) {
+            expect(rawDimension, `${entry.mark} 断面`).toContain(
+              rawPart.normalize('NFKC'),
+            )
+          }
+        } else {
+          expect({ b: c.b, depth: c.depth }, entry.mark).toEqual({
+            b: entry.b,
+            depth: entry.depth,
+          })
+        }
+
+        const top = entry.上端筋
+        const bottom = entry.下端筋
+        if (typeof top === 'string' && typeof bottom === 'string') {
+          expect(c.girderMain, `${entry.mark} 主筋`).toBeDefined()
+          expect(
+            c.girderMain && `${c.girderMain.topCount}-${c.girderMain.size}`,
+            `${entry.mark} 上端筋`,
+          ).toBe(top)
+          expect(
+            c.girderMain && `${c.girderMain.bottomCount}-${c.girderMain.size}`,
+            `${entry.mark} 下端筋`,
+          ).toBe(bottom)
+        } else {
+          expect(typeof top, `${entry.mark} 上端筋`).toBe('object')
+          expect(typeof bottom, `${entry.mark} 下端筋`).toBe('object')
+          expect(c.girderMain, `${entry.mark} 主筋`).toBeDefined()
+          const main = c.girderMain!
+          const topByPosition = top as Record<string, string>
+          const bottomByPosition = bottom as Record<string, string>
+          expect(
+            `${main.topCount}-${main.size}`,
+            `${entry.mark} 上端筋 中央`,
+          ).toBe(topByPosition.中央)
+          expect(
+            `${main.bottomCount}-${main.size}`,
+            `${entry.mark} 下端筋 中央`,
+          ).toBe(bottomByPosition.中央)
+          if ('端部' in topByPosition && '端部' in bottomByPosition) {
+            expect(
+              `${main.endTopCount}-${main.size}`,
+              `${entry.mark} 上端筋 端部`,
+            ).toBe(topByPosition.端部)
+            expect(
+              `${main.endBottomCount}-${main.size}`,
+              `${entry.mark} 下端筋 端部`,
+            ).toBe(bottomByPosition.端部)
+          }
+        }
+
+        expect(
+          c.stirrup && `${c.stirrup.size}@${c.stirrup.pitchMm}`,
+          `${entry.mark} あばら筋`,
+        ).toBe(normPitch(entry.あばら筋))
+
+        if (entry.腹筋) {
+          const match = entry.腹筋.match(/^(\d+)-(D\d+)$/)
+          expect(match, `${entry.mark} 腹筋`).not.toBeNull()
+          expect(c.sideBar, `${entry.mark} 腹筋`).toEqual({
+            count: Number(match?.[1]),
+            size: match?.[2],
+          })
+        } else {
+          expect(c.sideBar, `${entry.mark} 腹筋`).toBeUndefined()
+        }
+      }
+    }
+
+    expect(entriesChecked).toBe(12)
+  })
+
   it('yokohama スラブリスト — 上筋/下筋 별칭과 床板 실패 경로를 대조한다', () => {
     const doc = readExpected<ExpectedWallSlabDoc>(
       'yokohama-kanazawa-p15-slabs-walls.json',

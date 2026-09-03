@@ -15,8 +15,10 @@
     {
       "step": 1,
       "name": "pin-ojkk-p4-scope-out-cells",
-      "status": "pending",
-      "summary": ""
+      "status": "completed",
+      "summary": "ojkk-p4 小梁リスト 9칸·片持梁リスト 3칸의 対象外 断面寸法·配筋을 골든 전 셀 대조 테스트로 고정하고 FB3.depth 변조 실패·복원을 확인했다.",
+      "started_at": "2026-09-03T15:49:24+0900",
+      "completed_at": "2026-09-03T15:54:02+0900"
     },
     {
       "step": 2,
