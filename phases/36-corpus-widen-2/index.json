@@ -7,7 +7,8 @@
       "name": "register-corpus-and-cmap",
       "status": "completed",
       "summary": "CMap 자산 경로와 0.5pt 겹침 접기를 적용해 2차 22면을 생성하고 기존 14면 바이트 동일성·36면 실태표를 기록했다.",
-      "started_at": "2026-09-03T10:46:41+0900"
+      "started_at": "2026-09-03T10:46:41+0900",
+      "completed_at": "2026-09-03T11:16:41+0900"
     },
     {
       "step": 1,
