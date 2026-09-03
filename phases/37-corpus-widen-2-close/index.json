@@ -23,8 +23,10 @@
     {
       "step": 2,
       "name": "grid-axis-order-contract",
-      "status": "pending",
-      "summary": ""
+      "status": "blocked",
+      "summary": "축 순서 정규화·DEBUG_PARSE를 제거하고 strict 축척·후보별 전체합·부분합 규칙을 정리했으나 Fuji p17과 Karatsu 후쿠즈 골든이 금지된 예외 없이 성립하지 않아 차단했다.",
+      "started_at": "2026-09-03T15:57:42+0900",
+      "blocked_reason": "AC 골든 2건이 실패했다. Fuji p17은 골든의 라벨 A→E와 현재 페이지 좌표의 E→A가 충돌하고, Karatsu 후쿠즈 p1은 Y축 Y6-Y5/Y5-Y4가 중앙 축척 0.020052980132450337 대비 각각 0.020893829401088974(+4.20%), 0.01811624784053152(-9.66%)로 strict outlier다. 픽스처 수정·도면별 reverse 분기·strict 완화는 step 사양상 금지되어 있다."
     },
     {
       "step": 3,

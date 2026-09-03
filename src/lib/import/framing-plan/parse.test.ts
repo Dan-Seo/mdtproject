@@ -67,6 +67,23 @@ describe('parseFramingPlan — 通り芯グリッド', () => {
     ])
   })
 
+  it('회전 글리프 한 글자 열을 2,500 치수로 재조립한다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('Y1', 50, 100),
+        h('Y2', 50, 300),
+        v('2', 80, 240),
+        v(',', 80, 220),
+        v('5', 80, 200),
+        v('0', 80, 180),
+        v('0', 80, 160),
+      ]),
+    )
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.grids[0]?.spansMm).toEqual([2500])
+  })
+
   it('쉼표 치수(6,000)를 mm 정수로 읽는다', () => {
     const parsed = parseFramingPlan(
       page([h('X1', 100, 50), h('X2', 300, 50), h('6,000', 200, 80)]),
@@ -119,6 +136,25 @@ describe('parseFramingPlan — 通り芯グリッド', () => {
     expect(parsed.grids[0]?.totalConfirmed).toBe(true)
   })
 
+  it('여러 스팬 후보의 전체 치수는 각 후보 조합의 합으로 대조한다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('X1', 100, 50),
+        h('X2', 300, 50),
+        h('X3', 500, 50),
+        h('6000', 200, 80),
+        h('6100', 200, 90),
+        h('6000', 400, 80),
+        h('6100', 400, 90),
+        h('12000', 300, 110),
+      ]),
+    )
+
+    expect(parsed.issues).toEqual([])
+    expect(parsed.grids[0]?.spansMm).toEqual([6000, 6000])
+    expect(parsed.grids[0]?.totalConfirmed).toBe(true)
+  })
+
   it('전체 치수가 스팬 합과 다르면 合計不一致 — 오독 신호이므로 후보를 내지 않는다', () => {
     const parsed = parseFramingPlan(
       page([
@@ -160,6 +196,36 @@ describe('parseFramingPlan — 通り芯グリッド', () => {
     )
     expect(parsed.grids).toEqual([])
     expect(parsed.issues).toEqual(['ラベル文字混在'])
+  })
+
+  it('접두 없는 단순 라벨만 검증에 실패하면 通り芯ラベル未検出으로 일반화한다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('A', 100, 50),
+        h('B', 300, 50),
+        h('C', 500, 50),
+        h('6000', 200, 80),
+        h('3000', 400, 80),
+      ]),
+    )
+
+    expect(parsed.grids).toEqual([])
+    expect(parsed.issues).toEqual(['通り芯ラベル未検出'])
+  })
+
+  it('X·Y 접두 라벨이 있으면 검증 실패의 실제 이슈를 보존한다', () => {
+    const parsed = parseFramingPlan(
+      page([
+        h('X1', 100, 50),
+        h('X2', 300, 50),
+        h('X3', 500, 50),
+        h('6000', 200, 80),
+        h('3000', 400, 80),
+      ]),
+    )
+
+    expect(parsed.grids).toEqual([])
+    expect(parsed.issues).toEqual(['縮尺不整合'])
   })
 })
 

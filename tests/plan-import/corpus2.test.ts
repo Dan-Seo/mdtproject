@@ -151,6 +151,17 @@ describe('2차 7면 伏図 격자 골든', () => {
   })
 })
 
+describe('伏図 격자 축 순서 규약', () => {
+  it.each(CASES)('%s의 모든 축 좌표는 페이지 순서로 단조 증가한다', (textItemsFile) => {
+    const parsed = parseFramingPlan(readPage(textItemsFile))
+
+    for (const grid of parsed.grids) {
+      const positions = grid.axes.map((axis) => axis.positionPt)
+      expect(positions).toEqual([...positions].sort((left, right) => left - right))
+    }
+  })
+})
+
 describe('기존 14면 격자 회귀', () => {
   it.each(EXISTING_14)('%s', (textItemsFile, expectedGrids, expectedIssues) => {
     const parsed = parseFramingPlan(readPage(textItemsFile))

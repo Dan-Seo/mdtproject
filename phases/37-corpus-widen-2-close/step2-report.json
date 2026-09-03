@@ -1,0 +1,50 @@
+{
+  "removed": [
+    "normalizeAxisOrientation",
+    "DEBUG_PARSE x5"
+  ],
+  "scale_valid_strict": {
+    "restored": true,
+    "failing_pages": [
+      "karatsu-fukuzu-p1"
+    ],
+    "outliers": [
+      {
+        "axis": "Y",
+        "labels": [
+          "Y6",
+          "Y5",
+          "Y4"
+        ],
+        "positionsPt": [
+          175.5,
+          221.5500000000001,
+          254.26794360000002
+        ],
+        "spansMm": [
+          2204,
+          1806
+        ],
+        "scalesPtPerMm": [
+          0.020893829401088974,
+          0.01811624784053152
+        ],
+        "medianPtPerMm": 0.020052980132450337
+      }
+    ]
+  },
+  "issue_rule": "검증 실패 시 접두 없는 단순 숫자·문자 라벨만 있으면 通り芯ラベル未検出으로 일반화하고, X·Y 접두 라벨이 하나라도 있으면 실제 검증 이슈를 보존한다.",
+  "full_totals": "fixed",
+  "minimum_covered_spans": "spanCount - 2 상수를 제거하고, 축 끝의 부분합은 확인된 스팬 수가 미확정 스팬 수보다 많을 때만 채택하도록 기하적으로 표현했다.",
+  "rules_added": [
+    {
+      "rule": "mergeVerticalFragments",
+      "test": "src/lib/import/framing-plan/parse.test.ts — 회전 글리프 한 글자 열을 2,500 치수로 재조립한다"
+    }
+  ],
+  "tests": {
+    "files": 2,
+    "tests": 11
+  },
+  "summary": "축 순서 정규화와 DEBUG_PARSE 5개를 제거하고 strict 축척·후보별 전체합 대조·기하 기반 부분합·이슈 보존 규칙 및 회전 글리프 회귀 테스트를 추가했다. AC 스위트는 Fuji p17의 골든 A→E와 좌표 E→A 충돌, Karatsu 후쿠즈 Y축 strict outlier 때문에 219 passed / 2 failed로 blocked 처리했다."
+}

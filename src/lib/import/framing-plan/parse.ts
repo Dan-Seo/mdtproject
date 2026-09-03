@@ -686,14 +686,7 @@ function dimensionSolutions(
               ),
           0,
         ),
-        // Label bands on long runs can contain a small number of positions
-        // that are not exactly on the dimension scale. Keep the guard strict
-        // for short runs, while requiring at least two thirds of a long run
-        // to agree with its median scale.
-        scaleValid:
-          outlierCount === 0 ||
-          (scales.length >= 5 &&
-            outlierCount <= Math.floor(scales.length / 3)),
+        scaleValid: outlierCount === 0,
       })
       return
     }
@@ -710,16 +703,6 @@ function dimensionSolutions(
   }
 
   visit(0)
-  if (process.env.DEBUG_PARSE === '1') {
-    console.error(
-      'solutions',
-      sequence.axes.map((axis) => axis.label).join(','),
-      solutions.map((solution) => ({
-        spans: solution.spans.map((span) => span.valueMm),
-        scaleValid: solution.scaleValid,
-      })),
-    )
-  }
   const unique = new Map<string, DimensionSolution>()
   for (const solution of solutions) {
     const key = solution.spans.map((span) => span.valueMm).join(',')
@@ -759,10 +742,10 @@ interface PartialTotal {
 }
 
 /**
- * Shibata처럼 축의 뒤쪽에 미확정 축이 남은 경우에만 부분 합을 쓴다. 전체
- * 축에서 두 축 이상 벗어난 작은 부분합(예: Karatsu의 4,010·4,165)은
- * 합계의 증거가 아니므로 무시한다. 앞·뒤 중 하나에서 시작하는 연속 구간만
- * 살피며, 내부 구간은 부분합과 축을 혼동하기 쉽기 때문에 쓰지 않는다.
+ * 축의 한쪽 끝에서 시작하는 연속 구간의 부분 합만 쓴다. 부분 합이 확인하는
+ * 스팬보다 미확정 스팬이 많으면 작은 국소 합을 전체 축의 근거로 오인하기
+ * 쉬우므로 무시한다(예: Karatsu의 4,010·4,165). 내부 구간은 부분합과
+ * 축을 혼동하기 쉽기 때문에 쓰지 않는다.
  */
 function partialTotal(
   sequence: AxisSequence,
@@ -770,14 +753,19 @@ function partialTotal(
   dimensions: DimensionToken[],
 ): PartialTotal | undefined {
   const spanCount = solution.spans.length
-  const minimumCoveredSpans = Math.max(1, spanCount - 2)
   const used = new Set(solution.spans)
 
+  const hasMoreConfirmedThanUnresolved = (coveredSpanCount: number) => {
+    const unresolvedSpanCount = spanCount - coveredSpanCount
+    return coveredSpanCount > unresolvedSpanCount
+  }
+
   for (let lastIndex = sequence.axes.length - 2; lastIndex >= 1; lastIndex--) {
+    const coveredSpanCount = lastIndex
     const covered = solution.spans
       .slice(0, lastIndex)
       .reduce((sum, span) => sum + span.valueMm, 0)
-    if (lastIndex < minimumCoveredSpans) continue
+    if (!hasMoreConfirmedThanUnresolved(coveredSpanCount)) continue
     const match = totalCandidates(
       sequence,
       dimensions,
@@ -789,11 +777,11 @@ function partialTotal(
   }
 
   for (let firstIndex = 1; firstIndex < sequence.axes.length - 1; firstIndex++) {
+    const coveredSpanCount = sequence.axes.length - 1 - firstIndex
     const covered = solution.spans
       .slice(firstIndex)
       .reduce((sum, span) => sum + span.valueMm, 0)
-    const coveredSpans = sequence.axes.length - 1 - firstIndex
-    if (coveredSpans < minimumCoveredSpans) continue
+    if (!hasMoreConfirmedThanUnresolved(coveredSpanCount)) continue
     const match = totalCandidates(
       sequence,
       dimensions,
@@ -908,11 +896,12 @@ function validateSequence(
       candidate.solution.spans.map((span) => span.valueMm),
     ),
   )
-  const conflictingTotals = closestScaleValidTotals.some(({ candidates }) =>
-    candidates.some(
-      (candidate) =>
-        candidate.valueMm >= maximumSpan && candidate.valueMm !== fullTotals[0]?.spanSum,
-    ),
+  const conflictingTotals = closestScaleValidTotals.some(
+    ({ candidates, spanSum }) =>
+      candidates.some(
+        (candidate) =>
+          candidate.valueMm >= maximumSpan && candidate.valueMm !== spanSum,
+      ),
   )
   if (conflictingTotals) {
     issue('合計不一致')
@@ -1078,64 +1067,6 @@ function directSequences(
       direction: (sequence.simpleKinds.has('numeric') ? 'X' : 'Y') as 'X' | 'Y',
     })),
   ]
-}
-
-/**
- * Some drawings print a vertical axis from the high-numbered end toward the
- * low-numbered end.  Keep the measured positions in page order, but restore
- * the logical label order expected by the framing-plan contract.  A plain
- * Y1..Y3 band stays in page order for the legacy shapes; a three-label band
- * paired with a full five-axis X grid uses the widened-corpus orientation.
- */
-function normalizeAxisOrientation(
-  sequences: DirectedSequence[],
-): DirectedSequence[] {
-  const hasFiveAxisX = sequences.some(
-    (sequence) =>
-      sequence.direction === 'X' &&
-      sequence.alongKey === 'x' &&
-      sequence.axes.length >= 5 &&
-      sequence.axes.every((axis) => /^X\d+$/.test(axis.label)),
-  )
-
-  return sequences.map((sequence) => {
-    if (sequence.direction !== 'Y') return sequence
-
-    const names = sequence.axes.map((axis) => axis.label)
-    const namedY = names.every((label) => /^Y\d+$/.test(label))
-    const simpleAlpha =
-      names.every((label) => /^[A-Z]'?$/.test(label))
-    if (!namedY && !simpleAlpha) return sequence
-
-    const suffixes = names
-      .map((name) => /^.*Y(\d+)$/.exec(name)?.[1])
-      .filter((suffix): suffix is string => suffix !== undefined)
-      .map(Number)
-    const hasZero = suffixes.includes(0)
-    const hasTwoDigitLabel = suffixes.some((suffix) => suffix >= 10)
-    const reverseLabels =
-      (namedY &&
-        (hasZero || hasTwoDigitLabel ||
-          (hasFiveAxisX && names.length === 3))) ||
-      (simpleAlpha && sequence.alongKey === 'y')
-    if (!reverseLabels) return sequence
-
-    const reversedNames = [...names].reverse()
-    const axes = sequence.axes.map((axis, index) => ({
-      ...axis,
-      label: reversedNames[index],
-    }))
-    const reverseSpans =
-      (namedY &&
-        (hasZero || hasTwoDigitLabel ||
-          (hasFiveAxisX && names.length === 3))) ||
-      (simpleAlpha && sequence.alongKey === 'y')
-    return {
-      ...sequence,
-      axes,
-      spansMm: reverseSpans ? [...sequence.spansMm].reverse() : sequence.spansMm,
-    }
-  })
 }
 
 function sameAxisTail(
@@ -1468,27 +1399,8 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
     ...axisSequences(labels, 'x'),
     ...axisSequences(labels, 'y'),
   ])
-  if (process.env.DEBUG_PARSE === '1') {
-    console.error(
-      'raw',
-      JSON.stringify(
-        rawSequences.map((sequence) => ({
-          alongKey: sequence.alongKey,
-          axes: sequence.axes,
-          across: sequence.across,
-        })),
-      ),
-    )
-  }
   const validated = rawSequences.flatMap((sequence) => {
     const result = validateSequence(sequence, dimensions, issue)
-    if (process.env.DEBUG_PARSE === '1') {
-      console.error(
-        'validated',
-        sequence.axes.map((axis) => axis.label).join(','),
-        result?.spansMm,
-      )
-    }
     return result ? [result] : []
   })
   const namedSequences = validated.filter((sequence) => sequence.letters.size > 0)
@@ -1512,34 +1424,18 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
     )
   })
   if (filteredValidated.length === 0) {
+    const hasPrefixedAxisLabel = labels.some(
+      (label) => label.letter !== undefined,
+    )
     return {
       grids: [],
       blocks: [],
-      issues:
-        validated.length === 0 && labels.some((label) => label.letter !== undefined)
-          ? issues
-          : ['通り芯ラベル未検出'],
+      issues: hasPrefixedAxisLabel ? issues : ['通り芯ラベル未検出'],
     }
   }
   const directed = suppressEndpointSubsets(
-    normalizeAxisOrientation(
-      suppressIntermediateSequences(directSequences(filteredValidated)),
-    ),
+    suppressIntermediateSequences(directSequences(filteredValidated)),
   )
-  if (process.env.DEBUG_PARSE === '1') {
-    console.error(
-      JSON.stringify(directed.map((sequence) => ({
-        direction: sequence.direction,
-        alongKey: sequence.alongKey,
-        axes: sequence.axes.map((axis) => ({
-          label: axis.label,
-          positionPt: axis.positionPt,
-        })),
-        spans: sequence.spansMm,
-        total: sequence.totalConfirmed,
-      }))),
-    )
-  }
 
   const grids: PlanGridCandidate[] = []
   const seen = new Set<string>()
@@ -1567,9 +1463,5 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
     titles,
     issue,
   )
-  if (process.env.DEBUG_PARSE === '1') {
-    console.error('result', JSON.stringify({ blocks, issues }))
-  }
-
   return { grids, blocks, issues }
 }
