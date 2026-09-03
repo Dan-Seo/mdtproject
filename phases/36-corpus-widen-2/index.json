@@ -13,11 +13,11 @@
     {
       "step": 1,
       "name": "grid-generalize",
-      "status": "error",
-      "summary": "",
+      "status": "completed",
+      "summary": "通り芯 라벨을 접두 없는 숫자·문자로 넓히고, 나란한 치수 열은 축척 검증으로 수렴할 때만 채택(아니면 寸法列曖昧), 부분 合計 규약, 柱芯線図 제목, 갈라진 축열 병합을 더해 2차 7면 격자 골든과 기존 14면 회귀가 통과한다(118 tests). hirosaki 원인은 全体寸法이 중앙 인접 중점과 겹친 치수 위치. (report·status는 codex 타임아웃 후 Claude가 검증해 기록)",
       "started_at": "2026-09-03T11:16:42+0900",
-      "error_message": "[3회 시도 후 실패] Step did not update status",
-      "failed_at": "2026-09-03T12:46:42+0900"
+      "failed_at": "2026-09-03T12:46:42+0900",
+      "completed_at": "2026-09-03T12:52:30+09:00"
     },
     {
       "step": 2,
