@@ -1,0 +1,14 @@
+{
+  "project": "Kijun",
+  "phase": "36-corpus-widen-2",
+  "steps": [
+    { "step": 0, "name": "register-corpus-and-cmap", "status": "pending", "summary": "" },
+    { "step": 1, "name": "grid-generalize", "status": "pending", "summary": "" },
+    { "step": 2, "name": "elevation-generalize", "status": "pending", "summary": "" },
+    { "step": 3, "name": "list-saiki", "status": "pending", "summary": "" },
+    { "step": 4, "name": "list-ina-fuji-karatsu", "status": "pending", "summary": "" },
+    { "step": 5, "name": "refute-corpus-widen-2", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
+    { "step": 6, "name": "docs-corpus-widen-2", "status": "pending", "summary": "" }
+  ],
+  "created_at": "2026-09-03T00:45:00+0900"
+}

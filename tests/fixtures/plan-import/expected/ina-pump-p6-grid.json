@@ -1,0 +1,46 @@
+{
+  "$comment": "원문 독립 전사 (ADR-010 준용) — 150dpi 렌더링 전체와 300dpi 크롭을 눈으로 읽어 적었다. 파서 출력에서 유도하지 않았다. 스팬은 라벨 순서대로 인접 라벨 사이 mm이고 totalMm은 도면에 적힌 合計(없으면 null)다.",
+  "source": {
+    "cacheFile": "dwg-ina-pump.pdf",
+    "sha256": "7caf348f1b590f68bcd8efe70efef4e63c7693ebe3fc05df7b5a5cb0e00aabca",
+    "issuer": "長野県伊那市",
+    "project": "令和4年度開発計画関連小黒原産業適地ポンプ施設築造工事",
+    "sheet": "S-6 構造伏図・軸組図",
+    "page": 6,
+    "transcribedAt": "2026-09-03"
+  },
+  "blocks": [
+    {
+      "title": "伏図(3블록 공통)",
+      "x": {
+        "labels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "spansMm": [
+          4050,
+          4050
+        ],
+        "totalMm": 8100
+      },
+      "y": {
+        "labels": [
+          "A",
+          "B"
+        ],
+        "spansMm": [
+          6400
+        ],
+        "totalMm": null
+      },
+      "notes": [
+        "축 라벨이 X·Y 접두 없는 숫자(1·2·3)와 라틴 대문자(A·B)다",
+        "伏図 블록 셋이 같은 격자를 공유한다"
+      ]
+    }
+  ],
+  "notes": [
+    "같은 페이지의 軸組図는 미전사"
+  ]
+}

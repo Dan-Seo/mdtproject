@@ -44,6 +44,17 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용
 | `dwg-ojkk-zumen6.pdf` | 沖縄県住宅供給公社 | (仮称)公社赤道都市再生住宅整備工事（建築） 令和1年度 | p2 柱リスト (S-13), p3 大梁リスト (S-15), p4 小梁・スラブ・壁・階段リスト | `dcb9504a50d8661a76bbd96c412a20f468cfff7495167cd055ca0bb2289e1343` |
 | `dwg-yokohama.pdf` | 横浜市建築局 | 金沢区総合庁舎改築工事（第2工区建築工事） 平成28年8月 | p6 基礎伏図・1階床伏図 (S-C06), p7 2階床伏図 (S-C07), p8 軸組図(1) (S-C08), p9 軸組図(2) (S-C09), p13 柱・小梁断面リスト (S-C13), p14 大梁断面リスト (S-C14), p15 スラブリスト・壁リスト (S-C15) | `37d20dbab2dec0721d77ed9dfce74cce6685cd9c9f2e34fec4f346bf5d2e237b` |
 | `dwg-kani-kids.pdf` | 岐阜県可児市 | 可児市立桜ケ丘小学校キッズクラブ新築工事 平成29年8月 | p38 基礎伏図・基礎リスト・地中梁リスト (S-08), p39 梁伏図 (S-09), p40 軸組図(1) (S-10), p41 軸組図(2) (S-11) | `6d4b0f806b429a0103facf10189f75ef87568303459759fbc2826988fc037c8f` |
+| `dwg-karatsu-fukuzu.pdf` | 一般社団法人唐津東松浦薬剤師会 | （仮称）救急・夜間対応会営薬局新築工事 (S造·RC基礎) | p1 基礎伏図 (S-3) | `a6712f907e4b17d787e9b1add3e726d960d31340846139269127e9b3aceb068e` |
+| `dwg-karatsu-shousai.pdf` | 一般社団法人唐津東松浦薬剤師会 | 同上 | p1 基礎詳細図·地中梁リスト (S-4) | `9b41afc2706874535a0bfaa90c73bca87a2d4781fd2a03c15be4cae77fa81e75` |
+| `dwg-karatsu-hashirashin.pdf` | 一般社団法人唐津東松浦薬剤師会 | 同上 | p1 1階柱芯線図 (S-7) | `f2a33838a377b9c072a643333cbbad1a9c775b13335772598068b14dc11a8792` |
+| `dwg-karatsu-jikugumi1.pdf` | 一般社団法人唐津東松浦薬剤師会 | 同上 | p1 軸組図(1) (S-9) | `88cc5a750569d6c4e2e3517b3553c25ad123fe4647504f9417a0ea72b9e87ac9` |
+| `dwg-karatsu-jikugumi2.pdf` | 一般社団法人唐津東松浦薬剤師会 | 同上 | p1 軸組図(2) (S-10) | `82789e1ea94b707d3ea8b6aa5bee0c949abcb61f775b9ea950dcb06ec69302a3` |
+| `dwg-fuji-kanritou.pdf` | 富士河口湖町小立土地区画整理組合 | 平成22年度 新大堀配水場築造工事(建築工事) 管理棟 (RC) | p15 基礎伏図, p17 梁・床伏図, p18 軸組図(1), p20 柱・梁・壁・スラブ断面リスト | `5cf1575f4b596b3e070257f1cc386abc98731d116b4b3f5891c12874684d9e0d` |
+| `dwg-ina-pump.pdf` | 長野県伊那市 | 令和4年度開発計画関連小黒原産業適地ポンプ施設築造工事 | p6 構造伏図・軸組図 (S-6), p7 部材リスト (S-7) | `7caf348f1b590f68bcd8efe70efef4e63c7693ebe3fc05df7b5a5cb0e00aabca` |
+| `dwg-saiki-fire.pdf` | 大分県佐伯市 | 令和2年度 佐伯市消防署東部分署建設(建築主体)工事 | p1 大梁・小梁リスト (S-11), p2 柱・壁・スラブリスト (S-12) | `0c74b592bf9c4bf20f196645596dc3c64c24cfa4ccce0e5ec8fe95b96710ce20` |
+| `dwg-tsu-kanritou.pdf` | 三重県津市 | 旧津市民プール跡地テニスコート整備工事 管理棟 (S造·RC基礎) | p16 杭・基礎・1階伏図 (S-16), p20 2階・屋根伏図 (S-20), p21 軸組図(1) (S-21), p22 軸組図(2) (S-22) | `e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f` |
+| `dwg-hirosaki-kikyono.pdf` | 青森県弘前市 | 令和7年度 桔梗野小学校等複合施設新築工事(建築工事) 構造図1 | p21 1階床梁伏図 (S-019), p25 軸組図(1) (S-023) | `f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8` |
+| `dwg-shibata-fire.pdf` | 新発田地域広域事務組合 | 新発田広域消防本部解体工事（既存建物 構造図一式） | p1 1F伏図 (S-1), p7 柱リスト (S-7), p13 軸組図 (S-13) | `e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985` |
 
 ### 전수 조사 후 제외한 페이지
 
@@ -53,15 +64,45 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용
 - kani p45–48 — 解体撤去図로, 기설 건물의 도면이다.
 - ojkk p5–7 — セルボイドスラブ 시공 표준·배근구분도이며 リスト 표가 아니다.
 
+
+제2차 수집(2026-09-02·03)에서 제외한 페이지:
+
+- karatsu 5·6 (基礎リスト·基礎詳細) — 基礎(フーチング)는 스코프 밖 부재. 14 (雑) — 부재 도면이 아니다
+- fuji p16 基礎詳細図·基礎梁リスト, p19 軸組図(2) — 미전사(p17·p18·p20으로 대표성 충분)
+- ina p8 이후 — 部材リスト가 p7 한 장이다
+- saiki p3〜p7 — 伏図·軸組図는 別 파일(미입수)이고 이 파일은 リスト 2면＋기타
+- tsu p23 部材リスト — S造 部材(柱·梁 강재)라 스코프 밖. p17〜p19 基礎·杭 상세 — 스코프 밖
+- hirosaki p17 ボーリング柱状図, p20 基礎伏図(추정, 미확인) — RC リスト는 構造図1에 없다(別冊)
+- shibata p8〜p10 大梁リスト1〜3 — 미전사(p7 柱リスト로 대표)
+
 다운로드 URL (2026-08-12 수집 시점):
 
 - ojkk: https://www.ojkk.or.jp/userfiles/files/nyusatu_akamiti/zumen6.pdf
 - yokohama: https://www.city.yokohama.lg.jp/kanazawa/kusei/shiteikanrisha/kobo_kekka/20210330.files/0039_20190917.pdf
 - kani: http://www.city.kani.lg.jp/secure/14358/zumentenkiku.pdf
 
-## 왜 이 3부인가
+다운로드 URL (2026-09-02·03 수집 시점, 제2차):
 
-- **발주처 상이 3곳** — 포맷 변동(작성 사무소·CAD)이 실제로 존재함을 보장한다
+- karatsu: `http://karayaku.org/kaiei/入札関係書類/公告用資料/図面/構造図面/N.　<図面名>.pdf` — 번호 뒤가 **全角 공백**이다. 3.基礎伏図 / 4.基礎詳細図 / 7.1階柱芯線図 / 9.軸組図(1) / 10.軸組図(2). Git Bash의 curl은 일본어 인자를 깨뜨리므로 Python `urllib.parse.quote`로 받았다
+- fuji: https://www.town.fujikawaguchiko.lg.jp/upload/file/kanri/kokuji/H22koukoku/chiikigentei/20107_sinnoohori_kenntiku_kanri.pdf
+- ina: https://www.kkj.go.jp/d/?L=ja&A=bmFnYW5vL2luYV9jaXR5LzIwMjIvMjAyMjA2MjFfMDE0MjZfMDMucGRmCg== (nagano/ina_city/2022/20220621_01426_03.pdf)
+- saiki: https://www.kkj.go.jp/d/?L=ja&A=c2VhcmNoL2VsaXMtcHJlZi1vaXRhLzIwMjAvMjAyMDA3MDNfMDc4MDdfMTAucGRmCg== (search/elis-pref-oita/2020/20200703_07807_10.pdf)
+- tsu: https://www.info.city.tsu.mie.jp/_res/projects/default_project/_page_/001/013/722/003-2.pdf
+- hirosaki: https://www.city.hirosaki.aomori.jp/jouhou/keiyaku/koukoku/8_A_kikyouokouzouzu1.pdf
+- shibata: https://www.shibata-kouiki.jp/association/uploads/2-3.%E6%A7%8B%E9%80%A0%E5%9B%B3%E4%B8%80%E5%BC%8F.pdf
+
+### 제2차 수집 도면의 특성 (파서·추출기가 걸리는 곳)
+
+- **pdf.js CMap 미탑재면 텍스트 0건** — fuji(Acrobat Distiller 6, 비내장 MS-Gothic Identity-H)·shibata(iText/ARCDRAW, 90msp-RKSJ-H)는 `getDocument`에 `cMapUrl`·`cMapPacked`·`standardFontDataUrl`을 주지 않으면 모든 페이지가 0건이다. 경고도 없다. Node에서는 `cMapUrl`이 `file://` URL이 아니라 **파일시스템 경로 문자열**(`node_modules/pdfjs-dist/cmaps/`)이어야 한다(실측). 제품 `src/lib/import/pdf-text.ts`도 같은 옵션이 없어 브라우저에서도 같은 도면이 조용히 빈 결과가 됐다 — phase 36 step 0에서 고친다
+- **겹쳐 그린 글자** — saiki는 모든 글자를 같은 자리에 최대 7번 겹쳐 그린다(太字 흉내). p1 16,289건·p2 15,267건이고 겹친 글자끼리 좌표 편차가 x·y 최대 0.48pt·w 0.017pt라 정확히 같은 좌표가 아니다(정확 일치 키로는 15,791건이 남는다)
+- **/Rotate 90** — karatsu·fuji·saiki·tsu는 페이지 회전이 90이다. pdf.js viewport가 회전을 반영하므로 `toTextItems`의 좌표는 회전 후 좌상 원점이다
+- **X·Y 접두 없는 通り芯 라벨** — ina(1·2·3 / A·B), fuji(E〜A / 1·2), shibata(1〜7 / A〜C, 別 블록 X1·X2·A'〜C'). 현행 `AXIS_LABEL_PATTERN`은 `[a-z]?[XY]\d+`뿐이라 전부 `通り芯ラベル未検出`이다
+- **合計 없음·부분합 있음** — karatsu 伏図에는 合計이 없고 부분합(4,010·4,165)이 있다. 쉼표 없는 치수(hirosaki 8000·88000)도 있다
+- **표제란** — 전 발주처 도면의 우하단 표제란에 설계사무소 실명·주소·電話가 있다(karatsu 平野建築設計事務所, tsu ジェイエイ津安芸, saiki 松井設計, hirosaki 佐藤総合計画・蟻塚設計共同体 등). 페이지별 제외 경계는 `title-block-exclusions.json`에 실측으로 둔다
+
+## 왜 이 코퍼스인가
+
+- **발주처 상이 10곳**(1차 3곳 ＋ 2차 7곳: 唐津·富士河口湖·伊那·佐伯·津·弘前·新発田) — 포맷 변동(작성 사무소·CAD·PDF 생성기)이 실제로 존재함을 보장한다
 - **표 방향 2종** — ojkk·yokohama는 가로형(부재가 열), kani 地中梁リスト는 세로형(항목이 행)
 - **엣지 케이스 포함** — 高強度筋 `K13`(BarSize 표현 불가)·`S13(KSS785)`, 원형 단면 `600φ`,
   `2段筋` 주석, カットオフ 치수 `[2500]`(스코프 밖 값), 位置(端部/中央)·階별 상이값,
