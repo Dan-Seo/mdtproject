@@ -522,18 +522,71 @@ interface ExpectedSlabEntry {
   下筋?: Record<string, string>
 }
 
-interface ExpectedList {
-  listKind: string
+interface ExpectedOutOfScopeEntry {
+  mark: string
+  b?: number
+  depth?: number
+  上端筋: string | Record<string, string>
+  下端筋: string | Record<string, string>
+  あばら筋: string
+  腹筋?: string
+  腹筋raw?: string
+  expected?: {
+    b: null
+    depth: null
+    issues: string[]
+    '断面raw_contains': string[]
+  }
+}
+
+interface ExpectedListBase {
   scope?: string
-  entries?: Array<{ mark: string }>
   outOfScopeMarks?: string[]
   marks?: string[]
 }
 
+interface ExpectedWallList extends ExpectedListBase {
+  listKind: '壁リスト'
+  entries: ExpectedWallEntry[]
+}
+
+interface ExpectedSlabList extends ExpectedListBase {
+  listKind: 'スラブリスト'
+  entries: ExpectedSlabEntry[]
+}
+
+interface ExpectedOutOfScopeList extends ExpectedListBase {
+  listKind: '小梁リスト' | '片持梁リスト'
+  scope: '対象外'
+  entries: ExpectedOutOfScopeEntry[]
+}
+
+interface ExpectedNonMemberList extends ExpectedListBase {
+  listKind: '屋内階段・屋外階段 配筋図'
+  scope: '対象外'
+  entries?: never[]
+}
+
+type ExpectedList =
+  | ExpectedWallList
+  | ExpectedSlabList
+  | ExpectedOutOfScopeList
+  | ExpectedNonMemberList
+
 interface ExpectedWallSlabDoc {
-  lists: Array<ExpectedList & {
-    entries?: Array<ExpectedWallEntry | ExpectedSlabEntry>
-  }>
+  lists: ExpectedList[]
+}
+
+function expectedList<K extends ExpectedList['listKind']>(
+  lists: ExpectedList[],
+  listKind: K,
+): Extract<ExpectedList, { listKind: K }> {
+  const found = lists.find(
+    (entry): entry is Extract<ExpectedList, { listKind: K }> =>
+      entry.listKind === listKind,
+  )
+  if (!found) throw new Error(`missing expected list: ${listKind}`)
+  return found
 }
 
 /** 「D13-@100」·「D10@200」 표기 차를 흡수한다 — 하이픈은 장식이다 */
@@ -1087,10 +1140,8 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
       ].sort()
       expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
     }
-    const wallEntries = doc.lists.find(({ listKind }) => listKind === '壁リスト')!
-      .entries as ExpectedWallEntry[]
-    const slabEntries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
-      .entries as ExpectedSlabEntry[]
+    const wallEntries = expectedList(doc.lists, '壁リスト').entries
+    const slabEntries = expectedList(doc.lists, 'スラブリスト').entries
 
     const counts = { wallThickness: 0, wallVertical: 0, wallHorizontal: 0, slabThickness: 0, slabBars: 0 }
     for (const entry of wallEntries) {
@@ -1176,35 +1227,21 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
   })
 
   it('ojkk 小梁·片持梁リスト — 対象外 셀의 断面寸法·配筋을 전 셀 대조한다', () => {
-    type ExpectedOutOfScopeEntry = {
-      mark: string
-      b?: number
-      depth?: number
-      上端筋: string | Record<string, string>
-      下端筋: string | Record<string, string>
-      あばら筋: string
-      腹筋?: string
-      腹筋raw?: string
-      expected?: {
-        b: null
-        depth: null
-        issues: string[]
-        '断面raw_contains': string[]
-      }
-    }
-
     const doc = readExpected<ExpectedWallSlabDoc>(
       'ojkk-akamichi-p4-walls-slabs.json',
     )
     const parsed = parseSectionLists(readPage('ojkk-p4.json'))
-    const scopeOutLists = doc.lists.filter(({ listKind }) =>
-      ['小梁リスト', '片持梁リスト'].includes(listKind),
+    const scopeOutLists = doc.lists.filter(
+      (listSpec): listSpec is ExpectedOutOfScopeList =>
+        listSpec.scope === '対象外' &&
+        (listSpec.listKind === '小梁リスト' ||
+          listSpec.listKind === '片持梁リスト'),
     )
     let entriesChecked = 0
 
     for (const listSpec of scopeOutLists) {
       const parsedList = list(parsed, listSpec.listKind)
-      const entries = (listSpec.entries ?? []) as unknown as ExpectedOutOfScopeEntry[]
+      const entries = listSpec.entries
       expect(parsedList.candidates.map(({ mark }) => mark).sort(), listSpec.listKind).toEqual(
         entries.map(({ mark }) => mark).sort(),
       )
@@ -1313,8 +1350,7 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
             ].sort()
       expect(parsedList.candidates.map(({ mark }) => mark).sort()).toEqual(expectedMarks)
     }
-    const entries = doc.lists.find(({ listKind }) => listKind === 'スラブリスト')!
-      .entries as ExpectedSlabEntry[]
+    const entries = expectedList(doc.lists, 'スラブリスト').entries
     let thickness = 0
     let bars = 0
     for (const entry of entries) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseSectionLists } from './parse'
-import type { ParsedSectionList, SectionCandidate } from './types'
+import type { ParsedSectionList, SectionCandidate, TextPage } from './types'
 
 // 실물 도면 픽스처 대조는 tests/section-import/parse.test.ts에 있다.
 // 여기는 합성 TextPage로 파서의 경계 규칙만 고정한다.
@@ -30,7 +30,138 @@ function candidate(
   return found as SectionCandidate
 }
 
+function syntheticGirderPage(
+  rows: Array<{ label: string; y: number; values?: Array<string | undefined> }>,
+  marks: string[] = ['G1'],
+): TextPage {
+  return {
+    widthPt: 600,
+    heightPt: 180,
+    items: [
+      { str: '大梁リスト', x: 10, y: 5, w: 60, h: 8 },
+      { str: '符号', x: 10, y: 20, w: 20, h: 8 },
+      ...marks.map((mark, index) => ({
+        str: mark,
+        x: 100 + index * 80,
+        y: 20,
+        w: 20,
+        h: 8,
+      })),
+      ...rows.flatMap(({ label, y, values }) => [
+        { str: label, x: 10, y, w: 40, h: 8 },
+        ...(values ?? []).flatMap((value, index) =>
+          value === undefined
+            ? []
+            : [
+                {
+                  str: value,
+                  x: 100 + index * 80,
+                  y,
+                  w: 40,
+                  h: 8,
+                },
+              ],
+        ),
+      ]),
+    ],
+  }
+}
+
 describe('parseSectionLists (synthetic)', () => {
+  it('applies a common 腹筋 row before the first story to every story', () => {
+    const parsed = parseSectionLists(
+      syntheticGirderPage([
+        { label: '腹筋', y: 30, values: ['2-D10'] },
+        { label: '1F', y: 40 },
+        { label: '2F', y: 70 },
+      ]),
+    )
+    const girders = list(parsed, '大梁リスト')
+
+    expect(candidate(girders, 'G1', '1F').sideBar).toEqual({
+      count: 2,
+      size: 'D10',
+    })
+    expect(candidate(girders, 'G1', '2F').sideBar).toEqual({
+      count: 2,
+      size: 'D10',
+    })
+  })
+
+  it('applies a common 断面 row before the first story to every story', () => {
+    const parsed = parseSectionLists(
+      syntheticGirderPage([
+        { label: '断面', y: 30, values: ['400×600'] },
+        { label: '1F', y: 40 },
+        { label: '2F', y: 70 },
+      ]),
+    )
+    const girders = list(parsed, '大梁リスト')
+
+    expect([candidate(girders, 'G1', '1F').b, candidate(girders, 'G1', '1F').depth]).toEqual([
+      400,
+      600,
+    ])
+    expect([candidate(girders, 'G1', '2F').b, candidate(girders, 'G1', '2F').depth]).toEqual([
+      400,
+      600,
+    ])
+  })
+
+  it('does not let a first-story 腹筋 row leak into the next story', () => {
+    const parsed = parseSectionLists(
+      syntheticGirderPage([
+        { label: '1F', y: 40 },
+        { label: '腹筋', y: 50, values: ['2-D10'] },
+        { label: '2F', y: 70 },
+        { label: 'あばら筋', y: 80, values: ['D10@200'] },
+      ]),
+    )
+    const girders = list(parsed, '大梁リスト')
+
+    expect(candidate(girders, 'G1', '1F').sideBar).toEqual({
+      count: 2,
+      size: 'D10',
+    })
+    expect(candidate(girders, 'G1', '2F').sideBar).toBeUndefined()
+  })
+
+  it('does not let a first-story 断面 row leak into the next story', () => {
+    const parsed = parseSectionLists(
+      syntheticGirderPage([
+        { label: '1F', y: 40 },
+        { label: '断面', y: 50, values: ['400×600'] },
+        { label: '2F', y: 70 },
+        { label: 'あばら筋', y: 80, values: ['D10@200'] },
+      ]),
+    )
+    const girders = list(parsed, '大梁リスト')
+
+    expect([candidate(girders, 'G1', '1F').b, candidate(girders, 'G1', '1F').depth]).toEqual([
+      400,
+      600,
+    ])
+    const second = candidate(girders, 'G1', '2F')
+    expect(second.b).toBeUndefined()
+    expect(second.depth).toBeUndefined()
+  })
+
+  it.each([
+    ['FG1', '対象外'],
+    ['FCG1', '対象外'],
+    ['G1', '大梁'],
+    ['2G1', '大梁'],
+    ['RG1', '大梁'],
+    ['B1G1', '大梁'],
+    ['GA', '大梁'],
+  ] as const)('classifies 大梁 mark %s after removing only an allowed story prefix', (mark, kind) => {
+    const parsed = parseSectionLists(
+      syntheticGirderPage([{ label: '断面', y: 40, values: ['400×600'] }], [mark]),
+    )
+
+    expect(candidate(list(parsed, '大梁リスト'), mark).kind).toBe(kind)
+  })
+
   it('returns an empty array when no supported list title exists', () => {
     expect(
       parseSectionLists({

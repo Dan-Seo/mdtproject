@@ -322,7 +322,10 @@ function kindFromMark(mark: string, titleText: string): SectionCandidate['kind']
   // C1 계열은 층 접두(2C1, B1C1)까지 허용하되, FC1 같은 基礎柱 부호는
   // 기존 범위 판정처럼 柱候補로 승격하지 않는다.
   if (/^(?:C\d|\d+C\d|[A-EG-Z]\d+C\d)/i.test(mark)) return '柱'
-  if (/G\d/i.test(mark) || /^G[A-Z]?$/i.test(mark)) return '大梁'
+  // 大梁은 허용된 층 접두만 벗긴 뒤 G로 시작하는 부호다. FG1·FCG1처럼
+  // 부호 중간에 G가 있는 基礎系 부호를 大梁으로 승격하지 않는다.
+  const markWithoutStoryPrefix = mark.replace(/^(?:R|\d+|B\d*)/i, '')
+  if (/^G/i.test(markWithoutStoryPrefix)) return '大梁'
   return '対象外'
 }
 
@@ -2000,13 +2003,16 @@ function parseColumnBlock(
   )
 
   const candidates: SectionCandidate[] = []
+  const preTableRows =
+    stories.length > 0
+      ? rows.filter(
+          (row) => row.y > header.y && row.y < stories[0].row.y,
+        )
+      : []
   for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
-    const preSliceRows = rows.filter(
-      (row) => row.y > header.y && row.y < slice.startY,
-    )
     const shapeRow =
-      preSliceRows
+      preTableRows
         .filter((row) => exactLabel(row, ['形状断面']))
         .at(-1) ??
       dataRows.find((row) => exactLabel(row, ['形状断面']))
@@ -2025,7 +2031,7 @@ function parseColumnBlock(
     const dimensionRows =
       inSliceDimensionRows.length > 0
         ? inSliceDimensionRows
-        : preSliceRows
+        : preTableRows
             .filter((row) => isDimensionRow(row, ['断面', 'B×D', 'b×D'], marks))
             .slice(-1)
     // 한 슬라이스에 같은 라벨 행이 겹으로 있으면 여러 층 블록이 합쳐진 것이다 —
@@ -2303,19 +2309,22 @@ function parseGirderBlock(
     rowsWithinTable(blockRows, marks),
   )
   const candidates: SectionCandidate[] = []
+  const preTableRows =
+    stories.length > 0
+      ? rows.filter(
+          (row) => row.y > header.y && row.y < stories[0].row.y,
+        )
+      : []
 
   for (const [sliceIndex, slice] of slices.entries()) {
     const dataRows = rowsBetween(rows, slice.startY, slice.endY)
-    const preSliceRows = rows.filter(
-      (row) => row.y > header.y && row.y < slice.startY,
-    )
     const inSliceDimensionRows = dataRows.filter(
       (row) => isDimensionRow(row, ['断面', 'B×D', 'b×D', '寸法'], marks),
     )
     const dimensionRows =
       inSliceDimensionRows.length > 0
         ? inSliceDimensionRows
-        : preSliceRows
+        : preTableRows
             .filter((row) =>
               isDimensionRow(row, ['断面', 'B×D', 'b×D', '寸法'], marks),
             )
@@ -2333,7 +2342,7 @@ function parseGirderBlock(
     const sideBarRows =
       inSliceSideBarRows.length > 0
         ? inSliceSideBarRows
-        : preSliceRows
+        : preTableRows
             .filter((row) => exactLabel(row, ['腹筋']))
             .slice(-1)
     const widthTieRows = dataRows.filter((row) =>

@@ -1,0 +1,13 @@
+{
+  "fallback_rule": "층 슬라이스의 항목 행이 없을 때만 첫 층 라벨보다 앞선 표 머리 행의 마지막 일치 행을 fallback으로 사용한다. 첫 층 이후 행은 다음 층의 fallback 후보가 아니며, 층이 없는 블록은 fallback을 사용하지 않는다.",
+  "fallback_pages": {
+    "断面": [
+      "ina-p7.json: 大梁リスト의 첫 R階 슬라이스가 표 머리의 공통 B×D 행을 사용한다."
+    ],
+    "腹筋": []
+  },
+  "kind_rule": "isOutOfScopeList를 먼저 적용하고, R·숫자·B숫자 접두를 하나 벗긴 뒤 남은 부호가 G로 시작할 때만 大梁으로 분류한다.",
+  "tests_added": 5,
+  "existing_goldens_unchanged": true,
+  "summary": "5개 합성 회귀 테스트로 표 머리 fallback의 층간 전파와 이전 층 행 누수를 각각 断面·腹筋에 고정하고, 大梁 부호 판정을 허용된 층 접두 뒤 G 시작으로 좁혔다. 기존 전체 테스트·타입체크·lint를 통과했다."
+}
