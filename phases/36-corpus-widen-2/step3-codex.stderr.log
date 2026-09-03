@@ -1,0 +1,19 @@
+2026-09-03T04:09:22.024502Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T04:09:22.175876Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T04:09:22.501928Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-03T04:09:22.509703Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-03T04:10:32.792552Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\section-import\parse.test.ts:
+    )
+  })
+
+  it('ojkk 壁リスト·スラブリスト — 벽 5칸과 床板 6칸을 전사 대조한다', () => {
+2026-09-03T04:15:03.430158Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\section-import\parse.test.ts:
+          ).toBe(text)
+        }
+      }
+2026-09-03T04:15:29.777942Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\tests\section-import\parse.test.ts:
+          ).toBe(text)
+        }
+      }
+2026-09-03T04:16:46.162505Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\section-list\parse.ts:
+      ? exactLabel(hoopRow, ['帯筋', 'HOOP'])?.compact
