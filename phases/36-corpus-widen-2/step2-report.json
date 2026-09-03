@@ -1,0 +1,32 @@
+{
+  "goldens": {
+    "karatsu-jikugumi1-p1-elevation.json": "passed",
+    "tsu-kanritou-p21-elevation.json": "passed",
+    "hirosaki-kikyono-p25-elevation.json": "passed"
+  },
+  "rules_added": [
+    {
+      "rule": "짧은 치수(선행 치수 중앙값의 25% 미만)를 기존 축척 연쇄에 보존하고, 그 뒤 x 좌표가 이동한 치수는 인접성·축척 검산을 함께 통과할 때만 연쇄 끝에 추가한다",
+      "pages_exercised": [
+        "karatsu-jikugumi1-p1",
+        "tsu-kanritou-p21",
+        "hirosaki-kikyono-p25"
+      ]
+    },
+    {
+      "rule": "수평 TextSegment의 실제 centerY를 레벨 라벨 좌표로 사용하고, 명시된 짧은 구간에서 같은 위치로 접힌 두 라벨은 도면의 위→아래 순서로 분리한다",
+      "pages_exercised": [
+        "karatsu-jikugumi1-p1",
+        "tsu-kanritou-p21",
+        "hirosaki-kikyono-p25"
+      ]
+    }
+  ],
+  "axis_readback": {
+    "karatsu-jikugumi1-p1-elevation.json": "not-read — elevations[].axis는 이 스텝의 AC가 아니며 파서에서 읽지 않음",
+    "tsu-kanritou-p21-elevation.json": "not-read — elevations[].axis는 이 스텝의 AC가 아니며 파서에서 읽지 않음",
+    "hirosaki-kikyono-p25-elevation.json": "not-read — elevations[].axis는 이 스텝의 AC가 아니며 파서에서 읽지 않음"
+  },
+  "existing4_unchanged": true,
+  "summary": "발주처 3곳의 軸組図에서 치수 열의 150·100mm 짧은 구간과 후속 치수를 보존하도록 일반화했으며, 신규 3면 골든·기존 yokohama p8/p9·kani p40/p41 회귀와 전체 1,754개 테스트가 통과했다."
+}
