@@ -2,14 +2,60 @@
   "project": "Kijun",
   "phase": "37-corpus-widen-2-close",
   "steps": [
-    { "step": 0, "name": "refute-adjudication", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
-    { "step": 1, "name": "pin-ojkk-p4-scope-out-cells", "status": "pending", "summary": "" },
-    { "step": 2, "name": "grid-axis-order-contract", "status": "pending", "summary": "" },
-    { "step": 3, "name": "elevation-golden-tests", "status": "pending", "summary": "" },
-    { "step": 4, "name": "list-fallback-and-kind", "status": "pending", "summary": "" },
-    { "step": 5, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
-    { "step": 6, "name": "docs-corpus-widen-2", "status": "pending", "summary": "" },
-    { "step": 7, "name": "refute-docs", "kind": "verify", "status": "pending", "summary": "" }
+    {
+      "step": 0,
+      "name": "refute-adjudication",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "네 반증 항목 모두 불성립: fuji 회전 글리프 5개 확인, ojkk-p4 小梁 9건·片持梁 3건 84칸 일치, 14면 회귀에서 그 12건 외 변경 없음, 스윕 3면은 伏図가 아님.",
+      "started_at": "2026-09-03T15:33:05+0900"
+    },
+    {
+      "step": 1,
+      "name": "pin-ojkk-p4-scope-out-cells",
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 2,
+      "name": "grid-axis-order-contract",
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 3,
+      "name": "elevation-golden-tests",
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 4,
+      "name": "list-fallback-and-kind",
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 5,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 6,
+      "name": "docs-corpus-widen-2",
+      "status": "pending",
+      "summary": ""
+    },
+    {
+      "step": 7,
+      "name": "refute-docs",
+      "kind": "verify",
+      "status": "pending",
+      "summary": ""
+    }
   ],
   "created_at": "2026-09-03T15:30:00+0900"
 }

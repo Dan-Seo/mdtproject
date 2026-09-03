@@ -1,0 +1,114 @@
+{
+  "verdict": "completed",
+  "items": {
+    "1_rotated_glyphs": {
+      "holds": true,
+      "method": "rot === -90인 items를 x ±1pt로 묶고 각 그룹을 y 내림차순으로 직접 연결",
+      "found": {
+        "fuji-p15.json": [
+          {
+            "x": 133.168,
+            "text": "2,5004,1503,0002,500",
+            "y_range": [265.14, 547.74]
+          },
+          {
+            "x": 119.008,
+            "text": "12,150",
+            "y_range": [400.844, 412.08]
+          }
+        ],
+        "fuji-p17.json": [
+          {
+            "x": 95.668,
+            "text": "1752,5004,1503,0002,500175",
+            "y_range": [186.228, 552.36]
+          }
+        ]
+      },
+      "evidence": [
+        "fuji-p15 x=133.168 그룹에 2,500·4,150·3,000·2,500이, x=119.008 그룹에 12,150이 존재한다.",
+        "fuji-p17 x=95.668 그룹에 2,500이 존재한다."
+      ]
+    },
+    "2_ojkk_p4_transcription": {
+      "holds": true,
+      "entries_checked": 12,
+      "cells_checked": 84,
+      "mismatches": [],
+      "evidence": [
+        "小梁 y=182 断面寸法: 350x600, 550x700, 200x500, 450x900, 400x800, 450x1500, 300x400, 350x600, 200x850",
+        "小梁 y=188 上端筋: B1 4-D22; B2 端部/中央 6-D25/6-D25; B3 1-D22; FB1 4-D22; FB2 3-D22; FB3 4-D22; FB4 3-D22; FB5 3-D22; BW20 2-D16",
+        "小梁 y=196 下端筋: B1 4-D22; B2 端部/中央 6-D25/9-D25; B3 1-D22; FB1 4-D22; FB2 3-D22; FB3 4-D22; FB4 3-D22; FB5 3-D22; BW20 2-D16",
+        "小梁 y=204 あばら筋: D10@150, D13@200, D10@200, D10@150, D10@150, D10@150, D10@200, D10@200, D10@200 (양끝 하이픈 제거)",
+        "小梁 y=210 腹筋: B1 2-D10; B2 2-D10; B3 없음; FB1 4-D10; FB2 4-D10; FB3 8-D10; FB4 raw '-' ; FB5 2-D10; BW20 4-D10",
+        "小梁 위치 헤더 y=67.68: B2의 端部/中央",
+        "片持梁 y=438 断面寸法: CG1 400x700; FCG1 450x2750; CB1 中央/先端 200x550/200x400",
+        "片持梁 y=444 上端筋: CG1 5-D25; FCG1 3-D25; CB1 中央/先端 2-D25/2-D25",
+        "片持梁 y=452 下端筋: CG1 3-D25; FCG1 3-D25; CB1 中央/先端 1-D25/1-D25",
+        "片持梁 y=458 あばら筋: CG1 D13@200; FCG1 D13@200; CB1 D10@200 (양끝 하이픈 제거)",
+        "片持梁 y=466 腹筋: CG1 2-D10; FCG1 8-D10; CB1 없음",
+        "CB1의 断面raw_contains는 200x550·200x400이며, 원문에는 단일 사각형으로 확정할 수 없는 두 断面寸法이 남는다."
+      ]
+    },
+    "3_regression_scope": {
+      "holds": true,
+      "head": "a3e2ca1",
+      "main": "0dc6a1d",
+      "pages_compared": 14,
+      "raw_symbol_excluded": true,
+      "changed_cells": [
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "B1" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "B2" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "B3" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "FB1" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "FB2" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "FB3" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "FB4" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "FB5" },
+        { "file": "ojkk-p4.json", "listKind": "小梁リスト", "mark": "BW20" },
+        { "file": "ojkk-p4.json", "listKind": "片持梁リスト", "mark": "CG1" },
+        { "file": "ojkk-p4.json", "listKind": "片持梁リスト", "mark": "FCG1" },
+        { "file": "ojkk-p4.json", "listKind": "片持梁リスト", "mark": "CB1" }
+      ],
+      "unexpected_changes": [],
+      "evidence": [
+        "14면을 main worktree와 HEAD에서 parseSectionLists로 각각 실행하고, 재귀 정규화 후 후보 셀을 비교했다.",
+        "kani-p38·p39·p40·p41, ojkk-p2·p3, yokohama-p6·p7·p8·p9·p13·p14·p15는 모두 equal이었다.",
+        "ojkk-p4만 DIFFERENT였고 차이는 위 小梁 9건·片持梁 3건뿐이었다."
+      ]
+    },
+    "4_sweep_pages": {
+      "holds": true,
+      "page_kinds": {
+        "fuji-p20.json": {
+          "has_fukuzu": false,
+          "has_list": true,
+          "has_axial": false,
+          "item_count": 1298
+        },
+        "saiki-p2.json": {
+          "has_fukuzu": false,
+          "has_list": true,
+          "has_axial": false,
+          "item_count": 1970
+        },
+        "shibata-p13.json": {
+          "has_fukuzu": false,
+          "has_list": false,
+          "has_axial": true,
+          "item_count": 1115
+        }
+      },
+      "evidence": [
+        "세 페이지의 전체 items 문자열에 伏図가 0건이다.",
+        "fuji-p20·saiki-p2는 リスト, shibata-p13은 軸組図를 포함한다."
+      ]
+    }
+  },
+  "git_status_clean": false,
+  "git_status_note": "검증용 main worktree는 clean 상태로 제거했다. 현재 worktree에는 하네스가 갱신한 phase index·step1.md·step2.md와 step0 stdout/stderr 로그가 남아 있으며, src·tests에는 임시 변경이 없다.",
+  "tests": {
+    "targeted": "npx vitest run tests/section-import — 3 files passed, 119 tests passed"
+  },
+  "summary": "네 반증 항목 모두 불성립이다. 회전 글리프와 ojkk-p4 12개 대상외 전사가 원문에서 확인되었고, 14면 parseSectionLists 회귀는 ojkk-p4 小梁 9건·片持梁 3건 외 변경이 없으며, 스윕 3면에는 伏図가 없다."
+}
