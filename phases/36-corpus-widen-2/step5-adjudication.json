@@ -1,0 +1,49 @@
+{
+  "written_by": "Claude — step 5(codex 검증)의 반증 3건을 원문 TextItem·main worktree와 재대조한 교차검증 기록. step5-report.json은 손대지 않았다.",
+  "verdict": "refutation_not_upheld",
+  "items": {
+    "1_fabrication": {
+      "upheld": false,
+      "finding": "fuji-p15의 2,500·4,150·3,000·2,500과 合計 12,150은 rot −90 글리프 열로 페이지에 실재한다. x=133.2 열: y 547.7→538.6 「2,500」, 453.5→444.4 「4,150」, 352.2→343.1 「3,000」, 274.3→265.1 「2,500」. x=119.0 열: y 412.1→400.8 「12,150」(x=577.4·591.6에 같은 열이 한 번 더). 인접 치수 중심 간격 94·101·78pt는 스팬 중점 간격 3,325·3,575·2,750mm와 0.0283pt/mm(1:100)로 일치한다.",
+      "why_codex_missed": "codex의 대조는 recoverRows·makeSegments·verticalRuns의 문자열만 썼고, 이 페이지의 치수는 회전 글리프라 verticalRuns가 한 자리씩(2 5 0 0 …) 반환한다. 파서가 읽은 값을 검증 방법이 못 이은 것이지 파서가 지어낸 것이 아니다."
+    },
+    "2_transcription": {
+      "upheld": false,
+      "finding": "fuji-p17 골든 blocks[0].x.spansMm[0]=2500은 p15와 같은 격자·같은 회전 글리프 열이다(p17 vruns에 2 5 0 0 / 4 1 5 0 / 3 0 0 0 / 2 5 0 0 존재). 골든 테스트가 통과하므로 파서도 같은 원문에서 읽는다. 전사 오류 아님."
+    },
+    "3_falsifiability": {
+      "upheld": false,
+      "note": "codex 15/15 변조 실패 확인. 별도 이의 없음."
+    },
+    "4_regression": {
+      "upheld": false,
+      "kind": "verified_improvement",
+      "finding": "기존 14면을 셀 단위로 main worktree와 diff한 결과 바뀐 것은 ojkk-p4 小梁リスト 9칸·片持梁リスト 3칸뿐이다(그 외 123칸 동일). 도면의 断面寸法 행 원문(y≈182: 350x600 550x700 200x500 450x900 400x800 450x1500 300x400 350x600 200x850 / y≈437: 400x700 450x2750 200x550 200x400)과 B1·B2·B3·FB1·FB2·FB3·FB4·FB5·BW20·CG1·FCG1의 b×depth 11칸이 전부 일치한다. main은 이 행을 못 읽고 스케치 숫자 한쪽만 잡아 B2·FB5·CG1·FCG1에 断面矩形不成立을 냈다. CB1은 中央 200x550·先端 200x400 두 값이라 raw 「200x550200x400」+断面矩形不成立 — 값을 지어내지 않았다(main은 raw {}로 조용히 빠뜨렸다).",
+      "follow_up": "対象外 영역이라 골든이 없어 조용히 바뀔 수 있었다. phase 37에서 ojkk-p4 小梁·片持梁 断面寸法 12칸을 골든으로 고정한다."
+    },
+    "5_sweep": {
+      "note": "T=6→15에서 gridPages 23→26이 된 3면은 fuji-p20(断面リスト)·saiki-p2(柱・壁・スラブリスト)·shibata-p13(軸組図)이다 — 伏図가 아닌 면에 T=15가 부분 격자(寸法欠落 동반)를 만드는 오탐이고, 伏図 골든 7면·기존 14면의 격자는 T=6에서도 동일하다. R15 기록 사항(伏図 아닌 면의 오탐 억제는 별건)."
+    },
+    "6_specialization": {
+      "upheld": false,
+      "note": "코드 조건에 발주처·파일명 없음(주석·테스트 설명에만). 스텝별 커밋 파일 범위도 사양대로 — step1·2는 framing-plan/**·tests, step3·4는 section-list/**·tests."
+    },
+    "7_title_block": {
+      "upheld": false,
+      "note": "36면 재실행 0건 — 파일 텍스트 grep과 글리프 연결 문자열 둘 다."
+    },
+    "8_two_layer_and_defaults": {
+      "upheld": false,
+      "note": "codex 결과(2段 셀 8건 본수 0, ina 빈 STP 기본값 0)에 이의 없음."
+    }
+  },
+  "additional_checks": {
+    "lint": "0 errors, 1 warning(_omitted — main 기존)",
+    "typecheck": "pass",
+    "tests": "100 files, 1770 passed",
+    "e2e_uc12": "ALL CHECKS PASSED — fujiSlabCandidateCount 3 (phase 전 브라우저 0건 → CMap 경로 실증). build → dev → e2e 순서, dev-browser 종료 시 quickjs dispose 오류는 판정 뒤 환경 잡음",
+    "method": ".cache/refute-probe.mts·cell-probe.mts·dump-lists.mts·sweep-probe.mts(gitignored)를 HEAD와 main·HEAD detached worktree(.cache/wt-main·wt-head)에서 병행 실행, 스윕은 worktree 사본의 상수만 6으로 바꿔 측정(원본 무변경)"
+  },
+  "decision": "step 5의 refuted 기록은 그대로 둔다(게이트가 작동한 기록). 반증 3건은 재대조로 불성립이다. 다만 병합 전 Claude의 전 diff 검토(하위 에이전트＋직접 확인)에서 별개의 사양 위반이 나왔다 — ① framing-plan/parse.ts normalizeAxisOrientation: 골든 한 면씩에 맞춘 트리거 넷(hasZero·hasTwoDigitLabel·hasFiveAxisX&&3·simpleAlpha)으로 Y 라벨·스팬만 뒤집고 positionPt는 안 뒤집어 라벨↔좌표 거울상. 원인은 Claude 골든의 Y축을 번호 오름차순(아래→위)으로 적어 기존 규약(페이지 순서, kani-p38 Y3,Y2,Y1)과 어긋난 것 — 골든 7면을 페이지 순서로 고쳤다. ② DEBUG_PARSE 잔재 5곳, scaleValid 1/3 완화, 이슈 덮어쓰기, fullTotals[0] 비교. ③ corpus2-elevation.test.ts가 골든이 아니라 파서 출력에 맞춰 쓰였다(hirosaki [g0,g0,g1]·karatsu toHaveLength(2)와 RFL水上 하드코딩·tsu 2계열) — 실은 Claude 골든의 hirosaki X2通り RFL 누락이었고(TextItem RFL@(94,289) 근거) 고쳤다. ④ section-list의 앞 층 断面·腹筋 행 fallback과 /Gd/ 大梁 판정 확장. 그래서 phase 36을 아직 main에 넣지 않고 phase 37(step 0 판정 반증 게이트 → 1 ojkk-p4 골든 고정 → 2〜4 수정 → 5 반증 게이트 → 6 문서 → 7 문서 반증)을 feat-36 브랜치 위에서 돌린 뒤 둘을 함께 병합한다.",
+  "review_findings_source": "Claude 하위 에이전트 검토(2026-09-03 15:20) + 직접 코드 확인. 상세는 phases/37-corpus-widen-2-close/step2〜4.md 배경 절."
+}

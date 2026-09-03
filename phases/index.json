@@ -180,6 +180,11 @@
       "status": "refuted",
       "created_at": "2026-09-03T00:45:00+0900",
       "refuted_at": "2026-09-03T15:00:07+0900"
+    },
+    {
+      "dir": "37-corpus-widen-2-close",
+      "status": "pending",
+      "created_at": "2026-09-03T15:30:00+0900"
     }
   ]
 }

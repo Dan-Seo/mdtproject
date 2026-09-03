@@ -1,0 +1,15 @@
+{
+  "project": "Kijun",
+  "phase": "37-corpus-widen-2-close",
+  "steps": [
+    { "step": 0, "name": "refute-adjudication", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
+    { "step": 1, "name": "pin-ojkk-p4-scope-out-cells", "status": "pending", "summary": "" },
+    { "step": 2, "name": "grid-axis-order-contract", "status": "pending", "summary": "" },
+    { "step": 3, "name": "elevation-golden-tests", "status": "pending", "summary": "" },
+    { "step": 4, "name": "list-fallback-and-kind", "status": "pending", "summary": "" },
+    { "step": 5, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending", "summary": "" },
+    { "step": 6, "name": "docs-corpus-widen-2", "status": "pending", "summary": "" },
+    { "step": 7, "name": "refute-docs", "kind": "verify", "status": "pending", "summary": "" }
+  ],
+  "created_at": "2026-09-03T15:30:00+0900"
+}
