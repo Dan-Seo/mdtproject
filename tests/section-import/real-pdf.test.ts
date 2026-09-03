@@ -87,6 +87,40 @@ const pages: RealPage[] = [
       ['スラブリスト', 5],
     ],
   },
+  {
+    cacheFile: 'dwg-ina-pump.pdf',
+    page: 7,
+    fixture: 'ina-p7.json',
+    lists: [
+      ['大梁リスト', 2],
+      ['小梁リスト', 1],
+      ['地中梁リスト', 3],
+      // 壁·スラブ는 이 페이지에서 전사하지 않았지만, PDF에는 표제가 있어
+      // 파서가 빈 후보 목록을 낸다는 경계를 함께 고정한다.
+      ['壁リスト', 0],
+      ['スラブリスト', 0],
+      ['柱リスト', 0],
+    ],
+  },
+  {
+    cacheFile: 'dwg-fuji-kanritou.pdf',
+    page: 20,
+    fixture: 'fuji-p20.json',
+    lists: [
+      ['柱リスト', 4],
+      ['梁リスト', 6],
+      // スラブ·壁은 골든 전사 범위 밖이다. Fuji 실물 페이지의 검출 결과만
+      // 확인하고, 값 셀 대조는 전사 픽스처가 담당하는 두 목록에 한정한다.
+      ['スラブリスト', 6],
+      ['壁リスト', 0],
+    ],
+  },
+  {
+    cacheFile: 'dwg-karatsu-shousai.pdf',
+    page: 1,
+    fixture: 'karatsu-shousai-p1.json',
+    lists: [['地中梁リスト', 6]],
+  },
 ]
 
 const available = pages.filter(({ cacheFile }) =>

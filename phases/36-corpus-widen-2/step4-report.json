@@ -1,0 +1,49 @@
+{
+  "goldens": {
+    "ina-pump-p7-lists.json": {
+      "cells": 2,
+      "scopeOutCells": 4,
+      "status": "passed"
+    },
+    "fuji-kanritou-p20-lists.json": {
+      "cells": 7,
+      "scopeOutCells": 3,
+      "status": "passed"
+    },
+    "karatsu-karayaku-s4-foundation-girders.json": {
+      "cells": 0,
+      "scopeOutCells": 6,
+      "status": "passed"
+    }
+  },
+  "rules_added": [
+    {
+      "rule": "축척이 붙은 리스트 제목과 표 내부 階 행·층 접두 부호를 일반 규칙으로 복원한다",
+      "pages_exercised": ["ina-p7", "fuji-p20"]
+    },
+    {
+      "rule": "하나의 符号 셀에 있는 복수 부호를 같은 값 배정 그룹으로 펼치고 원문 셀을 raw에 보존한다",
+      "pages_exercised": ["fuji-p20", "karatsu-shousai-p1"]
+    },
+    {
+      "rule": "D10-100@·D10-200@·D10-1,000@와 기존 @ 접두 피치를 하나의 정규화 규칙으로 읽는다",
+      "pages_exercised": ["ina-p7", "fuji-p20", "karatsu-shousai-p1"]
+    },
+    {
+      "rule": "세로형 표의 上筋·下筋·STP.·寸法(*)·腹筋·備考 행과 다중 부호 셀을 공통 표 행 규칙으로 읽는다",
+      "pages_exercised": ["karatsu-shousai-p1"]
+    },
+    {
+      "rule": "스코프 밖 리스트도 표 셀을 읽되 후보 kind를 対象外로 유지하고, 스케치 주기형 柱リスト는 후보를 만들지 않는다",
+      "pages_exercised": ["ina-p7", "fuji-p20", "karatsu-shousai-p1"]
+    }
+  ],
+  "deferred_decisions": [
+    "ina 大梁의 빈 STP·腹筋에 頭注의 特記 기본값을 반영하지 않는다",
+    "fuji B1·B2 スターラップ은 독립 전사에서 확정하지 못한 셀이므로 값 대조에서 제외하고 골든을 변경하지 않는다",
+    "ina의 STP 기호 □·▥는 텍스트 셀에 기호가 없으므로 시각 전사값을 후보 필드로 추정하지 않는다",
+    "미전사 壁リスト·スラブリスト는 후보 값으로 만들지 않는다"
+  ],
+  "existing_goldens_unchanged": true,
+  "summary": "ina·fuji·karatsu 3면의 제목·階 접두·다중 符号·피치 표기·세로형 행을 일반 규칙으로 처리하고, 스코프 밖 후보와 ina 스케치 柱를 정직하게 구분했다. 신규 3면 골든·실물 PDF 통합 및 기존 전체 1,770개 테스트가 통과했다."
+}
