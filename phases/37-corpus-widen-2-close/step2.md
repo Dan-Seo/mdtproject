@@ -78,3 +78,26 @@ phase 36 step 1의 `src/lib/import/framing-plan/parse.ts`를 Claude가 검토해
   "summary": "index.json summary와 같은 요지"
 }
 ```
+
+## 재개 지시 (2차, 2026-09-03 16:20 — 1차 시도가 `blocked`로 끝난 뒤 Claude가 씀)
+
+1차 시도의 코드(커밋 `0d05716`: normalizeAxisOrientation·DEBUG_PARSE 제거, strict 축척, 후보별
+全体합, 기하 부분합, 이슈 규칙, mergeVerticalFragments 테스트)는 그대로 살아 있다. 남은 것은
+차단 사유 둘이다.
+
+1. **fuji p17 — Claude의 골든 정정이 틀렸다.** 문자 축은 페이지에서 E(y 194)가 위·A(y 543)가
+   아래라 원래의 E→A가 이미 페이지 순서였다. 골든을 원래대로 되돌렸다(`$comment`에 경위).
+   파서는 고칠 것 없다 — 되돌린 골든으로 통과하는지만 확인하라.
+2. **karatsu-fukuzu p1 Y축 — strict outlier의 출처를 찾아라.** 원시 TextItem의 라벨 중심
+   (recoverRows·makeSegments의 centerY, top-left 원점)은 x=852 열에 Y6@170·Y5@215·Y4@251·
+   Y3@332·Y2@453·Y0@536, x=107 열에 Y2@453·Y1@498·Y0@536이다. 이 **원시 중심**으로 재면
+   Y6→Y5 45pt/2,204mm=0.0204, Y5→Y4 36/1,806=0.0199, Y4→Y3 81/4,069=0.0199, Y3→Y2
+   121/6,000=0.0202, Y2→Y0 83/4,165=0.0199 — 중앙값 0.020에서 최대 +2.1%로 **strict 3% 안**이다.
+   1차 report의 위치(Y6 175.5·Y5 221.55·Y4 254.27)는 라벨 중심에서 +5.5·+6.5·+3.3pt 벗어나
+   있고 그 편차가 일정하지 않다. 즉 strict 검사에 들어가는 `positionPt`가 원시 라벨 중심이
+   아니라 어떤 가공값(치수 중점 스냅 `SNAP_RATIO`, `mergeAxisSequences`의 두 열 평균, 밴드
+   병합 등)이다. **그 출처를 찾아 report에 적고**, 축척 검증은 원시 라벨 중심으로 하도록
+   고쳐라(스냅·병합은 검증 뒤에 하거나, 검증에는 원본 좌표를 쓴다). 완화·예외는 여전히
+   금지다. 원시 중심으로도 3%를 넘는 축이 있으면 그 수치와 함께 다시 `blocked`.
+3. AC는 위와 같다(`corpus2.test.ts` 7면＋positionPt 단조＋`EXISTING_14`, `corpus2-elevation`은
+   제외). report는 1차 내용 위에 `resume` 항목을 더해 다시 써라.
