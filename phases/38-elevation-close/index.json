@@ -23,7 +23,10 @@
     {
       "step": 2,
       "name": "label-level-order",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-04T22:52:23+0900",
+      "completed_at": "2026-09-04T23:00:48+0900",
+      "summary": "y 순서 커서 대응으로 레벨 라벨을 매칭하고 최근접·짧은 치수 재배치 휴리스틱을 제거했다. 36면 스윕에서 tsu-p21·tsu-p22만 변경됐고 AC·전체 테스트·lint·typecheck가 통과했다."
     },
     {
       "step": 3,

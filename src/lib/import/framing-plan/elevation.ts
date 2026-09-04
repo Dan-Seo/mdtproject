@@ -30,7 +30,7 @@ const LEVEL_TOLERANCE_PT = 15
  * 레벨 라벨 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
  *
  * 이 창으로 후보를 거른 뒤 `isLevelLabel` 화이트리스트와
- * `nearestLevelIndex`의 레벨 허용 범위를 적용한다. x 방향 열 군집은 사용하지
+ * y 순서 커서 매칭의 레벨 허용 범위를 적용한다. x 방향 열 군집은 사용하지
  * 않는다. 치수 열과 실제 레벨 라벨의 x가 도면마다 달라질 수 있기 때문이다.
  *
  * 실물 kani p40에서 그 일이 일어났다 — 위·아래 두 軸組図의 **전체 치수**
@@ -174,22 +174,6 @@ function labelText(token: Token): string | undefined {
 
 function isLevelLabel(text: string): boolean {
   return /(?:FL|GL|RCL|(?:天端|下端|上端)$)/.test(text)
-}
-
-function nearestLevelIndex(
-  levels: ElevationLevel[],
-  y: number,
-): { index: number; distance: number } {
-  let index = -1
-  let distance = Number.POSITIVE_INFINITY
-  for (let i = 0; i < levels.length; i++) {
-    const candidateDistance = Math.abs(levels[i].positionPt - y)
-    if (candidateDistance < distance) {
-      index = i
-      distance = candidateDistance
-    }
-  }
-  return { index, distance }
 }
 
 /**
@@ -376,8 +360,9 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
       const scale = median(scales)
       const positions = levelsOf(chain, scale)
 
-      // 라벨은 가장 가까운 레벨 하나에만 붙는다 — 층이 얕으면 허용 범위가
-      // 겹치는데, 겹치는 만큼 양쪽에 싣으면 없는 라벨이 생긴다
+      // 라벨은 y 오름차순으로 아직 붙지 않은 첫 레벨에 붙인다. 허용 범위가
+      // 겹치는 좁은 구간에서도 도면의 순서를 보존하고, 다음 레벨이 없을 때만
+      // 직전 레벨에 중첩한다.
       const levels: ElevationLevel[] = positions.map(({ positionPt }) => ({
         labels: [],
         positionPt,
@@ -385,35 +370,36 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
       const labelsAtLevels: Token[][] = levels.map(() => [])
       const labelCandidates = labels.filter(
         (label) => horizontalDistance(label, chain[0].x) <= LABEL_WINDOW_PT,
-      )
+      ).sort((left, right) => left.y - right.y || left.x - right.x)
+      let cursor = 0
       for (const label of labelCandidates) {
         const text = labelText(label)
         if (text === undefined || !isLevelLabel(text)) continue
-        const nearest = nearestLevelIndex(levels, label.y)
-        if (nearest.index < 0 || nearest.distance > LEVEL_TOLERANCE_PT) {
-          continue
-        }
-        labelsAtLevels[nearest.index].push(label)
-      }
 
-      // 짧은 치수가 실제로 적혀 있으면, 그 사이의 두 레벨을 같은 위치로 접지
-      // 않는다. 치수 표기가 좁은 구간의 한쪽에 몰려 두 라벨이 앞 레벨에 함께
-      // 붙는 경우에는, 도면의 위→아래 라벨 순서로 다음 레벨에 하나를 보낸다.
-      for (let i = 0; i + 1 < chain.length; i++) {
-        if (!isShortDimension(chain[i], chain.slice(0, i))) continue
-        if (
-          labelsAtLevels[i]?.length !== 2 ||
-          labelsAtLevels[i + 1]?.length !== 0
-        ) {
+        let matchedIndex = -1
+        for (let index = cursor; index < levels.length; index++) {
+          if (
+            Math.abs(levels[index].positionPt - label.y) <=
+            LEVEL_TOLERANCE_PT
+          ) {
+            matchedIndex = index
+            break
+          }
+        }
+        if (matchedIndex < 0 && cursor > 0) {
+          const previousIndex = cursor - 1
+          if (
+            Math.abs(levels[previousIndex].positionPt - label.y) <=
+            LEVEL_TOLERANCE_PT
+          ) {
+            matchedIndex = previousIndex
+          }
+        }
+        if (matchedIndex < 0) {
           continue
         }
-        const ordered = [...(labelsAtLevels[i] ?? [])].sort(
-          (left, right) => left.y - right.y || left.x - right.x,
-        )
-        const moved = ordered.pop()
-        if (!moved) continue
-        labelsAtLevels[i] = ordered
-        labelsAtLevels[i + 1] = [moved]
+        labelsAtLevels[matchedIndex].push(label)
+        cursor = matchedIndex + 1
       }
 
       for (let i = 0; i < levels.length; i++) {

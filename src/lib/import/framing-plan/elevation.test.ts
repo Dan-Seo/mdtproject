@@ -150,4 +150,45 @@ describe('parseFrameElevations', () => {
     )
     expect(parsed.elevations[0]?.levels[1].labels).toEqual(['3FL'])
   })
+
+  it('라벨의 일정한 위쪽 오프셋과 좁은 마지막 간격에서도 위에서부터 순서대로 대응한다', () => {
+    const parsed = parseFrameElevations(
+      page([
+        v('2000', 50, 150),
+        v('2000', 50, 250),
+        v('2000', 50, 350),
+        v('200', 50, 379),
+        h('RFL', 80, 89),
+        h('3FL', 80, 189),
+        h('2FL', 80, 389),
+        h('1FL', 80, 399),
+        h('bY1通り軸組図', 300, 500),
+      ]),
+    )
+
+    expect(parsed.elevations[0]?.levels.map((level) => level.labels)).toEqual([
+      ['RFL'],
+      ['3FL'],
+      [],
+      ['2FL'],
+      ['1FL'],
+    ])
+  })
+
+  it('사이에 대응할 레벨이 없으면 직전에 대응한 레벨의 라벨 중첩을 유지한다', () => {
+    const parsed = parseFrameElevations(
+      page([
+        v('2000', 50, 150),
+        v('2000', 50, 250),
+        v('2000', 50, 350),
+        h('RFL', 80, 92),
+        h('2FL', 80, 192),
+        h('1FL', 80, 292),
+        h('設計GL', 80, 295),
+        h('bY1通り軸組図', 300, 500),
+      ]),
+    )
+
+    expect(parsed.elevations[0]?.levels[2].labels).toEqual(['1FL', '設計GL'])
+  })
 })

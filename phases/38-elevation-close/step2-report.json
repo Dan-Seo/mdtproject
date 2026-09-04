@@ -1,0 +1,61 @@
+{
+  "verdict": "completed",
+  "implementation": {
+    "rule": "창 안의 isLevelLabel 통과 라벨을 y 오름차순으로 훑고, 커서 이상에서 허용 범위에 드는 첫 레벨에 대응한다. 다음 레벨이 없을 때만 직전 레벨에 중첩한다.",
+    "removed": [
+      "nearestLevelIndex 최근접 대응",
+      "짧은 치수에서 두 라벨 중 하나를 다음 레벨로 미는 휴리스틱"
+    ]
+  },
+  "test_first": {
+    "narrow_levels": "구현 전 실패, 구현 후 통과",
+    "same_level_overlap": "구현 전 통과, 구현 후 통과"
+  },
+  "sweep": {
+    "pages": 36,
+    "different_pages": [
+      "tsu-p21.json",
+      "tsu-p22.json"
+    ],
+    "unchanged_pages": 34,
+    "comparison": "HEAD의 elevation.ts와 작업 트리의 parseFrameElevations를 메모리에서 각각 로드해 tests/fixtures/section-import/textitems 36면의 JSON 결과를 비교했다.",
+    "expected_labels": {
+      "tsu-p21 Y1·Y2": [
+        ["パラペット天端"],
+        ["RFL(水下)"],
+        ["2FL"],
+        ["1FL"],
+        ["設計GL", "基礎下端"]
+      ],
+      "tsu-p21 Y3": [
+        ["パラペット天端"],
+        ["RFL(水下)"],
+        ["2FL"],
+        ["1FL"],
+        ["設計GL"],
+        ["基礎下端"]
+      ],
+      "tsu-p22 block 1": [
+        ["パラペット天端"],
+        ["RFL(水下)"],
+        ["2FL"],
+        ["1FL"],
+        ["設計GL", "基礎下端"]
+      ],
+      "tsu-p22 block 2": [
+        ["パラペット天端"],
+        ["RFL(水下)"],
+        ["2FL"],
+        ["1FL"],
+        ["設計GL", "基礎下端"]
+      ]
+    }
+  },
+  "verification": {
+    "ac_tests": "npx vitest run tests/plan-import src/lib/import/framing-plan tests/section-import — 11 files, 255 tests passed",
+    "full_tests": "npm run test — 100 files, 1796 tests passed",
+    "lint": "npm run lint — 0 errors, 1 existing warning in src/app/api/oncall/alert/route.test.ts",
+    "typecheck": "npx tsc --noEmit — passed"
+  },
+  "summary": "레벨 라벨을 y 순서 커서로 대응하고 최근접·짧은 치수 휴리스틱을 제거했으며, 36면 스윕에서 tsu-p21·tsu-p22만 변경되고 지정 AC·전체 테스트·lint·typecheck가 통과했다."
+}
