@@ -17,7 +17,7 @@
       "name": "label-column-dead-code",
       "status": "completed",
       "started_at": "2026-09-04T22:45:56+0900",
-      "completed_at": "2026-09-04T22:49:05+0900",
+      "completed_at": "2026-09-04T22:52:21+0900",
       "summary": "軸組図 라벨 열 군집·선택 dead code를 제거하고 36면 JSON 결과 동일 및 지정 테스트·lint·typecheck를 통과"
     },
     {
