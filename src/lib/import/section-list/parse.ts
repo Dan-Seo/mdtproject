@@ -322,8 +322,11 @@ function kindFromMark(mark: string, titleText: string): SectionCandidate['kind']
   // C1 계열은 층 접두(2C1, B1C1)까지 허용하되, FC1 같은 基礎柱 부호는
   // 기존 범위 판정처럼 柱候補로 승격하지 않는다.
   if (/^(?:C\d|\d+C\d|[A-EG-Z]\d+C\d)/i.test(mark)) return '柱'
-  // 大梁은 허용된 층 접두만 벗긴 뒤 G로 시작하는 부호다. FG1·FCG1처럼
-  // 부호 중간에 G가 있는 基礎系 부호를 大梁으로 승격하지 않는다.
+  // 大梁은 허용된 층 접두만 벗긴 뒤 ^G로 시작하는 부호다. 코퍼스의
+  // `tests/fixtures/section-import/expected/ina-pump-p7-lists.json`에서 `GA`가
+  // 大梁リスト 항목으로 확인되므로, G 뒤에 숫자를 요구하는 옛 `^G\d`는
+  // 이 실물을 놓친다. 36면 코퍼스에는 `GB1`·`GW1`이 0건이므로, 없는
+  // 부호에 맞춰 이 판정을 더 좁히지 않는다.
   const markWithoutStoryPrefix = mark.replace(/^(?:R|\d+|B\d*)/i, '')
   if (/^G/i.test(markWithoutStoryPrefix)) return '大梁'
   return '対象外'

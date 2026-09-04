@@ -1,0 +1,148 @@
+{
+  "step": 4,
+  "survey": {
+    "pagesScanned": 36,
+    "script": ".cache/label-survey.mts",
+    "predicate": "/(?:FL|GL|RCL|(?:天端|下端|上端)$)/",
+    "pagesWithPlausibleMatches": 30,
+    "pagesWithoutPlausibleMatches": [
+      "kani-p39.json",
+      "karatsu-hashirashin-p1.json",
+      "ojkk-p2.json",
+      "shibata-p1.json",
+      "shibata-p7.json",
+      "yokohama-p14.json"
+    ],
+    "acceptedTrueLevelLabels": [
+      {
+        "text": "RFL",
+        "pages": ["hirosaki-p25.json"]
+      },
+      {
+        "text": "PHFL",
+        "pages": ["hirosaki-p25.json"]
+      },
+      {
+        "text": "2FL",
+        "pages": [
+          "hirosaki-p25.json",
+          "karatsu-jikugumi1-p1.json",
+          "karatsu-jikugumi2-p1.json",
+          "tsu-p21.json",
+          "tsu-p22.json",
+          "yokohama-p7.json",
+          "yokohama-p8.json",
+          "yokohama-p9.json"
+        ]
+      },
+      {
+        "text": "設計GL",
+        "pages": [
+          "hirosaki-p25.json",
+          "saiki-p2.json",
+          "tsu-p21.json",
+          "tsu-p22.json"
+        ]
+      },
+      {
+        "text": "基礎下端",
+        "pages": [
+          "hirosaki-p25.json",
+          "shibata-p13.json",
+          "tsu-p21.json",
+          "tsu-p22.json"
+        ]
+      },
+      {
+        "text": "パラペット天端",
+        "pages": ["tsu-p21.json", "tsu-p22.json"]
+      },
+      {
+        "text": "RFL(水下)",
+        "pages": ["tsu-p21.json", "tsu-p22.json"]
+      },
+      {
+        "text": "中央棟RCL(水下)",
+        "pages": ["yokohama-p8.json", "yokohama-p9.json"]
+      },
+      {
+        "text": "梁天端",
+        "pages": ["ina-p6.json", "tsu-p21.json", "tsu-p22.json"]
+      },
+      {
+        "text": "基礎梁天端",
+        "pages": ["tsu-p21.json", "tsu-p22.json"]
+      }
+    ],
+    "acceptedSentences": [
+      {
+        "text": "・基礎梁天端から1FLまでは打増しとする。",
+        "pages": ["tsu-p21.json", "tsu-p22.json"]
+      },
+      {
+        "text": "支持地盤は、GL-900以下の弱風化花崗岩層とする",
+        "pages": ["karatsu-fukuzu-p1.json"]
+      },
+      {
+        "text": "特記なき地中梁天端は、GL-100とする",
+        "pages": ["karatsu-fukuzu-p1.json"]
+      },
+      {
+        "text": "特記なき1階土間床天端は、GL+150とする",
+        "pages": ["karatsu-fukuzu-p1.json"]
+      }
+    ],
+    "rejectedLevelLikeStrings": [
+      {
+        "text": "1SL",
+        "pages": ["tsu-p21.json", "tsu-p22.json"],
+        "occurrences": 4
+      },
+      {
+        "text": "2SL",
+        "pages": ["saiki-p2.json"],
+        "occurrences": 1
+      },
+      {
+        "text": "2SL(水下)",
+        "pages": ["saiki-p2.json"],
+        "occurrences": 1
+      },
+      {
+        "text": "SL+756.70",
+        "pages": ["ina-p6.json"],
+        "occurrences": 3
+      },
+      {
+        "text": "RSL+760.00",
+        "pages": ["ina-p6.json"],
+        "occurrences": 3
+      }
+    ],
+    "interpretation": "화이트리스트는 문자열을 통과시키는 1차 후보 판정일 뿐이며, 실제 결과는 LABEL_WINDOW_PT와 레벨 위치 허용 범위·y 순서 대응을 모두 통과해야 한다."
+  },
+  "kindFromMark": {
+    "pattern": "story prefix 제거 후 ^G",
+    "census": {
+      "scope": "tests/fixtures/section-import/expected/*.json의 12개 전사 목록",
+      "pattern": "^G[A-Z]",
+      "matches": [
+        {
+          "file": "ina-pump-p7-lists.json",
+          "mark": "GA",
+          "kind": "大梁"
+        }
+      ],
+      "uniqueMatchCount": 1,
+      "GB1Count": 0,
+      "GW1Count": 0
+    }
+  },
+  "verification": {
+    "behaviorChange": false,
+    "addedTests": [
+      "1SL is not a level label",
+      "梁天端 is a level label"
+    ]
+  }
+}

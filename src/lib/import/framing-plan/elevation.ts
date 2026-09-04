@@ -175,6 +175,20 @@ function labelText(token: Token): string | undefined {
   return text.length > 0 ? text : undefined
 }
 
+/**
+ * 36면 서베이에서 관측한 레벨 라벨의 화이트리스트다.
+ *
+ * `SL` 계열은 넣지 않는다. tsu-p21의 `1SL`은 `1FL`과 같은 높이에 놓였고,
+ * 그 도면의 레벨 이름 체계는 FL/GL이다. 여기에 `SL`을 넣으면 한 레벨에
+ * 두 라벨이 생긴다. SL을 지원하려면 먼저 그 도면 계열의 골든이 필요하다.
+ *
+ * 이 판정은 접미어가 포함된 문자열도 통과시키므로, 36면에는
+ * `・基礎梁天端から1FLまでは打増しとする。`이나
+ * `支持地盤は、GL-900以下の弱風化花崗岩層とする` 같은 문장도 통과한다.
+ * 서베이에서 이 문장들은 `LABEL_WINDOW_PT`와 레벨 위치 허용 범위 밖이라
+ * 결과에 닿지 않았다. 여기서 문장 배제 규칙을 새로 만들지 않는다. 현재
+ * 코퍼스는 그 규칙의 효과를 반증할 수 없고, 그 근거는 R10의 후속 과제다.
+ */
 function isLevelLabel(text: string): boolean {
   return /(?:FL|GL|RCL|(?:天端|下端|上端)$)/.test(text)
 }

@@ -191,4 +191,34 @@ describe('parseFrameElevations', () => {
 
     expect(parsed.elevations[0]?.levels[2].labels).toEqual(['1FL', '設計GL'])
   })
+
+  it('SL 계열은 레벨 라벨로 취급하지 않는다', () => {
+    const parsed = parseFrameElevations(
+      page(
+        fourLevels().map((item) =>
+          item.str === '1FL' ? { ...item, str: '1SL' } : item,
+        ),
+      ),
+    )
+
+    expect(parsed.elevations).toHaveLength(1)
+    expect(parsed.elevations[0]?.levels.map((level) => level.labels)).toEqual([
+      ['RFL'],
+      ['3FL'],
+      ['2FL'],
+      [],
+    ])
+  })
+
+  it('天端 어미는 레벨 라벨로 취급한다', () => {
+    const parsed = parseFrameElevations(
+      page(
+        fourLevels().map((item) =>
+          item.str === '1FL' ? { ...item, str: '梁天端' } : item,
+        ),
+      ),
+    )
+
+    expect(parsed.elevations[0]?.levels.at(-1)?.labels).toEqual(['梁天端'])
+  })
 })
