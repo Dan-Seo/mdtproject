@@ -1,0 +1,14 @@
+{
+  "sweep": {
+    "pages": 36,
+    "differentPages": 0,
+    "command": "HEAD:src/lib/import/framing-plan/elevation.ts와 작업 트리의 parseFrameElevations를 각각 로드해 tests/fixtures/section-import/textitems 36면의 JSON.stringify 결과를 비교"
+  },
+  "removed": [
+    "labelColumns",
+    "selectLabelColumn",
+    "LABEL_COLUMN_GAP_PT",
+    "x 방향 라벨 열 군집 선택·재배치"
+  ],
+  "tests": "npx vitest run tests/plan-import src/lib/import/framing-plan: 8 files, 133 tests passed; npm run lint: 0 errors, 1 existing warning; npx tsc --noEmit: passed; rg forbidden symbols: 0 matches"
+}

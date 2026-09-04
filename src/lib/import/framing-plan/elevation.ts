@@ -27,23 +27,21 @@ const COLUMN_TOLERANCE_PT = 4
 /** 레벨 라벨과 푼 레벨 위치의 어긋남 허용(pt). 실물 최대 4.1pt */
 const LEVEL_TOLERANCE_PT = 15
 /**
- * 레벨 라벨 열 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
+ * 레벨 라벨 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
  *
- * 이 창은 넓은 후보 수집용이고, 실제 라벨 열은 후보를 x 방향 군집으로 나눈 뒤
- * 레벨 위치를 가장 많이 설명하는 군집 하나로 좁힌다. 치수 두 개만으로는 축척을
- * 유도할 수는 있어도 대조할 수가 없으므로, 넓은 창 전체를 라벨 열로 취급하면
- * 부재 부호를 레벨 라벨로 오인하게 된다.
+ * 이 창으로 후보를 거른 뒤 `isLevelLabel` 화이트리스트와
+ * `nearestLevelIndex`의 레벨 허용 범위를 적용한다. x 방향 열 군집은 사용하지
+ * 않는다. 치수 열과 실제 레벨 라벨의 x가 도면마다 달라질 수 있기 때문이다.
  *
  * 실물 kani p40에서 그 일이 일어났다 — 위·아래 두 軸組図의 **전체 치수**
  * 5,535 둘이 한 열로 이어져 축척이 3배로 나왔는데, 창이 150pt이던 동안에는
  * 128pt 떨어진 **通り芯 라벨 `Y1`**을 레벨 라벨로 주워 검증을 통과했다.
+ * 지금 그 오인을 막는 것은 열 군집이 아니라 `isLevelLabel` 화이트리스트다.
  *
  * 실측된 라벨 거리는 yokohama p8이 최대 62pt, kani p40이 최대 67pt다. 80은
  * 그 위이고 128 아래다. 더 벌어지는 도면은 빈 후보로 실패한다 (R10).
  */
 const LABEL_WINDOW_PT = 80
-/** 같은 레벨 라벨 열로 묶는 텍스트 바운더리 사이의 최대 간격(pt) */
-const LABEL_COLUMN_GAP_PT = COLUMN_TOLERANCE_PT * 4
 /** 계열이 이어지는지 보는 축척 편차. 伏図 파서와 같은 값이다 */
 const SCALE_TOLERANCE_RATIO = 0.03
 /** 라벨이 붙은 레벨이 이보다 적으면 계열로 보지 않는다 — 부분 치수 열과의 유일한 구분 */
@@ -178,36 +176,6 @@ function isLevelLabel(text: string): boolean {
   return /(?:FL|GL|RCL|(?:天端|下端|上端)$)/.test(text)
 }
 
-function labelColumns(labels: Token[], axisX: number): Token[][] {
-  const candidates = labels
-    .filter((label) => horizontalDistance(label, axisX) <= LABEL_WINDOW_PT)
-    .sort(
-      (left, right) =>
-        left.leftX - right.leftX ||
-        left.y - right.y ||
-        left.rightX - right.rightX,
-    )
-  const columns: Token[][] = []
-
-  for (const candidate of candidates) {
-    const column = columns.at(-1)
-    const columnRight = column?.reduce(
-      (right, token) => Math.max(right, token.rightX),
-      Number.NEGATIVE_INFINITY,
-    )
-    if (
-      column &&
-      candidate.leftX - columnRight! <= LABEL_COLUMN_GAP_PT
-    ) {
-      column.push(candidate)
-    } else {
-      columns.push([candidate])
-    }
-  }
-
-  return columns
-}
-
 function nearestLevelIndex(
   levels: ElevationLevel[],
   y: number,
@@ -222,50 +190,6 @@ function nearestLevelIndex(
     }
   }
   return { index, distance }
-}
-
-function selectLabelColumn(
-  labels: Token[],
-  levels: ElevationLevel[],
-  axisX: number,
-): Token[] {
-  const ranked = labelColumns(labels, axisX)
-    .map((column) => {
-      const usable = column.filter((token) => {
-        const text = labelText(token)
-        return text !== undefined && isLevelLabel(text)
-      })
-      const labelledLevels = new Set(
-        usable
-          .map((token) => nearestLevelIndex(levels, token.y))
-          .filter(({ distance }) => distance <= LEVEL_TOLERANCE_PT)
-          .map(({ index }) => index),
-      )
-      const distance = Math.min(
-        ...column.map((token) => horizontalDistance(token, axisX)),
-      )
-      return { column, labelledLevels, usable, distance }
-    })
-    .sort(
-      (left, right) =>
-        right.labelledLevels.size - left.labelledLevels.size ||
-        right.usable.length - left.usable.length ||
-        left.distance - right.distance,
-    )
-
-  const selected = ranked[0]?.column ?? []
-  const selectedSet = new Set(selected)
-  const displaced = ranked.flatMap(({ column }) =>
-    column.filter((token) => {
-      if (selectedSet.has(token)) return false
-      const text = labelText(token)
-      if (text === undefined || !isLevelLabel(text)) return false
-      const nearest = nearestLevelIndex(levels, token.y)
-      return nearest.distance <= LEVEL_TOLERANCE_PT
-    }),
-  )
-
-  return [...selected, ...displaced]
 }
 
 /**
@@ -459,8 +383,10 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
         positionPt,
       }))
       const labelsAtLevels: Token[][] = levels.map(() => [])
-      const labelColumn = selectLabelColumn(labels, levels, chain[0].x)
-      for (const label of labelColumn) {
+      const labelCandidates = labels.filter(
+        (label) => horizontalDistance(label, chain[0].x) <= LABEL_WINDOW_PT,
+      )
+      for (const label of labelCandidates) {
         const text = labelText(label)
         if (text === undefined || !isLevelLabel(text)) continue
         const nearest = nearestLevelIndex(levels, label.y)
