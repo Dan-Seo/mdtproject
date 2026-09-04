@@ -9,7 +9,7 @@
       "gate": true,
       "status": "completed",
       "started_at": "2026-09-04T22:26:27+0900",
-      "completed_at": "2026-09-04T22:45:00+0900",
+      "completed_at": "2026-09-04T22:45:55+0900",
       "summary": "C1~C5의 phase 37 근거 주장을 36면 픽스처·코드·골든과 독립 재현해 모두 성립함을 확인"
     },
     {
