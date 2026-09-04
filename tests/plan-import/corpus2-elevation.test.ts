@@ -20,9 +20,7 @@ type ElevationFixture = {
     title?: string
     titles?: string[]
     levels?: string[]
-    levelsBottom?: string[]
     heightsMm?: number[]
-    heightsBottomMm?: number[]
   }>
 }
 
@@ -63,7 +61,7 @@ function elevationForTitle(
         candidateTitle.startsWith(`${expectedTitle}S=`),
     ),
   )
-  expect(matches).toHaveLength(1)
+  expect(matches).toEqual([expect.anything()])
   return matches[0]!
 }
 
@@ -85,67 +83,51 @@ function titlesOf(
 function expectCorpus2Elevations(
   pageFile: string,
   goldenFile: string,
-): void {
+): ReturnType<typeof parseFrameElevations>['elevations'][] {
   const golden = readGolden(goldenFile)
   const parsed = parseFrameElevations(readPage(pageFile))
 
   expect(parsed.issues).toEqual([])
-  expect(parsed.elevations).toHaveLength(golden.elevations.length)
-
-  for (const expected of golden.elevations) {
+  const actualsByExpected = golden.elevations.map((expected) => {
     const titles = titlesOf(expected)
     expect(titles).not.toEqual([])
-    const actuals = titles.map((title) => elevationForTitle(parsed, title))
-    expect(new Set(actuals)).toEqual(new Set([actuals[0]]))
+    return titles.map((title) => elevationForTitle(parsed, title))
+  })
+  const actuals = actualsByExpected.flat()
 
-    const actual = actuals[0]!
-    expect(actual.heightsMm).toEqual(expected.heightsMm)
+  // 모든 파서 계열은 골든 항목에서 청구되어야 한다. 골든 여러 항목이
+  // 하나의 계열을 공유하는 경우(예: karatsu X3·X4)도 허용하되,
+  // 파서만의 미청구 계열은 허용하지 않는다.
+  expect(new Set(parsed.elevations)).toEqual(new Set(actuals))
+
+  for (const [index, expected] of golden.elevations.entries()) {
+    const expectedActuals = actualsByExpected[index]!
+    expect(new Set(expectedActuals)).toEqual(new Set([expectedActuals[0]]))
+
+    const actual = expectedActuals[0]!
+    const expectedHeights = expected.heightsMm ?? golden.heightsMm
+    const expectedLabels = expected.levels ?? golden.levelTexts
+    expect(expectedHeights).toBeDefined()
+    expect(expectedLabels).toBeDefined()
+    expect(actual.heightsMm).toEqual(expectedHeights)
     expect(labelsByLevel(actual)).toEqual(
-      expected.levels!.map((label) => [label]),
+      expectedLabels!.map((label) => [label]),
     )
   }
+
+  return actualsByExpected
 }
 
 describe('階高 corpus 2 골든', () => {
-  it('karatsu: 제목으로 대응한 X2·X3 두 블록의 높이와 레벨 라벨을 골든과 대조한다', () => {
-    const golden = readGolden('karatsu-jikugumi1-p1-elevation.json')
-    const parsed = parseFrameElevations(readPage('karatsu-jikugumi1-p1.json'))
-
-    expect(parsed.issues).toEqual([])
-    expect(parsed.elevations).toHaveLength(2)
-    const expectedElevations = golden.elevations.filter((entry) =>
-      entry.title === 'X2通り' || entry.title === 'X3通り',
+  it('karatsu: 골든의 모든 제목 항목을 대응 계열의 높이·레벨 라벨과 대조한다', () => {
+    const actualsByExpected = expectCorpus2Elevations(
+      'karatsu-jikugumi1-p1.json',
+      'karatsu-jikugumi1-p1-elevation.json',
     )
 
-    // X4通り는 텍스트에 레벨 라벨 열이 없어 골든 대조에서 제외한다.
-    // X2·X3은 제목의 정확한 軸組図 세그먼트로 계열을 대응한다.
-    expect(expectedElevations).toHaveLength(2)
-    for (const expected of expectedElevations) {
-      const actual = elevationForTitle(parsed, expected.title!)
-      expect(actual.heightsMm).toEqual(golden.heightsMm)
-      expect(labelsByLevel(actual)).toEqual(
-        golden.levelTexts!.map((label) => [label]),
-      )
-    }
-  })
-
-  it('tsu: 제목으로 대응한 Y3 블록의 골든 부분 전사 높이와 라벨 열을 대조한다', () => {
-    const golden = readGolden('tsu-kanritou-p21-elevation.json')
-    const parsed = parseFrameElevations(readPage('tsu-p21.json'))
-    const expected = golden.elevations[0]!
-    const actual = elevationForTitle(parsed, expected.title!)
-    const expectedHeights = expected.heightsBottomMm!
-    const expectedLabels = expected.levelsBottom!.map((label) => [label])
-
-    expect(parsed.issues).toEqual([])
-    // 2FL 위쪽은 최상단 레벨 라벨을 확정하지 않은 골든 부분 전사이므로
-    // 높이와 라벨 모두 아래쪽 골든 구간만 대조한다.
-    expect(actual.heightsMm.slice(-expectedHeights.length)).toEqual(
-      expectedHeights,
-    )
-    expect(labelsByLevel(actual).slice(-expectedLabels.length)).toEqual(
-      expectedLabels,
-    )
+    // 골든의 X3·X4 항목은 도면의 같은 치수 열을 공유하므로 하나의
+    // 파서 계열로 묶여야 한다. 이 관계를 골든 순서에서 직접 검증한다.
+    expect(actualsByExpected[1]?.[0]).toBe(actualsByExpected[2]?.[0])
   })
 
   it('tsu: p21의 모든 제목 계열을 전체 골든 높이·레벨 라벨과 대조한다', () => {
@@ -162,19 +144,10 @@ describe('階高 corpus 2 골든', () => {
     )
   })
 
-  it('hirosaki: 제목으로 대응한 X1·X2·X3 세 블록의 높이와 레벨 라벨을 골든과 대조한다', () => {
-    const golden = readGolden('hirosaki-kikyono-p25-elevation.json')
-    const parsed = parseFrameElevations(readPage('hirosaki-p25.json'))
-
-    expect(parsed.issues).toEqual([])
-    expect(parsed.elevations).toHaveLength(3)
-    expect(golden.elevations).toHaveLength(3)
-    for (const expected of golden.elevations) {
-      const actual = elevationForTitle(parsed, expected.title!)
-      expect(actual.heightsMm).toEqual(expected.heightsMm)
-      expect(labelsByLevel(actual)).toEqual(
-        expected.levels!.map((label) => [label]),
-      )
-    }
+  it('hirosaki: 골든의 모든 제목 계열을 높이·레벨 라벨과 대조한다', () => {
+    expectCorpus2Elevations(
+      'hirosaki-p25.json',
+      'hirosaki-kikyono-p25-elevation.json',
+    )
   })
 })

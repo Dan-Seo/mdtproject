@@ -1289,23 +1289,18 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
           const main = c.girderMain!
           const topByPosition = top as Record<string, string>
           const bottomByPosition = bottom as Record<string, string>
-          expect(
-            `${main.topCount}-${main.size}`,
-            `${entry.mark} 上端筋 中央`,
-          ).toBe(topByPosition.中央)
-          expect(
-            `${main.bottomCount}-${main.size}`,
-            `${entry.mark} 下端筋 中央`,
-          ).toBe(bottomByPosition.中央)
-          if ('端部' in topByPosition && '端部' in bottomByPosition) {
-            expect(
-              `${main.endTopCount}-${main.size}`,
-              `${entry.mark} 上端筋 端部`,
-            ).toBe(topByPosition.端部)
-            expect(
-              `${main.endBottomCount}-${main.size}`,
-              `${entry.mark} 下端筋 端部`,
-            ).toBe(bottomByPosition.端部)
+          for (const [position, text] of Object.entries(topByPosition)) {
+            const count = position === '端部' ? main.endTopCount : main.topCount
+            expect(`${count}-${main.size}`, `${entry.mark} 上端筋 ${position}`).toBe(
+              text,
+            )
+          }
+          for (const [position, text] of Object.entries(bottomByPosition)) {
+            const count =
+              position === '端部' ? main.endBottomCount : main.bottomCount
+            expect(`${count}-${main.size}`, `${entry.mark} 下端筋 ${position}`).toBe(
+              text,
+            )
           }
         }
 

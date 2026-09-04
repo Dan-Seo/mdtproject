@@ -47,7 +47,10 @@
     {
       "step": 5,
       "name": "test-literals-and-cb1",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-04T23:26:39+0900",
+      "completed_at": "2026-09-04T23:38:57+0900",
+      "summary": "골든 기반 계열 대조로 리터럴·미청구 계열을 제거하고 karatsu X2·X3·X4 및 CB1 모든 位置를 대조했으며 전체 테스트·lint·typecheck를 통과"
     },
     {
       "step": 6,
