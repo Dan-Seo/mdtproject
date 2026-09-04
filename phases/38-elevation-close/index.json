@@ -31,7 +31,10 @@
     {
       "step": 3,
       "name": "short-dimension-tolerance",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-04T23:04:05+0900",
+      "completed_at": "2026-09-04T23:13:40+0900",
+      "summary": "짧은 치수 허용비를 SHORT_DIMENSION_SCALE_TOLERANCE_RATIO=1.0으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증·36면 sweep·지정 AC를 통과했다."
     },
     {
       "step": 4,

@@ -18,6 +18,7 @@ type ElevationFixture = {
   levelTexts?: string[]
   elevations: Array<{
     title?: string
+    titles?: string[]
     levels?: string[]
     levelsBottom?: string[]
     heightsMm?: number[]
@@ -72,6 +73,39 @@ function labelsByLevel(
   return elevation.levels.map((level) => level.labels)
 }
 
+function titlesOf(
+  expected: ElevationFixture['elevations'][number],
+): string[] {
+  return (
+    expected.titles ??
+    (expected.title === undefined ? [] : [expected.title])
+  )
+}
+
+function expectCorpus2Elevations(
+  pageFile: string,
+  goldenFile: string,
+): void {
+  const golden = readGolden(goldenFile)
+  const parsed = parseFrameElevations(readPage(pageFile))
+
+  expect(parsed.issues).toEqual([])
+  expect(parsed.elevations).toHaveLength(golden.elevations.length)
+
+  for (const expected of golden.elevations) {
+    const titles = titlesOf(expected)
+    expect(titles).not.toEqual([])
+    const actuals = titles.map((title) => elevationForTitle(parsed, title))
+    expect(new Set(actuals)).toEqual(new Set([actuals[0]]))
+
+    const actual = actuals[0]!
+    expect(actual.heightsMm).toEqual(expected.heightsMm)
+    expect(labelsByLevel(actual)).toEqual(
+      expected.levels!.map((label) => [label]),
+    )
+  }
+}
+
 describe('階高 corpus 2 골든', () => {
   it('karatsu: 제목으로 대응한 X2·X3 두 블록의 높이와 레벨 라벨을 골든과 대조한다', () => {
     const golden = readGolden('karatsu-jikugumi1-p1-elevation.json')
@@ -111,6 +145,20 @@ describe('階高 corpus 2 골든', () => {
     )
     expect(labelsByLevel(actual).slice(-expectedLabels.length)).toEqual(
       expectedLabels,
+    )
+  })
+
+  it('tsu: p21의 모든 제목 계열을 전체 골든 높이·레벨 라벨과 대조한다', () => {
+    expectCorpus2Elevations(
+      'tsu-p21.json',
+      'tsu-kanritou-p21-elevation.json',
+    )
+  })
+
+  it('tsu: p22의 모든 제목 계열을 전체 골든 높이·레벨 라벨과 대조한다', () => {
+    expectCorpus2Elevations(
+      'tsu-p22.json',
+      'tsu-kanritou-p22-elevation.json',
     )
   })
 

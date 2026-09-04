@@ -57,12 +57,15 @@ const SHORT_DIMENSION_RATIO = 0.25
  * 창에서 유도한 범위 안에서만 열 이동을 허용한다 — 파일명별 x 좌표를 쓰지 않는다.
  */
 const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4
-/** 짧은 치수의 텍스트 위치 편차를 허용하되, 가까운 잡음 치수는 거절한다. */
 /**
- * 실제 짧은 꼬리 오차는 tsu 1170mm가 0.4879329, hirosaki 2310mm가 0.0005626이다.
- * 최대값을 포함하되 50% 창보다 좁히기 위해 0.49를 쓴다.
+ * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는
+ * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.
+ * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와
+ * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의
+ * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,
+ * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.
  */
-const SHORT_TAIL_SCALE_TOLERANCE_RATIO = 0.49
+const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0
 /**
  * 계열이 되려면 치수가 이만큼 있어야 한다.
  *
@@ -195,7 +198,8 @@ function chains(column: DimensionToken[]): DimensionToken[][] {
       current.length >= MINIMUM_CHAIN_DIMENSIONS &&
       isShortDimension(column[i + 1], current) &&
       reference !== undefined &&
-      Math.abs(scale / reference - 1) <= SHORT_TAIL_SCALE_TOLERANCE_RATIO
+      Math.abs(scale / reference - 1) <=
+        SHORT_DIMENSION_SCALE_TOLERANCE_RATIO
 
     if (continues || shortDimension) {
       current.push(column[i + 1])
@@ -247,7 +251,7 @@ function extendShortTail(
         if (expectedGap <= 0) return false
         return (
           Math.abs(gap / expectedGap - 1) <=
-          SHORT_TAIL_SCALE_TOLERANCE_RATIO
+          SHORT_DIMENSION_SCALE_TOLERANCE_RATIO
         )
       })
       .sort((left, right) => {
