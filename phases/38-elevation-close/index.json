@@ -52,13 +52,16 @@
       "completed_at": "2026-09-04T23:42:32+0900",
       "summary": "골든 기반 계열 대조로 리터럴·미청구 계열을 제거하고 karatsu X2·X3·X4 및 CB1 모든 位置를 대조했으며 전체 테스트·lint·typecheck를 통과"
     },
-    {
-      "step": 6,
-      "name": "refute-fixes",
-      "kind": "verify",
-      "gate": true,
-      "status": "pending"
-    },
+      {
+        "step": 6,
+        "name": "refute-fixes",
+        "kind": "verify",
+        "gate": true,
+        "status": "refuted",
+        "started_at": "2026-09-04T23:42:33+0900",
+        "completed_at": "2026-09-04T23:52:54+0900",
+        "summary": "karatsu·hirosaki·tsu-p21의 axis.spansMm 골든 값을 +1mm로 변조해도 대응 테스트가 통과해 스팬 기대값 대조 누락을 반증했다. 임시 변조는 전부 원복했다."
+      },
     {
       "step": 7,
       "name": "docs-elevation-close",
