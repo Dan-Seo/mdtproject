@@ -1,0 +1,51 @@
+{
+  "project": "Kijun",
+  "phase": "38-elevation-close",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refute-claims",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "label-column-dead-code",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "label-level-order",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "short-dimension-tolerance",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "whitelist-and-kind-evidence",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "test-literals-and-cb1",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "docs-elevation-close",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-09-04T22:30:00+0900"
+}
