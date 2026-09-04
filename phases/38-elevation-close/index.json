@@ -41,7 +41,7 @@
       "name": "whitelist-and-kind-evidence",
       "status": "completed",
       "started_at": "2026-09-04T23:17:23+0900",
-      "completed_at": "2026-09-04T23:23:53+0900",
+      "completed_at": "2026-09-04T23:26:38+0900",
       "summary": "36면 레벨 라벨 서베이와 ^G 부호 전수 계수 근거를 리포트·주석으로 남기고 SL·天端 회귀 테스트를 추가했으며 동작 변경 없이 AC를 통과"
     },
     {
