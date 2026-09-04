@@ -189,8 +189,9 @@
     },
     {
       "dir": "38-elevation-close",
-      "status": "pending",
-      "created_at": "2026-09-04T22:30:00+0900"
+      "status": "refuted",
+      "created_at": "2026-09-04T22:30:00+0900",
+      "refuted_at": "2026-09-04T23:54:32+0900"
     }
   ]
 }
