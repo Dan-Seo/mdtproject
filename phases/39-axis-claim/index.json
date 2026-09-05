@@ -23,10 +23,7 @@
     {
       "step": 2,
       "name": "unclaimed-key-guard",
-      "status": "blocked",
-      "summary": "골든 값 경로 32개를 측정해 18개를 대조 테스트, 13개를 출처·주석으로 등록하고 F1/F2를 수정했다. blocks[].title과 F2의 先端 본수는 근거 없는 청구를 피하려고 미청구로 남겼다.",
-      "blocked_reason": "현재 골든의 blocks[].title은 값 필드인데 이를 읽어 대조하는 테스트가 없다. 근거 없는 테스트를 추가하지 말라는 step 규칙에 따라 숨기지 않고 사용자 결정이 필요한 미청구 필드로 남긴다. 상세: step2-report.json",
-      "started_at": "2026-09-05T09:42:50+0900"
+      "status": "pending"
     },
     {
       "step": 3,
