@@ -208,8 +208,9 @@
     },
     {
       "dir": "41-report-record-integrity",
-      "status": "pending",
-      "created_at": "2026-09-05T13:40:00+0900"
+      "status": "completed",
+      "created_at": "2026-09-05T13:40:00+0900",
+      "completed_at": "2026-09-05T14:16:13+0900"
     }
   ]
 }
