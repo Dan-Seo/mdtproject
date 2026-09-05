@@ -1,0 +1,208 @@
+{
+  "step": 3,
+  "name": "docs-elevation-close",
+  "status": "completed",
+  "numbers_used": [
+    {
+      "value": 1.0,
+      "source": "phases/38-elevation-close/step3-report.json#/implementation/constant"
+    },
+    {
+      "value": 36,
+      "source": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/pages"
+    },
+    {
+      "value": 0.45,
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_0_45"
+    },
+    {
+      "value": 0.49,
+      "source": "phases/38-elevation-close/step3-report.json#/corpus_sweep/comparison"
+    },
+    {
+      "value": 5.0,
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0"
+    },
+    {
+      "value": 6,
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2"
+    },
+    {
+      "value": 5,
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2"
+    },
+    {
+      "value": 3,
+      "source": "phases/39-axis-claim/step1-report.json#/skipped_axis_count"
+    },
+    {
+      "value": 32,
+      "source": "phases/39-axis-claim/step2-report.json#/key_paths_total"
+    },
+    {
+      "value": 18,
+      "source": "phases/39-axis-claim/step2-report.json#/claimed"
+    },
+    {
+      "value": 14,
+      "source": "phases/39-axis-claim/step2-report.json#/reference_only"
+    },
+    {
+      "value": -12.4,
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+    },
+    {
+      "value": -12.7,
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+    },
+    {
+      "value": 9.3,
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+    },
+    {
+      "value": 21,
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/source/page"
+    },
+    {
+      "value": 22,
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/page"
+    },
+    {
+      "value": 0,
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0"
+    },
+    {
+      "value": 1,
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1"
+    },
+    {
+      "value": 2,
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/sheet"
+    },
+    {
+      "value": 8,
+      "source": "tests/plan-import/elevation.test.ts#yokohama-p8"
+    },
+    {
+      "value": "1SL",
+      "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/0/text"
+    },
+    {
+      "value": "2SL",
+      "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/1/text"
+    },
+    {
+      "value": "SL+756.70",
+      "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/3/text"
+    },
+    {
+      "value": "1FL",
+      "source": "phases/38-elevation-close/step4-report.json#/acceptedSentences/0/text"
+    },
+    {
+      "value": "2FL",
+      "source": "phases/38-elevation-close/step4-report.json#/acceptedTrueLevelLabels/1/text"
+    },
+    {
+      "value": "Y1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels"
+    },
+    {
+      "value": "Y2",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels"
+    },
+    {
+      "value": "X1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+    },
+    {
+      "value": "X2",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+    },
+    {
+      "value": "X3",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+    },
+    {
+      "value": "X4",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels"
+    },
+    {
+      "value": "X5",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels"
+    },
+    {
+      "value": 38,
+      "source": "phases/38-elevation-close/step3-report.json#/summary"
+    },
+    {
+      "value": 39,
+      "source": "phases/39-axis-claim/step2-report.json#/summary"
+    },
+    {
+      "value": 2,
+      "source": "phases/38-elevation-close/step2-report.json#/summary"
+    },
+    {
+      "value": 6,
+      "source": "phases/38-elevation-close/step6-report.json#/summary"
+    }
+  ],
+  "paths_verified": [
+    "phases/38-elevation-close/step0-report.json",
+    "phases/38-elevation-close/step2.md",
+    "phases/38-elevation-close/step2-report.json",
+    "phases/38-elevation-close/step3-report.json",
+    "phases/38-elevation-close/step4-report.json",
+    "phases/38-elevation-close/step6-report.json",
+    "phases/39-axis-claim/step0-report.json",
+    "phases/39-axis-claim/step1-report.json",
+    "phases/39-axis-claim/step2-report.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+    "tests/fixtures/section-import/SOURCES.md",
+    "tests/plan-import/corpus2-elevation.test.ts",
+    "tests/plan-import/elevation.test.ts",
+    "tests/plan-import/key-coverage.test.ts",
+    ".cache/dwg-tsu-kanritou.pdf",
+    "docs/RISKS.md",
+    "docs/ADR.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "docs/MILESTONES.md"
+  ],
+  "checks": {
+    "source_precheck": {
+      "command": "Test-Path -LiteralPath <path> -PathType Leaf (Windows equivalent of test -f)",
+      "source_pdf": ".cache/dwg-tsu-kanritou.pdf",
+      "source_pdf_exists": true,
+      "golden_file": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+      "golden_file_exists": true,
+      "dedicated_source_line_absent_before_edit": true
+    },
+    "claude_agents_rows_identical": {
+      "command": "diff --no-index <CLAUDE rows> <AGENTS rows>",
+      "exit_code": 0,
+      "rows_checked": [
+        "도면 인식(로컬)",
+        "R10",
+        "R15"
+      ]
+    },
+    "vitest": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "files_passed": 101,
+      "tests_passed": 1808
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "기존 src/app/api/oncall/alert/route.test.ts:161 _omitted unused warning"
+    }
+  },
+  "summary": "R15의 階高 짧은 치수 상수 항목을 1.0·36면 근거로 해소하되 R15는 열림으로 유지하고, R10·ADR-030·마일스톤·출처 문서를 갱신했으며 CLAUDE/AGENTS 대응 행 일치와 전체 테스트·lint를 확인했다."
+}
