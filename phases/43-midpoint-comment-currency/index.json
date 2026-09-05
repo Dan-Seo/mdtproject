@@ -1,0 +1,19 @@
+{
+  "project": "Kijun",
+  "phase": "43-midpoint-comment-currency",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refresh-midpoint-comment",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "refute-midpoint-comment",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-09-05T20:45:00+0900"
+}
