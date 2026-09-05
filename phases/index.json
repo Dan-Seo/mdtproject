@@ -195,9 +195,10 @@
     },
     {
       "dir": "39-axis-claim",
-      "status": "refuted",
+      "status": "completed",
       "created_at": "2026-09-05T00:40:00+0900",
-      "refuted_at": "2026-09-05T09:23:16+0900"
+      "refuted_at": "2026-09-05T09:23:16+0900",
+      "completed_at": "2026-09-05T10:38:33+0900"
     }
   ]
 }
