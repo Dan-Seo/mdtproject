@@ -7,7 +7,9 @@
       "name": "refute-transcription-fix",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "summary": "A1~A5 독립 재현이 모두 성립했다: tsu 21면 세 블록의 X1~X5, 전체 23개 axis 블록 불변식 위반 0건, A5 부재 경로 3건을 별도 확인.",
+      "started_at": "2026-09-05T09:23:52+0900"
     },
     {
       "step": 1,
