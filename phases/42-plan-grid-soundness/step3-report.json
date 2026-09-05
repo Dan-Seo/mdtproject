@@ -1,0 +1,3468 @@
+{
+  "phase": "42-plan-grid-soundness",
+  "step": 3,
+  "name": "refute-plan-grid-soundness",
+  "kind": "verify",
+  "verdict": "refuted",
+  "base_commit": "7a125780b9499fa7ba242c84c938be37c764e00b",
+  "evaluated_head": "bb9916c6c3e7d6a422c079794c33d6419085a925",
+  "summary": "step0 당시 A/B는 정확히 재현되나 현재 반환 후보의 A=7.685713pt와 주석의 10.379846pt는 불일치. P1/P2 변조 검출·원복, 53후보·19블록 불변, 61픽스처·76문서값 대조 및 전 게이트 통과.",
+  "items": [
+    {
+      "id": "1_midpoint_margin_reproduction",
+      "holds": false,
+      "method": "Loaded pre-phase and current parse.ts in memory, instrumented three successful validateSequence returns via TypeScript AST positions, recorded the actual selected token objects, and linked only returned grid/block sequences. Independently calculated absolute midpoint offsets and competing offsets inside the original adjacent-axis across windows on all 36 fixtures. No step0 replay script or measured rows were reused. Also ran each parser without instrumentation and compared every returned object.",
+      "evidence": {
+        "historical": {
+          "page_count": 36,
+          "span_count": 208,
+          "A": 10.379845548060018,
+          "B": 0.018264999999928477,
+          "holds": false,
+          "accepted_max": {
+            "page": "saiki-p2.json",
+            "direction": "X",
+            "along_key": "x",
+            "labels": [
+              "2",
+              "1"
+            ],
+            "positions_pt": [
+              43.16768159292046,
+              733.5277071287996
+            ],
+            "midpoint_pt": 388.34769436086003,
+            "bands_pt": [
+              131.37812926690913,
+              126.239949504
+            ],
+            "totalConfirmed": false,
+            "accepted": {
+              "text": "700",
+              "value_mm": 700,
+              "center": {
+                "x": 377.9678488128,
+                "y": 124.13994942900038
+              },
+              "distance_pt": 10.379845548060018,
+              "across_distance_pt": 2.1000000749996133
+            },
+            "competitor": {
+              "text": "850",
+              "value_mm": 850,
+              "center": {
+                "x": 354.6878590547997,
+                "y": 146.68794132479997
+              },
+              "distance_pt": 33.65983530606036,
+              "across_distance_pt": 15.309812057890838
+            }
+          },
+          "competing_min": {
+            "page": "hirosaki-p25.json",
+            "direction": "Y",
+            "along_key": "x",
+            "labels": [
+              "Y8",
+              "Y9"
+            ],
+            "positions_pt": [
+              929.204225,
+              1004.786715
+            ],
+            "midpoint_pt": 966.99547,
+            "bands_pt": [
+              268.33226999999994
+            ],
+            "totalConfirmed": true,
+            "accepted": {
+              "text": "8000",
+              "value_mm": 8000,
+              "center": {
+                "x": 967.0201086423999,
+                "y": 242.15715999999998
+              },
+              "distance_pt": 0.024638642399963828,
+              "across_distance_pt": 26.17510999999996
+            },
+            "competitor": {
+              "text": "24000",
+              "value_mm": 24000,
+              "center": {
+                "x": 967.0137349999999,
+                "y": 252.7547666666667
+              },
+              "distance_pt": 0.018264999999928477,
+              "across_distance_pt": 15.577503333333226
+            }
+          },
+          "unconfirmed_min": {
+            "page": "karatsu-fukuzu-p1.json",
+            "direction": "Y",
+            "along_key": "y",
+            "labels": [
+              "Y1",
+              "Y0"
+            ],
+            "positions_pt": [
+              503.04,
+              541.14
+            ],
+            "midpoint_pt": 522.09,
+            "bands_pt": [
+              107.00778,
+              851.99802
+            ],
+            "totalConfirmed": false,
+            "accepted": {
+              "text": "1,900",
+              "value_mm": 1900,
+              "center": {
+                "x": 131.7279,
+                "y": 518.6999999999999
+              },
+              "distance_pt": 3.3900000000001,
+              "across_distance_pt": 24.72012000000001
+            },
+            "competitor": {
+              "text": "180",
+              "value_mm": 180,
+              "center": {
+                "x": 153.4479,
+                "y": 515.9100000000001
+              },
+              "distance_pt": 6.17999999999995,
+              "across_distance_pt": 46.44012000000001
+            }
+          }
+        },
+        "current": {
+          "page_count": 36,
+          "span_count": 206,
+          "A": 7.685713200000237,
+          "B": 0.018264999999928477,
+          "holds": false,
+          "accepted_max": {
+            "page": "shibata-p13.json",
+            "direction": "X",
+            "along_key": "x",
+            "labels": [
+              "1",
+              "5"
+            ],
+            "positions_pt": [
+              724.234512,
+              1886.4420696000002
+            ],
+            "midpoint_pt": 1305.3382908,
+            "bands_pt": [
+              682.9778984000003
+            ],
+            "totalConfirmed": false,
+            "accepted": {
+              "text": "41,000",
+              "value_mm": 41000,
+              "center": {
+                "x": 1297.6525775999999,
+                "y": 653.9718598400004
+              },
+              "distance_pt": 7.685713200000237,
+              "across_distance_pt": 29.006038559999865
+            },
+            "competitor": {
+              "text": "11,000",
+              "value_mm": 11000,
+              "center": {
+                "x": 1198.44,
+                "y": 631.2702561777778
+              },
+              "distance_pt": 106.89829080000004,
+              "across_distance_pt": 51.70764222222249
+            }
+          },
+          "competing_min": {
+            "page": "hirosaki-p25.json",
+            "direction": "Y",
+            "along_key": "x",
+            "labels": [
+              "Y8",
+              "Y9"
+            ],
+            "positions_pt": [
+              929.204225,
+              1004.786715
+            ],
+            "midpoint_pt": 966.99547,
+            "bands_pt": [
+              268.33226999999994
+            ],
+            "totalConfirmed": true,
+            "accepted": {
+              "text": "8000",
+              "value_mm": 8000,
+              "center": {
+                "x": 967.0201086423999,
+                "y": 242.15715999999998
+              },
+              "distance_pt": 0.024638642399963828,
+              "across_distance_pt": 26.17510999999996
+            },
+            "competitor": {
+              "text": "24000",
+              "value_mm": 24000,
+              "center": {
+                "x": 967.0137349999999,
+                "y": 252.7547666666667
+              },
+              "distance_pt": 0.018264999999928477,
+              "across_distance_pt": 15.577503333333226
+            }
+          },
+          "unconfirmed_min": {
+            "page": "karatsu-fukuzu-p1.json",
+            "direction": "Y",
+            "along_key": "y",
+            "labels": [
+              "Y1",
+              "Y0"
+            ],
+            "positions_pt": [
+              503.04,
+              541.14
+            ],
+            "midpoint_pt": 522.09,
+            "bands_pt": [
+              107.00778,
+              851.99802
+            ],
+            "totalConfirmed": false,
+            "accepted": {
+              "text": "1,900",
+              "value_mm": 1900,
+              "center": {
+                "x": 131.7279,
+                "y": 518.6999999999999
+              },
+              "distance_pt": 3.3900000000001,
+              "across_distance_pt": 24.72012000000001
+            },
+            "competitor": {
+              "text": "180",
+              "value_mm": 180,
+              "center": {
+                "x": 153.4479,
+                "y": 515.9100000000001
+              },
+              "distance_pt": 6.17999999999995,
+              "across_distance_pt": 46.44012000000001
+            }
+          }
+        },
+        "historical_step0_values_exactly_reproduced": true,
+        "delta_current_minus_step0_A": -2.6941323480597816,
+        "delta_current_minus_step0_B": 0.0,
+        "current_span_count": 206,
+        "historical_span_count": 208,
+        "margin_conclusion_unchanged": true,
+        "comment": {
+          "path": "src/lib/import/framing-plan/parse.ts",
+          "start_line": 57,
+          "quote": "/** 치수 중심과 인접 축 중점의 어긋남 허용. 36면의 반환 격자·블록에서 실측한\n *  채택 이탈 최댓값 A는 10.379846pt(saiki-p2, X 2–1, 「700」)다.\n *  같은 치수 창(라벨 밴드 ±60pt)의 미채택 경쟁 이탈 최솟값 B는\n *  0.018265pt(hirosaki-p25, Y Y8–Y9, 「24000」合計)다. 合計 미확인 축만\n *  보아도 B는 6.180000pt(karatsu-fukuzu-p1, Y Y1–Y0, 「180」)이므로\n *  A ≤ 15 < B는 불성립이다. 중점 거리만의 안전 여백을 주장하지 않는다.\n *  T=4/6/15/30/40에서 격자 면은 23/23/26/26/26, 블록 면은 7/15/16/16/16.\n *  골든 7면의 전체 출력은 T=6만 15와 같고 4·30·40은 다르다(30은 issues만).\n *  재현·좌표 근거: phases/42-plan-grid-soundness/step0-report.json */\n",
+          "A_six_decimals": "10.379846",
+          "current_A_six_decimals": "7.685713",
+          "A_matches_current": false,
+          "A_matches_step0_population": true,
+          "B_matches_current": true,
+          "unconfirmed_B_matches_current": true
+        },
+        "refutation_scope": "Step 0 arithmetic is upheld at its original revision. The failed sub-property is equality between the current returned-population measurement and the MIDPOINT_TOLERANCE_PT comment: saiki-p2 is no longer returned, so A is 7.685713 pt at shibata-p13 X 1–5, not 10.379846 pt. The comment still describes returned grids/blocks without an explicit pre-step1 qualifier. If read purely as a historical step0 record, its numbers reproduce exactly. docs/RISKS.md explicitly qualifies these as step0 measurements and is not refuted by this change.",
+        "measurement_source_comparison": {
+          "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin"
+        },
+        "instrumented_outputs_equal_uninstrumented": true,
+        "parser_sha256_before": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+        "parser_sha256_after": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3"
+      }
+    },
+    {
+      "id": "2_properties_are_falsifiable",
+      "holds": true,
+      "method": "Disabled P1 and P2 separately in the actual parse.ts file, ran the complete parse.test.ts file with the JSON reporter, restored exact pre-mutation bytes in finally, compared SHA-256, and ran that test file again after each restoration.",
+      "evidence": {
+        "mutations": [
+          {
+            "property": "P1",
+            "path": "src/lib/import/framing-plan/parse.ts",
+            "original_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+            "removed_condition": "index > 0 && axis.positionPt === result.axes[index - 1].positionPt",
+            "replacement": "false && index > 0 && axis.positionPt === result.axes[index - 1].positionPt",
+            "mutated_sha256": "1b274d801ef5c0a37750d0df2f63b77ecc4bca7bf7fb65097bb0ad6e24b9e109",
+            "disabled": {
+              "command": [
+                "npx.cmd",
+                "vitest",
+                "run",
+                "src/lib/import/framing-plan/parse.test.ts",
+                "--reporter=json",
+                "--outputFile=.cache/phase42-step3/P1-disabled.json"
+              ],
+              "exit_code": 1,
+              "total": 29,
+              "passed": 28,
+              "failed": 1,
+              "failed_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+                  "messages": [
+                    "AssertionError: expected [ '寸法欠落', '縮尺範囲外' ] to include '通り芯座標重複'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:34:27\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+                  ]
+                }
+              ],
+              "property_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+                  "status": "failed"
+                },
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+                  "status": "passed"
+                }
+              ]
+            },
+            "restored_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+            "byte_equal": true,
+            "restored": {
+              "command": [
+                "npx.cmd",
+                "vitest",
+                "run",
+                "src/lib/import/framing-plan/parse.test.ts",
+                "--reporter=json",
+                "--outputFile=.cache/phase42-step3/P1-restored.json"
+              ],
+              "exit_code": 0,
+              "total": 29,
+              "passed": 29,
+              "failed": 0,
+              "failed_cases": [],
+              "property_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+                  "status": "passed"
+                },
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+                  "status": "passed"
+                }
+              ]
+            },
+            "holds": true
+          },
+          {
+            "property": "P2",
+            "path": "src/lib/import/framing-plan/parse.ts",
+            "original_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+            "removed_condition": "!Number.isFinite(result.scalePtPerMm) ||\n      result.scalePtPerMm < MIN_PLAN_SCALE_PT_PER_MM ||\n      result.scalePtPerMm > MAX_PLAN_SCALE_PT_PER_MM",
+            "replacement": "false",
+            "mutated_sha256": "764f7ef1c585ca45a89292cf4860acc31096997ea02cbf301f117f103698759f",
+            "disabled": {
+              "command": [
+                "npx.cmd",
+                "vitest",
+                "run",
+                "src/lib/import/framing-plan/parse.test.ts",
+                "--reporter=json",
+                "--outputFile=.cache/phase42-step3/P2-disabled.json"
+              ],
+              "exit_code": 1,
+              "total": 29,
+              "passed": 28,
+              "failed": 1,
+              "failed_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+                  "messages": [
+                    "AssertionError: expected [] to include '縮尺範囲外'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:64:31\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+                  ]
+                }
+              ],
+              "property_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+                  "status": "passed"
+                },
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+                  "status": "failed"
+                }
+              ]
+            },
+            "restored_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+            "byte_equal": true,
+            "restored": {
+              "command": [
+                "npx.cmd",
+                "vitest",
+                "run",
+                "src/lib/import/framing-plan/parse.test.ts",
+                "--reporter=json",
+                "--outputFile=.cache/phase42-step3/P2-restored.json"
+              ],
+              "exit_code": 0,
+              "total": 29,
+              "passed": 29,
+              "failed": 0,
+              "failed_cases": [],
+              "property_cases": [
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+                  "status": "passed"
+                },
+                {
+                  "name": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+                  "status": "passed"
+                }
+              ]
+            },
+            "holds": true
+          }
+        ],
+        "harness_files_modified_or_reset": false
+      }
+    },
+    {
+      "id": "3_only_two_grid_candidates_change",
+      "holds": true,
+      "method": "Executed both revisions against each of the same 36 fixture pages. Compared complete JSON objects for every grid (including coordinates and scale in addition to direction/labels/spans/totalConfirmed) and every block, preserving array order. Runtime imports outside the changed parser are unchanged from the phase base.",
+      "evidence": {
+        "base_commit": "7a125780b9499fa7ba242c84c938be37c764e00b",
+        "head_commit": "bb9916c6c3e7d6a422c079794c33d6419085a925",
+        "pages": [
+          {
+            "page": "fuji-p15.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              10
+            ],
+            "after_blocks": [
+              10
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "fuji-p17.json",
+            "before_grids": 3,
+            "after_grids": 3,
+            "unchanged": 3,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              19,
+              9
+            ],
+            "after_blocks": [
+              19,
+              9
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "fuji-p18.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "fuji-p20.json",
+            "before_grids": 1,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [
+              {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "2",
+                    "positionPt": 503.18780000000004
+                  },
+                  {
+                    "label": "1",
+                    "positionPt": 503.18780000000004
+                  }
+                ],
+                "spansMm": [
+                  7525
+                ],
+                "scalePtPerMm": 0,
+                "totalConfirmed": false
+              }
+            ],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "hirosaki-p21.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              197
+            ],
+            "after_blocks": [
+              197
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "hirosaki-p25.json",
+            "before_grids": 3,
+            "after_grids": 3,
+            "unchanged": 3,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "ina-p6.json",
+            "before_grids": 3,
+            "after_grids": 3,
+            "unchanged": 3,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              4
+            ],
+            "after_blocks": [
+              4
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "ina-p7.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              6
+            ],
+            "after_blocks": [
+              6
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "kani-p38.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              29
+            ],
+            "after_blocks": [
+              29
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "kani-p39.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              78
+            ],
+            "after_blocks": [
+              78
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "kani-p40.json",
+            "before_grids": 1,
+            "after_grids": 1,
+            "unchanged": 1,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "kani-p41.json",
+            "before_grids": 1,
+            "after_grids": 1,
+            "unchanged": 1,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "karatsu-fukuzu-p1.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              42
+            ],
+            "after_blocks": [
+              42
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "karatsu-hashirashin-p1.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              27
+            ],
+            "after_blocks": [
+              27
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "karatsu-jikugumi1-p1.json",
+            "before_grids": 4,
+            "after_grids": 4,
+            "unchanged": 4,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "karatsu-jikugumi2-p1.json",
+            "before_grids": 3,
+            "after_grids": 3,
+            "unchanged": 3,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              6
+            ],
+            "after_blocks": [
+              6
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "karatsu-shousai-p1.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "ojkk-p2.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "ojkk-p3.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "ojkk-p4.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "saiki-p1.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "saiki-p2.json",
+            "before_grids": 1,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [
+              {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "2",
+                    "positionPt": 43.16768159292046
+                  },
+                  {
+                    "label": "1",
+                    "positionPt": 733.5277071287996
+                  }
+                ],
+                "spansMm": [
+                  700
+                ],
+                "scalePtPerMm": 0.986228607908399,
+                "totalConfirmed": false
+              }
+            ],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "shibata-p1.json",
+            "before_grids": 5,
+            "after_grids": 5,
+            "unchanged": 5,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              69
+            ],
+            "after_blocks": [
+              69
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "shibata-p13.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              18
+            ],
+            "after_blocks": [
+              18
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "shibata-p7.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "tsu-p16.json",
+            "before_grids": 3,
+            "after_grids": 3,
+            "unchanged": 3,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              0
+            ],
+            "after_blocks": [
+              0
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "tsu-p20.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              55
+            ],
+            "after_blocks": [
+              55
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "tsu-p21.json",
+            "before_grids": 1,
+            "after_grids": 1,
+            "unchanged": 1,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "tsu-p22.json",
+            "before_grids": 1,
+            "after_grids": 1,
+            "unchanged": 1,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p13.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p14.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p15.json",
+            "before_grids": 0,
+            "after_grids": 0,
+            "unchanged": 0,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p6.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              2,
+              72
+            ],
+            "after_blocks": [
+              2,
+              72
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p7.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [
+              83,
+              69
+            ],
+            "after_blocks": [
+              83,
+              69
+            ],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p8.json",
+            "before_grids": 1,
+            "after_grids": 1,
+            "unchanged": 1,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          },
+          {
+            "page": "yokohama-p9.json",
+            "before_grids": 2,
+            "after_grids": 2,
+            "unchanged": 2,
+            "removed": [],
+            "added": [],
+            "before_blocks": [],
+            "after_blocks": [],
+            "blocks_byte_json_equal": true
+          }
+        ],
+        "removed": [
+          {
+            "page": "fuji-p20.json",
+            "grid": {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "2",
+                  "positionPt": 503.18780000000004
+                },
+                {
+                  "label": "1",
+                  "positionPt": 503.18780000000004
+                }
+              ],
+              "spansMm": [
+                7525
+              ],
+              "scalePtPerMm": 0,
+              "totalConfirmed": false
+            }
+          },
+          {
+            "page": "saiki-p2.json",
+            "grid": {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "2",
+                  "positionPt": 43.16768159292046
+                },
+                {
+                  "label": "1",
+                  "positionPt": 733.5277071287996
+                }
+              ],
+              "spansMm": [
+                700
+              ],
+              "scalePtPerMm": 0.986228607908399,
+              "totalConfirmed": false
+            }
+          }
+        ],
+        "added": [],
+        "grids_before": 55,
+        "grids_after": 53,
+        "retained_equal": 53,
+        "blocks_before": 19,
+        "blocks_after": 19
+      }
+    },
+    {
+      "id": "4_golden_and_fixtures_unchanged",
+      "holds": true,
+      "method": "Enumerated all files under both required roots at the pre-phase commit, HEAD, and disk. SHA-256 of exact committed blob bytes is compared per file. Worktree raw and LF-normalized hashes are reported separately; LF normalization is only used to account for Windows checkout line endings and does not modify files.",
+      "evidence": {
+        "fixture_count": 61,
+        "path_sets_equal": true,
+        "files": [
+          {
+            "path": "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+            "base_blob_sha256": "cce0d4b4033dec3dfe72d7c80c595ea8aebf41d3a787647ca386578790faa767",
+            "head_blob_sha256": "cce0d4b4033dec3dfe72d7c80c595ea8aebf41d3a787647ca386578790faa767",
+            "worktree_raw_sha256": "611599abb5dbf153f8865950befce07b079896ae4975a80ffa39e41e66b681da",
+            "worktree_lf_sha256": "cce0d4b4033dec3dfe72d7c80c595ea8aebf41d3a787647ca386578790faa767",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+            "base_blob_sha256": "40a7109c655fa3235fa6b1b12e6d0313b646cf97b0874cde0fd5b2a5ece8d69d",
+            "head_blob_sha256": "40a7109c655fa3235fa6b1b12e6d0313b646cf97b0874cde0fd5b2a5ece8d69d",
+            "worktree_raw_sha256": "19a9be29f6906818d830450662bcc56ef5f76d8212660252a16b231533cbe04d",
+            "worktree_lf_sha256": "40a7109c655fa3235fa6b1b12e6d0313b646cf97b0874cde0fd5b2a5ece8d69d",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+            "base_blob_sha256": "fd90198b35170c245b9cd33f06b4b08a9450db2d51f7734ce074e37a772bee8c",
+            "head_blob_sha256": "fd90198b35170c245b9cd33f06b4b08a9450db2d51f7734ce074e37a772bee8c",
+            "worktree_raw_sha256": "367376c6296a38812ed8f6d0dbf8c82ebe931a1a068119e3c1065b6f4bd20c6f",
+            "worktree_lf_sha256": "fd90198b35170c245b9cd33f06b4b08a9450db2d51f7734ce074e37a772bee8c",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+            "base_blob_sha256": "15d96faac50fcb073ac322a2547a865acf6b9ec066f6fe87e3b49a671cd53115",
+            "head_blob_sha256": "15d96faac50fcb073ac322a2547a865acf6b9ec066f6fe87e3b49a671cd53115",
+            "worktree_raw_sha256": "40515e95da3af3004852e447e8a0c4e391dd87e4b9fc6266a5d051fb59f8d034",
+            "worktree_lf_sha256": "15d96faac50fcb073ac322a2547a865acf6b9ec066f6fe87e3b49a671cd53115",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+            "base_blob_sha256": "6f969d0e9392f8eadf985147d6e39f8cedb7302ec530d7eb973d70e67f12299d",
+            "head_blob_sha256": "6f969d0e9392f8eadf985147d6e39f8cedb7302ec530d7eb973d70e67f12299d",
+            "worktree_raw_sha256": "8f2fc1b4b9247f593bee197141434c6c957a3552bdecfab7b01a0fba9c280976",
+            "worktree_lf_sha256": "6f969d0e9392f8eadf985147d6e39f8cedb7302ec530d7eb973d70e67f12299d",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+            "base_blob_sha256": "90ff673fc9736660280e21e30f8fbadbedfcd15f5e74025bcdf539e2376c80c0",
+            "head_blob_sha256": "90ff673fc9736660280e21e30f8fbadbedfcd15f5e74025bcdf539e2376c80c0",
+            "worktree_raw_sha256": "a88d9e50eba35c1ddc943eeea7ce2644fd0cc1746d04f6033baf428663b4f8e6",
+            "worktree_lf_sha256": "90ff673fc9736660280e21e30f8fbadbedfcd15f5e74025bcdf539e2376c80c0",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+            "base_blob_sha256": "d9f7ba8d1648ad9619d9fb923cf6ecd331a45d69c8ee321abdbdd3c6bf4869d4",
+            "head_blob_sha256": "d9f7ba8d1648ad9619d9fb923cf6ecd331a45d69c8ee321abdbdd3c6bf4869d4",
+            "worktree_raw_sha256": "a8ad12b56969806d53775194c3a263048a1e9c6261d9c7f5dce0d7b85a0bda86",
+            "worktree_lf_sha256": "d9f7ba8d1648ad9619d9fb923cf6ecd331a45d69c8ee321abdbdd3c6bf4869d4",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+            "base_blob_sha256": "b49340ed53555ec93272ca13ca02daa8f2c999f230d49ceb1a4e40d5c33d9b3f",
+            "head_blob_sha256": "b49340ed53555ec93272ca13ca02daa8f2c999f230d49ceb1a4e40d5c33d9b3f",
+            "worktree_raw_sha256": "4124a1394edb499d63978887772322c8a1cb5608ae328efe97a8319fcf710fb3",
+            "worktree_lf_sha256": "b49340ed53555ec93272ca13ca02daa8f2c999f230d49ceb1a4e40d5c33d9b3f",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+            "base_blob_sha256": "8eb00b99be8bce8f598560cbe5072870894236cc7f68742c24f85a6deba46371",
+            "head_blob_sha256": "8eb00b99be8bce8f598560cbe5072870894236cc7f68742c24f85a6deba46371",
+            "worktree_raw_sha256": "dfd2dfd4ded4f883e15d42ae06ab688a63292590b59850dd86adab3fab992675",
+            "worktree_lf_sha256": "8eb00b99be8bce8f598560cbe5072870894236cc7f68742c24f85a6deba46371",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+            "base_blob_sha256": "1ee8a4967c39a06c62bf291c6f4f1fd45c04c475623d85949bb23ce7da0a8172",
+            "head_blob_sha256": "1ee8a4967c39a06c62bf291c6f4f1fd45c04c475623d85949bb23ce7da0a8172",
+            "worktree_raw_sha256": "e70c9600214c58d62f9a634c8d02e473a46406051db7e946c4cdc755dcc657d6",
+            "worktree_lf_sha256": "1ee8a4967c39a06c62bf291c6f4f1fd45c04c475623d85949bb23ce7da0a8172",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+            "base_blob_sha256": "8a25b9204ff6bbb52e42dab6d8f6f6525786e5321be1307ad41e62c785dbce54",
+            "head_blob_sha256": "8a25b9204ff6bbb52e42dab6d8f6f6525786e5321be1307ad41e62c785dbce54",
+            "worktree_raw_sha256": "d3e584599ab86c17277ae7d021e4c6f8eb52fcfed1661959107f105b0911210c",
+            "worktree_lf_sha256": "8a25b9204ff6bbb52e42dab6d8f6f6525786e5321be1307ad41e62c785dbce54",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/SOURCES.md",
+            "base_blob_sha256": "1adac412d84d41878d486cced9e81a27567eb6f249e5037ce2bc5f4b8cd2075c",
+            "head_blob_sha256": "1adac412d84d41878d486cced9e81a27567eb6f249e5037ce2bc5f4b8cd2075c",
+            "worktree_raw_sha256": "66b661e014d7a3030e2e6e8cfabff79fdf5b249ae0332aba815f1922a73f6cb3",
+            "worktree_lf_sha256": "1adac412d84d41878d486cced9e81a27567eb6f249e5037ce2bc5f4b8cd2075c",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/fuji-kanritou-p20-lists.json",
+            "base_blob_sha256": "0b39d1df8ef3d829d63cbc7aa61cefe4cecc73857fa91017873b16f5b0700037",
+            "head_blob_sha256": "0b39d1df8ef3d829d63cbc7aa61cefe4cecc73857fa91017873b16f5b0700037",
+            "worktree_raw_sha256": "0b39d1df8ef3d829d63cbc7aa61cefe4cecc73857fa91017873b16f5b0700037",
+            "worktree_lf_sha256": "0b39d1df8ef3d829d63cbc7aa61cefe4cecc73857fa91017873b16f5b0700037",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+            "base_blob_sha256": "c365ee074681843c4cdcc42ab8e1cf7deecce9cc32eab64c1039ba5b13927eeb",
+            "head_blob_sha256": "c365ee074681843c4cdcc42ab8e1cf7deecce9cc32eab64c1039ba5b13927eeb",
+            "worktree_raw_sha256": "c365ee074681843c4cdcc42ab8e1cf7deecce9cc32eab64c1039ba5b13927eeb",
+            "worktree_lf_sha256": "c365ee074681843c4cdcc42ab8e1cf7deecce9cc32eab64c1039ba5b13927eeb",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json",
+            "base_blob_sha256": "18a4e56d61c19462277cd0aa59a635b2f0e1eae6c2c2c8807a1cf34afa174de0",
+            "head_blob_sha256": "18a4e56d61c19462277cd0aa59a635b2f0e1eae6c2c2c8807a1cf34afa174de0",
+            "worktree_raw_sha256": "52595ffc53ba64cf935fa227a3caa4ab0cdc31bf55243522b5ded740b5f8bca7",
+            "worktree_lf_sha256": "18a4e56d61c19462277cd0aa59a635b2f0e1eae6c2c2c8807a1cf34afa174de0",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/karatsu-karayaku-s4-foundation-girders.json",
+            "base_blob_sha256": "8ab56e79c17984572a7ca9b7489c5aa231458d072d9289f7e83500dbad5d7dc8",
+            "head_blob_sha256": "8ab56e79c17984572a7ca9b7489c5aa231458d072d9289f7e83500dbad5d7dc8",
+            "worktree_raw_sha256": "8ab56e79c17984572a7ca9b7489c5aa231458d072d9289f7e83500dbad5d7dc8",
+            "worktree_lf_sha256": "8ab56e79c17984572a7ca9b7489c5aa231458d072d9289f7e83500dbad5d7dc8",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p2-columns.json",
+            "base_blob_sha256": "4d6d5935a6d0939ac7d5ef5a7c7579db7f4d232414ed9aaf193785629ae11140",
+            "head_blob_sha256": "4d6d5935a6d0939ac7d5ef5a7c7579db7f4d232414ed9aaf193785629ae11140",
+            "worktree_raw_sha256": "69e0994e9ecd38f0878786b0659d1a4f285ae3043ce705615893ea0c2d47d62e",
+            "worktree_lf_sha256": "4d6d5935a6d0939ac7d5ef5a7c7579db7f4d232414ed9aaf193785629ae11140",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p3-girders.json",
+            "base_blob_sha256": "4dda5e400662becc62e13fd13c38c5b93b0107b463cc22670444749d0395134a",
+            "head_blob_sha256": "4dda5e400662becc62e13fd13c38c5b93b0107b463cc22670444749d0395134a",
+            "worktree_raw_sha256": "31509592e746df404b5cac6bacc8c048d3998e9fd6cd5a3fbb56373cd7eba977",
+            "worktree_lf_sha256": "4dda5e400662becc62e13fd13c38c5b93b0107b463cc22670444749d0395134a",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+            "base_blob_sha256": "5dac95bb70d1481cebc492bcc083777989ae9c593f6ee7c24b738a8f066dc246",
+            "head_blob_sha256": "5dac95bb70d1481cebc492bcc083777989ae9c593f6ee7c24b738a8f066dc246",
+            "worktree_raw_sha256": "590a477a371e71250d52475da41027cd4d7b3c78a9754f2d904fa7b181d5bf59",
+            "worktree_lf_sha256": "5dac95bb70d1481cebc492bcc083777989ae9c593f6ee7c24b738a8f066dc246",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/saiki-fire-p1-girders.json",
+            "base_blob_sha256": "c96ac23d0e304640645c189d4ee869686c7effab552988a2ee618a514bc21439",
+            "head_blob_sha256": "c96ac23d0e304640645c189d4ee869686c7effab552988a2ee618a514bc21439",
+            "worktree_raw_sha256": "c96ac23d0e304640645c189d4ee869686c7effab552988a2ee618a514bc21439",
+            "worktree_lf_sha256": "c96ac23d0e304640645c189d4ee869686c7effab552988a2ee618a514bc21439",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/saiki-fire-p2-columns.json",
+            "base_blob_sha256": "6df180381f0526a1d179d01ffc4275046da665bb697273e8611bcd2f9465ec3e",
+            "head_blob_sha256": "6df180381f0526a1d179d01ffc4275046da665bb697273e8611bcd2f9465ec3e",
+            "worktree_raw_sha256": "6df180381f0526a1d179d01ffc4275046da665bb697273e8611bcd2f9465ec3e",
+            "worktree_lf_sha256": "6df180381f0526a1d179d01ffc4275046da665bb697273e8611bcd2f9465ec3e",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p13-columns.json",
+            "base_blob_sha256": "a12434445ef3a6d11c6eb8afca61fd182b85d92e7becd54b94c035eb956105f9",
+            "head_blob_sha256": "a12434445ef3a6d11c6eb8afca61fd182b85d92e7becd54b94c035eb956105f9",
+            "worktree_raw_sha256": "d067936ede685dd916fe0476daa1742c3aa18157101880551b9ee81d12bc515e",
+            "worktree_lf_sha256": "a12434445ef3a6d11c6eb8afca61fd182b85d92e7becd54b94c035eb956105f9",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p14-girders.json",
+            "base_blob_sha256": "c652fc18ccdb96b6735994bef907cb7e69e0133c8db82681c91e97979f171e5b",
+            "head_blob_sha256": "c652fc18ccdb96b6735994bef907cb7e69e0133c8db82681c91e97979f171e5b",
+            "worktree_raw_sha256": "ff5c85395910900e641f096ce0e7f2bb23b0fc6f2dc500357548be65aa1033d3",
+            "worktree_lf_sha256": "c652fc18ccdb96b6735994bef907cb7e69e0133c8db82681c91e97979f171e5b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+            "base_blob_sha256": "5f0182297908bd3cd926eb3dae40e49e9b322fbbcf5faca8a80d7a7066b1f76a",
+            "head_blob_sha256": "5f0182297908bd3cd926eb3dae40e49e9b322fbbcf5faca8a80d7a7066b1f76a",
+            "worktree_raw_sha256": "5f0182297908bd3cd926eb3dae40e49e9b322fbbcf5faca8a80d7a7066b1f76a",
+            "worktree_lf_sha256": "5f0182297908bd3cd926eb3dae40e49e9b322fbbcf5faca8a80d7a7066b1f76a",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p15.json",
+            "base_blob_sha256": "8f94040d0dd01add0b55b39db7a33966ded033a7a53256b3069df0725b59cbc0",
+            "head_blob_sha256": "8f94040d0dd01add0b55b39db7a33966ded033a7a53256b3069df0725b59cbc0",
+            "worktree_raw_sha256": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+            "worktree_lf_sha256": "8f94040d0dd01add0b55b39db7a33966ded033a7a53256b3069df0725b59cbc0",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p17.json",
+            "base_blob_sha256": "b6c7ccfe3d94d32af36e854025af1ef8d5e7e56be52c58d146f04d751d5c0633",
+            "head_blob_sha256": "b6c7ccfe3d94d32af36e854025af1ef8d5e7e56be52c58d146f04d751d5c0633",
+            "worktree_raw_sha256": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+            "worktree_lf_sha256": "b6c7ccfe3d94d32af36e854025af1ef8d5e7e56be52c58d146f04d751d5c0633",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p18.json",
+            "base_blob_sha256": "2d1b3f96b198a868b3d083fbaa57111cf25f8e8ce590e51b1b98ff5b30c25bbb",
+            "head_blob_sha256": "2d1b3f96b198a868b3d083fbaa57111cf25f8e8ce590e51b1b98ff5b30c25bbb",
+            "worktree_raw_sha256": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+            "worktree_lf_sha256": "2d1b3f96b198a868b3d083fbaa57111cf25f8e8ce590e51b1b98ff5b30c25bbb",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p20.json",
+            "base_blob_sha256": "4c8e1d7c9eb0a8deaffb2241be1475991193e27cea2ad49d97716b44c744fc26",
+            "head_blob_sha256": "4c8e1d7c9eb0a8deaffb2241be1475991193e27cea2ad49d97716b44c744fc26",
+            "worktree_raw_sha256": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+            "worktree_lf_sha256": "4c8e1d7c9eb0a8deaffb2241be1475991193e27cea2ad49d97716b44c744fc26",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+            "base_blob_sha256": "b1e8ba09eb5935cec33d6600038c08b0eabb4dfd7821fcc134d3adc63972fe07",
+            "head_blob_sha256": "b1e8ba09eb5935cec33d6600038c08b0eabb4dfd7821fcc134d3adc63972fe07",
+            "worktree_raw_sha256": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+            "worktree_lf_sha256": "b1e8ba09eb5935cec33d6600038c08b0eabb4dfd7821fcc134d3adc63972fe07",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+            "base_blob_sha256": "ffee3a2e2e27b969c5b09a39330c75718c80b1ebde7df4b6d40b60edc548fd2c",
+            "head_blob_sha256": "ffee3a2e2e27b969c5b09a39330c75718c80b1ebde7df4b6d40b60edc548fd2c",
+            "worktree_raw_sha256": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+            "worktree_lf_sha256": "ffee3a2e2e27b969c5b09a39330c75718c80b1ebde7df4b6d40b60edc548fd2c",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ina-p6.json",
+            "base_blob_sha256": "fe2aaaedffb352534fd664816fc063eb83ffd1ea209c8d7a0357eff0f630b219",
+            "head_blob_sha256": "fe2aaaedffb352534fd664816fc063eb83ffd1ea209c8d7a0357eff0f630b219",
+            "worktree_raw_sha256": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+            "worktree_lf_sha256": "fe2aaaedffb352534fd664816fc063eb83ffd1ea209c8d7a0357eff0f630b219",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ina-p7.json",
+            "base_blob_sha256": "d388eb22edb9a1a93b883630ac99a9e82ba10505f347edafacf6e4ca2ce759f6",
+            "head_blob_sha256": "d388eb22edb9a1a93b883630ac99a9e82ba10505f347edafacf6e4ca2ce759f6",
+            "worktree_raw_sha256": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+            "worktree_lf_sha256": "d388eb22edb9a1a93b883630ac99a9e82ba10505f347edafacf6e4ca2ce759f6",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p38.json",
+            "base_blob_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+            "head_blob_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+            "worktree_raw_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+            "worktree_lf_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p39.json",
+            "base_blob_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+            "head_blob_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+            "worktree_raw_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+            "worktree_lf_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p40.json",
+            "base_blob_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+            "head_blob_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+            "worktree_raw_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+            "worktree_lf_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p41.json",
+            "base_blob_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+            "head_blob_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+            "worktree_raw_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+            "worktree_lf_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+            "base_blob_sha256": "787b5be569ecf717dbc39846ce7ef1d8d49d0eb704bfd6cbc914e9ab662d6c8a",
+            "head_blob_sha256": "787b5be569ecf717dbc39846ce7ef1d8d49d0eb704bfd6cbc914e9ab662d6c8a",
+            "worktree_raw_sha256": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+            "worktree_lf_sha256": "787b5be569ecf717dbc39846ce7ef1d8d49d0eb704bfd6cbc914e9ab662d6c8a",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+            "base_blob_sha256": "2103abe463e40e39da08ba67916e1d1bdd19a787558206616beab811a2efa9e5",
+            "head_blob_sha256": "2103abe463e40e39da08ba67916e1d1bdd19a787558206616beab811a2efa9e5",
+            "worktree_raw_sha256": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+            "worktree_lf_sha256": "2103abe463e40e39da08ba67916e1d1bdd19a787558206616beab811a2efa9e5",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+            "base_blob_sha256": "d1cbcbd4e466b403f6a188154ed4018c8525827bac330c6938c142e75596e23a",
+            "head_blob_sha256": "d1cbcbd4e466b403f6a188154ed4018c8525827bac330c6938c142e75596e23a",
+            "worktree_raw_sha256": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+            "worktree_lf_sha256": "d1cbcbd4e466b403f6a188154ed4018c8525827bac330c6938c142e75596e23a",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+            "base_blob_sha256": "4a04b5f8e7b9b45942a8ce195399001cb2a5ccf46c0f0c02d8049108f1788780",
+            "head_blob_sha256": "4a04b5f8e7b9b45942a8ce195399001cb2a5ccf46c0f0c02d8049108f1788780",
+            "worktree_raw_sha256": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+            "worktree_lf_sha256": "4a04b5f8e7b9b45942a8ce195399001cb2a5ccf46c0f0c02d8049108f1788780",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+            "base_blob_sha256": "40e08e7e5abce8026254e336be4c61b979d663a9e9ce4b63ba3604815879cb78",
+            "head_blob_sha256": "40e08e7e5abce8026254e336be4c61b979d663a9e9ce4b63ba3604815879cb78",
+            "worktree_raw_sha256": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+            "worktree_lf_sha256": "40e08e7e5abce8026254e336be4c61b979d663a9e9ce4b63ba3604815879cb78",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p2.json",
+            "base_blob_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+            "head_blob_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+            "worktree_raw_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+            "worktree_lf_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p3.json",
+            "base_blob_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+            "head_blob_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+            "worktree_raw_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+            "worktree_lf_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p4.json",
+            "base_blob_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+            "head_blob_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+            "worktree_raw_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+            "worktree_lf_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/saiki-p1.json",
+            "base_blob_sha256": "dc9ee788900905fc377c857938ec2bbec655719c26f0aad67dbe89f0a3208b5d",
+            "head_blob_sha256": "dc9ee788900905fc377c857938ec2bbec655719c26f0aad67dbe89f0a3208b5d",
+            "worktree_raw_sha256": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+            "worktree_lf_sha256": "dc9ee788900905fc377c857938ec2bbec655719c26f0aad67dbe89f0a3208b5d",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/saiki-p2.json",
+            "base_blob_sha256": "3e343f52571151310265431b409694c6148e2766430836033a9955f9d1d99010",
+            "head_blob_sha256": "3e343f52571151310265431b409694c6148e2766430836033a9955f9d1d99010",
+            "worktree_raw_sha256": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+            "worktree_lf_sha256": "3e343f52571151310265431b409694c6148e2766430836033a9955f9d1d99010",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p1.json",
+            "base_blob_sha256": "7eef4034c76bd7405e2395262b28cdb092eb9bc933ec0eeed2cb084d1bc795a9",
+            "head_blob_sha256": "7eef4034c76bd7405e2395262b28cdb092eb9bc933ec0eeed2cb084d1bc795a9",
+            "worktree_raw_sha256": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+            "worktree_lf_sha256": "7eef4034c76bd7405e2395262b28cdb092eb9bc933ec0eeed2cb084d1bc795a9",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p13.json",
+            "base_blob_sha256": "eedc41502360103360958043792ad18d36ed442bca07ec5dd2edbd0df80020fa",
+            "head_blob_sha256": "eedc41502360103360958043792ad18d36ed442bca07ec5dd2edbd0df80020fa",
+            "worktree_raw_sha256": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+            "worktree_lf_sha256": "eedc41502360103360958043792ad18d36ed442bca07ec5dd2edbd0df80020fa",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p7.json",
+            "base_blob_sha256": "b6e53e37f39f2756b9c2151da449513816be03f659a8242a3b53f6352f6a46d0",
+            "head_blob_sha256": "b6e53e37f39f2756b9c2151da449513816be03f659a8242a3b53f6352f6a46d0",
+            "worktree_raw_sha256": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+            "worktree_lf_sha256": "b6e53e37f39f2756b9c2151da449513816be03f659a8242a3b53f6352f6a46d0",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p16.json",
+            "base_blob_sha256": "51c8c847f06272f997771daa491a77cd74d7937cece0900014e3f3e544d4791b",
+            "head_blob_sha256": "51c8c847f06272f997771daa491a77cd74d7937cece0900014e3f3e544d4791b",
+            "worktree_raw_sha256": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+            "worktree_lf_sha256": "51c8c847f06272f997771daa491a77cd74d7937cece0900014e3f3e544d4791b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p20.json",
+            "base_blob_sha256": "96627023cd3de6f1691ab48c4cb00b630e554271446efd833637826803fca2ef",
+            "head_blob_sha256": "96627023cd3de6f1691ab48c4cb00b630e554271446efd833637826803fca2ef",
+            "worktree_raw_sha256": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+            "worktree_lf_sha256": "96627023cd3de6f1691ab48c4cb00b630e554271446efd833637826803fca2ef",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p21.json",
+            "base_blob_sha256": "ee0e4b5418a8a0a44dc0a0672ea37cbd4591dc1069bd32d8e70d6529f28a499f",
+            "head_blob_sha256": "ee0e4b5418a8a0a44dc0a0672ea37cbd4591dc1069bd32d8e70d6529f28a499f",
+            "worktree_raw_sha256": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+            "worktree_lf_sha256": "ee0e4b5418a8a0a44dc0a0672ea37cbd4591dc1069bd32d8e70d6529f28a499f",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p22.json",
+            "base_blob_sha256": "7ea5d64a8741234ba645a5152bd717ddc22ffbc10a9cb0dfab2190107a1f069b",
+            "head_blob_sha256": "7ea5d64a8741234ba645a5152bd717ddc22ffbc10a9cb0dfab2190107a1f069b",
+            "worktree_raw_sha256": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+            "worktree_lf_sha256": "7ea5d64a8741234ba645a5152bd717ddc22ffbc10a9cb0dfab2190107a1f069b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p13.json",
+            "base_blob_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+            "head_blob_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+            "worktree_raw_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+            "worktree_lf_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p14.json",
+            "base_blob_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+            "head_blob_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+            "worktree_raw_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+            "worktree_lf_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p15.json",
+            "base_blob_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+            "head_blob_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+            "worktree_raw_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+            "worktree_lf_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p6.json",
+            "base_blob_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+            "head_blob_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+            "worktree_raw_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+            "worktree_lf_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p7.json",
+            "base_blob_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+            "head_blob_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+            "worktree_raw_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+            "worktree_lf_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p8.json",
+            "base_blob_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+            "head_blob_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+            "worktree_raw_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+            "worktree_lf_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p9.json",
+            "base_blob_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+            "head_blob_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+            "worktree_raw_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+            "worktree_lf_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          },
+          {
+            "path": "tests/fixtures/section-import/title-block-exclusions.json",
+            "base_blob_sha256": "01aab0888272c09b71fb459cadc75a0ea5f0ce6978f2b6e17f61b8af259711b2",
+            "head_blob_sha256": "01aab0888272c09b71fb459cadc75a0ea5f0ce6978f2b6e17f61b8af259711b2",
+            "worktree_raw_sha256": "e40126d0fce585033acf6bbeef61dd47e54c81505b3faf56caebf6376ba3e449",
+            "worktree_lf_sha256": "01aab0888272c09b71fb459cadc75a0ea5f0ce6978f2b6e17f61b8af259711b2",
+            "committed_bytes_equal": true,
+            "worktree_matches_after_eol_normalization": true
+          }
+        ],
+        "all_committed_bytes_equal": true,
+        "all_worktree_content_equal": true,
+        "line_endings_note": "Commit-to-commit SHA-256 compares exact Git blob bytes with no normalization. Working files additionally have both raw and LF-normalized SHA-256 because core.autocrlf checkout uses CRLF/mixed line endings. No fixture was written or reformatted."
+      }
+    },
+    {
+      "id": "5_document_numbers_reach_evidence",
+      "holds": true,
+      "method": "Read step2 document additions from its actual diff, independently mapped displayed numeric claims to leaf JSON pointers, resolved each pointer and compared displayed values (six-decimal rounding only where the document rounds). Resolved every explicit/shorthand report pointer on added lines. Compared the complete table-line sequences in AGENTS.md and CLAUDE.md.",
+      "evidence": {
+        "checks": [
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "36면",
+            "document_value": 36,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/corpus/page_count",
+            "source_value": 36,
+            "comparison_value": 36,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "208개",
+            "document_value": 208,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/corpus/accepted_span_measurements",
+            "source_value": 208,
+            "comparison_value": 208,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "10.379846pt",
+            "document_value": 10.379846,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max/value_pt",
+            "source_value": 10.379845548060018,
+            "comparison_value": 10.379846,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "`2–1`",
+            "document_value": [
+              "2",
+              "1"
+            ],
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max/axis_labels",
+            "source_value": [
+              "2",
+              "1"
+            ],
+            "comparison_value": [
+              "2",
+              "1"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "`700`",
+            "document_value": 700,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max/dimension_value_mm",
+            "source_value": 700,
+            "comparison_value": 700,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "0.018265pt",
+            "document_value": 0.018265,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/value_pt",
+            "source_value": 0.018264999999928477,
+            "comparison_value": 0.018265,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "`Y8–Y9`",
+            "document_value": [
+              "Y8",
+              "Y9"
+            ],
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/axis_labels",
+            "source_value": [
+              "Y8",
+              "Y9"
+            ],
+            "comparison_value": [
+              "Y8",
+              "Y9"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "`24000`",
+            "document_value": 24000,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/dimension_value_mm",
+            "source_value": 24000,
+            "comparison_value": 24000,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "A ≤ 15 < B",
+            "document_value": 15,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt",
+            "source_value": 15,
+            "comparison_value": 15,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "text": "성립하지 않는다",
+            "document_value": false,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/holds",
+            "source_value": false,
+            "comparison_value": false,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 29,
+            "text": "`24000`",
+            "document_value": 24000,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/dimension_value_mm",
+            "source_value": 24000,
+            "comparison_value": 24000,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 29,
+            "text": "`8000`",
+            "document_value": 8000,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/competing_pair_accepted/dimension_value_mm",
+            "source_value": 8000,
+            "comparison_value": 8000,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 29,
+            "text": "6.180000pt",
+            "document_value": 6.18,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min/value_pt",
+            "source_value": 6.17999999999995,
+            "comparison_value": 6.18,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 29,
+            "text": "`Y1–Y0`",
+            "document_value": [
+              "Y1",
+              "Y0"
+            ],
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min/axis_labels",
+            "source_value": [
+              "Y1",
+              "Y0"
+            ],
+            "comparison_value": [
+              "Y1",
+              "Y0"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 29,
+            "text": "`180`",
+            "document_value": 180,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min/dimension_value_mm",
+            "source_value": 180,
+            "comparison_value": 180,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 35,
+            "text": "| 4 | 23 | 7 |",
+            "document_value": 4,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0/tolerance_pt",
+            "source_value": 4,
+            "comparison_value": 4,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 35,
+            "text": "| 4 | 23 | 7 |",
+            "document_value": 23,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0/grid_pages",
+            "source_value": 23,
+            "comparison_value": 23,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 35,
+            "text": "| 4 | 23 | 7 |",
+            "document_value": 7,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0/block_pages",
+            "source_value": 7,
+            "comparison_value": 7,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 35,
+            "text": "아니오",
+            "document_value": false,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0/golden_identical",
+            "source_value": false,
+            "comparison_value": false,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 36,
+            "text": "| 6 | 23 | 15 |",
+            "document_value": 6,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1/tolerance_pt",
+            "source_value": 6,
+            "comparison_value": 6,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 36,
+            "text": "| 6 | 23 | 15 |",
+            "document_value": 23,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1/grid_pages",
+            "source_value": 23,
+            "comparison_value": 23,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 36,
+            "text": "| 6 | 23 | 15 |",
+            "document_value": 15,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1/block_pages",
+            "source_value": 15,
+            "comparison_value": 15,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 36,
+            "text": "예",
+            "document_value": true,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1/golden_identical",
+            "source_value": true,
+            "comparison_value": true,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 37,
+            "text": "| 15 | 26 | 16 |",
+            "document_value": 15,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2/tolerance_pt",
+            "source_value": 15,
+            "comparison_value": 15,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 37,
+            "text": "| 15 | 26 | 16 |",
+            "document_value": 26,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2/grid_pages",
+            "source_value": 26,
+            "comparison_value": 26,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 37,
+            "text": "| 15 | 26 | 16 |",
+            "document_value": 16,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2/block_pages",
+            "source_value": 16,
+            "comparison_value": 16,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 37,
+            "text": "기준",
+            "document_value": true,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2/golden_identical",
+            "source_value": true,
+            "comparison_value": true,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 38,
+            "text": "| 30 | 26 | 16 |",
+            "document_value": 30,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3/tolerance_pt",
+            "source_value": 30,
+            "comparison_value": 30,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 38,
+            "text": "| 30 | 26 | 16 |",
+            "document_value": 26,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3/grid_pages",
+            "source_value": 26,
+            "comparison_value": 26,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 38,
+            "text": "| 30 | 26 | 16 |",
+            "document_value": 16,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3/block_pages",
+            "source_value": 16,
+            "comparison_value": 16,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 38,
+            "text": "아니오",
+            "document_value": false,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3/golden_identical",
+            "source_value": false,
+            "comparison_value": false,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 39,
+            "text": "| 40 | 26 | 16 |",
+            "document_value": 40,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4/tolerance_pt",
+            "source_value": 40,
+            "comparison_value": 40,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 39,
+            "text": "| 40 | 26 | 16 |",
+            "document_value": 26,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4/grid_pages",
+            "source_value": 26,
+            "comparison_value": 26,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 39,
+            "text": "| 40 | 26 | 16 |",
+            "document_value": 16,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4/block_pages",
+            "source_value": 16,
+            "comparison_value": 16,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 39,
+            "text": "아니오",
+            "document_value": false,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4/golden_identical",
+            "source_value": false,
+            "comparison_value": false,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 33,
+            "text": "T=15",
+            "document_value": 15,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt",
+            "source_value": 15,
+            "comparison_value": 15,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "`2·1`",
+            "document_value": [
+              "2",
+              "1"
+            ],
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/0/grid/axes",
+            "source_value": [
+              {
+                "label": "2",
+                "positionPt": 503.18780000000004
+              },
+              {
+                "label": "1",
+                "positionPt": 503.18780000000004
+              }
+            ],
+            "comparison_value": [
+              "2",
+              "1"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "좌표가 같아",
+            "document_value": true,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/0/grid/axes",
+            "source_value": [
+              {
+                "label": "2",
+                "positionPt": 503.18780000000004
+              },
+              {
+                "label": "1",
+                "positionPt": 503.18780000000004
+              }
+            ],
+            "comparison_value": true,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "0.986229 pt/mm",
+            "document_value": 0.986229,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1/grid/scalePtPerMm",
+            "source_value": 0.986228607908399,
+            "comparison_value": 0.986229,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "36면",
+            "document_value": 36,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/pages_count",
+            "source_value": 36,
+            "comparison_value": 36,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "55→53",
+            "document_value": 55,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/grids_before",
+            "source_value": 55,
+            "comparison_value": 55,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "55→53",
+            "document_value": 53,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/grids_after",
+            "source_value": 53,
+            "comparison_value": 53,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "53후보",
+            "document_value": 53,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/retained_grids_deep_equal",
+            "source_value": 53,
+            "comparison_value": 53,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "19블록",
+            "document_value": 19,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_before",
+            "source_value": 19,
+            "comparison_value": 19,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "19블록",
+            "document_value": 19,
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_after",
+            "source_value": 19,
+            "comparison_value": 19,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 41,
+            "text": "T=15",
+            "document_value": 15,
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt",
+            "source_value": 15,
+            "comparison_value": 15,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 43,
+            "text": "세 면",
+            "document_value": 3,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "source_value": {
+              "ina-p7": {
+                "title": null,
+                "x": {
+                  "labels": [
+                    "1",
+                    "2",
+                    "3"
+                  ],
+                  "spansMm": [
+                    4050,
+                    4050
+                  ],
+                  "totalConfirmed": true,
+                  "spanSumMm": 8100
+                },
+                "y": {
+                  "labels": [
+                    "B",
+                    "A"
+                  ],
+                  "spansMm": [
+                    6400
+                  ],
+                  "totalConfirmed": false,
+                  "spanSumMm": 6400
+                },
+                "placement_count": 6,
+                "mark_counts": {
+                  "C1": 6
+                },
+                "matches_claude": true,
+                "comparisons": {
+                  "x_labels": {
+                    "claude": [
+                      "1",
+                      "2",
+                      "3"
+                    ],
+                    "remeasured": [
+                      "1",
+                      "2",
+                      "3"
+                    ],
+                    "matches": true
+                  },
+                  "x_spans": {
+                    "claude": [
+                      4050,
+                      4050
+                    ],
+                    "remeasured": [
+                      4050,
+                      4050
+                    ],
+                    "matches": true
+                  },
+                  "x_total": {
+                    "claude": 8100,
+                    "remeasured": 8100,
+                    "matches": true
+                  },
+                  "y_labels": {
+                    "claude": [
+                      "B",
+                      "A"
+                    ],
+                    "remeasured": [
+                      "B",
+                      "A"
+                    ],
+                    "matches": true
+                  },
+                  "y_spans": {
+                    "claude": [
+                      6400
+                    ],
+                    "remeasured": [
+                      6400
+                    ],
+                    "matches": true
+                  },
+                  "placements": {
+                    "claude": 6,
+                    "remeasured": 6,
+                    "matches": true
+                  },
+                  "marks": {
+                    "claude": {
+                      "C1": 6
+                    },
+                    "remeasured": {
+                      "C1": 6
+                    },
+                    "matches": true
+                  }
+                },
+                "page_titles": [
+                  "大梁リスト",
+                  "小梁リスト",
+                  "地中梁リスト",
+                  "壁リスト",
+                  "スラブリスト",
+                  "柱リスト"
+                ],
+                "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/ina-p7",
+                "context": {
+                  "grid_equals_ina_p6": true,
+                  "grid_matches_ina_p6_golden": true,
+                  "recovered_annotations": [
+                    "主筋8-D22",
+                    "HOOP-D13-@100"
+                  ],
+                  "interpretation": "C1 labels and rebar annotations belong to the column-list sketch area; grid agreement does not validate a plan block.",
+                  "source": "tests/fixtures/section-import/expected/ina-pump-p7-lists.json#/lists/3",
+                  "text_evidence": {
+                    "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/ina-p7/relevant_text"
+                  }
+                }
+              },
+              "shibata-p13": {
+                "title": null,
+                "x": {
+                  "labels": [
+                    "1",
+                    "5"
+                  ],
+                  "spansMm": [
+                    41000
+                  ],
+                  "totalConfirmed": false,
+                  "spanSumMm": 41000
+                },
+                "y": {
+                  "labels": [
+                    "A",
+                    "B",
+                    "C"
+                  ],
+                  "spansMm": [
+                    7000,
+                    8000
+                  ],
+                  "totalConfirmed": true,
+                  "spanSumMm": 15000
+                },
+                "placement_count": 18,
+                "mark_counts": {
+                  "C6": 5,
+                  "C7": 2,
+                  "C5": 2,
+                  "G3": 1,
+                  "G4": 1,
+                  "G5": 1,
+                  "W15": 2,
+                  "FG3": 2,
+                  "FG4": 1,
+                  "FG5": 1
+                },
+                "matches_claude": true,
+                "comparisons": {
+                  "x_labels": {
+                    "claude": [
+                      "1",
+                      "5"
+                    ],
+                    "remeasured": [
+                      "1",
+                      "5"
+                    ],
+                    "matches": true
+                  },
+                  "x_spans": {
+                    "claude": [
+                      41000
+                    ],
+                    "remeasured": [
+                      41000
+                    ],
+                    "matches": true
+                  },
+                  "y_labels": {
+                    "claude": [
+                      "A",
+                      "B",
+                      "C"
+                    ],
+                    "remeasured": [
+                      "A",
+                      "B",
+                      "C"
+                    ],
+                    "matches": true
+                  },
+                  "y_spans": {
+                    "claude": [
+                      7000,
+                      8000
+                    ],
+                    "remeasured": [
+                      7000,
+                      8000
+                    ],
+                    "matches": true
+                  },
+                  "placements": {
+                    "claude": 18,
+                    "remeasured": 18,
+                    "matches": true
+                  }
+                },
+                "page_titles": [
+                  "[本体棟]B通り軸組図S=1/100",
+                  "[本体棟]1通り軸組図S=1/100",
+                  "[本体棟]3-2通り軸組図S=1/100",
+                  "[本体棟]5通り軸組図S=1/100"
+                ],
+                "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/shibata-p13"
+              },
+              "karatsu-jikugumi2-p1": {
+                "title": null,
+                "x": {
+                  "labels": [
+                    "X1",
+                    "X2",
+                    "X3",
+                    "X4",
+                    "X5",
+                    "X6",
+                    "X7"
+                  ],
+                  "spansMm": [
+                    2300,
+                    3350,
+                    5250,
+                    4200,
+                    7025,
+                    5000
+                  ],
+                  "totalConfirmed": false,
+                  "spanSumMm": 27125
+                },
+                "y": {
+                  "labels": [
+                    "Y0",
+                    "Y1",
+                    "Y2"
+                  ],
+                  "spansMm": [
+                    1900,
+                    2265
+                  ],
+                  "totalConfirmed": true,
+                  "spanSumMm": 4165
+                },
+                "placement_count": 6,
+                "mark_counts": {
+                  "FG3": 4,
+                  "FG4": 2
+                },
+                "matches_claude": true,
+                "comparisons": {
+                  "x_labels": {
+                    "claude": [
+                      "X1",
+                      "X2",
+                      "X3",
+                      "X4",
+                      "X5",
+                      "X6",
+                      "X7"
+                    ],
+                    "remeasured": [
+                      "X1",
+                      "X2",
+                      "X3",
+                      "X4",
+                      "X5",
+                      "X6",
+                      "X7"
+                    ],
+                    "matches": true
+                  },
+                  "y_labels": {
+                    "claude": [
+                      "Y0",
+                      "Y1",
+                      "Y2"
+                    ],
+                    "remeasured": [
+                      "Y0",
+                      "Y1",
+                      "Y2"
+                    ],
+                    "matches": true
+                  },
+                  "y_spans": {
+                    "claude": [
+                      1900,
+                      2265
+                    ],
+                    "remeasured": [
+                      1900,
+                      2265
+                    ],
+                    "matches": true
+                  },
+                  "placements": {
+                    "claude": 6,
+                    "remeasured": 6,
+                    "matches": true
+                  }
+                },
+                "page_titles": [
+                  "X5通り軸組図",
+                  "X6通り軸組図",
+                  "X7通り軸組図",
+                  "Y0通り軸組図",
+                  "Y1通り軸組図"
+                ],
+                "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/karatsu-jikugumi2-p1"
+              }
+            },
+            "comparison_value": 3,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "1·2·3",
+            "document_value": [
+              "1",
+              "2",
+              "3"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/x/labels",
+            "source_value": [
+              "1",
+              "2",
+              "3"
+            ],
+            "comparison_value": [
+              "1",
+              "2",
+              "3"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "4050·4050",
+            "document_value": [
+              4050,
+              4050
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/x/spansMm",
+            "source_value": [
+              4050,
+              4050
+            ],
+            "comparison_value": [
+              4050,
+              4050
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "B·A",
+            "document_value": [
+              "B",
+              "A"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/y/labels",
+            "source_value": [
+              "B",
+              "A"
+            ],
+            "comparison_value": [
+              "B",
+              "A"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "6400",
+            "document_value": [
+              6400
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/y/spansMm",
+            "source_value": [
+              6400
+            ],
+            "comparison_value": [
+              6400
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "6개",
+            "document_value": 6,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/placement_count",
+            "source_value": 6,
+            "comparison_value": 6,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "text": "1·5",
+            "document_value": [
+              "1",
+              "5"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/x/labels",
+            "source_value": [
+              "1",
+              "5"
+            ],
+            "comparison_value": [
+              "1",
+              "5"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "text": "41000",
+            "document_value": [
+              41000
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/x/spansMm",
+            "source_value": [
+              41000
+            ],
+            "comparison_value": [
+              41000
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "text": "A·B·C",
+            "document_value": [
+              "A",
+              "B",
+              "C"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/y/labels",
+            "source_value": [
+              "A",
+              "B",
+              "C"
+            ],
+            "comparison_value": [
+              "A",
+              "B",
+              "C"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "text": "7000·8000",
+            "document_value": [
+              7000,
+              8000
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/y/spansMm",
+            "source_value": [
+              7000,
+              8000
+            ],
+            "comparison_value": [
+              7000,
+              8000
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "text": "18개",
+            "document_value": 18,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/placement_count",
+            "source_value": 18,
+            "comparison_value": 18,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "text": "X1〜X7",
+            "document_value": [
+              "X1",
+              "X2",
+              "X3",
+              "X4",
+              "X5",
+              "X6",
+              "X7"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/x/labels",
+            "source_value": [
+              "X1",
+              "X2",
+              "X3",
+              "X4",
+              "X5",
+              "X6",
+              "X7"
+            ],
+            "comparison_value": [
+              "X1",
+              "X2",
+              "X3",
+              "X4",
+              "X5",
+              "X6",
+              "X7"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "text": "2300·3350·5250·4200·7025·5000",
+            "document_value": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/x/spansMm",
+            "source_value": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "comparison_value": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "text": "Y0·Y1·Y2",
+            "document_value": [
+              "Y0",
+              "Y1",
+              "Y2"
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/y/labels",
+            "source_value": [
+              "Y0",
+              "Y1",
+              "Y2"
+            ],
+            "comparison_value": [
+              "Y0",
+              "Y1",
+              "Y2"
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "text": "1900·2265",
+            "document_value": [
+              1900,
+              2265
+            ],
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/y/spansMm",
+            "source_value": [
+              1900,
+              2265
+            ],
+            "comparison_value": [
+              1900,
+              2265
+            ],
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "text": "6개",
+            "document_value": 6,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/placement_count",
+            "source_value": 6,
+            "comparison_value": 6,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "8100",
+            "document_value": 8100,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/x/spanSumMm",
+            "source_value": 8100,
+            "comparison_value": 8100,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "text": "모두 `C1`",
+            "document_value": {
+              "C1": 6
+            },
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/mark_counts",
+            "source_value": {
+              "C1": 6
+            },
+            "comparison_value": {
+              "C1": 6
+            },
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "主筋8-D22",
+            "document_value": "主筋8-D22",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/context/recovered_annotations/0",
+            "source_value": "主筋8-D22",
+            "comparison_value": "主筋8-D22",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "HOOP-D13-@100",
+            "document_value": "HOOP-D13-@100",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/context/recovered_annotations/1",
+            "source_value": "HOOP-D13-@100",
+            "comparison_value": "HOOP-D13-@100",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "[本体棟]B通り軸組図S=1/100",
+            "document_value": "[本体棟]B通り軸組図S=1/100",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles/0",
+            "source_value": "[本体棟]B通り軸組図S=1/100",
+            "comparison_value": "[本体棟]B通り軸組図S=1/100",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "[本体棟]1通り軸組図S=1/100",
+            "document_value": "[本体棟]1通り軸組図S=1/100",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles/1",
+            "source_value": "[本体棟]1通り軸組図S=1/100",
+            "comparison_value": "[本体棟]1通り軸組図S=1/100",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "[本体棟]3-2通り軸組図S=1/100",
+            "document_value": "[本体棟]3-2通り軸組図S=1/100",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles/2",
+            "source_value": "[本体棟]3-2通り軸組図S=1/100",
+            "comparison_value": "[本体棟]3-2通り軸組図S=1/100",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "[本体棟]5通り軸組図S=1/100",
+            "document_value": "[本体棟]5通り軸組図S=1/100",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles/3",
+            "source_value": "[本体棟]5通り軸組図S=1/100",
+            "comparison_value": "[本体棟]5通り軸組図S=1/100",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "X5通り軸組図",
+            "document_value": "X5通り軸組図",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/page_titles/0",
+            "source_value": "X5通り軸組図",
+            "comparison_value": "X5通り軸組図",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "Y0通り軸組図",
+            "document_value": "Y0通り軸組図",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/page_titles/3",
+            "source_value": "Y0通り軸組図",
+            "comparison_value": "Y0通り軸組図",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 51,
+            "text": "Y1通り軸組図",
+            "document_value": "Y1通り軸組図",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/page_titles/4",
+            "source_value": "Y1通り軸組図",
+            "comparison_value": "Y1通り軸組図",
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 56,
+            "text": "**42개**",
+            "document_value": 42,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-fukuzu-p1/placement_count",
+            "source_value": 42,
+            "comparison_value": 42,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 56,
+            "text": "**27개**",
+            "document_value": 27,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-hashirashin-p1/placement_count",
+            "source_value": 27,
+            "comparison_value": 27,
+            "holds": true
+          },
+          {
+            "document": "docs/RISKS.md",
+            "line": 56,
+            "text": "**4개**",
+            "document_value": 4,
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/ina-p6/placement_count",
+            "source_value": 4,
+            "comparison_value": 4,
+            "holds": true
+          }
+        ],
+        "comparison_count": 76,
+        "all_values_equal": true,
+        "pointer_checks": [
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed",
+            "resolved": true,
+            "value_sha256": "b386b375940217b40a3878ea48209aeabe7b62702cdafc1ed8c818488c939341"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "resolved": true,
+            "value_sha256": "22cdf40c93b43b7b290447eecc41fe8a0d64bb536280bb80fe3802a313a88b47"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules",
+            "resolved": true,
+            "value_sha256": "6e540ae17430bde5463067ccba05bb907ba69ef019594aeb64bab8cab76fd314"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/corpus",
+            "resolved": true,
+            "value_sha256": "e2d677aea8382675669f8c7b7bc16b61e781285ac7f0c6d05f21e76a24ca95bb"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin",
+            "resolved": true,
+            "value_sha256": "83aa094d8f7ccb6b6bd4b183547c3cba4c92d4ba35154e5b6dbb5b39444f8f7a"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1",
+            "resolved": true,
+            "value_sha256": "b522d8b2bcea9a66d9f4ddd19954f992315cf7c9ba97510b24f7775d5114e31e"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/margin_interpretation",
+            "resolved": true,
+            "value_sha256": "25c42240f79256689a839fd77a0f3918b397bb5e08a0b2435dba274a691a475b"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/competing_pair_accepted",
+            "resolved": true,
+            "value_sha256": "83d02aafed0e0679728d2f57ce0508253a91394ea9ddc83856aa59c555bae347"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin",
+            "resolved": true,
+            "value_sha256": "b284e3c215db467231c5d25fa532a3b9a0b3fb3fd974a49334f83ab4ad343f39"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep_comparison",
+            "resolved": true,
+            "value_sha256": "164a4d394789257a17523d3b7ee283685e11b485eae300e1a7f3b85126a8f72d"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0",
+            "resolved": true,
+            "value_sha256": "4a9ebc49e0d9272ac19afbadd56c88bffa9cc4898d83a3c83ad91afa313ac052"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1",
+            "resolved": true,
+            "value_sha256": "5d4f8ec17b75f7db4384246b090b44a3501aeb4d36651a8f0420bf25cec72ea5"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2",
+            "resolved": true,
+            "value_sha256": "bafc06c4c61138906507afc1d9cbaaa8ae3e4b7fef0e6887bc1c3d864c0cca23"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3",
+            "resolved": true,
+            "value_sha256": "af7fc67e000e6e265bcfc8153ed90962f4fe52384edcf8b1acd69c310c653d61"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep_comparison",
+            "resolved": true,
+            "value_sha256": "164a4d394789257a17523d3b7ee283685e11b485eae300e1a7f3b85126a8f72d"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4",
+            "resolved": true,
+            "value_sha256": "e613957cfe2c8cb308a2641f884a676ea6a7017166203c98ad39632a73625c16"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/0",
+            "resolved": true,
+            "value_sha256": "aa8b8d0b9587f6dd06fac7c5e3140040e1d52e5a84e3c1b56eab9990d9b9d6b9"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1",
+            "resolved": true,
+            "value_sha256": "b522d8b2bcea9a66d9f4ddd19954f992315cf7c9ba97510b24f7775d5114e31e"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/scale_unit_correction",
+            "resolved": true,
+            "value_sha256": "dff311e2fe890c6c39000de3adc0a9ea15e4a40f34a11fec57f9ed3e81e2b09e"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census",
+            "resolved": true,
+            "value_sha256": "9567d617dcbb1ef131c09867a7876f055fa9ed6ffd9d1c93a4fcc5bbb25bf03a"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt",
+            "resolved": true,
+            "value_sha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "resolved": true,
+            "value_sha256": "22cdf40c93b43b7b290447eecc41fe8a0d64bb536280bb80fe3802a313a88b47"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7",
+            "resolved": true,
+            "value_sha256": "98badc63e33c8e74ca16c8fe494e47bbd233245d58084ce133ea90cac5143293"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13",
+            "resolved": true,
+            "value_sha256": "3cbec8026ca9e4596767fe892aac27dc8daa5133045cbba983b5007facb29f54"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1",
+            "resolved": true,
+            "value_sha256": "52f3fe76764110128b92cfcec4f514a0eeb90412fe5e656c7cbe3a236f97c10c"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/context",
+            "resolved": true,
+            "value_sha256": "410ac22949f042749d4179020ea0c620ca3c37aa45213984117f3ff7eb8b9216"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles",
+            "resolved": true,
+            "value_sha256": "76837a2b94aee775d55fc5dcb9dcfe57f02a6a1ddd560b9adb2e9a2d84a9c83b"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/page_titles",
+            "resolved": true,
+            "value_sha256": "ce9d88f838333673da6e9e547efb1f51b265f33d910ad7ea0a23ff953cc74b37"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/0",
+            "resolved": true,
+            "value_sha256": "e8c7738639cfd047abb66d73851f53b4d9d45870f18e338ff04c681358745579"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/1",
+            "resolved": true,
+            "value_sha256": "16277b24cb971541df239c1b64efd5f1bc8d84bb7652ede9c8786ff83a63be10"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls",
+            "resolved": true,
+            "value_sha256": "b657e3b68fb7a2d65440de54168b860aece7bb6169b35564ce6324b262a749d3"
+          },
+          {
+            "document": "docs/RISKS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/2",
+            "resolved": true,
+            "value_sha256": "3c300b4f1f4f57c9ed4a0fdb03dbd0c1ff5196531206873996537c5c1febcf6c"
+          },
+          {
+            "document": "docs/MILESTONES.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed",
+            "resolved": true,
+            "value_sha256": "b386b375940217b40a3878ea48209aeabe7b62702cdafc1ed8c818488c939341"
+          },
+          {
+            "document": "docs/MILESTONES.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin",
+            "resolved": true,
+            "value_sha256": "83aa094d8f7ccb6b6bd4b183547c3cba4c92d4ba35154e5b6dbb5b39444f8f7a"
+          },
+          {
+            "document": "docs/MILESTONES.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "resolved": true,
+            "value_sha256": "22cdf40c93b43b7b290447eecc41fe8a0d64bb536280bb80fe3802a313a88b47"
+          },
+          {
+            "document": "docs/MILESTONES.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules",
+            "resolved": true,
+            "value_sha256": "6e540ae17430bde5463067ccba05bb907ba69ef019594aeb64bab8cab76fd314"
+          },
+          {
+            "document": "AGENTS.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin",
+            "resolved": true,
+            "value_sha256": "83aa094d8f7ccb6b6bd4b183547c3cba4c92d4ba35154e5b6dbb5b39444f8f7a"
+          },
+          {
+            "document": "AGENTS.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed",
+            "resolved": true,
+            "value_sha256": "b386b375940217b40a3878ea48209aeabe7b62702cdafc1ed8c818488c939341"
+          },
+          {
+            "document": "AGENTS.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "resolved": true,
+            "value_sha256": "22cdf40c93b43b7b290447eecc41fe8a0d64bb536280bb80fe3802a313a88b47"
+          },
+          {
+            "document": "CLAUDE.md",
+            "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin",
+            "resolved": true,
+            "value_sha256": "83aa094d8f7ccb6b6bd4b183547c3cba4c92d4ba35154e5b6dbb5b39444f8f7a"
+          },
+          {
+            "document": "CLAUDE.md",
+            "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed",
+            "resolved": true,
+            "value_sha256": "b386b375940217b40a3878ea48209aeabe7b62702cdafc1ed8c818488c939341"
+          },
+          {
+            "document": "CLAUDE.md",
+            "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured",
+            "resolved": true,
+            "value_sha256": "22cdf40c93b43b7b290447eecc41fe8a0d64bb536280bb80fe3802a313a88b47"
+          }
+        ],
+        "resolved_pointer_count": 42,
+        "tables_equal": true,
+        "counting_rule": "One comparison per displayed scalar, array, boolean or verbatim source annotation; repeated numeric claims are separate comparisons. Existing R10/R15 and ledger quantities carried over unchanged are not new step2 claims. Page IDs, risk/phase/step numbers and the notation 2段筋 are identifiers, not measured quantities. Sweep table booleans are also compared.",
+        "citation_check": {
+          "command": "python scripts/check-citations.py phases/42-plan-grid-soundness/step*-report.json",
+          "exit_code": 0
+        },
+        "tables_note": "All table rows, headers and order match exactly. Whole files have pre-existing non-table differences; whole-file identity is not the step3 requirement."
+      }
+    },
+    {
+      "id": "6_open_items_remain_open",
+      "holds": true,
+      "method": "Located R10 and R15 open headings, quoted the still-unsupported items and the explicit open-block section, and checked all three page rows and both refuted title rules within that open section.",
+      "evidence": {
+        "quotes": [
+          {
+            "id": "R10",
+            "document": "docs/RISKS.md",
+            "line": 21,
+            "quote": "- **R10 (열림 — 2차 코퍼스 포맷 과적합)** 2차 코퍼스(22면·발주처 7곳)를 더한 결과, 독립 전사 골든은 격자 7/7면·階高 3/3면·リスト 5/5면이 통과했다. phase 37 종료 HEAD로 36면을 재실행한 조사(Claude 실측 2026-09-03 18:30)에서는 골든이 없는 伏図 면의 `寸法列曖昧`·`通り芯対応不明`(fuji-p15·tsu-p20)·`ラベル文字混在`(karatsu-jikugumi2), 골든 면에서도 블록 밖에 남는 잉여 격자와 `寸法欠落`(shibata-p1·tsu-p16)와 リスト·軸組図 면의 부분 격자 오탐을 기록했다. 이번 phase에서 마지막 항목을 기하로 닫힌 격자 오탐과 열린 블록 오탐으로 구분한다. **기하로 닫힌 것**은 `fuji-p20`의 인접 通り芯 좌표 중복과 `saiki-p2`의 범위 밖 축척이며, 각각 `通り芯座標重複`·`縮尺範囲外`로 격자 후보에서 빠졌다(`phases/42-plan-grid-soundness/step1-report.json#/census/removed`). **열린 블록 오탐**은 伏図가 없는 `ina-p7`(部材リスト)·`shibata-p13`·`karatsu-jikugumi2-p1`(軸組図)이 제목 없는 블록을 내는 것이다. 격자 값이 같은 건물 伏図와 맞아도 면의 용도와 부호 배치까지 옳다는 뜻은 아니다. 세 면의 재계측과 반증된 제목 규칙은 R15 및 `phases/42-plan-grid-soundness/step2-report.json#/remeasured`·`#/refuted_rules`에 있다. 壁·スラブ·shibata 大梁·柱リスト(p7) 미전사도 계속 열려 있다. 2段筋 본수, 頭注의 特記 기본값, 스케치 주기형 柱リスト도 미지원이다. phase 36 step 5가 `refuted`로 끝났으나, 회전 글리프를 잇지 못한 반증 방법과 ojkk-p4 対象外 12칸의 원문 일치 개선을 재대조했고 phase 37 step 0이 이를 다시 반증해 불성립으로 판정했다. R3(일본 사용자 접점 0) 때문에 실패 도면 수집은 사용자 동의가 필요하며, 닫지 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`, `phases/37-corpus-widen-2-close/step0-report.json`)",
+            "holds": true
+          },
+          {
+            "id": "R15",
+            "document": "docs/RISKS.md",
+            "line": 27,
+            "quote": "- **R15 (열림 — 伏図 중점 문턱의 여백 불성립·블록 오탐)** phase 42에서 중점 거리 `alongDistance`의 채택 최댓값과 미채택 경쟁 최솟값을 계측했다. step 0 시점의 **36면·208개 채택 스팬**(반환 격자와 블록의 축 열 합집합)에서 **A = 10.379846pt**는 `saiki-p2`의 X `2–1`, 치수 `700`이고, **B = 0.018265pt**는 `hirosaki-p25`의 Y `Y8–Y9`, 치수 `24000`이다. 따라서 **`A ≤ 15 < B`는 성립하지 않는다.** A는 파서가 채택한 값의 극값이지 정답 스팬의 인증이 아니며, 해당 `saiki-p2` 후보는 뒤의 step 1에서 제거됐다(`phases/42-plan-grid-soundness/step0-report.json#/corpus`·`#/midpoint_margin`; `phases/42-plan-grid-soundness/step1-report.json#/census/removed/1`).",
+            "holds": true
+          },
+          {
+            "id": "false_blocks",
+            "document": "docs/RISKS.md",
+            "line": 43,
+            "quote": "  **열린 것 — 블록 오탐**: 다음 세 면은 伏図가 없는 면인데 각각 제목 없는 블록을 낸다. 아래 스팬은 mm이며, 배치 수는 파서가 낸 항목 수이지 올바른 부재 배치의 인증이 아니다. 축 라벨·스팬·배치 수는 이번 재계측에서 Claude 실측과 일치했다(`phases/42-plan-grid-soundness/step2-report.json#/remeasured`).",
+            "holds": true
+          },
+          {
+            "id": "title_gate_refuted",
+            "document": "docs/RISKS.md",
+            "line": 55,
+            "quote": "  - ① 「면에 伏図·柱芯線図 제목이 있어야 블록을 낸다」는 반증됐다. 진짜 基礎伏図인 `karatsu-fukuzu-p1`은 픽스처 텍스트에 두 제목 문자열이 모두 없고, 표제란은 개인정보 때문에 제외되어 있다. 면 제목 요구는 정당한 블록도 버린다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/0`).",
+            "holds": true
+          },
+          {
+            "id": "untitled_drop_refuted",
+            "document": "docs/RISKS.md",
+            "line": 56,
+            "quote": "  - ② 「제목이 붙지 않은 블록은 버린다」도 반증됐다. `karatsu-fukuzu-p1`의 **42개**, `karatsu-hashirashin-p1`의 **27개**, `ina-p6`의 **4개** 배치 블록은 제목이 없어도 축·스팬·기재 合計가 전사 골든과 맞는다. 다만 「모두 제목이 멀어서 안 붙는다」는 설명은 정정한다. 앞의 면은 제목 자체가 없고, 뒤의 두 면은 제목이 블록의 가로 범위 밖이라 연결되지 않는다. 골든 대조가 배치 항목 하나하나의 정당성까지 인증하는 것은 아니다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/1`·`#/valid_untitled_controls`).",
+            "holds": true
+          },
+          {
+            "id": "ina-p7",
+            "document": "docs/RISKS.md",
+            "line": 47,
+            "quote": "  | `ina-p7` — 部材リスト | X `1·2·3`: `4050·4050`, 合計 `8100`; Y `B·A`: `6400` | 6개, 모두 `C1` | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7` |",
+            "holds": true
+          },
+          {
+            "id": "shibata-p13",
+            "document": "docs/RISKS.md",
+            "line": 48,
+            "quote": "  | `shibata-p13` — 軸組図 | X `1·5`: `41000`; Y `A·B·C`: `7000·8000` | 18개 | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13` |",
+            "holds": true
+          },
+          {
+            "id": "karatsu-jikugumi2-p1",
+            "document": "docs/RISKS.md",
+            "line": 49,
+            "quote": "  | `karatsu-jikugumi2-p1` — 軸組図(2) | X `X1〜X7`: `2300·3350·5250·4200·7025·5000`; Y `Y0·Y1·Y2`: `1900·2265` | 6개 | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1` |",
+            "holds": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "7_changed_paths_are_allowed",
+      "holds": true,
+      "method": "Ran git diff --name-only 7a12578 across the entire phase, and separately checked untracked files. Classified each path against the exact requested prefixes/files; did not exclude harness paths from this scope check.",
+      "evidence": {
+        "base_commit": "7a125780b9499fa7ba242c84c938be37c764e00b",
+        "base_selection": "7a12578 is the parent of d567d91, which introduced phase42 specifications; includes specification and phases/index.json changes as well as implementation.",
+        "tracked_changes": [
+          {
+            "path": "AGENTS.md",
+            "allowed_by": "AGENTS.md"
+          },
+          {
+            "path": "CLAUDE.md",
+            "allowed_by": "CLAUDE.md"
+          },
+          {
+            "path": "docs/MILESTONES.md",
+            "allowed_by": "docs/MILESTONES.md"
+          },
+          {
+            "path": "docs/RISKS.md",
+            "allowed_by": "docs/RISKS.md"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/index.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step0-codex.stderr.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step0-codex.stdout.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step0-invoke.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step0-report.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step0.md",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step1-codex.stderr.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step1-codex.stdout.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step1-invoke.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step1-report.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step1.md",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step2-codex.stderr.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step2-codex.stdout.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step2-invoke.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step2-report.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step2.md",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step3.md",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/index.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "src/lib/import/framing-plan/parse.test.ts",
+            "allowed_by": "src/lib/import/framing-plan/"
+          },
+          {
+            "path": "src/lib/import/framing-plan/parse.ts",
+            "allowed_by": "src/lib/import/framing-plan/"
+          },
+          {
+            "path": "src/lib/import/framing-plan/types.ts",
+            "allowed_by": "src/lib/import/framing-plan/"
+          },
+          {
+            "path": "src/locales/ja.json",
+            "allowed_by": "src/locales/ja.json"
+          },
+          {
+            "path": "src/locales/ko.json",
+            "allowed_by": "src/locales/ko.json"
+          }
+        ],
+        "untracked_at_audit": [
+          {
+            "path": "phases/42-plan-grid-soundness/step3-codex.stderr.log",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/step3-codex.stdout.log",
+            "allowed_by": "phases/"
+          }
+        ],
+        "step3_deliverables": [
+          {
+            "path": "phases/42-plan-grid-soundness/step3-report.json",
+            "allowed_by": "phases/"
+          },
+          {
+            "path": "phases/42-plan-grid-soundness/index.json",
+            "allowed_by": "phases/"
+          }
+        ]
+      }
+    },
+    {
+      "id": "8_all_gates_pass",
+      "holds": true,
+      "method": "After restoring mutations, executed the complete Vitest suite, ESLint, TypeScript and production build. Queried Windows node processes immediately before build for next dev / Next start-server commands; none were running. No server or harness process was stopped.",
+      "evidence": {
+        "vitest": {
+          "command": "npx vitest run --reporter=json --outputFile=.cache/phase42-step3/full-tests.json",
+          "exit_code": 0,
+          "tests": 1811,
+          "passed": 1811,
+          "failed": 0,
+          "pending": 0,
+          "test_files": 101,
+          "success": true
+        },
+        "lint": {
+          "command": "npm run lint",
+          "exit_code": 0
+        },
+        "typecheck": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0
+        },
+        "build": {
+          "command": "npm run build",
+          "exit_code": 0,
+          "next_dev_process_count_before_build": 0,
+          "stopped_processes": [],
+          "log": "\n> kijun@0.1.0 prebuild\n> node scripts/copy-pdfjs-assets.mjs\n\n\n> kijun@0.1.0 build\n> next build\n\n   ▲ Next.js 15.5.23\n   - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1190ms\n   Skipping linting\n   Checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/6) ...\n   Generating static pages (1/6) \n   Generating static pages (2/6) \n   Generating static pages (4/6) \n ✓ Generating static pages (6/6)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                     108 kB         213 kB\n├ ○ /_not-found                            995 B         105 kB\n├ ƒ /api/oncall/alert                      122 B         105 kB\n└ ○ /icon.svg                                0 B            0 B\n+ First Load JS shared by all             105 kB\n  ├ chunks/255-4ff60647f670442d.js       46.4 kB\n  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB\n  └ other shared chunks (total)          3.89 kB\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n"
+        },
+        "logs_sha256": {
+          "vitest.log": "e11c4018b7dfd796adcf9649955998b4089e0c413ad925084254ff2fd2d77be0",
+          "lint.log": "471105c4782aed411e34b0a63917a6723df5faea8e0ccbcae6297dbbba686b69",
+          "tsc.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "build.log": "75832c0bae55c0c134452b5f65c7822c535badca80d93cb9583a37b7b06e45a7"
+        }
+      }
+    }
+  ],
+  "paths_verified": [
+    ".gitignore",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "docs/MILESTONES.md",
+    "docs/RISKS.md",
+    "package.json",
+    "phases/42-plan-grid-soundness/index.json",
+    "phases/42-plan-grid-soundness/step0-report.json",
+    "phases/42-plan-grid-soundness/step0.md",
+    "phases/42-plan-grid-soundness/step1-report.json",
+    "phases/42-plan-grid-soundness/step1.md",
+    "phases/42-plan-grid-soundness/step2-report.json",
+    "phases/42-plan-grid-soundness/step3-report.json",
+    "phases/42-plan-grid-soundness/step3.md",
+    "scripts/check-citations.py",
+    "src/lib/import/framing-plan/parse.test.ts",
+    "src/lib/import/framing-plan/parse.ts",
+    "src/lib/import/framing-plan/types.ts",
+    "src/lib/import/runs.ts",
+    "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+    "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+    "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+    "tests/fixtures/section-import/SOURCES.md",
+    "tests/fixtures/section-import/expected/fuji-kanritou-p20-lists.json",
+    "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+    "tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json",
+    "tests/fixtures/section-import/expected/karatsu-karayaku-s4-foundation-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p2-columns.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p3-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p1-girders.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p2-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p13-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p14-girders.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+    "tests/fixtures/section-import/textitems/fuji-p15.json",
+    "tests/fixtures/section-import/textitems/fuji-p17.json",
+    "tests/fixtures/section-import/textitems/fuji-p18.json",
+    "tests/fixtures/section-import/textitems/fuji-p20.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+    "tests/fixtures/section-import/textitems/ina-p6.json",
+    "tests/fixtures/section-import/textitems/ina-p7.json",
+    "tests/fixtures/section-import/textitems/kani-p38.json",
+    "tests/fixtures/section-import/textitems/kani-p39.json",
+    "tests/fixtures/section-import/textitems/kani-p40.json",
+    "tests/fixtures/section-import/textitems/kani-p41.json",
+    "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+    "tests/fixtures/section-import/textitems/ojkk-p2.json",
+    "tests/fixtures/section-import/textitems/ojkk-p3.json",
+    "tests/fixtures/section-import/textitems/ojkk-p4.json",
+    "tests/fixtures/section-import/textitems/saiki-p1.json",
+    "tests/fixtures/section-import/textitems/saiki-p2.json",
+    "tests/fixtures/section-import/textitems/shibata-p1.json",
+    "tests/fixtures/section-import/textitems/shibata-p13.json",
+    "tests/fixtures/section-import/textitems/shibata-p7.json",
+    "tests/fixtures/section-import/textitems/tsu-p16.json",
+    "tests/fixtures/section-import/textitems/tsu-p20.json",
+    "tests/fixtures/section-import/textitems/tsu-p21.json",
+    "tests/fixtures/section-import/textitems/tsu-p22.json",
+    "tests/fixtures/section-import/textitems/yokohama-p13.json",
+    "tests/fixtures/section-import/textitems/yokohama-p14.json",
+    "tests/fixtures/section-import/textitems/yokohama-p15.json",
+    "tests/fixtures/section-import/textitems/yokohama-p6.json",
+    "tests/fixtures/section-import/textitems/yokohama-p7.json",
+    "tests/fixtures/section-import/textitems/yokohama-p8.json",
+    "tests/fixtures/section-import/textitems/yokohama-p9.json",
+    "tests/fixtures/section-import/title-block-exclusions.json"
+  ],
+  "paths_expected_absent": [
+    ".cache/phase42-step3"
+  ],
+  "reproduction": {
+    "instructions": "Recreate the listed UTF-8 temporary files under the repository root. Run node .cache/phase42-step3/audit.cjs, python .cache/phase42-step3/mutate.py, python .cache/phase42-step3/docs.py and python .cache/phase42-step3/static.py. audit.cjs evaluates parser variants only in memory; mutate.py is the sole disk mutation and restores bytes in finally. Remove only this temporary directory after replay. Do not run scripts/execute.py.",
+    "files": [
+      {
+        "temporary_path": ".cache/phase42-step3/audit.cjs",
+        "content": "const fs = require('node:fs');\nconst path = require('node:path');\nconst cp = require('node:child_process');\nconst crypto = require('node:crypto');\nconst Module = require('node:module');\nconst ts = require('typescript');\nconst esbuild = require('esbuild');\nconst assert = require('node:assert/strict');\nconst root = process.cwd();\nconst parserPath = 'src/lib/import/framing-plan/parse.ts';\nconst base = '7a12578';\nconst out = path.join(root, '.cache/phase42-step3');\nconst sha = b => crypto.createHash('sha256').update(b).digest('hex');\nconst git = args => cp.execFileSync('git', args, {maxBuffer: 64 * 1024 * 1024});\nconst save = (name, value) => fs.writeFileSync(path.join(out, name + '.json'), JSON.stringify(value, null, 2) + '\\n');\nfunction instrument(source) {\n  const ast = ts.createSourceFile(parserPath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);\n  const changes = [];\n  let functionName = '';\n  const visit = node => {\n    const parentName = functionName;\n    if (ts.isFunctionDeclaration(node)) functionName = node.name?.text;\n    if (ts.isReturnStatement(node) && node.expression && ts.isObjectLiteralExpression(node.expression)) {\n      const expr = node.expression;\n      const raw = expr.getText(ast);\n      if (functionName === 'validateSequence' && expr.properties.some(p => p.name?.getText(ast) === 'spansMm')) {\n        const partial = raw.includes('solution.spans\\n') || /spansMm:\\s*solution\\.spans/.test(raw);\n        const tokens = partial ? 'solution.spans.slice(first.firstIndex, first.lastIndex)' : raw.includes('selected.solution') ? 'selected.solution.spans' : 'selected.spans';\n        changes.push([expr.getStart(ast), expr.end, `__record(${raw}, sequence, ${tokens}, ${partial ? 'first.firstIndex' : '0'}, dimensions)`]);\n      }\n      if (functionName === 'gridCandidate') changes.push([expr.getStart(ast), expr.end, `__grid(${raw}, sequence)`]);\n    }\n    ts.forEachChild(node, visit);\n    functionName = parentName;\n  };\n  visit(ast);\n  assert.equal(changes.length, 4);\n  for (const [start, end, value] of changes.sort((a,b)=>b[0]-a[0])) source = source.slice(0,start)+value+source.slice(end);\n  source = source.replace('dimensions.push({', 'dimensions.push({ __raw: normalizedText,');\n  return source + `\nconst __tag = Symbol('step3');\nconst __grids = new WeakMap();\nfunction __record(result, original, tokens, offset, dimensions) {\n  result[__tag] = {original, tokens, offset, dimensions};\n  return result;\n}\nfunction __grid(result, sequence) { __grids.set(result, sequence); return result; }\nexport function audit(output) {\n  const rows = [];\n  const sequences = new Set([...output.grids, ...output.blocks.flatMap(b => [b.xGrid,b.yGrid])].map(g => __grids.get(g)));\n  for (const sequence of sequences) {\n    const {original,tokens,offset,dimensions} = sequence[__tag];\n    const used = new Set(tokens);\n    const along = sequence.alongKey;\n    const across = along === 'x' ? 'y' : 'x';\n    for (let i = 0; i < tokens.length; i++) {\n      const midpoint = (sequence.axes[i].positionPt + sequence.axes[i+1].positionPt)/2;\n      const bands = [...new Set([...original.axisAcrossOptions[i+offset],...original.axisAcrossOptions[i+offset+1]])];\n      const describe = token => ({text:token.__raw,value_mm:token.valueMm,center:{x:token.x,y:token.y},distance_pt:Math.abs(token[along]-midpoint),across_distance_pt:Math.min(...bands.map(b=>Math.abs(token[across]-b)))});\n      const competitors = dimensions.filter(d => !used.has(d) && bands.some(b=>Math.abs(d[across]-b)<=DIMENSION_WINDOW_PT)).map(describe).sort((a,b)=>a.distance_pt-b.distance_pt);\n      rows.push({direction:sequence.direction,along_key:along,labels:sequence.axes.slice(i,i+2).map(a=>a.label),positions_pt:sequence.axes.slice(i,i+2).map(a=>a.positionPt),midpoint_pt:midpoint,bands_pt:bands,totalConfirmed:sequence.totalConfirmed,accepted:describe(tokens[i]),competitor:competitors[0]??null});\n    }\n  }\n  return rows;\n}\n`;\n}\nfunction compile(source, debug) {\n  const code = esbuild.buildSync({stdin:{contents:debug?instrument(source):source,loader:'ts',sourcefile:path.resolve(parserPath),resolveDir:path.dirname(path.resolve(parserPath))},bundle:true,write:false,platform:'node',format:'cjs',logLevel:'silent'}).outputFiles[0].text;\n  const evaluated = new Module(path.join(out, 'virtual.cjs'));\n  evaluated.filename = path.join(out, 'virtual.cjs');\n  evaluated.paths = Module._nodeModulePaths(root);\n  evaluated._compile(code, evaluated.filename);\n  return evaluated.exports;\n}\nconst currentBytes = fs.readFileSync(parserPath);\nconst before = git(['show', `${base}:${parserPath}`]).toString('utf8');\nconst current = currentBytes.toString('utf8');\n// runs.ts is the only runtime dependency of this parser; require it unchanged.\nassert.equal(git(['diff', base, '--', 'src/lib/import/runs.ts']).length, 0);\nconst baseline = compile(before, false);\nconst baselineAudit = compile(before, true);\nconst now = compile(current, false);\nconst nowAudit = compile(current, true);\nconst dir = 'tests/fixtures/section-import/textitems';\nconst files = fs.readdirSync(dir).filter(f=>f.endsWith('.json')).sort();\nassert.equal(files.length, 36);\nconst pages = files.map(file => {\n  const fixture = JSON.parse(fs.readFileSync(path.join(dir,file),'utf8'));\n  const page = {...fixture.page,items:fixture.items};\n  const oldOutput = baseline.parseFramingPlan(page);\n  const oldDebug = baselineAudit.parseFramingPlan(page);\n  const newOutput = now.parseFramingPlan(page);\n  const newDebug = nowAudit.parseFramingPlan(page);\n  assert.equal(JSON.stringify(oldOutput),JSON.stringify(oldDebug));\n  assert.equal(JSON.stringify(newOutput),JSON.stringify(newDebug));\n  return {file,before:oldOutput,after:newOutput,before_measurements:baselineAudit.audit(oldDebug),after_measurements:nowAudit.audit(newDebug)};\n});\nfunction margin(key) {\n  const rows = pages.flatMap(p=>p[key].map(r=>({page:p.file,...r})));\n  const max = rows.reduce((a,b)=>a.accepted.distance_pt>=b.accepted.distance_pt?a:b);\n  const min = rows.filter(r=>r.competitor).reduce((a,b)=>a.competitor.distance_pt<=b.competitor.distance_pt?a:b);\n  const unconfirmed = rows.filter(r=>!r.totalConfirmed&&r.competitor).reduce((a,b)=>a.competitor.distance_pt<=b.competitor.distance_pt?a:b);\n  return {page_count:pages.length,span_count:rows.length,A:max.accepted.distance_pt,B:min.competitor.distance_pt,holds:max.accepted.distance_pt<=15&&15<min.competitor.distance_pt,accepted_max:max,competing_min:min,unconfirmed_min:unconfirmed};\n}\nconst census = pages.map(p=>{\n  const oldKeys = p.before.grids.map(g=>JSON.stringify(g));\n  const newKeys = p.after.grids.map(g=>JSON.stringify(g));\n  return {page:p.file,before_grids:oldKeys.length,after_grids:newKeys.length,unchanged:oldKeys.filter(k=>newKeys.includes(k)).length,removed:p.before.grids.filter((g,i)=>!newKeys.includes(oldKeys[i])),added:p.after.grids.filter((g,i)=>!oldKeys.includes(newKeys[i])),before_blocks:p.before.blocks.map(b=>b.placements.length),after_blocks:p.after.blocks.map(b=>b.placements.length),blocks_byte_json_equal:JSON.stringify(p.before.blocks)===JSON.stringify(p.after.blocks)};\n});\nsave('pages',pages);\nsave('measurements',{base,parser_sha256_before:sha(currentBytes),parser_sha256_after:sha(fs.readFileSync(parserPath)),historical:margin('before_measurements'),current:margin('after_measurements'),census});\nconsole.log(JSON.stringify({historical:margin('before_measurements'),current:margin('after_measurements'),changed:census.filter(p=>p.removed.length||p.added.length),all_blocks_equal:census.every(p=>p.blocks_byte_json_equal)},null,2));\n"
+      },
+      {
+        "temporary_path": ".cache/phase42-step3/mutate.py",
+        "content": "import hashlib\nimport json\nfrom pathlib import Path\nimport subprocess\n\nwork = Path('.cache/phase42-step3')\ntarget = Path('src/lib/import/framing-plan/parse.ts')\nhashof = lambda b: hashlib.sha256(b).hexdigest()\nresults = []\n\ndef test(label):\n    report = work / f'{label}.json'\n    command = ['npx.cmd', 'vitest', 'run', 'src/lib/import/framing-plan/parse.test.ts', '--reporter=json', f'--outputFile={report.as_posix()}']\n    run = subprocess.run(command, capture_output=True)\n    data = json.loads(report.read_text(encoding='utf-8'))\n    cases = [case for suite in data['testResults'] for case in suite['assertionResults']]\n    return {'command': command, 'exit_code': run.returncode,\n            'total': data['numTotalTests'], 'passed': data['numPassedTests'], 'failed': data['numFailedTests'],\n            'failed_cases': [{'name': c['fullName'], 'messages': c['failureMessages']} for c in cases if c['status'] == 'failed'],\n            'property_cases': [{'name': c['fullName'], 'status': c['status']} for c in cases if 'P1:' in c['fullName'] or 'P2:' in c['fullName']]}\n\nmutations = [\n    ('P1', 'index > 0 && axis.positionPt === result.axes[index - 1].positionPt',\n     'false && index > 0 && axis.positionPt === result.axes[index - 1].positionPt'),\n    ('P2', '!Number.isFinite(result.scalePtPerMm) ||\\n      result.scalePtPerMm < MIN_PLAN_SCALE_PT_PER_MM ||\\n      result.scalePtPerMm > MAX_PLAN_SCALE_PT_PER_MM',\n     'false'),\n]\nfor name, old, new in mutations:\n    original = target.read_bytes()\n    normalized = original.decode('utf-8').replace('\\r\\n', '\\n')\n    assert normalized.count(old) == 1\n    entry = {'property': name, 'path': target.as_posix(), 'original_sha256': hashof(original),\n             'removed_condition': old, 'replacement': new}\n    try:\n        target.write_text(normalized.replace(old, new), encoding='utf-8', newline='\\n')\n        entry['mutated_sha256'] = hashof(target.read_bytes())\n        entry['disabled'] = test(f'{name}-disabled')\n    finally:\n        target.write_bytes(original)\n        entry['restored_sha256'] = hashof(target.read_bytes())\n        entry['byte_equal'] = original == target.read_bytes()\n    entry['restored'] = test(f'{name}-restored')\n    entry['holds'] = (entry['disabled']['exit_code'] != 0\n                      and any(name + ':' in c['name'] for c in entry['disabled']['failed_cases'])\n                      and entry['restored']['exit_code'] == 0 and entry['byte_equal'])\n    results.append(entry)\n    (work / 'mutations.json').write_text(json.dumps(results, ensure_ascii=False, indent=2) + '\\n', encoding='utf-8')\n    print(json.dumps({'property': name, 'disabled_exit': entry['disabled']['exit_code'],\n                      'restored_exit': entry['restored']['exit_code'], 'holds': entry['holds'],\n                      'sha256': entry['restored_sha256']}), flush=True)\n"
+      },
+      {
+        "temporary_path": ".cache/phase42-step3/docs.py",
+        "content": "import hashlib\nimport json\nfrom pathlib import Path\nimport re\nimport subprocess\n\nroot = Path.cwd()\nout = root / '.cache/phase42-step3'\nprefix = 'phases/42-plan-grid-soundness/'\nchecks = []\nread_paths = set()\n\ndef read(p):\n    read_paths.add(p)\n    return (root / p).read_text(encoding='utf-8-sig')\n\ndef resolve(citation):\n    file, pointer = citation.split('#', 1)\n    value = json.loads(read(file))\n    for token in pointer.lstrip('/').split('/') if pointer else []:\n        token = token.replace('~1', '/').replace('~0', '~')\n        value = value[int(token)] if isinstance(value, list) else value[token]\n    return value\n\nrisks = read('docs/RISKS.md').splitlines()\n\ndef check(anchor, text, value, step, pointer, transform=None):\n    lines = [(i + 1, line) for i, line in enumerate(risks) if anchor in line]\n    assert len(lines) == 1, (anchor, len(lines))\n    line_number, line = lines[0]\n    citation = prefix + f'step{step}-report.json#' + pointer\n    actual = resolve(citation)\n    comparable = transform(actual) if transform else actual\n    checks.append({'document': 'docs/RISKS.md', 'line': line_number,\n                   'text': text, 'document_value': value, 'source': citation,\n                   'source_value': actual, 'comparison_value': comparable,\n                   'holds': text in line and comparable == value})\n\na = 'step 0 시점의 **36면'\ncheck(a, '36면', 36, 0, '/corpus/page_count')\ncheck(a, '208개', 208, 0, '/corpus/accepted_span_measurements')\ncheck(a, '10.379846pt', 10.379846, 0, '/midpoint_margin/accepted_max/value_pt', lambda n: round(n,6))\ncheck(a, '`2–1`', ['2','1'], 0, '/midpoint_margin/accepted_max/axis_labels')\ncheck(a, '`700`', 700, 0, '/midpoint_margin/accepted_max/dimension_value_mm')\ncheck(a, '0.018265pt', 0.018265, 0, '/midpoint_margin/competing_min/value_pt', lambda n: round(n,6))\ncheck(a, '`Y8–Y9`', ['Y8','Y9'], 0, '/midpoint_margin/competing_min/axis_labels')\ncheck(a, '`24000`', 24000, 0, '/midpoint_margin/competing_min/dimension_value_mm')\ncheck(a, 'A ≤ 15 < B', 15, 0, '/midpoint_margin/tolerance_pt')\ncheck(a, '성립하지 않는다', False, 0, '/midpoint_margin/holds')\na = 'B의 모집단은'\ncheck(a, '`24000`', 24000, 0, '/midpoint_margin/competing_min/dimension_value_mm')\ncheck(a, '`8000`', 8000, 0, '/competing_pair_accepted/dimension_value_mm')\ncheck(a, '6.180000pt', 6.18, 0, '/unconfirmed_margin/competing_min/value_pt', lambda n: round(n,6))\ncheck(a, '`Y1–Y0`', ['Y1','Y0'], 0, '/unconfirmed_margin/competing_min/axis_labels')\ncheck(a, '`180`', 180, 0, '/unconfirmed_margin/competing_min/dimension_value_mm')\nfor i, (t, grids, blocks, same, word) in enumerate([(4,23,7,False,'아니오'),(6,23,15,True,'예'),(15,26,16,True,'기준'),(30,26,16,False,'아니오'),(40,26,16,False,'아니오')]):\n    a = f'| {t} | {grids} | {blocks} |'\n    for field, n in [('tolerance_pt',t),('grid_pages',grids),('block_pages',blocks)]:\n        check(a, a, n, 0, f'/sweep/{i}/{field}')\n    check(a, word, same, 0, f'/sweep/{i}/golden_identical')\ncheck('| T (pt) |', 'T=15', 15, 0, '/midpoint_margin/tolerance_pt')\na = '**기하로 닫힌 격자 오탐**:'\ncheck(a, '`2·1`', ['2','1'], 1, '/census/removed/0/grid/axes', lambda axes:[x['label'] for x in axes])\ncheck(a, '좌표가 같아', True, 1, '/census/removed/0/grid/axes', lambda axes:axes[0]['positionPt']==axes[1]['positionPt'])\ncheck(a, '0.986229 pt/mm', 0.986229, 1, '/census/removed/1/grid/scalePtPerMm', lambda n:round(n,6))\nfor text, value, pointer in [('36면',36,'pages_count'),('55→53',55,'grids_before'),('55→53',53,'grids_after'),('53후보',53,'retained_grids_deep_equal'),('19블록',19,'blocks_before'),('19블록',19,'blocks_after')]:\n    check(a,text,value,1,'/census/'+pointer)\ncheck(a,'T=15',15,0,'/midpoint_margin/tolerance_pt')\ncheck('다음 세 면은 伏図가 없는 면', '세 면', 3, 2, '/remeasured', lambda v:len(v))\nfor page, xl, xs, yl, ys, count in [\n    ('ina-p7',['1','2','3'],[4050,4050],['B','A'],[6400],6),\n    ('shibata-p13',['1','5'],[41000],['A','B','C'],[7000,8000],18),\n    ('karatsu-jikugumi2-p1',['X1','X2','X3','X4','X5','X6','X7'],[2300,3350,5250,4200,7025,5000],['Y0','Y1','Y2'],[1900,2265],6),\n]:\n    a = f'| `{page}` —'\n    p = f'/remeasured/{page}'\n    for axis, labels, spans in [('x',xl,xs),('y',yl,ys)]:\n        text = 'X1〜X7' if page.startswith('karatsu') and axis=='x' else '·'.join(labels)\n        check(a,text,labels,2,p+f'/{axis}/labels')\n        check(a,'·'.join(map(str,spans)),spans,2,p+f'/{axis}/spansMm')\n    check(a,str(count)+'개',count,2,p+'/placement_count')\ncheck('| `ina-p7` —','8100',8100,2,'/remeasured/ina-p7/x/spanSumMm')\ncheck('| `ina-p7` —','모두 `C1`',{'C1':6},2,'/remeasured/ina-p7/mark_counts')\na = '`ina-p7`의 격자 값은'\nfor i,text in enumerate(['主筋8-D22','HOOP-D13-@100']):\n    check(a,text,text,2,f'/remeasured/ina-p7/context/recovered_annotations/{i}')\nfor i,text in enumerate(['[本体棟]B通り軸組図S=1/100','[本体棟]1通り軸組図S=1/100','[本体棟]3-2通り軸組図S=1/100','[本体棟]5通り軸組図S=1/100']):\n    check(a,text,text,2,f'/remeasured/shibata-p13/page_titles/{i}')\nfor i,text in [(0,'X5通り軸組図'),(3,'Y0通り軸組図'),(4,'Y1通り軸組図')]:\n    check(a,text,text,2,f'/remeasured/karatsu-jikugumi2-p1/page_titles/{i}')\na = '② 「제목이 붙지 않은 블록은 버린다」'\nfor p,n in [('karatsu-fukuzu-p1',42),('karatsu-hashirashin-p1',27),('ina-p6',4)]:\n    check(a,f'**{n}개**',n,2,f'/valid_untitled_controls/{p}/placement_count')\n\n# Check every explicit JSON pointer on each line changed by step 2. Shorthand #/\n# inherits the preceding full report path on that line; record the resolved value.\ndocuments = ['docs/RISKS.md','docs/MILESTONES.md','AGENTS.md','CLAUDE.md']\npointer_checks = []\nadditions = {}\nfor document in documents:\n    diff = subprocess.check_output(['git','diff','2ec72d1^','2ec72d1','--unified=0','--',document]).decode('utf-8')\n    added = [line[1:] for line in diff.splitlines() if line.startswith('+') and not line.startswith('+++')]\n    additions[document] = added\n    for line in added:\n        prior_file = None\n        for match in re.finditer(r'(?:(phases/[^`\\s#;]+\\.json))?(#/[^`\\s;]+)',line):\n            if match[1]: prior_file = match[1]\n            if prior_file:\n                citation = prior_file + match[2]\n                value = resolve(citation)\n                pointer_checks.append({'document':document,'source':citation,'resolved':True,'value_sha256':hashlib.sha256(json.dumps(value,ensure_ascii=False,sort_keys=True).encode()).hexdigest()})\n\nagents = read('AGENTS.md')\nclaude = read('CLAUDE.md')\ntables = lambda text: [line for line in text.splitlines() if line.lstrip().startswith('|')]\nopen_checks = []\nfor label, anchor, terms in [\n    ('R10','- **R10 (열림', ['壁·スラブ·shibata 大梁·柱リスト(p7) 미전사도 계속 열려','2段筋 본수','特記 기본값','스케치 주기형 柱リスト']),\n    ('R15','- **R15 (열림', ['여백 불성립','블록 오탐']),\n    ('false_blocks','**열린 것 — 블록 오탐**', ['세 면']),\n    ('title_gate_refuted','① 「면에 伏図·柱芯線図 제목이 있어야 블록을 낸다」', ['반증됐다']),\n    ('untitled_drop_refuted','② 「제목이 붙지 않은 블록은 버린다」', ['반증됐다']),\n]:\n    line_number,line = next((i+1,l) for i,l in enumerate(risks) if anchor in l)\n    open_checks.append({'id':label,'document':'docs/RISKS.md','line':line_number,'quote':line,'holds':all(t in line for t in terms)})\nfor page in ['ina-p7','shibata-p13','karatsu-jikugumi2-p1']:\n    line_number,line = next((i+1,l) for i,l in enumerate(risks) if f'| `{page}` —' in l)\n    open_checks.append({'id':page,'document':'docs/RISKS.md','line':line_number,'quote':line,'holds':True})\n\nresult = {'checks':checks,'comparison_count':len(checks),'all_values_equal':all(c['holds'] for c in checks),\n          'pointer_checks':pointer_checks,'resolved_pointer_count':len(pointer_checks),\n          'tables_equal':tables(agents)==tables(claude),'files_byte_equal':(root/'AGENTS.md').read_bytes()==(root/'CLAUDE.md').read_bytes(),\n          'open_checks':open_checks,'read_paths':sorted(read_paths),\n          'counting_rule':'One comparison per displayed scalar, array, boolean or verbatim source annotation; repeated numeric claims are separate comparisons. Existing R10/R15 and ledger quantities carried over unchanged are not new step2 claims. Page IDs, risk/phase/step numbers and the notation 2段筋 are identifiers, not measured quantities. Sweep table booleans are also compared.'}\n(out/'documents.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')\nprint(json.dumps({k:result[k] for k in ['comparison_count','all_values_equal','resolved_pointer_count','tables_equal','files_byte_equal']}))\nprint(json.dumps([c for c in checks if not c['holds']],ensure_ascii=True))\n"
+      },
+      {
+        "temporary_path": ".cache/phase42-step3/static.py",
+        "content": "import hashlib\nimport json\nfrom pathlib import Path\nimport subprocess\n\nout = Path('.cache/phase42-step3')\nbase = '7a12578'\nroots = ['tests/fixtures/plan-import/expected', 'tests/fixtures/section-import']\ngit = lambda *args: subprocess.check_output(['git',*args])\nsha = lambda b: hashlib.sha256(b).hexdigest()\nbase_files = git('ls-tree','-r','--name-only',base,'--',*roots).decode().splitlines()\nhead_files = git('ls-tree','-r','--name-only','HEAD','--',*roots).decode().splitlines()\nworking_files = sorted(p.as_posix() for d in roots for p in Path(d).rglob('*') if p.is_file())\nhashes = []\nfor file in sorted(set(base_files+head_files+working_files)):\n    old = git('show',f'{base}:{file}') if file in base_files else None\n    new = git('show',f'HEAD:{file}') if file in head_files else None\n    work = Path(file).read_bytes() if Path(file).is_file() else None\n    hashes.append({'path':file,'base_blob_sha256':sha(old) if old is not None else None,\n                   'head_blob_sha256':sha(new) if new is not None else None,\n                   'worktree_raw_sha256':sha(work) if work is not None else None,\n                   'worktree_lf_sha256':sha(work.replace(b'\\r\\n',b'\\n')) if work is not None else None,\n                   'committed_bytes_equal':old==new and old is not None,\n                   'worktree_matches_after_eol_normalization':old==work.replace(b'\\r\\n',b'\\n') if work is not None else False})\nchanged = git('diff','--name-only',base).decode().splitlines()\nuntracked = git('ls-files','--others','--exclude-standard').decode().splitlines()\nallowed_prefixes = ['phases/','src/lib/import/framing-plan/']\nallowed_exact = ['src/locales/ja.json','src/locales/ko.json','docs/RISKS.md','docs/MILESTONES.md','CLAUDE.md','AGENTS.md']\ndef reason(p):\n    return next((a for a in allowed_prefixes if p.startswith(a)), None) or (p if p in allowed_exact else None)\nresult = {'base':git('rev-parse',base).decode().strip(),'head':git('rev-parse','HEAD').decode().strip(),\n          'fixture_count':len(hashes),'path_sets_equal':set(base_files)==set(head_files)==set(working_files),\n          'files':hashes,'all_committed_bytes_equal':all(h['committed_bytes_equal'] for h in hashes),\n          'all_worktree_content_equal':all(h['worktree_matches_after_eol_normalization'] for h in hashes),\n          'line_endings_note':'Commit-to-commit SHA-256 compares exact Git blob bytes with no normalization. Working files additionally have both raw and LF-normalized SHA-256 because core.autocrlf checkout uses CRLF/mixed line endings. No fixture was written or reformatted.',\n          'scope':[{'path':p,'allowed_by':reason(p)} for p in changed],\n          'untracked':[{'path':p,'allowed_by':reason(p)} for p in untracked],\n          'all_paths_allowed':all(reason(p) for p in changed+untracked)}\n(out/'static.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')\nprint(json.dumps({k:result[k] for k in ['fixture_count','path_sets_equal','all_committed_bytes_equal','all_worktree_content_equal','all_paths_allowed']}))\n"
+      }
+    ]
+  },
+  "limitations": [
+    "No implementation, fixture or documentation correction was made. The refutation is confined to the current-population comment equality in item 1; it does not refute the historical step0 measurement, the unchanged negative margin conclusion, or the two geometry guards.",
+    "The numeric document audit checks report consistency, not an independent transcription of the original drawings."
+  ],
+  "temporary_files_removed": true,
+  "final_parser_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+  "target_files_unchanged_from_evaluated_head": true
+}
