@@ -1,0 +1,3166 @@
+{
+  "refuted_rules": [
+    {
+      "rule": "면에 伏図·柱芯線図 제목이 있어야 블록을 낸다",
+      "verdict": "refuted",
+      "evidence": {
+        "page": "karatsu-fukuzu-p1",
+        "is_genuine_grid_basis": "전사 골든의 S-3 基礎伏図 출처 및 축·스팬·기재 合計 계약을 대조했다.",
+        "no_title_in_fixture": {
+          "joined_text_has_fukuzu": false,
+          "joined_text_has_hashirashinzu": false,
+          "recovered_title_tokens": 0,
+          "vertical_title_tokens": 0
+        },
+        "title_block_exclusion": "tests/fixtures/section-import/SOURCES.md의 표제란 제외(개인정보) 절은 karatsu 해당 면의 제외를 명시한다. 원본 PDF를 새로 렌더한 검증은 아니며 로컬 TextItem·전사·출처 대장 대조다.",
+        "counterfactual": "면 제목 필터를 적용하면 골든 격자가 일치하는 이 블록을 버린다.",
+        "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/karatsu-fukuzu-p1",
+        "supporting_sources": [
+          {
+            "source": "tests/fixtures/section-import/SOURCES.md"
+          },
+          {
+            "source": "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json#/source"
+          }
+        ]
+      }
+    },
+    {
+      "rule": "제목이 붙지 않은 블록은 버린다",
+      "verdict": "refuted",
+      "evidence": {
+        "controls": [
+          "karatsu-fukuzu-p1",
+          "karatsu-hashirashin-p1",
+          "ina-p6"
+        ],
+        "placement_counts": [
+          42,
+          27,
+          4
+        ],
+        "all_untitled": true,
+        "all_golden_grid_contracts_match": true,
+        "counterfactual": "title !== undefined를 요구하면 세 골든 격자 블록이 모두 탈락한다. 배치 수는 현재 출력의 개수이고 배치 단위 정확성을 골든이 인증한다는 뜻은 아니다.",
+        "claude_description_correction": "karatsu-fukuzu-p1은 제목 자체가 픽스처에 없으므로 멀어서 미연결된 것이 아니다. karatsu-hashirashin-p1·ina-p6은 복원된 제목의 x 좌표가 실제 블록 x 범위 밖이다. buildBlocks는 이 경우 제목을 연결하지 않는다.",
+        "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls",
+        "parser_evidence": {
+          "source": "src/lib/import/framing-plan/parse.ts",
+          "symbol": "buildBlocks",
+          "condition": "distanceToRange(candidate.x, xExtent.min, xExtent.max) > 0"
+        }
+      }
+    },
+    {
+      "rule": "라벨 밴드와 격자 사각형의 거리 ÷ 스팬으로 가른다",
+      "verdict": "unverified",
+      "evidence": {
+        "conclusion": "갈린다고 확인된 바 없다. 이번 스텝에서 파서 내부 밴드 좌표로 독립 재계측하지 못했으며, 분리 가능·불가능 중 어느 쪽도 확정하지 않는다.",
+        "claude_approximation_from_step_spec": {
+          "ina-p7": 0.99,
+          "ina-p6": 0.87,
+          "karatsu-jikugumi2-p1": 3.51,
+          "yokohama-p7": 2.56
+        },
+        "approximation_status": "위 값은 step 사양에 기재된 Claude의 라벨 문자열 매칭 근사치다. 이번 스텝의 재계측값이 아니므로 문서에 실측 수치로 옮기지 않았다.",
+        "reason": "공개 PlanGridCandidate는 밴드 좌표를 보존하지 않는다. 내부 AxisSequence는 across·axisAcross·axisAcrossOptions를 갖는다. 동일 문자열은 여러 밴드에 반복될 수 있어 공개 라벨에서 밴드를 역추정하는 방식은 독립 검증이 아니다.",
+        "retry_requirements": [
+          "실제 buildBlocks에서 짝지어진 AxisSequence를 사용한다.",
+          "across·axisAcross·axisAcrossOptions의 어느 좌표를 재는지, 페이지 방향, 거리 함수와 분모 스팬의 정의를 먼저 고정한다.",
+          "정당한 제목 없는 블록과 오탐 블록을 함께 재고 단일 문턱의 분리 가능성을 판정한다."
+        ],
+        "source": "src/lib/import/framing-plan/parse.ts",
+        "public_contract": {
+          "source": "src/lib/import/framing-plan/types.ts"
+        },
+        "specification": {
+          "source": "phases/42-plan-grid-soundness/step2.md"
+        }
+      }
+    }
+  ],
+  "citations": [
+    {
+      "value": 36,
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/corpus/page_count"
+    },
+    {
+      "value": 208,
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/corpus/accepted_span_measurements"
+    },
+    {
+      "value": 10.379846,
+      "rounding": "six decimal places",
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max/value_pt"
+    },
+    {
+      "value": {
+        "page": "saiki-p2",
+        "labels": [
+          "2",
+          "1"
+        ],
+        "dimension_mm": 700
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max"
+    },
+    {
+      "value": 0.018265,
+      "rounding": "six decimal places",
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/value_pt"
+    },
+    {
+      "value": {
+        "page": "hirosaki-p25",
+        "labels": [
+          "Y8",
+          "Y9"
+        ],
+        "dimension_mm": 24000
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min"
+    },
+    {
+      "value": 15,
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt"
+    },
+    {
+      "value": false,
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/holds"
+    },
+    {
+      "value": 8000,
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/competing_pair_accepted/dimension_value_mm"
+    },
+    {
+      "value": 6.18,
+      "rounding": "six decimal places",
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min/value_pt"
+    },
+    {
+      "value": {
+        "page": "karatsu-fukuzu-p1",
+        "labels": [
+          "Y1",
+          "Y0"
+        ],
+        "dimension_mm": 180
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min"
+    },
+    {
+      "value": {
+        "tolerance_pt": 4,
+        "grid_pages": 23,
+        "block_pages": 7,
+        "golden_identical": false
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/0"
+    },
+    {
+      "value": {
+        "tolerance_pt": 6,
+        "grid_pages": 23,
+        "block_pages": 15,
+        "golden_identical": true
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/1"
+    },
+    {
+      "value": {
+        "tolerance_pt": 15,
+        "grid_pages": 26,
+        "block_pages": 16,
+        "golden_identical": true
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/2"
+    },
+    {
+      "value": {
+        "tolerance_pt": 30,
+        "grid_pages": 26,
+        "block_pages": 16,
+        "golden_identical": false
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/3"
+    },
+    {
+      "value": {
+        "tolerance_pt": 40,
+        "grid_pages": 26,
+        "block_pages": 16,
+        "golden_identical": false
+      },
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep/4"
+    },
+    {
+      "value": "T=30: tsu-p16 issues only; golden block contract passes",
+      "source": "phases/42-plan-grid-soundness/step0-report.json#/sweep_comparison"
+    },
+    {
+      "value": {
+        "page": "fuji-p20",
+        "labels": [
+          "2",
+          "1"
+        ],
+        "same_position": true
+      },
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/0"
+    },
+    {
+      "value": 0.986229,
+      "rounding": "six decimal places",
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1/grid/scalePtPerMm"
+    },
+    {
+      "value": "pt/mm is not the physical scale ratio",
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/scale_unit_correction"
+    },
+    {
+      "value": 36,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/pages_count"
+    },
+    {
+      "value": 55,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/grids_before"
+    },
+    {
+      "value": 53,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/grids_after"
+    },
+    {
+      "value": 53,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/retained_grids_deep_equal"
+    },
+    {
+      "value": 19,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_before"
+    },
+    {
+      "value": 19,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_after"
+    },
+    {
+      "value": true,
+      "source": "phases/42-plan-grid-soundness/step1-report.json#/census/all_blocks_deep_equal"
+    },
+    {
+      "value": {
+        "x": {
+          "labels": [
+            "1",
+            "2",
+            "3"
+          ],
+          "spansMm": [
+            4050,
+            4050
+          ],
+          "totalMm": 8100
+        },
+        "y": {
+          "labels": [
+            "B",
+            "A"
+          ],
+          "spansMm": [
+            6400
+          ]
+        },
+        "placement_count": 6,
+        "mark_counts": {
+          "C1": 6
+        }
+      },
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7"
+    },
+    {
+      "value": {
+        "x": {
+          "labels": [
+            "1",
+            "5"
+          ],
+          "spansMm": [
+            41000
+          ]
+        },
+        "y": {
+          "labels": [
+            "A",
+            "B",
+            "C"
+          ],
+          "spansMm": [
+            7000,
+            8000
+          ]
+        },
+        "placement_count": 18
+      },
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13"
+    },
+    {
+      "value": {
+        "x": {
+          "labels": [
+            "X1",
+            "X2",
+            "X3",
+            "X4",
+            "X5",
+            "X6",
+            "X7"
+          ],
+          "spansMm": [
+            2300,
+            3350,
+            5250,
+            4200,
+            7025,
+            5000
+          ]
+        },
+        "y": {
+          "labels": [
+            "Y0",
+            "Y1",
+            "Y2"
+          ],
+          "spansMm": [
+            1900,
+            2265
+          ]
+        },
+        "placement_count": 6
+      },
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1"
+    },
+    {
+      "value": [
+        "主筋8-D22",
+        "HOOP-D13-@100"
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/context"
+    },
+    {
+      "value": "shibata page titles and their scale notation",
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles"
+    },
+    {
+      "value": "karatsu page titles and their axis labels",
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1/page_titles"
+    },
+    {
+      "value": 0,
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/0/evidence/no_title_in_fixture/recovered_title_tokens"
+    },
+    {
+      "value": 42,
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-fukuzu-p1/placement_count"
+    },
+    {
+      "value": 27,
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-hashirashin-p1/placement_count"
+    },
+    {
+      "value": 4,
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/ina-p6/placement_count"
+    }
+  ],
+  "citation_scope": "이번 변경에서 추가·갱신한 정량 주장 및 반복되는 동일 수치에 대한 출처다. 기존에 유지한 과거 階高·axis 실측 문단은 변경 전 인용을 유지한다. 문서·면 식별자와 조항명·원문 표기는 해당 자료 또는 재계측 항목을 가리킨다.",
+  "edits": [
+    {
+      "file": "docs/RISKS.md",
+      "section": "R10: 부분 격자 오탐 구분",
+      "before": "- **R10 (열림 — 2차 코퍼스 포맷 과적합)** 2차 코퍼스(22면·발주처 7곳)를 더한 결과, 독립 전사 골든은 격자 7/7면·階高 3/3면·リスト 5/5면이 통과했다. 남은 것은(phase 37 종료 HEAD로 36면 재실행, Claude 실측 2026-09-03 18:30) 골든이 없는 伏図 면의 `寸法列曖昧`·`通り芯対応不明`(fuji-p15·tsu-p20)·`ラベル文字混在`(karatsu-jikugumi2), 골든 면에서도 블록 밖에 남는 잉여 격자와 `寸法欠落`(shibata-p1·tsu-p16), リスト·軸組図 면에 생기는 부분 격자 오탐 `寸法欠落`(fuji-p20·ina-p7·saiki-p2·shibata-p13), 그리고 壁·スラブ·shibata 大梁·柱リスト(p7) 미전사다. 2段筋 본수, 頭注의 特記 기본값, 스케치 주기형 柱リスト도 미지원이다. phase 36 step 5가 `refuted`로 끝났으나, 회전 글리프를 잇지 못한 반증 방법과 ojkk-p4 対象外 12칸의 원문 일치 개선을 재대조했고 phase 37 step 0이 이를 다시 반증해 불성립으로 판정했다. R3(일본 사용자 접점 0) 때문에 실패 도면 수집은 사용자 동의가 필요하며, 닫지 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`, `phases/37-corpus-widen-2-close/step0-report.json`)",
+      "after": "- **R10 (열림 — 2차 코퍼스 포맷 과적합)** 2차 코퍼스(22면·발주처 7곳)를 더한 결과, 독립 전사 골든은 격자 7/7면·階高 3/3면·リスト 5/5면이 통과했다. phase 37 종료 HEAD로 36면을 재실행한 조사(Claude 실측 2026-09-03 18:30)에서는 골든이 없는 伏図 면의 `寸法列曖昧`·`通り芯対応不明`(fuji-p15·tsu-p20)·`ラベル文字混在`(karatsu-jikugumi2), 골든 면에서도 블록 밖에 남는 잉여 격자와 `寸法欠落`(shibata-p1·tsu-p16)와 リスト·軸組図 면의 부분 격자 오탐을 기록했다. 이번 phase에서 마지막 항목을 기하로 닫힌 격자 오탐과 열린 블록 오탐으로 구분한다. **기하로 닫힌 것**은 `fuji-p20`의 인접 通り芯 좌표 중복과 `saiki-p2`의 범위 밖 축척이며, 각각 `通り芯座標重複`·`縮尺範囲外`로 격자 후보에서 빠졌다(`phases/42-plan-grid-soundness/step1-report.json#/census/removed`). **열린 블록 오탐**은 伏図가 없는 `ina-p7`(部材リスト)·`shibata-p13`·`karatsu-jikugumi2-p1`(軸組図)이 제목 없는 블록을 내는 것이다. 격자 값이 같은 건물 伏図와 맞아도 면의 용도와 부호 배치까지 옳다는 뜻은 아니다. 세 면의 재계측과 반증된 제목 규칙은 R15 및 `phases/42-plan-grid-soundness/step2-report.json#/remeasured`·`#/refuted_rules`에 있다. 壁·スラブ·shibata 大梁·柱リスト(p7) 미전사도 계속 열려 있다. 2段筋 본수, 頭注의 特記 기본값, 스케치 주기형 柱リスト도 미지원이다. phase 36 step 5가 `refuted`로 끝났으나, 회전 글리프를 잇지 못한 반증 방법과 ojkk-p4 対象外 12칸의 원문 일치 개선을 재대조했고 phase 37 step 0이 이를 다시 반증해 불성립으로 판정했다. R3(일본 사용자 접점 0) 때문에 실패 도면 수집은 사용자 동의가 필요하며, 닫지 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`, `phases/37-corpus-widen-2-close/step0-report.json`)"
+    },
+    {
+      "file": "docs/RISKS.md",
+      "section": "R15: 여백·sweep·닫힌 격자와 열린 블록·반증 규칙",
+      "before": "- **R15 (열림 — 合計 없는 축의 문턱 안정성)** phase 37 step 5의 sweep에서 T=4는 36면·`gridPages=23`이고 기존 `kani-p38`·`kani-p39`·`yokohama-p6`·`yokohama-p7`의 `寸法欠落`을 재현했다. T=6은 같은 `gridPages=23`에서 요구한 4면을 복원했고, T=15는 `gridPages=26`, T=30도 `gridPages=26`, T=40도 `gridPages=26`이었으나 `fuji-p17`에서만 `寸法列曖昧` 오탐이 추가됐다. T=6→15 사이에 늘어난 3면은 `fuji-p20`(断面リスト)·`saiki-p2`(柱・壁・スラブリスト)·`shibata-p13`(軸組図)으로, 伏図가 아닌 면의 부분 격자 오탐이다. 伏図 골든 7면과 기존 14면은 T=6에서 동일했다. 이번에는 `alongDistance` 최댓값과 경쟁 치수 최솟값을 미측정했다. 伏図를 가진 발주처는 SOURCES.md 기준 2곳에서 8곳으로 늘었지만, R15를 닫지는 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`·`phases/37-corpus-widen-2-close/step5-report.json`).",
+      "after": "- **R15 (열림 — 伏図 중점 문턱의 여백 불성립·블록 오탐)** phase 42에서 중점 거리 `alongDistance`의 채택 최댓값과 미채택 경쟁 최솟값을 계측했다. step 0 시점의 **36면·208개 채택 스팬**(반환 격자와 블록의 축 열 합집합)에서 **A = 10.379846pt**는 `saiki-p2`의 X `2–1`, 치수 `700`이고, **B = 0.018265pt**는 `hirosaki-p25`의 Y `Y8–Y9`, 치수 `24000`이다. 따라서 **`A ≤ 15 < B`는 성립하지 않는다.** A는 파서가 채택한 값의 극값이지 정답 스팬의 인증이 아니며, 해당 `saiki-p2` 후보는 뒤의 step 1에서 제거됐다(`phases/42-plan-grid-soundness/step0-report.json#/corpus`·`#/midpoint_margin`; `phases/42-plan-grid-soundness/step1-report.json#/census/removed/1`).\n\n  B의 모집단은 같은 라벨 밴드의 치수 창 안에서 그 축 열의 스팬으로 소비하지 않은 토큰이며, 合計도 포함한다. `24000`은 合計이고 그 구간의 실제 채택 치수는 `8000`이다. 경쟁 토큰이 더 가깝다는 것과 파서가 그 토큰을 잘못 골랐다는 것은 구분한다. 合計 미확인 축만 보아도 B = **6.180000pt**(`karatsu-fukuzu-p1`, Y `Y1–Y0`, `180`)라 같은 문턱의 안전 여백은 없다(`phases/42-plan-grid-soundness/step0-report.json#/margin_interpretation`·`#/competing_pair_accepted`·`#/unconfirmed_margin`).\n\n  **T sweep은 step 1 이전의 출력이다.** 아래 「동일」은 伏図 골든 면의 파서 반환 객체 전체를 기준 T와 비교한 결과이며, 골든의 블록 계약 통과와는 별개다(`phases/42-plan-grid-soundness/step0-report.json#/sweep_comparison`).\n\n  | T (pt) | 격자 후보를 내는 면 | 블록을 내는 면 | T=15와 골든 면 전체 출력 동일 | 근거 |\n  |---|---|---|---|---|\n  | 4 | 23 | 7 | 아니오 | `phases/42-plan-grid-soundness/step0-report.json#/sweep/0` |\n  | 6 | 23 | 15 | 예 | `phases/42-plan-grid-soundness/step0-report.json#/sweep/1` |\n  | 15 | 26 | 16 | 기준 | `phases/42-plan-grid-soundness/step0-report.json#/sweep/2` |\n  | 30 | 26 | 16 | 아니오 — tsu-p16의 issues 차이, 블록 계약은 통과 | `phases/42-plan-grid-soundness/step0-report.json#/sweep/3`·`#/sweep_comparison` |\n  | 40 | 26 | 16 | 아니오 | `phases/42-plan-grid-soundness/step0-report.json#/sweep/4` |\n\n  **기하로 닫힌 격자 오탐**: `fuji-p20`은 인접 通り芯 `2·1`의 좌표가 같아 P1(`通り芯座標重複`)으로, `saiki-p2`는 **0.986229 pt/mm**의 범위 밖 축척이라 P2(`縮尺範囲外`)로 제거됐다. 이 값의 단위는 pt/mm이며 「축척 ≒ 1:1」로 읽지 않는다(`phases/42-plan-grid-soundness/step1-report.json#/census/removed/0`·`#/census/removed/1`; 단위 정정 `phases/42-plan-grid-soundness/step2-report.json#/scale_unit_correction`). 이 변경으로 **36면의 격자 후보 55→53**, 남은 **53후보와 19블록은 모두 불변**이다. 닫힌 범위는 이 두 면의 격자 오탐뿐이며, **T=15를 유지**하고 문턱 안정성이나 블록 판별을 해결했다고 주장하지 않는다(`phases/42-plan-grid-soundness/step1-report.json#/census`; `phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt`).\n\n  **열린 것 — 블록 오탐**: 다음 세 면은 伏図가 없는 면인데 각각 제목 없는 블록을 낸다. 아래 스팬은 mm이며, 배치 수는 파서가 낸 항목 수이지 올바른 부재 배치의 인증이 아니다. 축 라벨·스팬·배치 수는 이번 재계측에서 Claude 실측과 일치했다(`phases/42-plan-grid-soundness/step2-report.json#/remeasured`).\n\n  | 면과 원문 종류 | 제목 없는 블록의 축·스팬 | 배치 | 근거 |\n  |---|---|---|---|\n  | `ina-p7` — 部材リスト | X `1·2·3`: `4050·4050`, 合計 `8100`; Y `B·A`: `6400` | 6개, 모두 `C1` | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7` |\n  | `shibata-p13` — 軸組図 | X `1·5`: `41000`; Y `A·B·C`: `7000·8000` | 18개 | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13` |\n  | `karatsu-jikugumi2-p1` — 軸組図(2) | X `X1〜X7`: `2300·3350·5250·4200·7025·5000`; Y `Y0·Y1·Y2`: `1900·2265` | 6개 | `phases/42-plan-grid-soundness/step2-report.json#/remeasured/karatsu-jikugumi2-p1` |\n\n  `ina-p7`의 격자 값은 같은 건물 `ina-p6`의 伏図 출력 및 전사 골든과 일치한다. 그래도 이 면을 伏図 블록으로 내는 것은 오탐이다. 배치된 `C1`은 柱リスト의 스케치·주기 영역에 있고, 같은 영역에서 `主筋8-D22`·`HOOP-D13-@100`을 재확인했다. 이를 실제 平面의 柱 배치로 승인할 근거는 없다(`phases/42-plan-grid-soundness/step2-report.json#/remeasured/ina-p7/context`). `shibata-p13`의 제목은 `[本体棟]B通り軸組図S=1/100`·`[本体棟]1通り軸組図S=1/100`·`[本体棟]3-2通り軸組図S=1/100`·`[本体棟]5通り軸組図S=1/100`이며, `karatsu-jikugumi2-p1`에는 `X5通り軸組図` 계열과 `Y0通り軸組図`·`Y1通り軸組図`가 있다. 軸組図의 다른 방향 축을 짝지어도 伏図의 배치가 되지는 않는다(`phases/42-plan-grid-soundness/step2-report.json#/remeasured/shibata-p13/page_titles`·`#/remeasured/karatsu-jikugumi2-p1/page_titles`).\n\n  **반증된 후보 규칙과 미확인 규칙**:\n\n  - ① 「면에 伏図·柱芯線図 제목이 있어야 블록을 낸다」는 반증됐다. 진짜 基礎伏図인 `karatsu-fukuzu-p1`은 픽스처 텍스트에 두 제목 문자열이 모두 없고, 표제란은 개인정보 때문에 제외되어 있다. 면 제목 요구는 정당한 블록도 버린다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/0`).\n  - ② 「제목이 붙지 않은 블록은 버린다」도 반증됐다. `karatsu-fukuzu-p1`의 **42개**, `karatsu-hashirashin-p1`의 **27개**, `ina-p6`의 **4개** 배치 블록은 제목이 없어도 축·스팬·기재 合計가 전사 골든과 맞는다. 다만 「모두 제목이 멀어서 안 붙는다」는 설명은 정정한다. 앞의 면은 제목 자체가 없고, 뒤의 두 면은 제목이 블록의 가로 범위 밖이라 연결되지 않는다. 골든 대조가 배치 항목 하나하나의 정당성까지 인증하는 것은 아니다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/1`·`#/valid_untitled_controls`).\n  - ③ 「라벨 밴드와 격자 사각형의 거리 ÷ 스팬」은 **미확인(unverified)**이다. **갈린다고 확인된 바 없다.** Claude의 라벨 문자열 매칭 근사치는 파서 내부 밴드 좌표의 계측값이 아니며, 이번에는 그 좌표로 독립 재계측하지 못했다. 재시도하려면 `AxisSequence.across`·`axisAcross`·`axisAcrossOptions` 및 실제 짝지어진 축을 사용하고, 거리·분모 스팬의 정의를 고정해 정당한 블록과 오탐을 함께 재야 한다. 근사치를 새 문턱의 근거로 쓰지 않는다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/2`)."
+    },
+    {
+      "file": "docs/RISKS.md",
+      "section": "R15: 階高 보충의 잔여 요약",
+      "before": "  **階高 한 면 상수 항목은 해소**: `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`을 짧은 치수 공통 허용비로 쓴다. 뜻은 「밀림이 기대 간격 자체를 넘지 않는다」다. `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`은 36면의 편차를 기록하고, `counterexamples.ratio_0_45`는 0.45에서 tsu 꼬리가 빠짐을, `corpus_sweep`은 0.49 대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다. `counterexamples.ratio_5_0`에서는 hirosaki 경쟁 꼬리의 후보 자격이 달라져도 5.0의 최종 출력이 1.0과 같았다. 따라서 최종 출력만으로 허용비를 구별하지 못하는 무차별성이 있지만, 보고서가 측정하지 않은 연속구간의 양 끝값까지 확정하지 않는다. 채택값은 관측된 동일 출력의 선택지 가운데 기하적 의미가 있는 값이며, 실측 편차에 붙인 상수가 아니다. `phases/39-axis-claim/step2-report.json`의 `f1_comment_verification`도 이 근거 범위를 확인한다. **伏図 문턱과 부분 격자 오탐은 그대로 남아 R15 자체는 열림이다.**",
+      "after": "  **階高 한 면 상수 항목은 해소**: `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`을 짧은 치수 공통 허용비로 쓴다. 뜻은 「밀림이 기대 간격 자체를 넘지 않는다」다. `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`은 36면의 편차를 기록하고, `counterexamples.ratio_0_45`는 0.45에서 tsu 꼬리가 빠짐을, `corpus_sweep`은 0.49 대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다. `counterexamples.ratio_5_0`에서는 hirosaki 경쟁 꼬리의 후보 자격이 달라져도 5.0의 최종 출력이 1.0과 같았다. 따라서 최종 출력만으로 허용비를 구별하지 못하는 무차별성이 있지만, 보고서가 측정하지 않은 연속구간의 양 끝값까지 확정하지 않는다. 채택값은 관측된 동일 출력의 선택지 가운데 기하적 의미가 있는 값이며, 실측 편차에 붙인 상수가 아니다. `phases/39-axis-claim/step2-report.json`의 `f1_comment_verification`도 이 근거 범위를 확인한다. **伏図 중점 문턱의 여백 불성립과 위 블록 오탐은 남아 R15 자체는 열림이다.**"
+    },
+    {
+      "file": "docs/MILESTONES.md",
+      "section": "도면 인식(로컬): 현재 잔여 항목",
+      "before": "   - **phase 38·39 결과**: tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 대조하고, 레벨 라벨은 순서 대응으로, 짧은 치수는 `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`의 공통 규칙으로 정리했다. 36면 실측에서 확인된 허용비의 효과와 최종 출력 동일성까지만 근거로 남긴다(`phases/38-elevation-close/step3-report.json`). 문장도 통과하는 레벨 화이트리스트와 SL 계열 제외는 유지한다(`phases/38-elevation-close/step4-report.json`). axis 기대값을 흔들어도 통과하던 반증을 계기로 tsu의 `X5` 누락을 바로잡고, 軸組図 axis와 같은 건물 伏図 격자의 정·역방향 부분열·스팬 합 대조를 추가했다. phase 39 종료 시점에 미전사 axis가 3개 골든 항목이었고(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`), phase 40에서 tsu p21 `elevations[1]`과 p22 두 항목을 전사해 **미전사 axis는 0개**다(`phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count`). 한 면의 모든 軸組図 블록이 같은 축을 쓰므로 제목 공유 항목도 axis 값이 일의로 정해진다(`phases/40-citation-integrity/step0-report.json#/claims/2/evidence/conclusion`). 키 커버리지 가드는 전체 32개 경로 중 18개를 실제 대조 테스트, 14개를 출처·주석 등 참고 전용으로 등록한다. 혼합 제목 `blocks[].title`의 대조는 구조를 구별한 뒤로 유보했다(`phases/39-axis-claim/step2-report.json`). 階高의 한 면 상수 문제는 해소했으며, 코퍼스 한계와 伏図 문턱 때문에 R10·R15는 열림을 유지한다.",
+      "after": "   - **phase 38·39 결과**: tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 대조하고, 레벨 라벨은 순서 대응으로, 짧은 치수는 `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`의 공통 규칙으로 정리했다. 36면 실측에서 확인된 허용비의 효과와 최종 출력 동일성까지만 근거로 남긴다(`phases/38-elevation-close/step3-report.json`). 문장도 통과하는 레벨 화이트리스트와 SL 계열 제외는 유지한다(`phases/38-elevation-close/step4-report.json`). axis 기대값을 흔들어도 통과하던 반증을 계기로 tsu의 `X5` 누락을 바로잡고, 軸組図 axis와 같은 건물 伏図 격자의 정·역방향 부분열·스팬 합 대조를 추가했다. phase 39 종료 시점에 미전사 axis가 3개 골든 항목이었고(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`), phase 40에서 tsu p21 `elevations[1]`과 p22 두 항목을 전사해 **미전사 axis는 0개**다(`phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count`). 한 면의 모든 軸組図 블록이 같은 축을 쓰므로 제목 공유 항목도 axis 값이 일의로 정해진다(`phases/40-citation-integrity/step0-report.json#/claims/2/evidence/conclusion`). 키 커버리지 가드는 전체 32개 경로 중 18개를 실제 대조 테스트, 14개를 출처·주석 등 참고 전용으로 등록한다. 혼합 제목 `blocks[].title`의 대조는 구조를 구별한 뒤로 유보했다(`phases/39-axis-claim/step2-report.json`). 階高의 한 면 상수 문제는 해소했으며, 코퍼스 한계와 伏図 문턱 때문에 R10·R15는 열림을 유지한다.\n   - **phase 42 잔여 정리**: `fuji-p20`의 인접 通り芯 좌표 중복과 `saiki-p2`의 범위 밖 축척은 격자 후보에서 제거됐다(`phases/42-plan-grid-soundness/step1-report.json#/census/removed`). **남은 것은 중점 문턱의 안전 여백 불성립과 블록 오탐**이다: `ina-p7`(部材リスト)·`shibata-p13`·`karatsu-jikugumi2-p1`(軸組図)은 伏図가 없는 면인데 제목 없는 블록을 계속 낸다(`phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin`; `phases/42-plan-grid-soundness/step2-report.json#/remeasured`). 제목 존재·블록 제목 연결을 요구하면 정당한 伏図도 버리므로 두 규칙은 반증됐고, 밴드 거리/스팬 규칙은 내부 좌표 재계측 전까지 미확인이다(`phases/42-plan-grid-soundness/step2-report.json#/refuted_rules`). **R10·R15는 열림**을 유지한다. 壁·スラブ·shibata 大梁·柱リスト의 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원과 레벨 문장·SL 계열 한계도 그대로 남는다."
+    },
+    {
+      "file": "CLAUDE.md",
+      "section": "마일스톤 대장: 도면 인식 잔여",
+      "before": "| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 axis는 0개다. 잔여: 伏図 문턱·부분 격자 오탐, 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |",
+      "after": "| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 axis는 0개다. 잔여: 伏図 중점 문턱의 여백 불성립·ina-p7·shibata-p13·karatsu-jikugumi2-p1의 블록 오탐(fuji-p20·saiki-p2의 기하 오탐은 제거), 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |"
+    },
+    {
+      "file": "CLAUDE.md",
+      "section": "리스크 대장: R10",
+      "before": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 axis는 0개다. 레벨 화이트리스트의 문장 통과·SL 계열 제외, 伏図 오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계는 계속 열림. 근거: docs/RISKS.md R10 |",
+      "after": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 axis는 0개다. 레벨 화이트리스트의 문장 통과·SL 계열 제외는 계속 열린 한계다. fuji-p20·saiki-p2의 기하 오탐은 제거됐으나 ina-p7·shibata-p13·karatsu-jikugumi2-p1의 제목 없는 블록 오탐은 남는다. 壁·スラブ·shibata 大梁·柱リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계도 계속 열림. 근거: docs/RISKS.md R10 |"
+    },
+    {
+      "file": "CLAUDE.md",
+      "section": "리스크 대장: R15",
+      "before": "| R15 | 열림 | 伏図 문턱 안정성과 부분 격자 오탐은 계속 열림. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |",
+      "after": "| R15 | 열림 | 중점 거리 여백은 불성립이며 T=15 유지(`phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin`). fuji-p20·saiki-p2 기하 오탐은 제거(`phases/42-plan-grid-soundness/step1-report.json#/census/removed`), ina-p7·shibata-p13·karatsu-jikugumi2-p1 블록 오탐은 열림(`phases/42-plan-grid-soundness/step2-report.json#/remeasured`). 제목 요구·제목 없는 블록 폐기는 반증, 밴드 거리/스팬은 미확인. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |"
+    },
+    {
+      "file": "AGENTS.md",
+      "section": "마일스톤 대장: 도면 인식 잔여",
+      "before": "| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 axis는 0개다. 잔여: 伏図 문턱·부분 격자 오탐, 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |",
+      "after": "| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 axis는 0개다. 잔여: 伏図 중점 문턱의 여백 불성립·ina-p7·shibata-p13·karatsu-jikugumi2-p1의 블록 오탐(fuji-p20·saiki-p2의 기하 오탐은 제거), 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |"
+    },
+    {
+      "file": "AGENTS.md",
+      "section": "리스크 대장: R10",
+      "before": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 axis는 0개다. 레벨 화이트리스트의 문장 통과·SL 계열 제외, 伏図 오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계는 계속 열림. 근거: docs/RISKS.md R10 |",
+      "after": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 axis는 0개다. 레벨 화이트리스트의 문장 통과·SL 계열 제외는 계속 열린 한계다. fuji-p20·saiki-p2의 기하 오탐은 제거됐으나 ina-p7·shibata-p13·karatsu-jikugumi2-p1의 제목 없는 블록 오탐은 남는다. 壁·スラブ·shibata 大梁·柱リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계도 계속 열림. 근거: docs/RISKS.md R10 |"
+    },
+    {
+      "file": "AGENTS.md",
+      "section": "리스크 대장: R15",
+      "before": "| R15 | 열림 | 伏図 문턱 안정성과 부분 격자 오탐은 계속 열림. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |",
+      "after": "| R15 | 열림 | 중점 거리 여백은 불성립이며 T=15 유지(`phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin`). fuji-p20·saiki-p2 기하 오탐은 제거(`phases/42-plan-grid-soundness/step1-report.json#/census/removed`), ina-p7·shibata-p13·karatsu-jikugumi2-p1 블록 오탐은 열림(`phases/42-plan-grid-soundness/step2-report.json#/remeasured`). 제목 요구·제목 없는 블록 폐기는 반증, 밴드 거리/스팬은 미확인. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |"
+    }
+  ],
+  "reproduction": {
+    "measurement_command": "PowerShell here-string piped to npx tsx --input-type=module",
+    "measurement_script": "import { readFileSync, writeFileSync } from 'node:fs';\nimport { createHash } from 'node:crypto';\nimport { execFileSync } from 'node:child_process';\nimport { parseFramingPlan } from './src/lib/import/framing-plan/parse.ts';\nimport { recoverRows, compact, verticalRuns } from './src/lib/import/runs.ts';\nconst names = ['ina-p7','shibata-p13','karatsu-jikugumi2-p1','karatsu-fukuzu-p1','karatsu-hashirashin-p1','ina-p6'];\nconst sha = bytes => createHash('sha256').update(bytes).digest('hex');\nconst pages = Object.fromEntries(names.map(name => {\n  const file = 'tests/fixtures/section-import/textitems/' + name + '.json';\n  const bytes = readFileSync(file);\n  const fixture = JSON.parse(bytes.toString());\n  const output = parseFramingPlan({...fixture.page, items: fixture.items});\n  const segments = recoverRows(fixture.items).flatMap(row => row.segments.map(s => ({text:compact(s.text), x:s.centerX, y:s.centerY})));\n  const vertical = verticalRuns(fixture.items).map(r => ({text:compact(r.text), ...r}));\n  const joined = compact(fixture.items.map(i=>i.str).join(''));\n  const titleTokens = segments.filter(s => /\\u4f0f\\u56f3|\\u67f1\\u82af\\u7dda\\u56f3/.test(s.text));\n  const relevantText = segments.filter(s => /\\u8ef8\\u7d44\\u56f3|\\u901a\\u308a|\\u30ea\\u30b9\\u30c8|\\u4e3b\\u7b4b|8-D22|HOOP|^C1$/.test(s.text));\n  const blocks = output.blocks.map(b => ({\n    title: b.title ?? null,\n    x: {labels:b.xGrid.axes.map(a=>a.label),spansMm:b.xGrid.spansMm,totalConfirmed:b.xGrid.totalConfirmed, spanSumMm:b.xGrid.spansMm.reduce((a,b)=>a+b,0)},\n    y: {labels:b.yGrid.axes.map(a=>a.label),spansMm:b.yGrid.spansMm,totalConfirmed:b.yGrid.totalConfirmed, spanSumMm:b.yGrid.spansMm.reduce((a,b)=>a+b,0)},\n    placement_count:b.placements.length,\n    mark_counts:b.placements.reduce((acc,p)=>({...acc,[p.mark]:(acc[p.mark]??0)+1}),{})\n  }));\n  return [name, {file, fixture_sha256:sha(bytes), page:fixture.page, output, blocks,\n    joined_text_has_fukuzu:joined.includes('\\u4f0f\\u56f3'),\n    joined_text_has_hashirashinzu:joined.includes('\\u67f1\\u82af\\u7dda\\u56f3'),\n    title_tokens:titleTokens, relevant_text:relevantText,\n    vertical_title_text:vertical.filter(s=>/\\u4f0f\\u56f3|\\u67f1\\u82af\\u7dda\\u56f3|\\u8ef8\\u7d44\\u56f3/.test(s.text))\n  }];\n}));\nconst report = {\n phase:'42-plan-grid-soundness', step:2, name:'document-open-items', status:'in_progress',\n baseline_commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),\n measurement:{method:'Read unchanged TextItem fixtures; call parseFramingPlan; count returned blocks and placements. Titles are checked in compact item text, recovered row segments and vertical runs.', parser_sha256:sha(readFileSync('src/lib/import/framing-plan/parse.ts')), pages},\n paths_verified:names.map(n=>'tests/fixtures/section-import/textitems/'+n+'.json'),\n paths_expected_absent:[]\n};\nwriteFileSync('phases/42-plan-grid-soundness/step2-report.json', JSON.stringify(report,null,2)+'\\n');\nconsole.log(JSON.stringify(Object.fromEntries(Object.entries(pages).map(([name,p])=>[name,{blocks:p.blocks, title_tokens:p.title_tokens,relevant_text:p.relevant_text,joined_text_has_fukuzu:p.joined_text_has_fukuzu,joined_text_has_hashirashinzu:p.joined_text_has_hashirashinzu}])),null,2));",
+    "crosscheck_command": "PowerShell here-string piped to python -",
+    "crosscheck_script": "import json, pathlib, hashlib\np = pathlib.Path('phases/42-plan-grid-soundness/step2-report.json')\nr = json.loads(p.read_text(encoding='utf-8'))\npages = r['measurement']['pages']\nexpected = {\n 'ina-p7': {'x_labels':['1','2','3'],'x_spans':[4050,4050],'x_total':8100,'y_labels':['B','A'],'y_spans':[6400],'placements':6,'marks':{'C1':6}},\n 'shibata-p13': {'x_labels':['1','5'],'x_spans':[41000],'y_labels':['A','B','C'],'y_spans':[7000,8000],'placements':18},\n 'karatsu-jikugumi2-p1': {'x_labels':['X1','X2','X3','X4','X5','X6','X7'],'y_labels':['Y0','Y1','Y2'],'y_spans':[1900,2265],'placements':6},\n}\nr['remeasured'] = {}\nfor name, e in expected.items():\n    q = pages[name]\n    assert len(q['blocks']) == 1\n    b = q['blocks'][0]\n    assert b['title'] is None\n    actual = {'x_labels':b['x']['labels'],'x_spans':b['x']['spansMm'],'x_total':b['x']['spanSumMm'] if b['x']['totalConfirmed'] else None,'y_labels':b['y']['labels'],'y_spans':b['y']['spansMm'],'placements':b['placement_count'],'marks':b['mark_counts']}\n    comparisons = {key:{'claude':value,'remeasured':actual[key],'matches':value==actual[key]} for key,value in e.items()}\n    assert all(c['matches'] for c in comparisons.values())\n    r['remeasured'][name] = {'title':b['title'],'x':b['x'],'y':b['y'],'placement_count':b['placement_count'],'mark_counts':b['mark_counts'],'matches_claude':True,'comparisons':comparisons,'page_titles':[s['text'] for s in q['relevant_text'] if '\\u8ef8\\u7d44\\u56f3' in s['text'] or '\\u30ea\\u30b9\\u30c8' in s['text']], 'source':'phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/'+name}\nassert pages['ina-p7']['blocks'][0]['x'] == pages['ina-p6']['blocks'][0]['x']\nassert pages['ina-p7']['blocks'][0]['y'] == pages['ina-p6']['blocks'][0]['y']\ncontrols = {\n 'karatsu-fukuzu-p1':('tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json',42),\n 'karatsu-hashirashin-p1':('tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json',27),\n 'ina-p6':('tests/fixtures/plan-import/expected/ina-pump-p6-grid.json',4),\n}\nr['valid_untitled_controls'] = {}\nfor name,(file,count) in controls.items():\n    golden = json.loads(pathlib.Path(file).read_text(encoding='utf-8'))\n    b = pages[name]['blocks'][0]\n    for axis in ['x','y']:\n        assert b[axis]['labels'] == golden['blocks'][0][axis]['labels']\n        assert b[axis]['spansMm'] == golden['blocks'][0][axis]['spansMm']\n        assert b[axis]['totalConfirmed'] == (golden['blocks'][0][axis]['totalMm'] is not None)\n        if b[axis]['totalConfirmed']: assert b[axis]['spanSumMm'] == golden['blocks'][0][axis]['totalMm']\n    assert b['title'] is None and b['placement_count']==count\n    xs = [a['positionPt'] for a in pages[name]['output']['blocks'][0]['xGrid']['axes']]\n    associations = [{'text':s['text'],'x_pt':s['x'],'block_x_min_pt':min(xs),'block_x_max_pt':max(xs),'outside_x_extent':s['x']<min(xs) or s['x']>max(xs)} for s in pages[name]['title_tokens']]\n    assert all(t['outside_x_extent'] for t in associations)\n    r['valid_untitled_controls'][name] = {'title':None,'placement_count':count,'golden_grid_matches':True,'golden_file':file,'golden_sha256':hashlib.sha256(pathlib.Path(file).read_bytes()).hexdigest(),'golden_scope':'Axis labels, spans and declared total only; placement count is measured output, not a placement correctness oracle.','title_association':associations,'source':'phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/'+name}\n    r['paths_verified'].append(file)\nassert pages['karatsu-fukuzu-p1']['joined_text_has_fukuzu'] is False\nassert pages['karatsu-fukuzu-p1']['joined_text_has_hashirashinzu'] is False\nassert pages['karatsu-fukuzu-p1']['title_tokens']==[]\nassert pages['karatsu-fukuzu-p1']['vertical_title_text']==[]\nr['scale_unit_correction'] = {'saiki_pt_per_mm':0.986228607908399,'physical_scale_denominator':72/25.4/0.986228607908399,'note':'The approximately one value is pt/mm, not a physical 1:1 scale ratio. Physical conversion is approximately 1:2.8742.','source':'phases/42-plan-grid-soundness/step1-report.json#/census/removed/1/grid/scalePtPerMm'}\np.write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')\nprint(json.dumps({'remeasured_matches':{k:v['matches_claude'] for k,v in r['remeasured'].items()},'controls':r['valid_untitled_controls'],'scale_unit_correction':r['scale_unit_correction']},ensure_ascii=True))\n",
+    "note": "임시 스크립트 파일 없이 stdin으로 실행했다. 측정은 변경 없는 파서·픽스처를 읽고 step2-report.json만 쓴다."
+  },
+  "phase": "42-plan-grid-soundness",
+  "step": 2,
+  "name": "document-open-items",
+  "status": "completed",
+  "baseline_commit": "17ae6f9b126d2e3163bb907937793dc123797050",
+  "measurement": {
+    "method": "Read unchanged TextItem fixtures; call parseFramingPlan; count returned blocks and placements. Titles are checked in compact item text, recovered row segments and vertical runs.",
+    "parser_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+    "pages": {
+      "ina-p7": {
+        "file": "tests/fixtures/section-import/textitems/ina-p7.json",
+        "fixture_sha256": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+        "page": {
+          "widthPt": 1190.52002,
+          "heightPt": 841.92004
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "1",
+                  "positionPt": 293.8893757236328
+                },
+                {
+                  "label": "2",
+                  "positionPt": 351.2349743235938
+                },
+                {
+                  "label": "3",
+                  "positionPt": 408.70537292050784
+                }
+              ],
+              "spansMm": [
+                4050,
+                4050
+              ],
+              "scalePtPerMm": 0.014190221875781244,
+              "totalConfirmed": true
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "B",
+                  "positionPt": 576.4736582657623
+                },
+                {
+                  "label": "A",
+                  "positionPt": 667.2029342643432
+                }
+              ],
+              "spansMm": [
+                6400
+              ],
+              "scalePtPerMm": 0.014176449374778244,
+              "totalConfirmed": false
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "1",
+                    "positionPt": 293.8893757236328
+                  },
+                  {
+                    "label": "2",
+                    "positionPt": 351.2349743235938
+                  },
+                  {
+                    "label": "3",
+                    "positionPt": 408.70537292050784
+                  }
+                ],
+                "spansMm": [
+                  4050,
+                  4050
+                ],
+                "scalePtPerMm": 0.014190221875781244,
+                "totalConfirmed": true
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "B",
+                    "positionPt": 576.4736582657623
+                  },
+                  {
+                    "label": "A",
+                    "positionPt": 667.2029342643432
+                  }
+                ],
+                "spansMm": [
+                  6400
+                ],
+                "scalePtPerMm": 0.014176449374778244,
+                "totalConfirmed": false
+              },
+              "placements": [
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 0
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 0
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 1
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 1
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 1
+                }
+              ],
+              "unplacedMarks": []
+            }
+          ],
+          "issues": [
+            "寸法欠落"
+          ]
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "1",
+                "2",
+                "3"
+              ],
+              "spansMm": [
+                4050,
+                4050
+              ],
+              "totalConfirmed": true,
+              "spanSumMm": 8100
+            },
+            "y": {
+              "labels": [
+                "B",
+                "A"
+              ],
+              "spansMm": [
+                6400
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 6400
+            },
+            "placement_count": 6,
+            "mark_counts": {
+              "C1": 6
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": false,
+        "joined_text_has_hashirashinzu": false,
+        "title_tokens": [],
+        "relevant_text": [
+          {
+            "text": "大梁リスト",
+            "x": 91.78302518563422,
+            "y": 50.11317440931538
+          },
+          {
+            "text": "小梁リスト",
+            "x": 670.5170209112091,
+            "y": 50.11317440931538
+          },
+          {
+            "text": "地中梁リスト",
+            "x": 95.99383437563127,
+            "y": 264.7812114724314
+          },
+          {
+            "text": "壁リスト",
+            "x": 666.2366115693112,
+            "y": 264.7812114724314
+          },
+          {
+            "text": "スラブリスト",
+            "x": 670.2646986689315,
+            "y": 469.3823802464259
+          },
+          {
+            "text": "C1",
+            "x": 303.0660850221258,
+            "y": 580.8665681994664
+          },
+          {
+            "text": "C1",
+            "x": 360.53692249734553,
+            "y": 580.8665681994664
+          },
+          {
+            "text": "C1",
+            "x": 399.4564455488454,
+            "y": 580.8665681994664
+          },
+          {
+            "text": "主筋8-D22",
+            "x": 312.4070591604493,
+            "y": 637.5599834316406
+          },
+          {
+            "text": "HOOP-D13-@100",
+            "x": 315.0576059004493,
+            "y": 644.6962472890625
+          },
+          {
+            "text": "C1",
+            "x": 284.7060334334417,
+            "y": 646.8636457126804
+          },
+          {
+            "text": "C1",
+            "x": 360.53692249734553,
+            "y": 656.7036796006505
+          },
+          {
+            "text": "C1",
+            "x": 399.4806681577704,
+            "y": 656.7036796006505
+          },
+          {
+            "text": "柱リスト",
+            "x": 310.22310753365866,
+            "y": 790.8589520015528
+          }
+        ],
+        "vertical_title_text": []
+      },
+      "shibata-p13": {
+        "file": "tests/fixtures/section-import/textitems/shibata-p13.json",
+        "fixture_sha256": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+        "page": {
+          "widthPt": 2383.93701,
+          "heightPt": 1683.77954
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "1",
+                  "positionPt": 724.234512
+                },
+                {
+                  "label": "5",
+                  "positionPt": 1886.4420696000002
+                }
+              ],
+              "spansMm": [
+                41000
+              ],
+              "scalePtPerMm": 0.028346525795121955,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "A",
+                  "positionPt": 299.03762639999997
+                },
+                {
+                  "label": "B",
+                  "positionPt": 497.4628128
+                },
+                {
+                  "label": "C",
+                  "positionPt": 724.234512
+                }
+              ],
+              "spansMm": [
+                7000,
+                8000
+              ],
+              "scalePtPerMm": 0.0283464624,
+              "totalConfirmed": true
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "1",
+                    "positionPt": 724.234512
+                  },
+                  {
+                    "label": "5",
+                    "positionPt": 1886.4420696000002
+                  }
+                ],
+                "spansMm": [
+                  41000
+                ],
+                "scalePtPerMm": 0.028346525795121955,
+                "totalConfirmed": false
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "A",
+                    "positionPt": 299.03762639999997
+                  },
+                  {
+                    "label": "B",
+                    "positionPt": 497.4628128
+                  },
+                  {
+                    "label": "C",
+                    "positionPt": 724.234512
+                  }
+                ],
+                "spansMm": [
+                  7000,
+                  8000
+                ],
+                "scalePtPerMm": 0.0283464624,
+                "totalConfirmed": true
+              },
+              "placements": [
+                {
+                  "mark": "C6",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "C7",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "C6",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 0
+                },
+                {
+                  "mark": "C5",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 0
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G5",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 0
+                },
+                {
+                  "mark": "C6",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "W15",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "C7",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "W15",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "C6",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 0,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "C5",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 0,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "C6",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 1
+                },
+                {
+                  "mark": "FG3",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 1
+                },
+                {
+                  "mark": "FG3",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 1,
+                  "axis": "X"
+                },
+                {
+                  "mark": "FG4",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 1,
+                  "axis": "X"
+                },
+                {
+                  "mark": "FG5",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 1
+                }
+              ],
+              "unplacedMarks": []
+            }
+          ],
+          "issues": [
+            "寸法欠落"
+          ]
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "1",
+                "5"
+              ],
+              "spansMm": [
+                41000
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 41000
+            },
+            "y": {
+              "labels": [
+                "A",
+                "B",
+                "C"
+              ],
+              "spansMm": [
+                7000,
+                8000
+              ],
+              "totalConfirmed": true,
+              "spanSumMm": 15000
+            },
+            "placement_count": 18,
+            "mark_counts": {
+              "C6": 5,
+              "C7": 2,
+              "C5": 2,
+              "G3": 1,
+              "G4": 1,
+              "G5": 1,
+              "W15": 2,
+              "FG3": 2,
+              "FG4": 1,
+              "FG5": 1
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": false,
+        "joined_text_has_hashirashinzu": false,
+        "title_tokens": [],
+        "relevant_text": [
+          {
+            "text": "[本体棟]B通り軸組図S=1/100",
+            "x": 2079.189492,
+            "y": 590.4612968000001
+          },
+          {
+            "text": "C1",
+            "x": 311.9858208,
+            "y": 1136.8396952000003
+          },
+          {
+            "text": "[本体棟]1通り軸組図S=1/100",
+            "x": 497.4571728000001,
+            "y": 1405.4219624000002
+          },
+          {
+            "text": "[本体棟]3-2通り軸組図S=1/100",
+            "x": 1191.9453515999999,
+            "y": 1405.4219624000002
+          },
+          {
+            "text": "[本体棟]5通り軸組図S=1/100",
+            "x": 1884.7270896,
+            "y": 1405.4219624000002
+          }
+        ],
+        "vertical_title_text": []
+      },
+      "karatsu-jikugumi2-p1": {
+        "file": "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+        "fixture_sha256": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+        "page": {
+          "widthPt": 1191,
+          "heightPt": 842
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "X1",
+                  "positionPt": 165.32778
+                },
+                {
+                  "label": "X2",
+                  "positionPt": 211.43802
+                },
+                {
+                  "label": "X3",
+                  "positionPt": 278.60778
+                },
+                {
+                  "label": "X4",
+                  "positionPt": 383.84778
+                },
+                {
+                  "label": "X5",
+                  "positionPt": 468.02778
+                },
+                {
+                  "label": "X6",
+                  "positionPt": 608.75802
+                },
+                {
+                  "label": "X7",
+                  "positionPt": 708.9877799999999
+                }
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "scalePtPerMm": 0.02004595199999999,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "Y0",
+                  "positionPt": 165.32778
+                },
+                {
+                  "label": "Y1",
+                  "positionPt": 203.42777999999998
+                },
+                {
+                  "label": "Y2",
+                  "positionPt": 248.84777999999997
+                },
+                {
+                  "label": "Y3",
+                  "positionPt": 369.08778
+                },
+                {
+                  "label": "Y4",
+                  "positionPt": 450.65801999999996
+                }
+              ],
+              "spansMm": [
+                1900,
+                2265,
+                6000,
+                4069
+              ],
+              "scalePtPerMm": 0.020052631578947367,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "Y0",
+                  "positionPt": 636.56768
+                },
+                {
+                  "label": "Y1",
+                  "positionPt": 674.63802
+                },
+                {
+                  "label": "Y2",
+                  "positionPt": 720.02778
+                }
+              ],
+              "spansMm": [
+                1900,
+                2265
+              ],
+              "scalePtPerMm": 0.020039629139072857,
+              "totalConfirmed": true
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "X1",
+                    "positionPt": 165.32778
+                  },
+                  {
+                    "label": "X2",
+                    "positionPt": 211.43802
+                  },
+                  {
+                    "label": "X3",
+                    "positionPt": 278.60778
+                  },
+                  {
+                    "label": "X4",
+                    "positionPt": 383.84778
+                  },
+                  {
+                    "label": "X5",
+                    "positionPt": 468.02778
+                  },
+                  {
+                    "label": "X6",
+                    "positionPt": 608.75802
+                  },
+                  {
+                    "label": "X7",
+                    "positionPt": 708.9877799999999
+                  }
+                ],
+                "spansMm": [
+                  2300,
+                  3350,
+                  5250,
+                  4200,
+                  7025,
+                  5000
+                ],
+                "scalePtPerMm": 0.02004595199999999,
+                "totalConfirmed": false
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "Y0",
+                    "positionPt": 636.56768
+                  },
+                  {
+                    "label": "Y1",
+                    "positionPt": 674.63802
+                  },
+                  {
+                    "label": "Y2",
+                    "positionPt": 720.02778
+                  }
+                ],
+                "spansMm": [
+                  1900,
+                  2265
+                ],
+                "scalePtPerMm": 0.020039629139072857,
+                "totalConfirmed": true
+              },
+              "placements": [
+                {
+                  "mark": "FG3",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 0
+                },
+                {
+                  "mark": "FG3",
+                  "role": "ベイ",
+                  "ix": 1,
+                  "iy": 0
+                },
+                {
+                  "mark": "FG3",
+                  "role": "ベイ",
+                  "ix": 2,
+                  "iy": 0
+                },
+                {
+                  "mark": "FG3",
+                  "role": "ベイ",
+                  "ix": 3,
+                  "iy": 0
+                },
+                {
+                  "mark": "FG4",
+                  "role": "辺",
+                  "ix": 5,
+                  "iy": 0,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "FG4",
+                  "role": "辺",
+                  "ix": 6,
+                  "iy": 0,
+                  "axis": "Y"
+                }
+              ],
+              "unplacedMarks": []
+            }
+          ],
+          "issues": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ]
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "X1",
+                "X2",
+                "X3",
+                "X4",
+                "X5",
+                "X6",
+                "X7"
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 27125
+            },
+            "y": {
+              "labels": [
+                "Y0",
+                "Y1",
+                "Y2"
+              ],
+              "spansMm": [
+                1900,
+                2265
+              ],
+              "totalConfirmed": true,
+              "spanSumMm": 4165
+            },
+            "placement_count": 6,
+            "mark_counts": {
+              "FG3": 4,
+              "FG4": 2
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": false,
+        "joined_text_has_hashirashinzu": false,
+        "title_tokens": [],
+        "relevant_text": [
+          {
+            "text": "C1",
+            "x": 256.85804399999995,
+            "y": 104.61032399999999
+          },
+          {
+            "text": "C1",
+            "x": 377.5784279999999,
+            "y": 103.71052800000001
+          },
+          {
+            "text": "C1",
+            "x": 459.627996,
+            "y": 103.70952600000001
+          },
+          {
+            "text": "C1",
+            "x": 361.348284,
+            "y": 171.750336
+          },
+          {
+            "text": "C1",
+            "x": 256.858044,
+            "y": 175.58999999999997
+          },
+          {
+            "text": "C1",
+            "x": 458.667996,
+            "y": 175.58999999999997
+          },
+          {
+            "text": "X5通り軸組図",
+            "x": 315.657852,
+            "y": 299.61
+          },
+          {
+            "text": "X6通り軸組図",
+            "x": 678.9875119999999,
+            "y": 299.61
+          },
+          {
+            "text": "X7通り軸組図",
+            "x": 920.1276119999999,
+            "y": 299.61
+          },
+          {
+            "text": "Y0通り軸組図",
+            "x": 419.45756399999993,
+            "y": 524.73
+          },
+          {
+            "text": "Y1通り軸組図",
+            "x": 419.45756399999993,
+            "y": 727.23
+          }
+        ],
+        "vertical_title_text": []
+      },
+      "karatsu-fukuzu-p1": {
+        "file": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+        "fixture_sha256": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+        "page": {
+          "widthPt": 1191,
+          "heightPt": 842
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "X1",
+                  "positionPt": 202.46777999999998
+                },
+                {
+                  "label": "X2",
+                  "positionPt": 248.57802
+                },
+                {
+                  "label": "X3",
+                  "positionPt": 315.74778
+                },
+                {
+                  "label": "X4",
+                  "positionPt": 420.95802
+                },
+                {
+                  "label": "X5",
+                  "positionPt": 505.16778
+                },
+                {
+                  "label": "X6",
+                  "positionPt": 645.8980200000001
+                },
+                {
+                  "label": "X7",
+                  "positionPt": 746.1276799999999
+                }
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "scalePtPerMm": 0.02004793043478262,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "Y6",
+                  "positionPt": 175.5
+                },
+                {
+                  "label": "Y5",
+                  "positionPt": 221.5500000000001
+                },
+                {
+                  "label": "Y4",
+                  "positionPt": 254.26794360000002
+                },
+                {
+                  "label": "Y3",
+                  "positionPt": 337.44
+                },
+                {
+                  "label": "Y2",
+                  "positionPt": 457.62
+                },
+                {
+                  "label": "Y1",
+                  "positionPt": 503.04
+                },
+                {
+                  "label": "Y0",
+                  "positionPt": 541.14
+                }
+              ],
+              "spansMm": [
+                2204,
+                1806,
+                4069,
+                6000,
+                2265,
+                1900
+              ],
+              "scalePtPerMm": 0.02005263157894735,
+              "totalConfirmed": false
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "X1",
+                    "positionPt": 202.46777999999998
+                  },
+                  {
+                    "label": "X2",
+                    "positionPt": 248.57802
+                  },
+                  {
+                    "label": "X3",
+                    "positionPt": 315.74778
+                  },
+                  {
+                    "label": "X4",
+                    "positionPt": 420.95802
+                  },
+                  {
+                    "label": "X5",
+                    "positionPt": 505.16778
+                  },
+                  {
+                    "label": "X6",
+                    "positionPt": 645.8980200000001
+                  },
+                  {
+                    "label": "X7",
+                    "positionPt": 746.1276799999999
+                  }
+                ],
+                "spansMm": [
+                  2300,
+                  3350,
+                  5250,
+                  4200,
+                  7025,
+                  5000
+                ],
+                "scalePtPerMm": 0.02004793043478262,
+                "totalConfirmed": false
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "Y6",
+                    "positionPt": 175.5
+                  },
+                  {
+                    "label": "Y5",
+                    "positionPt": 221.5500000000001
+                  },
+                  {
+                    "label": "Y4",
+                    "positionPt": 254.26794360000002
+                  },
+                  {
+                    "label": "Y3",
+                    "positionPt": 337.44
+                  },
+                  {
+                    "label": "Y2",
+                    "positionPt": 457.62
+                  },
+                  {
+                    "label": "Y1",
+                    "positionPt": 503.04
+                  },
+                  {
+                    "label": "Y0",
+                    "positionPt": 541.14
+                  }
+                ],
+                "spansMm": [
+                  2204,
+                  1806,
+                  4069,
+                  6000,
+                  2265,
+                  1900
+                ],
+                "scalePtPerMm": 0.02005263157894735,
+                "totalConfirmed": false
+              },
+              "placements": [
+                {
+                  "mark": "S1",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 2,
+                  "axis": "X"
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 3,
+                  "iy": 2
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 1,
+                  "iy": 2
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 3,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 3,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 3,
+                  "axis": "X"
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 2,
+                  "iy": 3
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 3,
+                  "iy": 3
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 1,
+                  "iy": 3
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 4,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 4,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G2",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 4,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 4,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 5,
+                  "iy": 4,
+                  "axis": "X"
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 0,
+                  "iy": 4
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 2,
+                  "iy": 4
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 3,
+                  "iy": 4
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 5,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 5,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 5,
+                  "axis": "X"
+                },
+                {
+                  "mark": "S1",
+                  "role": "ベイ",
+                  "ix": 3,
+                  "iy": 5
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "格子点",
+                  "ix": 3,
+                  "iy": 6
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G3",
+                  "role": "辺",
+                  "ix": 5,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 4,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 5,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 4,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G1",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 3,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G1",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 3,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 4,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 2
+                },
+                {
+                  "mark": "G1",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 3,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 4,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 4,
+                  "iy": 5,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G1",
+                  "role": "辺",
+                  "ix": 4,
+                  "iy": 3,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G1",
+                  "role": "辺",
+                  "ix": 4,
+                  "iy": 2,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "辺",
+                  "ix": 4,
+                  "iy": 4,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "G4",
+                  "role": "格子点",
+                  "ix": 5,
+                  "iy": 5
+                },
+                {
+                  "mark": "G4",
+                  "role": "格子点",
+                  "ix": 6,
+                  "iy": 5
+                }
+              ],
+              "unplacedMarks": [
+                "S1"
+              ]
+            }
+          ],
+          "issues": []
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "X1",
+                "X2",
+                "X3",
+                "X4",
+                "X5",
+                "X6",
+                "X7"
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 27125
+            },
+            "y": {
+              "labels": [
+                "Y6",
+                "Y5",
+                "Y4",
+                "Y3",
+                "Y2",
+                "Y1",
+                "Y0"
+              ],
+              "spansMm": [
+                2204,
+                1806,
+                4069,
+                6000,
+                2265,
+                1900
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 18244
+            },
+            "placement_count": 42,
+            "mark_counts": {
+              "S1": 10,
+              "G2": 6,
+              "G3": 11,
+              "G4": 9,
+              "G1": 6
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": false,
+        "joined_text_has_hashirashinzu": false,
+        "title_tokens": [],
+        "relevant_text": [
+          {
+            "text": "床配筋リスト",
+            "x": 871.497468,
+            "y": 597.93
+          },
+          {
+            "text": "短辺(主筋)方向",
+            "x": 934.7967920000001,
+            "y": 617.250296
+          }
+        ],
+        "vertical_title_text": []
+      },
+      "karatsu-hashirashin-p1": {
+        "file": "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+        "fixture_sha256": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+        "page": {
+          "widthPt": 1191,
+          "heightPt": 842
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "X1",
+                  "positionPt": 326.33802
+                },
+                {
+                  "label": "X2",
+                  "positionPt": 372.44777999999997
+                },
+                {
+                  "label": "X3",
+                  "positionPt": 439.58778
+                },
+                {
+                  "label": "X4",
+                  "positionPt": 544.82768
+                },
+                {
+                  "label": "X5",
+                  "positionPt": 628.94768
+                },
+                {
+                  "label": "X6",
+                  "positionPt": 769.76768
+                },
+                {
+                  "label": "X7",
+                  "positionPt": 869.96778
+                }
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "scalePtPerMm": 0.020045551601423496,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "Y6",
+                  "positionPt": 235.44
+                },
+                {
+                  "label": "Y5",
+                  "positionPt": 279.6
+                },
+                {
+                  "label": "Y4",
+                  "positionPt": 315.84
+                },
+                {
+                  "label": "Y3",
+                  "positionPt": 397.38
+                },
+                {
+                  "label": "Y2",
+                  "positionPt": 517.5599
+                },
+                {
+                  "label": "Y1",
+                  "positionPt": 563.479964
+                },
+                {
+                  "label": "Y0",
+                  "positionPt": 601.2800000000001
+                }
+              ],
+              "spansMm": [
+                2204,
+                1806,
+                4069,
+                6000,
+                2265,
+                1900
+              ],
+              "scalePtPerMm": 0.02005263157894738,
+              "totalConfirmed": false
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "X1",
+                    "positionPt": 326.33802
+                  },
+                  {
+                    "label": "X2",
+                    "positionPt": 372.44777999999997
+                  },
+                  {
+                    "label": "X3",
+                    "positionPt": 439.58778
+                  },
+                  {
+                    "label": "X4",
+                    "positionPt": 544.82768
+                  },
+                  {
+                    "label": "X5",
+                    "positionPt": 628.94768
+                  },
+                  {
+                    "label": "X6",
+                    "positionPt": 769.76768
+                  },
+                  {
+                    "label": "X7",
+                    "positionPt": 869.96778
+                  }
+                ],
+                "spansMm": [
+                  2300,
+                  3350,
+                  5250,
+                  4200,
+                  7025,
+                  5000
+                ],
+                "scalePtPerMm": 0.020045551601423496,
+                "totalConfirmed": false
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "Y6",
+                    "positionPt": 235.44
+                  },
+                  {
+                    "label": "Y5",
+                    "positionPt": 279.6
+                  },
+                  {
+                    "label": "Y4",
+                    "positionPt": 315.84
+                  },
+                  {
+                    "label": "Y3",
+                    "positionPt": 397.38
+                  },
+                  {
+                    "label": "Y2",
+                    "positionPt": 517.5599
+                  },
+                  {
+                    "label": "Y1",
+                    "positionPt": 563.479964
+                  },
+                  {
+                    "label": "Y0",
+                    "positionPt": 601.2800000000001
+                  }
+                ],
+                "spansMm": [
+                  2204,
+                  1806,
+                  4069,
+                  6000,
+                  2265,
+                  1900
+                ],
+                "scalePtPerMm": 0.02005263157894738,
+                "totalConfirmed": false
+              },
+              "placements": [
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 0
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 3,
+                  "iy": 1
+                },
+                {
+                  "mark": "C1",
+                  "role": "ベイ",
+                  "ix": 1,
+                  "iy": 1
+                },
+                {
+                  "mark": "C1",
+                  "role": "辺",
+                  "ix": 4,
+                  "iy": 1,
+                  "axis": "Y"
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 3
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 3
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 3,
+                  "iy": 3
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 4,
+                  "iy": 3
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 4
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 4
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 3,
+                  "iy": 4
+                },
+                {
+                  "mark": "C1",
+                  "role": "格子点",
+                  "ix": 4,
+                  "iy": 4
+                },
+                {
+                  "mark": "C2",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 4
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 5,
+                  "iy": 4
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 6,
+                  "iy": 4
+                },
+                {
+                  "mark": "C2",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 5
+                },
+                {
+                  "mark": "C2",
+                  "role": "格子点",
+                  "ix": 1,
+                  "iy": 5
+                },
+                {
+                  "mark": "C2",
+                  "role": "格子点",
+                  "ix": 3,
+                  "iy": 5
+                },
+                {
+                  "mark": "C2",
+                  "role": "格子点",
+                  "ix": 4,
+                  "iy": 5
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 0,
+                  "iy": 6
+                },
+                {
+                  "mark": "C3",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 2,
+                  "iy": 6
+                },
+                {
+                  "mark": "C3",
+                  "role": "辺",
+                  "ix": 2,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "C3",
+                  "role": "辺",
+                  "ix": 3,
+                  "iy": 6,
+                  "axis": "X"
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 4,
+                  "iy": 6
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 5,
+                  "iy": 6
+                },
+                {
+                  "mark": "C3",
+                  "role": "格子点",
+                  "ix": 6,
+                  "iy": 6
+                }
+              ],
+              "unplacedMarks": []
+            }
+          ],
+          "issues": []
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "X1",
+                "X2",
+                "X3",
+                "X4",
+                "X5",
+                "X6",
+                "X7"
+              ],
+              "spansMm": [
+                2300,
+                3350,
+                5250,
+                4200,
+                7025,
+                5000
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 27125
+            },
+            "y": {
+              "labels": [
+                "Y6",
+                "Y5",
+                "Y4",
+                "Y3",
+                "Y2",
+                "Y1",
+                "Y0"
+              ],
+              "spansMm": [
+                2204,
+                1806,
+                4069,
+                6000,
+                2265,
+                1900
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 18244
+            },
+            "placement_count": 27,
+            "mark_counts": {
+              "C1": 12,
+              "C2": 5,
+              "C3": 10
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": false,
+        "joined_text_has_hashirashinzu": true,
+        "title_tokens": [
+          {
+            "text": "1階柱芯線図1:501:100",
+            "x": 1023.8670599999999,
+            "y": 723.93
+          }
+        ],
+        "relevant_text": [
+          {
+            "text": "C1",
+            "x": 453.29804399999995,
+            "y": 220.109964
+          },
+          {
+            "text": "C1",
+            "x": 532.5279959999999,
+            "y": 281.25
+          },
+          {
+            "text": "C1",
+            "x": 398.847996,
+            "y": 300.87
+          },
+          {
+            "text": "C1",
+            "x": 638.5180439999999,
+            "y": 300.27
+          },
+          {
+            "text": "C1",
+            "x": 382.0172759999999,
+            "y": 381.81
+          },
+          {
+            "text": "C1",
+            "x": 449.1573719999999,
+            "y": 381.81
+          },
+          {
+            "text": "C1",
+            "x": 554.3979479999999,
+            "y": 381.81
+          },
+          {
+            "text": "C1",
+            "x": 617.9376599999999,
+            "y": 401.370042
+          },
+          {
+            "text": "C1",
+            "x": 382.018044,
+            "y": 502.05
+          },
+          {
+            "text": "C1",
+            "x": 449.1581399999999,
+            "y": 502.05
+          },
+          {
+            "text": "C1",
+            "x": 554.3987159999998,
+            "y": 502.05
+          },
+          {
+            "text": "C1",
+            "x": 621.8980439999999,
+            "y": 501.69
+          }
+        ],
+        "vertical_title_text": []
+      },
+      "ina-p6": {
+        "file": "tests/fixtures/section-import/textitems/ina-p6.json",
+        "fixture_sha256": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+        "page": {
+          "widthPt": 1190.52002,
+          "heightPt": 841.92004
+        },
+        "output": {
+          "grids": [
+            {
+              "direction": "X",
+              "axes": [
+                {
+                  "label": "1",
+                  "positionPt": 656.2725148916015
+                },
+                {
+                  "label": "2",
+                  "positionPt": 713.6805134900391
+                },
+                {
+                  "label": "3",
+                  "positionPt": 771.0261120900001
+                }
+              ],
+              "spansMm": [
+                4050,
+                4050
+              ],
+              "scalePtPerMm": 0.014174814468750007,
+              "totalConfirmed": true
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "B",
+                  "positionPt": 149.88216326292422
+                },
+                {
+                  "label": "A",
+                  "positionPt": 240.61142047344197
+                }
+              ],
+              "spansMm": [
+                6400
+              ],
+              "scalePtPerMm": 0.014176446439143398,
+              "totalConfirmed": false
+            },
+            {
+              "direction": "Y",
+              "axes": [
+                {
+                  "label": "A",
+                  "positionPt": 921.9600148916015
+                },
+                {
+                  "label": "B",
+                  "positionPt": 1012.6896126765234
+                }
+              ],
+              "spansMm": [
+                6400
+              ],
+              "scalePtPerMm": 0.014176499653894049,
+              "totalConfirmed": false
+            }
+          ],
+          "blocks": [
+            {
+              "xGrid": {
+                "direction": "X",
+                "axes": [
+                  {
+                    "label": "1",
+                    "positionPt": 267.9543772470703
+                  },
+                  {
+                    "label": "2",
+                    "positionPt": 325.2999758470313
+                  },
+                  {
+                    "label": "3",
+                    "positionPt": 382.7079744454688
+                  }
+                ],
+                "spansMm": [
+                  4050,
+                  4050
+                ],
+                "scalePtPerMm": 0.014174814468749993,
+                "totalConfirmed": true
+              },
+              "yGrid": {
+                "direction": "Y",
+                "axes": [
+                  {
+                    "label": "B",
+                    "positionPt": 565.3188522083892
+                  },
+                  {
+                    "label": "A",
+                    "positionPt": 656.0481282069703
+                  }
+                ],
+                "spansMm": [
+                  6400
+                ],
+                "scalePtPerMm": 0.014176449374778315,
+                "totalConfirmed": false
+              },
+              "placements": [
+                {
+                  "mark": "FG1",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "FG1",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 0,
+                  "axis": "X"
+                },
+                {
+                  "mark": "FG1",
+                  "role": "辺",
+                  "ix": 0,
+                  "iy": 1,
+                  "axis": "X"
+                },
+                {
+                  "mark": "FG1",
+                  "role": "辺",
+                  "ix": 1,
+                  "iy": 1,
+                  "axis": "X"
+                }
+              ],
+              "unplacedMarks": []
+            }
+          ],
+          "issues": [
+            "通り芯対応不明"
+          ]
+        },
+        "blocks": [
+          {
+            "title": null,
+            "x": {
+              "labels": [
+                "1",
+                "2",
+                "3"
+              ],
+              "spansMm": [
+                4050,
+                4050
+              ],
+              "totalConfirmed": true,
+              "spanSumMm": 8100
+            },
+            "y": {
+              "labels": [
+                "B",
+                "A"
+              ],
+              "spansMm": [
+                6400
+              ],
+              "totalConfirmed": false,
+              "spanSumMm": 6400
+            },
+            "placement_count": 4,
+            "mark_counts": {
+              "FG1": 4
+            }
+          }
+        ],
+        "joined_text_has_fukuzu": true,
+        "joined_text_has_hashirashinzu": false,
+        "title_tokens": [
+          {
+            "text": "R階床梁伏図",
+            "x": 126.91696997940761,
+            "y": 269.45512953364965
+          },
+          {
+            "text": "1階上部床梁伏図",
+            "x": 135.3733884353521,
+            "y": 477.0708226293909
+          },
+          {
+            "text": "1階床梁伏図",
+            "x": 126.91696997940761,
+            "y": 684.9077500627711
+          }
+        ],
+        "relevant_text": [
+          {
+            "text": "C1",
+            "x": 665.4702852704169,
+            "y": 165.8959842172505
+          },
+          {
+            "text": "C1",
+            "x": 722.8352998315039,
+            "y": 165.8959842172505
+          },
+          {
+            "text": "C1",
+            "x": 761.8198456445327,
+            "y": 165.8959842172505
+          },
+          {
+            "text": "C1",
+            "x": 931.1404789507283,
+            "y": 165.8959842172505
+          },
+          {
+            "text": "C1",
+            "x": 1003.4383493648432,
+            "y": 165.8959842172505
+          },
+          {
+            "text": "A通り",
+            "x": 600.4339908141956,
+            "y": 224.8178953421671
+          },
+          {
+            "text": "1通り",
+            "x": 866.0233122468508,
+            "y": 224.8178953421671
+          },
+          {
+            "text": "C1",
+            "x": 665.4702852704169,
+            "y": 348.7813160497625
+          },
+          {
+            "text": "C1",
+            "x": 722.8352998315039,
+            "y": 348.7813160497625
+          },
+          {
+            "text": "C1",
+            "x": 761.8198456445327,
+            "y": 348.7813160497625
+          },
+          {
+            "text": "C1",
+            "x": 931.1493812847602,
+            "y": 348.7813160497625
+          },
+          {
+            "text": "C1",
+            "x": 1003.4268516225733,
+            "y": 348.7813160497625
+          },
+          {
+            "text": "C1",
+            "x": 277.13569243344176,
+            "y": 361.98459662918447
+          },
+          {
+            "text": "C1",
+            "x": 334.50070699452857,
+            "y": 361.98459662918447
+          },
+          {
+            "text": "C1",
+            "x": 373.50565288385934,
+            "y": 361.98459662918447
+          },
+          {
+            "text": "B通り",
+            "x": 600.4339908141956,
+            "y": 407.70886737669014
+          },
+          {
+            "text": "2通り",
+            "x": 866.0233122468508,
+            "y": 407.70886737669014
+          },
+          {
+            "text": "C1",
+            "x": 277.13569243344176,
+            "y": 437.70634165771855
+          },
+          {
+            "text": "C1",
+            "x": 334.50070699452857,
+            "y": 437.70634165771855
+          },
+          {
+            "text": "C1",
+            "x": 373.50565288385934,
+            "y": 437.70634165771855
+          },
+          {
+            "text": "C1",
+            "x": 931.1493812847602,
+            "y": 531.5321468715244
+          },
+          {
+            "text": "C1",
+            "x": 1003.4268516225733,
+            "y": 531.5321468715244
+          },
+          {
+            "text": "3通り",
+            "x": 866.0233122468508,
+            "y": 590.461570629391
+          },
+          {
+            "text": "軸組図",
+            "x": 764.8143741042672,
+            "y": 694.6151313076441
+          }
+        ],
+        "vertical_title_text": []
+      }
+    }
+  },
+  "paths_verified": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "docs/MILESTONES.md",
+    "docs/RISKS.md",
+    "package.json",
+    "phases/42-plan-grid-soundness/index.json",
+    "phases/42-plan-grid-soundness/step0-report.json",
+    "phases/42-plan-grid-soundness/step1-report.json",
+    "phases/42-plan-grid-soundness/step2-report.json",
+    "phases/42-plan-grid-soundness/step2.md",
+    "scripts/check-citations.py",
+    "scripts/ci/review-carryforward.sh",
+    "scripts/ci/review-carryforward.spec.sh",
+    "scripts/ci/review-filter.sh",
+    "scripts/ci/review-scope.spec.sh",
+    "scripts/githooks/pre-commit",
+    "src/lib/import/framing-plan/parse.ts",
+    "src/lib/import/framing-plan/types.ts",
+    "src/lib/import/runs.ts",
+    "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+    "tests/fixtures/section-import/SOURCES.md",
+    "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+    "tests/fixtures/section-import/textitems/ina-p6.json",
+    "tests/fixtures/section-import/textitems/ina-p7.json",
+    "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+    "tests/fixtures/section-import/textitems/shibata-p13.json"
+  ],
+  "paths_expected_absent": [],
+  "remeasured": {
+    "ina-p7": {
+      "title": null,
+      "x": {
+        "labels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "spansMm": [
+          4050,
+          4050
+        ],
+        "totalConfirmed": true,
+        "spanSumMm": 8100
+      },
+      "y": {
+        "labels": [
+          "B",
+          "A"
+        ],
+        "spansMm": [
+          6400
+        ],
+        "totalConfirmed": false,
+        "spanSumMm": 6400
+      },
+      "placement_count": 6,
+      "mark_counts": {
+        "C1": 6
+      },
+      "matches_claude": true,
+      "comparisons": {
+        "x_labels": {
+          "claude": [
+            "1",
+            "2",
+            "3"
+          ],
+          "remeasured": [
+            "1",
+            "2",
+            "3"
+          ],
+          "matches": true
+        },
+        "x_spans": {
+          "claude": [
+            4050,
+            4050
+          ],
+          "remeasured": [
+            4050,
+            4050
+          ],
+          "matches": true
+        },
+        "x_total": {
+          "claude": 8100,
+          "remeasured": 8100,
+          "matches": true
+        },
+        "y_labels": {
+          "claude": [
+            "B",
+            "A"
+          ],
+          "remeasured": [
+            "B",
+            "A"
+          ],
+          "matches": true
+        },
+        "y_spans": {
+          "claude": [
+            6400
+          ],
+          "remeasured": [
+            6400
+          ],
+          "matches": true
+        },
+        "placements": {
+          "claude": 6,
+          "remeasured": 6,
+          "matches": true
+        },
+        "marks": {
+          "claude": {
+            "C1": 6
+          },
+          "remeasured": {
+            "C1": 6
+          },
+          "matches": true
+        }
+      },
+      "page_titles": [
+        "大梁リスト",
+        "小梁リスト",
+        "地中梁リスト",
+        "壁リスト",
+        "スラブリスト",
+        "柱リスト"
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/ina-p7",
+      "context": {
+        "grid_equals_ina_p6": true,
+        "grid_matches_ina_p6_golden": true,
+        "recovered_annotations": [
+          "主筋8-D22",
+          "HOOP-D13-@100"
+        ],
+        "interpretation": "C1 labels and rebar annotations belong to the column-list sketch area; grid agreement does not validate a plan block.",
+        "source": "tests/fixtures/section-import/expected/ina-pump-p7-lists.json#/lists/3",
+        "text_evidence": {
+          "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/ina-p7/relevant_text"
+        }
+      }
+    },
+    "shibata-p13": {
+      "title": null,
+      "x": {
+        "labels": [
+          "1",
+          "5"
+        ],
+        "spansMm": [
+          41000
+        ],
+        "totalConfirmed": false,
+        "spanSumMm": 41000
+      },
+      "y": {
+        "labels": [
+          "A",
+          "B",
+          "C"
+        ],
+        "spansMm": [
+          7000,
+          8000
+        ],
+        "totalConfirmed": true,
+        "spanSumMm": 15000
+      },
+      "placement_count": 18,
+      "mark_counts": {
+        "C6": 5,
+        "C7": 2,
+        "C5": 2,
+        "G3": 1,
+        "G4": 1,
+        "G5": 1,
+        "W15": 2,
+        "FG3": 2,
+        "FG4": 1,
+        "FG5": 1
+      },
+      "matches_claude": true,
+      "comparisons": {
+        "x_labels": {
+          "claude": [
+            "1",
+            "5"
+          ],
+          "remeasured": [
+            "1",
+            "5"
+          ],
+          "matches": true
+        },
+        "x_spans": {
+          "claude": [
+            41000
+          ],
+          "remeasured": [
+            41000
+          ],
+          "matches": true
+        },
+        "y_labels": {
+          "claude": [
+            "A",
+            "B",
+            "C"
+          ],
+          "remeasured": [
+            "A",
+            "B",
+            "C"
+          ],
+          "matches": true
+        },
+        "y_spans": {
+          "claude": [
+            7000,
+            8000
+          ],
+          "remeasured": [
+            7000,
+            8000
+          ],
+          "matches": true
+        },
+        "placements": {
+          "claude": 18,
+          "remeasured": 18,
+          "matches": true
+        }
+      },
+      "page_titles": [
+        "[本体棟]B通り軸組図S=1/100",
+        "[本体棟]1通り軸組図S=1/100",
+        "[本体棟]3-2通り軸組図S=1/100",
+        "[本体棟]5通り軸組図S=1/100"
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/shibata-p13"
+    },
+    "karatsu-jikugumi2-p1": {
+      "title": null,
+      "x": {
+        "labels": [
+          "X1",
+          "X2",
+          "X3",
+          "X4",
+          "X5",
+          "X6",
+          "X7"
+        ],
+        "spansMm": [
+          2300,
+          3350,
+          5250,
+          4200,
+          7025,
+          5000
+        ],
+        "totalConfirmed": false,
+        "spanSumMm": 27125
+      },
+      "y": {
+        "labels": [
+          "Y0",
+          "Y1",
+          "Y2"
+        ],
+        "spansMm": [
+          1900,
+          2265
+        ],
+        "totalConfirmed": true,
+        "spanSumMm": 4165
+      },
+      "placement_count": 6,
+      "mark_counts": {
+        "FG3": 4,
+        "FG4": 2
+      },
+      "matches_claude": true,
+      "comparisons": {
+        "x_labels": {
+          "claude": [
+            "X1",
+            "X2",
+            "X3",
+            "X4",
+            "X5",
+            "X6",
+            "X7"
+          ],
+          "remeasured": [
+            "X1",
+            "X2",
+            "X3",
+            "X4",
+            "X5",
+            "X6",
+            "X7"
+          ],
+          "matches": true
+        },
+        "y_labels": {
+          "claude": [
+            "Y0",
+            "Y1",
+            "Y2"
+          ],
+          "remeasured": [
+            "Y0",
+            "Y1",
+            "Y2"
+          ],
+          "matches": true
+        },
+        "y_spans": {
+          "claude": [
+            1900,
+            2265
+          ],
+          "remeasured": [
+            1900,
+            2265
+          ],
+          "matches": true
+        },
+        "placements": {
+          "claude": 6,
+          "remeasured": 6,
+          "matches": true
+        }
+      },
+      "page_titles": [
+        "X5通り軸組図",
+        "X6通り軸組図",
+        "X7通り軸組図",
+        "Y0通り軸組図",
+        "Y1通り軸組図"
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/karatsu-jikugumi2-p1"
+    }
+  },
+  "valid_untitled_controls": {
+    "karatsu-fukuzu-p1": {
+      "title": null,
+      "placement_count": 42,
+      "golden_grid_matches": true,
+      "golden_file": "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+      "golden_sha256": "8f2fc1b4b9247f593bee197141434c6c957a3552bdecfab7b01a0fba9c280976",
+      "golden_scope": "Axis labels, spans and declared total only; placement count is measured output, not a placement correctness oracle.",
+      "title_association": [],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/karatsu-fukuzu-p1"
+    },
+    "karatsu-hashirashin-p1": {
+      "title": null,
+      "placement_count": 27,
+      "golden_grid_matches": true,
+      "golden_file": "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+      "golden_sha256": "a88d9e50eba35c1ddc943eeea7ce2644fd0cc1746d04f6033baf428663b4f8e6",
+      "golden_scope": "Axis labels, spans and declared total only; placement count is measured output, not a placement correctness oracle.",
+      "title_association": [
+        {
+          "text": "1階柱芯線図1:501:100",
+          "x_pt": 1023.8670599999999,
+          "block_x_min_pt": 326.33802,
+          "block_x_max_pt": 869.96778,
+          "outside_x_extent": true
+        }
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/karatsu-hashirashin-p1"
+    },
+    "ina-p6": {
+      "title": null,
+      "placement_count": 4,
+      "golden_grid_matches": true,
+      "golden_file": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+      "golden_sha256": "40515e95da3af3004852e447e8a0c4e391dd87e4b9fc6266a5d051fb59f8d034",
+      "golden_scope": "Axis labels, spans and declared total only; placement count is measured output, not a placement correctness oracle.",
+      "title_association": [
+        {
+          "text": "R階床梁伏図",
+          "x_pt": 126.91696997940761,
+          "block_x_min_pt": 267.9543772470703,
+          "block_x_max_pt": 382.7079744454688,
+          "outside_x_extent": true
+        },
+        {
+          "text": "1階上部床梁伏図",
+          "x_pt": 135.3733884353521,
+          "block_x_min_pt": 267.9543772470703,
+          "block_x_max_pt": 382.7079744454688,
+          "outside_x_extent": true
+        },
+        {
+          "text": "1階床梁伏図",
+          "x_pt": 126.91696997940761,
+          "block_x_min_pt": 267.9543772470703,
+          "block_x_max_pt": 382.7079744454688,
+          "outside_x_extent": true
+        }
+      ],
+      "source": "phases/42-plan-grid-soundness/step2-report.json#/measurement/pages/ina-p6"
+    }
+  },
+  "scale_unit_correction": {
+    "saiki_pt_per_mm": 0.986228607908399,
+    "physical_scale_denominator": 2.8742277871081803,
+    "note": "The approximately one value is pt/mm, not a physical 1:1 scale ratio. Physical conversion is approximately 1:2.8742.",
+    "source": "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1/grid/scalePtPerMm"
+  },
+  "scope_checks": {
+    "code_tests_golden_fixtures_unchanged": true,
+    "measurement_input_hashes_unchanged": true,
+    "tracked_changes": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "docs/MILESTONES.md",
+      "docs/RISKS.md",
+      "phases/42-plan-grid-soundness/index.json"
+    ],
+    "mirror_tables_identical": true,
+    "mirror_body_identical_except_existing_agents_preamble": true,
+    "all_edits_found": true,
+    "test_note": "No test code or fixtures changed; this documentation step does not rerun or claim a new full-suite count."
+  },
+  "validation": {
+    "citation_check": {
+      "command": "python scripts/check-citations.py phases/42-plan-grid-soundness/step*-report.json",
+      "exit_code": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "Existing unused _omitted variable in src/app/api/oncall/alert/route.test.ts:161; file unchanged."
+    },
+    "numeric_citation_checks": {
+      "scalar_sources": [
+        "phases/42-plan-grid-soundness/step0-report.json#/corpus/page_count",
+        "phases/42-plan-grid-soundness/step0-report.json#/corpus/accepted_span_measurements",
+        "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/accepted_max/value_pt",
+        "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/competing_min/value_pt",
+        "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/tolerance_pt",
+        "phases/42-plan-grid-soundness/step0-report.json#/midpoint_margin/holds",
+        "phases/42-plan-grid-soundness/step0-report.json#/competing_pair_accepted/dimension_value_mm",
+        "phases/42-plan-grid-soundness/step0-report.json#/unconfirmed_margin/competing_min/value_pt",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/removed/1/grid/scalePtPerMm",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/pages_count",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/grids_before",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/grids_after",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/retained_grids_deep_equal",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_before",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/blocks_after",
+        "phases/42-plan-grid-soundness/step1-report.json#/census/all_blocks_deep_equal",
+        "phases/42-plan-grid-soundness/step2-report.json#/refuted_rules/0/evidence/no_title_in_fixture/recovered_title_tokens",
+        "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-fukuzu-p1/placement_count",
+        "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/karatsu-hashirashin-p1/placement_count",
+        "phases/42-plan-grid-soundness/step2-report.json#/valid_untitled_controls/ina-p6/placement_count"
+      ],
+      "all_match": true,
+      "sweep_rows_match": true
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "mirror_check": "Risk and milestone rows are identical; full bodies match after stripping the pre-existing AGENTS-only preamble.",
+    "tests": "Code, tests, golden data and fixtures are unchanged. Full test suite was not rerun for this documentation-only step."
+  },
+  "summary": "세 면 블록 재계측·제목 규칙 반증을 기록하고 R10·R15를 기하 오탐 해소와 열린 블록 오탐으로 구분; 문서 동기화·인용 검사·lint 통과."
+}

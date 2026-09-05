@@ -214,8 +214,15 @@
     },
     {
       "dir": "42-plan-grid-soundness",
-      "status": "pending",
-      "created_at": "2026-09-05T19:30:00+0900"
+      "status": "completed",
+      "created_at": "2026-09-05T19:30:00+0900",
+      "completed_at": "2026-09-05T20:32:36+0900"
+    },
+    {
+      "dir": "43-midpoint-comment-currency",
+      "status": "completed",
+      "created_at": "2026-09-05T20:45:00+0900",
+      "completed_at": "2026-09-05T20:55:47+0900"
     }
   ]
 }

@@ -1,0 +1,3181 @@
+{
+  "phase": "42-plan-grid-soundness",
+  "step": 1,
+  "name": "grid-geometry-soundness",
+  "status": "completed",
+  "summary": "P1·P2와 양 로케일 사유 코드 추가: 36면 격자 55→53, 나머지 53후보와 19블록 전체 객체 불변; 변조 2건 검출·SHA-256 복원, 1811테스트·lint·tsc 통과.",
+  "baseline": {
+    "commit": "9b2c50ff8e2fe3bf5ac1de575cc7bdfbb44109ca",
+    "parser_path": "src/lib/import/framing-plan/parse.ts",
+    "parser_git_blob_sha256": "0a892671382a68e72da6eeb7b5ec08b376f7887a635d55e1d8a00694db16886b",
+    "parser_worktree_sha256": "faf57b026d60620ed8114ab465617b536c2e0af38c079445d772ad0c5654738b",
+    "method": "구현 전 깨끗한 파서로 재계측. census.ts가 git show HEAD:parse.ts와 작업 파일의 LF 정규화 텍스트 일치를 assert했다. CRLF 체크아웃 차이만 허용했다. 이전 step 보고서의 출력을 복사하지 않았다.",
+    "before_command": "npx tsx tmp/phase42-step1/census.ts before",
+    "after_command": "npx tsx tmp/phase42-step1/census.ts after",
+    "after_census_parser_sha256": "93b0738a3af7ce18989f74a49c3c6e3615dc2c0f9f13c0b6fac50e939c8690cb",
+    "final_parser_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+    "post_census_change": "주석의 정상 53후보를 나머지 53후보로 정정했다. 이들은 축척 검사를 통과한 후보이지 실제 伏図임이 보증된 후보가 아니다. 동작 변경은 없다."
+  },
+  "scale_policy": {
+    "support_range_inclusive": {
+      "minimum": "1:1000",
+      "maximum": "1:10"
+    },
+    "min_pt_per_mm": 0.0028346456692913387,
+    "max_pt_per_mm": 0.2834645669291339,
+    "conversion": "1 inch = 72 pt = 25.4 mm; scalePtPerMm = (72 / 25.4) / scale denominator.",
+    "reference": {
+      "document": "建築工事設計図書作成基準（令和2年改定）",
+      "url": "https://www.mlit.go.jp/common/001157950.pdf",
+      "printed_page": 9,
+      "pdf_page": 10,
+      "section": "4.2, rows 25–27",
+      "verified_fact": "基礎伏図・各階床伏図・軸組図의 기본 축척은 1/100 또는 1/200이며 1/10・1/20・1/30・1/50도 허용한다."
+    },
+    "decision": "명시된 1:10 확대 伏図까지 포함한다. 축소 PDF의 실측 축척을 허용하도록 1:200의 선형 5배 축소(1:1000)를 하한으로 정한다. A0→A4의 선형 약 4배 축소(1:800)보다 1.25배 여유다. 하한 1:1000 자체가 원문에 정해져 있다는 뜻은 아니며, 일반 도면 축척과 용지 축소에서 정한 제품의 후보 인식 한계다.",
+    "independent_of_corpus": "53개 후보의 min/max에 오차율을 붙여 경계를 만들지 않았다. 도면 축척과 축소를 근거로 정한 범위 안에 관측값이 충분한 여유로 들어가는지만 대조한다.",
+    "retained_count": 53,
+    "observed_min_pt_per_mm": 0.00944781125,
+    "observed_max_pt_per_mm": 0.02835011034482758,
+    "lower_margin_multiplier": 3.332977857638889,
+    "upper_margin_multiplier": 9.99871123890886,
+    "saiki_scale_over_retained_max": 34.78746981626244,
+    "saiki_scale_over_upper_limit": 3.4791953667879625,
+    "limitations": "이 범위는 건축도면 전체의 물리적 가능성 판정이나 배근 규준이 아니다. 1:1000보다 더 축소되거나 1:10보다 확대된 실제 伏図도 거부할 수 있다. 범위 안의 부분 격자·블록 오탐은 별도로 남는다. 零距離는 P1으로 먼저 거부한다."
+  },
+  "implementation": {
+    "source": "src/lib/import/framing-plan/parse.ts",
+    "P1": "치수 선택 후 반환될 열의 인접 axes.positionPt가 정확히 같으면 通り芯座標重複으로 거부한다. 축을 합치거나 빼지 않는다.",
+    "P2": "같은 시점에 열의 scalePtPerMm이 유한하고 포함 경계 안인지 검사한다. full total·partial total·total 없음 반환 경로 모두가 이 관문을 지난다. 더 그럴듯한 치수로 재선택하지 않는다.",
+    "simple_labels": "기존 접두 없는 라벨 실패의 일반화 규약을 유지하되 새 두 기하 코드는 보존한다. 따라서 후보가 모두 사라진 fuji·saiki에서도 구체적 사유를 볼 수 있다.",
+    "locale_messages": {
+      "ja": {
+        "通り芯座標重複": "隣り合う通り芯が同じ座標にあるため、グリッド候補にできません",
+        "縮尺範囲外": "実測縮尺が対応範囲（1:1000〜1:10）外のため、グリッド候補にできません"
+      },
+      "ko": {
+        "通り芯座標重複": "인접한 通り芯의 좌표가 같아 격자 후보로 읽을 수 없습니다",
+        "縮尺範囲外": "실측 축척이 지원 범위(1:1000〜1:10) 밖이라 격자 후보로 읽을 수 없습니다"
+      }
+    }
+  },
+  "census": {
+    "pages_count": 36,
+    "grids_before": 55,
+    "grids_after": 53,
+    "retained_grids_deep_equal": 53,
+    "compared_grid_fields": [
+      "direction",
+      "axes (labels and positions)",
+      "spansMm",
+      "scalePtPerMm",
+      "totalConfirmed"
+    ],
+    "blocks_before": 19,
+    "blocks_after": 19,
+    "all_blocks_deep_equal": true,
+    "block_comparison": "블록 수·블록별 부호 배치 수뿐 아니라 xGrid/yGrid·title·placements 전체(mark, role, ix, iy, axis)·unplacedMarks도 deep equality로 대조했다.",
+    "sha256_serialization": "UTF-8 JSON, ensure_ascii=False, sort_keys=True, separators=(comma, colon), trailing newline 없음.",
+    "removed": [
+      {
+        "file": "fuji-p20.json",
+        "grid": {
+          "direction": "X",
+          "axes": [
+            {
+              "label": "2",
+              "positionPt": 503.18780000000004
+            },
+            {
+              "label": "1",
+              "positionPt": 503.18780000000004
+            }
+          ],
+          "spansMm": [
+            7525
+          ],
+          "scalePtPerMm": 0,
+          "totalConfirmed": false
+        },
+        "after_issues": [
+          "通り芯座標重複"
+        ],
+        "recovered_titles": [
+          "柱・梁・壁・スラブ断面リスト",
+          "柱リスト",
+          "梁リスト",
+          "スラブリスト",
+          "壁リスト",
+          "A926HA0J-構造図6-断面リスト"
+        ]
+      },
+      {
+        "file": "saiki-p2.json",
+        "grid": {
+          "direction": "X",
+          "axes": [
+            {
+              "label": "2",
+              "positionPt": 43.16768159292046
+            },
+            {
+              "label": "1",
+              "positionPt": 733.5277071287996
+            }
+          ],
+          "spansMm": [
+            700
+          ],
+          "scalePtPerMm": 0.986228607908399,
+          "totalConfirmed": false
+        },
+        "after_issues": [
+          "縮尺範囲外"
+        ],
+        "recovered_titles": [
+          "※部材リストに増打部は含まず。",
+          "柱リストS=1:50",
+          "壁リストS=1:20",
+          "スラブリスト"
+        ]
+      }
+    ],
+    "pages": [
+      {
+        "file": "fuji-p15.json",
+        "source": "tests/fixtures/section-import/textitems/fuji-p15.json",
+        "fixture_sha256": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法列曖昧",
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            10
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法列曖昧",
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            10
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "E",
+                "positionPt": 236.16
+              },
+              {
+                "label": "D",
+                "positionPt": 305.97003
+              },
+              {
+                "label": "C",
+                "positionPt": 392.099832
+              },
+              {
+                "label": "B",
+                "positionPt": 509.700048
+              },
+              {
+                "label": "A",
+                "positionPt": 580.5602279999999
+              }
+            ],
+            "spansMm": [
+              2500,
+              3000,
+              4150,
+              2500
+            ],
+            "scalePtPerMm": 0.028344072000000005,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 660.837792
+              },
+              {
+                "label": "2",
+                "positionPt": 806.8177800000001
+              }
+            ],
+            "spansMm": [
+              5150
+            ],
+            "scalePtPerMm": 0.028345628737864087,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "f9062d3d24aefc79c6de1dcb714ea64d5f8e99808958149ccb4b99c2b7f5219b",
+        "grids_after_sha256": "f9062d3d24aefc79c6de1dcb714ea64d5f8e99808958149ccb4b99c2b7f5219b",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "3bb0d889ae0dff60fdebf27c08c1840129caccae64ae90f9c14c67b6e29381b8",
+        "blocks_after_sha256": "3bb0d889ae0dff60fdebf27c08c1840129caccae64ae90f9c14c67b6e29381b8"
+      },
+      {
+        "file": "fuji-p17.json",
+        "source": "tests/fixtures/section-import/textitems/fuji-p17.json",
+        "fixture_sha256": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+        "before": {
+          "grids": 3,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            19,
+            9
+          ]
+        },
+        "after": {
+          "grids": 3,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            19,
+            9
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "E",
+                "positionPt": 194.04
+              },
+              {
+                "label": "D",
+                "positionPt": 269.88
+              },
+              {
+                "label": "C",
+                "positionPt": 354.899784
+              },
+              {
+                "label": "B",
+                "positionPt": 472.5
+              },
+              {
+                "label": "A",
+                "positionPt": 543.36
+              }
+            ],
+            "spansMm": [
+              2500,
+              3000,
+              4150,
+              2500
+            ],
+            "scalePtPerMm": 0.02834399999999996,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "C",
+                "positionPt": 354.899784
+              },
+              {
+                "label": "B",
+                "positionPt": 472.5
+              },
+              {
+                "label": "A",
+                "positionPt": 543.36
+              }
+            ],
+            "spansMm": [
+              4150,
+              2500
+            ],
+            "scalePtPerMm": 0.02834399999999996,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 179.87791200000004
+              },
+              {
+                "label": "2",
+                "positionPt": 325.85790000000003
+              }
+            ],
+            "spansMm": [
+              5150
+            ],
+            "scalePtPerMm": 0.028345628737864077,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "ed1786655619571f43111fe6b8e4a67be2ebdd473ca00fe2ea5207518e734d70",
+        "grids_after_sha256": "ed1786655619571f43111fe6b8e4a67be2ebdd473ca00fe2ea5207518e734d70",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "cdd7cec80260685e51f20cbc8221a7fbea7d4bef276a524c11268163227efb0e",
+        "blocks_after_sha256": "cdd7cec80260685e51f20cbc8221a7fbea7d4bef276a524c11268163227efb0e"
+      },
+      {
+        "file": "fuji-p18.json",
+        "source": "tests/fixtures/section-import/textitems/fuji-p18.json",
+        "fixture_sha256": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "fuji-p20.json",
+        "source": "tests/fixtures/section-import/textitems/fuji-p20.json",
+        "fixture_sha256": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯座標重複"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": false,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "2",
+                "positionPt": 503.18780000000004
+              },
+              {
+                "label": "1",
+                "positionPt": 503.18780000000004
+              }
+            ],
+            "spansMm": [
+              7525
+            ],
+            "scalePtPerMm": 0,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": [],
+        "grids_before_sha256": "8ca39a884c2028d1278e2e83ca3e70d9efd3a5dfb1ce9035e43bdb9f6e3ca7aa",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "hirosaki-p21.json",
+        "source": "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+        "fixture_sha256": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            197
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            197
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 154.06247499999998
+              },
+              {
+                "label": "X2",
+                "positionPt": 229.64495499999995
+              },
+              {
+                "label": "X3",
+                "positionPt": 305.22744499999993
+              },
+              {
+                "label": "X4",
+                "positionPt": 380.80993499999994
+              },
+              {
+                "label": "X5",
+                "positionPt": 456.3924249999999
+              },
+              {
+                "label": "X6",
+                "positionPt": 531.9749149999999
+              },
+              {
+                "label": "X7",
+                "positionPt": 607.5574149999999
+              },
+              {
+                "label": "X8",
+                "positionPt": 683.1399049999999
+              },
+              {
+                "label": "X9",
+                "positionPt": 758.722415
+              },
+              {
+                "label": "X10",
+                "positionPt": 834.3090374999999
+              },
+              {
+                "label": "X11",
+                "positionPt": 909.8915274999999
+              },
+              {
+                "label": "X12",
+                "positionPt": 985.4740175
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000
+            ],
+            "scalePtPerMm": 0.00944781125,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y10",
+                "positionPt": 99.67534999999998
+              },
+              {
+                "label": "Y9",
+                "positionPt": 175.25784
+              },
+              {
+                "label": "Y8",
+                "positionPt": 250.84032
+              },
+              {
+                "label": "Y7",
+                "positionPt": 326.42283
+              },
+              {
+                "label": "Y6",
+                "positionPt": 430.34875999999997
+              },
+              {
+                "label": "Y5",
+                "positionPt": 505.93125
+              },
+              {
+                "label": "Y4",
+                "positionPt": 581.51376
+              },
+              {
+                "label": "Y3",
+                "positionPt": 657.09625
+              },
+              {
+                "label": "Y2",
+                "positionPt": 732.67873
+              },
+              {
+                "label": "Y1",
+                "positionPt": 808.26122
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              11000,
+              8000,
+              8000,
+              8000,
+              8000,
+              8000
+            ],
+            "scalePtPerMm": 0.00944781125,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "2f8d1643e7fa9bdcf16e968c685b444298890a83ec1d777acb328c6ea33660e0",
+        "grids_after_sha256": "2f8d1643e7fa9bdcf16e968c685b444298890a83ec1d777acb328c6ea33660e0",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "167055fb102cca4dd28048d260d54f573251cd34334351894a485533d169a098",
+        "blocks_after_sha256": "167055fb102cca4dd28048d260d54f573251cd34334351894a485533d169a098"
+      },
+      {
+        "file": "hirosaki-p25.json",
+        "source": "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+        "fixture_sha256": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+        "before": {
+          "grids": 3,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 3,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 165.66644499999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 241.24893499999993
+              },
+              {
+                "label": "Y3",
+                "positionPt": 316.8314249999999
+              },
+              {
+                "label": "Y4",
+                "positionPt": 392.4139149999999
+              },
+              {
+                "label": "Y5",
+                "positionPt": 467.9963949999999
+              },
+              {
+                "label": "Y6",
+                "positionPt": 543.5788849999999
+              },
+              {
+                "label": "Y7",
+                "positionPt": 647.504825
+              },
+              {
+                "label": "Y8",
+                "positionPt": 723.087315
+              },
+              {
+                "label": "Y9",
+                "positionPt": 798.669805
+              },
+              {
+                "label": "Y10",
+                "positionPt": 874.2564275
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              11000,
+              8000,
+              8000,
+              8000
+            ],
+            "scalePtPerMm": 0.00944781125,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 168.37344499999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 243.95593499999998
+              },
+              {
+                "label": "Y3",
+                "positionPt": 319.53845499999994
+              },
+              {
+                "label": "Y4",
+                "positionPt": 395.12091499999997
+              },
+              {
+                "label": "Y5",
+                "positionPt": 470.7034049999999
+              },
+              {
+                "label": "Y6",
+                "positionPt": 546.2859149999999
+              },
+              {
+                "label": "Y7",
+                "positionPt": 650.211835
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000,
+              8000,
+              8000,
+              11000
+            ],
+            "scalePtPerMm": 0.00944781125,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y7",
+                "positionPt": 853.621735
+              },
+              {
+                "label": "Y8",
+                "positionPt": 929.204225
+              },
+              {
+                "label": "Y9",
+                "positionPt": 1004.786715
+              },
+              {
+                "label": "Y10",
+                "positionPt": 1080.3733375
+              }
+            ],
+            "spansMm": [
+              8000,
+              8000,
+              8000
+            ],
+            "scalePtPerMm": 0.00944781125,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "79bdff6892efea0663c3d7a47b1c972598fd43a262ad6af340c0338d1812cd1d",
+        "grids_after_sha256": "79bdff6892efea0663c3d7a47b1c972598fd43a262ad6af340c0338d1812cd1d",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "ina-p6.json",
+        "source": "tests/fixtures/section-import/textitems/ina-p6.json",
+        "fixture_sha256": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+        "before": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            4
+          ]
+        },
+        "after": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            4
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 656.2725148916015
+              },
+              {
+                "label": "2",
+                "positionPt": 713.6805134900391
+              },
+              {
+                "label": "3",
+                "positionPt": 771.0261120900001
+              }
+            ],
+            "spansMm": [
+              4050,
+              4050
+            ],
+            "scalePtPerMm": 0.014174814468750007,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "B",
+                "positionPt": 149.88216326292422
+              },
+              {
+                "label": "A",
+                "positionPt": 240.61142047344197
+              }
+            ],
+            "spansMm": [
+              6400
+            ],
+            "scalePtPerMm": 0.014176446439143398,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "A",
+                "positionPt": 921.9600148916015
+              },
+              {
+                "label": "B",
+                "positionPt": 1012.6896126765234
+              }
+            ],
+            "spansMm": [
+              6400
+            ],
+            "scalePtPerMm": 0.014176499653894049,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "e8d16ed2944b48768bdb9568298af519bad01d9da134b2fbcf6ee1e6055b797d",
+        "grids_after_sha256": "e8d16ed2944b48768bdb9568298af519bad01d9da134b2fbcf6ee1e6055b797d",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "3346ddc9ef742c68c5e949e93c4c98d5713c4d09859736263d45aeb08bedf8f4",
+        "blocks_after_sha256": "3346ddc9ef742c68c5e949e93c4c98d5713c4d09859736263d45aeb08bedf8f4"
+      },
+      {
+        "file": "ina-p7.json",
+        "source": "tests/fixtures/section-import/textitems/ina-p7.json",
+        "fixture_sha256": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 293.8893757236328
+              },
+              {
+                "label": "2",
+                "positionPt": 351.2349743235938
+              },
+              {
+                "label": "3",
+                "positionPt": 408.70537292050784
+              }
+            ],
+            "spansMm": [
+              4050,
+              4050
+            ],
+            "scalePtPerMm": 0.014190221875781244,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "B",
+                "positionPt": 576.4736582657623
+              },
+              {
+                "label": "A",
+                "positionPt": 667.2029342643432
+              }
+            ],
+            "spansMm": [
+              6400
+            ],
+            "scalePtPerMm": 0.014176449374778244,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "6831db80c619a190337b2e3cf0bf35244a8090e89f1397bf95f711a4cdfd66a4",
+        "grids_after_sha256": "6831db80c619a190337b2e3cf0bf35244a8090e89f1397bf95f711a4cdfd66a4",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "ef149f6288ca482ae72d78c437e28e8c9762dfe097fe07e271ebd51a9b9ac4e3",
+        "blocks_after_sha256": "ef149f6288ca482ae72d78c437e28e8c9762dfe097fe07e271ebd51a9b9ac4e3"
+      },
+      {
+        "file": "kani-p38.json",
+        "source": "tests/fixtures/section-import/textitems/kani-p38.json",
+        "fixture_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            29
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            29
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 363.9412911528
+              },
+              {
+                "label": "X2",
+                "positionPt": 534.0414272328001
+              },
+              {
+                "label": "X3",
+                "positionPt": 704.1415633128001
+              },
+              {
+                "label": "X4",
+                "positionPt": 930.8217446568001
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "scalePtPerMm": 0.028350022680000014,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 325.080260064
+              },
+              {
+                "label": "Y2",
+                "positionPt": 495.12039609600004
+              },
+              {
+                "label": "Y1",
+                "positionPt": 792.7566342048001
+              }
+            ],
+            "spansMm": [
+              6000,
+              10500
+            ],
+            "scalePtPerMm": 0.02834287981714287,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "657ed74c67a3a9107c97c856090ec8e9cc644d1bfa5603c6c1e9226bbfd0e518",
+        "grids_after_sha256": "657ed74c67a3a9107c97c856090ec8e9cc644d1bfa5603c6c1e9226bbfd0e518",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "475634b40c36fc727677cffe6630e2bf008b7a65fdf57cf82c46c546f84ae4ed",
+        "blocks_after_sha256": "475634b40c36fc727677cffe6630e2bf008b7a65fdf57cf82c46c546f84ae4ed"
+      },
+      {
+        "file": "kani-p39.json",
+        "source": "tests/fixtures/section-import/textitems/kani-p39.json",
+        "fixture_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            78
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            78
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 363.9412911528
+              },
+              {
+                "label": "X2",
+                "positionPt": 534.0414272328001
+              },
+              {
+                "label": "X3",
+                "positionPt": 704.1415633128001
+              },
+              {
+                "label": "X4",
+                "positionPt": 930.8217446568001
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "scalePtPerMm": 0.028350022680000014,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 325.080260064
+              },
+              {
+                "label": "Y2",
+                "positionPt": 495.12039609600004
+              },
+              {
+                "label": "Y1",
+                "positionPt": 792.7714034473846
+              }
+            ],
+            "spansMm": [
+              6000,
+              10500
+            ],
+            "scalePtPerMm": 0.02834287981714287,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "24099e6b673f449aa47969d1f1d10113e0329e66d823d9cf764591cecc39e9a7",
+        "grids_after_sha256": "24099e6b673f449aa47969d1f1d10113e0329e66d823d9cf764591cecc39e9a7",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "5d42d2ffc03ab9f03b546ba67f673564866f4118fb4bbad6e4daf11ade790677",
+        "blocks_after_sha256": "5d42d2ffc03ab9f03b546ba67f673564866f4118fb4bbad6e4daf11ade790677"
+      },
+      {
+        "file": "kani-p40.json",
+        "source": "tests/fixtures/section-import/textitems/kani-p40.json",
+        "fixture_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 246.3411970728
+              },
+              {
+                "label": "Y2",
+                "positionPt": 543.9414351528001
+              },
+              {
+                "label": "Y3",
+                "positionPt": 714.0415712328
+              }
+            ],
+            "spansMm": [
+              10500,
+              6000
+            ],
+            "scalePtPerMm": 0.028350022679999996,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "c0500978cc607b613de654e17f29326bfa6804089f518fcc923e2ebf23916d30",
+        "grids_after_sha256": "c0500978cc607b613de654e17f29326bfa6804089f518fcc923e2ebf23916d30",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "kani-p41.json",
+        "source": "tests/fixtures/section-import/textitems/kani-p41.json",
+        "fixture_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 303.0412424328
+              },
+              {
+                "label": "X2",
+                "positionPt": 473.08137846479997
+              },
+              {
+                "label": "X3",
+                "positionPt": 643.1815145448
+              },
+              {
+                "label": "X4",
+                "positionPt": 869.8616958888
+              }
+            ],
+            "spansMm": [
+              6000,
+              6000,
+              8000
+            ],
+            "scalePtPerMm": 0.028340022671999993,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "be29d0fbe0746e09af4e328ba5ec58e64c3e51a63216da374cf4f33c8c256560",
+        "grids_after_sha256": "be29d0fbe0746e09af4e328ba5ec58e64c3e51a63216da374cf4f33c8c256560",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "karatsu-fukuzu-p1.json",
+        "source": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+        "fixture_sha256": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            42
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            42
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 202.46777999999998
+              },
+              {
+                "label": "X2",
+                "positionPt": 248.57802
+              },
+              {
+                "label": "X3",
+                "positionPt": 315.74778
+              },
+              {
+                "label": "X4",
+                "positionPt": 420.95802
+              },
+              {
+                "label": "X5",
+                "positionPt": 505.16778
+              },
+              {
+                "label": "X6",
+                "positionPt": 645.8980200000001
+              },
+              {
+                "label": "X7",
+                "positionPt": 746.1276799999999
+              }
+            ],
+            "spansMm": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "scalePtPerMm": 0.02004793043478262,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y6",
+                "positionPt": 175.5
+              },
+              {
+                "label": "Y5",
+                "positionPt": 221.5500000000001
+              },
+              {
+                "label": "Y4",
+                "positionPt": 254.26794360000002
+              },
+              {
+                "label": "Y3",
+                "positionPt": 337.44
+              },
+              {
+                "label": "Y2",
+                "positionPt": 457.62
+              },
+              {
+                "label": "Y1",
+                "positionPt": 503.04
+              },
+              {
+                "label": "Y0",
+                "positionPt": 541.14
+              }
+            ],
+            "spansMm": [
+              2204,
+              1806,
+              4069,
+              6000,
+              2265,
+              1900
+            ],
+            "scalePtPerMm": 0.02005263157894735,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "3886121188c18b9f5c554184fd20ebbfb360ea7b852cddb3fa93ae56ffa64b81",
+        "grids_after_sha256": "3886121188c18b9f5c554184fd20ebbfb360ea7b852cddb3fa93ae56ffa64b81",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "184eb7c7f305e5ec9792140a496ea62c5e5495083d8902a3db9d90f764e3fc8a",
+        "blocks_after_sha256": "184eb7c7f305e5ec9792140a496ea62c5e5495083d8902a3db9d90f764e3fc8a"
+      },
+      {
+        "file": "karatsu-hashirashin-p1.json",
+        "source": "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+        "fixture_sha256": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            27
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [],
+          "block_placement_counts": [
+            27
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 326.33802
+              },
+              {
+                "label": "X2",
+                "positionPt": 372.44777999999997
+              },
+              {
+                "label": "X3",
+                "positionPt": 439.58778
+              },
+              {
+                "label": "X4",
+                "positionPt": 544.82768
+              },
+              {
+                "label": "X5",
+                "positionPt": 628.94768
+              },
+              {
+                "label": "X6",
+                "positionPt": 769.76768
+              },
+              {
+                "label": "X7",
+                "positionPt": 869.96778
+              }
+            ],
+            "spansMm": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "scalePtPerMm": 0.020045551601423496,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y6",
+                "positionPt": 235.44
+              },
+              {
+                "label": "Y5",
+                "positionPt": 279.6
+              },
+              {
+                "label": "Y4",
+                "positionPt": 315.84
+              },
+              {
+                "label": "Y3",
+                "positionPt": 397.38
+              },
+              {
+                "label": "Y2",
+                "positionPt": 517.5599
+              },
+              {
+                "label": "Y1",
+                "positionPt": 563.479964
+              },
+              {
+                "label": "Y0",
+                "positionPt": 601.2800000000001
+              }
+            ],
+            "spansMm": [
+              2204,
+              1806,
+              4069,
+              6000,
+              2265,
+              1900
+            ],
+            "scalePtPerMm": 0.02005263157894738,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "aa4c14f0e50b82849c5884aa27ed63df90290b7815db479d4babc336e6fe5938",
+        "grids_after_sha256": "aa4c14f0e50b82849c5884aa27ed63df90290b7815db479d4babc336e6fe5938",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "fefdc98044e4171b6e30f8e4faf7b3034209a09ae7c940098979b2c3b20edd7c",
+        "blocks_after_sha256": "fefdc98044e4171b6e30f8e4faf7b3034209a09ae7c940098979b2c3b20edd7c"
+      },
+      {
+        "file": "karatsu-jikugumi1-p1.json",
+        "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+        "fixture_sha256": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+        "before": {
+          "grids": 4,
+          "blocks": 0,
+          "issues": [
+            "寸法欠落",
+            "縮尺不整合"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 4,
+          "blocks": 0,
+          "issues": [
+            "寸法欠落",
+            "縮尺不整合"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 166.40777999999997
+              },
+              {
+                "label": "Y1",
+                "positionPt": 204.50778
+              },
+              {
+                "label": "Y2",
+                "positionPt": 249.89802
+              },
+              {
+                "label": "Y3",
+                "positionPt": 370.16778
+              },
+              {
+                "label": "Y6",
+                "positionPt": 532.1077799999999
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              8079
+            ],
+            "scalePtPerMm": 0.020044959999999997,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "A",
+                "positionPt": 396.0879
+              },
+              {
+                "label": "B",
+                "positionPt": 483.74789999999996
+              },
+              {
+                "label": "C",
+                "positionPt": 571.3479
+              }
+            ],
+            "spansMm": [
+              4373,
+              4373
+            ],
+            "scalePtPerMm": 0.020045735193231183,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 718.1077799999999
+              },
+              {
+                "label": "Y1",
+                "positionPt": 756.1780200000001
+              },
+              {
+                "label": "Y2",
+                "positionPt": 801.56778
+              },
+              {
+                "label": "Y3",
+                "positionPt": 921.83802
+              },
+              {
+                "label": "Y5",
+                "positionPt": 1039.58768
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              5875
+            ],
+            "scalePtPerMm": 0.020042495319148947,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 803.45802
+              },
+              {
+                "label": "Y1",
+                "positionPt": 841.52778
+              },
+              {
+                "label": "Y2",
+                "positionPt": 886.94778
+              },
+              {
+                "label": "Y3",
+                "positionPt": 1007.18768
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000
+            ],
+            "scalePtPerMm": 0.020039983333333337,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "5e1c7611513f39bce0755b9fa921918f16ae765e145b4af826f852fed1770d0c",
+        "grids_after_sha256": "5e1c7611513f39bce0755b9fa921918f16ae765e145b4af826f852fed1770d0c",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "karatsu-jikugumi2-p1.json",
+        "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+        "fixture_sha256": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+        "before": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "after": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 165.32778
+              },
+              {
+                "label": "X2",
+                "positionPt": 211.43802
+              },
+              {
+                "label": "X3",
+                "positionPt": 278.60778
+              },
+              {
+                "label": "X4",
+                "positionPt": 383.84778
+              },
+              {
+                "label": "X5",
+                "positionPt": 468.02778
+              },
+              {
+                "label": "X6",
+                "positionPt": 608.75802
+              },
+              {
+                "label": "X7",
+                "positionPt": 708.9877799999999
+              }
+            ],
+            "spansMm": [
+              2300,
+              3350,
+              5250,
+              4200,
+              7025,
+              5000
+            ],
+            "scalePtPerMm": 0.02004595199999999,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 165.32778
+              },
+              {
+                "label": "Y1",
+                "positionPt": 203.42777999999998
+              },
+              {
+                "label": "Y2",
+                "positionPt": 248.84777999999997
+              },
+              {
+                "label": "Y3",
+                "positionPt": 369.08778
+              },
+              {
+                "label": "Y4",
+                "positionPt": 450.65801999999996
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265,
+              6000,
+              4069
+            ],
+            "scalePtPerMm": 0.020052631578947367,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y0",
+                "positionPt": 636.56768
+              },
+              {
+                "label": "Y1",
+                "positionPt": 674.63802
+              },
+              {
+                "label": "Y2",
+                "positionPt": 720.02778
+              }
+            ],
+            "spansMm": [
+              1900,
+              2265
+            ],
+            "scalePtPerMm": 0.020039629139072857,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "3e5a8167c0fa3f1c654152612cd3a0616967f1420b8822e57b259492ad3deb5f",
+        "grids_after_sha256": "3e5a8167c0fa3f1c654152612cd3a0616967f1420b8822e57b259492ad3deb5f",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "772836fdc3a5ab9d692786f1f35275e8e53c048d0103719706a28f4779ca0c9d",
+        "blocks_after_sha256": "772836fdc3a5ab9d692786f1f35275e8e53c048d0103719706a28f4779ca0c9d"
+      },
+      {
+        "file": "karatsu-shousai-p1.json",
+        "source": "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+        "fixture_sha256": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "ojkk-p2.json",
+        "source": "tests/fixtures/section-import/textitems/ojkk-p2.json",
+        "fixture_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "ojkk-p3.json",
+        "source": "tests/fixtures/section-import/textitems/ojkk-p3.json",
+        "fixture_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "ojkk-p4.json",
+        "source": "tests/fixtures/section-import/textitems/ojkk-p4.json",
+        "fixture_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "saiki-p1.json",
+        "source": "tests/fixtures/section-import/textitems/saiki-p1.json",
+        "fixture_sha256": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "saiki-p2.json",
+        "source": "tests/fixtures/section-import/textitems/saiki-p2.json",
+        "fixture_sha256": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "縮尺範囲外"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": false,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "2",
+                "positionPt": 43.16768159292046
+              },
+              {
+                "label": "1",
+                "positionPt": 733.5277071287996
+              }
+            ],
+            "spansMm": [
+              700
+            ],
+            "scalePtPerMm": 0.986228607908399,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": [],
+        "grids_before_sha256": "0deeda98722cb7640beefc3860befa03fe7d9947ac174dbd1fd51310bfcbc404",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "shibata-p1.json",
+        "source": "tests/fixtures/section-import/textitems/shibata-p1.json",
+        "fixture_sha256": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+        "before": {
+          "grids": 5,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            69
+          ]
+        },
+        "after": {
+          "grids": 5,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            69
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 517.2935160000001
+              },
+              {
+                "label": "X2",
+                "positionPt": 829.1045495999999
+              }
+            ],
+            "spansMm": [
+              11000
+            ],
+            "scalePtPerMm": 0.028346457599999986,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 554.1557232
+              },
+              {
+                "label": "2",
+                "positionPt": 880.1428128
+              },
+              {
+                "label": "3",
+                "positionPt": 1191.950976
+              },
+              {
+                "label": "4",
+                "positionPt": 1546.2846095999998
+              },
+              {
+                "label": "5",
+                "positionPt": 1716.3632808
+              }
+            ],
+            "spansMm": [
+              11500,
+              11000,
+              12500,
+              6000
+            ],
+            "scalePtPerMm": 0.028346445600000037,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y2",
+                "positionPt": 493.0566896
+              },
+              {
+                "label": "Y1",
+                "positionPt": 805.0633088
+              }
+            ],
+            "spansMm": [
+              11000
+            ],
+            "scalePtPerMm": 0.028346457599999996,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "C'",
+                "positionPt": 615.5907333714287
+              },
+              {
+                "label": "B'",
+                "positionPt": 849.3744824
+              },
+              {
+                "label": "A'",
+                "positionPt": 1114.4138768
+              }
+            ],
+            "spansMm": [
+              8350,
+              9350
+            ],
+            "scalePtPerMm": 0.028346459294117634,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "C",
+                "positionPt": 632.4022352
+              },
+              {
+                "label": "B",
+                "positionPt": 855.8913368
+              },
+              {
+                "label": "A",
+                "positionPt": 1054.50080528
+              }
+            ],
+            "spansMm": [
+              8000,
+              7000
+            ],
+            "scalePtPerMm": 0.028346459314285703,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "db8f72203c53eed74b07f75271e603f01e0af8536293a732042e8aa575a2fd64",
+        "grids_after_sha256": "db8f72203c53eed74b07f75271e603f01e0af8536293a732042e8aa575a2fd64",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "797d93fb76c0052db7c5acdea17caf96565f38912f74883d555a699b061d110d",
+        "blocks_after_sha256": "797d93fb76c0052db7c5acdea17caf96565f38912f74883d555a699b061d110d"
+      },
+      {
+        "file": "shibata-p13.json",
+        "source": "tests/fixtures/section-import/textitems/shibata-p13.json",
+        "fixture_sha256": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            18
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            18
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "1",
+                "positionPt": 724.234512
+              },
+              {
+                "label": "5",
+                "positionPt": 1886.4420696000002
+              }
+            ],
+            "spansMm": [
+              41000
+            ],
+            "scalePtPerMm": 0.028346525795121955,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "A",
+                "positionPt": 299.03762639999997
+              },
+              {
+                "label": "B",
+                "positionPt": 497.4628128
+              },
+              {
+                "label": "C",
+                "positionPt": 724.234512
+              }
+            ],
+            "spansMm": [
+              7000,
+              8000
+            ],
+            "scalePtPerMm": 0.0283464624,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "2b93723b3ea9bc2c729a490d7af50eebad8049502bf6d2b1613b687c2a41bb51",
+        "grids_after_sha256": "2b93723b3ea9bc2c729a490d7af50eebad8049502bf6d2b1613b687c2a41bb51",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "de9bfdd14c9d8d535aa1f86132a2855f7fb9589108214325d73e423cfeb1bcc3",
+        "blocks_after_sha256": "de9bfdd14c9d8d535aa1f86132a2855f7fb9589108214325d73e423cfeb1bcc3"
+      },
+      {
+        "file": "shibata-p7.json",
+        "source": "tests/fixtures/section-import/textitems/shibata-p7.json",
+        "fixture_sha256": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "tsu-p16.json",
+        "source": "tests/fixtures/section-import/textitems/tsu-p16.json",
+        "fixture_sha256": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+        "before": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落",
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            0
+          ]
+        },
+        "after": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落",
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            0
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 344.5008798093929
+              },
+              {
+                "label": "X2",
+                "positionPt": 459.10083396939297
+              },
+              {
+                "label": "X3",
+                "positionPt": 559.9607936260163
+              },
+              {
+                "label": "X4",
+                "positionPt": 700.4807374180164
+              },
+              {
+                "label": "X5",
+                "positionPt": 775.3607074660163
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "scalePtPerMm": 0.019584661155679448,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "2",
+                "positionPt": 483.5278065888
+              },
+              {
+                "label": "1",
+                "positionPt": 574.739770104
+              }
+            ],
+            "spansMm": [
+              4700
+            ],
+            "scalePtPerMm": 0.019582970890212777,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 328.19986872000004
+              },
+              {
+                "label": "Y2",
+                "positionPt": 442.19982312
+              },
+              {
+                "label": "Y1",
+                "positionPt": 582.359767056
+              }
+            ],
+            "spansMm": [
+              5825,
+              7175
+            ],
+            "scalePtPerMm": 0.01958466115567946,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "f3ffe3cd28f09ba3f1a30bc804bda9a1d321e7f5595eec5e9c8861c8bcca5dbf",
+        "grids_after_sha256": "f3ffe3cd28f09ba3f1a30bc804bda9a1d321e7f5595eec5e9c8861c8bcca5dbf",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "ccb1e8b0ba8979d3c95abfa1b1f643f8cf7f9d2a6a9664b11aa790c3f0cbf458",
+        "blocks_after_sha256": "ccb1e8b0ba8979d3c95abfa1b1f643f8cf7f9d2a6a9664b11aa790c3f0cbf458"
+      },
+      {
+        "file": "tsu-p20.json",
+        "source": "tests/fixtures/section-import/textitems/tsu-p20.json",
+        "fixture_sha256": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            55
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "通り芯対応不明"
+          ],
+          "block_placement_counts": [
+            55
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 429.5208458020163
+              },
+              {
+                "label": "X2",
+                "positionPt": 544.060799985393
+              },
+              {
+                "label": "X3",
+                "positionPt": 644.9207596420163
+              },
+              {
+                "label": "X4",
+                "positionPt": 785.4407034340162
+              },
+              {
+                "label": "X5",
+                "positionPt": 860.260673505393
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "scalePtPerMm": 0.019584458185752083,
+            "totalConfirmed": true
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y3",
+                "positionPt": 328.19986872000004
+              },
+              {
+                "label": "Y2",
+                "positionPt": 442.19982312
+              },
+              {
+                "label": "Y1",
+                "positionPt": 582.7197669120001
+              }
+            ],
+            "spansMm": [
+              5825,
+              7175
+            ],
+            "scalePtPerMm": 0.019584661155679448,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "5c0183aa9bf4a28b25c172772accd17cdff5eafc98db213b6125546e55d56308",
+        "grids_after_sha256": "5c0183aa9bf4a28b25c172772accd17cdff5eafc98db213b6125546e55d56308",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "949fc8305eeec47d36b252d890ad76a468c9d62066b2044d15361b2f25c50b49",
+        "blocks_after_sha256": "949fc8305eeec47d36b252d890ad76a468c9d62066b2044d15361b2f25c50b49"
+      },
+      {
+        "file": "tsu-p21.json",
+        "source": "tests/fixtures/section-import/textitems/tsu-p21.json",
+        "fixture_sha256": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "X1",
+                "positionPt": 452.74083651339294
+              },
+              {
+                "label": "X2",
+                "positionPt": 567.2807906980164
+              },
+              {
+                "label": "X3",
+                "positionPt": 668.1407503533931
+              },
+              {
+                "label": "X4",
+                "positionPt": 808.660694145393
+              },
+              {
+                "label": "X5",
+                "positionPt": 883.4206642413931
+              }
+            ],
+            "spansMm": [
+              5850,
+              5150,
+              7175,
+              3825
+            ],
+            "scalePtPerMm": 0.01958445818551003,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "55d68c778e01efd8cde0b1c80edbd5dec4ee4c91f19c3adec616ad6bec8da0b3",
+        "grids_after_sha256": "55d68c778e01efd8cde0b1c80edbd5dec4ee4c91f19c3adec616ad6bec8da0b3",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "tsu-p22.json",
+        "source": "tests/fixtures/section-import/textitems/tsu-p22.json",
+        "fixture_sha256": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "Y1",
+                "positionPt": 475.0008276100163
+              },
+              {
+                "label": "Y2",
+                "positionPt": 615.5211910946836
+              },
+              {
+                "label": "Y3",
+                "positionPt": 729.6413882933849
+              }
+            ],
+            "spansMm": [
+              7175,
+              5825
+            ],
+            "scalePtPerMm": 0.01959145016286719,
+            "totalConfirmed": true
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "0005c17f921dca048e3159be6714a4e1fe0ce457daeb8abdd40c366ced332b93",
+        "grids_after_sha256": "0005c17f921dca048e3159be6714a4e1fe0ce457daeb8abdd40c366ced332b93",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "yokohama-p13.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p13.json",
+        "fixture_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "yokohama-p14.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p14.json",
+        "fixture_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "yokohama-p15.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p15.json",
+        "fixture_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+        "before": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 0,
+          "blocks": 0,
+          "issues": [
+            "通り芯ラベル未検出"
+          ],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "grids_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "yokohama-p6.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p6.json",
+        "fixture_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+        "before": {
+          "grids": 2,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            2,
+            72
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            2,
+            72
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 509.605092
+              },
+              {
+                "label": "bX2",
+                "positionPt": 756.236892
+              },
+              {
+                "label": "bX3",
+                "positionPt": 1002.836124
+              },
+              {
+                "label": "cX1",
+                "positionPt": 1036.8569400000001
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700,
+              1200
+            ],
+            "scalePtPerMm": 0.02834848275862069,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY6",
+                "positionPt": 216.35941999999991
+              },
+              {
+                "label": "bY5",
+                "positionPt": 358.13925199999994
+              },
+              {
+                "label": "bY4",
+                "positionPt": 528.1796119999999
+              },
+              {
+                "label": "bY3",
+                "positionPt": 811.6798039999999
+              },
+              {
+                "label": "bY2",
+                "positionPt": 981.720164
+              },
+              {
+                "label": "bY1",
+                "positionPt": 1123.4405239999999
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "scalePtPerMm": 0.02834407199999996,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "5e71e7a67752c63d5ebe729530fce54e61285a090a6a9efccab27679639ace03",
+        "grids_after_sha256": "5e71e7a67752c63d5ebe729530fce54e61285a090a6a9efccab27679639ace03",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "e51a830c577143c55d870080cb4795b988921f923465c666e2bcbb860b29c085",
+        "blocks_after_sha256": "e51a830c577143c55d870080cb4795b988921f923465c666e2bcbb860b29c085"
+      },
+      {
+        "file": "yokohama-p7.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p7.json",
+        "fixture_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+        "before": {
+          "grids": 2,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            83,
+            69
+          ]
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 2,
+          "issues": [],
+          "block_placement_counts": [
+            83,
+            69
+          ]
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 509.60714400000006
+              },
+              {
+                "label": "bX2",
+                "positionPt": 756.2389440000001
+              },
+              {
+                "label": "bX3",
+                "positionPt": 1002.8381760000001
+              },
+              {
+                "label": "cX1",
+                "positionPt": 1036.858992
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700,
+              1200
+            ],
+            "scalePtPerMm": 0.02834848275862069,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY6",
+                "positionPt": 216.35800400000002
+              },
+              {
+                "label": "bY5",
+                "positionPt": 358.13783600000005
+              },
+              {
+                "label": "bY4",
+                "positionPt": 528.1781959999998
+              },
+              {
+                "label": "bY3",
+                "positionPt": 811.6783879999999
+              },
+              {
+                "label": "bY2",
+                "positionPt": 981.7187479999999
+              },
+              {
+                "label": "bY1",
+                "positionPt": 1123.4384
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "scalePtPerMm": 0.02834378880000004,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "cee1bcb10025de8a3e086ff06af81bf067966ea877b3f1edf13c6515df00d0b6",
+        "grids_after_sha256": "cee1bcb10025de8a3e086ff06af81bf067966ea877b3f1edf13c6515df00d0b6",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "9e74e4328f7dfa84d6a51285067bcc66e29f4d9af3688be16737258471fa3733",
+        "blocks_after_sha256": "9e74e4328f7dfa84d6a51285067bcc66e29f4d9af3688be16737258471fa3733"
+      },
+      {
+        "file": "yokohama-p8.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p8.json",
+        "fixture_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+        "before": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 1,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "X",
+            "axes": [
+              {
+                "label": "bX1",
+                "positionPt": 361.49217199999987
+              },
+              {
+                "label": "bX2",
+                "positionPt": 608.1381319999998
+              },
+              {
+                "label": "bX3",
+                "positionPt": 854.72462
+              }
+            ],
+            "spansMm": [
+              8700,
+              8700
+            ],
+            "scalePtPerMm": 0.02835011034482758,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "1ae8e4421e7be135ebbb92be227e2a532bc0b187c775ba2151df5bbecff59c9a",
+        "grids_after_sha256": "1ae8e4421e7be135ebbb92be227e2a532bc0b187c775ba2151df5bbecff59c9a",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "yokohama-p9.json",
+        "source": "tests/fixtures/section-import/textitems/yokohama-p9.json",
+        "fixture_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+        "before": {
+          "grids": 2,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "after": {
+          "grids": 2,
+          "blocks": 0,
+          "issues": [],
+          "block_placement_counts": []
+        },
+        "grids_deep_equal": true,
+        "grids_before": [
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY1",
+                "positionPt": 695.039112
+              },
+              {
+                "label": "bY2",
+                "positionPt": 836.787792
+              },
+              {
+                "label": "bY3",
+                "positionPt": 1006.859304
+              },
+              {
+                "label": "bY4",
+                "positionPt": 1290.3524159999997
+              },
+              {
+                "label": "bY5",
+                "positionPt": 1460.4395039999995
+              },
+              {
+                "label": "bY6",
+                "positionPt": 1602.1457039999991
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000,
+              10000,
+              6000,
+              5000
+            ],
+            "scalePtPerMm": 0.02834784799999996,
+            "totalConfirmed": false
+          },
+          {
+            "direction": "Y",
+            "axes": [
+              {
+                "label": "bY1",
+                "positionPt": 1791.959088
+              },
+              {
+                "label": "bY2",
+                "positionPt": 1933.6794479999999
+              },
+              {
+                "label": "bY3",
+                "positionPt": 2103.7792799999997
+              }
+            ],
+            "spansMm": [
+              5000,
+              6000
+            ],
+            "scalePtPerMm": 0.02834997199999998,
+            "totalConfirmed": false
+          }
+        ],
+        "grids_after": "identical to grids_before",
+        "grids_before_sha256": "97be45245aff641c8f390a0120a31af442253215f7d40b6e798ec4c548fd1005",
+        "grids_after_sha256": "97be45245aff641c8f390a0120a31af442253215f7d40b6e798ec4c548fd1005",
+        "blocks_deep_equal": true,
+        "blocks_before_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "blocks_after_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ]
+  },
+  "title_boundary": {
+    "source": "tests/fixtures/section-import/SOURCES.md",
+    "karatsu_fixture": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "nfkc_joined_item_text_has_fukuzu": false,
+    "nfkc_joined_item_text_has_hashirashinzu": false,
+    "recovered_title_tokens": [
+      "床配筋リスト"
+    ],
+    "grid_axes": [
+      7,
+      7
+    ],
+    "block_placements": 42,
+    "unchanged": true,
+    "basis": "표제란은 개인정보 때문에 TextItem 픽스처에서 제외된다. 이 면의 유일한 리スト 제목을 근거로 후보를 거르지 않았다.",
+    "non_goals": [
+      {
+        "file": "ina-p7.json",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "scale_values": [
+          0.014190221875781244,
+          0.014176449374778244
+        ],
+        "blocks_unchanged": true
+      },
+      {
+        "file": "karatsu-jikugumi2-p1.json",
+        "before": {
+          "grids": 3,
+          "blocks": 1,
+          "issues": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            6
+          ]
+        },
+        "scale_values": [
+          0.02004595199999999,
+          0.020052631578947367,
+          0.020039629139072857
+        ],
+        "blocks_unchanged": true
+      },
+      {
+        "file": "shibata-p13.json",
+        "before": {
+          "grids": 2,
+          "blocks": 1,
+          "issues": [
+            "寸法欠落"
+          ],
+          "block_placement_counts": [
+            18
+          ]
+        },
+        "scale_values": [
+          0.028346525795121955,
+          0.0283464624
+        ],
+        "blocks_unchanged": true
+      }
+    ]
+  },
+  "tests": {
+    "red": {
+      "command": "npx vitest run src/lib/import/framing-plan/parse.test.ts --reporter=json --outputFile=tmp/phase42-step1/red.json",
+      "exit_code": 1,
+      "passed": 27,
+      "failed": [
+        {
+          "ancestorTitles": [
+            "parseFramingPlan — 通り芯グリッド"
+          ],
+          "fullName": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+          "status": "failed",
+          "title": "P1: coincident adjacent axes have no span geometry",
+          "duration": 6.5774000000000115,
+          "failureMessages": [
+            "AssertionError: expected [ '寸法欠落' ] to include '通り芯座標重複'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:34:27\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "parseFramingPlan — 通り芯グリッド"
+          ],
+          "fullName": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+          "status": "failed",
+          "title": "P2: measured scale must fit the plan range even with a confirmed total",
+          "duration": 1.026299999999992,
+          "failureMessages": [
+            "AssertionError: expected [] to include '縮尺範囲外'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:54:31\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+          ],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "note": "기존 테스트는 전부 통과했고 새 P1·P2만 실패했다. 이후 새 두 테스트 안에 정상 입력·포함 경계 대조를 추가했다."
+    },
+    "targeted_green": {
+      "command": "npx vitest run src/lib/import/framing-plan/parse.test.ts tests/plan-import --reporter=json --outputFile=tmp/phase42-step1/green.json",
+      "exit_code": 0,
+      "passed": 99,
+      "failed": 0
+    },
+    "final_unit_green": {
+      "command": "npx vitest run src/lib/import/framing-plan/parse.test.ts --reporter=json --outputFile=tmp/phase42-step1/green-final.json",
+      "exit_code": 0,
+      "passed": 29,
+      "failed": 0
+    },
+    "mutations": [
+      {
+        "property": "P1",
+        "command": [
+          "npx.cmd",
+          "vitest",
+          "run",
+          "src/lib/import/framing-plan/parse.test.ts",
+          "--reporter=json",
+          "--outputFile=tmp/phase42-step1/mutant-P1.json"
+        ],
+        "exit_code": 1,
+        "failed_tests": [
+          {
+            "ancestorTitles": [
+              "parseFramingPlan — 通り芯グリッド"
+            ],
+            "fullName": "parseFramingPlan — 通り芯グリッド P1: coincident adjacent axes have no span geometry",
+            "status": "failed",
+            "title": "P1: coincident adjacent axes have no span geometry",
+            "duration": 6.581999999999994,
+            "failureMessages": [
+              "AssertionError: expected [ '寸法欠落', '縮尺範囲外' ] to include '通り芯座標重複'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:34:27\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+            ],
+            "meta": {},
+            "tags": []
+          }
+        ],
+        "num_passed_tests": 28,
+        "removed_check": "    if (\n      result.axes.some(\n        (axis, index) =>\n          index > 0 && axis.positionPt === result.axes[index - 1].positionPt,\n      )\n    ) {\n      issue('通り芯座標重複')\n      return []\n    }\n",
+        "before_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+        "mutated_sha256": "94b2b9f43750b5ce087db19c341697e5e33789cd4345b2547732ae63b7327327",
+        "restored_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+        "byte_identical": true
+      },
+      {
+        "property": "P2",
+        "command": [
+          "npx.cmd",
+          "vitest",
+          "run",
+          "src/lib/import/framing-plan/parse.test.ts",
+          "--reporter=json",
+          "--outputFile=tmp/phase42-step1/mutant-P2.json"
+        ],
+        "exit_code": 1,
+        "failed_tests": [
+          {
+            "ancestorTitles": [
+              "parseFramingPlan — 通り芯グリッド"
+            ],
+            "fullName": "parseFramingPlan — 通り芯グリッド P2: measured scale must fit the plan range even with a confirmed total",
+            "status": "failed",
+            "title": "P2: measured scale must fit the plan range even with a confirmed total",
+            "duration": 3.3588999999999487,
+            "failureMessages": [
+              "AssertionError: expected [] to include '縮尺範囲外'\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1319:15)\n    at Proxy.<anonymous> (file:///C:/Users/emper/mdtproject/node_modules/@vitest/expect/dist/index.js:1156:15)\n    at Proxy.methodWrapper (file:///C:/Users/emper/mdtproject/node_modules/chai/index.js:1700:25)\n    at C:/Users/emper/mdtproject/src/lib/import/framing-plan/parse.test.ts:64:31\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+            ],
+            "meta": {},
+            "tags": []
+          }
+        ],
+        "num_passed_tests": 28,
+        "removed_check": "    if (\n      !Number.isFinite(result.scalePtPerMm) ||\n      result.scalePtPerMm < MIN_PLAN_SCALE_PT_PER_MM ||\n      result.scalePtPerMm > MAX_PLAN_SCALE_PT_PER_MM\n    ) {\n      issue('縮尺範囲外')\n      return []\n    }\n",
+        "before_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+        "mutated_sha256": "77e05715063d7903fcacf10a5201931e8fda0c82e64ba975ee355b4a51a35631",
+        "restored_sha256": "c14dd44887a56e073f9457d6a25e3d2e4164a839e3c88b6fa032aa50a28aada3",
+        "byte_identical": true
+      }
+    ],
+    "mutation_limit": "P1 제거 시 P2가 영축척 후보를 여전히 거부할 수 있다. P1 테스트는 특정 사유 코드의 소실을 검출한다. P2 테스트는 하한·상한 밖 입력과 合計 유무, 정상 포함 경계를 검사한다.",
+    "full": {
+      "command": "npx vitest run --reporter=json --outputFile=tmp/phase42-step1/full-test.json",
+      "exit_code": 0,
+      "passed": 1811,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "기존 src/app/api/oncall/alert/route.test.ts:161:23 _omitted unused 경고. 이 step의 변경 파일이 아니다."
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "validation_timing": "전체 테스트·lint·tsc 완료 후 parse.ts의 주석 한 단어만 정정했다. 정정 후 두 변조를 다시 실행하고 최종 파일의 바이트 복원을 확인했다.",
+    "citations": {
+      "command": "python scripts/check-citations.py phases/42-plan-grid-soundness/step1-report.json",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  },
+  "scope_checks": {
+    "fixtures_and_goldens_unchanged": true,
+    "compared_fixture_files": 61,
+    "fixture_comparison": "git show 직전 커밋과 모든 추적 파일의 LF 정규화 바이트를 대조했다. 36면 JSON은 전후 실바이트 SHA-256도 동일하다.",
+    "existing_test_bytes_unchanged_after_removing_added_tests": true,
+    "midpoint_tolerance_unchanged": 15,
+    "no_page_or_issuer_filter": true,
+    "no_new_title_filter": true,
+    "no_block_logic_changes": true,
+    "rulepack_unchanged": true,
+    "harness_not_executed_or_terminated": true
+  },
+  "reproduction": {
+    "baseline_commit": "9b2c50ff8e2fe3bf5ac1de575cc7bdfbb44109ca",
+    "instructions": [
+      "직전 커밋의 파서를 사용하는 체크아웃에서 census.ts를 before로 실행한다.",
+      "최종 파서에서 같은 36면을 after로 실행한다.",
+      "census pages의 grids 전체를 비교하되 fuji-p20 X와 saiki-p2 X만 탈락했는지 assert한다. blocks는 36면 모두 전체 객체 equality를 assert한다.",
+      "mutate.py는 각 if 검사 블록을 한 번씩 지우고 파일 단위 Vitest를 실행해 JSON 결과를 검사한다. finally에서 원본 바이트를 쓰고 SHA-256을 대조한다.",
+      "census.ts·mutate.py는 아래 문자열을 임시 경로에 그대로 기록해 재현할 수 있다. 임시 파일은 제품·fixture 산출물이 아니다."
+    ],
+    "scripts": {
+      "census.ts": "import { createHash } from 'node:crypto'\nimport { execFileSync } from 'node:child_process'\nimport { readFileSync, readdirSync, writeFileSync } from 'node:fs'\nimport { parseFramingPlan } from '../../src/lib/import/framing-plan/parse'\nimport { compact, recoverRows } from '../../src/lib/import/runs'\n\nconst parserPath = 'src/lib/import/framing-plan/parse.ts'\nconst sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex')\nif (process.argv[2] === 'before') {\n  const committed = execFileSync('git', ['show', `HEAD:${parserPath}`])\n  const working = readFileSync(parserPath)\n  if (committed.toString().replace(/\\r\\n/g, '\\n') !== working.toString().replace(/\\r\\n/g, '\\n')) throw Error('Parser differs from HEAD')\n}\nconst directory = 'tests/fixtures/section-import/textitems'\nconst files = readdirSync(directory).filter(file => file.endsWith('.json')).sort()\nif (files.length !== 36) throw Error(`Unexpected page count: ${files.length}`)\nconst pages = files.map(file => {\n  const bytes = readFileSync(`${directory}/${file}`)\n  const fixture = JSON.parse(bytes.toString())\n  const output = parseFramingPlan({ ...fixture.page, items: fixture.items })\n  return {\n    file, fixture_sha256: sha(bytes), output,\n    title_tokens: recoverRows(fixture.items).flatMap(row => row.segments.map(segment => compact(segment.text))).filter(text => /伏図|柱芯線図|リスト/.test(text)),\n  }\n})\nconst result = {\n  head: execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(),\n  parser_sha256: sha(readFileSync(parserPath)), pages,\n}\nwriteFileSync(`tmp/phase42-step1/${process.argv[2]}.json`, JSON.stringify(result, null, 2) + '\\n')\nconsole.log(JSON.stringify({pages:pages.length, grids:pages.reduce((sum, p)=>sum+p.output.grids.length,0), blocks:pages.reduce((sum,p)=>sum+p.output.blocks.length,0), outliers:pages.flatMap(p=>p.output.grids.filter(g=>g.scalePtPerMm<0.005||g.scalePtPerMm>0.1).map(g=>({file:p.file,...g}))), karatsu:pages.find(p=>p.file==='karatsu-fukuzu-p1.json')}))\n",
+      "mutate.py": "import hashlib\nimport json\nfrom pathlib import Path\nimport subprocess\n\nroot = Path.cwd()\nwork = root / 'tmp/phase42-step1'\nparser = root / 'src/lib/import/framing-plan/parse.ts'\noriginal = parser.read_bytes()\ntext = original.decode('utf-8')\nsha = lambda content: hashlib.sha256(content).hexdigest()\nmutants = {\n    'P1': \"    if (\\n      result.axes.some(\\n        (axis, index) =>\\n          index > 0 && axis.positionPt === result.axes[index - 1].positionPt,\\n      )\\n    ) {\\n      issue('通り芯座標重複')\\n      return []\\n    }\\n\",\n    'P2': \"    if (\\n      !Number.isFinite(result.scalePtPerMm) ||\\n      result.scalePtPerMm < MIN_PLAN_SCALE_PT_PER_MM ||\\n      result.scalePtPerMm > MAX_PLAN_SCALE_PT_PER_MM\\n    ) {\\n      issue('縮尺範囲外')\\n      return []\\n    }\\n\",\n}\nresults = []\nfor name, block in mutants.items():\n    normalized = text.replace('\\r\\n', '\\n')\n    assert normalized.count(block) == 1\n    try:\n        parser.write_text(normalized.replace(block, ''), encoding='utf-8', newline='')\n        changed_sha = sha(parser.read_bytes())\n        command = ['npx.cmd', 'vitest', 'run', 'src/lib/import/framing-plan/parse.test.ts', '--reporter=json', f'--outputFile=tmp/phase42-step1/mutant-{name}.json']\n        run = subprocess.run(command, capture_output=True, text=True, encoding='utf-8')\n        report = json.loads((work / f'mutant-{name}.json').read_text(encoding='utf-8'))\n        failed = [a for suite in report['testResults'] for a in suite['assertionResults'] if a['status'] == 'failed']\n        assert run.returncode == 1 and len(failed) == 1\n        assert failed[0]['title'].startswith(name + ':')\n    finally:\n        parser.write_bytes(original)\n        assert parser.read_bytes() == original\n    results.append({'property': name, 'command': command, 'exit_code': run.returncode, 'failed_tests': failed, 'num_passed_tests': report['numPassedTests'], 'removed_check': block, 'before_sha256':sha(original), 'mutated_sha256':changed_sha, 'restored_sha256':sha(parser.read_bytes()), 'byte_identical':True})\n(work / 'mutations.json').write_text(json.dumps(results, ensure_ascii=False, indent=2) + '\\n', encoding='utf-8')\nprint(json.dumps([{'property': r['property'], 'exit_code':r['exit_code'], 'failed_test':r['failed_tests'][0]['title'], 'before_sha256':r['before_sha256'], 'restored_sha256':r['restored_sha256']} for r in results]))\n"
+    }
+  },
+  "paths_verified": [
+    "AGENTS.md",
+    "docs/ADR.md",
+    "package.json",
+    "phases/42-plan-grid-soundness/index.json",
+    "phases/42-plan-grid-soundness/step0-report.json",
+    "phases/42-plan-grid-soundness/step1-report.json",
+    "phases/42-plan-grid-soundness/step1.md",
+    "scripts/check-citations.py",
+    "src/app/api/oncall/alert/route.test.ts",
+    "src/lib/import/framing-plan/parse.test.ts",
+    "src/lib/import/framing-plan/parse.ts",
+    "src/lib/import/framing-plan/types.ts",
+    "src/lib/import/runs.ts",
+    "src/lib/import/section-list/types.ts",
+    "src/lib/import/types.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+    "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+    "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+    "tests/fixtures/section-import/SOURCES.md",
+    "tests/fixtures/section-import/expected/fuji-kanritou-p20-lists.json",
+    "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+    "tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json",
+    "tests/fixtures/section-import/expected/karatsu-karayaku-s4-foundation-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p2-columns.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p3-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p1-girders.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p2-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p13-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p14-girders.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+    "tests/fixtures/section-import/textitems/fuji-p15.json",
+    "tests/fixtures/section-import/textitems/fuji-p17.json",
+    "tests/fixtures/section-import/textitems/fuji-p18.json",
+    "tests/fixtures/section-import/textitems/fuji-p20.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+    "tests/fixtures/section-import/textitems/ina-p6.json",
+    "tests/fixtures/section-import/textitems/ina-p7.json",
+    "tests/fixtures/section-import/textitems/kani-p38.json",
+    "tests/fixtures/section-import/textitems/kani-p39.json",
+    "tests/fixtures/section-import/textitems/kani-p40.json",
+    "tests/fixtures/section-import/textitems/kani-p41.json",
+    "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+    "tests/fixtures/section-import/textitems/ojkk-p2.json",
+    "tests/fixtures/section-import/textitems/ojkk-p3.json",
+    "tests/fixtures/section-import/textitems/ojkk-p4.json",
+    "tests/fixtures/section-import/textitems/saiki-p1.json",
+    "tests/fixtures/section-import/textitems/saiki-p2.json",
+    "tests/fixtures/section-import/textitems/shibata-p1.json",
+    "tests/fixtures/section-import/textitems/shibata-p13.json",
+    "tests/fixtures/section-import/textitems/shibata-p7.json",
+    "tests/fixtures/section-import/textitems/tsu-p16.json",
+    "tests/fixtures/section-import/textitems/tsu-p20.json",
+    "tests/fixtures/section-import/textitems/tsu-p21.json",
+    "tests/fixtures/section-import/textitems/tsu-p22.json",
+    "tests/fixtures/section-import/textitems/yokohama-p13.json",
+    "tests/fixtures/section-import/textitems/yokohama-p14.json",
+    "tests/fixtures/section-import/textitems/yokohama-p15.json",
+    "tests/fixtures/section-import/textitems/yokohama-p6.json",
+    "tests/fixtures/section-import/textitems/yokohama-p7.json",
+    "tests/fixtures/section-import/textitems/yokohama-p8.json",
+    "tests/fixtures/section-import/textitems/yokohama-p9.json",
+    "tests/fixtures/section-import/title-block-exclusions.json",
+    "tests/plan-import/parse.test.ts",
+    "vitest.config.ts"
+  ],
+  "paths_expected_absent": []
+}

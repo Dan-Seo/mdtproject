@@ -1,0 +1,1935 @@
+{
+  "step": 0,
+  "name": "midpoint-margin-sweep",
+  "status": "completed",
+  "baseline_commit": "d567d91ed1e757f108ae28300de474bf7cfe191e",
+  "midpoint_margin": {
+    "accepted_max": {
+      "value_pt": 10.379845548060018,
+      "direction": "X",
+      "along_key": "x",
+      "axis_labels": [
+        "2",
+        "1"
+      ],
+      "dimension_text": "700",
+      "dimension_value_mm": 700,
+      "dimension_token_index": 43,
+      "dimension_center_pt": {
+        "x": 377.9678488128,
+        "y": 124.13994942900038
+      },
+      "axis_positions_pt": [
+        43.16768159292046,
+        733.5277071287996
+      ],
+      "midpoint_pt": 388.34769436086003,
+      "across_options_pt": [
+        131.37812926690913,
+        126.239949504
+      ],
+      "across_distance_pt": 2.1000000749996133,
+      "total_confirmed": false,
+      "sequence_index": 0,
+      "span_index": 0,
+      "page": "saiki-p2.json"
+    },
+    "competing_min": {
+      "value_pt": 0.018264999999928477,
+      "direction": "Y",
+      "along_key": "x",
+      "axis_labels": [
+        "Y8",
+        "Y9"
+      ],
+      "dimension_text": "24000",
+      "dimension_value_mm": 24000,
+      "dimension_token_index": 10,
+      "dimension_center_pt": {
+        "x": 967.0137349999999,
+        "y": 252.7547666666667
+      },
+      "axis_positions_pt": [
+        929.204225,
+        1004.786715
+      ],
+      "midpoint_pt": 966.99547,
+      "across_options_pt": [
+        268.33226999999994
+      ],
+      "across_distance_pt": 15.577503333333226,
+      "total_confirmed": true,
+      "sequence_index": 2,
+      "span_index": 1,
+      "page": "hirosaki-p25.json"
+    },
+    "tolerance_pt": 15,
+    "holds": false
+  },
+  "margin_interpretation": [
+    "36면에서 실제 반환되는 grids와 blocks의 축 열을 합집합으로 잡아 208개 채택 스팬을 측정했다. 채택은 현재 파서의 선택을 뜻하며 도면상 정답의 인증이 아니다. A가 나온 saiki-p2는 リスト 면의 부분 격자다.",
+    "B는 축 열에서 스팬으로 소비하지 않은 토큰이다. 인접 축의 axisAcrossOptions 중 하나에서 across 거리 <= 60pt인 토큰을 조사하며 along 거리 상한은 계측에 적용하지 않는다. 최솟값 자체가 15pt 안에 있어 상한을 적용해도 같은 B다. 다른 스팬에서 이미 선택한 토큰은 제외하되 合計 토큰은 스팬 미채택이므로 포함한다.",
+    "전체 B의 24000은 Y7~Y10 세 스팬의 合計이며 Y8~Y9의 채택값은 8000이다. 중점에 더 가까운 合計가 있어도 파서가 그 토큰을 스팬으로 선택했다는 뜻은 아니다. 다른 검증과 선택 규칙이 있으므로 거리 여백 불성립만으로 모든 격자가 틀렸다고 주장하지 않는다.",
+    "옛 주석과 같은 合計 미확인 축만 따로 보아도 B=6.18pt로 15보다 작다. 이 결과는 R15의 후속 문서 갱신 근거이며 이번 step에서는 R15 문서나 허용오차 값을 바꾸지 않는다."
+  ],
+  "unconfirmed_margin": {
+    "accepted_span_measurements": 101,
+    "accepted_max": {
+      "value_pt": 10.379845548060018,
+      "direction": "X",
+      "along_key": "x",
+      "axis_labels": [
+        "2",
+        "1"
+      ],
+      "dimension_text": "700",
+      "dimension_value_mm": 700,
+      "dimension_token_index": 43,
+      "dimension_center_pt": {
+        "x": 377.9678488128,
+        "y": 124.13994942900038
+      },
+      "axis_positions_pt": [
+        43.16768159292046,
+        733.5277071287996
+      ],
+      "midpoint_pt": 388.34769436086003,
+      "across_options_pt": [
+        131.37812926690913,
+        126.239949504
+      ],
+      "across_distance_pt": 2.1000000749996133,
+      "total_confirmed": false,
+      "sequence_index": 0,
+      "span_index": 0,
+      "page": "saiki-p2.json"
+    },
+    "competing_min": {
+      "value_pt": 6.17999999999995,
+      "direction": "Y",
+      "along_key": "y",
+      "axis_labels": [
+        "Y1",
+        "Y0"
+      ],
+      "dimension_text": "180",
+      "dimension_value_mm": 180,
+      "dimension_token_index": 21,
+      "dimension_center_pt": {
+        "x": 153.4479,
+        "y": 515.9100000000001
+      },
+      "axis_positions_pt": [
+        503.04,
+        541.14
+      ],
+      "midpoint_pt": 522.09,
+      "across_options_pt": [
+        107.00778,
+        851.99802
+      ],
+      "across_distance_pt": 46.44012000000001,
+      "total_confirmed": false,
+      "sequence_index": 1,
+      "span_index": 5,
+      "page": "karatsu-fukuzu-p1.json"
+    },
+    "accepted_at_competing_pair": {
+      "value_pt": 3.3900000000001,
+      "direction": "Y",
+      "along_key": "y",
+      "axis_labels": [
+        "Y1",
+        "Y0"
+      ],
+      "dimension_text": "1,900",
+      "dimension_value_mm": 1900,
+      "dimension_token_index": 18,
+      "dimension_center_pt": {
+        "x": 131.7279,
+        "y": 518.6999999999999
+      },
+      "axis_positions_pt": [
+        503.04,
+        541.14
+      ],
+      "midpoint_pt": 522.09,
+      "across_options_pt": [
+        107.00778,
+        851.99802
+      ],
+      "across_distance_pt": 24.72012000000001,
+      "total_confirmed": false,
+      "sequence_index": 1,
+      "span_index": 5,
+      "page": "karatsu-fukuzu-p1.json"
+    },
+    "holds": false
+  },
+  "competing_pair_accepted": {
+    "value_pt": 0.024638642399963828,
+    "direction": "Y",
+    "along_key": "x",
+    "axis_labels": [
+      "Y8",
+      "Y9"
+    ],
+    "dimension_text": "8000",
+    "dimension_value_mm": 8000,
+    "dimension_token_index": 7,
+    "dimension_center_pt": {
+      "x": 967.0201086423999,
+      "y": 242.15715999999998
+    },
+    "axis_positions_pt": [
+      929.204225,
+      1004.786715
+    ],
+    "midpoint_pt": 966.99547,
+    "across_options_pt": [
+      268.33226999999994
+    ],
+    "across_distance_pt": 26.17510999999996,
+    "total_confirmed": true,
+    "sequence_index": 2,
+    "span_index": 1,
+    "page": "hirosaki-p25.json"
+  },
+  "definition_crosschecks": {
+    "exclude_only_current_span_competing_min": {
+      "value_pt": 0.018264999999928477,
+      "direction": "Y",
+      "along_key": "x",
+      "axis_labels": [
+        "Y8",
+        "Y9"
+      ],
+      "dimension_text": "24000",
+      "dimension_value_mm": 24000,
+      "dimension_token_index": 10,
+      "dimension_center_pt": {
+        "x": 967.0137349999999,
+        "y": 252.7547666666667
+      },
+      "axis_positions_pt": [
+        929.204225,
+        1004.786715
+      ],
+      "midpoint_pt": 966.99547,
+      "across_options_pt": [
+        268.33226999999994
+      ],
+      "across_distance_pt": 15.577503333333226,
+      "total_confirmed": true,
+      "sequence_index": 2,
+      "span_index": 1,
+      "page": "hirosaki-p25.json"
+    },
+    "different_numeric_value_competing_min": {
+      "value_pt": 0.018264999999928477,
+      "direction": "Y",
+      "along_key": "x",
+      "axis_labels": [
+        "Y8",
+        "Y9"
+      ],
+      "dimension_text": "24000",
+      "dimension_value_mm": 24000,
+      "dimension_token_index": 10,
+      "dimension_center_pt": {
+        "x": 967.0137349999999,
+        "y": 252.7547666666667
+      },
+      "axis_positions_pt": [
+        929.204225,
+        1004.786715
+      ],
+      "midpoint_pt": 966.99547,
+      "across_options_pt": [
+        268.33226999999994
+      ],
+      "across_distance_pt": 15.577503333333226,
+      "total_confirmed": true,
+      "sequence_index": 2,
+      "span_index": 1,
+      "page": "hirosaki-p25.json"
+    },
+    "note": "다른 스팬의 선택 토큰까지 경쟁으로 포함하거나 동일 값 토큰을 빼도 전체 최솟값의 면·축 쌍·토큰이 같다."
+  },
+  "sweep": [
+    {
+      "tolerance_pt": 4,
+      "grid_pages": 23,
+      "block_pages": 7,
+      "golden_identical": false
+    },
+    {
+      "tolerance_pt": 6,
+      "grid_pages": 23,
+      "block_pages": 15,
+      "golden_identical": true
+    },
+    {
+      "tolerance_pt": 15,
+      "grid_pages": 26,
+      "block_pages": 16,
+      "golden_identical": true
+    },
+    {
+      "tolerance_pt": 30,
+      "grid_pages": 26,
+      "block_pages": 16,
+      "golden_identical": false
+    },
+    {
+      "tolerance_pt": 40,
+      "grid_pages": 26,
+      "block_pages": 16,
+      "golden_identical": false
+    }
+  ],
+  "sweep_comparison": "golden_identical은 corpus2.test.ts의 CASES 7면에 대해 parseFramingPlan 반환 객체 전체(grids, blocks, issues, 좌표·축척·배치·제목 포함)를 배열 순서까지 T=15와 정확 비교한 값이다. 골든 파일과의 계약 대조는 sweep_details.golden_pages.matches_golden_contract로 별도 기록한다. T=30은 tsu-p16의 issues만 달라 전체 동일성은 false지만 골든의 블록 계약은 통과한다.",
+  "sweep_details": [
+    {
+      "tolerance_pt": 4,
+      "grid_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "hirosaki-p25.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "kani-p40.json",
+        "kani-p41.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi1-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "tsu-p21.json",
+        "tsu-p22.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json",
+        "yokohama-p8.json",
+        "yokohama-p9.json"
+      ],
+      "block_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi2-p1.json"
+      ],
+      "golden_pages": [
+        {
+          "page": "fuji-p17.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793",
+          "output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793"
+        },
+        {
+          "page": "hirosaki-p21.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311",
+          "output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311"
+        },
+        {
+          "page": "ina-p6.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653",
+          "output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653"
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "identical": false,
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "matches_golden_contract": false,
+          "baseline_output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127",
+          "output_sha256": "9fbeb3f66dc89abbd38879f6dadb5f80755d028853567fe835f0e589ccfc8a04"
+        },
+        {
+          "page": "karatsu-hashirashin-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478",
+          "output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478"
+        },
+        {
+          "page": "shibata-p1.json",
+          "identical": false,
+          "changed_fields": [
+            "grids",
+            "blocks"
+          ],
+          "matches_golden_contract": false,
+          "baseline_output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f",
+          "output_sha256": "8b9dc3ae58bd3fb44345bfdec2846db71a9b36feceab6c3ba1b2eb58a07c6c20"
+        },
+        {
+          "page": "tsu-p16.json",
+          "identical": false,
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "matches_golden_contract": false,
+          "baseline_output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36",
+          "output_sha256": "22489d2d02ee522555eb3e0435c01f24c377fa2a4d168d904a195c9ffded79ee"
+        }
+      ],
+      "changes_vs_15": [
+        {
+          "page": "fuji-p20.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            0
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        },
+        {
+          "page": "kani-p38.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "kani-p39.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "karatsu-jikugumi1-p1.json",
+          "changed_fields": [
+            "issues"
+          ],
+          "grids_before_after": [
+            4,
+            4
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落",
+            "縮尺不整合"
+          ],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "saiki-p2.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            0
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        },
+        {
+          "page": "shibata-p1.json",
+          "changed_fields": [
+            "grids",
+            "blocks"
+          ],
+          "grids_before_after": [
+            5,
+            2
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "shibata-p13.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            0
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        },
+        {
+          "page": "tsu-p16.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            2
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落",
+            "通り芯対応不明"
+          ],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "tsu-p20.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [
+            "通り芯対応不明"
+          ],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "yokohama-p6.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            2,
+            0
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "yokohama-p7.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            1
+          ],
+          "blocks_before_after": [
+            2,
+            0
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        }
+      ]
+    },
+    {
+      "tolerance_pt": 6,
+      "grid_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "hirosaki-p25.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "kani-p40.json",
+        "kani-p41.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi1-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "tsu-p21.json",
+        "tsu-p22.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json",
+        "yokohama-p8.json",
+        "yokohama-p9.json"
+      ],
+      "block_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json"
+      ],
+      "golden_pages": [
+        {
+          "page": "fuji-p17.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793",
+          "output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793"
+        },
+        {
+          "page": "hirosaki-p21.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311",
+          "output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311"
+        },
+        {
+          "page": "ina-p6.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653",
+          "output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653"
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127",
+          "output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127"
+        },
+        {
+          "page": "karatsu-hashirashin-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478",
+          "output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478"
+        },
+        {
+          "page": "shibata-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f",
+          "output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f"
+        },
+        {
+          "page": "tsu-p16.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36",
+          "output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36"
+        }
+      ],
+      "changes_vs_15": [
+        {
+          "page": "fuji-p20.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            0
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        },
+        {
+          "page": "saiki-p2.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            0
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        },
+        {
+          "page": "shibata-p13.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            0
+          ],
+          "blocks_before_after": [
+            1,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "通り芯ラベル未検出"
+          ]
+        }
+      ]
+    },
+    {
+      "tolerance_pt": 15,
+      "grid_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "fuji-p20.json",
+        "hirosaki-p21.json",
+        "hirosaki-p25.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "kani-p40.json",
+        "kani-p41.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi1-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "saiki-p2.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "tsu-p21.json",
+        "tsu-p22.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json",
+        "yokohama-p8.json",
+        "yokohama-p9.json"
+      ],
+      "block_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json"
+      ],
+      "golden_pages": [
+        {
+          "page": "fuji-p17.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793",
+          "output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793"
+        },
+        {
+          "page": "hirosaki-p21.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311",
+          "output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311"
+        },
+        {
+          "page": "ina-p6.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653",
+          "output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653"
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127",
+          "output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127"
+        },
+        {
+          "page": "karatsu-hashirashin-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478",
+          "output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478"
+        },
+        {
+          "page": "shibata-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f",
+          "output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f"
+        },
+        {
+          "page": "tsu-p16.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36",
+          "output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36"
+        }
+      ],
+      "changes_vs_15": []
+    },
+    {
+      "tolerance_pt": 30,
+      "grid_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "fuji-p20.json",
+        "hirosaki-p21.json",
+        "hirosaki-p25.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "kani-p40.json",
+        "kani-p41.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi1-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "saiki-p2.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "tsu-p21.json",
+        "tsu-p22.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json",
+        "yokohama-p8.json",
+        "yokohama-p9.json"
+      ],
+      "block_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json"
+      ],
+      "golden_pages": [
+        {
+          "page": "fuji-p17.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793",
+          "output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793"
+        },
+        {
+          "page": "hirosaki-p21.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311",
+          "output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311"
+        },
+        {
+          "page": "ina-p6.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653",
+          "output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653"
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127",
+          "output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127"
+        },
+        {
+          "page": "karatsu-hashirashin-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478",
+          "output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478"
+        },
+        {
+          "page": "shibata-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f",
+          "output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f"
+        },
+        {
+          "page": "tsu-p16.json",
+          "identical": false,
+          "changed_fields": [
+            "issues"
+          ],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36",
+          "output_sha256": "b67fe72005b581b12798af5ef14e5d92f11311d9cb6f448af9322aec4895fb93"
+        }
+      ],
+      "changes_vs_15": [
+        {
+          "page": "fuji-p20.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            3
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "縮尺不整合",
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "karatsu-jikugumi2-p1.json",
+          "changed_fields": [
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            3
+          ],
+          "blocks_before_after": [
+            1,
+            1
+          ],
+          "issues_before": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "ラベル文字混在",
+            "縮尺不整合"
+          ]
+        },
+        {
+          "page": "shibata-p13.json",
+          "changed_fields": [
+            "grids",
+            "blocks"
+          ],
+          "grids_before_after": [
+            2,
+            3
+          ],
+          "blocks_before_after": [
+            1,
+            2
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "tsu-p16.json",
+          "changed_fields": [
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            3
+          ],
+          "blocks_before_after": [
+            1,
+            1
+          ],
+          "issues_before": [
+            "寸法欠落",
+            "通り芯対応不明"
+          ],
+          "issues_after": [
+            "寸法列曖昧",
+            "通り芯対応不明"
+          ]
+        }
+      ]
+    },
+    {
+      "tolerance_pt": 40,
+      "grid_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "fuji-p20.json",
+        "hirosaki-p21.json",
+        "hirosaki-p25.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "kani-p40.json",
+        "kani-p41.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi1-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "saiki-p2.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "tsu-p21.json",
+        "tsu-p22.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json",
+        "yokohama-p8.json",
+        "yokohama-p9.json"
+      ],
+      "block_page_names": [
+        "fuji-p15.json",
+        "fuji-p17.json",
+        "hirosaki-p21.json",
+        "ina-p6.json",
+        "ina-p7.json",
+        "kani-p38.json",
+        "kani-p39.json",
+        "karatsu-fukuzu-p1.json",
+        "karatsu-hashirashin-p1.json",
+        "karatsu-jikugumi2-p1.json",
+        "shibata-p1.json",
+        "shibata-p13.json",
+        "tsu-p16.json",
+        "tsu-p20.json",
+        "yokohama-p6.json",
+        "yokohama-p7.json"
+      ],
+      "golden_pages": [
+        {
+          "page": "fuji-p17.json",
+          "identical": false,
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "matches_golden_contract": false,
+          "baseline_output_sha256": "24ecd87362f52a52dd44922822880d2684253be69891265f92d6e21aa1f28793",
+          "output_sha256": "37fc7108fe2c1f86b60890f3dfda9e42674c83c52ffcbcdb6d95a98f2d362807"
+        },
+        {
+          "page": "hirosaki-p21.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311",
+          "output_sha256": "762e37bccc593b3c3240bda9f3c5e9d83d7b1de8ac3cc8ecb491130858737311"
+        },
+        {
+          "page": "ina-p6.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653",
+          "output_sha256": "cfdf0cbbbf4ca17bfe7c251019817ffe80ee30c34e23e5464f1970d75d06a653"
+        },
+        {
+          "page": "karatsu-fukuzu-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127",
+          "output_sha256": "faa5da164eca89246366764c594b9c1cee32f728c295e5c5db8ba4b8fdbbb127"
+        },
+        {
+          "page": "karatsu-hashirashin-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478",
+          "output_sha256": "3807e934be66950f89f624d844339c0ff3d622518e923e00df222f01bcbf8478"
+        },
+        {
+          "page": "shibata-p1.json",
+          "identical": true,
+          "changed_fields": [],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f",
+          "output_sha256": "d6d99a79b6fbb9c1dacaf5d89bfd86707ff95cb9dc7dbb8ff3787fceae4eb21f"
+        },
+        {
+          "page": "tsu-p16.json",
+          "identical": false,
+          "changed_fields": [
+            "issues"
+          ],
+          "matches_golden_contract": true,
+          "baseline_output_sha256": "5c31db119425ed57b49bd28fc2d725ef106977387904604e4822942e967bea36",
+          "output_sha256": "b67fe72005b581b12798af5ef14e5d92f11311d9cb6f448af9322aec4895fb93"
+        }
+      ],
+      "changes_vs_15": [
+        {
+          "page": "fuji-p17.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            3
+          ],
+          "blocks_before_after": [
+            2,
+            2
+          ],
+          "issues_before": [],
+          "issues_after": [
+            "寸法列曖昧"
+          ]
+        },
+        {
+          "page": "fuji-p20.json",
+          "changed_fields": [
+            "grids",
+            "issues"
+          ],
+          "grids_before_after": [
+            1,
+            3
+          ],
+          "blocks_before_after": [
+            0,
+            0
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "縮尺不整合",
+            "寸法欠落"
+          ]
+        },
+        {
+          "page": "karatsu-jikugumi2-p1.json",
+          "changed_fields": [
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            3
+          ],
+          "blocks_before_after": [
+            1,
+            1
+          ],
+          "issues_before": [
+            "ラベル文字混在",
+            "寸法欠落"
+          ],
+          "issues_after": [
+            "ラベル文字混在",
+            "縮尺不整合"
+          ]
+        },
+        {
+          "page": "shibata-p13.json",
+          "changed_fields": [
+            "grids",
+            "blocks",
+            "issues"
+          ],
+          "grids_before_after": [
+            2,
+            4
+          ],
+          "blocks_before_after": [
+            1,
+            3
+          ],
+          "issues_before": [
+            "寸法欠落"
+          ],
+          "issues_after": []
+        },
+        {
+          "page": "tsu-p16.json",
+          "changed_fields": [
+            "issues"
+          ],
+          "grids_before_after": [
+            3,
+            3
+          ],
+          "blocks_before_after": [
+            1,
+            1
+          ],
+          "issues_before": [
+            "寸法欠落",
+            "通り芯対応不明"
+          ],
+          "issues_after": [
+            "寸法列曖昧",
+            "通り芯対応不明"
+          ]
+        }
+      ]
+    }
+  ],
+  "corpus": {
+    "page_count": 36,
+    "accepted_span_measurements": 208,
+    "returned_sequences": 65,
+    "competitor_span_pairs_within_15": 28,
+    "pages": [
+      {
+        "page": "fuji-p15.json",
+        "input_sha256": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 3,
+        "accepted_span_measurements": 9,
+        "accepted_max_pt": 2.549981999999943,
+        "competing_min_pt": 1.9348829999999566,
+        "competitor_span_pairs_within_15": 4
+      },
+      {
+        "page": "fuji-p17.json",
+        "input_sha256": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+        "grids": 3,
+        "blocks": 2,
+        "returned_sequences": 4,
+        "accepted_span_measurements": 8,
+        "accepted_max_pt": 2.490288000000021,
+        "competing_min_pt": 0.030215999999995802,
+        "competitor_span_pairs_within_15": 7
+      },
+      {
+        "page": "fuji-p18.json",
+        "input_sha256": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "fuji-p20.json",
+        "input_sha256": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 1,
+        "accepted_max_pt": 7.560117999999989,
+        "competing_min_pt": 31.920107999999914,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "hirosaki-p21.json",
+        "input_sha256": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 20,
+        "accepted_max_pt": 2.692477401800147,
+        "competing_min_pt": 0.01828000000011798,
+        "competitor_span_pairs_within_15": 1
+      },
+      {
+        "page": "hirosaki-p25.json",
+        "input_sha256": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+        "grids": 3,
+        "blocks": 0,
+        "returned_sequences": 3,
+        "accepted_span_measurements": 18,
+        "accepted_max_pt": 0.024669999999986203,
+        "competing_min_pt": 0.018264999999928477,
+        "competitor_span_pairs_within_15": 9
+      },
+      {
+        "page": "ina-p6.json",
+        "input_sha256": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+        "grids": 3,
+        "blocks": 1,
+        "returned_sequences": 5,
+        "accepted_span_measurements": 7,
+        "accepted_max_pt": 2.2913855937864582,
+        "competing_min_pt": 28.667883684849244,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "ina-p7.json",
+        "input_sha256": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 3,
+        "accepted_max_pt": 2.273946552038524,
+        "competing_min_pt": 28.663650293287162,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "kani-p38.json",
+        "input_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 5,
+        "accepted_max_pt": 5.148004133400036,
+        "competing_min_pt": 28.350022679999825,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "kani-p39.json",
+        "input_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 5,
+        "accepted_max_pt": 5.155388754692353,
+        "competing_min_pt": 28.350022679999825,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "kani-p40.json",
+        "input_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 2,
+        "accepted_max_pt": 0.030000038999901335,
+        "competing_min_pt": 85.050068055,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "kani-p41.json",
+        "input_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 3,
+        "accepted_max_pt": 0.0600000629999613,
+        "competing_min_pt": 28.350022679999938,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "karatsu-fukuzu-p1.json",
+        "input_sha256": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 12,
+        "accepted_max_pt": 4.305000000000035,
+        "competing_min_pt": 6.17999999999995,
+        "competitor_span_pairs_within_15": 5
+      },
+      {
+        "page": "karatsu-hashirashin-p1.json",
+        "input_sha256": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 12,
+        "accepted_max_pt": 3.7399820000000545,
+        "competing_min_pt": 14.730000000000018,
+        "competitor_span_pairs_within_15": 1
+      },
+      {
+        "page": "karatsu-jikugumi1-p1.json",
+        "input_sha256": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+        "grids": 4,
+        "blocks": 0,
+        "returned_sequences": 4,
+        "accepted_span_measurements": 13,
+        "accepted_max_pt": 0.5699999999999932,
+        "competing_min_pt": 62.88000000000005,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "karatsu-jikugumi2-p1.json",
+        "input_sha256": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+        "grids": 3,
+        "blocks": 1,
+        "returned_sequences": 3,
+        "accepted_span_measurements": 12,
+        "accepted_max_pt": 0.5698800000000688,
+        "competing_min_pt": 16.500120000000038,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "karatsu-shousai-p1.json",
+        "input_sha256": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "ojkk-p2.json",
+        "input_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "ojkk-p3.json",
+        "input_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "ojkk-p4.json",
+        "input_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "saiki-p1.json",
+        "input_sha256": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "saiki-p2.json",
+        "input_sha256": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 1,
+        "accepted_max_pt": 10.379845548060018,
+        "competing_min_pt": 33.65983530606036,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "shibata-p1.json",
+        "input_sha256": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+        "grids": 5,
+        "blocks": 1,
+        "returned_sequences": 5,
+        "accepted_span_measurements": 10,
+        "accepted_max_pt": 5.645506800000021,
+        "competing_min_pt": 43.87842720000003,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "shibata-p13.json",
+        "input_sha256": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 3,
+        "accepted_max_pt": 7.685713200000237,
+        "competing_min_pt": 105.70158600000002,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "shibata-p7.json",
+        "input_sha256": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "tsu-p16.json",
+        "input_sha256": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+        "grids": 3,
+        "blocks": 1,
+        "returned_sequences": 4,
+        "accepted_span_measurements": 9,
+        "accepted_max_pt": 4.200020332864597,
+        "competing_min_pt": 20.81401368726472,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "tsu-p20.json",
+        "input_sha256": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+        "grids": 2,
+        "blocks": 1,
+        "returned_sequences": 3,
+        "accepted_span_measurements": 8,
+        "accepted_max_pt": 4.200020332864597,
+        "competing_min_pt": 5.939958859566445,
+        "competitor_span_pairs_within_15": 1
+      },
+      {
+        "page": "tsu-p21.json",
+        "input_sha256": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 4,
+        "accepted_max_pt": 0.0899955618634749,
+        "competing_min_pt": 50.36998865720807,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "tsu-p22.json",
+        "input_sha256": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 2,
+        "accepted_max_pt": 0.06053669019308927,
+        "competing_min_pt": 56.93977618256281,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p13.json",
+        "input_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p14.json",
+        "input_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p15.json",
+        "input_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+        "grids": 0,
+        "blocks": 0,
+        "returned_sequences": 0,
+        "accepted_span_measurements": 0,
+        "accepted_max_pt": null,
+        "competing_min_pt": null,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p6.json",
+        "input_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+        "grids": 2,
+        "blocks": 2,
+        "returned_sequences": 4,
+        "accepted_span_measurements": 16,
+        "accepted_max_pt": 5.80372199999988,
+        "competing_min_pt": 151.39572599999974,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p7.json",
+        "input_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+        "grids": 2,
+        "blocks": 2,
+        "returned_sequences": 4,
+        "accepted_span_measurements": 16,
+        "accepted_max_pt": 5.803117999999927,
+        "competing_min_pt": 151.39650600000027,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p8.json",
+        "input_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+        "grids": 1,
+        "blocks": 0,
+        "returned_sequences": 1,
+        "accepted_span_measurements": 2,
+        "accepted_max_pt": 0.047725999999897795,
+        "competing_min_pt": 416.6530740000004,
+        "competitor_span_pairs_within_15": 0
+      },
+      {
+        "page": "yokohama-p9.json",
+        "input_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+        "grids": 2,
+        "blocks": 0,
+        "returned_sequences": 2,
+        "accepted_span_measurements": 7,
+        "accepted_max_pt": 0.04815399999915826,
+        "competing_min_pt": 331.5124460000011,
+        "competitor_span_pairs_within_15": 0
+      }
+    ]
+  },
+  "procedure": {
+    "environment": {
+      "platform": "Windows PowerShell",
+      "node": "v24.15.0",
+      "python": "Python 3.13.9"
+    },
+    "steps": [
+      "리포 루트에서 TextItem JSON 파일명을 정렬해 36개인지 assert하고 각 파일의 {...fixture.page, items: fixture.items}를 parseFramingPlan에 전달한다. T=15 원본 출력을 baseline15로 저장한다.",
+      "MIDPOINT_TOLERANCE_PT 선언값만 4, 6, 15, 30, 40으로 바꾸고 각 T마다 새로운 npx tsx 프로세스를 실행해 모듈 캐시를 배제한다. grids.length > 0 및 blocks.length > 0인 면의 수를 센다. 후보의 총개수나 issues 유무로 면을 세지 않는다.",
+      "T=15에서 collectTokens.classify가 DimensionToken을 만들 때 compact 이후의 normalizedText를 __step0Text로 보관한다. 문자열을 mm 값에서 역으로 만들지 않는다. 치수 좌표는 파서가 실제 사용하는 x,y를 그대로 쓰고 별도 높이 보정은 하지 않는다.",
+      "validateSequence의 세 성공 반환(full total, partial total, no total)을 __step0Remember로 감싸 WeakMap에 실제 선택한 DimensionToken 객체와 원래 axisAcrossOptions를 기록한다. partial total은 firstIndex..lastIndex로 채택된 spans만 자르고 원래 옵션 인덱스를 보존한다. 반환 객체 자체의 필드는 바꾸지 않는다.",
+      "gridCandidate에서 만들어진 공개 후보와 내부 DirectedSequence를 WeakMap으로 연결한다. parseFramingPlan의 마지막 반환 직전에 최종 grids 및 blocks의 xGrid/yGrid에 실제 실린 sequence만 객체 식별자로 중복 제거한다. 검증 후 억제된 열·출력에서 버려진 중복 후보는 세지 않는다.",
+      "각 채택 스팬 i에 대해 midpoint=(axes[i].positionPt+axes[i+1].positionPt)/2, along=sequence.alongKey, value_pt=abs(token[along]-midpoint)를 출력한다. direction은 제품 X/Y, along_key는 페이지 x/y라 서로 같다고 가정하지 않는다.",
+      "B 후보는 동일 sequence의 선택 스팬 토큰 Set에 없고, 원래 인접 두 축의 axisAcrossOptions 합집합 중 하나에서 abs(token[across]-band)<=DIMENSION_WINDOW_PT(60)인 토큰이다. along 문턱은 적용하지 않고 가장 작은 거리를 고른다. 선택 집합은 숫자값이 아닌 객체 식별자로 제외해 다른 위치의 같은 값이 숨지 않게 한다.",
+      "208개 span-row의 accepted.value_pt 최댓값과 competing.value_pt 최솟값을 모은다. 合計 미확인 축만의 최솟값, 현재 스팬 토큰만 제외한 경우, 채택값과 숫자가 다른 토큰만 본 경우도 따로 집계한다.",
+      "계측 T=15의 36면 반환 객체가 원본 baseline15와 전부 동일한지 assert한다. finally에서 parse.ts를 백업한 바이트로 복원하고 SHA-256 일치를 확인한다. 이후 MIDPOINT 주석 하나만 갱신한다.",
+      "계측 스크립트는 아래 replay_files에 내용으로 보존한 뒤 삭제한다. 재현하려면 해당 상대 경로에 UTF-8로 임시 복원하고 python tmp/phase42-step0/measure.py를 실행한다. 이 스크립트는 현재 주석에서도 동작하며 parser는 finally에서 실행 직전 상태로 복원한다. 실행 완료 후 임시 파일을 삭제한다."
+    ],
+    "replay_files": [
+      {
+        "temporary_path": "tmp/phase42-step0/run.ts",
+        "content": "import { readFileSync, readdirSync, writeFileSync } from 'node:fs'\nimport * as parser from '../../src/lib/import/framing-plan/parse'\n\nconst dir = 'tests/fixtures/section-import/textitems'\nconst files = readdirSync(dir).filter((file) => file.endsWith('.json')).sort()\nif (files.length !== 36) throw new Error(`Expected 36 pages, got ${files.length}`)\nconst pages = files.map((file) => {\n  const fixture = JSON.parse(readFileSync(`${dir}/${file}`, 'utf8'))\n  const output = parser.parseFramingPlan({ ...fixture.page, items: fixture.items })\n  const debug = (parser as any).__step0Measurements?.splice(0) ?? []\n  return { file, fixture_source: fixture.source, output, debug }\n})\nwriteFileSync(process.argv[2], JSON.stringify(pages, null, 2) + '\\n')\nconsole.log(JSON.stringify({ pages: pages.length, grid_pages: pages.filter((p) => p.output.grids.length).length, block_pages: pages.filter((p) => p.output.blocks.length).length }))\n"
+      },
+      {
+        "temporary_path": "tmp/phase42-step0/measure.py",
+        "content": "import hashlib\nimport json\nfrom pathlib import Path\nimport subprocess\n\nroot = Path.cwd()\nwork = root / 'tmp/phase42-step0'\nparser = root / 'src/lib/import/framing-plan/parse.ts'\noriginal_bytes = parser.read_bytes()\noriginal = original_bytes.decode('utf-8').replace('\\r\\n', '\\n')\n(work / 'original-parse.ts.txt').write_bytes(original_bytes)\n\ndef replace_once(text, before, after):\n    assert text.count(before) == 1, (before, text.count(before))\n    return text.replace(before, after)\n\ndef run(name):\n    result = subprocess.run(['npx.cmd', 'tsx', 'tmp/phase42-step0/run.ts', f'tmp/phase42-step0/{name}.json'], capture_output=True, text=True, encoding='utf-8')\n    print(name, result.returncode, result.stdout.strip(), flush=True)\n    if result.returncode:\n        print(result.stderr)\n        raise RuntimeError(name)\n    return json.loads((work / f'{name}.json').read_text(encoding='utf-8'))\n\ndef instrument(text):\n    text = replace_once(text, '      dimensions.push({\\n', '      dimensions.push({\\n        __step0Text: normalizedText,\\n')\n    replacements = [\n        ('''    return {\n      ...sequence,\n      direction: [...sequence.letters][0],\n      spansMm: selected.solution.spans.map((span) => span.valueMm),\n      scalePtPerMm: selected.solution.scalePtPerMm,\n      totalConfirmed: true,\n    }''', '''    return __step0Remember({\n      ...sequence,\n      direction: [...sequence.letters][0],\n      spansMm: selected.solution.spans.map((span) => span.valueMm),\n      scalePtPerMm: selected.solution.scalePtPerMm,\n      totalConfirmed: true,\n    }, sequence, selected.solution.spans, 0)'''),\n        ('''    return {\n      ...sequence,\n      direction: [...sequence.letters][0],\n      axes: sequence.axes.slice(first.firstIndex, first.lastIndex + 1),\n      spansMm: solution.spans\n        .slice(first.firstIndex, first.lastIndex)\n        .map((span) => span.valueMm),\n      scalePtPerMm: solution.scalePtPerMm,\n      totalConfirmed: true,\n    }''', '''    return __step0Remember({\n      ...sequence,\n      direction: [...sequence.letters][0],\n      axes: sequence.axes.slice(first.firstIndex, first.lastIndex + 1),\n      spansMm: solution.spans\n        .slice(first.firstIndex, first.lastIndex)\n        .map((span) => span.valueMm),\n      scalePtPerMm: solution.scalePtPerMm,\n      totalConfirmed: true,\n    }, sequence, solution.spans.slice(first.firstIndex, first.lastIndex), first.firstIndex)'''),\n        ('''  return {\n    ...sequence,\n    direction: [...sequence.letters][0],\n    spansMm: selected.spans.map((span) => span.valueMm),\n    scalePtPerMm: selected.scalePtPerMm,\n    totalConfirmed: false,\n  }''', '''  return __step0Remember({\n    ...sequence,\n    direction: [...sequence.letters][0],\n    spansMm: selected.spans.map((span) => span.valueMm),\n    scalePtPerMm: selected.scalePtPerMm,\n    totalConfirmed: false,\n  }, sequence, selected.spans, 0)'''),\n        ('''function gridCandidate(sequence: DirectedSequence): PlanGridCandidate {\n  return {\n    direction: sequence.direction,\n    axes: sequence.axes,\n    spansMm: sequence.spansMm,\n    scalePtPerMm: sequence.scalePtPerMm,\n    totalConfirmed: sequence.totalConfirmed,\n  }\n}''', '''function gridCandidate(sequence: DirectedSequence): PlanGridCandidate {\n  const candidate = {\n    direction: sequence.direction,\n    axes: sequence.axes,\n    spansMm: sequence.spansMm,\n    scalePtPerMm: sequence.scalePtPerMm,\n    totalConfirmed: sequence.totalConfirmed,\n  }\n  __step0GridSequences.set(candidate, sequence)\n  return candidate\n}'''),\n        ('  return { grids, blocks, issues }', '''  const result = { grids, blocks, issues }\n  __step0Measurements.push(__step0Measure(result, dimensions))\n  return result'''),\n    ]\n    for before, after in replacements:\n        text = replace_once(text, before, after)\n    return text + (work / 'instrumentation.ts.txt').read_text(encoding='utf-8')\n\ntry:\n    baseline = run('baseline15')\n    for tolerance in [4, 6, 15, 30, 40]:\n        parser.write_text(replace_once(original, 'const MIDPOINT_TOLERANCE_PT = 15', f'const MIDPOINT_TOLERANCE_PT = {tolerance}'), encoding='utf-8', newline='')\n        run(f'sweep{tolerance}')\n    parser.write_text(instrument(original), encoding='utf-8', newline='')\n    measured = run('measured15')\n    assert all(a['output'] == b['output'] for a, b in zip(baseline, measured)), 'Instrumentation changed output'\nfinally:\n    parser.write_bytes(original_bytes)\n    assert parser.read_bytes() == original_bytes\n    print('parser restored byte-for-byte', hashlib.sha256(original_bytes).hexdigest(), flush=True)\n"
+      },
+      {
+        "temporary_path": "tmp/phase42-step0/instrumentation.ts.txt",
+        "content": "\nconst __step0Selections = new WeakMap()\nconst __step0GridSequences = new WeakMap()\nexport const __step0Measurements: any[] = []\nfunction __step0Remember(result: any, original: any, spans: any[], start: number) {\n  __step0Selections.set(result.axes, { original, spans, start })\n  return result\n}\nfunction __step0Measure(parsed: any, dimensions: any[]) {\n  const sequences = [...new Set([\n    ...parsed.grids,\n    ...parsed.blocks.flatMap((block: any) => [block.xGrid, block.yGrid]),\n  ].map((grid: any) => __step0GridSequences.get(grid)))]\n  const rows: any[] = []\n  for (const [sequenceIndex, sequence] of sequences.entries()) {\n    const trace = __step0Selections.get(sequence.axes)\n    if (!trace || trace.spans.length !== sequence.spansMm.length) throw new Error('Missing trace')\n    const used = new Set(trace.spans)\n    for (let index = 0; index < trace.spans.length; index++) {\n      const span = trace.spans[index]\n      if (span.valueMm !== sequence.spansMm[index]) throw new Error('Span mismatch')\n      const originalIndex = trace.start + index\n      const bands = [...new Set([\n        ...(trace.original.axisAcrossOptions[originalIndex] ?? []),\n        ...(trace.original.axisAcrossOptions[originalIndex + 1] ?? []),\n      ])]\n      const along = sequence.alongKey\n      const across = along === 'x' ? 'y' : 'x'\n      const axisPositions = [sequence.axes[index].positionPt, sequence.axes[index + 1].positionPt]\n      const midpoint = (axisPositions[0] + axisPositions[1]) / 2\n      const inWindow = (token: any) => bands.some((band: any) => Math.abs(token[across] - band) <= DIMENSION_WINDOW_PT)\n      const entry = (token: any) => ({\n        value_pt: Math.abs(token[along] - midpoint),\n        direction: sequence.direction,\n        along_key: along,\n        axis_labels: [sequence.axes[index].label, sequence.axes[index + 1].label],\n        dimension_text: token.__step0Text,\n        dimension_value_mm: token.valueMm,\n        dimension_token_index: dimensions.indexOf(token),\n        dimension_center_pt: { x: token.x, y: token.y },\n        axis_positions_pt: axisPositions,\n        midpoint_pt: midpoint,\n        across_options_pt: bands,\n        across_distance_pt: Math.min(...bands.map((band: any) => Math.abs(token[across] - band))),\n        total_confirmed: sequence.totalConfirmed,\n        sequence_index: sequenceIndex,\n        span_index: index,\n      })\n      if (!inWindow(span) || Math.abs(span[along] - midpoint) > MIDPOINT_TOLERANCE_PT) throw new Error('Invalid accepted span')\n      const competitors = dimensions.filter((token) => !used.has(token) && inWindow(token)).map(entry).sort((a, b) => a.value_pt - b.value_pt || a.dimension_token_index - b.dimension_token_index)\n      const perSpanCompetitors = dimensions.filter((token) => token !== span && inWindow(token)).map(entry).sort((a, b) => a.value_pt - b.value_pt || a.dimension_token_index - b.dimension_token_index)\n      rows.push({\n        accepted: entry(span),\n        competing: competitors[0] ?? null,\n        competing_distinct_value: competitors.find((item) => item.dimension_value_mm !== span.valueMm) ?? null,\n        competing_per_span: perSpanCompetitors[0] ?? null,\n        competitors_in_window: competitors.length,\n        competitors_within_tolerance: competitors.filter((item) => item.value_pt <= MIDPOINT_TOLERANCE_PT).length,\n        accepted_sequence_token_indices: trace.spans.map((token: any) => dimensions.indexOf(token)),\n      })\n    }\n  }\n  return { sequence_count: sequences.length, rows }\n}\n"
+      }
+    ],
+    "command": "python tmp/phase42-step0/measure.py",
+    "instrumentation_output_identical_pages": 36,
+    "parser_restored_sha256": "ed462ffda5c9d3b7da3889f913d2c4e03119986b5c5e484b994cfcc6e511a0be"
+  },
+  "comment_update": {
+    "before": "/** 치수 중심과 인접 축 중점의 어긋남 허용. 14면 sweep의 안전 창도 6pt 이상\n *  30pt 미만이다. 4pt에서는 기존 치수가 빠져 寸法欠落, 30pt부터는 오탐이 들어와\n *  合計不一致가 된다. 채택 최댓값은 5.803722pt, 合計 미확인 축의 최근접 미사용\n *  경쟁 치수는 140.325470pt다. */",
+    "after": "/** 치수 중심과 인접 축 중점의 어긋남 허용. 36면의 반환 격자·블록에서 실측한\n *  채택 이탈 최댓값 A는 10.379846pt(saiki-p2, X 2–1, 「700」)다.\n *  같은 치수 창(라벨 밴드 ±60pt)의 미채택 경쟁 이탈 최솟값 B는\n *  0.018265pt(hirosaki-p25, Y Y8–Y9, 「24000」合計)다. 合計 미확인 축만\n *  보아도 B는 6.180000pt(karatsu-fukuzu-p1, Y Y1–Y0, 「180」)이므로\n *  A ≤ 15 < B는 불성립이다. 중점 거리만의 안전 여백을 주장하지 않는다.\n *  T=4/6/15/30/40에서 격자 면은 23/23/26/26/26, 블록 면은 7/15/16/16/16.\n *  골든 7면의 전체 출력은 T=6만 15와 같고 4·30·40은 다르다(30은 issues만).\n *  재현·좌표 근거: phases/42-plan-grid-soundness/step0-report.json */"
+  },
+  "cleanup_evidence": {
+    "timing": "계측 완료 및 주석 갱신 후, report 생성과 step 완료 상태 갱신 전",
+    "initial_status": [
+      " M phases/42-plan-grid-soundness/index.json",
+      "?? phases/42-plan-grid-soundness/step0-codex.stderr.log",
+      "?? phases/42-plan-grid-soundness/step0-codex.stdout.log"
+    ],
+    "metadata_note": "시작부터 있던 index.json의 started_at 변경만 먼저 stage해 보존했다. 아래 git diff --name-only는 unstaged diff이며 --cached의 유일 경로도 함께 공개한다. 하네스 로그 두 파일은 하네스 소유라 건드리거나 커밋하지 않는다.",
+    "git_diff_name_only": {
+      "command": "git diff --name-only",
+      "stdout": [
+        "src/lib/import/framing-plan/parse.ts"
+      ]
+    },
+    "git_diff_cached_name_only": {
+      "command": "git diff --cached --name-only",
+      "stdout": [
+        "phases/42-plan-grid-soundness/index.json"
+      ]
+    },
+    "comment_only_equality": "after == before.replace(before_comment, after_comment)",
+    "comment_only_equality_passed": true,
+    "fixtures_diff_from_HEAD": {
+      "command": "git diff HEAD --name-only -- tests/fixtures/plan-import/expected tests/fixtures/section-import",
+      "stdout": []
+    },
+    "temporary_workspace_removed": "tmp/phase42-step0",
+    "final_deliverables": [
+      "src/lib/import/framing-plan/parse.ts",
+      "phases/42-plan-grid-soundness/step0-report.json",
+      "phases/42-plan-grid-soundness/index.json"
+    ]
+  },
+  "validation": {
+    "vitest": {
+      "command": "npx vitest run --reporter=json --outputFile=tmp/phase42-step0/vitest.json",
+      "exit_code": 0,
+      "success": true,
+      "test_files": 101,
+      "tests_total": 1809,
+      "tests_passed": 1809,
+      "tests_failed": 0,
+      "tests_pending": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning_file": "src/app/api/oncall/alert/route.test.ts",
+      "warning_line": 161,
+      "warning": "_omitted is assigned a value but never used (@typescript-eslint/no-unused-vars)",
+      "warning_file_changed": false
+    },
+    "citation_check": {
+      "command": "python scripts/check-citations.py phases/42-plan-grid-soundness/step0-report.json",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "extrema_arithmetic": {
+      "formula": "abs(dimension_center_pt[along_key] - sum(axis_positions_pt)/2)",
+      "maximum_absolute_error_pt": 0
+    },
+    "ac_result": "passed"
+  },
+  "paths_verified": [
+    ".gitignore",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "package.json",
+    "phases/37-corpus-widen-2-close/step5-report.json",
+    "phases/42-plan-grid-soundness/index.json",
+    "phases/42-plan-grid-soundness/step0-report.json",
+    "phases/42-plan-grid-soundness/step0.md",
+    "scripts/check-citations.py",
+    "src/app/api/oncall/alert/route.test.ts",
+    "src/lib/import/framing-plan/parse.ts",
+    "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+    "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+    "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+    "tests/fixtures/section-import/textitems/fuji-p15.json",
+    "tests/fixtures/section-import/textitems/fuji-p17.json",
+    "tests/fixtures/section-import/textitems/fuji-p18.json",
+    "tests/fixtures/section-import/textitems/fuji-p20.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+    "tests/fixtures/section-import/textitems/ina-p6.json",
+    "tests/fixtures/section-import/textitems/ina-p7.json",
+    "tests/fixtures/section-import/textitems/kani-p38.json",
+    "tests/fixtures/section-import/textitems/kani-p39.json",
+    "tests/fixtures/section-import/textitems/kani-p40.json",
+    "tests/fixtures/section-import/textitems/kani-p41.json",
+    "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+    "tests/fixtures/section-import/textitems/ojkk-p2.json",
+    "tests/fixtures/section-import/textitems/ojkk-p3.json",
+    "tests/fixtures/section-import/textitems/ojkk-p4.json",
+    "tests/fixtures/section-import/textitems/saiki-p1.json",
+    "tests/fixtures/section-import/textitems/saiki-p2.json",
+    "tests/fixtures/section-import/textitems/shibata-p1.json",
+    "tests/fixtures/section-import/textitems/shibata-p13.json",
+    "tests/fixtures/section-import/textitems/shibata-p7.json",
+    "tests/fixtures/section-import/textitems/tsu-p16.json",
+    "tests/fixtures/section-import/textitems/tsu-p20.json",
+    "tests/fixtures/section-import/textitems/tsu-p21.json",
+    "tests/fixtures/section-import/textitems/tsu-p22.json",
+    "tests/fixtures/section-import/textitems/yokohama-p13.json",
+    "tests/fixtures/section-import/textitems/yokohama-p14.json",
+    "tests/fixtures/section-import/textitems/yokohama-p15.json",
+    "tests/fixtures/section-import/textitems/yokohama-p6.json",
+    "tests/fixtures/section-import/textitems/yokohama-p7.json",
+    "tests/fixtures/section-import/textitems/yokohama-p8.json",
+    "tests/fixtures/section-import/textitems/yokohama-p9.json",
+    "tests/plan-import/corpus2-elevation.test.ts",
+    "tests/plan-import/corpus2.test.ts",
+    "tests/plan-import/elevation.test.ts",
+    "tests/plan-import/key-coverage.test.ts",
+    "tests/plan-import/parse.test.ts",
+    "vitest.config.ts"
+  ],
+  "paths_expected_absent": [
+    "tmp/phase42-step0/run.ts",
+    "tmp/phase42-step0/measure.py",
+    "tmp/phase42-step0/instrumentation.ts.txt",
+    "tmp/phase42-step0/report.py",
+    "tmp/phase42-step0"
+  ]
+}

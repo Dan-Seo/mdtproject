@@ -5,25 +5,38 @@
     {
       "step": 0,
       "name": "midpoint-margin-sweep",
-      "status": "pending"
+      "status": "completed",
+      "summary": "36면·208스팬 계측: A=10.379846pt, B=0.018265pt로 여백 불성립; 5값 sweep·주석 갱신, T=15 유지, 전체 테스트 1809건·린트 통과.",
+      "started_at": "2026-09-05T19:38:27+0900",
+      "completed_at": "2026-09-05T19:51:39+0900"
     },
     {
       "step": 1,
       "name": "grid-geometry-soundness",
-      "status": "pending"
+      "status": "completed",
+      "summary": "P1·P2와 양 로케일 사유 코드 추가: 36면 격자 55→53, 나머지 53후보·19블록 불변; 변조 2건 검출·SHA-256 복원, 1811테스트·lint·tsc 통과.",
+      "started_at": "2026-09-05T19:51:40+0900",
+      "completed_at": "2026-09-05T20:04:02+0900"
     },
     {
       "step": 2,
       "name": "document-open-items",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-05T20:04:03+0900",
+      "summary": "세 면 블록 재계측·제목 규칙 반증을 기록하고 R10·R15를 기하 오탐 해소와 열린 블록 오탐으로 구분; 문서 동기화·인용 검사·lint 통과.",
+      "completed_at": "2026-09-05T20:18:43+0900"
     },
     {
       "step": 3,
       "name": "refute-plan-grid-soundness",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-09-05T20:18:44+0900",
+      "summary": "step0 당시 A/B는 정확히 재현되나 현재 반환 후보의 A=7.685713pt와 주석의 10.379846pt는 불일치. P1/P2 변조 검출·원복, 53후보·19블록 불변, 61픽스처·76문서값 대조 및 전 게이트 통과.",
+      "refuted_at": "2026-09-05T20:32:35+0900"
     }
   ],
-  "created_at": "2026-09-05T19:30:00+0900"
+  "created_at": "2026-09-05T19:30:00+0900",
+  "completed_at": "2026-09-05T20:32:36+0900"
 }

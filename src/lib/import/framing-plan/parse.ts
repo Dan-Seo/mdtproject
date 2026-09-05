@@ -54,13 +54,33 @@ const BLOCK_TITLE_PATTERN = /伏図|柱芯線図/
 const BAND_TOLERANCE_PT = 8
 /** 치수 열이 라벨 밴드에서 떨어질 수 있는 거리. 실측 최대 50pt(kani X) */
 const DIMENSION_WINDOW_PT = 60
-/** 치수 중심과 인접 축 중점의 어긋남 허용. 14면 sweep의 안전 창도 6pt 이상
- *  30pt 미만이다. 4pt에서는 기존 치수가 빠져 寸法欠落, 30pt부터는 오탐이 들어와
- *  合計不一致가 된다. 채택 최댓값은 5.803722pt, 合計 미확인 축의 최근접 미사용
- *  경쟁 치수는 140.325470pt다. */
+/** 치수 중심과 인접 축 중점의 어긋남 허용. 현재 파서의 36면 반환 격자·블록
+ *  축 열 합집합 206스팬에서 A는 7.685713pt(shibata-p13, X 1–5, 「41,000」)다.
+ *  shibata-p13은 R15의 열린 블록 오탐 면이므로 A는 정답 스팬의 인증이 아니다.
+ *  현재 A 재계측: phases/43-midpoint-comment-currency/step0-report.json#/remeasured
+ *  같은 치수 창(라벨 밴드 ±60pt)의 미채택 경쟁 이탈 최솟값 B는
+ *  0.018265pt(hirosaki-p25, Y Y8–Y9, 「24000」合計)다. 合計 미확인 축만
+ *  보아도 B는 6.180000pt(karatsu-fukuzu-p1, Y Y1–Y0, 「180」)이므로
+ *  A ≤ 15 < B는 불성립이다. 중점 거리만의 안전 여백을 주장하지 않는다.
+ *  phase 42 step 0의 T=4/6/15/30/40 sweep에서 격자 면은 23/23/26/26/26,
+ *  블록 면은 7/15/16/16/16.
+ *  골든 7면의 전체 출력은 T=6만 15와 같고 4·30·40은 다르다(30은 issues만).
+ *  B·sweep 근거: phases/42-plan-grid-soundness/step0-report.json */
 const MIDPOINT_TOLERANCE_PT = 15
 /** 스팬별 실측 축척(pt/mm)의 중앙값 대비 허용 편차. 실측 최대 0.5% */
 const SCALE_TOLERANCE_RATIO = 0.03
+/**
+ * 伏図 후보의 실측 축척 범위: 1:1000–1:10 (pt/mm = 72 / 25.4 / 분모).
+ * 建築工事設計図書作成基準 R2 §4.2, 인쇄 p9의 基礎伏図·各階床伏図는
+ * 1:100·1:200, 확대는 1:10까지 허용한다: https://www.mlit.go.jp/common/001157950.pdf
+ * 축소 PDF도 읽도록 1:200의 선형 5배 축소까지 범위를 연다(A0→A4는 4배).
+ * 이는 배근 규준값이 아니라 제품의 인식 범위다. 그 밖은 근사하지 않는다.
+ * 36면의 나머지 53후보는 0.009448–0.028350 pt/mm로, 하한 대비 3.33배,
+ * 상한까지 10.00배 여유가 있다. 코퍼스 극값으로 경계를 정하지 않았다.
+ * 재계측·한계: phases/42-plan-grid-soundness/step1-report.json
+ */
+const MIN_PLAN_SCALE_PT_PER_MM = 72 / 25.4 / 1000
+const MAX_PLAN_SCALE_PT_PER_MM = 72 / 25.4 / 10
 /**
  * 부호를 격자점·중점에 붙이는 허용 거리 ＝ 그 방향 **중앙값 스팬**의 이 비율.
  *
@@ -1424,7 +1444,27 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
   ])
   const validated = rawSequences.flatMap((sequence) => {
     const result = validateSequence(sequence, dimensions, issue)
-    return result ? [result] : []
+    if (!result) return []
+    // 치수 선택(전체·부분 合計 포함)이 끝난 열을 검사한다. 범위에 맞는 다른
+    // 치수로 바꿔 끼우거나, 같은 좌표의 축을 삭제해 격자를 만들지 않는다.
+    if (
+      result.axes.some(
+        (axis, index) =>
+          index > 0 && axis.positionPt === result.axes[index - 1].positionPt,
+      )
+    ) {
+      issue('通り芯座標重複')
+      return []
+    }
+    if (
+      !Number.isFinite(result.scalePtPerMm) ||
+      result.scalePtPerMm < MIN_PLAN_SCALE_PT_PER_MM ||
+      result.scalePtPerMm > MAX_PLAN_SCALE_PT_PER_MM
+    ) {
+      issue('縮尺範囲外')
+      return []
+    }
+    return [result]
   })
   const namedSequences = validated.filter((sequence) => sequence.letters.size > 0)
   const filteredValidated = validated.filter((sequence) => {
@@ -1450,10 +1490,18 @@ export function parseFramingPlan(page: TextPage): ParsedFramingPlan {
     const hasPrefixedAxisLabel = labels.some(
       (label) => label.letter !== undefined,
     )
+    // 숫자·문자형 라벨도 치수 선택 뒤 확인한 기하 실패는 그대로 알린다.
+    const geometryIssues = issues.filter(
+      (code) => code === '通り芯座標重複' || code === '縮尺範囲外',
+    )
     return {
       grids: [],
       blocks: [],
-      issues: hasPrefixedAxisLabel ? issues : ['通り芯ラベル未検出'],
+      issues: hasPrefixedAxisLabel
+        ? issues
+        : geometryIssues.length > 0
+          ? geometryIssues
+          : ['通り芯ラベル未検出'],
     }
   }
   const directed = suppressEndpointSubsets(
