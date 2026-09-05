@@ -1,9 +1,9 @@
 {
   "step": 2,
   "name": "unclaimed-key-guard",
-  "exitCode": 143,
+  "exitCode": 0,
   "timedOut": false,
-  "elapsed": 25.02975200000219,
+  "elapsed": 1641.3700643999036,
   "stdout_log": "phases\\39-axis-claim\\step2-codex.stdout.log",
   "stderr_log": "phases\\39-axis-claim\\step2-codex.stderr.log"
 }
