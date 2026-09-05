@@ -63,6 +63,9 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용
 | `dwg-hirosaki-kikyono.pdf` | 青森県弘前市 | 令和7年度 桔梗野小学校等複合施設新築工事(建築工事) 構造図1 | p21 1階床梁伏図 (S-019), p25 軸組図(1) (S-023) | `f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8` |
 | `dwg-shibata-fire.pdf` | 新発田地域広域事務組合 | 新発田広域消防本部解体工事（既存建物 構造図一式） | p1 1F伏図 (S-1), p7 柱リスト (S-7), p13 軸組図 (S-13) | `e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985` |
 
+신규 階高 골든의 출처:
+- `tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json` — `dwg-tsu-kanritou.pdf` p22, **S-22 軸組図(2)**, **三重県津市**. 위 PDF 표의 출처 행과 연결된다.
+
 ### 전수 조사 후 제외한 페이지
 
 - yokohama p5 杭伏図・杭リスト — 말뚝은 산정 스코프 밖 부재다.

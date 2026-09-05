@@ -1,0 +1,291 @@
+{
+  "step": 2,
+  "name": "unclaimed-key-guard",
+  "status": "blocked",
+  "key_paths_total": 32,
+  "claimed": [
+    {
+      "path": "blocks[].x.labels[]",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "blocks[].x.spansMm[]",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "blocks[].x.totalMm",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "blocks[].y.labels[]",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "blocks[].y.spansMm[]",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "blocks[].y.totalMm",
+      "test": "tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든"
+    },
+    {
+      "path": "elevations[].axis.labels[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증"
+    },
+    {
+      "path": "elevations[].axis.spansMm[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증"
+    },
+    {
+      "path": "elevations[].axis.totalMm",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증"
+    },
+    {
+      "path": "elevations[].heightsBottomMm[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > levelsBottom·heightsBottomMm 꼬리 대조"
+    },
+    {
+      "path": "elevations[].heightsMm[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    },
+    {
+      "path": "elevations[].levelsBottom[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > levelsBottom·heightsBottomMm 꼬리 대조"
+    },
+    {
+      "path": "elevations[].levels[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    },
+    {
+      "path": "elevations[].title",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    },
+    {
+      "path": "elevations[].titles[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    },
+    {
+      "path": "heightsMm[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    },
+    {
+      "path": "levelTexts[]",
+      "test": "tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든"
+    }
+  ],
+  "reference_only": [
+    {
+      "path": "$comment",
+      "reason": "독립 전사 방법과 변경 경위를 설명하는 주석이다."
+    },
+    {
+      "path": "blocks[].notes[]",
+      "reason": "블록별 판독 주석이며 파서 값의 기대값이 아니다."
+    },
+    {
+      "path": "blocks[].title",
+      "reason": "7개 grid 골든의 8개 title 중 도면 문자열 5건(예: 屋根伏図)과 전사자 주석 3건(예: 伏図(공통))이 섞여 있어 균일한 기대값으로 전체 대조할 수 없는 블록 설명 메타데이터다."
+    },
+    {
+      "path": "elevations[].levelsBottomNote",
+      "reason": "부분 전사 꼬리의 경위를 설명하는 주석이다."
+    },
+    {
+      "path": "elevations[].note",
+      "reason": "특정 계열의 원문 대조 메모이며 산출 기대값이 아니다."
+    },
+    {
+      "path": "levelNote",
+      "reason": "페이지 전체 레벨 전사의 주석이다."
+    },
+    {
+      "path": "notes[]",
+      "reason": "도면 판독 한계와 범위를 설명하는 주석이다."
+    },
+    {
+      "path": "source.cacheFile",
+      "reason": "원본 캐시 파일 식별자이며 파서 출력값이 아니다."
+    },
+    {
+      "path": "source.issuer",
+      "reason": "도면 발주처 메타데이터다."
+    },
+    {
+      "path": "source.page",
+      "reason": "원본 도면의 쪽 메타데이터다."
+    },
+    {
+      "path": "source.project",
+      "reason": "원본 프로젝트명 메타데이터다."
+    },
+    {
+      "path": "source.sha256",
+      "reason": "원본 무결성 확인용 해시다."
+    },
+    {
+      "path": "source.sheet",
+      "reason": "원본 도면명 메타데이터다."
+    },
+    {
+      "path": "source.transcribedAt",
+      "reason": "독립 전사 일자 메타데이터다."
+    }
+  ],
+  "unclaimed_value_fields": [
+    "levels[]"
+  ],
+  "deferred_claims": [
+    {
+      "path": "blocks[].title",
+      "files": [
+        "fuji-kanritou-p17-grid.json",
+        "hirosaki-kikyono-p21-grid.json",
+        "ina-pump-p6-grid.json",
+        "karatsu-fukuzu-p1-grid.json",
+        "karatsu-hashirashin-p1-grid.json",
+        "shibata-fire-p1-grid.json",
+        "tsu-kanritou-p16-grid.json"
+      ],
+      "reason": "7개 grid 골든의 8개 title 중 도면 문자열 5건과 전사자 주석 3건이 섞여 있어 현재 균일한 값 대조를 청구하지 않는다. 도면 문자열 항목만 후속 phase에서 골든 구조를 정한 뒤 청구할 수 있다.",
+      "condition": "parse.ts:1374-1386은 블록 가로 범위 안의 제목 후보 중 세로 거리가 가장 가까운 제목을 계산한다. 후속 phase에서 골든 구조를 바꿔 도면 문자열인 항목만 구별하면 그 부분의 제목 대조를 청구할 수 있다. 현재는 하지 않는다."
+    },
+    {
+      "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json:lists[].entries[mark=CB1].上端筋.先端",
+      "reason": "片持梁의 先端과 中央은 다른 위치이며, 현재 골든에서 본수가 우연히 같다는 사실만으로 中央 대응을 정할 수 없다. 先端≠中央인 도면이 코퍼스에 들어오기 전까지 청구를 보류한다."
+    },
+    {
+      "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json:lists[].entries[mark=CB1].下端筋.先端",
+      "reason": "片持梁의 先端과 中央은 다른 위치이며, 현재 골든에서 본수가 우연히 같다는 사실만으로 中央 대응을 정할 수 없다. 先端≠中央인 도면이 코퍼스에 들어오기 전까지 청구를 보류한다."
+    }
+  ],
+  "f2_position_mapping": {
+    "端部": "endTopCount / endBottomCount",
+    "中央": "topCount / bottomCount",
+    "先端": "명시적 unclaimed — CB1 두 위치는 deferred_claims",
+    "unknown": "outOfScopePositionRole throws; 암묵적인 中央 폴백 없음",
+    "already_committed_in": "d7d1a85",
+    "両端": "별도 大梁 루프 그대로 유지"
+  },
+  "mutations": [
+    {
+      "what": "fuji-kanritou-p17-grid.json에 임시 __probe: 1 추가",
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/key-coverage.test.ts > plan-import 골든 값 키 커버리지 > 골든의 모든 값 경로가 대조 또는 명시적 참고 전용으로 등록된다",
+      "reported_path": "__probe",
+      "reported_file": "fuji-kanritou-p17-grid.json"
+    },
+    {
+      "what": "CLAIMED에서 blocks[].x.labels[] 항목을 임시 삭제",
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/key-coverage.test.ts > plan-import 골든 값 키 커버리지 > 골든의 모든 값 경로가 대조 또는 명시적 참고 전용으로 등록된다",
+      "reported_path": "blocks[].x.labels[]"
+    },
+    {
+      "what": "CLAIMED의 blocks[].x.labels[]를 실제 골든에 없는 __absent_claim으로 임시 교체하고 역방향 검사만 실행",
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/key-coverage.test.ts > plan-import 골든 값 키 커버리지 > 등록한 경로는 실제 골든에 존재하고 두 목록이 겹치지 않는다",
+      "reported_path": "__absent_claim"
+    }
+  ],
+  "restoration": {
+    "command": "git diff -- tests/fixtures",
+    "exit_code": 0,
+    "diff_empty": true,
+    "method": "임시 변조 전 바이트를 보관하고 finally에서 복원"
+  },
+  "verification": {
+    "full_tests": {
+      "command": "npx vitest run",
+      "exit_code": 1,
+      "passed": 1806,
+      "failed": 1,
+      "files_passed": 100,
+      "files_failed": 1,
+      "failing_test": "tests/plan-import/key-coverage.test.ts > plan-import 골든 값 키 커버리지 > 골든의 모든 값 경로가 대조 또는 명시적 참고 전용으로 등록된다",
+      "reason": "levels[] 미청구: karatsu-jikugumi1-p1-elevation.json"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "기존 src/app/api/oncall/alert/route.test.ts:161 _omitted unused warning"
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "step1_comparison": "step1-report.json에는 전체 검사가 아닌 corpus2-elevation 1개 파일 통과만 기록되어 있다. 현재 그 10개 테스트는 통과하고 앱 동작 변경은 없으며, 전체 검사 실패는 새 미청구 가드 1개다.",
+    "final_targeted": {
+      "command": "npx vitest run tests/plan-import/key-coverage.test.ts tests/plan-import/corpus2-elevation.test.ts",
+      "exit_code": 1,
+      "passed": 11,
+      "failed": 1,
+      "reason": "levels[] 미청구 가드 1개만 실패; elevation 기존 10개와 역방향 가드는 통과"
+    }
+  },
+  "unclaimed_value_evidence": [
+    {
+      "path": "levels[]",
+      "file": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+      "json_pointer": "/levels",
+      "values": [
+        "RFL",
+        "2FL",
+        "1FL",
+        "GL"
+      ],
+      "reason": "기존 CLAIMED는 階高 corpus 2 골든이 이 필드를 대조한다고 선언했지만, corpus2-elevation.test.ts:220은 expected.levels 또는 golden.levelTexts만 읽는다. 최상위 golden.levels를 값 대조하는 경로는 없다.",
+      "interpretation": "levelNote는 RFL을 레벨명, RFL水上을 원문 문자열로 구별한다. 기존 코드는 levelTexts만 대조하며, 레벨명 대응을 새로 정하거나 levels[]를 REFERENCE_ONLY로 옮기는 것은 이번 사양의 허용 범위 밖이다.",
+      "counterexample": {
+        "what": "최상위 levels[0]을 RFL에서 __probe_unread_level로 임시 변경",
+        "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts tests/plan-import/key-coverage.test.ts",
+        "exit_code": 0,
+        "passed": 12,
+        "failing_test": null,
+        "baseline": "blocks[].title 판정 적용 후, 잘못된 levels[] CLAIMED 선언을 제거하기 전",
+        "restored": true
+      }
+    }
+  ],
+  "title_count_measurement": {
+    "files": 7,
+    "entries": 8,
+    "drawing_titles": 5,
+    "transcriber_comments": 3,
+    "note": "사양의 넷은 실측과 다르다. fuji 골든 하나에 공통 주석과 屋根伏図 두 항목이 있어 총 8항목이며, 도면 문자열은 열거된 다섯 개다."
+  },
+  "f1_comment_verification": {
+    "already_committed_in": "d7d1a85",
+    "constant_unchanged": "SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0",
+    "source_comment": "src/lib/import/framing-plan/elevation.ts:58-70",
+    "measurement_source": "phases/38-elevation-close/step3-report.json",
+    "measurements": [
+      {
+        "value": 0.45,
+        "key": "counterexamples.ratio_0_45",
+        "result": "실패"
+      },
+      {
+        "value": 0.49,
+        "key": "corpus_sweep.comparison / corpus_sweep.changed_pages",
+        "result": "1.0 대비 tsu-p21·p22만 출력 변경"
+      },
+      {
+        "value": 1.0,
+        "key": "implementation.constant",
+        "result": "채택"
+      },
+      {
+        "value": 5.0,
+        "key": "counterexamples.ratio_5_0.final_output_same_as_1_0",
+        "result": "1.0과 최종 출력 동일"
+      }
+    ],
+    "unmeasured_20_0_removed": true,
+    "src_changes_this_run": false
+  },
+  "mutation_note": "CLAIMED 항목 삭제는 3항(실제 골든→목록)을 깨뜨린다. 4항(목록→실제 골든)은 없는 경로를 등록하는 별도 변조로 실측했다. 세 변조의 기준선은 잘못된 levels[] 청구를 제거하기 전이며, title 판정 후 가드 2개가 통과하는 상태였다. 이후 levels[]의 값 변조 생존을 확인해 잘못된 청구를 제거했다.",
+  "blocked_reason": "karatsu-jikugumi1-p1-elevation.json의 최상위 levels[]는 어떤 테스트도 값을 대조하지 않는다. 임의 문자열 변조도 12개 관련 테스트를 통과했다. 사양이 levels의 REFERENCE_ONLY 분류와 근거 없는 청구 테스트 신설을 금지하므로 별도 청구 결정이 필요하다. 기존 title·CB1 先端 보류는 차단 사유가 아니다.",
+  "summary": "32개 키 경로 중 17개 CLAIMED·14개 REFERENCE_ONLY를 확인하고 양방향 변조를 반증했다. 기존에 잘못 청구된 levels[] 1개를 발견해 blocked로 기록한다."
+}

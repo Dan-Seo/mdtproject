@@ -1,0 +1,140 @@
+{
+  "step": 0,
+  "name": "refute-transcription-fix",
+  "verdict": "refuted",
+  "claims": [
+    {
+      "id": "A1",
+      "holds": true,
+      "method": "PyMuPDF 1.28.0 get_text(rawdict)로 .cache/dwg-tsu-kanritou.pdf의 0-based page 20을 읽고, rawdict span chars를 복원한 뒤 전각 라벨을 NFKC 정규화했다.",
+      "evidence": {
+        "pageIndex": 20,
+        "rotation": 90,
+        "axisBlocks": 3,
+        "titles": [
+          "Ｙ１通り軸組図 S=1/100",
+          "Ｙ２通り軸組図 S=1/100",
+          "Ｙ３通り軸組図 S=1/100"
+        ],
+        "labelsByBlock": {
+          "Y1通り軸組図": [
+            { "label": "X1", "x": 471.41, "y": 1231.26 },
+            { "label": "X2", "x": 471.41, "y": 1116.72 },
+            { "label": "X3", "x": 471.41, "y": 1015.86 },
+            { "label": "X4", "x": 471.41, "y": 875.34 },
+            { "label": "X5", "x": 471.41, "y": 800.58 }
+          ],
+          "Y2通り軸組図": [
+            { "label": "X1", "x": 471.41, "y": 601.98 },
+            { "label": "X2", "x": 471.41, "y": 487.44 },
+            { "label": "X3", "x": 471.41, "y": 386.58 },
+            { "label": "X4", "x": 471.41, "y": 246.06 },
+            { "label": "X5", "x": 471.41, "y": 171.18 }
+          ],
+          "Y3通り軸組図": [
+            { "label": "X1", "x": 952.43, "y": 1231.26 },
+            { "label": "X2", "x": 952.43, "y": 1116.72 },
+            { "label": "X3", "x": 952.43, "y": 1015.86 },
+            { "label": "X4", "x": 952.43, "y": 875.34 },
+            { "label": "X5", "x": 952.43, "y": 800.58 }
+          ]
+        },
+        "counts": [5, 5, 5]
+      }
+    },
+    {
+      "id": "A2",
+      "holds": true,
+      "method": "같은 tsu PDF page의 raw text/dict에서 치수 span을 독립 추출하고, 회전 방향 dir=(0,-1)의 표시 순서를 fitz y 내림차순으로 확인했다.",
+      "evidence": {
+        "spansMm": [5850, 5150, 7175, 3825],
+        "totalMm": 22000,
+        "spanSumMm": 22000,
+        "spanOccurrences": 3,
+        "totalOccurrences": 3,
+        "observedSpanTexts": ["5,850", "5,150", "7,175", "3,825"],
+        "observedTotalText": "22,000"
+      }
+    },
+    {
+      "id": "A3",
+      "holds": true,
+      "method": "현재 tests/fixtures/plan-import/expected의 모든 JSON을 순회해 elevation axis와 grid blocks[].x/y를 계수하고, tsu 파일의 수정 전 값은 git show HEAD~1로 읽었다.",
+      "evidence": {
+        "before": {
+          "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+          "source": "HEAD~1",
+          "labels": 4,
+          "spans": 4,
+          "violations": 1,
+          "axis": {
+            "labels": ["X1", "X2", "X3", "X4"],
+            "spansMm": [5850, 5150, 7175, 3825],
+            "totalMm": 22000
+          }
+        },
+        "afterTsu": { "labels": 5, "spans": 4, "violations": 0 },
+        "allCurrent": { "axisBlocks": 23, "violations": 0 }
+      }
+    },
+    {
+      "id": "A4",
+      "holds": true,
+      "method": "파서 출력이 아닌 원본 PDF의 지정 면을 PyMuPDF 텍스트 레이어에서 읽고, 독립적으로 읽은 labels/spansMm/totalMm을 각 골든 axis와 비교했다.",
+      "evidence": {
+        "karatsu": {
+          "pdf": ".cache/dwg-karatsu-jikugumi1.pdf",
+          "pageIndex": 0,
+          "source": [
+            { "title": "X2", "labels": ["Y0", "Y1", "Y2", "Y3"], "spansMm": [1900, 2265, 6000], "totalMm": null },
+            { "title": "X3", "labels": ["Y0", "Y1", "Y2", "Y3", "Y6"], "spansMm": [1900, 2265, 6000, 8079], "totalMm": null },
+            { "title": "X4", "labels": ["Y0", "Y1", "Y2", "Y3", "Y5"], "spansMm": [1900, 2265, 6000, 5875], "totalMm": null }
+          ],
+          "goldenMatches": [true, true, true]
+        },
+        "hirosaki": {
+          "pdf": ".cache/dwg-hirosaki-kikyono.pdf",
+          "pageIndex": 24,
+          "source": [
+            { "title": "X1", "labels": ["Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7"], "spansMm": [8000, 8000, 8000, 8000, 8000, 11000], "totalMm": 51000 },
+            { "title": "X2", "labels": ["Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10"], "spansMm": [8000, 8000, 8000, 8000, 8000, 11000, 8000, 8000, 8000], "totalMm": 75000 },
+            { "title": "X3", "labels": ["Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10"], "spansMm": [8000, 8000, 8000, 8000, 8000, 11000, 8000, 8000, 8000], "totalMm": 75000 }
+          ],
+          "goldenMatches": [true, true, true]
+        }
+      }
+    },
+    {
+      "id": "A5",
+      "holds": true,
+      "method": "phase 38 step6-report.json이 변조 대상으로 명시한 세 파일명에 대해 Git for Windows의 find를 tests 루트에서 각각 실행했다.",
+      "evidence": {
+        "commands": [
+          { "command": "find tests -name \"karatsu-jikugumi1-p38.json\"", "stdout": "", "stderr": "", "exitCode": 0 },
+          { "command": "find tests -name \"hirosaki-jikugumi-p15.json\"", "stdout": "", "stderr": "", "exitCode": 0 },
+          { "command": "find tests -name \"tsu-jikugumi-p21.json\"", "stdout": "", "stderr": "", "exitCode": 0 }
+        ]
+      }
+    }
+  ],
+  "paths_verified": [
+    { "path": ".cache/dwg-tsu-kanritou.pdf", "exists": true },
+    { "path": ".cache/dwg-karatsu-jikugumi1.pdf", "exists": true },
+    { "path": ".cache/dwg-hirosaki-kikyono.pdf", "exists": true },
+    { "path": "phases/38-elevation-close/step6-report.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json", "exists": true },
+    { "path": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p38.json", "exists": false },
+    { "path": "tests/fixtures/plan-import/expected/hirosaki-jikugumi-p15.json", "exists": false },
+    { "path": "tests/fixtures/plan-import/expected/tsu-jikugumi-p21.json", "exists": false }
+  ],
+  "summary": "A1~A5의 주장 자체는 모두 성립한다. 그러나 A5에서 인용한 세 변조 경로가 레포에 존재하지 않아 paths_verified에 false가 포함된다. AC 규칙에 따라 이 검증 게이트는 refuted로 종결하며 대상 골든·코드·테스트는 고치지 않았다."
+}

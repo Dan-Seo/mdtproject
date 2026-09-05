@@ -2,11 +2,52 @@
   "project": "Kijun",
   "phase": "39-axis-claim",
   "steps": [
-    { "step": 0, "name": "refute-transcription-fix", "kind": "verify", "gate": true, "status": "pending" },
-    { "step": 1, "name": "claim-axis-crosscheck", "status": "pending" },
-    { "step": 2, "name": "unclaimed-key-guard", "status": "pending" },
-    { "step": 3, "name": "docs-elevation-close", "status": "pending" },
-    { "step": 4, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending" }
+    {
+      "step": 0,
+      "name": "refute-transcription-fix",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "A1~A5 독립 재현이 모두 성립했다: tsu 21면 세 블록의 X1~X5, 전체 23개 axis 블록 불변식 위반 0건, A5 부재 경로 3건을 별도 확인.",
+      "started_at": "2026-09-05T09:23:52+0900",
+      "completed_at": "2026-09-05T09:31:39+0900"
+    },
+    {
+      "step": 1,
+      "name": "claim-axis-crosscheck",
+      "status": "completed",
+      "summary": "모든 grid/elevation axis의 자기 정합성, 지정된 3개 伏図 축과의 정방향·역방향 부분열·스팬 합계, levelsBottom 꼬리와 axis 미청구 3건을 골든 상호검증하고 6건 변조 반증을 기록했다.",
+      "started_at": "2026-09-05T09:31:40+0900",
+      "completed_at": "2026-09-05T09:42:49+0900"
+    },
+    {
+      "step": 2,
+      "name": "unclaimed-key-guard",
+      "status": "completed",
+      "summary": "32개 골든 키 경로를 CLAIMED 18개·REFERENCE_ONLY 14개로 등록하고 levels 관계와 F1/F2를 확인했으며, 7건 변조가 모두 실패하고 전체 1808개 테스트·lint·타입 검사가 통과했다.",
+      "started_at": "2026-09-05T09:56:07+0900",
+      "completed_at": "2026-09-05T10:14:03+0900"
+    },
+    {
+      "step": 3,
+      "name": "docs-elevation-close",
+      "status": "completed",
+      "started_at": "2026-09-05T10:10:12+0900",
+      "summary": "階高 한 면 상수 항목과 tsu 전체 레벨·axis 청구 규약을 문서에 반영하고 숫자·출처 장부를 작성했다. R10·R15는 열림이며 문서 표 동기화·전체 테스트·lint를 통과했다.",
+      "completed_at": "2026-09-05T10:32:50+0900"
+    },
+    {
+      "step": 4,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "refuted",
+      "started_at": "2026-09-05T10:23:17+0900",
+      "summary": "F1 주석의 150mm가 지정 report에 없고 문서 numbers_used의 source 12개가 존재하지 않는 JSON 키를 가리켜 반증했다. 유효 axis·grid 변조 92/92 검출, 키 가드·F2 정상, 전체 1808 테스트·lint·tsc·build 통과. 대상은 수정하지 않았고 원복 diff는 비어 있다.",
+      "completed_at": "2026-09-05T10:37:26.626553+09:00",
+      "refuted_at": "2026-09-05T10:42:33+0900"
+    }
   ],
-  "created_at": "2026-09-05T00:40:00+0900"
+  "created_at": "2026-09-05T00:40:00+0900",
+  "completed_at": "2026-09-05T10:44:16+0900"
 }

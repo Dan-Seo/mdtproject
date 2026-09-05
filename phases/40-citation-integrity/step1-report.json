@@ -1,0 +1,759 @@
+{
+  "phase": "40-citation-integrity",
+  "step": 1,
+  "step_name": "comment-and-crosscheck",
+  "status": "completed",
+  "base_head": "caf07cd",
+  "comment_choice": {
+    "option": "a",
+    "reason": "36면을 재계측하여 기존 편차와 치수의 대응을 확인했다. 150mm 귀속은 새 계측 근거를 인용하고 반올림 편차 표기는 인용 report의 정확한 값으로 교체했다."
+  },
+  "measured": {
+    "method": "현재 elevation.ts의 소스를 메모리에서만 계측했다. chains()의 shortDimension이 참일 때 다음 치수 토큰·좌표·기준 축척·관측 축척을 기록했다. 제품 파일에 계측 코드를 쓰지 않았고, 36면 모두 계측 전후 parseFrameElevations 전체 JSON 출력이 동일했다.",
+    "source": "src/lib/import/framing-plan/elevation.ts",
+    "source_sha256_before_comment_edit": "bc08eb054437274d1d36bbb10f432342bbb8827ccc75cd4c420e26fc40071ed2",
+    "command": "node --import tsx --input-type=module (아래 script를 stdin으로 전달)",
+    "script": "import fs from 'node:fs';\nimport path from 'node:path';\nimport crypto from 'node:crypto';\nimport ts from 'typescript';\nimport { pathToFileURL } from 'node:url';\nimport { parseFrameElevations } from './src/lib/import/framing-plan/elevation.ts';\nconst sourcePath = 'src/lib/import/framing-plan/elevation.ts';\nconst source = fs.readFileSync(sourcePath, 'utf8');\nconst marker = '    if (continues || shortDimension) {';\nif (source.split(marker).length !== 2) throw new Error('Instrumentation site changed');\nconst instrumented = source.replace(marker,\n  '    if (shortDimension) globalThis.__kijunShortProbe.push({ dimension: column[i + 1], previous: column[i], referenceScale: reference, observedScale: scale, deviation: Math.abs(scale / reference - 1), roundedDeviation: Number(Math.abs(scale / reference - 1).toFixed(6)), ordinaryContinues: continues });\\n' + marker\n).replace(\"from '../runs'\", \"from '\" + pathToFileURL(path.resolve('src/lib/import/runs.ts')).href + \"'\");\nconst js = ts.transpileModule(instrumented, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;\nconst probe = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));\nconst directory = 'tests/fixtures/section-import/textitems';\nconst files = fs.readdirSync(directory).filter(file => file.endsWith('.json')).sort();\nconst pages = [];\nfor (const file of files) {\n  const bytes = fs.readFileSync(path.join(directory, file));\n  const fixture = JSON.parse(bytes);\n  const page = { ...fixture.page, items: fixture.items };\n  globalThis.__kijunShortProbe = [];\n  const baseline = parseFrameElevations(page);\n  const measured = probe.parseFrameElevations(page);\n  if (JSON.stringify(baseline) !== JSON.stringify(measured)) throw new Error('Probe changed output: ' + file);\n  pages.push({ file, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), observations: globalThis.__kijunShortProbe, outputUnchanged: true });\n}\ndelete globalThis.__kijunShortProbe;\nconst prior = JSON.parse(fs.readFileSync('phases/38-elevation-close/step3-report.json', 'utf8'));\nconst matches = prior.short_dimension_sweep.observed.map(entry => {\n const actual = pages.find(page => page.file === entry.page);\n const observed = actual.observations.map(item => item.roundedDeviation);\n return { file: entry.page, expected: entry.short_dimension_deviations, actual: observed, matches: JSON.stringify(observed) === JSON.stringify(entry.short_dimension_deviations) };\n});\nif (pages.length !== prior.short_dimension_sweep.pages || matches.some(item => !item.matches)) throw new Error('Survey does not reproduce prior report');\nconsole.log(JSON.stringify({ source: sourcePath, sourceSha256: crypto.createHash('sha256').update(source).digest('hex'), pageCount: pages.length, pages, priorReportMatches: matches }));",
+    "page_count": 36,
+    "pages": [
+      {
+        "file": "fuji-p15.json",
+        "sha256": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+        "output_unchanged": true
+      },
+      {
+        "file": "fuji-p17.json",
+        "sha256": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+        "output_unchanged": true
+      },
+      {
+        "file": "fuji-p18.json",
+        "sha256": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+        "output_unchanged": true
+      },
+      {
+        "file": "fuji-p20.json",
+        "sha256": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+        "output_unchanged": true
+      },
+      {
+        "file": "hirosaki-p21.json",
+        "sha256": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+        "output_unchanged": true
+      },
+      {
+        "file": "hirosaki-p25.json",
+        "sha256": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+        "output_unchanged": true
+      },
+      {
+        "file": "ina-p6.json",
+        "sha256": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+        "output_unchanged": true
+      },
+      {
+        "file": "ina-p7.json",
+        "sha256": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+        "output_unchanged": true
+      },
+      {
+        "file": "kani-p38.json",
+        "sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+        "output_unchanged": true
+      },
+      {
+        "file": "kani-p39.json",
+        "sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+        "output_unchanged": true
+      },
+      {
+        "file": "kani-p40.json",
+        "sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+        "output_unchanged": true
+      },
+      {
+        "file": "kani-p41.json",
+        "sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+        "output_unchanged": true
+      },
+      {
+        "file": "karatsu-fukuzu-p1.json",
+        "sha256": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+        "output_unchanged": true
+      },
+      {
+        "file": "karatsu-hashirashin-p1.json",
+        "sha256": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+        "output_unchanged": true
+      },
+      {
+        "file": "karatsu-jikugumi1-p1.json",
+        "sha256": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+        "output_unchanged": true
+      },
+      {
+        "file": "karatsu-jikugumi2-p1.json",
+        "sha256": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+        "output_unchanged": true
+      },
+      {
+        "file": "karatsu-shousai-p1.json",
+        "sha256": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+        "output_unchanged": true
+      },
+      {
+        "file": "ojkk-p2.json",
+        "sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+        "output_unchanged": true
+      },
+      {
+        "file": "ojkk-p3.json",
+        "sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+        "output_unchanged": true
+      },
+      {
+        "file": "ojkk-p4.json",
+        "sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+        "output_unchanged": true
+      },
+      {
+        "file": "saiki-p1.json",
+        "sha256": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+        "output_unchanged": true
+      },
+      {
+        "file": "saiki-p2.json",
+        "sha256": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+        "output_unchanged": true
+      },
+      {
+        "file": "shibata-p1.json",
+        "sha256": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+        "output_unchanged": true
+      },
+      {
+        "file": "shibata-p13.json",
+        "sha256": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+        "output_unchanged": true
+      },
+      {
+        "file": "shibata-p7.json",
+        "sha256": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+        "output_unchanged": true
+      },
+      {
+        "file": "tsu-p16.json",
+        "sha256": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+        "output_unchanged": true
+      },
+      {
+        "file": "tsu-p20.json",
+        "sha256": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+        "output_unchanged": true
+      },
+      {
+        "file": "tsu-p21.json",
+        "sha256": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+        "output_unchanged": true
+      },
+      {
+        "file": "tsu-p22.json",
+        "sha256": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p13.json",
+        "sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p14.json",
+        "sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p15.json",
+        "sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p6.json",
+        "sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p7.json",
+        "sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p8.json",
+        "sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+        "output_unchanged": true
+      },
+      {
+        "file": "yokohama-p9.json",
+        "sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+        "output_unchanged": true
+      }
+    ],
+    "observed": [
+      {
+        "file": "hirosaki-p25.json",
+        "observations": [
+          {
+            "dimension": {
+              "text": "100",
+              "x": 129.74410999999998,
+              "y": 188.35932169279994,
+              "leftX": 129.74410999999998,
+              "rightX": 129.74410999999998,
+              "valueMm": 100
+            },
+            "previous": {
+              "text": "4500",
+              "x": 129.74410999999998,
+              "y": 166.63578777979995,
+              "leftX": 129.74410999999998,
+              "rightX": 129.74410999999998,
+              "valueMm": 4500
+            },
+            "referenceScale": 0.009447810337135133,
+            "observedScale": 0.009445014744782602,
+            "deviation": 0.0002958984413079513,
+            "roundedDeviation": 0.000296,
+            "ordinaryContinues": true
+          },
+          {
+            "dimension": {
+              "text": "100",
+              "x": 127.03707999999995,
+              "y": 444.39420169280004,
+              "leftX": 127.03707999999995,
+              "rightX": 127.03707999999995,
+              "valueMm": 100
+            },
+            "previous": {
+              "text": "4500",
+              "x": 127.03707999999995,
+              "y": 422.67061278560004,
+              "leftX": 127.03707999999995,
+              "rightX": 127.03707999999995,
+              "valueMm": 4500
+            },
+            "referenceScale": 0.009447810337135144,
+            "observedScale": 0.009445038655304347,
+            "deviation": 0.00029336764095511114,
+            "roundedDeviation": 0.000293,
+            "ordinaryContinues": true
+          },
+          {
+            "dimension": {
+              "text": "100",
+              "x": 127.03707999999995,
+              "y": 680.6188834453999,
+              "leftX": 127.03707999999995,
+              "rightX": 127.03707999999995,
+              "valueMm": 100
+            },
+            "previous": {
+              "text": "4500",
+              "x": 127.03707999999995,
+              "y": 658.8952945382,
+              "leftX": 127.03707999999995,
+              "rightX": 127.03707999999995,
+              "valueMm": 4500
+            },
+            "referenceScale": 0.009447811080300027,
+            "observedScale": 0.009445038655304296,
+            "deviation": 0.000293446277890963,
+            "roundedDeviation": 0.000293,
+            "ordinaryContinues": true
+          },
+          {
+            "dimension": {
+              "text": "100",
+              "x": 794.8670299999999,
+              "y": 188.35933344539998,
+              "leftX": 794.8670299999999,
+              "rightX": 794.8670299999999,
+              "valueMm": 100
+            },
+            "previous": {
+              "text": "4500",
+              "x": 794.8670299999999,
+              "y": 166.63574453819996,
+              "leftX": 794.8670299999999,
+              "rightX": 794.8670299999999,
+              "valueMm": 4500
+            },
+            "referenceScale": 0.0094478110803,
+            "observedScale": 0.009445038655304359,
+            "deviation": 0.0002934462778814151,
+            "roundedDeviation": 0.000293,
+            "ordinaryContinues": true
+          }
+        ]
+      },
+      {
+        "file": "shibata-p1.json",
+        "observations": [
+          {
+            "dimension": {
+              "text": "580",
+              "x": 1779.3452352,
+              "y": 1075.225028,
+              "leftX": 1779.3452352,
+              "rightX": 1779.3452352,
+              "valueMm": 580
+            },
+            "previous": {
+              "text": "5,300",
+              "x": 1779.3452352,
+              "y": 975.1941896000001,
+              "leftX": 1779.3452352,
+              "rightX": 1779.3452352,
+              "valueMm": 5300
+            },
+            "referenceScale": 0.0283464494386921,
+            "observedScale": 0.03402409469387755,
+            "deviation": 0.20029475887148052,
+            "roundedDeviation": 0.200295,
+            "ordinaryContinues": false
+          }
+        ]
+      },
+      {
+        "file": "tsu-p21.json",
+        "observations": [
+          {
+            "dimension": {
+              "text": "150",
+              "x": 180.1009279596,
+              "y": 272.33987785665533,
+              "leftX": 180.1009279596,
+              "rightX": 180.1009279596,
+              "valueMm": 150
+            },
+            "previous": {
+              "text": "3,500",
+              "x": 180.1009279596,
+              "y": 242.87988083513545,
+              "leftX": 180.1009279596,
+              "rightX": 180.1009279596,
+              "valueMm": 3500
+            },
+            "referenceScale": 0.01958047567730737,
+            "observedScale": 0.01614246412138076,
+            "deviation": 0.1755836585681657,
+            "roundedDeviation": 0.175584,
+            "ordinaryContinues": false
+          },
+          {
+            "dimension": {
+              "text": "150",
+              "x": 180.1009279596,
+              "y": 753.419685424032,
+              "leftX": 180.1009279596,
+              "rightX": 180.1009279596,
+              "valueMm": 150
+            },
+            "previous": {
+              "text": "3,500",
+              "x": 180.1009279596,
+              "y": 724.0196883791355,
+              "leftX": 180.1009279596,
+              "rightX": 180.1009279596,
+              "valueMm": 3500
+            },
+            "referenceScale": 0.019551207396939944,
+            "observedScale": 0.0161095874218611,
+            "deviation": 0.17603107087992476,
+            "roundedDeviation": 0.176031,
+            "ordinaryContinues": false
+          }
+        ]
+      },
+      {
+        "file": "tsu-p22.json",
+        "observations": [
+          {
+            "dimension": {
+              "text": "150",
+              "x": 180.3409278636,
+              "y": 272.5198777840319,
+              "leftX": 180.3409278636,
+              "rightX": 180.3409278636,
+              "valueMm": 150
+            },
+            "previous": {
+              "text": "3,500",
+              "x": 180.3409278636,
+              "y": 243.11988073913545,
+              "leftX": 180.3409278636,
+              "rightX": 180.3409278636,
+              "valueMm": 3500
+            },
+            "referenceScale": 0.019609743958587066,
+            "observedScale": 0.01610958742186107,
+            "deviation": 0.17849068014951242,
+            "roundedDeviation": 0.178491,
+            "ordinaryContinues": false
+          },
+          {
+            "dimension": {
+              "text": "150",
+              "x": 180.3409278636,
+              "y": 753.5996853526553,
+              "leftX": 180.3409278636,
+              "rightX": 180.3409278636,
+              "valueMm": 150
+            },
+            "previous": {
+              "text": "3,500",
+              "x": 180.3409278636,
+              "y": 724.1396883311355,
+              "leftX": 180.3409278636,
+              "rightX": 180.3409278636,
+              "valueMm": 3500
+            },
+            "referenceScale": 0.0195512073963318,
+            "observedScale": 0.016142464121380727,
+            "deviation": 0.17434950209727829,
+            "roundedDeviation": 0.17435,
+            "ordinaryContinues": false
+          }
+        ]
+      }
+    ],
+    "prior_report": "phases/38-elevation-close/step3-report.json",
+    "prior_report_matches": [
+      {
+        "file": "hirosaki-p25.json",
+        "expected": [
+          0.000296,
+          0.000293,
+          0.000293,
+          0.000293
+        ],
+        "actual": [
+          0.000296,
+          0.000293,
+          0.000293,
+          0.000293
+        ],
+        "matches": true
+      },
+      {
+        "file": "shibata-p1.json",
+        "expected": [
+          0.200295
+        ],
+        "actual": [
+          0.200295
+        ],
+        "matches": true
+      },
+      {
+        "file": "tsu-p21.json",
+        "expected": [
+          0.175584,
+          0.176031
+        ],
+        "actual": [
+          0.175584,
+          0.176031
+        ],
+        "matches": true
+      },
+      {
+        "file": "tsu-p22.json",
+        "expected": [
+          0.178491,
+          0.17435
+        ],
+        "actual": [
+          0.178491,
+          0.17435
+        ],
+        "matches": true
+      }
+    ],
+    "conclusion": "tsu-p21의 편차 0.175584와 0.176031은 모두 raw 150, valueMm 150인 치수의 것이다. 다른 면을 포함해 기존 report의 short_dimension_deviations도 모두 재현했다."
+  },
+  "comment_numbers": [
+    {
+      "value": "36",
+      "grep_command": "grep -nF -- '\"page_count\": 36' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/page_count",
+      "grep_exit_code": 0,
+      "grep_output": "17:    \"page_count\": 36,\n"
+    },
+    {
+      "value": "21",
+      "grep_command": "grep -nF -- '\"file\": \"tsu-p21.json\"' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/observed/2/file",
+      "grep_exit_code": 0,
+      "grep_output": "155:        \"file\": \"tsu-p21.json\",\n327:        \"file\": \"tsu-p21.json\",\n458:        \"file\": \"tsu-p21.json\",\n"
+    },
+    {
+      "value": "150",
+      "grep_command": "grep -nF -- '\"valueMm\": 150' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/observed/2/observations/0/dimension/valueMm",
+      "grep_exit_code": 0,
+      "grep_output": "336:              \"valueMm\": 150\n359:              \"valueMm\": 150\n387:              \"valueMm\": 150\n410:              \"valueMm\": 150\n"
+    },
+    {
+      "value": "0.175584",
+      "grep_command": "grep -nF -- '\"roundedDeviation\": 0.175584' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/observed/2/observations/0/roundedDeviation",
+      "grep_exit_code": 0,
+      "grep_output": "349:            \"roundedDeviation\": 0.175584,\n"
+    },
+    {
+      "value": "0.176031",
+      "grep_command": "grep -nF -- '\"roundedDeviation\": 0.176031' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/observed/2/observations/1/roundedDeviation",
+      "grep_exit_code": 0,
+      "grep_output": "372:            \"roundedDeviation\": 0.176031,\n"
+    },
+    {
+      "value": "40",
+      "grep_command": "grep -nF -- '\"phase\": \"40-citation-integrity\"' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/phase",
+      "grep_exit_code": 0,
+      "grep_output": "2:  \"phase\": \"40-citation-integrity\",\n"
+    },
+    {
+      "value": "1",
+      "grep_command": "grep -nF -- '\"step\": 1' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/step",
+      "grep_exit_code": 0,
+      "grep_output": "3:  \"step\": 1,\n"
+    },
+    {
+      "value": "1170",
+      "grep_command": "grep -nF -- '\"1170\"' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/observed/2/short_tail_candidates",
+      "grep_exit_code": 0,
+      "grep_output": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n"
+    },
+    {
+      "value": "0.487933",
+      "grep_command": "grep -nF -- '0.487933' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/observed/2/short_tail_candidates/1170/1",
+      "grep_exit_code": 0,
+      "grep_output": "48:          \"1170\": [0.490606, 0.487933]\n"
+    },
+    {
+      "value": "0.490606",
+      "grep_command": "grep -nF -- '0.490606' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/observed/2/short_tail_candidates/1170/0",
+      "grep_exit_code": 0,
+      "grep_output": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n"
+    },
+    {
+      "value": "30",
+      "grep_command": "grep -nF -- '30mm' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0/candidate",
+      "grep_exit_code": 0,
+      "grep_output": "18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n"
+    },
+    {
+      "value": "4.3321887991",
+      "grep_command": "grep -nF -- '4.3321887991' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0/deviations/0",
+      "grep_exit_code": 0,
+      "grep_output": "19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n"
+    },
+    {
+      "value": "5.3271613186",
+      "grep_command": "grep -nF -- '5.3271613186' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0/deviations/1",
+      "grep_exit_code": 0,
+      "grep_output": "19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n"
+    },
+    {
+      "value": "38",
+      "grep_command": "grep -nF -- '\"prior_report\": \"phases/38-elevation-close/step3-report.json\"' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/prior_report",
+      "grep_exit_code": 0,
+      "grep_output": "429:    \"prior_report\": \"phases/38-elevation-close/step3-report.json\",\n"
+    },
+    {
+      "value": "3",
+      "grep_command": "grep -nF -- '\"prior_report\": \"phases/38-elevation-close/step3-report.json\"' 'phases/40-citation-integrity/step1-report.json'",
+      "found": true,
+      "pointer": "phases/40-citation-integrity/step1-report.json#/measured/prior_report",
+      "grep_exit_code": 0,
+      "grep_output": "429:    \"prior_report\": \"phases/38-elevation-close/step3-report.json\",\n"
+    },
+    {
+      "value": "0.45",
+      "grep_command": "grep -nF -- '0.45' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/summary",
+      "grep_exit_code": 0,
+      "grep_output": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n"
+    },
+    {
+      "value": "0.49",
+      "grep_command": "grep -nF -- '0.49' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/corpus_sweep/comparison",
+      "grep_exit_code": 0,
+      "grep_output": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n"
+    },
+    {
+      "value": "1.0",
+      "grep_command": "grep -nF -- 'SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/implementation/constant",
+      "grep_exit_code": 0,
+      "grep_output": "4:    \"constant\": \"SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\",\n"
+    },
+    {
+      "value": "22",
+      "grep_command": "grep -nF -- 'tsu-p22.json' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/corpus_sweep/changed_pages/1",
+      "grep_exit_code": 0,
+      "grep_output": "52:        \"page\": \"tsu-p22.json\",\n63:    \"changed_pages\": [\"tsu-p21.json\", \"tsu-p22.json\"],\n"
+    },
+    {
+      "value": "5.0",
+      "grep_command": "grep -nF -- '5.0' 'phases/38-elevation-close/step3-report.json'",
+      "found": true,
+      "pointer": "phases/38-elevation-close/step3-report.json#/summary",
+      "grep_exit_code": 0,
+      "grep_output": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n"
+    }
+  ],
+  "crosscheck_added": {
+    "elevation_file": "tsu-kanritou-p22-elevation.json",
+    "grid_file": "tsu-kanritou-p16-grid.json",
+    "axis": "y",
+    "normal_run": {
+      "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts --reporter=verbose",
+      "exit_code": 0,
+      "tests_passed": 12
+    },
+    "mutation": {
+      "file": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+      "pointer": "/blocks/0/y/spansMm/0",
+      "from": 5825,
+      "to": 5826
+    },
+    "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts -t tsu-kanritou-p22-elevation --reporter=verbose",
+    "exit_code": 1,
+    "failing_test": "軸組図·伏図 axis 골든 상호검증 > 'tsu-kanritou-p22-elevation.json'의 axis가 'tsu-kanritou-p16-grid.json'의 'y' 축 부분열이다",
+    "mutation_output": "\n RUN  v4.1.10 C:/Users/emper/mdtproject\n\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든 > karatsu: 골든의 모든 제목 항목을 대응 계열의 높이·레벨 라벨과 대조한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든 > tsu: p21의 모든 제목 계열을 전체 골든 높이·레벨 라벨과 대조한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든 > tsu: p22의 모든 제목 계열을 전체 골든 높이·레벨 라벨과 대조한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든 > hirosaki: 골든의 모든 제목 계열을 높이·레벨 라벨과 대조한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든 > levels가 있으면 levelTexts와 순서·접두사 관계를 대조한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > levelsBottom·heightsBottomMm이 있으면 전체 계열의 꼬리와 일치한다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'hirosaki-kikyono-p25-elevation.json'의 axis가 'hirosaki-kikyono-p21-grid.json'의 'y' 축 부분열이다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'tsu-kanritou-p21-elevation.json'의 axis가 'tsu-kanritou-p16-grid.json'의 'x' 축 부분열이다\n × |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'tsu-kanritou-p22-elevation.json'의 axis가 'tsu-kanritou-p16-grid.json'의 'y' 축 부분열이다 6ms\n   → expected false to be true // Object.is equality\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'karatsu-jikugumi1-p1-elevation.json'의 axis가 'karatsu-fukuzu-p1-grid.json'의 'y' 축 부분열이다\n ↓ |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > axis 없는 elevation 항목이 없다\n\n Test Files  1 failed (1)\n      Tests  1 failed | 11 skipped (12)\n   Start at  11:08:14\n   Duration  185ms (transform 39ms, setup 0ms, import 54ms, tests 7ms, environment 0ms)\n\n\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯\n\n FAIL  |domain| tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'tsu-kanritou-p22-elevation.json'의 axis가 'tsu-kanritou-p16-grid.json'의 'y' 축 부분열이다\nAssertionError: expected false to be true // Object.is equality\n\n- Expected\n+ Received\n\n- true\n+ false\n\n ❯ tests/plan-import/corpus2-elevation.test.ts:358:11\n    356|         expect(\n    357|           axisIsOrderedSubsequence(elevation.axis, gridAxis),\n    358|         ).toBe(true)\n       |           ^\n    359|       }\n    360|     },\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n",
+    "isolation": "-t 필터로 새 p22 상호검증만 실행했다. 자기 정합성 테스트나 다른 짝의 실패로 감도를 대체하지 않았다.",
+    "restored_byte_for_byte": true,
+    "restored_sha256": "dfd2dfd4ded4f883e15d42ae06ab688a63292590b59850dd86adab3fab992675",
+    "fixture_diff": {
+      "command": "git diff -- tests/fixtures",
+      "exit_code": 0,
+      "stdout": "",
+      "empty": true
+    },
+    "after_restoration": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "test_files_passed": 101,
+      "tests_passed": 1809,
+      "fixture_diff_empty": true
+    }
+  },
+  "validation": {
+    "behavior_unchanged": {
+      "command": "git diff -- src/",
+      "exit_code": 0,
+      "raw_diff": "diff --git a/src/lib/import/framing-plan/elevation.ts b/src/lib/import/framing-plan/elevation.ts\nindex 92991cd..5463adb 100644\n--- a/src/lib/import/framing-plan/elevation.ts\n+++ b/src/lib/import/framing-plan/elevation.ts\n@@ -60,13 +60,14 @@ const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4\n /**\n  * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는\n  * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\n- * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와\n- * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의\n- * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의\n- * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과\n- * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,\n- * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`\n- * 에서는 5.0의 최종 출력이 1.0과 같았다.\n+ * 36면 재계측에서 tsu-p21의 150mm 치수 편차는 0.175584/0.176031이었다\n+ * (`phases/40-citation-integrity/step1-report.json`의 `measured.observed`).\n+ * tsu-p21의 1170mm 꼬리 편차는 0.487933/0.490606이고, 탈락시키는 hirosaki의\n+ * 30mm 경쟁 꼬리 편차는 4.3321887991〜5.3271613186이다. 이 꼬리 값의 근거는\n+ * `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`과\n+ * `counterexamples`다. 같은 report에서 0.45는 실패했고, `corpus_sweep`에서\n+ * 0.49는 채택값 1.0과 비교해 tsu-p21·p22의 결과가 달랐다.\n+ * `counterexamples`에서 5.0의 최종 출력은 1.0과 같았다.\n  */\n const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\n /**\n",
+      "changed_lines": [
+        "- * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와",
+        "- * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의",
+        "- * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의",
+        "- * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과",
+        "- * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,",
+        "- * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`",
+        "- * 에서는 5.0의 최종 출력이 1.0과 같았다.",
+        "+ * 36면 재계측에서 tsu-p21의 150mm 치수 편차는 0.175584/0.176031이었다",
+        "+ * (`phases/40-citation-integrity/step1-report.json`의 `measured.observed`).",
+        "+ * tsu-p21의 1170mm 꼬리 편차는 0.487933/0.490606이고, 탈락시키는 hirosaki의",
+        "+ * 30mm 경쟁 꼬리 편차는 4.3321887991〜5.3271613186이다. 이 꼬리 값의 근거는",
+        "+ * `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`과",
+        "+ * `counterexamples`다. 같은 report에서 0.45는 실패했고, `corpus_sweep`에서",
+        "+ * 0.49는 채택값 1.0과 비교해 tsu-p21·p22의 결과가 달랐다.",
+        "+ * `counterexamples`에서 5.0의 최종 출력은 1.0과 같았다."
+      ],
+      "all_changes_comments_or_whitespace": true,
+      "constant_unchanged": true,
+      "emitted_javascript_equal": true,
+      "method": "HEAD? ?? ??? TypeScript transpileModule(removeComments:true, ES2022, ESNext)? ??? ?? ???? ????."
+    },
+    "full_tests": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "test_files_passed": 101,
+      "tests_passed": 1809,
+      "output": "\n RUN  v4.1.10 C:/Users/emper/mdtproject\n\n\n Test Files  101 passed (101)\n      Tests  1809 passed (1809)\n   Start at  11:10:19\n   Duration  13.07s (transform 20.27s, setup 15.58s, import 32.96s, tests 45.10s, environment 87.41s)\n\n"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "existing_warnings": 1,
+      "output": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n? 1 problem (0 errors, 1 warning)\n\n"
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0,
+      "output": ""
+    }
+  },
+  "comment_verification": {
+    "comment": "/**\r\n * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는\r\n * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\r\n * 36면 재계측에서 tsu-p21의 150mm 치수 편차는 0.175584/0.176031이었다\n * (`phases/40-citation-integrity/step1-report.json`의 `measured.observed`).\n * tsu-p21의 1170mm 꼬리 편차는 0.487933/0.490606이고, 탈락시키는 hirosaki의\n * 30mm 경쟁 꼬리 편차는 4.3321887991〜5.3271613186이다. 이 꼬리 값의 근거는\n * `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`과\n * `counterexamples`다. 같은 report에서 0.45는 실패했고, `corpus_sweep`에서\n * 0.49는 채택값 1.0과 비교해 tsu-p21·p22의 결과가 달랐다.\n * `counterexamples`에서 5.0의 최종 출력은 1.0과 같았다.\n */",
+    "numeric_tokens": [
+      "36",
+      "21",
+      "150",
+      "0.175584",
+      "0.176031",
+      "40",
+      "1",
+      "1170",
+      "0.487933",
+      "0.490606",
+      "30",
+      "4.3321887991",
+      "5.3271613186",
+      "38",
+      "3",
+      "0.45",
+      "0.49",
+      "1.0",
+      "22",
+      "5.0"
+    ],
+    "all_numbers_registered": true,
+    "all_found": true,
+    "scope": "?? ?? ?? ? ?? ??. ??? ??? ????report ?? ???? ??? ??? ????. grep? ?? ?? ???? ? JSON ???? ??? ????? ????."
+  },
+  "completed_at": "2026-09-05T02:11:15.973Z",
+  "summary": "36? ????? tsu 150mm ?? ??? ???? ?? ?? 20?? ????. p22?p16 y? ????? grid ? ? ?? ??? ????? ?? 1809? ????lint?tsc? ????."
+}

@@ -422,6 +422,22 @@ python -c "import fitz,sys; d=fitz.open(sys.argv[1]); [print(t, [i+1 for i,p in 
 
 **구현 결과 (2026-09-03, phase 36·37)**: 형상 골든은 격자 7/7면, 階高 3/3면을 통과시켰다. 通り芯 라벨은 접두 없는 숫자·문자 표기까지 일반화했고, 合計 없음·部分合·나란한 치수 열은 `寸法列曖昧` 규약으로 보존했다. 階高는 명시 치수 소구간 150·100을 다뤘다. 원문 대조에서 fuji의 rot −90 회전 글리프는 같은 x 열로 이어야 했고, 이를 놓친 반증 방법은 phase 37에서 재대조로 바로잡았다.
 
+**phase 38·39 보충 — 階高 대응과 골든의 청구 규약**
+
+레벨 라벨은 가로 창과 레벨 위치 허용 범위를 통과한 것만 위에서 아래로 읽고, 아직 대응하지 않은 레벨 중 허용 범위에 드는 첫 레벨에 순서대로 붙인다. 다음 대응 레벨이 없을 때만 허용 범위 안의 직전 레벨에 겹친다. 이는 도면에 사이 치수가 없어 같은 레벨로 읽는 라벨을 보존하는 규칙이다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다(`phases/38-elevation-close/step2-report.json#/implementation`, `tests/plan-import/elevation.test.ts`). 오프셋 중앙값 보정은 쓰지 않는다. karatsu의 라벨 중심과 대응 레벨 위치의 차이는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`로 부호가 다르며, 일괄 보정하면 GL을 허용 범위 밖으로 밀어낸다. 이 반례는 phase 38의 step 2 사양에 기록돼 있고, 같은 수치는 `tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json`의 좌표에서 재대조했다.
+
+짧은 치수의 허용은 「밀림이 기대 간격을 넘지 않는다」는 공통 규칙이며 `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`이다. 36면 편차 조사, 0.45의 tsu 꼬리 누락, 0.49 대비 tsu 두 면의 변화, hirosaki의 1.0·5.0 최종 출력 동일성은 `phases/38-elevation-close/step3-report.json`에 있다. 출력이 허용비를 구별하지 못하는 선택지 안에서 의미가 있는 값을 고른다. 기록되지 않은 연속구간의 경계를 측정값으로 쓰지 않는다(`phases/39-axis-claim/step2-report.json#/f1_comment_verification`).
+
+**골든의 값 필드는 반드시 실제로 대조하는 테스트에 청구돼야 한다.** 청구되지 않은 기대값은 검증처럼 보이지만 검증이 아니다. phase 38의 step 6에서는 axis 스팬을 바꿔도 테스트가 통과했고, 그 뒤 원문 대조에서 tsu의 마지막 通り芯 `X5` 누락이 드러났다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step0-report.json#/claims`). `tests/plan-import/key-coverage.test.ts`가 값 경로와 청구 테스트를 등록하고 누락·유령 등록·중복을 검사한다. 출처·주석은 사유가 있는 `REFERENCE_ONLY`로 구별한다. 특히 `blocks[].title`은 원문 제목과 전사자 주석이 섞여 있어 참고 전용이며, 구조를 구별한 뒤 제목 대조를 청구하는 조건은 `phases/39-axis-claim/step2-report.json#/deferred_claims`에 남는다. 이 가드는 등록의 완전성을 검사하므로 실제 대조의 효력은 변조 반증으로 함께 확인한다.
+
+軸組図의 `axis`는 파서가 그 면에서 격자를 내라는 기대값이 아니라, 같은 건물 伏図 격자와 전사를 상호검증하는 기준 데이터다. 페이지 방향이 뒤집힐 수 있으므로 伏図 축의 정방향·역방향을 모두 허용한다. 軸組図 라벨은 그 방향의 순서 있는 부분열이어야 하고, 인접 라벨 사이 스팬은 伏図에서 건너뛴 구간의 합과 같아야 한다. 라벨·스팬 개수 관계와 기재된 合計도 별도로 대조한다. axis 미전사 항목은 격자로 근사하지 않고 미전사로 남긴다(`tests/plan-import/corpus2-elevation.test.ts`, `phases/39-axis-claim/step1-report.json`).
+
+**추기 정정**: 레벨 라벨은 레벨과 y 순서를 지켜 대응하며, 오프셋 보정으로 가장 가까운 레벨에 옮기지 않는다. karatsu-jikugumi1의 반례는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`이고, 중앙값 보정은 `GL`을 허용 범위 밖으로 밀어 라벨을 잃게 한다(`phases/38-elevation-close/step2.md#배경`). 도면에 두 레벨 사이 치수가 없을 때만 두 라벨을 한 레벨에 겹쳐 대응한다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다.
+
+짧은 치수 허용은 「밀림이 기대 간격을 넘지 않는다」는 뜻이며, `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`은 36면에서 출력이 서로 구별되지 않는 무차별 구간 안에서 고른 값이다(`phases/38-elevation-close/step3-report.json#/implementation/constant`, `#/short_dimension_sweep/pages`, `#/corpus_sweep/comparison`). 골든의 모든 값 필드는 실제 대조 테스트에 청구돼야 한다. 청구되지 않은 기대값은 검증처럼 보일 뿐 검증이 아니며, phase 38 step 6의 axis 스팬 반증과 그로 인한 tsu `X5` 누락이 이를 보였다. phase 39 step 2의 키 커버리지 가드가 32개 경로 중 18개를 대조 테스트에 청구하고 14개를 `REFERENCE_ONLY`로 구별한다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step2-report.json#/key_paths_total`, `#/claimed`, `#/reference_only`, `tests/plan-import/key-coverage.test.ts`).
+
+軸組図 골든의 `axis`는 軸組図 면에서 격자를 만들라는 파서 기대값이 아니라, 같은 건물 伏図 격자와 대조하는 전사 상호검증용 기준 데이터다. 페이지 순서가 뒤집힐 수 있으므로 정방향·역방향을 모두 허용하고, 라벨은 부분열이며 스팬은 건너뛴 구간의 합과 같아야 한다. 전사하지 않은 axis는 격자로 **근사하지 않고** 미전사로 남긴다 — 이 규칙은 값을 지어내지 않기 위한 것이고, 전사할 근거가 생기면 전사하는 쪽이 옳다. phase 39에서 3개 항목이 미전사였고(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`), 한 면의 모든 블록이 같은 축을 쓴다는 원본 확인으로 근거가 서서 phase 40에서 전사해 현재 0개다(`phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count`).
+
 ### ADR-031: 伏図에서 通り芯과 스팬 치수만 읽는다 — ADR-018이 그은 「형상은 수동」의 경계를 옮긴다
 
 > **폐지(2026-08-25 사용자 결정, ADR-030으로 대체)**: 이 항은 폐지되었다(superseded by ADR-030). 병렬 세션 둘이 같은 번호로 각자 ADR-030을 썼고, 머지 때 이 항을 ADR-031로 개번했다. 구현(`src/lib/import/plan/`)은 삭제했지만, ① 「合計와 맞는 조합만 채택한다」는 자기 검산의 아이디어, ② 「스팬 1본 축은 검산이 원리상 아무것도 배제하지 못한다」는 ③-2 정정의 관측, ③ 좌표 규약을 한 곳에 두는 원칙(④)은 framing-plan의 `runs.ts`에 실제로 반영되어 남아 있다. 이 항은 그 근거 문서로 보존한다.

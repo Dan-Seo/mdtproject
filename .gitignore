@@ -43,3 +43,6 @@ phases/**/step*-output.json
 # AI-readiness 감사 산출물 (agentic-eng-toolkit 스킬) — 돌릴 때마다 재생성된다
 docs/ai-readiness-map.html
 docs/ai-readiness-score.json
+
+# 하네스 스텝의 임시 렌더·중간 산출물 (예: PDF 300dpi 크롭) — 언제든 재생성된다
+tmp/

@@ -1,0 +1,287 @@
+{
+  "phase": "40-citation-integrity",
+  "step": 2,
+  "step_name": "docs-citations",
+  "status": "completed",
+  "base_head": "67a086df4df0ffa7d4a706dd729aec23c83bebb6",
+  "scope": [
+    "docs/RISKS.md R10",
+    "CLAUDE.md R10 및 같은 미전사 수치를 반복하는 도면 인식(로컬) 행",
+    "AGENTS.md 대응 행",
+    "이 step의 report와 index 상태"
+  ],
+  "numbers_used": [
+    {
+      "value": "2FL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/acceptedTrueLevelLabels/2/text",
+      "usage": "docs/RISKS.md R10: 레벨 표기의 통과",
+      "relation": "exact"
+    },
+    {
+      "value": "1FL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/acceptedSentences/0/text",
+      "usage": "docs/RISKS.md R10: 통과 문장 안에 든 문자열",
+      "relation": "substring"
+    },
+    {
+      "value": "・基礎梁天端から1FLまでは打増しとする。",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/acceptedSentences/0/text",
+      "usage": "docs/RISKS.md R10: 문장 통과 예시",
+      "relation": "exact"
+    },
+    {
+      "value": "1SL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/0/text",
+      "usage": "docs/RISKS.md R10: 제외된 SL 계열 표기",
+      "relation": "exact"
+    },
+    {
+      "value": "2SL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/1/text",
+      "usage": "docs/RISKS.md R10: 제외된 SL 계열 표기",
+      "relation": "exact"
+    },
+    {
+      "value": "SL+756.70",
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/3/text",
+      "usage": "docs/RISKS.md R10: 제외된 SL 계열 표기",
+      "relation": "exact"
+    },
+    {
+      "value": 21,
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/0/evidence/page_1_based",
+      "usage": "docs/RISKS.md R10: tsu p21",
+      "relation": "exact"
+    },
+    {
+      "value": 22,
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/1/evidence/page_1_based",
+      "usage": "docs/RISKS.md R10: tsu p22",
+      "relation": "exact"
+    },
+    {
+      "value": "elevations[1]",
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/7",
+      "usage": "docs/RISKS.md R10: tsu p21 전사 완료 항목",
+      "relation": "source_identifies_array_entry",
+      "page": 21,
+      "array_index": 1
+    },
+    {
+      "value": "elevations[0]",
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/8",
+      "usage": "docs/RISKS.md R10: tsu p22 전사 완료 항목",
+      "relation": "source_identifies_array_entry",
+      "page": 22,
+      "array_index": 0
+    },
+    {
+      "value": "elevations[1]",
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/9",
+      "usage": "docs/RISKS.md R10: tsu p22 전사 완료 항목",
+      "relation": "source_identifies_array_entry",
+      "page": 22,
+      "array_index": 1
+    },
+    {
+      "value": 0,
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count",
+      "usage": "docs/RISKS.md R10 및 CLAUDE.md·AGENTS.md의 R10·도면 인식(로컬) 행: 미전사 axis 0개",
+      "relation": "exact"
+    },
+    {
+      "value": "p21의 모든 軸組図 블록은 같은 X축을, p22의 모든 블록은 같은 Y축을 쓴다",
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/2/evidence/conclusion",
+      "usage": "docs/RISKS.md R10: 제목 공유 항목의 axis를 확정한 근거",
+      "relation": "translation"
+    },
+    {
+      "value": "axis 없는 elevation 항목이 없다",
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count",
+      "usage": "docs/RISKS.md R10: 미전사 없음 테스트 설명",
+      "relation": "zero_missing"
+    },
+    {
+      "value": "tests/plan-import/corpus2-elevation.test.ts",
+      "source": "phases/40-citation-integrity/step0-report.json#/validation/regression/command",
+      "usage": "docs/RISKS.md R10: 기존 미전사 없음 테스트가 들어 있는 파일",
+      "relation": "substring"
+    }
+  ],
+  "correction_notes": {
+    "five_label_references": "모두 survey 아래에 있다. 2FL은 acceptedTrueLevelLabels의 index 2이며 index 1은 PHFL이다. 1FL은 acceptedSentences의 index 0에 포함된 문자열이지 독립 레벨 항목이 아니다.",
+    "narrowed_claim": "step4-report는 1SL과 1FL의 같은 높이를 기록하지 않는다. 해당 설명을 삭제하고 보고서가 직접 기록한 SL 문자열의 제외와 문장 통과만 남겼다.",
+    "historical_reports": "과거 반증 근거인 phase 39 보고서는 수정하지 않는다. 현재 문서와 이 보고서의 인용을 정정한다.",
+    "axis_scope": "미전사 수치는 elevation 골든 항목을 센다. 페이지 내 축 공유에 관한 결론을 다른 속성이나 다른 도면으로 일반화하지 않는다."
+  },
+  "checks": {
+    "prewrite_resolution": {
+      "all_resolved": true,
+      "document_json_reference_count": 13,
+      "numbers_used_count": 15
+    },
+    "test_guard": {
+      "file": "tests/plan-import/corpus2-elevation.test.ts",
+      "name": "axis 없는 elevation 항목이 없다",
+      "count_statement": "if (elevation.axis === undefined) skippedAxisCount += 1",
+      "assertion": "expect(skippedAxisCount).toBe(0)",
+      "read_only": true
+    },
+    "pointer_resolution": {
+      "all_resolved": true,
+      "failed": 0,
+      "references_checked": 16,
+      "method": "각 파일을 UTF-8 JSON으로 다시 읽고 RFC 6901 ~1/~0 복호화 후 object key 또는 엄격한 배열 index로 끝까지 순회"
+    },
+    "claude_agents_diff": {
+      "command": "git diff --no-index -- <CLAUDE.md 전체 표 행을 추출한 임시 파일> <AGENTS.md 전체 표 행을 추출한 임시 파일>",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "row_count": 32,
+      "tables_identical": true,
+      "sha256": "8607ff9bd2ce0732703fb0c35a9523fa548e6a7db67fa04b53dc9640f836b997",
+      "r10_row_identical": true
+    },
+    "vitest": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "files_passed": 101,
+      "tests_passed": 1809,
+      "output": "\n Test Files  101 passed (101)\n      Tests  1809 passed (1809)\n   Start at  11:16:59\n   Duration  14.09s (transform 23.97s, setup 18.56s, import 37.99s, tests 51.23s, environment 106.92s)\n\n"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "output": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 1 problem (0 errors, 1 warning)\n\n",
+      "errors": 0,
+      "warnings": 1,
+      "existing_warning": "src/app/api/oncall/alert/route.test.ts:161 _omitted unused"
+    },
+    "implementation_unchanged": {
+      "command": "git diff --exit-code HEAD -- src/ tests/",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "persisted_source_recheck": {
+      "all_resolved": true,
+      "source_occurrences": 31,
+      "distinct_sources": 16,
+      "all_numbers_used_registered": true,
+      "resolved_values_match_registry": true,
+      "failures": 0
+    }
+  },
+  "pointers_verified": [
+    {
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C4",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_type": "dict",
+      "resolved_sha256": "d6cb7f66610607f9da238595c47f65af1d28703a9b333c11a78b80c25522b968"
+    },
+    {
+      "source": "phases/38-elevation-close/step3-report.json#/implementation/golden",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_type": "dict",
+      "resolved_sha256": "c4758ea12f6b1edce7fad1cd69ba95d968258b5c6e0301b4f2c4e2a0e680d382"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey/acceptedSentences/0/text",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "・基礎梁天端から1FLまでは打増しとする。"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey/acceptedTrueLevelLabels/2/text",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "2FL"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/0/text",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "1SL"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/1/text",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "2SL"
+    },
+    {
+      "source": "phases/38-elevation-close/step4-report.json#/survey/rejectedLevelLikeStrings/3/text",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "SL+756.70"
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/0/evidence/page_1_based",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": 21
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/1/evidence/page_1_based",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": 22
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/2/evidence/conclusion",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "p21の全3図は同じX軸、p22の全5図は同じY軸。axis値に限れば、複数captionを共有するelevation項目の対応ブロックを一つに決めなくても値は一意。階高や他の属性がすべて同一とは主張しない。"
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/7",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_type": "dict",
+      "resolved_sha256": "d018af02d3ebbd8023d8ab3ad5744792090f09066580e14c5a368646eed32994"
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/8",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_type": "dict",
+      "resolved_sha256": "1c6030248bd103dd2ca38950bd8028a064f0077d555690374ef120cc938bd3c1"
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/items/9",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_type": "dict",
+      "resolved_sha256": "ce3c23c527c932607ea33a891b27d11b233a3f3632fce9b745b16f3bba786998"
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": 0
+    },
+    {
+      "source": "phases/40-citation-integrity/step0-report.json#/validation/regression/command",
+      "file_exists": true,
+      "pointer_resolved": true,
+      "resolved_value": "npx vitest run tests/plan-import/corpus2-elevation.test.ts tests/plan-import/key-coverage.test.ts"
+    }
+  ],
+  "completed_at": "2026-09-05T02:18:43.028168+00:00",
+  "summary": "R10의 axis 미전사를 0개로 갱신하고 survey의 실제 키·배열 위치로 인용을 정정했다. 변경값 15개와 인용 16개를 검증하고 CLAUDE/AGENTS 전체 표 32행 일치·전체 1809 테스트·lint 통과를 확인했다."
+}

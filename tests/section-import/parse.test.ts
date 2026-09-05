@@ -679,6 +679,26 @@ function isCenterPosition(position: string): boolean {
   return position.includes('中央')
 }
 
+/** 대상 외 리스트의 위치를 본수 필드에 대응시키는 명시적 표다. */
+const OUT_OF_SCOPE_POSITION_ROLE = {
+  端部: 'end',
+  中央: 'center',
+  // 先端은 中央으로 접을 근거가 없으므로 이 대조에서 청구하지 않는다.
+  先端: 'unclaimed',
+} as const
+
+type OutOfScopePositionRole =
+  (typeof OUT_OF_SCOPE_POSITION_ROLE)[keyof typeof OUT_OF_SCOPE_POSITION_ROLE]
+
+function outOfScopePositionRole(position: string): OutOfScopePositionRole {
+  if (!Object.prototype.hasOwnProperty.call(OUT_OF_SCOPE_POSITION_ROLE, position)) {
+    throw new Error(`지원하지 않는 대상 외 리스트 위치: ${position}`)
+  }
+  return OUT_OF_SCOPE_POSITION_ROLE[
+    position as keyof typeof OUT_OF_SCOPE_POSITION_ROLE
+  ]
+}
+
 function sweepGirders(
   pageFile: string,
   expectedFile: string,
@@ -1290,14 +1310,17 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {
           const topByPosition = top as Record<string, string>
           const bottomByPosition = bottom as Record<string, string>
           for (const [position, text] of Object.entries(topByPosition)) {
-            const count = position === '端部' ? main.endTopCount : main.topCount
+            const role = outOfScopePositionRole(position)
+            if (role === 'unclaimed') continue
+            const count = role === 'end' ? main.endTopCount : main.topCount
             expect(`${count}-${main.size}`, `${entry.mark} 上端筋 ${position}`).toBe(
               text,
             )
           }
           for (const [position, text] of Object.entries(bottomByPosition)) {
-            const count =
-              position === '端部' ? main.endBottomCount : main.bottomCount
+            const role = outOfScopePositionRole(position)
+            if (role === 'unclaimed') continue
+            const count = role === 'end' ? main.endBottomCount : main.bottomCount
             expect(`${count}-${main.size}`, `${entry.mark} 下端筋 ${position}`).toBe(
               text,
             )

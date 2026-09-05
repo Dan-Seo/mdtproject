@@ -60,10 +60,14 @@ const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4
 /**
  * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는
  * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.
- * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와
- * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의
- * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,
- * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.
+ * 36면 재계측에서 tsu-p21의 150mm 치수 편차는 0.175584/0.176031이었다
+ * (`phases/40-citation-integrity/step1-report.json`의 `measured.observed`).
+ * tsu-p21의 1170mm 꼬리 편차는 0.487933/0.490606이고, 탈락시키는 hirosaki의
+ * 30mm 경쟁 꼬리 편차는 4.3321887991〜5.3271613186이다. 이 꼬리 값의 근거는
+ * `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`과
+ * `counterexamples`다. 같은 report에서 0.45는 실패했고, `corpus_sweep`에서
+ * 0.49는 채택값 1.0과 비교해 tsu-p21·p22의 결과가 달랐다.
+ * `counterexamples`에서 5.0의 최종 출력은 1.0과 같았다.
  */
 const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0
 /**

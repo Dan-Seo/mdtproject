@@ -1,0 +1,52 @@
+{
+  "project": "Kijun",
+  "phase": "40-citation-integrity",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refute-tsu-axis-transcription",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "B1〜B6 반증 불성립: PDF p21 3블록·p22 5블록 및 p16 역방향 축 대조, axis 26개 불변식·미전사 0개·JSON 포인터 39개 검증 완료(step0-report.json).",
+      "started_at": "2026-09-05T10:46:07+0900",
+      "completed_at": "2026-09-05T11:05:46+0900"
+    },
+    {
+      "step": 1,
+      "name": "comment-and-crosscheck",
+      "status": "completed",
+      "summary": "36면 계측으로 150mm 편차 귀속·주석 숫자 20개를 검증하고 p22↔p16 y축 상호검증·한 칸 변조 실패를 확인; 전체 1809개 테스트·lint·tsc 통과(step1-report.json).",
+      "started_at": "2026-09-05T11:05:46+0900",
+      "completed_at": "2026-09-05T11:12:58+0900"
+    },
+    {
+      "step": 2,
+      "name": "docs-citations",
+      "status": "completed",
+      "started_at": "2026-09-05T11:12:59+0900",
+      "summary": "R10의 axis 미전사를 0개로 갱신하고 survey의 실제 키·배열 위치로 인용을 정정했다. 변경값 15개와 인용 16개를 검증하고 CLAUDE/AGENTS 전체 표 32행 일치·전체 1809 테스트·lint 통과를 확인했다.",
+      "completed_at": "2026-09-05T11:19:21+0900"
+    },
+    {
+      "step": 3,
+      "name": "citation-checker",
+      "status": "completed",
+      "started_at": "2026-09-05T11:19:22+0900",
+      "summary": "표준 라이브러리 90줄 인용 검사기 구현; step0~3 source 73건·26개 경계 검사·lint 통과, 실제 포인터 변조 exit 1 및 원복 확인, 과거 fixture 필드 3경로 미검출 한계를 report에 기록.",
+      "completed_at": "2026-09-05T11:25:25+0900"
+    },
+    {
+      "step": 4,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "started_at": "2026-09-05T11:36:11+0900",
+      "summary": "9항목 반증 불성립: 주석 숫자 20종·포인터 38개 해석, 유효 변조 173/173 검출(무효 1건 별도), 전체 1809 테스트·lint·tsc·build 통과 및 원복 확인(step4-report.json).",
+      "completed_at": "2026-09-05T11:43:31+0900"
+    }
+  ],
+  "created_at": "2026-09-05T10:55:00+0900",
+  "completed_at": "2026-09-05T11:43:32+0900"
+}

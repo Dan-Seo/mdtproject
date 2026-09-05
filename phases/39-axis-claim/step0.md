@@ -35,6 +35,8 @@ Claude가 커밋한 `tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevat
     3블록(X1·X2·X3通り)의 labels·spansMm·totalMm
 - **A5** phase 38 `step6-report.json`이 변조했다고 적은 세 경로가 레포에 **없다**.
   `find tests -name "<파일명>"` 세 번의 출력이 전부 빈 결과임을 report에 그대로 실어라.
+  이 세 경로는 **부재가 결론**이므로 `paths_expected_absent`에 적고
+  `paths_verified`에는 넣지 마라(아래 AC 참조).
 
 ## 하지 말 것
 
@@ -52,7 +54,11 @@ Claude가 커밋한 `tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevat
 - `claims`: A1〜A5 각각 `{ "id", "holds": true|false, "method", "evidence" }`.
   `evidence`에는 실제로 읽은 값을 적어라 — A1은 세 블록별 라벨 목록과 각 라벨의 (x, y),
   A3은 위반 건수와 검사한 axis 블록 총수, A5는 세 `find` 명령의 원문 출력.
-- `paths_verified`: report가 인용한 모든 파일 경로와 그 존재 여부(true/false).
-  **false가 하나라도 있으면 `verdict`는 `refuted`다.**
+- `paths_verified`: report가 **근거로 삼은** 파일 경로와 그 존재 여부(true/false).
+  즉 실제로 열어서 읽은 파일들이다. **false가 하나라도 있으면 `verdict`는 `refuted`다.**
+- `paths_expected_absent`: A5가 **부재를 증명하는** 세 경로. 여기 항목은 `exists: false`가
+  정상이며, 하나라도 `true`면(= 그 파일이 실재하면) A5가 무너진 것이므로 `refuted`다.
+  **A5의 세 경로를 `paths_verified`에 넣지 마라** — 그 목록은 「내가 읽은 파일은 전부
+  실재한다」를 보증하는 자리이고, 부재 증거는 성격이 반대다.
 
 하나라도 `holds: false`면 `refuted`로 종결하라. 뒤 스텝은 게이트에 막힌다.
