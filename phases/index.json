@@ -199,6 +199,11 @@
       "created_at": "2026-09-05T00:40:00+0900",
       "refuted_at": "2026-09-05T09:23:16+0900",
       "completed_at": "2026-09-05T10:44:16+0900"
+    },
+    {
+      "dir": "40-citation-integrity",
+      "status": "pending",
+      "created_at": "2026-09-05T10:55:00+0900"
     }
   ]
 }
