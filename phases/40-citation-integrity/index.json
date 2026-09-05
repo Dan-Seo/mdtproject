@@ -9,7 +9,8 @@
       "gate": true,
       "status": "completed",
       "summary": "B1〜B6 반증 불성립: PDF p21 3블록·p22 5블록 및 p16 역방향 축 대조, axis 26개 불변식·미전사 0개·JSON 포인터 39개 검증 완료(step0-report.json).",
-      "started_at": "2026-09-05T10:46:07+0900"
+      "started_at": "2026-09-05T10:46:07+0900",
+      "completed_at": "2026-09-05T11:05:46+0900"
     },
     {
       "step": 1,
