@@ -10,7 +10,8 @@
       "status": "refuted",
       "started_at": "2026-09-05T09:12:54+0900",
       "completed_at": "2026-09-05T09:22:52+0900",
-      "summary": "A1~A5 주장은 성립하지만 A5의 세 변조 경로가 레포에 없어 paths_verified에 false가 포함되므로 AC에 따라 refuted"
+      "summary": "A1~A5 주장은 성립하지만 A5의 세 변조 경로가 레포에 없어 paths_verified에 false가 포함되므로 AC에 따라 refuted",
+      "refuted_at": "2026-09-05T09:23:15+0900"
     },
     {
       "step": 1,
