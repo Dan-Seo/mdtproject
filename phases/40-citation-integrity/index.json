@@ -23,7 +23,9 @@
     {
       "step": 2,
       "name": "docs-citations",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-05T11:12:59+0900",
+      "summary": "R10의 axis 미전사를 0개로 갱신하고 survey의 실제 키·배열 위치로 인용을 정정했다. 변경값 15개와 인용 16개를 검증하고 CLAUDE/AGENTS 전체 표 32행 일치·전체 1809 테스트·lint 통과를 확인했다."
     },
     {
       "step": 3,
