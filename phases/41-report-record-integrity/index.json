@@ -15,7 +15,8 @@
       "name": "path-claim-check",
       "status": "completed",
       "summary": "114줄 검사기에 선언된 경로 주장 대조를 추가하고 가드레일을 동기화했다. 반증 2건·37항목·lint 통과, report 126개 전수 집계(paths_verified 292·expected_absent 6·source 263), 기존 실패 9개 보존.",
-      "started_at": "2026-09-05T13:46:55+0900"
+      "started_at": "2026-09-05T13:46:55+0900",
+      "completed_at": "2026-09-05T13:54:52+0900"
     },
     {
       "step": 2,
