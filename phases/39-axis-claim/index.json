@@ -1,0 +1,12 @@
+{
+  "project": "Kijun",
+  "phase": "39-axis-claim",
+  "steps": [
+    { "step": 0, "name": "refute-transcription-fix", "kind": "verify", "gate": true, "status": "pending" },
+    { "step": 1, "name": "claim-axis-crosscheck", "status": "pending" },
+    { "step": 2, "name": "unclaimed-key-guard", "status": "pending" },
+    { "step": 3, "name": "docs-elevation-close", "status": "pending" },
+    { "step": 4, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending" }
+  ],
+  "created_at": "2026-09-05T00:40:00+0900"
+}
