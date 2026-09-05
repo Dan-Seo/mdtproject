@@ -309,34 +309,30 @@
       "kind": "numeric_value_or_page",
       "used_in": [
         {
-          "document": "docs/RISKS.md#R15",
-          "context": "2-report.json`의 `f1_comment_verification`도 이"
-        },
-        {
           "document": "docs/RISKS.md#R10",
           "context": "·X3)와 `elevations[1]`(X4·X5). 제목 수나 실제 通り 수를"
         }
       ]
     },
     {
-      "value": "phases/38-elevation-close/step0-report.json#claims.C4",
+      "value": "phases/38-elevation-close/step0-report.json#/claims/C4",
       "source": "phases/38-elevation-close/step0-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/RISKS.md#R10",
-          "context": "벨 대조를 통과한다(`phases/38-elevation-close/step0-report.json#claims.C4`, `phases/38-elev"
+          "context": "벨 대조를 통과한다(`phases/38-elevation-close/step0-report.json#/claims/C4`, `phases/38-elev"
         }
       ]
     },
     {
-      "value": "phases/38-elevation-close/step3-report.json#implementation.golden",
+      "value": "phases/38-elevation-close/step3-report.json#/implementation/golden",
       "source": "phases/38-elevation-close/step3-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/RISKS.md#R10",
-          "context": "laims.C4`, `phases/38-elevation-close/step3-report.json#implementation.golden`, `tests/plan-imp"
+          "context": "laims.C4`, `phases/38-elevation-close/step3-report.json#/implementation/golden`, `tests/plan-imp"
         }
       ]
     },
@@ -362,22 +358,22 @@
       "used_in": [
         {
           "document": "docs/RISKS.md#R10",
-          "context": "칙은 만들지 않았다(`phases/38-elevation-close/step4-report.json#survey`). `1SL`·`2SL`·`S"
+          "context": "칙은 만들지 않았다(`phases/38-elevation-close/step4-report.json#/survey`). `1SL`·`2SL`·`S"
         }
       ]
     },
     {
-      "value": "phases/39-axis-claim/step1-report.json#skipped_axis_count",
+      "value": "phases/39-axis-claim/step1-report.json#/skipped_axis_count",
       "source": "phases/39-axis-claim/step1-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/RISKS.md#R10",
-          "context": " 골든 항목**이다(`phases/39-axis-claim/step1-report.json#skipped_axis_count`): `tsu-kanritou-"
+          "context": " 골든 항목**이다(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`): `tsu-kanritou-"
         },
         {
           "document": "docs/MILESTONES.md#도면-인식",
-          "context": "ort.json`, `phases/39-axis-claim/step1-report.json#skipped_axis_count`). 키 커버리지 가드는 전체 "
+          "context": "ort.json`, `phases/39-axis-claim/step1-report.json#/skipped_axis_count`). 키 커버리지 가드는 전체 "
         }
       ]
     },
@@ -510,7 +506,7 @@
       "used_in": [
         {
           "document": "docs/RISKS.md#R10",
-          "context": "#survey`). `1SL`·`2SL`·`SL+…` 계열은"
+          "context": "#/survey`). `1SL`·`2SL`·`SL+…` 계열은"
         },
         {
           "document": "docs/RISKS.md#R10",
@@ -697,7 +693,7 @@
       "used_in": [
         {
           "document": "docs/ADR.md#ADR-030",
-          "context": "GL`이 그 사례다(`phases/38-elevation-close/step2-report.json#implementation`, `tests/plan-imp"
+          "context": "GL`이 그 사례다(`phases/38-elevation-close/step2-report.json#/implementation`, `tests/plan-imp"
         }
       ]
     },
@@ -713,24 +709,24 @@
       ]
     },
     {
-      "value": "phases/39-axis-claim/step2-report.json#f1_comment_verification",
+      "value": "phases/39-axis-claim/step2-report.json#/f1_comment_verification",
       "source": "phases/39-axis-claim/step2-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/ADR.md#ADR-030",
-          "context": "값으로 쓰지 않는다(`phases/39-axis-claim/step2-report.json#f1_comment_verification`).\n\n**골든의 값 필드는 반"
+          "context": "값으로 쓰지 않는다(`phases/39-axis-claim/step2-report.json#/f1_comment_verification`).\n\n**골든의 값 필드는 반"
         }
       ]
     },
     {
-      "value": "phases/38-elevation-close/step6-report.json#items.2_golden_falsifiability",
+      "value": "phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability",
       "source": "phases/38-elevation-close/step6-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/ADR.md#ADR-030",
-          "context": "` 누락이 드러났다(`phases/38-elevation-close/step6-report.json#items.2_golden_falsifiability`, `phases/39-axis"
+          "context": "` 누락이 드러났다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis"
         }
       ]
     },
@@ -741,18 +737,18 @@
       "used_in": [
         {
           "document": "docs/ADR.md#ADR-030",
-          "context": "iability`, `phases/39-axis-claim/step0-report.json#claims`). `tests/plan-im"
+          "context": "iability`, `phases/39-axis-claim/step0-report.json#/claims`). `tests/plan-im"
         }
       ]
     },
     {
-      "value": "phases/39-axis-claim/step2-report.json#deferred_claims",
+      "value": "phases/39-axis-claim/step2-report.json#/deferred_claims",
       "source": "phases/39-axis-claim/step2-report.json#",
       "kind": "reference",
       "used_in": [
         {
           "document": "docs/ADR.md#ADR-030",
-          "context": "를 청구하는 조건은 `phases/39-axis-claim/step2-report.json#deferred_claims`에 남는다. 이 가드는 등록의 "
+          "context": "를 청구하는 조건은 `phases/39-axis-claim/step2-report.json#/deferred_claims`에 남는다. 이 가드는 등록의 "
         }
       ]
     },
@@ -1012,6 +1008,17 @@
           "context": "오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リ"
         }
       ]
+    },
+    {
+      "value": "f1_comment_verification",
+      "source": "phases/39-axis-claim/step2-report.json#/f1_comment_verification",
+      "kind": "report_key",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "2-report.json`의 `f1_comment_verification`도 이"
+        }
+      ]
     }
   ],
   "paths_verified": [
@@ -1211,6 +1218,48 @@
       "only_requested_document_sections_changed": true,
       "product_code_tests_and_goldens_unchanged": true,
       "harness_logs_excluded_from_commit": true
+    },
+    "independent_ac_recheck": {
+      "full_tests": {
+        "command": "npx vitest run",
+        "exit_code": 0,
+        "files_passed": 101,
+        "tests_passed": 1808,
+        "start_time": "10:17:06"
+      },
+      "lint": {
+        "command": "npm run lint",
+        "exit_code": 0,
+        "errors": 0,
+        "existing_warnings": 1
+      },
+      "karatsu_offset_recheck": {
+        "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+        "label_center_y": [
+          84.45015000000001,
+          154.349586,
+          224.48958599999997,
+          249.45
+        ],
+        "level_position_pt": [
+          96.86999999999999,
+          167.01,
+          237.15,
+          240.156
+        ],
+        "rounded_offsets_pt": [
+          -12.4,
+          -12.7,
+          -12.7,
+          9.3
+        ]
+      },
+      "table_diff": {
+        "command": "diff -u <(grep -E \"^\\| (R10|R15|[^|]*[(])\" CLAUDE.md) <(grep -E \"^\\| (R10|R15|[^|]*[(])\" AGENTS.md)",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
     }
   },
   "number_coverage": {
