@@ -41,7 +41,9 @@
       "name": "refute-fixes",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "refuted",
+      "summary": "comment_clean 반증 성립: 주석의 150mm 잔존으로 step 4 금지 조건 위반. 나머지 8항목·172/172 변조·34개 포인터·1809 테스트·lint·tsc·build 통과; 검증 대상 무수정(step4-report.json).",
+      "started_at": "2026-09-05T11:25:25+0900"
     }
   ],
   "created_at": "2026-09-05T10:55:00+0900"
