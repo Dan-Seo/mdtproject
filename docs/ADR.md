@@ -436,7 +436,7 @@ python -c "import fitz,sys; d=fitz.open(sys.argv[1]); [print(t, [i+1 for i,p in 
 
 짧은 치수 허용은 「밀림이 기대 간격을 넘지 않는다」는 뜻이며, `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`은 36면에서 출력이 서로 구별되지 않는 무차별 구간 안에서 고른 값이다(`phases/38-elevation-close/step3-report.json#/implementation/constant`, `#/short_dimension_sweep/pages`, `#/corpus_sweep/comparison`). 골든의 모든 값 필드는 실제 대조 테스트에 청구돼야 한다. 청구되지 않은 기대값은 검증처럼 보일 뿐 검증이 아니며, phase 38 step 6의 axis 스팬 반증과 그로 인한 tsu `X5` 누락이 이를 보였다. phase 39 step 2의 키 커버리지 가드가 32개 경로 중 18개를 대조 테스트에 청구하고 14개를 `REFERENCE_ONLY`로 구별한다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step2-report.json#/key_paths_total`, `#/claimed`, `#/reference_only`, `tests/plan-import/key-coverage.test.ts`).
 
-軸組図 골든의 `axis`는 軸組図 면에서 격자를 만들라는 파서 기대값이 아니라, 같은 건물 伏図 격자와 대조하는 전사 상호검증용 기준 데이터다. 페이지 순서가 뒤집힐 수 있으므로 정방향·역방향을 모두 허용하고, 라벨은 부분열이며 스팬은 건너뛴 구간의 합과 같아야 한다. 미전사 axis는 격자로 근사하지 않고 미전사로 남긴다(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`).
+軸組図 골든의 `axis`는 軸組図 면에서 격자를 만들라는 파서 기대값이 아니라, 같은 건물 伏図 격자와 대조하는 전사 상호검증용 기준 데이터다. 페이지 순서가 뒤집힐 수 있으므로 정방향·역방향을 모두 허용하고, 라벨은 부분열이며 스팬은 건너뛴 구간의 합과 같아야 한다. 전사하지 않은 axis는 격자로 **근사하지 않고** 미전사로 남긴다 — 이 규칙은 값을 지어내지 않기 위한 것이고, 전사할 근거가 생기면 전사하는 쪽이 옳다. phase 39에서 3개 항목이 미전사였고(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`), 한 면의 모든 블록이 같은 축을 쓴다는 원본 확인으로 근거가 서서 phase 40에서 전사해 현재 0개다(`phases/40-citation-integrity/step0-report.json#/claims/5/evidence/missing_axis_count`).
 
 ### ADR-031: 伏図에서 通り芯과 스팬 치수만 읽는다 — ADR-018이 그은 「형상은 수동」의 경계를 옮긴다
 
