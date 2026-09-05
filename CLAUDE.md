@@ -94,6 +94,7 @@ npm run test         # 전체 테스트
 npm run test:golden  # 규준 표 대조 골든테스트만
 npm run test:ci-scripts # CI 셸 스크립트 회귀 (리뷰 범위 필터·승계 판정·로그 축약·시크릿 마스킹)
 npm run lighthouse   # 브라우저 실측·회귀 예산 (npm run build 후. 예산 근거는 lighthouserc.cjs)
+python scripts/check-citations.py phases/{N}-*/step*-report*.json  # phase를 닫기 전에 그 report의 인용과 경로 주장을 대조한다 — `source`의 파일·JSON 포인터 해석, `paths_verified`(있어야 함)와 `paths_expected_absent`·`fabricated_paths`(없어야 함). 한 건이라도 어긋나면 비영으로 끝난다. 선언되지 않은 경로 언급은 주장이 아니라 검사하지 않으므로, report가 근거로 삼은 경로는 사양이 `paths_verified`에 선언하게 할 것
 npx tsx scripts/perf/stress-fixture.ts 5 > /tmp/stress5.json  # R4 계측용 5층 합성 案件. uc17이 「案件を読み込み」로 넣는다 (tests/e2e/README.md)
 gh workflow run ci.yml --ref main -f force_failure=true  # oncall 사고 대응 경로 실검증 — main CI를 의도적으로 실패시켜 로그 축약·시크릿 마스킹·에이전트 분석·이슈 생성까지 밟는다. 산출물은 분석 이슈 하나이고 수정 커밋은 안 나온다(재현 불가라). 끝나면 이슈를 닫을 것
 gh workflow run ci.yml --ref main -f force_failure=true -f fixable=true  # 위에 더해 **수정 경로**까지 — oncall이 scripts/ci/oncall-drill.ts에 재현 가능한 타입 오류를 심어, 에이전트가 재현·수정하고 7게이트 재검증→oncall/* 푸시→draft PR까지 밟는다. force_failure 단독으로는 재현 불가라 이 경로가 통째로 미검증으로 남는다. 산출물은 draft PR 하나 — 끝나면 PR을 닫고 oncall/fix-* 브랜치를 지울 것
