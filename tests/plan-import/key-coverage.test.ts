@@ -115,6 +115,11 @@ const REFERENCE_ONLY: readonly ReferenceOnlyPath[] = [
     reason: '블록별 판독 주석이며 파서 값의 기대값이 아니다.',
   },
   {
+    path: 'blocks[].title',
+    reason:
+      '7개 grid 골든의 8개 title 중 도면 문자열 5건(예: 屋根伏図)과 전사자 주석 3건(예: 伏図(공통))이 섞여 있어 균일한 기대값으로 전체 대조할 수 없는 블록 설명 메타데이터다.',
+  },
+  {
     path: 'elevations[].levelsBottomNote',
     reason: '부분 전사 꼬리의 경위를 설명하는 주석이다.',
   },
@@ -236,14 +241,20 @@ describe('plan-import 골든 값 키 커버리지', () => {
     const unclaimed = [...actual.entries()]
       .filter(([path]) => !covered.has(path))
       .map(([path, files]) => ({ path, files: [...files].sort() }))
-    const stale = [...covered]
-      .filter((path) => !actual.has(path))
-      .sort()
-
     expect(
       unclaimed,
       'unclaimed value paths: make an explicit claim or report the field as blocked',
     ).toEqual([])
+  })
+
+  it('등록한 경로는 실제 골든에 존재하고 두 목록이 겹치지 않는다', () => {
+    const actual = goldenValuePaths()
+    const claimed = listedPaths(CLAIMED)
+    const referenceOnly = listedPaths(REFERENCE_ONLY)
+    const stale = [...new Set([...claimed, ...referenceOnly])]
+      .filter((path) => !actual.has(path))
+      .sort()
+
     expect(
       stale,
       'CLAIMED/REFERENCE_ONLY contains a path absent from the golden',
