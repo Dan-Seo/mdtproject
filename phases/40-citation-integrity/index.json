@@ -2,11 +2,37 @@
   "project": "Kijun",
   "phase": "40-citation-integrity",
   "steps": [
-    { "step": 0, "name": "refute-tsu-axis-transcription", "kind": "verify", "gate": true, "status": "pending" },
-    { "step": 1, "name": "comment-and-crosscheck", "status": "pending" },
-    { "step": 2, "name": "docs-citations", "status": "pending" },
-    { "step": 3, "name": "citation-checker", "status": "pending" },
-    { "step": 4, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending" }
+    {
+      "step": 0,
+      "name": "refute-tsu-axis-transcription",
+      "kind": "verify",
+      "gate": true,
+      "status": "completed",
+      "summary": "B1〜B6 반증 불성립: PDF p21 3블록·p22 5블록 및 p16 역방향 축 대조, axis 26개 불변식·미전사 0개·JSON 포인터 39개 검증 완료(step0-report.json).",
+      "started_at": "2026-09-05T10:46:07+0900"
+    },
+    {
+      "step": 1,
+      "name": "comment-and-crosscheck",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "docs-citations",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "citation-checker",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    }
   ],
   "created_at": "2026-09-05T10:55:00+0900"
 }
