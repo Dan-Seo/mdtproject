@@ -7,7 +7,8 @@
       "name": "refresh-midpoint-comment",
       "status": "completed",
       "started_at": "2026-09-05T20:36:28+0900",
-      "summary": "Remeasured 36 pages / 206 spans: A=7.685713pt at shibata-p13 X 1-5 (41,000), matching step3; refreshed the comment and R15, preserved T=15 and parser behavior, and passed 99 tests, lint and citation checks."
+      "summary": "Remeasured 36 pages / 206 spans: A=7.685713pt at shibata-p13 X 1-5 (41,000), matching step3; refreshed the comment and R15, preserved T=15 and parser behavior, and passed 99 tests, lint and citation checks.",
+      "completed_at": "2026-09-05T20:45:50+0900"
     },
     {
       "step": 1,
