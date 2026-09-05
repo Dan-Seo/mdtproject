@@ -44,7 +44,8 @@
       "status": "refuted",
       "started_at": "2026-09-05T10:23:17+0900",
       "summary": "F1 주석의 150mm가 지정 report에 없고 문서 numbers_used의 source 12개가 존재하지 않는 JSON 키를 가리켜 반증했다. 유효 axis·grid 변조 92/92 검출, 키 가드·F2 정상, 전체 1808 테스트·lint·tsc·build 통과. 대상은 수정하지 않았고 원복 diff는 비어 있다.",
-      "completed_at": "2026-09-05T10:37:26.626553+09:00"
+      "completed_at": "2026-09-05T10:37:26.626553+09:00",
+      "refuted_at": "2026-09-05T10:38:24+0900"
     }
   ],
   "created_at": "2026-09-05T00:40:00+0900"
