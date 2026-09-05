@@ -3,7 +3,7 @@
   "name": "refute-transcription-fix",
   "exitCode": 0,
   "timedOut": false,
-  "elapsed": 620.5140839000233,
+  "elapsed": 466.72640720009804,
   "stdout_log": "phases\\39-axis-claim\\step0-codex.stdout.log",
   "stderr_log": "phases\\39-axis-claim\\step0-codex.stderr.log"
 }
