@@ -261,6 +261,24 @@ describe('階高 corpus 2 골든', () => {
       'hirosaki-kikyono-p25-elevation.json',
     )
   })
+
+  it('levels가 있으면 levelTexts와 순서·접두사 관계를 대조한다', () => {
+    let checked = 0
+
+    for (const file of goldenFiles('-elevation.json')) {
+      const golden = readGolden(file)
+      if (golden.levels === undefined) continue
+
+      expect(golden.levelTexts).toBeDefined()
+      expect(golden.levels).toHaveLength(golden.levelTexts!.length)
+      golden.levels.forEach((level, index) => {
+        expect(golden.levelTexts![index]!.startsWith(level)).toBe(true)
+      })
+      checked += 1
+    }
+
+    expect(checked).toBeGreaterThan(0)
+  })
 })
 
 describe('軸組図·伏図 axis 골든 상호검증', () => {

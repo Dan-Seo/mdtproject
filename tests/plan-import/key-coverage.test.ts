@@ -99,6 +99,10 @@ const CLAIMED: readonly ClaimedPath[] = [
     path: 'levelTexts[]',
     test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',
   },
+  {
+    path: 'levels[]',
+    test: 'tests/plan-import/corpus2-elevation.test.ts > levels·levelTexts 관계 대조',
+  },
 ]
 
 const REFERENCE_ONLY: readonly ReferenceOnlyPath[] = [
