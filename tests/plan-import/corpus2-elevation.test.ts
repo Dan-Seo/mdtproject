@@ -151,6 +151,11 @@ const AXIS_CROSSCHECKS = [
     axis: 'x',
   },
   {
+    elevationFile: 'tsu-kanritou-p22-elevation.json',
+    gridFile: 'tsu-kanritou-p16-grid.json',
+    axis: 'y',
+  },
+  {
     elevationFile: 'karatsu-jikugumi1-p1-elevation.json',
     gridFile: 'karatsu-fukuzu-p1-grid.json',
     axis: 'y',
