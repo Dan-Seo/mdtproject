@@ -3,7 +3,7 @@
   "name": "unclaimed-key-guard",
   "exitCode": 0,
   "timedOut": false,
-  "elapsed": 1641.3700643999036,
+  "elapsed": 794.7694454999873,
   "stdout_log": "phases\\39-axis-claim\\step2-codex.stdout.log",
   "stderr_log": "phases\\39-axis-claim\\step2-codex.stderr.log"
 }
