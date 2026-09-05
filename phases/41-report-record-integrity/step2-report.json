@@ -1,0 +1,2678 @@
+{
+  "phase": "41-report-record-integrity",
+  "step": 2,
+  "step_name": "refute-record-integrity",
+  "kind": "verify",
+  "attempt": 2,
+  "verdict": "upheld",
+  "reviewed_head": "560ee9c3ad8d6f54c68931ef59e2ef8adbecf5f1",
+  "base_commit": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+  "base_method": "git rev-parse 746329f^; 746329f is the first phase 41 specification commit.",
+  "items": [
+    {
+      "id": 1,
+      "holds": true,
+      "method": "Parse the indicated JSONL log line, extract the unique field literal from item.command by the recorded regex, then compare strings and UTF-8 bytes. Independently mask every non-ASCII code point and compare stored_before, also checked against the pre-phase git blob.",
+      "evidence": {
+        "checked": 4,
+        "matched": 4,
+        "records": [
+          {
+            "file": "phases/36-corpus-widen-2/step0-report.json",
+            "pointer": "/summary",
+            "log_file": "phases/36-corpus-widen-2/step0-codex.stdout.log",
+            "log_line": 99,
+            "log_event_id": "item_53",
+            "extraction_regex": "\\bsummary\\s*:\\s*'([^']*)'",
+            "extracted_text": "CMap/standard-font 자산 경로를 브라우저·Node 추출기에 공통 적용하고, 겹침 글자를 0.5pt 기준으로 정규화해 2차 22면을 생성했다. 기존 14면은 바이트 동일하며 36면 실태와 e2e 환경 미기동을 기록했다.",
+            "log_sha256": "e47524ce34254f2431c989cab11e32696f04d0d2a67b78bcaa43b7d46c970440",
+            "utf8_bytes": 258,
+            "restored_sha256": "6dcc224a22189bfea1b44b2db0d1a03f802a5aedcf94e909c8e061cd2a139d3b",
+            "extracted_sha256": "6dcc224a22189bfea1b44b2db0d1a03f802a5aedcf94e909c8e061cd2a139d3b",
+            "stored_before_sha256": "e4b08580f163c3efe2ad2349d41d38ab4ae4db3687774b19e915769e45b3b334",
+            "equal_string": true,
+            "equal_utf8_bytes": true,
+            "skeleton_matches_stored_before": true,
+            "stored_before_matches_prephase": true
+          },
+          {
+            "file": "phases/40-citation-integrity/step1-report.json",
+            "pointer": "/validation/behavior_unchanged/method",
+            "log_file": "phases/40-citation-integrity/step1-codex.stdout.log",
+            "log_line": 44,
+            "log_event_id": "item_22",
+            "extraction_regex": "\\bmethod:'([^']*)'",
+            "extracted_text": "HEAD와 작업 파일을 TypeScript transpileModule(removeComments:true, ES2022, ESNext)로 변환한 출력 문자열이 동일하다.",
+            "log_sha256": "41137b70c5cc02e7173d2f4a8f50b47b0f0f0087e126eea96b6052013e248af2",
+            "utf8_bytes": 135,
+            "restored_sha256": "d8b35a6c7ae0e1146f7335a49da4ff28dfa4fc71adcfe7c44a08ff7822bed0c6",
+            "extracted_sha256": "d8b35a6c7ae0e1146f7335a49da4ff28dfa4fc71adcfe7c44a08ff7822bed0c6",
+            "stored_before_sha256": "7c4f0113846711d9e2a1400856c29baf4fd7381db3ba770ce0c5b4aac8c21ae3",
+            "equal_string": true,
+            "equal_utf8_bytes": true,
+            "skeleton_matches_stored_before": true,
+            "stored_before_matches_prephase": true
+          },
+          {
+            "file": "phases/40-citation-integrity/step1-report.json",
+            "pointer": "/comment_verification/scope",
+            "log_file": "phases/40-citation-integrity/step1-codex.stdout.log",
+            "log_line": 44,
+            "log_event_id": "item_22",
+            "extraction_regex": "\\bscope:'([^']*)'",
+            "extracted_text": "대상 상수 바로 위 주석 전체. 수치뿐 아니라 페이지·report 경로 식별자에 포함된 숫자도 등록했다. grep은 표기 존재 확인이며 각 JSON 포인터도 해석해 값·맥락을 확인했다.",
+            "log_sha256": "41137b70c5cc02e7173d2f4a8f50b47b0f0f0087e126eea96b6052013e248af2",
+            "utf8_bytes": 227,
+            "restored_sha256": "a4fae70ee0411a4732c4f123b50f6f93540d81ec04bdbe51a31a6fbe0f10ee1f",
+            "extracted_sha256": "a4fae70ee0411a4732c4f123b50f6f93540d81ec04bdbe51a31a6fbe0f10ee1f",
+            "stored_before_sha256": "64893ac550cfa2a8411104ef3ace48f6ebb7096108414651968b9c364e00c09e",
+            "equal_string": true,
+            "equal_utf8_bytes": true,
+            "skeleton_matches_stored_before": true,
+            "stored_before_matches_prephase": true
+          },
+          {
+            "file": "phases/40-citation-integrity/step1-report.json",
+            "pointer": "/summary",
+            "log_file": "phases/40-citation-integrity/step1-codex.stdout.log",
+            "log_line": 52,
+            "log_event_id": "item_27",
+            "extraction_regex": "report\\.summary='([^']*)'",
+            "extracted_text": "36면 재계측으로 tsu 150mm 편차 귀속을 확인하고 주석 숫자 20개를 검증했다. p22↔p16 y축 상호검증과 grid 한 칸 변조 실패를 확인했으며 전체 1809개 테스트·lint·tsc가 통과했다.",
+            "log_sha256": "41137b70c5cc02e7173d2f4a8f50b47b0f0f0087e126eea96b6052013e248af2",
+            "utf8_bytes": 228,
+            "restored_sha256": "0628b325be95aa1ba011b9ad549df117b27301bb61366d42589838df73c96102",
+            "extracted_sha256": "0628b325be95aa1ba011b9ad549df117b27301bb61366d42589838df73c96102",
+            "stored_before_sha256": "ef55de0bbf49bfaa62a839bc5b145d2525bbcd8e83a18ab79e0bd7c002475c11",
+            "equal_string": true,
+            "equal_utf8_bytes": true,
+            "skeleton_matches_stored_before": true,
+            "stored_before_matches_prephase": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "holds": true,
+      "method": "Recursively compare parsed JSON values from git show at base_commit with current files, including added/removed keys and list entries; require exact pointer-set equality. Enumerate git diff --name-only base_commit and test each permitted prefix or exact path. Compare the added guardrail in both mirrored documents.",
+      "evidence": {
+        "files": [
+          {
+            "file": "phases/36-corpus-widen-2/step0-report.json",
+            "changed_pointers": [
+              "/summary"
+            ],
+            "declared_pointers": [
+              "/summary"
+            ],
+            "exact_set_equal": true
+          },
+          {
+            "file": "phases/40-citation-integrity/step1-report.json",
+            "changed_pointers": [
+              "/comment_verification/scope",
+              "/summary",
+              "/validation/behavior_unchanged/method"
+            ],
+            "declared_pointers": [
+              "/comment_verification/scope",
+              "/summary",
+              "/validation/behavior_unchanged/method"
+            ],
+            "exact_set_equal": true
+          }
+        ],
+        "path_checks": [
+          {
+            "path": "AGENTS.md",
+            "allowed_by": "AGENTS.md",
+            "allowed": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "allowed_by": "CLAUDE.md",
+            "allowed": true
+          },
+          {
+            "path": "phases/36-corpus-widen-2/step0-report.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/40-citation-integrity/step1-report.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/index.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step0-codex.stderr.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step0-codex.stdout.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step0-invoke.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step0-report.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step0.md",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step1-codex.stderr.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step1-codex.stdout.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step1-invoke.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step1-report.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step1.md",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2-codex.stderr.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2-codex.stdout.log",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2-invoke.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2-report.attempt1.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2.md",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "phases/index.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          },
+          {
+            "path": "scripts/check-citations.py",
+            "allowed_by": "scripts/check-citations.py",
+            "allowed": true
+          },
+          {
+            "path": "phases/41-report-record-integrity/step2-report.json",
+            "allowed_by": "phases/",
+            "allowed": true
+          }
+        ],
+        "changed_path_count": 23,
+        "command": "git diff --name-only 0d1e6741f3274e40fa34fac6d1aca308620370f2"
+      }
+    },
+    {
+      "id": 3,
+      "holds": true,
+      "method": "Fresh recursive scan of every string value in the glob, without consulting step0's occurrence census. Enumerate every maximal question-mark run of length at least two. Inspect actual command/error/diff content and source-code operators. Match audit excerpts and stored-before quotations independently to pre-phase git blobs or current original records. Store positions and hashes instead of duplicating the quoted question marks.",
+      "evidence": {
+        "glob": "phases/*/step*-report*.json",
+        "files_scanned": 128,
+        "matching_strings": 52,
+        "maximal_runs": 188,
+        "classification_counts": {
+          "original_question_marks": 38,
+          "captured_io": 14
+        },
+        "unexplained_count": 0,
+        "unrecoverable_count": 0,
+        "records": [
+          {
+            "file": "phases/22-opening-reinforcement/step0-report.json",
+            "pointer": "/checks/2/evidence/2",
+            "source": "phases/22-opening-reinforcement/step0-report.json#/checks/2/evidence/2",
+            "classification": "original_question_marks",
+            "reason": "The pair is a TypeScript nullish-coalescing operator in the described openings fallback, also present in both current source files.",
+            "value_sha256": "f286d5c7ee513f0f94331c9015affd6479e44d7b962e8d05b5e60f8f5da4f79e",
+            "string_length": 173,
+            "runs": [
+              {
+                "start": 154,
+                "end": 156,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/27-cantilever-slab/step0-report.json",
+            "pointer": "/premises/6/evidence/1/source/1/text",
+            "source": "phases/27-cantilever-slab/step0-report.json#/premises/6/evidence/1/source/1/text",
+            "classification": "original_question_marks",
+            "reason": "This is a quoted TypeScript openings-map block; its nullish-coalescing expression still exists in project.ts.",
+            "value_sha256": "147741de2c986c0f1381a7c7cbefe2b119c39adcc9d72f4c04722f97ca9e255c",
+            "string_length": 709,
+            "runs": [
+              {
+                "start": 227,
+                "end": 229,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/27-cantilever-slab/step0-report.json",
+            "pointer": "/twoSupportSites/1/source/1/text",
+            "source": "phases/27-cantilever-slab/step0-report.json#/twoSupportSites/1/source/1/text",
+            "classification": "original_question_marks",
+            "reason": "This is a quoted TypeScript openings-map block; its nullish-coalescing expression still exists in project.ts.",
+            "value_sha256": "147741de2c986c0f1381a7c7cbefe2b119c39adcc9d72f4c04722f97ca9e255c",
+            "string_length": 709,
+            "runs": [
+              {
+                "start": 227,
+                "end": 229,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step2-report.json",
+            "pointer": "/mutations/A/changed",
+            "source": "phases/33-stbridge-skeleton-import/step2-report.json#/mutations/A/changed",
+            "classification": "original_question_marks",
+            "reason": "This describes the deliberately inserted TypeScript nullish-coalescing mutation, not a damaged natural-language sentence.",
+            "value_sha256": "ced24b379ac3adae5be0edd628bcb2f3d65364372cf13ef2c79cef3ed2106005",
+            "string_length": 58,
+            "runs": [
+              {
+                "start": 52,
+                "end": 54,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+            "pointer": "/premises/3/note",
+            "source": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json#/premises/3/note",
+            "classification": "original_question_marks",
+            "reason": "The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b5e0623ba19cd68c2a55e68944836ad0a1625205d800a65b94648a6503fab90a",
+            "string_length": 123,
+            "runs": [
+              {
+                "start": 79,
+                "end": 81,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+            "pointer": "/fabrication_candidates/0/pattern",
+            "source": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json#/fabrication_candidates/0/pattern",
+            "classification": "original_question_marks",
+            "reason": "The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d",
+            "string_length": 14,
+            "runs": [
+              {
+                "start": 9,
+                "end": 11,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+            "pointer": "/premises/3/note",
+            "source": "phases/33-stbridge-skeleton-import/step4-report.json#/premises/3/note",
+            "classification": "original_question_marks",
+            "reason": "The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b5e0623ba19cd68c2a55e68944836ad0a1625205d800a65b94648a6503fab90a",
+            "string_length": 123,
+            "runs": [
+              {
+                "start": 79,
+                "end": 81,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+            "pointer": "/fabrication_candidates/0/pattern",
+            "source": "phases/33-stbridge-skeleton-import/step4-report.json#/fabrication_candidates/0/pattern",
+            "classification": "original_question_marks",
+            "reason": "The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d",
+            "string_length": 14,
+            "runs": [
+              {
+                "start": 9,
+                "end": 11,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+            "pointer": "/pre_commit_status/3",
+            "source": "phases/33-stbridge-skeleton-import/step5-report.json#/pre_commit_status/3",
+            "classification": "captured_io",
+            "reason": "The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "06e7d4f792676949fbe4e63b84b68b6ab85d28d72d2d876848c9163461da1f9a",
+            "string_length": 60,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+            "pointer": "/pre_commit_status/4",
+            "source": "phases/33-stbridge-skeleton-import/step5-report.json#/pre_commit_status/4",
+            "classification": "captured_io",
+            "reason": "The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "914fe311272c21aed0338d060f5bfc03a4de58754c735dc9f951c69bf8079cb7",
+            "string_length": 60,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+            "pointer": "/pre_commit_status/5",
+            "source": "phases/33-stbridge-skeleton-import/step5-report.json#/pre_commit_status/5",
+            "classification": "captured_io",
+            "reason": "The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "59a3342275b581acc077a297eba7dc7c2fe93c99525ba30b1ab33583c21dc423",
+            "string_length": 55,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+            "pointer": "/pre_commit_status/6",
+            "source": "phases/33-stbridge-skeleton-import/step5-report.json#/pre_commit_status/6",
+            "classification": "captured_io",
+            "reason": "The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "27a96f35efd65044e43d7dff3d4142e2c9998b5f849827ae516ad726d2b964f3",
+            "string_length": 42,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/89/command",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/89/command",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe",
+            "string_length": 96,
+            "runs": [
+              {
+                "start": 90,
+                "end": 95,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/89/stderr",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/89/stderr",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae",
+            "string_length": 1232,
+            "runs": [
+              {
+                "start": 76,
+                "end": 81,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/90/command",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/90/command",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe",
+            "string_length": 96,
+            "runs": [
+              {
+                "start": 90,
+                "end": 95,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/90/stderr",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/90/stderr",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae",
+            "string_length": 1232,
+            "runs": [
+              {
+                "start": 76,
+                "end": 81,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/91/command",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/91/command",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe",
+            "string_length": 96,
+            "runs": [
+              {
+                "start": 90,
+                "end": 95,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/mutations/91/stderr",
+            "source": "phases/39-axis-claim/step4-report.json#/mutations/91/stderr",
+            "classification": "captured_io",
+            "reason": "Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae",
+            "string_length": 1232,
+            "runs": [
+              {
+                "start": 76,
+                "end": 81,
+                "length": 5
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/39-axis-claim/step4-report.json",
+            "pointer": "/static_evidence/test_diff/output",
+            "source": "phases/39-axis-claim/step4-report.json#/static_evidence/test_diff/output",
+            "classification": "captured_io",
+            "reason": "Recorded git diff contains the TypeScript nullish-coalescing operator.",
+            "value_sha256": "69d02d458a9150ebd0a286586c68cdb9adb3cac8bfeabcb425d6e9c379ee45d4",
+            "string_length": 17050,
+            "runs": [
+              {
+                "start": 11855,
+                "end": 11857,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/40-citation-integrity/step4-report.json",
+            "pointer": "/items/1_comment_clean/grep_source_comment/command",
+            "source": "phases/40-citation-integrity/step4-report.json#/items/1_comment_clean/grep_source_comment/command",
+            "classification": "captured_io",
+            "reason": "Recorded shell input preserves the grep search literals or the rejected Vitest regex; the exact command is evidence.",
+            "value_sha256": "b265a31ed7f2aaf23ef22f890049623a069c85e277adda5dff7d1452ad306642",
+            "string_length": 200,
+            "runs": [
+              {
+                "start": 62,
+                "end": 67,
+                "length": 5
+              },
+              {
+                "start": 99,
+                "end": 101,
+                "length": 2
+              },
+              {
+                "start": 102,
+                "end": 104,
+                "length": 2
+              },
+              {
+                "start": 110,
+                "end": 112,
+                "length": 2
+              },
+              {
+                "start": 119,
+                "end": 121,
+                "length": 2
+              },
+              {
+                "start": 138,
+                "end": 141,
+                "length": 3
+              },
+              {
+                "start": 152,
+                "end": 154,
+                "length": 2
+              },
+              {
+                "start": 155,
+                "end": 157,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/40-citation-integrity/step4-report.json",
+            "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/command",
+            "source": "phases/40-citation-integrity/step4-report.json#/mutation_census/records/171/diagnostic_control_on_restored_fixture/command",
+            "classification": "captured_io",
+            "reason": "Recorded shell input preserves the grep search literals or the rejected Vitest regex; the exact command is evidence.",
+            "value_sha256": "9564d3f27c8b6d8113fd635990ad7279bd03eddbc0b3421f043d18e75e5030f7",
+            "string_length": 228,
+            "runs": [
+              {
+                "start": 93,
+                "end": 95,
+                "length": 2
+              },
+              {
+                "start": 106,
+                "end": 109,
+                "length": 3
+              },
+              {
+                "start": 110,
+                "end": 112,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/40-citation-integrity/step4-report.json",
+            "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/stderr",
+            "source": "phases/40-citation-integrity/step4-report.json#/mutation_census/records/171/diagnostic_control_on_restored_fixture/stderr",
+            "classification": "captured_io",
+            "reason": "Recorded startup stderr preserves the invalid regex and Nothing to repeat failure.",
+            "value_sha256": "6cf7a82c104f40e6ff6590b6a05484c899943c4b88cbf2411f9539ef504f6c23",
+            "string_length": 1249,
+            "runs": [
+              {
+                "start": 79,
+                "end": 81,
+                "length": 2
+              },
+              {
+                "start": 92,
+                "end": 95,
+                "length": 3
+              },
+              {
+                "start": 96,
+                "end": 98,
+                "length": 2
+              }
+            ],
+            "original_matches": []
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/0/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/0/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The pair is a TypeScript nullish-coalescing operator in the described openings fallback, also present in both current source files.",
+            "value_sha256": "cb3f02cfb814c871e514a4fc519a68a9fd3c019dfdf07261ebe5cee40d224d7e",
+            "string_length": 94,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/22-opening-reinforcement/step0-report.json",
+                "pointer": "/checks/2/evidence/2",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "f286d5c7ee513f0f94331c9015affd6479e44d7b962e8d05b5e60f8f5da4f79e"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/1/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/1/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. This is a quoted TypeScript openings-map block; its nullish-coalescing expression still exists in project.ts.",
+            "value_sha256": "9f34c5b61b679cdb0c1e78493282af6d0eed896ee3d068f86eff2d9d57cde213",
+            "string_length": 152,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/27-cantilever-slab/step0-report.json",
+                "pointer": "/premises/6/evidence/1/source/1/text",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "147741de2c986c0f1381a7c7cbefe2b119c39adcc9d72f4c04722f97ca9e255c"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/2/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/2/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. This is a quoted TypeScript openings-map block; its nullish-coalescing expression still exists in project.ts.",
+            "value_sha256": "9f34c5b61b679cdb0c1e78493282af6d0eed896ee3d068f86eff2d9d57cde213",
+            "string_length": 152,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/27-cantilever-slab/step0-report.json",
+                "pointer": "/premises/6/evidence/1/source/1/text",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "147741de2c986c0f1381a7c7cbefe2b119c39adcc9d72f4c04722f97ca9e255c"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/3/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/3/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. This describes the deliberately inserted TypeScript nullish-coalescing mutation, not a damaged natural-language sentence.",
+            "value_sha256": "ced24b379ac3adae5be0edd628bcb2f3d65364372cf13ef2c79cef3ed2106005",
+            "string_length": 58,
+            "runs": [
+              {
+                "start": 52,
+                "end": 54,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step2-report.json",
+                "pointer": "/mutations/A/changed",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "ced24b379ac3adae5be0edd628bcb2f3d65364372cf13ef2c79cef3ed2106005"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/4/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/4/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "69137435f9d3fb7b4d94da6f622ea9d978f9754745662bd2a05dd28ec0b225e3",
+            "string_length": 119,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+                "pointer": "/premises/3/note",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "b5e0623ba19cd68c2a55e68944836ad0a1625205d800a65b94648a6503fab90a"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/5/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/5/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d",
+            "string_length": 14,
+            "runs": [
+              {
+                "start": 9,
+                "end": 11,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+                "pointer": "/fabrication_candidates/0/pattern",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/6/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/6/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "69137435f9d3fb7b4d94da6f622ea9d978f9754745662bd2a05dd28ec0b225e3",
+            "string_length": 119,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+                "pointer": "/premises/3/note",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "b5e0623ba19cd68c2a55e68944836ad0a1625205d800a65b94648a6503fab90a"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/7/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/7/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The expression quoted in the note or pattern is the nullish-coalescing operator present in decode.ts.",
+            "value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d",
+            "string_length": 14,
+            "runs": [
+              {
+                "start": 9,
+                "end": 11,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+                "pointer": "/fabrication_candidates/0/pattern",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "b476e3340892f074957a0d91c607118999c93cc847bd94d4b2b9a9b3e19f465d"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/8/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/8/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "06e7d4f792676949fbe4e63b84b68b6ab85d28d72d2d876848c9163461da1f9a",
+            "string_length": 60,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+                "pointer": "/pre_commit_status/3",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "06e7d4f792676949fbe4e63b84b68b6ab85d28d72d2d876848c9163461da1f9a"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/9/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/9/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "914fe311272c21aed0338d060f5bfc03a4de58754c735dc9f951c69bf8079cb7",
+            "string_length": 60,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+                "pointer": "/pre_commit_status/4",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "914fe311272c21aed0338d060f5bfc03a4de58754c735dc9f951c69bf8079cb7"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/10/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/10/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "59a3342275b581acc077a297eba7dc7c2fe93c99525ba30b1ab33583c21dc423",
+            "string_length": 55,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+                "pointer": "/pre_commit_status/5",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "59a3342275b581acc077a297eba7dc7c2fe93c99525ba30b1ab33583c21dc423"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/11/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/11/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The leading pair is the git porcelain untracked-file marker in the recorded pre-commit status.",
+            "value_sha256": "27a96f35efd65044e43d7dff3d4142e2c9998b5f849827ae516ad726d2b964f3",
+            "string_length": 42,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+                "pointer": "/pre_commit_status/6",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "27a96f35efd65044e43d7dff3d4142e2c9998b5f849827ae516ad726d2b964f3"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/12/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/12/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "e4b08580f163c3efe2ad2349d41d38ab4ae4db3687774b19e915769e45b3b334",
+            "string_length": 129,
+            "runs": [
+              {
+                "start": 19,
+                "end": 21,
+                "length": 2
+              },
+              {
+                "start": 22,
+                "end": 25,
+                "length": 3
+              },
+              {
+                "start": 26,
+                "end": 31,
+                "length": 5
+              },
+              {
+                "start": 36,
+                "end": 40,
+                "length": 4
+              },
+              {
+                "start": 41,
+                "end": 43,
+                "length": 2
+              },
+              {
+                "start": 44,
+                "end": 48,
+                "length": 4
+              },
+              {
+                "start": 50,
+                "end": 52,
+                "length": 2
+              },
+              {
+                "start": 53,
+                "end": 56,
+                "length": 3
+              },
+              {
+                "start": 63,
+                "end": 67,
+                "length": 4
+              },
+              {
+                "start": 68,
+                "end": 72,
+                "length": 4
+              },
+              {
+                "start": 78,
+                "end": 80,
+                "length": 2
+              },
+              {
+                "start": 81,
+                "end": 85,
+                "length": 4
+              },
+              {
+                "start": 87,
+                "end": 89,
+                "length": 2
+              },
+              {
+                "start": 92,
+                "end": 94,
+                "length": 2
+              },
+              {
+                "start": 95,
+                "end": 98,
+                "length": 3
+              },
+              {
+                "start": 99,
+                "end": 103,
+                "length": 4
+              },
+              {
+                "start": 108,
+                "end": 111,
+                "length": 3
+              },
+              {
+                "start": 116,
+                "end": 118,
+                "length": 2
+              },
+              {
+                "start": 119,
+                "end": 123,
+                "length": 4
+              },
+              {
+                "start": 124,
+                "end": 128,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/36-corpus-widen-2/step0-report.json",
+                "pointer": "/summary",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "e4b08580f163c3efe2ad2349d41d38ab4ae4db3687774b19e915769e45b3b334"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/13/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/13/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "8718c1c03da8af6e30a395961f093016584cf251e0718f36c32934d94fe89297",
+            "string_length": 81,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/command",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/14/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/14/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "88bfb4ef4c5e5d11130d11b6d04b8ee2a69cfd55b27ddc40edbcf9e5ae838522",
+            "string_length": 155,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/stderr",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/15/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/15/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "8718c1c03da8af6e30a395961f093016584cf251e0718f36c32934d94fe89297",
+            "string_length": 81,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/command",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/16/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/16/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "88bfb4ef4c5e5d11130d11b6d04b8ee2a69cfd55b27ddc40edbcf9e5ae838522",
+            "string_length": 155,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/stderr",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/17/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/17/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest command input contains the mangled regex; preserving it records the failed shell invocation.",
+            "value_sha256": "8718c1c03da8af6e30a395961f093016584cf251e0718f36c32934d94fe89297",
+            "string_length": 81,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/command",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "ff0ec45c2e4e4e3d715550c65b2f43d7cc8313cb0df70b2a58c6653c40356efe"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/18/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/18/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded Vitest startup stderr quotes the actually rejected regex.",
+            "value_sha256": "88bfb4ef4c5e5d11130d11b6d04b8ee2a69cfd55b27ddc40edbcf9e5ae838522",
+            "string_length": 155,
+            "runs": [
+              {
+                "start": 75,
+                "end": 80,
+                "length": 5
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/mutations/89/stderr",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "d379820bbd6e5385d5d41c7cce9359f3eafef7064b5fe92ba7e1ce92230733ae"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/19/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/19/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded git diff contains the TypeScript nullish-coalescing operator.",
+            "value_sha256": "471659009e681134b7dce8d525b234883c667314220db48693c171a0c7452578",
+            "string_length": 152,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/39-axis-claim/step4-report.json",
+                "pointer": "/static_evidence/test_diff/output",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "69d02d458a9150ebd0a286586c68cdb9adb3cac8bfeabcb425d6e9c379ee45d4"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/20/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/20/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "7c4f0113846711d9e2a1400856c29baf4fd7381db3ba770ce0c5b4aac8c21ae3",
+            "string_length": 95,
+            "runs": [
+              {
+                "start": 6,
+                "end": 8,
+                "length": 2
+              },
+              {
+                "start": 9,
+                "end": 12,
+                "length": 3
+              },
+              {
+                "start": 78,
+                "end": 81,
+                "length": 3
+              },
+              {
+                "start": 82,
+                "end": 84,
+                "length": 2
+              },
+              {
+                "start": 85,
+                "end": 89,
+                "length": 4
+              },
+              {
+                "start": 90,
+                "end": 94,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/validation/behavior_unchanged/method",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "7c4f0113846711d9e2a1400856c29baf4fd7381db3ba770ce0c5b4aac8c21ae3"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/21/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/21/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "64893ac550cfa2a8411104ef3ace48f6ebb7096108414651968b9c364e00c09e",
+            "string_length": 103,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              },
+              {
+                "start": 3,
+                "end": 5,
+                "length": 2
+              },
+              {
+                "start": 6,
+                "end": 8,
+                "length": 2
+              },
+              {
+                "start": 11,
+                "end": 13,
+                "length": 2
+              },
+              {
+                "start": 14,
+                "end": 16,
+                "length": 2
+              },
+              {
+                "start": 18,
+                "end": 21,
+                "length": 3
+              },
+              {
+                "start": 22,
+                "end": 25,
+                "length": 3
+              },
+              {
+                "start": 26,
+                "end": 30,
+                "length": 4
+              },
+              {
+                "start": 37,
+                "end": 39,
+                "length": 2
+              },
+              {
+                "start": 40,
+                "end": 44,
+                "length": 4
+              },
+              {
+                "start": 45,
+                "end": 48,
+                "length": 3
+              },
+              {
+                "start": 49,
+                "end": 52,
+                "length": 3
+              },
+              {
+                "start": 53,
+                "end": 57,
+                "length": 4
+              },
+              {
+                "start": 65,
+                "end": 67,
+                "length": 2
+              },
+              {
+                "start": 68,
+                "end": 70,
+                "length": 2
+              },
+              {
+                "start": 71,
+                "end": 75,
+                "length": 4
+              },
+              {
+                "start": 83,
+                "end": 87,
+                "length": 4
+              },
+              {
+                "start": 88,
+                "end": 91,
+                "length": 3
+              },
+              {
+                "start": 92,
+                "end": 97,
+                "length": 5
+              },
+              {
+                "start": 98,
+                "end": 102,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/comment_verification/scope",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "64893ac550cfa2a8411104ef3ace48f6ebb7096108414651968b9c364e00c09e"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/22/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/22/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "ef55de0bbf49bfaa62a839bc5b145d2525bbcd8e83a18ab79e0bd7c002475c11",
+            "string_length": 116,
+            "runs": [
+              {
+                "start": 4,
+                "end": 9,
+                "length": 5
+              },
+              {
+                "start": 20,
+                "end": 22,
+                "length": 2
+              },
+              {
+                "start": 23,
+                "end": 26,
+                "length": 3
+              },
+              {
+                "start": 27,
+                "end": 31,
+                "length": 4
+              },
+              {
+                "start": 32,
+                "end": 34,
+                "length": 2
+              },
+              {
+                "start": 35,
+                "end": 37,
+                "length": 2
+              },
+              {
+                "start": 40,
+                "end": 42,
+                "length": 2
+              },
+              {
+                "start": 43,
+                "end": 47,
+                "length": 4
+              },
+              {
+                "start": 60,
+                "end": 65,
+                "length": 5
+              },
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              },
+              {
+                "start": 78,
+                "end": 81,
+                "length": 3
+              },
+              {
+                "start": 82,
+                "end": 87,
+                "length": 5
+              },
+              {
+                "start": 88,
+                "end": 90,
+                "length": 2
+              },
+              {
+                "start": 97,
+                "end": 101,
+                "length": 4
+              },
+              {
+                "start": 111,
+                "end": 115,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/summary",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "ef55de0bbf49bfaa62a839bc5b145d2525bbcd8e83a18ab79e0bd7c002475c11"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/23/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/23/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded shell input preserves the grep search literals or the rejected Vitest regex; the exact command is evidence.",
+            "value_sha256": "b265a31ed7f2aaf23ef22f890049623a069c85e277adda5dff7d1452ad306642",
+            "string_length": 200,
+            "runs": [
+              {
+                "start": 62,
+                "end": 67,
+                "length": 5
+              },
+              {
+                "start": 99,
+                "end": 101,
+                "length": 2
+              },
+              {
+                "start": 102,
+                "end": 104,
+                "length": 2
+              },
+              {
+                "start": 110,
+                "end": 112,
+                "length": 2
+              },
+              {
+                "start": 119,
+                "end": 121,
+                "length": 2
+              },
+              {
+                "start": 138,
+                "end": 141,
+                "length": 3
+              },
+              {
+                "start": 152,
+                "end": 154,
+                "length": 2
+              },
+              {
+                "start": 155,
+                "end": 157,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step4-report.json",
+                "pointer": "/items/1_comment_clean/grep_source_comment/command",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "b265a31ed7f2aaf23ef22f890049623a069c85e277adda5dff7d1452ad306642"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/24/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/24/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded shell input preserves the grep search literals or the rejected Vitest regex; the exact command is evidence.",
+            "value_sha256": "55c8b2d1ac1864587cf4fcaa1bb39531d6423f37c10ede1ff01d3144bfd0958c",
+            "string_length": 169,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              },
+              {
+                "start": 88,
+                "end": 91,
+                "length": 3
+              },
+              {
+                "start": 92,
+                "end": 94,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step4-report.json",
+                "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/command",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "9564d3f27c8b6d8113fd635990ad7279bd03eddbc0b3421f043d18e75e5030f7"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/occurrences/25/excerpt",
+            "source": "phases/41-report-record-integrity/step0-report.json#/occurrences/25/excerpt",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. Recorded startup stderr preserves the invalid regex and Nothing to repeat failure.",
+            "value_sha256": "cd0d5c44a77a2cc7fa16acad0315a24912c4d179c7002d0833f1a04afcfa2d2b",
+            "string_length": 169,
+            "runs": [
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              },
+              {
+                "start": 88,
+                "end": 91,
+                "length": 3
+              },
+              {
+                "start": 92,
+                "end": 94,
+                "length": 2
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step4-report.json",
+                "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/stderr",
+                "revision": "working-tree",
+                "substring_match": true,
+                "original_value_sha256": "6cf7a82c104f40e6ff6590b6a05484c899943c4b88cbf2411f9539ef504f6c23"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/restorations/0/stored_before",
+            "source": "phases/41-report-record-integrity/step0-report.json#/restorations/0/stored_before",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "e4b08580f163c3efe2ad2349d41d38ab4ae4db3687774b19e915769e45b3b334",
+            "string_length": 129,
+            "runs": [
+              {
+                "start": 19,
+                "end": 21,
+                "length": 2
+              },
+              {
+                "start": 22,
+                "end": 25,
+                "length": 3
+              },
+              {
+                "start": 26,
+                "end": 31,
+                "length": 5
+              },
+              {
+                "start": 36,
+                "end": 40,
+                "length": 4
+              },
+              {
+                "start": 41,
+                "end": 43,
+                "length": 2
+              },
+              {
+                "start": 44,
+                "end": 48,
+                "length": 4
+              },
+              {
+                "start": 50,
+                "end": 52,
+                "length": 2
+              },
+              {
+                "start": 53,
+                "end": 56,
+                "length": 3
+              },
+              {
+                "start": 63,
+                "end": 67,
+                "length": 4
+              },
+              {
+                "start": 68,
+                "end": 72,
+                "length": 4
+              },
+              {
+                "start": 78,
+                "end": 80,
+                "length": 2
+              },
+              {
+                "start": 81,
+                "end": 85,
+                "length": 4
+              },
+              {
+                "start": 87,
+                "end": 89,
+                "length": 2
+              },
+              {
+                "start": 92,
+                "end": 94,
+                "length": 2
+              },
+              {
+                "start": 95,
+                "end": 98,
+                "length": 3
+              },
+              {
+                "start": 99,
+                "end": 103,
+                "length": 4
+              },
+              {
+                "start": 108,
+                "end": 111,
+                "length": 3
+              },
+              {
+                "start": 116,
+                "end": 118,
+                "length": 2
+              },
+              {
+                "start": 119,
+                "end": 123,
+                "length": 4
+              },
+              {
+                "start": 124,
+                "end": 128,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/36-corpus-widen-2/step0-report.json",
+                "pointer": "/summary",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "e4b08580f163c3efe2ad2349d41d38ab4ae4db3687774b19e915769e45b3b334"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/restorations/1/stored_before",
+            "source": "phases/41-report-record-integrity/step0-report.json#/restorations/1/stored_before",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "7c4f0113846711d9e2a1400856c29baf4fd7381db3ba770ce0c5b4aac8c21ae3",
+            "string_length": 95,
+            "runs": [
+              {
+                "start": 6,
+                "end": 8,
+                "length": 2
+              },
+              {
+                "start": 9,
+                "end": 12,
+                "length": 3
+              },
+              {
+                "start": 78,
+                "end": 81,
+                "length": 3
+              },
+              {
+                "start": 82,
+                "end": 84,
+                "length": 2
+              },
+              {
+                "start": 85,
+                "end": 89,
+                "length": 4
+              },
+              {
+                "start": 90,
+                "end": 94,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/validation/behavior_unchanged/method",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "7c4f0113846711d9e2a1400856c29baf4fd7381db3ba770ce0c5b4aac8c21ae3"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/restorations/2/stored_before",
+            "source": "phases/41-report-record-integrity/step0-report.json#/restorations/2/stored_before",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "64893ac550cfa2a8411104ef3ace48f6ebb7096108414651968b9c364e00c09e",
+            "string_length": 103,
+            "runs": [
+              {
+                "start": 0,
+                "end": 2,
+                "length": 2
+              },
+              {
+                "start": 3,
+                "end": 5,
+                "length": 2
+              },
+              {
+                "start": 6,
+                "end": 8,
+                "length": 2
+              },
+              {
+                "start": 11,
+                "end": 13,
+                "length": 2
+              },
+              {
+                "start": 14,
+                "end": 16,
+                "length": 2
+              },
+              {
+                "start": 18,
+                "end": 21,
+                "length": 3
+              },
+              {
+                "start": 22,
+                "end": 25,
+                "length": 3
+              },
+              {
+                "start": 26,
+                "end": 30,
+                "length": 4
+              },
+              {
+                "start": 37,
+                "end": 39,
+                "length": 2
+              },
+              {
+                "start": 40,
+                "end": 44,
+                "length": 4
+              },
+              {
+                "start": 45,
+                "end": 48,
+                "length": 3
+              },
+              {
+                "start": 49,
+                "end": 52,
+                "length": 3
+              },
+              {
+                "start": 53,
+                "end": 57,
+                "length": 4
+              },
+              {
+                "start": 65,
+                "end": 67,
+                "length": 2
+              },
+              {
+                "start": 68,
+                "end": 70,
+                "length": 2
+              },
+              {
+                "start": 71,
+                "end": 75,
+                "length": 4
+              },
+              {
+                "start": 83,
+                "end": 87,
+                "length": 4
+              },
+              {
+                "start": 88,
+                "end": 91,
+                "length": 3
+              },
+              {
+                "start": 92,
+                "end": 97,
+                "length": 5
+              },
+              {
+                "start": 98,
+                "end": 102,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/comment_verification/scope",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "64893ac550cfa2a8411104ef3ace48f6ebb7096108414651968b9c364e00c09e"
+              }
+            ]
+          },
+          {
+            "file": "phases/41-report-record-integrity/step0-report.json",
+            "pointer": "/restorations/3/stored_before",
+            "source": "phases/41-report-record-integrity/step0-report.json#/restorations/3/stored_before",
+            "classification": "original_question_marks",
+            "reason": "Exact quotation of a source record, independently matched against its parsed value. The question marks really exist in the pre-phase stored JSON; this is an audit quotation of the damage, not an unrestored authored field.",
+            "value_sha256": "ef55de0bbf49bfaa62a839bc5b145d2525bbcd8e83a18ab79e0bd7c002475c11",
+            "string_length": 116,
+            "runs": [
+              {
+                "start": 4,
+                "end": 9,
+                "length": 5
+              },
+              {
+                "start": 20,
+                "end": 22,
+                "length": 2
+              },
+              {
+                "start": 23,
+                "end": 26,
+                "length": 3
+              },
+              {
+                "start": 27,
+                "end": 31,
+                "length": 4
+              },
+              {
+                "start": 32,
+                "end": 34,
+                "length": 2
+              },
+              {
+                "start": 35,
+                "end": 37,
+                "length": 2
+              },
+              {
+                "start": 40,
+                "end": 42,
+                "length": 2
+              },
+              {
+                "start": 43,
+                "end": 47,
+                "length": 4
+              },
+              {
+                "start": 60,
+                "end": 65,
+                "length": 5
+              },
+              {
+                "start": 75,
+                "end": 77,
+                "length": 2
+              },
+              {
+                "start": 78,
+                "end": 81,
+                "length": 3
+              },
+              {
+                "start": 82,
+                "end": 87,
+                "length": 5
+              },
+              {
+                "start": 88,
+                "end": 90,
+                "length": 2
+              },
+              {
+                "start": 97,
+                "end": 101,
+                "length": 4
+              },
+              {
+                "start": 111,
+                "end": 115,
+                "length": 4
+              }
+            ],
+            "original_matches": [
+              {
+                "file": "phases/40-citation-integrity/step1-report.json",
+                "pointer": "/summary",
+                "revision": "0d1e6741f3274e40fa34fac6d1aca308620370f2",
+                "substring_match": true,
+                "original_value_sha256": "ef55de0bbf49bfaa62a839bc5b145d2525bbcd8e83a18ab79e0bd7c002475c11"
+              }
+            ]
+          }
+        ],
+        "self_report_included": true,
+        "self_report_matching_strings": 0
+      }
+    },
+    {
+      "id": 4,
+      "holds": true,
+      "method": "Temporarily mutate the existing step1 report four times, run the real checker before/during/after each mutation, and restore saved raw bytes. Each before/restored SHA-256 pair must match. The exists:false case uses a temporary valid control entry; both that entry's bytes and the original report bytes are restored. Harness-owned files are excluded from mutation and restoration.",
+      "evidence": {
+        "checked": 4,
+        "detected": 4,
+        "records": [
+          {
+            "id": "verified_missing",
+            "file": "phases/41-report-record-integrity/step1-report.json",
+            "claim_pointer": "/paths_verified/0",
+            "original_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "baseline": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "mutant": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 1,
+              "stdout": "{\"report\": \"phases/41-report-record-integrity/step1-report.json\", \"file\": \"phases/41-report-record-integrity/step2-intentionally-absent.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+              "stderr": ""
+            },
+            "restored_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "final_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "sha256_before": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_mutated": "ea597dade95a022a1ba4c8f8bbd04c199be5588122d424b09e407fded1342f6e",
+            "sha256_restored": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_original": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_final": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "seed_sha256": null,
+            "seed_note": null,
+            "mutant_rejected": true,
+            "bytes_restored": true,
+            "restored_passed": true
+          },
+          {
+            "id": "expected_absent_present",
+            "file": "phases/41-report-record-integrity/step1-report.json",
+            "claim_pointer": "/paths_expected_absent/0",
+            "original_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "baseline": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "mutant": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 1,
+              "stdout": "{\"report\": \"phases/41-report-record-integrity/step1-report.json\", \"file\": \"package.json\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_expected_absent requires exists=False\"}\n",
+              "stderr": ""
+            },
+            "restored_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "final_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "sha256_before": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_mutated": "69eabb98f9eaec9b0b12923df907d02ab8d171c83950d9cea3cf586f3e6b136e",
+            "sha256_restored": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_original": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_final": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "seed_sha256": null,
+            "seed_note": null,
+            "mutant_rejected": true,
+            "bytes_restored": true,
+            "restored_passed": true
+          },
+          {
+            "id": "fabricated_present",
+            "file": "phases/41-report-record-integrity/step1-report.json",
+            "claim_pointer": "/fabricated_paths/0",
+            "original_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "baseline": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "mutant": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 1,
+              "stdout": "{\"report\": \"phases/41-report-record-integrity/step1-report.json\", \"file\": \"package.json\", \"pointer\": null, \"reason\": \"path_claim_unexpected: fabricated_paths requires exists=False\"}\n",
+              "stderr": ""
+            },
+            "restored_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "final_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "sha256_before": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_mutated": "9afe6e5933291d895623ffbe2407be638f61e637cfa19af9ed1e50f93c6d9625",
+            "sha256_restored": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_original": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_final": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "seed_sha256": null,
+            "seed_note": null,
+            "mutant_rejected": true,
+            "bytes_restored": true,
+            "restored_passed": true
+          },
+          {
+            "id": "explicit_false_present",
+            "file": "phases/41-report-record-integrity/step1-report.json",
+            "claim_pointer": "/paths_verified/0/path",
+            "original_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "baseline": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "mutant": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 1,
+              "stdout": "{\"report\": \"phases/41-report-record-integrity/step1-report.json\", \"file\": \"package.json\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_verified requires exists=False\"}\n",
+              "stderr": ""
+            },
+            "restored_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "final_control": {
+              "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            "sha256_before": "3ddc837079c025c93dc65d2eaafb3dde45a53e8e70a1b549a15c44f6f5ba2017",
+            "sha256_mutated": "95581700bd76340ee6aa2a647a5d6add56378419d9fe384bbd8772e131a209aa",
+            "sha256_restored": "3ddc837079c025c93dc65d2eaafb3dde45a53e8e70a1b549a15c44f6f5ba2017",
+            "sha256_original": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "sha256_final": "e45172cdcefc42e9ba8c47ae44a3fb0be1b39c21b3bf865985fa49b065f54594",
+            "seed_sha256": "3ddc837079c025c93dc65d2eaafb3dde45a53e8e70a1b549a15c44f6f5ba2017",
+            "seed_note": "An exists:false entry naming the verified absent path was temporarily installed; after the path mutation it was restored byte for byte, then the initial report bytes were restored.",
+            "mutant_rejected": true,
+            "bytes_restored": true,
+            "restored_passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "holds": true,
+      "method": "Run all three required checker glob commands; retain every diagnostic and count source failures separately. Re-run after writing this report so its own source fields are checked.",
+      "evidence": {
+        "commands": {
+          "40-citation-integrity": {
+            "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json",
+            "exit_code": 0,
+            "diagnostics": [],
+            "stderr": "",
+            "source_failures": 0,
+            "path_failures": 0
+          },
+          "39-axis-claim": {
+            "command": "python scripts/check-citations.py phases/39-axis-claim/step*-report.json",
+            "exit_code": 1,
+            "diagnostics": [
+              {
+                "report": "phases/39-axis-claim\\step0-report.json",
+                "file": "git show bd5ae60^:tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+                "pointer": null,
+                "reason": "file_missing: no regular file"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "tests/plan-import/elevation.test.ts",
+                "pointer": "yokohama-p8",
+                "reason": "json_parse_error: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/0/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/1/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/3/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedSentences/0/text",
+                "reason": "missing_key: 'acceptedSentences'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step3-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedTrueLevelLabels/1/text",
+                "reason": "missing_key: 'acceptedTrueLevelLabels'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/0/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/1/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/3/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedSentences/0/text",
+                "reason": "missing_key: 'acceptedSentences'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedTrueLevelLabels/1/text",
+                "reason": "missing_key: 'acceptedTrueLevelLabels'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "tests/plan-import/elevation.test.ts",
+                "pointer": "yokohama-p8",
+                "reason": "json_parse_error: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/0/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/1/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/3/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedSentences/0/text",
+                "reason": "missing_key: 'acceptedSentences'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedTrueLevelLabels/1/text",
+                "reason": "missing_key: 'acceptedTrueLevelLabels'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "tests/plan-import/elevation.test.ts",
+                "pointer": "yokohama-p8",
+                "reason": "json_parse_error: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/0/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/1/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/rejectedLevelLikeStrings/3/text",
+                "reason": "missing_key: 'rejectedLevelLikeStrings'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedSentences/0/text",
+                "reason": "missing_key: 'acceptedSentences'"
+              },
+              {
+                "report": "phases/39-axis-claim\\step4-report.json",
+                "file": "phases/38-elevation-close/step4-report.json",
+                "pointer": "/acceptedTrueLevelLabels/1/text",
+                "reason": "missing_key: 'acceptedTrueLevelLabels'"
+              }
+            ],
+            "stderr": "",
+            "source_failures": 24,
+            "path_failures": 0
+          },
+          "41-report-record-integrity": {
+            "command": "python scripts/check-citations.py phases/41-report-record-integrity/step*-report.json",
+            "exit_code": 0,
+            "diagnostics": [],
+            "stderr": "",
+            "source_failures": 0,
+            "path_failures": 0
+          }
+        },
+        "source_failure_count": 24,
+        "source_failure_definition": "Emitted source failure occurrences, including repeated citations captured in older reports. These are not distinct-report counts.",
+        "failed_report_count": 3,
+        "distinct_failed_targets": 7,
+        "phase41_includes_this_report": true,
+        "phase41_includes_this_report_sources": true
+      }
+    },
+    {
+      "id": 6,
+      "holds": true,
+      "method": "Locate the added citation-bearing line in AGENTS.md and CLAUDE.md and confirm it was absent in pre-phase blobs. Independently parse phase39 step4-report and resolve /mutation_census_note; quote the complete current value.",
+      "evidence": {
+        "guardrails": {
+          "AGENTS.md": {
+            "matches": [
+              {
+                "line": 39,
+                "text": "- CRITICAL: **검증 명령의 인자에 한글·일본어를 넣지 말 것.** Windows 셸을 지나며 `?`로 깨져 Vitest가 시작 전에 죽거나 0건 매칭이 「통과」로 보일 수 있다. 파일 단위로 실행하고 JSON 리포터 출력에서 필요한 결과를 고를 것. 근거: `phases/39-axis-claim/step4-report.json#/mutation_census_note`."
+              }
+            ],
+            "absent_prephase": true
+          },
+          "CLAUDE.md": {
+            "matches": [
+              {
+                "line": 36,
+                "text": "- CRITICAL: **검증 명령의 인자에 한글·일본어를 넣지 말 것.** Windows 셸을 지나며 `?`로 깨져 Vitest가 시작 전에 죽거나 0건 매칭이 「통과」로 보일 수 있다. 파일 단위로 실행하고 JSON 리포터 출력에서 필요한 결과를 고를 것. 근거: `phases/39-axis-claim/step4-report.json#/mutation_census_note`."
+              }
+            ],
+            "absent_prephase": true
+          }
+        },
+        "identical": true,
+        "source": "phases/39-axis-claim/step4-report.json#/mutation_census_note",
+        "resolved_value": "1항·2항의 실제 변조 실행은 95회다. 첫 grid 3회는 PowerShell 기본 stdin 인코딩으로 한글 test-name 정규식이 깨져 Vitest 시작 전에 종료했으므로 검출로 세지 않았다. UTF-8로 고친 실행 명령으로 세 칸을 각각 다시 검사했고 전부 assertion 실패했다. 서로 다른 칸 92개(89+3)에 대한 유효 검사 92/92 검출. 3항·F2는 별도 집계하며 이 census에 넣지 않는다. F2 준비 중 인코딩 때문에 JSON 경로를 못 읽은 1회는 파일을 쓰기 전 종료하고 원본을 보존했으므로 변조 횟수에 포함하지 않는다."
+      }
+    },
+    {
+      "id": 7,
+      "holds": true,
+      "method": "Run npx vitest run, npm run lint, npx tsc --noEmit and npm run build directly. Read Win32_Process command lines before starting build and require no active next dev process. No harness process was launched or stopped.",
+      "evidence": {
+        "lint": {
+          "command": "npm run lint",
+          "exit_code": 0,
+          "warnings": 1,
+          "warning": "src/app/api/oncall/alert/route.test.ts:161:23 _omitted is assigned a value but never used"
+        },
+        "tsc": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0
+        },
+        "prebuild": {
+          "command": "Win32_Process search for next dev / next start-server / npm run dev",
+          "matches": []
+        },
+        "vitest": {
+          "command": "npx vitest run",
+          "exit_code": 0,
+          "stdout": "\n Test Files  101 passed (101)\n      Tests  1809 passed (1809)\n   Start at  14:07:28\n   Duration  14.66s (transform 18.60s, setup 18.04s, import 33.29s, tests 50.18s, environment 107.61s)\n\n",
+          "test_files_passed": 101,
+          "tests_passed": 1809
+        },
+        "build": {
+          "command": "npm run build",
+          "exit_code": 0,
+          "stdout": "\n> kijun@0.1.0 prebuild\n> node scripts/copy-pdfjs-assets.mjs\n\n\n> kijun@0.1.0 build\n> next build\n\n   ▲ Next.js 15.5.23\n   - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1118ms\n   Skipping linting\n   Checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/6) ...\n   Generating static pages (1/6) \r\n   Generating static pages (2/6) \r\n   Generating static pages (4/6) \r\n ✓ Generating static pages (6/6)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                     108 kB         213 kB\n├ ○ /_not-found                            995 B         105 kB\n├ ƒ /api/oncall/alert                      122 B         105 kB\n└ ○ /icon.svg                                0 B            0 B\n+ First Load JS shared by all             105 kB\n  ├ chunks/255-4ff60647f670442d.js       46.4 kB\n  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB\n  └ other shared chunks (total)          3.89 kB\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n"
+        }
+      }
+    }
+  ],
+  "findings": [],
+  "paths_verified": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "package.json",
+    "phases/12-plan-apply-story/step1-report.json",
+    "phases/12-plan-apply-story/step2-report.json",
+    "phases/13-harness-fixes/step0-report.json",
+    "phases/13-harness-fixes/step1-report.json",
+    "phases/14-plan-track-unify/step0-report.json",
+    "phases/14-plan-track-unify/step1-report.json",
+    "phases/15-plan-guard-debts/step0-report.json",
+    "phases/15-plan-guard-debts/step1-report.json",
+    "phases/16-span1-record/step0-report.json",
+    "phases/16-span1-record/step1-report.json",
+    "phases/16-span1-record/step2-report.json",
+    "phases/17-total-unconfirmed-risk/step0-report.json",
+    "phases/17-total-unconfirmed-risk/step1-report.json",
+    "phases/17-total-unconfirmed-risk/step2-report.json",
+    "phases/18-plan-corpus-widen/step0-report.json",
+    "phases/18-plan-corpus-widen/step1-report.json",
+    "phases/19-wall-slab-lists/step0-report.json",
+    "phases/19-wall-slab-lists/step1-report.json",
+    "phases/19-wall-slab-lists/step2-report.json",
+    "phases/20-girder-end-asymmetry/step0-report.json",
+    "phases/20-girder-end-asymmetry/step1-report.json",
+    "phases/20-girder-end-asymmetry/step2-report.json",
+    "phases/21-asym-import/step0-report.json",
+    "phases/21-asym-import/step1-report.json",
+    "phases/21-asym-import/step2-report.json",
+    "phases/22-opening-reinforcement/step0-report.json",
+    "phases/22-opening-reinforcement/step1-report.json",
+    "phases/22-opening-reinforcement/step2-report.json",
+    "phases/22-opening-reinforcement/step3-report.json",
+    "phases/23-story-label/step0-report.json",
+    "phases/23-story-label/step1-report.json",
+    "phases/23-story-label/step2-report.json",
+    "phases/23-story-label/step3-report.json",
+    "phases/24-wall-class/step0-report.json",
+    "phases/24-wall-class/step1-report.json",
+    "phases/24-wall-class/step2-report.json",
+    "phases/25-wall-extent/step0-report.json",
+    "phases/25-wall-extent/step1-report.json",
+    "phases/25-wall-extent/step2-report.json",
+    "phases/25-wall-extent/step3-report.json",
+    "phases/26-plan-place/step0-report.json",
+    "phases/26-plan-place/step1-report.json",
+    "phases/26-plan-place/step2-report.json",
+    "phases/27-cantilever-slab/step0-report.json",
+    "phases/27-cantilever-slab/step1-report.json",
+    "phases/27-cantilever-slab/step2-report.json",
+    "phases/27-cantilever-slab/step3-report.json",
+    "phases/28-shear-hook-shape/step0-report.json",
+    "phases/28-shear-hook-shape/step0b-report.json",
+    "phases/28-shear-hook-shape/step1-report.json",
+    "phases/28-shear-hook-shape/step2-report.json",
+    "phases/28-shear-hook-shape/step2b-report.json",
+    "phases/28-shear-hook-shape/step3-report.json",
+    "phases/28-shear-hook-shape/step4-report.json",
+    "phases/28-shear-hook-shape/step5-report.json",
+    "phases/29-harness-verify-gate/step0-report.json",
+    "phases/29-harness-verify-gate/step1-report.json",
+    "phases/29-harness-verify-gate/step2-report.json",
+    "phases/30-rulepack-review-sheet/step0a-report.json",
+    "phases/30-rulepack-review-sheet/step0b-report.json",
+    "phases/30-rulepack-review-sheet/step1-report.json",
+    "phases/30-rulepack-review-sheet/step2-report.json",
+    "phases/30-rulepack-review-sheet/step3-report.json",
+    "phases/30-rulepack-review-sheet/step4-report.json",
+    "phases/31-wall-shiki-decision/step0-report.json",
+    "phases/31-wall-shiki-decision/step1-report.json",
+    "phases/31-wall-shiki-decision/step2-report.json",
+    "phases/32-harness-test-rot/step0-report.json",
+    "phases/32-harness-test-rot/step0a-report.json",
+    "phases/32-harness-test-rot/step1-report.json",
+    "phases/32-harness-test-rot/step2-report.json",
+    "phases/32-harness-test-rot/step3-report.json",
+    "phases/33-stbridge-skeleton-import/step0-report.json",
+    "phases/33-stbridge-skeleton-import/step1-report.json",
+    "phases/33-stbridge-skeleton-import/step2-report.json",
+    "phases/33-stbridge-skeleton-import/step3-report.json",
+    "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+    "phases/33-stbridge-skeleton-import/step4-report.json",
+    "phases/33-stbridge-skeleton-import/step5-report.json",
+    "phases/34-stbridge-apply/step0-report.json",
+    "phases/34-stbridge-apply/step6-report.json",
+    "phases/34-stbridge-apply/step7-report.json",
+    "phases/34-stbridge-apply/step8-report.json",
+    "phases/35-ledger-reconciliation/step0-report.json",
+    "phases/35-ledger-reconciliation/step1-report.json",
+    "phases/35-ledger-reconciliation/step2-report.json",
+    "phases/35-ledger-reconciliation/step3-report.json",
+    "phases/35-ledger-reconciliation/step4-report.json",
+    "phases/35-ledger-reconciliation/step5-report.json",
+    "phases/36-corpus-widen-2/step0-codex.stdout.log",
+    "phases/36-corpus-widen-2/step0-report.json",
+    "phases/36-corpus-widen-2/step1-report.json",
+    "phases/36-corpus-widen-2/step2-report.json",
+    "phases/36-corpus-widen-2/step3-report.json",
+    "phases/36-corpus-widen-2/step4-report.json",
+    "phases/36-corpus-widen-2/step5-report.json",
+    "phases/37-corpus-widen-2-close/step0-report.json",
+    "phases/37-corpus-widen-2-close/step1-report.json",
+    "phases/37-corpus-widen-2-close/step2-report.json",
+    "phases/37-corpus-widen-2-close/step3-report.json",
+    "phases/37-corpus-widen-2-close/step4-report.json",
+    "phases/37-corpus-widen-2-close/step5-report.json",
+    "phases/37-corpus-widen-2-close/step6-report.json",
+    "phases/37-corpus-widen-2-close/step7-report.json",
+    "phases/38-elevation-close/step0-report.json",
+    "phases/38-elevation-close/step1-report.json",
+    "phases/38-elevation-close/step2-report.json",
+    "phases/38-elevation-close/step3-report.json",
+    "phases/38-elevation-close/step4-report.json",
+    "phases/38-elevation-close/step5-report.json",
+    "phases/38-elevation-close/step6-report.json",
+    "phases/39-axis-claim/step0-report.attempt1.json",
+    "phases/39-axis-claim/step0-report.json",
+    "phases/39-axis-claim/step1-report.json",
+    "phases/39-axis-claim/step2-report.attempt1.json",
+    "phases/39-axis-claim/step2-report.attempt2.json",
+    "phases/39-axis-claim/step2-report.json",
+    "phases/39-axis-claim/step3-report.json",
+    "phases/39-axis-claim/step4-report.json",
+    "phases/40-citation-integrity/step0-report.json",
+    "phases/40-citation-integrity/step1-codex.stdout.log",
+    "phases/40-citation-integrity/step1-report.json",
+    "phases/40-citation-integrity/step2-report.json",
+    "phases/40-citation-integrity/step3-report.json",
+    "phases/40-citation-integrity/step4-report.attempt1.json",
+    "phases/40-citation-integrity/step4-report.json",
+    "phases/41-report-record-integrity/index.json",
+    "phases/41-report-record-integrity/step0-codex.stderr.log",
+    "phases/41-report-record-integrity/step0-codex.stdout.log",
+    "phases/41-report-record-integrity/step0-invoke.json",
+    "phases/41-report-record-integrity/step0-report.json",
+    "phases/41-report-record-integrity/step0.md",
+    "phases/41-report-record-integrity/step1-codex.stderr.log",
+    "phases/41-report-record-integrity/step1-codex.stdout.log",
+    "phases/41-report-record-integrity/step1-invoke.json",
+    "phases/41-report-record-integrity/step1-report.json",
+    "phases/41-report-record-integrity/step1.md",
+    "phases/41-report-record-integrity/step2-codex.stderr.log",
+    "phases/41-report-record-integrity/step2-codex.stdout.log",
+    "phases/41-report-record-integrity/step2-invoke.json",
+    "phases/41-report-record-integrity/step2-report.attempt1.json",
+    "phases/41-report-record-integrity/step2-report.json",
+    "phases/41-report-record-integrity/step2.md",
+    "phases/index.json",
+    "scripts/check-citations.py",
+    "src/domain/model/project.ts",
+    "src/domain/rebar/wall.ts",
+    "src/lib/import/stb/decode.ts",
+    "tests/plan-import/corpus2-elevation.test.ts"
+  ],
+  "paths_expected_absent": [
+    "phases/41-report-record-integrity/step2-intentionally-absent.json"
+  ],
+  "notes": [
+    "Verification only; no implementation or historical report edits persist.",
+    "The prior attempt's report is preserved. Only this attempt's report and the step status are authored deliverables.",
+    "Shell verification commands use ASCII arguments; Unicode log content is decoded, never replayed."
+  ],
+  "status": "completed",
+  "summary": "7항 모두 성립: 로그 복원 4/4, 정확한 JSON 포인터 차이, 잔여 물음표 52건·188구간 설명, 변조 4/4 검출·바이트 원복, 인용·가드레일·전 게이트 확인.",
+  "completed_at": "2026-09-05T05:15:01.862Z"
+}

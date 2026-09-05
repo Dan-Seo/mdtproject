@@ -1,5 +1,11 @@
 # Step 2 (검증 전용): 이 phase를 반증하라
 
+> **재실행 메모.** 이 스텝은 한 번 `refuted`로 끝났고 그 기록은
+> `step2-report.attempt1.json`에 보존돼 있다. 반증 두 건(F1·F2)은 **이 사양의 결함**이었다 —
+> 2항이 허용 경로에서 `CLAUDE.md`를 빠뜨렸고, 4항이 하네스가 스스로 쓰는 파일까지
+> 「깨끗해야 한다」고 요구했다. 검증자의 판단은 옳았다. 두 항을 아래처럼 고쳤으니
+> 처음부터 다시 검증하라.
+
 너는 검증자다. **대상을 고치지 마라.** 어긋나는 것을 찾으면 그대로 두고 무엇이 어긋났는지
 적어라. 고치기 시작하면 만든 쪽이 자기 것을 승인하는 것이 되어 교차가 무너진다.
 
@@ -21,8 +27,11 @@ step0의 `restorations` 각 건에 대해, **step0-report.json의 값을 믿지 
 
 - 복원 대상 파일 각각에 대해, 이 phase 이전 커밋의 사본과 현재 사본을 **파싱해 비교**하고
   값이 다른 JSON 포인터의 집합이 `restorations`의 포인터 집합과 **정확히 일치**함을 보여라.
-- 이 phase에서 바뀐 경로 전체를 `git diff --stat`로 뽑아,
-  `phases/`·`scripts/check-citations.py`·`AGENTS.md` 밖의 경로가 **없음**을 수치로 보여라.
+- 이 phase에서 바뀐 경로 전체를 `git diff --name-only <phase 직전 커밋>`으로 뽑아,
+  각 경로가 다음 집합에 **든다**는 것을 보여라 —
+  `phases/`, `scripts/check-citations.py`, `AGENTS.md`, `CLAUDE.md`.
+  (`AGENTS.md`와 `CLAUDE.md`의 「개발 프로세스」 절은 서로 거울이다. 가드레일 한 줄은
+  두 파일 모두에 있어야 하고, 한쪽에만 있으면 그것이 반증이다.)
 
 ## 3. 남은 `?`는 전부 설명된다
 
@@ -41,7 +50,10 @@ step1의 실측을 믿지 말고 **네가 직접** 변조하고 원복하라.
 - `paths_verified`의 어느 항목을 실재하지 않는 경로로 바꾸면 비영, 원복하면 0.
 - 실재하는 경로를 `paths_expected_absent`·`fabricated_paths`에 넣으면 비영, 원복하면 0.
 - `exists: false` 항목을 실재하는 경로로 바꾸면 비영, 원복하면 0.
-- 세 실측이 끝난 뒤 `git diff --stat -- phases/`가 비어 있다.
+- 각 변조가 끝난 뒤 **네가 변조한 그 파일**이 변조 직전 바이트와 동일함을 sha256으로 보여라.
+  하네스가 스텝이 도는 동안 스스로 쓰는
+  `phases/41-report-record-integrity/index.json`·`step*-invoke.json`·`step*-codex.*.log`는
+  네가 쓴 것이 아니므로 이 대조의 대상이 아니다. 그것을 비우거나 되돌리려 하지 마라.
 
 ## 5. 옛 검사가 그대로 산다
 
