@@ -13,7 +13,9 @@
     {
       "step": 1,
       "name": "grid-geometry-soundness",
-      "status": "pending"
+      "status": "completed",
+      "summary": "P1·P2와 양 로케일 사유 코드 추가: 36면 격자 55→53, 나머지 53후보·19블록 불변; 변조 2건 검출·SHA-256 복원, 1811테스트·lint·tsc 통과.",
+      "started_at": "2026-09-05T19:51:40+0900"
     },
     {
       "step": 2,

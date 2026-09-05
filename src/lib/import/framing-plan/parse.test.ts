@@ -27,6 +27,58 @@ function page(items: TextItem[]): TextPage {
 }
 
 describe('parseFramingPlan — 通り芯グリッド', () => {
+  it('P1: coincident adjacent axes have no span geometry', () => {
+    const parsed = parseFramingPlan(
+      page([h('X1', 100, 50), h('X2', 100, 50), h('6000', 100, 80)]),
+    )
+    expect(parsed.issues).toContain('通り芯座標重複')
+    expect(parsed.grids).toEqual([])
+    expect(parsed.blocks).toEqual([])
+
+    const separated = parseFramingPlan(
+      page([h('X1', 100, 50), h('X2', 300, 50), h('6000', 200, 80)]),
+    )
+    expect(separated.grids).toHaveLength(1)
+    expect(separated.issues).not.toContain('通り芯座標重複')
+  })
+
+  it('P2: measured scale must fit the plan range even with a confirmed total', () => {
+    // Integer dimensions and independent point coordinates, not parser constants.
+    // Both 1 pt/mm and 0.002 pt/mm are outside the supported 1:10–1:1000 range.
+    for (const spanMm of [200, 100000]) {
+      for (const withTotal of [false, true]) {
+        const parsed = parseFramingPlan(
+          page([
+            h('1', 100, 50),
+            h('2', 300, 50),
+            h(String(spanMm), 200, 80),
+            ...(withTotal
+              ? [
+                  h('3', 500, 50),
+                  h(String(spanMm), 400, 80),
+                  h(String(spanMm * 2), 300, 110),
+                ]
+              : []),
+          ]),
+        )
+        expect(parsed.issues).toContain('縮尺範囲外')
+        expect(parsed.grids).toEqual([])
+        expect(parsed.blocks).toEqual([])
+      }
+    }
+
+    // One inch on paper (72 pt): 254 mm at 1:10, 25400 mm at 1:1000.
+    // The endpoints are included, and simple numeric labels keep their issues.
+    for (const spanMm of [254, 25400]) {
+      const parsed = parseFramingPlan(
+        page([h('1', 100, 50), h('2', 172, 50), h(String(spanMm), 136, 80)]),
+      )
+      expect(parsed.grids).toHaveLength(1)
+      expect(parsed.grids[0]?.spansMm).toEqual([spanMm])
+      expect(parsed.issues).not.toContain('縮尺範囲外')
+    }
+  })
+
   it('라벨이 하나도 없으면 通り芯ラベル未検出', () => {
     const parsed = parseFramingPlan(page([h('8700', 200, 80)]))
     expect(parsed.grids).toEqual([])
