@@ -17,7 +17,8 @@
       "gate": true,
       "status": "refuted",
       "started_at": "2026-09-05T20:45:51+0900",
-      "summary": "Item 2 R15-wide citation coverage refuted: five correct historical values lack step 0 citations; current A=7.685713pt, all 36 parser outputs and 20 registered citations match, and 1,811 tests, lint, tsc, build and citation checks pass."
+      "summary": "Item 2 R15-wide citation coverage refuted: five correct historical values lack step 0 citations; current A=7.685713pt, all 36 parser outputs and 20 registered citations match, and 1,811 tests, lint, tsc, build and citation checks pass.",
+      "refuted_at": "2026-09-05T20:55:46+0900"
     }
   ],
   "created_at": "2026-09-05T20:45:00+0900"
