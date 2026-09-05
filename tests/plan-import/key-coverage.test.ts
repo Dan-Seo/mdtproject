@@ -99,10 +99,6 @@ const CLAIMED: readonly ClaimedPath[] = [
     path: 'levelTexts[]',
     test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',
   },
-  {
-    path: 'levels[]',
-    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',
-  },
 ]
 
 const REFERENCE_ONLY: readonly ReferenceOnlyPath[] = [
@@ -243,7 +239,10 @@ describe('plan-import 골든 값 키 커버리지', () => {
       .map(([path, files]) => ({ path, files: [...files].sort() }))
     expect(
       unclaimed,
-      'unclaimed value paths: make an explicit claim or report the field as blocked',
+      [
+        'unclaimed value paths: make an explicit claim or report the field as blocked',
+        ...unclaimed.map(({ path, files }) => `${path}: ${files.join(', ')}`),
+      ].join('\n'),
     ).toEqual([])
   })
 

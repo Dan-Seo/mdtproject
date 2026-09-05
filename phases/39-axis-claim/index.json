@@ -23,10 +23,10 @@
     {
       "step": 2,
       "name": "unclaimed-key-guard",
-      "status": "completed",
-      "summary": "골든 값 경로 32개를 측정해 18개를 대조 테스트, 14개를 출처·주석으로 등록하고 F1/F2를 수정했다. blocks[].title은 혼합 제목 메타데이터로 REFERENCE_ONLY에 등록했고, F2의 CB1 先端 본수는 근거 부족으로 deferred_claims에 남겼다.",
+      "status": "blocked",
+      "summary": "32개 키 경로 중 17개 CLAIMED·14개 REFERENCE_ONLY를 확인하고 양방향 변조를 반증했다. 기존에 잘못 청구된 levels[] 1개를 발견해 blocked로 기록한다.",
       "started_at": "2026-09-05T09:56:07+0900",
-      "completed_at": "2026-09-05T10:12:00+0900"
+      "blocked_reason": "karatsu-jikugumi1-p1-elevation.json의 최상위 levels[]는 어떤 테스트도 값을 대조하지 않는다. 임의 문자열 변조도 12개 관련 테스트를 통과했다. 사양이 levels의 REFERENCE_ONLY 분류와 근거 없는 청구 테스트 신설을 금지하므로 별도 청구 결정이 필요하다. 기존 title·CB1 先端 보류는 차단 사유가 아니다."
     },
     {
       "step": 3,
