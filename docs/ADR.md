@@ -432,6 +432,12 @@ python -c "import fitz,sys; d=fitz.open(sys.argv[1]); [print(t, [i+1 for i,p in 
 
 軸組図의 `axis`는 파서가 그 면에서 격자를 내라는 기대값이 아니라, 같은 건물 伏図 격자와 전사를 상호검증하는 기준 데이터다. 페이지 방향이 뒤집힐 수 있으므로 伏図 축의 정방향·역방향을 모두 허용한다. 軸組図 라벨은 그 방향의 순서 있는 부분열이어야 하고, 인접 라벨 사이 스팬은 伏図에서 건너뛴 구간의 합과 같아야 한다. 라벨·스팬 개수 관계와 기재된 合計도 별도로 대조한다. axis 미전사 항목은 격자로 근사하지 않고 미전사로 남긴다(`tests/plan-import/corpus2-elevation.test.ts`, `phases/39-axis-claim/step1-report.json`).
 
+**추기 정정**: 레벨 라벨은 레벨과 y 순서를 지켜 대응하며, 오프셋 보정으로 가장 가까운 레벨에 옮기지 않는다. karatsu-jikugumi1의 반례는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`이고, 중앙값 보정은 `GL`을 허용 범위 밖으로 밀어 라벨을 잃게 한다(`phases/38-elevation-close/step2.md#배경`). 도면에 두 레벨 사이 치수가 없을 때만 두 라벨을 한 레벨에 겹쳐 대응한다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다.
+
+짧은 치수 허용은 「밀림이 기대 간격을 넘지 않는다」는 뜻이며, `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`은 36면에서 출력이 서로 구별되지 않는 무차별 구간 안에서 고른 값이다(`phases/38-elevation-close/step3-report.json#/implementation/constant`, `#/short_dimension_sweep/pages`, `#/corpus_sweep/comparison`). 골든의 모든 값 필드는 실제 대조 테스트에 청구돼야 한다. 청구되지 않은 기대값은 검증처럼 보일 뿐 검증이 아니며, phase 38 step 6의 axis 스팬 반증과 그로 인한 tsu `X5` 누락이 이를 보였다. phase 39 step 2의 키 커버리지 가드가 32개 경로 중 18개를 대조 테스트에 청구하고 14개를 `REFERENCE_ONLY`로 구별한다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step2-report.json#/key_paths_total`, `#/claimed`, `#/reference_only`, `tests/plan-import/key-coverage.test.ts`).
+
+軸組図 골든의 `axis`는 軸組図 면에서 격자를 만들라는 파서 기대값이 아니라, 같은 건물 伏図 격자와 대조하는 전사 상호검증용 기준 데이터다. 페이지 순서가 뒤집힐 수 있으므로 정방향·역방향을 모두 허용하고, 라벨은 부분열이며 스팬은 건너뛴 구간의 합과 같아야 한다. 미전사 axis는 격자로 근사하지 않고 미전사로 남긴다(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`).
+
 ### ADR-031: 伏図에서 通り芯과 스팬 치수만 읽는다 — ADR-018이 그은 「형상은 수동」의 경계를 옮긴다
 
 > **폐지(2026-08-25 사용자 결정, ADR-030으로 대체)**: 이 항은 폐지되었다(superseded by ADR-030). 병렬 세션 둘이 같은 번호로 각자 ADR-030을 썼고, 머지 때 이 항을 ADR-031로 개번했다. 구현(`src/lib/import/plan/`)은 삭제했지만, ① 「合計와 맞는 조합만 채택한다」는 자기 검산의 아이디어, ② 「스팬 1본 축은 검산이 원리상 아무것도 배제하지 못한다」는 ③-2 정정의 관측, ③ 좌표 규약을 한 곳에 두는 원칙(④)은 framing-plan의 `runs.ts`에 실제로 반영되어 남아 있다. 이 항은 그 근거 문서로 보존한다.
