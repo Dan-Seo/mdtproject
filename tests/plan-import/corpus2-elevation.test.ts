@@ -355,7 +355,11 @@ describe('軸組図·伏図 axis 골든 상호검증', () => {
     },
   )
 
-  it('axis 없는 elevation 항목은 건너뛰되 그 수가 3개로 고정된다', () => {
+  // 2026-09-05: tsu p21 elevations[1]과 p22 두 항목의 axis를 전사해 0이 됐다.
+  // 면 안의 모든 軸組図 블록이 같은 通り芯 축을 쓰는 것을 원본에서 확인했으므로,
+  // 제목 없는 항목의 대응 블록을 몰라도 axis 값이 정해진다. 이 수는 골든에서
+  // 파생되며, 미전사가 다시 늘면 실패해야 하므로 고정값으로 남긴다.
+  it('axis 없는 elevation 항목이 없다', () => {
     let skippedAxisCount = 0
 
     for (const file of goldenFiles('-elevation.json')) {
@@ -365,6 +369,6 @@ describe('軸組図·伏図 axis 골든 상호검증', () => {
       }
     }
 
-    expect(skippedAxisCount).toBe(3)
+    expect(skippedAxisCount).toBe(0)
   })
 })
