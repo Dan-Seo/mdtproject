@@ -1,0 +1,12 @@
+{
+  "project": "Kijun",
+  "phase": "40-citation-integrity",
+  "steps": [
+    { "step": 0, "name": "refute-tsu-axis-transcription", "kind": "verify", "gate": true, "status": "pending" },
+    { "step": 1, "name": "comment-and-crosscheck", "status": "pending" },
+    { "step": 2, "name": "docs-citations", "status": "pending" },
+    { "step": 3, "name": "citation-checker", "status": "pending" },
+    { "step": 4, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending" }
+  ],
+  "created_at": "2026-09-05T10:55:00+0900"
+}
