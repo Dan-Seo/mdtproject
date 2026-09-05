@@ -23,7 +23,9 @@
       "name": "refute-record-integrity",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "refuted",
+      "started_at": "2026-09-05T13:54:53+0900",
+      "summary": "복원 4/4·잔여 물음표 52건 설명·경로 변조 4/4·전 게이트는 통과했다. CLAUDE.md가 허용 경로 밖이며 하네스 started_at 변경 때문에 phases/ diff 공백 조건은 성립하지 않아 사양의 2·4항을 반증했다."
     }
   ],
   "created_at": "2026-09-05T13:40:00+0900"
