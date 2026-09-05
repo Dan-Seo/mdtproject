@@ -24,7 +24,7 @@
       "step": 2,
       "name": "unclaimed-key-guard",
       "status": "completed",
-      "summary": "골든 값 경로 32개를 측정해 18개를 대조 테스트, 14개를 출처·주석으로 등록하고 F1/F2를 수정했다. blocks[].title은 혼합 제목 메타데이터로 REFERENCE_ONLY에 등록하고 deferred_claims에 조건을 남겼으며, levels[]는 levelTexts와의 길이·접두사 관계 대조로 청구했다.",
+      "summary": "32개 골든 키 경로를 CLAIMED 18개·REFERENCE_ONLY 14개로 등록하고 levels 관계와 F1/F2를 확인했으며, 7건 변조가 모두 실패하고 전체 1808개 테스트·lint·타입 검사가 통과했다.",
       "started_at": "2026-09-05T09:56:07+0900",
       "completed_at": "2026-09-05T10:10:55+0900"
     },
