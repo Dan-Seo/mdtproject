@@ -33,7 +33,8 @@
       "name": "citation-checker",
       "status": "completed",
       "started_at": "2026-09-05T11:19:22+0900",
-      "summary": "표준 라이브러리 90줄 인용 검사기 구현; step0~3 source 73건·26개 경계 검사·lint 통과, 실제 포인터 변조 exit 1 및 원복 확인, 과거 fixture 필드 3경로 미검출 한계를 report에 기록."
+      "summary": "표준 라이브러리 90줄 인용 검사기 구현; step0~3 source 73건·26개 경계 검사·lint 통과, 실제 포인터 변조 exit 1 및 원복 확인, 과거 fixture 필드 3경로 미검출 한계를 report에 기록.",
+      "completed_at": "2026-09-05T11:25:25+0900"
     },
     {
       "step": 4,
