@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "refute-plan-grid-soundness",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 831.219677000001,
+  "stdout_log": "phases\\42-plan-grid-soundness\\step3-codex.stdout.log",
+  "stderr_log": "phases\\42-plan-grid-soundness\\step3-codex.stderr.log"
+}
