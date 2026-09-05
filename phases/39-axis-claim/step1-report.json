@@ -1,0 +1,63 @@
+{
+  "step": 1,
+  "name": "claim-axis-crosscheck",
+  "skipped_axis_count": 3,
+  "mutations": [
+    {
+      "file": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "json_pointer": "/elevations/0/axis/spansMm/0",
+      "before": 5850,
+      "after": 5851,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다"
+    },
+    {
+      "file": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "json_pointer": "/elevations/0/axis/labels/0",
+      "before": "X1",
+      "after": null,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다"
+    },
+    {
+      "file": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+      "json_pointer": "/elevations/0/axis/spansMm/0",
+      "before": 8000,
+      "after": 8001,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다"
+    },
+    {
+      "file": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+      "json_pointer": "/elevations/0/axis/labels/0",
+      "before": "Y1",
+      "after": null,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다"
+    },
+    {
+      "file": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+      "json_pointer": "/elevations/0/axis/spansMm/0",
+      "before": 1900,
+      "after": 1901,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 'karatsu-jikugumi1-p1-elevation.json'의 axis가 'karatsu-fukuzu-p1-grid.json'의 'y' 축 부분열이다"
+    },
+    {
+      "file": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+      "json_pointer": "/elevations/0/axis/labels/0",
+      "before": "Y0",
+      "after": null,
+      "exit_code": 1,
+      "failing_test": "tests/plan-import/corpus2-elevation.test.ts > 軸組図·伏図 axis 골든 상호검증 > 모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다"
+    }
+  ],
+  "restoration": {
+    "command": "git diff -- tests/fixtures/plan-import/expected",
+    "diff_empty": true
+  },
+  "verification": {
+    "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts",
+    "exit_code": 0
+  }
+}

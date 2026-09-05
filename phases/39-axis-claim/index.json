@@ -15,7 +15,10 @@
     {
       "step": 1,
       "name": "claim-axis-crosscheck",
-      "status": "pending"
+      "status": "completed",
+      "summary": "모든 grid/elevation axis의 자기 정합성, 지정된 3개 伏図 축과의 정방향·역방향 부분열·스팬 합계, levelsBottom 꼬리와 axis 미청구 3건을 골든 상호검증하고 6건 변조 반증을 기록했다.",
+      "started_at": "2026-09-05T09:31:40+0900",
+      "completed_at": "2026-09-05T09:39:54+0900"
     },
     {
       "step": 2,
