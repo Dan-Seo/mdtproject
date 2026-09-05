@@ -21,7 +21,9 @@
     {
       "step": 2,
       "name": "document-open-items",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-09-05T20:04:03+0900",
+      "summary": "세 면 블록 재계측·제목 규칙 반증을 기록하고 R10·R15를 기하 오탐 해소와 열린 블록 오탐으로 구분; 문서 동기화·인용 검사·lint 통과."
     },
     {
       "step": 3,
