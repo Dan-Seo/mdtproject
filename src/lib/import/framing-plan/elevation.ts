@@ -27,23 +27,21 @@ const COLUMN_TOLERANCE_PT = 4
 /** 레벨 라벨과 푼 레벨 위치의 어긋남 허용(pt). 실물 최대 4.1pt */
 const LEVEL_TOLERANCE_PT = 15
 /**
- * 레벨 라벨 열 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
+ * 레벨 라벨 후보를 찾는 가로 창(pt) — 치수 열 중심에서의 거리.
  *
- * 이 창은 넓은 후보 수집용이고, 실제 라벨 열은 후보를 x 방향 군집으로 나눈 뒤
- * 레벨 위치를 가장 많이 설명하는 군집 하나로 좁힌다. 치수 두 개만으로는 축척을
- * 유도할 수는 있어도 대조할 수가 없으므로, 넓은 창 전체를 라벨 열로 취급하면
- * 부재 부호를 레벨 라벨로 오인하게 된다.
+ * 이 창으로 후보를 거른 뒤 `isLevelLabel` 화이트리스트와
+ * y 순서 커서 매칭의 레벨 허용 범위를 적용한다. x 방향 열 군집은 사용하지
+ * 않는다. 치수 열과 실제 레벨 라벨의 x가 도면마다 달라질 수 있기 때문이다.
  *
  * 실물 kani p40에서 그 일이 일어났다 — 위·아래 두 軸組図의 **전체 치수**
  * 5,535 둘이 한 열로 이어져 축척이 3배로 나왔는데, 창이 150pt이던 동안에는
  * 128pt 떨어진 **通り芯 라벨 `Y1`**을 레벨 라벨로 주워 검증을 통과했다.
+ * 지금 그 오인을 막는 것은 열 군집이 아니라 `isLevelLabel` 화이트리스트다.
  *
  * 실측된 라벨 거리는 yokohama p8이 최대 62pt, kani p40이 최대 67pt다. 80은
  * 그 위이고 128 아래다. 더 벌어지는 도면은 빈 후보로 실패한다 (R10).
  */
 const LABEL_WINDOW_PT = 80
-/** 같은 레벨 라벨 열로 묶는 텍스트 바운더리 사이의 최대 간격(pt) */
-const LABEL_COLUMN_GAP_PT = COLUMN_TOLERANCE_PT * 4
 /** 계열이 이어지는지 보는 축척 편차. 伏図 파서와 같은 값이다 */
 const SCALE_TOLERANCE_RATIO = 0.03
 /** 라벨이 붙은 레벨이 이보다 적으면 계열로 보지 않는다 — 부분 치수 열과의 유일한 구분 */
@@ -59,12 +57,15 @@ const SHORT_DIMENSION_RATIO = 0.25
  * 창에서 유도한 범위 안에서만 열 이동을 허용한다 — 파일명별 x 좌표를 쓰지 않는다.
  */
 const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4
-/** 짧은 치수의 텍스트 위치 편차를 허용하되, 가까운 잡음 치수는 거절한다. */
 /**
- * 실제 짧은 꼬리 오차는 tsu 1170mm가 0.4879329, hirosaki 2310mm가 0.0005626이다.
- * 최대값을 포함하되 50% 창보다 좁히기 위해 0.49를 쓴다.
+ * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는
+ * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.
+ * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와
+ * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의
+ * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,
+ * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.
  */
-const SHORT_TAIL_SCALE_TOLERANCE_RATIO = 0.49
+const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0
 /**
  * 계열이 되려면 치수가 이만큼 있어야 한다.
  *
@@ -174,98 +175,22 @@ function labelText(token: Token): string | undefined {
   return text.length > 0 ? text : undefined
 }
 
+/**
+ * 36면 서베이에서 관측한 레벨 라벨의 화이트리스트다.
+ *
+ * `SL` 계열은 넣지 않는다. tsu-p21의 `1SL`은 `1FL`과 같은 높이에 놓였고,
+ * 그 도면의 레벨 이름 체계는 FL/GL이다. 여기에 `SL`을 넣으면 한 레벨에
+ * 두 라벨이 생긴다. SL을 지원하려면 먼저 그 도면 계열의 골든이 필요하다.
+ *
+ * 이 판정은 접미어가 포함된 문자열도 통과시키므로, 36면에는
+ * `・基礎梁天端から1FLまでは打増しとする。`이나
+ * `支持地盤は、GL-900以下の弱風化花崗岩層とする` 같은 문장도 통과한다.
+ * 서베이에서 이 문장들은 `LABEL_WINDOW_PT`와 레벨 위치 허용 범위 밖이라
+ * 결과에 닿지 않았다. 여기서 문장 배제 규칙을 새로 만들지 않는다. 현재
+ * 코퍼스는 그 규칙의 효과를 반증할 수 없고, 그 근거는 R10의 후속 과제다.
+ */
 function isLevelLabel(text: string): boolean {
   return /(?:FL|GL|RCL|(?:天端|下端|上端)$)/.test(text)
-}
-
-function labelColumns(labels: Token[], axisX: number): Token[][] {
-  const candidates = labels
-    .filter((label) => horizontalDistance(label, axisX) <= LABEL_WINDOW_PT)
-    .sort(
-      (left, right) =>
-        left.leftX - right.leftX ||
-        left.y - right.y ||
-        left.rightX - right.rightX,
-    )
-  const columns: Token[][] = []
-
-  for (const candidate of candidates) {
-    const column = columns.at(-1)
-    const columnRight = column?.reduce(
-      (right, token) => Math.max(right, token.rightX),
-      Number.NEGATIVE_INFINITY,
-    )
-    if (
-      column &&
-      candidate.leftX - columnRight! <= LABEL_COLUMN_GAP_PT
-    ) {
-      column.push(candidate)
-    } else {
-      columns.push([candidate])
-    }
-  }
-
-  return columns
-}
-
-function nearestLevelIndex(
-  levels: ElevationLevel[],
-  y: number,
-): { index: number; distance: number } {
-  let index = -1
-  let distance = Number.POSITIVE_INFINITY
-  for (let i = 0; i < levels.length; i++) {
-    const candidateDistance = Math.abs(levels[i].positionPt - y)
-    if (candidateDistance < distance) {
-      index = i
-      distance = candidateDistance
-    }
-  }
-  return { index, distance }
-}
-
-function selectLabelColumn(
-  labels: Token[],
-  levels: ElevationLevel[],
-  axisX: number,
-): Token[] {
-  const ranked = labelColumns(labels, axisX)
-    .map((column) => {
-      const usable = column.filter((token) => {
-        const text = labelText(token)
-        return text !== undefined && isLevelLabel(text)
-      })
-      const labelledLevels = new Set(
-        usable
-          .map((token) => nearestLevelIndex(levels, token.y))
-          .filter(({ distance }) => distance <= LEVEL_TOLERANCE_PT)
-          .map(({ index }) => index),
-      )
-      const distance = Math.min(
-        ...column.map((token) => horizontalDistance(token, axisX)),
-      )
-      return { column, labelledLevels, usable, distance }
-    })
-    .sort(
-      (left, right) =>
-        right.labelledLevels.size - left.labelledLevels.size ||
-        right.usable.length - left.usable.length ||
-        left.distance - right.distance,
-    )
-
-  const selected = ranked[0]?.column ?? []
-  const selectedSet = new Set(selected)
-  const displaced = ranked.flatMap(({ column }) =>
-    column.filter((token) => {
-      if (selectedSet.has(token)) return false
-      const text = labelText(token)
-      if (text === undefined || !isLevelLabel(text)) return false
-      const nearest = nearestLevelIndex(levels, token.y)
-      return nearest.distance <= LEVEL_TOLERANCE_PT
-    }),
-  )
-
-  return [...selected, ...displaced]
 }
 
 /**
@@ -287,7 +212,8 @@ function chains(column: DimensionToken[]): DimensionToken[][] {
       current.length >= MINIMUM_CHAIN_DIMENSIONS &&
       isShortDimension(column[i + 1], current) &&
       reference !== undefined &&
-      Math.abs(scale / reference - 1) <= SHORT_TAIL_SCALE_TOLERANCE_RATIO
+      Math.abs(scale / reference - 1) <=
+        SHORT_DIMENSION_SCALE_TOLERANCE_RATIO
 
     if (continues || shortDimension) {
       current.push(column[i + 1])
@@ -339,7 +265,7 @@ function extendShortTail(
         if (expectedGap <= 0) return false
         return (
           Math.abs(gap / expectedGap - 1) <=
-          SHORT_TAIL_SCALE_TOLERANCE_RATIO
+          SHORT_DIMENSION_SCALE_TOLERANCE_RATIO
         )
       })
       .sort((left, right) => {
@@ -452,42 +378,46 @@ export function parseFrameElevations(page: TextPage): ParsedFrameElevations {
       const scale = median(scales)
       const positions = levelsOf(chain, scale)
 
-      // 라벨은 가장 가까운 레벨 하나에만 붙는다 — 층이 얕으면 허용 범위가
-      // 겹치는데, 겹치는 만큼 양쪽에 싣으면 없는 라벨이 생긴다
+      // 라벨은 y 오름차순으로 아직 붙지 않은 첫 레벨에 붙인다. 허용 범위가
+      // 겹치는 좁은 구간에서도 도면의 순서를 보존하고, 다음 레벨이 없을 때만
+      // 직전 레벨에 중첩한다.
       const levels: ElevationLevel[] = positions.map(({ positionPt }) => ({
         labels: [],
         positionPt,
       }))
       const labelsAtLevels: Token[][] = levels.map(() => [])
-      const labelColumn = selectLabelColumn(labels, levels, chain[0].x)
-      for (const label of labelColumn) {
+      const labelCandidates = labels.filter(
+        (label) => horizontalDistance(label, chain[0].x) <= LABEL_WINDOW_PT,
+      ).sort((left, right) => left.y - right.y || left.x - right.x)
+      let cursor = 0
+      for (const label of labelCandidates) {
         const text = labelText(label)
         if (text === undefined || !isLevelLabel(text)) continue
-        const nearest = nearestLevelIndex(levels, label.y)
-        if (nearest.index < 0 || nearest.distance > LEVEL_TOLERANCE_PT) {
-          continue
-        }
-        labelsAtLevels[nearest.index].push(label)
-      }
 
-      // 짧은 치수가 실제로 적혀 있으면, 그 사이의 두 레벨을 같은 위치로 접지
-      // 않는다. 치수 표기가 좁은 구간의 한쪽에 몰려 두 라벨이 앞 레벨에 함께
-      // 붙는 경우에는, 도면의 위→아래 라벨 순서로 다음 레벨에 하나를 보낸다.
-      for (let i = 0; i + 1 < chain.length; i++) {
-        if (!isShortDimension(chain[i], chain.slice(0, i))) continue
-        if (
-          labelsAtLevels[i]?.length !== 2 ||
-          labelsAtLevels[i + 1]?.length !== 0
-        ) {
+        let matchedIndex = -1
+        for (let index = cursor; index < levels.length; index++) {
+          if (
+            Math.abs(levels[index].positionPt - label.y) <=
+            LEVEL_TOLERANCE_PT
+          ) {
+            matchedIndex = index
+            break
+          }
+        }
+        if (matchedIndex < 0 && cursor > 0) {
+          const previousIndex = cursor - 1
+          if (
+            Math.abs(levels[previousIndex].positionPt - label.y) <=
+            LEVEL_TOLERANCE_PT
+          ) {
+            matchedIndex = previousIndex
+          }
+        }
+        if (matchedIndex < 0) {
           continue
         }
-        const ordered = [...(labelsAtLevels[i] ?? [])].sort(
-          (left, right) => left.y - right.y || left.x - right.x,
-        )
-        const moved = ordered.pop()
-        if (!moved) continue
-        labelsAtLevels[i] = ordered
-        labelsAtLevels[i + 1] = [moved]
+        labelsAtLevels[matchedIndex].push(label)
+        cursor = matchedIndex + 1
       }
 
       for (let i = 0; i < levels.length; i++) {

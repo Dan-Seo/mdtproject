@@ -1,0 +1,9 @@
+{
+  "step": 5,
+  "name": "test-literals-and-cb1",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 952.9188870999496,
+  "stdout_log": "phases\\38-elevation-close\\step5-codex.stdout.log",
+  "stderr_log": "phases\\38-elevation-close\\step5-codex.stderr.log"
+}

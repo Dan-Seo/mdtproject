@@ -1,0 +1,85 @@
+{
+  "step": 6,
+  "name": "refute-fixes",
+  "verdict": "refuted",
+  "items": {
+    "1_spec_scope": {
+      "holds": true,
+      "evidence": [
+        "git diff main...HEAD의 코드·테스트 변경은 elevation.ts, elevation.test.ts, corpus2-elevation.test.ts, section-list/parse.ts, section-import/parse.test.ts로 제한되어 있다.",
+        "도면·발주처·시트 이름에 따른 실행 조건, process.env 사용, 골든 픽스처 변경은 diff에서 발견되지 않았다.",
+        "SHORT_DIMENSION_SCALE_TOLERANCE_RATIO=1.0은 step 3 사양에 명시된 필수 상수이며, 사양 밖 새 규준 수치 상수는 발견되지 않았다."
+      ]
+    },
+    "2_golden_falsifiability": {
+      "holds": false,
+      "evidence": [
+        {
+          "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts -t \"karatsu|tsu: p21|hirosaki\"",
+          "exit_code": 0,
+          "result": "3 passed",
+          "mutations": [
+            {
+              "fixture": "karatsu-jikugumi1-p38.json",
+              "path": "elevations[0].axis.spansMm[0]",
+              "from": 1900,
+              "to": 1901
+            },
+            {
+              "fixture": "hirosaki-jikugumi-p15.json",
+              "path": "elevations[0].axis.spansMm[0]",
+              "from": 8000,
+              "to": 8001
+            },
+            {
+              "fixture": "tsu-jikugumi-p21.json",
+              "path": "elevations[0].axis.spansMm[0]",
+              "from": 5850,
+              "to": 5851
+            }
+          ]
+        },
+        "tsu-p22 골든에는 axis.spansMm 필드가 없다. 같은 파일의 heightsMm[0] 600→601 변조는 대응 테스트를 실패시켰지만, 이는 누락된 스팬 검증을 보완하지 않는다.",
+        "따라서 스팬 기대값을 한 칸씩 바꾸면 대응 테스트가 실패해야 한다는 항목은 반증됐다. 현재 테스트는 elevation의 title·labels·heightsMm만 대조하고 axis.spansMm을 대조하지 않는다."
+      ]
+    },
+    "3_regression_scope": {
+      "holds": true,
+      "evidence": "step2-report.json의 36면 비교에서 변경 면은 tsu-p21.json·tsu-p22.json뿐이고 나머지 34면은 동일했다."
+    },
+    "4_existing_14_pages": {
+      "holds": true,
+      "evidence": "npx vitest run src/lib/import/framing-plan/elevation.test.ts tests/plan-import/elevation.test.ts tests/plan-import/corpus2-elevation.test.ts 실행 결과 3 files passed, 28 tests passed. tests/section-import/parse.test.ts를 포함한 전체 테스트도 통과했다."
+    },
+    "5_constant_source": {
+      "holds": true,
+      "evidence": "step3-report.json에서 0.45 반증, 5.0 비교, 36면 sweep 및 최종 1.0 출력 기준을 확인했다. 결정적 골든 반증이 먼저 성립해 추가 ratio 변조는 중단했다."
+    },
+    "6_test_not_tailored": {
+      "holds": true,
+      "evidence": [
+        "tests/plan-import/corpus2-elevation.test.ts에 toHaveLength(리터럴) 사용이 없다.",
+        "파싱 결과를 원하는 라벨만 남기는 필터나 parsed[i]→golden[j] 재배치 배열은 발견되지 않았다.",
+        "테스트는 골든에 있는 각 title을 순회해 후보를 대응시키며, karatsu의 X3·X4 공유 후보도 함께 검증한다."
+      ]
+    },
+    "7_ordering_counterexamples": {
+      "holds": true,
+      "evidence": "yokohama p8·p9의 중앙棟1FL/基準GL 중첩 라벨, karatsu GL, 라벨 과다·과소 합성 입력 테스트가 포함된 elevation 테스트가 통과했다."
+    },
+    "8_quality_gates": {
+      "holds": true,
+      "evidence": [
+        "npx vitest run: 100 files passed, 1799 tests passed.",
+        "npm run lint: exit 0; 기존 route.test.ts의 _omitted 미사용 warning 1건만 남았다.",
+        "npm run typecheck: exit 0."
+      ]
+    }
+  },
+  "restoration": {
+    "temporary_golden_mutations_restored": true,
+    "golden_fixture_diff_after_restore": [],
+    "product_or_existing_test_changes_made_by_step6": false
+  },
+  "summary": "karatsu·hirosaki·tsu-p21의 axis.spansMm 골든 값을 +1mm로 변조해도 대응 테스트가 통과했다. 스팬 기대값 대조가 없어 Step 6 게이트를 반증했으며, 임시 변조는 전부 원복했다."
+}

@@ -1,0 +1,47 @@
+{
+  "verdict": "not_refuted",
+  "claims": {
+    "C1": {
+      "holds": true,
+      "evidence": [
+        "labelColumns/selectLabelColumn/LABEL_COLUMN_GAP_PT의 선택 경로를 제거하고 label과 chain[0].x의 LABEL_WINDOW_PT 거리만 검사하는 독립 사본을 만들었다.",
+        "tests/fixtures/section-import/textitems의 36면에서 원본과 사본의 JSON.stringify(parseFrameElevations(page))를 비교한 결과 files=36, diffs=[], equivalent=true였다."
+      ]
+    },
+    "C2": {
+      "holds": true,
+      "evidence": [
+        "tsu-p21 Y3의 1170mm 꼬리: 실제 간격 19.1999835pt, 기대 간격 12.9037969pt, |실제/기대-1|=0.4879329(소수 4자리 0.4879)였다.",
+        "hirosaki-p25의 2310mm 꼬리: 실제 간격 11.3910168pt, 기대 간격 11.3846124pt, |실제/기대-1|=0.0005625(소수 4자리 0.0006)였다.",
+        "SHORT_TAIL_SCALE_TOLERANCE_RATIO를 0.49에서 0.45로 바꾼 독립 사본은 tsu-p21.json만 결과가 달라졌고, hirosaki-p25.json은 동일했다."
+      ]
+    },
+    "C3": {
+      "holds": true,
+      "evidence": [
+        "36면의 recoverRows 세그먼트와 verticalRuns 문자열 9317개에 현행 정규식 /(?:FL|GL|RCL|(?:天端|下端|上端)$)/을 적용했다. 梁天端 21건과 基礎梁天端 4건의 토큰은 통과했고, 1SL 4건·2SL 2건·SL+756.70 3건·RSL+760.00 3건은 탈락했다.",
+        "화이트리스트가 문장에도 적용되는 통과 예는 「・基礎梁天端から1FLまでは打増しとする。」와 「支持地盤は、GL-900以下の弱風化花崗岩層とする」였다.",
+        "phase 37 문서가 탈락한다고 주장한 梁天端·基礎梁天端은 실제 후보 토큰으로는 통과하며, 실제 탈락 계열은 1SL·▽2SL(水下)·▽SL+756.70·▽RSL+760.00이었다."
+      ]
+    },
+    "C4": {
+      "holds": true,
+      "evidence": [
+        "현행 파서의 tsu-p21은 Y1·Y2에서 heightsMm=[600,3500,3500,150]과 5개 레벨을, Y3에서 heightsMm=[600,3500,3500,150,1170]과 6개 레벨을 냈다.",
+        "현행 파서의 tsu-p22는 X1·X2·X3 및 X4·X5 두 블록 모두 heightsMm=[600,3500,3500,150]과 5개 레벨을 냈다.",
+        "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json 및 tsu-kanritou-p22-elevation.json의 독립 전사는 네 블록 모두 6레벨·5구간 [600,3500,3500,150,1170]이다. 따라서 같은 도면 계열에서 블록별 결과가 불일치하고 현행 파서가 1170을 누락한다는 주장이 성립한다."
+      ]
+    },
+    "C5": {
+      "holds": true,
+      "evidence": [
+        "docs/RISKS.md R15는 SHORT_TAIL_SCALE_TOLERANCE_RATIO=0.49와 tsu-p21 1170mm의 실측 오차 0.488을 기록하며 C2의 재현값과 일치한다.",
+        "docs/RISKS.md R10의 2段筋 본수 미지원·頭注 特記 기본값 미채움·壁·スラブ·shibata 大梁·柱リスト 미전사 잔여가 존재한다. 실제로 saiki-p1 파서는 2段筋 후보 8건 모두 2段筋未対応과 main 미확정을 냈고, ina-p7의 G1·GA는 stirrup/sideBar 없이 남겼다.",
+        "tests/fixtures/section-import/expected/ina-pump-p7-lists.json은 빈 STP·腹筋을 頭注의 기본값으로 채우지 않는다고 기록하고, 壁リスト·スラブリスト를 미전사로 남긴다. tests/fixtures/section-import/SOURCES.md는 shibata p8〜p10 大梁リスト1〜3을 미전사로 명시한다.",
+        "docs/ADR.md ADR-045의 raw 보존·2段筋未対応 및 빈 셀의 特記 기본값 금지 결정은 src/lib/import/section-list/parse.ts의 isTwoLayerBar/setGirderMain과 setPitch의 실제 동작 및 위 파서 출력과 일치한다.",
+        "phase 37 step6-report.json의 numbers_used 중 임의로 90, 150·100, 2段筋 본수 0, T=4 gridPages=23, 階高 골든 3/3면을 대조했다. 90은 34개 TextItem fixture의 rot=-90과 tests/section-import/textitems.test.ts에, 150·100은 현재 elevation 파서 출력에, 2段筋 본수 0은 saiki-p1 파서 출력에, T=4 gridPages=23은 phase 37 step5 sweep 기록에, 階高 골든 3/3면은 tests/plan-import/corpus2-elevation.test.ts의 karatsu·tsu·hirosaki 3개 골든 케이스에 각각 실제로 나타난다."
+      ]
+    }
+  },
+  "notes": "C1~C5 모두 독립 재현에서 성립했다. 기존 코드·테스트·골든·문서는 수정하지 않았으며, targeted plan/section-import 테스트 7개 파일 179건, 전체 테스트 100개 파일 1794건이 통과했다. lint는 오류 0건·기존 warning 1건(_omitted 미사용)이었다."
+}

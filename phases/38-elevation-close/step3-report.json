@@ -1,0 +1,73 @@
+{
+  "verdict": "completed",
+  "implementation": {
+    "constant": "SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0",
+    "renamed_from": "SHORT_TAIL_SCALE_TOLERANCE_RATIO",
+    "scope": "chains()와 extendShortTail()에서 짧은 치수 공통 허용비로 사용",
+    "golden": "tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조"
+  },
+  "counterexamples": {
+    "ratio_0_45": {
+      "result": "confirmed_failure",
+      "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts",
+      "observed": "5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.",
+      "restored": true
+    },
+    "ratio_5_0": {
+      "result": "confirmed_candidate_qualification",
+      "candidate": "hirosaki-p25의 30mm 꼬리 후보",
+      "deviations": [4.3321887991, 5.3271613186, 4.7101499289],
+      "qualifies": [true, false, true],
+      "final_output_same_as_1_0": true,
+      "restored": true,
+      "temporary_log_committed": false
+    }
+  },
+  "short_dimension_sweep": {
+    "pages": 36,
+    "pages_with_short_rule": 4,
+    "pages_without_short_rule": 32,
+    "observed": [
+      {
+        "page": "hirosaki-p25.json",
+        "short_dimension_deviations": [0.000296, 0.000293, 0.000293, 0.000293],
+        "short_tail_candidates": {
+          "2310": [0.000563, 0.000561, 0.000559],
+          "2580": [0.000503]
+        }
+      },
+      {
+        "page": "shibata-p1.json",
+        "short_dimension_deviations": [0.200295],
+        "short_tail_candidates": {}
+      },
+      {
+        "page": "tsu-p21.json",
+        "short_dimension_deviations": [0.175584, 0.176031],
+        "short_tail_candidates": {
+          "1170": [0.490606, 0.487933]
+        }
+      },
+      {
+        "page": "tsu-p22.json",
+        "short_dimension_deviations": [0.178491, 0.17435],
+        "short_tail_candidates": {
+          "1170": [0.490606, 0.492583]
+        }
+      }
+    ]
+  },
+  "corpus_sweep": {
+    "pages": 36,
+    "comparison": "ratio 0.49 대비 ratio 1.0",
+    "changed_pages": ["tsu-p21.json", "tsu-p22.json"],
+    "unchanged_pages": 34
+  },
+  "verification": {
+    "targeted_tests": "11 files, 257 tests passed",
+    "lint": "0 errors, 1 existing warning",
+    "typecheck": "passed",
+    "old_constant_search": "rg -n SHORT_TAIL_SCALE_TOLERANCE_RATIO src → 0 matches"
+  },
+  "summary": "짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다."
+}

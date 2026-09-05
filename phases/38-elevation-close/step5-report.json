@@ -1,0 +1,51 @@
+{
+  "step": 5,
+  "name": "test-literals-and-cb1",
+  "golden_mutation_checks": {
+    "karatsu": {
+      "fixture": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+      "temporary_change": "heightsMm[0]: 3500 -> 3501",
+      "test": "tests/plan-import/corpus2-elevation.test.ts -t karatsu",
+      "failed": true,
+      "restored": true
+    },
+    "hirosaki": {
+      "fixture": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+      "temporary_change": "elevations[0].heightsMm[0]: 3400 -> 3401",
+      "test": "tests/plan-import/corpus2-elevation.test.ts -t hirosaki",
+      "failed": true,
+      "restored": true
+    },
+    "tsu": {
+      "fixture": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "temporary_change": "elevations[0].heightsMm[0]: 600 -> 601",
+      "test": "tests/plan-import/corpus2-elevation.test.ts -t tsu: p21",
+      "failed": true,
+      "restored": true
+    },
+    "ojkk_p4_cb1": {
+      "fixture": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+      "temporary_change": "CB1 上端筋 先端: 2-D25 -> 3-D25",
+      "test": "tests/section-import/parse.test.ts -t ojkk 小梁·片持梁",
+      "failed": true,
+      "restored": true
+    }
+  },
+  "literal_scan": {
+    "command": "rg -n \"toHaveLength\\(\" tests/plan-import/corpus2-elevation.test.ts",
+    "matches": 0
+  },
+  "cb1_position_mapping": {
+    "中央": "girderMain.topCount/bottomCount",
+    "端部": "girderMain.endTopCount/endBottomCount",
+    "other_positions": "compare against the single central pair; a differing value fails"
+  },
+  "verification": {
+    "targeted_tests": "35 passed",
+    "full_tests": "100 files, 1799 tests passed",
+    "lint": "passed with one pre-existing warning in src/app/api/oncall/alert/route.test.ts",
+    "typecheck": "passed",
+    "golden_fixtures_unchanged": true
+  },
+  "summary": "Elevation tests now derive series and values from goldens, charge every parser series, and compare every CB1 position without changing parser or fixtures."
+}
