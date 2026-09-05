@@ -1,0 +1,2500 @@
+{
+  "phase": "41-report-record-integrity",
+  "step": 1,
+  "step_name": "path-claim-check",
+  "status": "completed",
+  "summary": "114줄 검사기에 선언된 경로 주장 대조를 추가하고 가드레일을 동기화했다. 반증 2건·37항목·lint 통과, report 126개 전수 집계(paths_verified 292·expected_absent 6·source 263), 기존 실패 9개 보존.",
+  "implementation": {
+    "file": "scripts/check-citations.py",
+    "line_count": 114,
+    "dependencies": "Python standard library only",
+    "behavior": [
+      "Recursively inspect only list-valued paths_verified, paths_expected_absent and fabricated_paths declarations.",
+      "paths_verified accepts a string or an object with path; only exists:false claims absence, and an omitted exists claims presence.",
+      "paths_expected_absent and fabricated_paths always claim absence, including object entries.",
+      "Path.exists() accepts regular files and directories. Relative claim paths use the repository root; report arguments/globs use cwd.",
+      "Source traversal, regular-file checks and JSON pointer resolution are unchanged."
+    ],
+    "diagnostics": [
+      "path_claim_missing",
+      "path_claim_unexpected",
+      "path_claim_invalid"
+    ]
+  },
+  "guardrail": {
+    "files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "source": "phases/39-axis-claim/step4-report.json#/mutation_census_note",
+    "change": "검증 명령의 인자에 한글·일본어를 넣지 않고 파일 단위 실행 후 JSON 리포터 출력에서 결과를 고르도록 개발 프로세스에 같은 항목을 추가했다.",
+    "synchronization": "AGENTS.md-only copy notice is preserved; all body lines match CLAUDE.md."
+  },
+  "validation": {
+    "baseline_head": "eccef47",
+    "tdd": {
+      "method": "The same temporary-fixture subprocess assertions ran before and after implementation; no persistent test file or existing test changed.",
+      "command": "@'\nimport json\nimport subprocess\nimport sys\nimport tempfile\nfrom pathlib import Path\n\nroot = Path.cwd()\nchecker = root / 'scripts/check-citations.py'\ncases = []\nwith tempfile.TemporaryDirectory(prefix='kijun-path-claims-') as name:\n    folder = Path(name)\n    report = folder / 'report.json'\n    target = folder / 'target.json'\n    target.write_text('{\"array\":[null],\"a/b\":{\"~\":false},\"\":0}', encoding='utf-8')\n    plain = folder / 'plain.txt'\n    plain.write_text('not json', encoding='utf-8')\n    missing = str(folder / 'missing.json')\n    def check(label, data, code=0, reasons=(), cwd=root):\n        report.write_text(json.dumps(data), encoding='utf-8')\n        result = subprocess.run([sys.executable, str(checker), str(report)],\n                                cwd=cwd, capture_output=True, text=True, encoding='utf-8')\n        actual = [json.loads(line)['reason'].split(':')[0] for line in result.stdout.splitlines()]\n        passed = result.returncode == code and actual == list(reasons) and not result.stderr\n        cases.append(dict(name=label, expected_exit_code=code, exit_code=result.returncode,\n                          expected_reasons=list(reasons), stdout=result.stdout, stderr=result.stderr, passed=passed))\n    check('verified string file', {'paths_verified':[str(plain)]})\n    check('verified object exists true', {'paths_verified':[{'path':str(plain),'exists':True}]})\n    check('verified object default present', {'paths_verified':[{'path':str(plain),'checked':True}]})\n    check('verified string directory', {'paths_verified':[str(folder)]})\n    check('verified object directory', {'paths_verified':[{'path':str(folder)}]})\n    check('verified string missing', {'paths_verified':[missing]}, 1, ['path_claim_missing'])\n    check('verified object missing', {'paths_verified':[{'path':missing}]}, 1, ['path_claim_missing'])\n    check('verified true missing', {'paths_verified':[{'path':missing,'exists':True}]}, 1, ['path_claim_missing'])\n    check('verified false missing', {'paths_verified':[{'path':missing,'exists':False}]})\n    check('verified false file', {'paths_verified':[{'path':str(plain),'exists':False}]}, 1, ['path_claim_unexpected'])\n    check('verified false directory', {'paths_verified':[{'path':str(folder),'exists':False}]}, 1, ['path_claim_unexpected'])\n    for field in ['paths_expected_absent','fabricated_paths']:\n        check(field+' missing string', {field:[missing]})\n        check(field+' missing object', {field:[{'path':missing,'exists':False}]})\n        check(field+' existing file', {field:[str(plain)]}, 1, ['path_claim_unexpected'])\n        check(field+' existing directory', {field:[{'path':str(folder)}]}, 1, ['path_claim_unexpected'])\n        check(field+' overrides exists true', {field:[{'path':str(plain),'exists':True}]}, 1, ['path_claim_unexpected'])\n    check('nested declarations', {'items':[{'evidence':{'paths_verified':[missing]}}]}, 1, ['path_claim_missing'])\n    check('undeclared path text ignored', {'fixture':missing,'path':missing,'commands':[missing],'notes':missing})\n    check('non-list declaration ignored', {'paths_verified':missing})\n    check('root relative independent of cwd', {'paths_verified':['scripts']}, cwd=folder)\n    check('source directory stays invalid', {'source':str(folder)}, 1, ['file_missing'])\n    check('source plain regular file', {'source':str(plain)})\n    check('source missing', {'source':missing}, 1, ['file_missing'])\n    check('source pointer null', {'nested':[{'source':str(target)+'#/array/0'}]})\n    check('source pointer escapes', {'source':str(target)+'#/a~1b/~0'})\n    check('source empty key', {'source':str(target)+'#/'})\n    check('source root pointer', {'source':str(target)+'#'})\n    check('source bad key', {'source':str(target)+'#/missing'}, 1, ['missing_key'])\n    check('source bad index', {'source':str(target)+'#/array/1'}, 1, ['array_index'])\n    check('source invalid pointer', {'source':str(target)+'#x'}, 1, ['invalid_pointer'])\n    check('source invalid JSON', {'source':str(plain)+'#/x'}, 1, ['json_parse_error'])\n    check('both kinds reported', {'source':missing,'paths_verified':[missing]}, 1, ['file_missing','path_claim_missing'])\nfailures = [c['name'] for c in cases if not c['passed']]\nprint(json.dumps(dict(total=len(cases), passed=len(cases)-len(failures), failed=failures, cases=cases)))\nsys.exit(bool(failures))\n'@ | python -X utf8 -",
+      "red": {
+        "exit_code": 1,
+        "total": 37,
+        "passed": 24,
+        "failures": [
+          {
+            "name": "verified string missing",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "verified object missing",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "verified true missing",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "verified false file",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "verified false directory",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "paths_expected_absent existing file",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "paths_expected_absent existing directory",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "paths_expected_absent overrides exists true",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "fabricated_paths existing file",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "fabricated_paths existing directory",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "fabricated_paths overrides exists true",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "nested declarations",
+            "expected_exit_code": 1,
+            "exit_code": 0,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "",
+            "stderr": "",
+            "passed": false
+          },
+          {
+            "name": "both kinds reported",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "file_missing",
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-lg33n4vj\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-lg33n4vj\\\\missing.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+            "stderr": "",
+            "passed": false
+          }
+        ]
+      },
+      "green": {
+        "exit_code": 0,
+        "total": 37,
+        "passed": 37,
+        "cases": [
+          {
+            "name": "verified string file",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified object exists true",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified object default present",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified string directory",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified object directory",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified string missing",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified object missing",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified true missing",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified false missing",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified false file",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_verified requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "verified false directory",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_verified requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "paths_expected_absent missing string",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "paths_expected_absent missing object",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "paths_expected_absent existing file",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_expected_absent requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "paths_expected_absent existing directory",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_expected_absent requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "paths_expected_absent overrides exists true",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_expected_absent requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "fabricated_paths missing string",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "fabricated_paths missing object",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "fabricated_paths existing file",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": null, \"reason\": \"path_claim_unexpected: fabricated_paths requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "fabricated_paths existing directory",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\", \"pointer\": null, \"reason\": \"path_claim_unexpected: fabricated_paths requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "fabricated_paths overrides exists true",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_unexpected"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": null, \"reason\": \"path_claim_unexpected: fabricated_paths requires exists=False\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "nested declarations",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "undeclared path text ignored",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "non-list declaration ignored",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "root relative independent of cwd",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source directory stays invalid",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "file_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source plain regular file",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source missing",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "file_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source pointer null",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source pointer escapes",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source empty key",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source root pointer",
+            "expected_exit_code": 0,
+            "exit_code": 0,
+            "expected_reasons": [],
+            "stdout": "",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source bad key",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "missing_key"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\target.json\", \"pointer\": \"/missing\", \"reason\": \"missing_key: 'missing'\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source bad index",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "array_index"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\target.json\", \"pointer\": \"/array/1\", \"reason\": \"array_index: '1' invalid for length 1\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source invalid pointer",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "invalid_pointer"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\target.json\", \"pointer\": \"x\", \"reason\": \"invalid_pointer: expected / tokens with ~0 or ~1 escapes\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "source invalid JSON",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "json_parse_error"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\plain.txt\", \"pointer\": \"/x\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n",
+            "stderr": "",
+            "passed": true
+          },
+          {
+            "name": "both kinds reported",
+            "expected_exit_code": 1,
+            "exit_code": 1,
+            "expected_reasons": [
+              "file_missing",
+              "path_claim_missing"
+            ],
+            "stdout": "{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\report.json\", \"file\": \"C:\\\\Users\\\\emper\\\\AppData\\\\Local\\\\Temp\\\\kijun-path-claims-2836q9vv\\\\missing.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+            "stderr": "",
+            "passed": true
+          }
+        ]
+      }
+    },
+    "ac_baseline": {
+      "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json phases/41-report-record-integrity/step0-report.json",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "mutations": [
+      {
+        "mutation": {
+          "report": "phases/40-citation-integrity/step0-report.json",
+          "pointer": "/paths_verified/0/path",
+          "before": ".cache/dwg-tsu-kanritou.pdf",
+          "after": "phases/41-report-record-integrity/__missing_path_claim__.json"
+        },
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json phases/41-report-record-integrity/step0-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/40-citation-integrity\\\\step0-report.json\", \"file\": \"phases/41-report-record-integrity/__missing_path_claim__.json\", \"pointer\": null, \"reason\": \"path_claim_missing: paths_verified requires exists=True\"}\n",
+        "stderr": "",
+        "restored": true,
+        "restored_check": {
+          "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json phases/41-report-record-integrity/step0-report.json",
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "original_sha256": "6c009135c9ea1c4f2ade14412f9afad0da6314d0182e5609658181864bb7d2da",
+        "restored_sha256": "6c009135c9ea1c4f2ade14412f9afad0da6314d0182e5609658181864bb7d2da"
+      },
+      {
+        "mutation": {
+          "report": "phases/40-citation-integrity/step3-report.json",
+          "edits": [
+            {
+              "pointer": "/historical_incident/fabricated_paths/3",
+              "added": "scripts",
+              "kind": "existing directory"
+            },
+            {
+              "pointer": "/paths_expected_absent/0",
+              "added": "scripts/check-citations.py",
+              "kind": "existing regular file"
+            }
+          ]
+        },
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json phases/41-report-record-integrity/step0-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/40-citation-integrity\\\\step3-report.json\", \"file\": \"scripts\", \"pointer\": null, \"reason\": \"path_claim_unexpected: fabricated_paths requires exists=False\"}\n{\"report\": \"phases/40-citation-integrity\\\\step3-report.json\", \"file\": \"scripts/check-citations.py\", \"pointer\": null, \"reason\": \"path_claim_unexpected: paths_expected_absent requires exists=False\"}\n",
+        "stderr": "",
+        "restored": true,
+        "restored_check": {
+          "command": "python scripts/check-citations.py phases/40-citation-integrity/step*-report.json phases/41-report-record-integrity/step0-report.json",
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "original_sha256": "f73108227e50da493c182da41804951802b834fc51fb1f2740df8d2cca22a976",
+        "restored_sha256": "f73108227e50da493c182da41804951802b834fc51fb1f2740df8d2cca22a976"
+      }
+    ],
+    "post_mutation_diff": {
+      "command": "git diff --stat -- phases/",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "restoration": {
+      "historical_reports_byte_identical": 125,
+      "preexisting_staged_metadata": {
+        "command": "git diff --cached --stat -- phases/",
+        "exit_code": 0,
+        "stdout": " phases/41-report-record-integrity/index.json | 3 ++-\n 1 file changed, 2 insertions(+), 1 deletion(-)\n",
+        "stderr": ""
+      },
+      "measurement_stage": "After both mutations and before this report or the step summary was written. The harness's pre-existing started_at edit was staged, not reverted, for the required commit. The unfiltered git diff --stat -- phases/ was empty; the staged diff contained only that pre-existing index edit. All 125 existing reports were independently compared byte-for-byte with the pre-mutation snapshot."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "stdout": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 1 problem (0 errors, 1 warning)\n\n",
+      "errors": 0,
+      "existing_warnings": 1
+    },
+    "existing_tests": "src/ and existing tests are unchanged. The task requires lint and checker/mutation runs; the full application suite was not rerun."
+  },
+  "limitations": [
+    "선언되지 않은 경로 언급은 이 검사에서 경로 주장으로 취급하지 않는다. fixture·명령·diff·서술 문자열이 경로처럼 보여도 훑지 않으며 키 블랙리스트도 두지 않는다.",
+    "report가 근거로 삼은 경로는 해당 step 사양이 paths_verified에 선언하도록 요구해야 한다. 검사기 자체는 선언의 누락이나 증거의 완전성을 판정하지 못한다.",
+    "존재 여부는 실행 시점의 파일시스템을 기준으로 한다. 실제로 읽었는지, 파일 내용·해시가 주장과 일치하는지, 인용 내용이 참인지는 보증하지 않는다.",
+    "과거 report에서 발견한 실패는 기록만 하고 고치지 않는다. source가 문자열이면 기존 검사대로 검사하므로 자연어 source나 과거 임시 경로도 기존 실패로 집계될 수 있다."
+  ],
+  "paths_verified": [
+    "phases/12-plan-apply-story/step1-report.json",
+    "phases/12-plan-apply-story/step2-report.json",
+    "phases/13-harness-fixes/step0-report.json",
+    "phases/13-harness-fixes/step1-report.json",
+    "phases/14-plan-track-unify/step0-report.json",
+    "phases/14-plan-track-unify/step1-report.json",
+    "phases/15-plan-guard-debts/step0-report.json",
+    "phases/15-plan-guard-debts/step1-report.json",
+    "phases/16-span1-record/step0-report.json",
+    "phases/16-span1-record/step1-report.json",
+    "phases/16-span1-record/step2-report.json",
+    "phases/17-total-unconfirmed-risk/step0-report.json",
+    "phases/17-total-unconfirmed-risk/step1-report.json",
+    "phases/17-total-unconfirmed-risk/step2-report.json",
+    "phases/18-plan-corpus-widen/step0-report.json",
+    "phases/18-plan-corpus-widen/step1-report.json",
+    "phases/19-wall-slab-lists/step0-report.json",
+    "phases/19-wall-slab-lists/step1-report.json",
+    "phases/19-wall-slab-lists/step2-report.json",
+    "phases/20-girder-end-asymmetry/step0-report.json",
+    "phases/20-girder-end-asymmetry/step1-report.json",
+    "phases/20-girder-end-asymmetry/step2-report.json",
+    "phases/21-asym-import/step0-report.json",
+    "phases/21-asym-import/step1-report.json",
+    "phases/21-asym-import/step2-report.json",
+    "phases/22-opening-reinforcement/step0-report.json",
+    "phases/22-opening-reinforcement/step1-report.json",
+    "phases/22-opening-reinforcement/step2-report.json",
+    "phases/22-opening-reinforcement/step3-report.json",
+    "phases/23-story-label/step0-report.json",
+    "phases/23-story-label/step1-report.json",
+    "phases/23-story-label/step2-report.json",
+    "phases/23-story-label/step3-report.json",
+    "phases/24-wall-class/step0-report.json",
+    "phases/24-wall-class/step1-report.json",
+    "phases/24-wall-class/step2-report.json",
+    "phases/25-wall-extent/step0-report.json",
+    "phases/25-wall-extent/step1-report.json",
+    "phases/25-wall-extent/step2-report.json",
+    "phases/25-wall-extent/step3-report.json",
+    "phases/26-plan-place/step0-report.json",
+    "phases/26-plan-place/step1-report.json",
+    "phases/26-plan-place/step2-report.json",
+    "phases/27-cantilever-slab/step0-report.json",
+    "phases/27-cantilever-slab/step1-report.json",
+    "phases/27-cantilever-slab/step2-report.json",
+    "phases/27-cantilever-slab/step3-report.json",
+    "phases/28-shear-hook-shape/step0-report.json",
+    "phases/28-shear-hook-shape/step0b-report.json",
+    "phases/28-shear-hook-shape/step1-report.json",
+    "phases/28-shear-hook-shape/step2-report.json",
+    "phases/28-shear-hook-shape/step2b-report.json",
+    "phases/28-shear-hook-shape/step3-report.json",
+    "phases/28-shear-hook-shape/step4-report.json",
+    "phases/28-shear-hook-shape/step5-report.json",
+    "phases/29-harness-verify-gate/step0-report.json",
+    "phases/29-harness-verify-gate/step1-report.json",
+    "phases/29-harness-verify-gate/step2-report.json",
+    "phases/30-rulepack-review-sheet/step0a-report.json",
+    "phases/30-rulepack-review-sheet/step0b-report.json",
+    "phases/30-rulepack-review-sheet/step1-report.json",
+    "phases/30-rulepack-review-sheet/step2-report.json",
+    "phases/30-rulepack-review-sheet/step3-report.json",
+    "phases/30-rulepack-review-sheet/step4-report.json",
+    "phases/31-wall-shiki-decision/step0-report.json",
+    "phases/31-wall-shiki-decision/step1-report.json",
+    "phases/31-wall-shiki-decision/step2-report.json",
+    "phases/32-harness-test-rot/step0-report.json",
+    "phases/32-harness-test-rot/step0a-report.json",
+    "phases/32-harness-test-rot/step1-report.json",
+    "phases/32-harness-test-rot/step2-report.json",
+    "phases/32-harness-test-rot/step3-report.json",
+    "phases/33-stbridge-skeleton-import/step0-report.json",
+    "phases/33-stbridge-skeleton-import/step1-report.json",
+    "phases/33-stbridge-skeleton-import/step2-report.json",
+    "phases/33-stbridge-skeleton-import/step3-report.json",
+    "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+    "phases/33-stbridge-skeleton-import/step4-report.json",
+    "phases/33-stbridge-skeleton-import/step5-report.json",
+    "phases/34-stbridge-apply/step0-report.json",
+    "phases/34-stbridge-apply/step6-report.json",
+    "phases/34-stbridge-apply/step7-report.json",
+    "phases/34-stbridge-apply/step8-report.json",
+    "phases/35-ledger-reconciliation/step0-report.json",
+    "phases/35-ledger-reconciliation/step1-report.json",
+    "phases/35-ledger-reconciliation/step2-report.json",
+    "phases/35-ledger-reconciliation/step3-report.json",
+    "phases/35-ledger-reconciliation/step4-report.json",
+    "phases/35-ledger-reconciliation/step5-report.json",
+    "phases/36-corpus-widen-2/step0-report.json",
+    "phases/36-corpus-widen-2/step1-report.json",
+    "phases/36-corpus-widen-2/step2-report.json",
+    "phases/36-corpus-widen-2/step3-report.json",
+    "phases/36-corpus-widen-2/step4-report.json",
+    "phases/36-corpus-widen-2/step5-report.json",
+    "phases/37-corpus-widen-2-close/step0-report.json",
+    "phases/37-corpus-widen-2-close/step1-report.json",
+    "phases/37-corpus-widen-2-close/step2-report.json",
+    "phases/37-corpus-widen-2-close/step3-report.json",
+    "phases/37-corpus-widen-2-close/step4-report.json",
+    "phases/37-corpus-widen-2-close/step5-report.json",
+    "phases/37-corpus-widen-2-close/step6-report.json",
+    "phases/37-corpus-widen-2-close/step7-report.json",
+    "phases/38-elevation-close/step0-report.json",
+    "phases/38-elevation-close/step1-report.json",
+    "phases/38-elevation-close/step2-report.json",
+    "phases/38-elevation-close/step3-report.json",
+    "phases/38-elevation-close/step4-report.json",
+    "phases/38-elevation-close/step5-report.json",
+    "phases/38-elevation-close/step6-report.json",
+    "phases/39-axis-claim/step0-report.attempt1.json",
+    "phases/39-axis-claim/step0-report.json",
+    "phases/39-axis-claim/step1-report.json",
+    "phases/39-axis-claim/step2-report.attempt1.json",
+    "phases/39-axis-claim/step2-report.attempt2.json",
+    "phases/39-axis-claim/step2-report.json",
+    "phases/39-axis-claim/step3-report.json",
+    "phases/39-axis-claim/step4-report.json",
+    "phases/40-citation-integrity/step0-report.json",
+    "phases/40-citation-integrity/step1-report.json",
+    "phases/40-citation-integrity/step2-report.json",
+    "phases/40-citation-integrity/step3-report.json",
+    "phases/40-citation-integrity/step4-report.attempt1.json",
+    "phases/40-citation-integrity/step4-report.json",
+    "phases/41-report-record-integrity/step0-report.json",
+    "scripts/check-citations.py",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "package.json",
+    "phases/41-report-record-integrity/index.json",
+    "phases/41-report-record-integrity/step1.md",
+    "phases/41-report-record-integrity/step1-report.json"
+  ],
+  "census": {
+    "glob": "phases/*/step*-report*.json",
+    "method": "Independent recursive field census plus a separate checker subprocess for every file and one aggregate glob run. Occurrences count, including repeated declarations; paths_verified includes exists:false entries, and expected_absent sums the two absence-list fields. source counts only string-valued source entries.",
+    "files_scanned": 126,
+    "counts": {
+      "paths_verified": 292,
+      "expected_absent": 6,
+      "source": 263
+    },
+    "historical_files_scanned": 125,
+    "historical_counts": {
+      "paths_verified": 159,
+      "expected_absent": 6,
+      "source": 262
+    },
+    "self_included": true,
+    "self_note": "This report was written before the census and included in the glob. Adding census statistics/output adds no string-valued source or list-valued path declarations.",
+    "exit_code_counts": {
+      "0": 117,
+      "1": 9
+    },
+    "failure_reasons": {
+      "file_missing": 28,
+      "json_parse_error": 3,
+      "missing_key": 20
+    },
+    "failed_files": [
+      "phases/26-plan-place/step0-report.json",
+      "phases/27-cantilever-slab/step1-report.json",
+      "phases/28-shear-hook-shape/step2-report.json",
+      "phases/28-shear-hook-shape/step2b-report.json",
+      "phases/37-corpus-widen-2-close/step7-report.json",
+      "phases/39-axis-claim/step0-report.attempt1.json",
+      "phases/39-axis-claim/step0-report.json",
+      "phases/39-axis-claim/step3-report.json",
+      "phases/39-axis-claim/step4-report.json"
+    ],
+    "phase39_preserved_failures": [
+      {
+        "file": "phases/39-axis-claim/step0-report.attempt1.json",
+        "exit_code": 1,
+        "diagnostics_count": 1
+      },
+      {
+        "file": "phases/39-axis-claim/step0-report.json",
+        "exit_code": 1,
+        "diagnostics_count": 1
+      },
+      {
+        "file": "phases/39-axis-claim/step3-report.json",
+        "exit_code": 1,
+        "diagnostics_count": 6
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "exit_code": 1,
+        "diagnostics_count": 17
+      }
+    ],
+    "aggregate": {
+      "command": "python scripts/check-citations.py phases/*/step*-report*.json",
+      "exit_code": 1,
+      "stdout": "{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/model/project.ts:380-405\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/lib/hooks/useTakeoff.ts:169-193\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/lib/import/framing-plan/apply.ts:147-189\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/model/project.ts:1237-1280, 1374-1392\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/model/project.ts:561-631\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/model/project.ts:579-585\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/rebar/slab.ts:206-220, src/domain/rebar/slab-ends.ts:81-102\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/components/plan/PlanEditor.tsx:467-529, 731-740, 1115-1116\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/components/section/SectionTable.tsx:49-59, 954-957\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/components/plan/PlanImport.tsx:342-369, 558-564\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/lib/import/framing-plan/apply.ts:180-193\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/model/project.ts:1029-1031, 1374-1392\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/lib/store.ts:42-49, 82-91; src/components/plan/PlanEditor.tsx:707-708\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/domain/quantity/index.ts:247-265, 294-300, 217-230\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/lib/store.ts:23-40, 123-125\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\26-plan-place\\\\step0-report.json\", \"file\": \"src/components/plan/PlanEditor.tsx, src/components/section/SectionTable.tsx\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\27-cantilever-slab\\\\step1-report.json\", \"file\": \"\\u88685.3.4 printedPage 30\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\28-shear-hook-shape\\\\step2-report.json\", \"file\": \"docs/RISKS.md R4 recorded measurement\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\28-shear-hook-shape\\\\step2b-report.json\", \"file\": \"preserved phases/28-shear-hook-shape/step2-report.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/37-corpus-widen-2-close/step0-report.json.items.1_rotated_glyphs.method; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step2-report.json.summary; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.additional_checks.e2e_uc12; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.items.8_two_layer_and_defaults.note; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.items.4_regression.follow_up; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"phases/37-corpus-widen-2-close/step5-report.json.items.5_sweep \\ubc0f phases/36-corpus-widen-2/step5-adjudication.json.items.5_sweep; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\37-corpus-widen-2-close\\\\step7-report.json\", \"file\": \"\\ud5c8\\uc6a9\\ub41c phase \\ubcf4\\uace0\\uc11c\\u00b7SOURCES.md\\uc5d0 \\ub300\\uc751 \\ud56d\\ubaa9\\uc774 \\uc5c6\\uace0 step6-report.json.numbers_used\\uc5d0\\ub3c4 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step0-report.attempt1.json\", \"file\": \"HEAD~1\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step0-report.json\", \"file\": \"git show bd5ae60^:tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases\\\\39-axis-claim\\\\step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n",
+      "stderr": ""
+    },
+    "files": [
+      {
+        "file": "phases/12-plan-apply-story/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/12-plan-apply-story/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/12-plan-apply-story/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/12-plan-apply-story/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/13-harness-fixes/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/13-harness-fixes/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/13-harness-fixes/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/13-harness-fixes/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/14-plan-track-unify/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/14-plan-track-unify/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/14-plan-track-unify/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/14-plan-track-unify/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/15-plan-guard-debts/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/15-plan-guard-debts/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/15-plan-guard-debts/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/15-plan-guard-debts/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/16-span1-record/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/16-span1-record/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/16-span1-record/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/16-span1-record/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/16-span1-record/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/16-span1-record/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/17-total-unconfirmed-risk/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/17-total-unconfirmed-risk/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/17-total-unconfirmed-risk/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/17-total-unconfirmed-risk/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/17-total-unconfirmed-risk/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/17-total-unconfirmed-risk/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/18-plan-corpus-widen/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/18-plan-corpus-widen/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/18-plan-corpus-widen/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/18-plan-corpus-widen/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/19-wall-slab-lists/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/19-wall-slab-lists/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/19-wall-slab-lists/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/19-wall-slab-lists/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/19-wall-slab-lists/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/19-wall-slab-lists/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/20-girder-end-asymmetry/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/20-girder-end-asymmetry/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/20-girder-end-asymmetry/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/20-girder-end-asymmetry/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/20-girder-end-asymmetry/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/20-girder-end-asymmetry/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/21-asym-import/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/21-asym-import/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/21-asym-import/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/21-asym-import/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/21-asym-import/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/21-asym-import/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/22-opening-reinforcement/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/22-opening-reinforcement/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/22-opening-reinforcement/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/22-opening-reinforcement/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/22-opening-reinforcement/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/22-opening-reinforcement/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/22-opening-reinforcement/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/22-opening-reinforcement/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/23-story-label/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/23-story-label/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/23-story-label/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/23-story-label/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/23-story-label/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/23-story-label/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/23-story-label/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/23-story-label/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/24-wall-class/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/24-wall-class/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/24-wall-class/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/24-wall-class/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/24-wall-class/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/24-wall-class/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/25-wall-extent/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/25-wall-extent/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/25-wall-extent/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/25-wall-extent/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/25-wall-extent/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/25-wall-extent/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/25-wall-extent/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/25-wall-extent/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/26-plan-place/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 16
+        },
+        "diagnostics_count": 16,
+        "command": "python scripts/check-citations.py phases/26-plan-place/step0-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/model/project.ts:380-405\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/lib/hooks/useTakeoff.ts:169-193\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/lib/import/framing-plan/apply.ts:147-189\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/model/project.ts:1237-1280, 1374-1392\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/model/project.ts:561-631\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/model/project.ts:579-585\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/rebar/slab.ts:206-220, src/domain/rebar/slab-ends.ts:81-102\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/components/plan/PlanEditor.tsx:467-529, 731-740, 1115-1116\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/components/section/SectionTable.tsx:49-59, 954-957\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/components/plan/PlanImport.tsx:342-369, 558-564\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/lib/import/framing-plan/apply.ts:180-193\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/model/project.ts:1029-1031, 1374-1392\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/lib/store.ts:42-49, 82-91; src/components/plan/PlanEditor.tsx:707-708\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/domain/quantity/index.ts:247-265, 294-300, 217-230\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/lib/store.ts:23-40, 123-125\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/26-plan-place/step0-report.json\", \"file\": \"src/components/plan/PlanEditor.tsx, src/components/section/SectionTable.tsx\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/26-plan-place/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/26-plan-place/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/26-plan-place/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/26-plan-place/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/27-cantilever-slab/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/27-cantilever-slab/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/27-cantilever-slab/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 1,
+        "command": "python scripts/check-citations.py phases/27-cantilever-slab/step1-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/27-cantilever-slab/step1-report.json\", \"file\": \"\\u88685.3.4 printedPage 30\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/27-cantilever-slab/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/27-cantilever-slab/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/27-cantilever-slab/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/27-cantilever-slab/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step0b-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step0b-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 1,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step2-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/28-shear-hook-shape/step2-report.json\", \"file\": \"docs/RISKS.md R4 recorded measurement\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step2b-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 1,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step2b-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/28-shear-hook-shape/step2b-report.json\", \"file\": \"preserved phases/28-shear-hook-shape/step2-report.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/28-shear-hook-shape/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/28-shear-hook-shape/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/29-harness-verify-gate/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/29-harness-verify-gate/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/29-harness-verify-gate/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/29-harness-verify-gate/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/29-harness-verify-gate/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/29-harness-verify-gate/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step0a-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step0a-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step0b-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step0b-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/30-rulepack-review-sheet/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/30-rulepack-review-sheet/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/31-wall-shiki-decision/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/31-wall-shiki-decision/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/31-wall-shiki-decision/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/31-wall-shiki-decision/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/31-wall-shiki-decision/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/31-wall-shiki-decision/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/32-harness-test-rot/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/32-harness-test-rot/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/32-harness-test-rot/step0a-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/32-harness-test-rot/step0a-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/32-harness-test-rot/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/32-harness-test-rot/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/32-harness-test-rot/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/32-harness-test-rot/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/32-harness-test-rot/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/32-harness-test-rot/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/33-stbridge-skeleton-import/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/34-stbridge-apply/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/34-stbridge-apply/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/34-stbridge-apply/step6-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/34-stbridge-apply/step6-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/34-stbridge-apply/step7-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/34-stbridge-apply/step7-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/34-stbridge-apply/step8-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/34-stbridge-apply/step8-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/35-ledger-reconciliation/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/35-ledger-reconciliation/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/36-corpus-widen-2/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/36-corpus-widen-2/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step6-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step6-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/37-corpus-widen-2-close/step7-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 7
+        },
+        "diagnostics_count": 7,
+        "command": "python scripts/check-citations.py phases/37-corpus-widen-2-close/step7-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/37-corpus-widen-2-close/step0-report.json.items.1_rotated_glyphs.method; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step2-report.json.summary; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.additional_checks.e2e_uc12; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.items.8_two_layer_and_defaults.note; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/36-corpus-widen-2/step5-adjudication.json.items.4_regression.follow_up; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"phases/37-corpus-widen-2-close/step5-report.json.items.5_sweep \\ubc0f phases/36-corpus-widen-2/step5-adjudication.json.items.5_sweep; step6-report.json.numbers_used\\uc5d0 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n{\"report\": \"phases/37-corpus-widen-2-close/step7-report.json\", \"file\": \"\\ud5c8\\uc6a9\\ub41c phase \\ubcf4\\uace0\\uc11c\\u00b7SOURCES.md\\uc5d0 \\ub300\\uc751 \\ud56d\\ubaa9\\uc774 \\uc5c6\\uace0 step6-report.json.numbers_used\\uc5d0\\ub3c4 \\uc5c6\\uc74c\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step4-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step5-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step5-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/38-elevation-close/step6-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/38-elevation-close/step6-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step0-report.attempt1.json",
+        "counts": {
+          "paths_verified": 17,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 1,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step0-report.attempt1.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/39-axis-claim/step0-report.attempt1.json\", \"file\": \"HEAD~1\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step0-report.json",
+        "counts": {
+          "paths_verified": 13,
+          "expected_absent": 3,
+          "source": 1
+        },
+        "diagnostics_count": 1,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step0-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/39-axis-claim/step0-report.json\", \"file\": \"git show bd5ae60^:tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\", \"pointer\": null, \"reason\": \"file_missing: no regular file\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step2-report.attempt1.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step2-report.attempt1.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step2-report.attempt2.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step2-report.attempt2.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step3-report.json",
+        "counts": {
+          "paths_verified": 22,
+          "expected_absent": 0,
+          "source": 36
+        },
+        "diagnostics_count": 6,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step3-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases/39-axis-claim/step3-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "counts": {
+          "paths_verified": 66,
+          "expected_absent": 0,
+          "source": 84
+        },
+        "diagnostics_count": 17,
+        "command": "python scripts/check-citations.py phases/39-axis-claim/step4-report.json",
+        "exit_code": 1,
+        "stdout": "{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"tests/plan-import/elevation.test.ts\", \"pointer\": \"yokohama-p8\", \"reason\": \"json_parse_error: Expecting value: line 1 column 1 (char 0)\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/0/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/1/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/rejectedLevelLikeStrings/3/text\", \"reason\": \"missing_key: 'rejectedLevelLikeStrings'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedSentences/0/text\", \"reason\": \"missing_key: 'acceptedSentences'\"}\n{\"report\": \"phases/39-axis-claim/step4-report.json\", \"file\": \"phases/38-elevation-close/step4-report.json\", \"pointer\": \"/acceptedTrueLevelLabels/1/text\", \"reason\": \"missing_key: 'acceptedTrueLevelLabels'\"}\n",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step0-report.json",
+        "counts": {
+          "paths_verified": 15,
+          "expected_absent": 0,
+          "source": 39
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step1-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step2-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 31
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step2-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step3-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 3,
+          "source": 2
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step3-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step4-report.attempt1.json",
+        "counts": {
+          "paths_verified": 13,
+          "expected_absent": 0,
+          "source": 20
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step4-report.attempt1.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/40-citation-integrity/step4-report.json",
+        "counts": {
+          "paths_verified": 13,
+          "expected_absent": 0,
+          "source": 20
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/40-citation-integrity/step4-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/41-report-record-integrity/step0-report.json",
+        "counts": {
+          "paths_verified": 0,
+          "expected_absent": 0,
+          "source": 0
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/41-report-record-integrity/step0-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "file": "phases/41-report-record-integrity/step1-report.json",
+        "counts": {
+          "paths_verified": 133,
+          "expected_absent": 0,
+          "source": 1
+        },
+        "diagnostics_count": 0,
+        "command": "python scripts/check-citations.py phases/41-report-record-integrity/step1-report.json",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  }
+}

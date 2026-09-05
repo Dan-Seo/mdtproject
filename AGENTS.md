@@ -36,6 +36,7 @@
 - 마일스톤 순서를 건너뛰지 말 것. M0(스파이크) → M1(워킹 스켈레톤) → M2(룰팩) → M3a(단일 스팬 大梁·뷰어) → M3b(다스팬·継手) → M3c(고유 상세) → M4(확장) → M5(UX 리뷰). 도면 인식(로컬)은 M3a 이후 병행 가능한 별도 트랙 — 입력 파이프라인이라 산정 로직 마일스톤과 코드 영역이 겹치지 않는다 (ADR-018)
 - 마일스톤 현황(`docs/MILESTONES.md`)·열린 리스크(`docs/RISKS.md`)의 **수치는 손으로 갱신하므로 코드보다 뒤처진다.** 인용하기 전에 코드로 대조할 것 — 여러 세션·worktree 가 같은 main 을 밀고 있어 컨텍스트에 들어온 사본이 디스크보다 오래된 경우도 있다(`git log --oneline -3` 로 실제 HEAD 확인)
 - 커밋 메시지는 conventional commits 형식을 따를 것 (feat:, fix:, docs:, refactor:)
+- CRITICAL: **검증 명령의 인자에 한글·일본어를 넣지 말 것.** Windows 셸을 지나며 `?`로 깨져 Vitest가 시작 전에 죽거나 0건 매칭이 「통과」로 보일 수 있다. 파일 단위로 실행하고 JSON 리포터 출력에서 필요한 결과를 고를 것. 근거: `phases/39-axis-claim/step4-report.json#/mutation_census_note`.
 - CRITICAL: **의존 관계가 없는 툴 호출은 한 메시지에 묶을 것.** 세션 로그 실측에서 툴 호출 메시지 10,682건 중 10,681건(100.0%)이 단일 호출이었다 — 호출 한 번의 값은 명령의 길이가 아니라 그 시점의 컨텍스트 크기가 정하므로(실측 회당 $0.18) 읽기 둘을 따로 보내면 값이 두 배다. `git log`·`grep`·`cat`처럼 서로 읽지 않는 명령은 한 번에 보낸다. 앞 결과가 뒤 명령의 인자를 정하는 경우만 나눈다. 근거는 `docs/reports/TOKEN-AUDIT-2026-08-25.md`
 - CRITICAL: `scripts/execute.py`를 백그라운드로 띄운 뒤 **진행 확인은 `TaskOutput`이 아니라 `phases/{phase}/index.json`의 step status를 읽는 것으로 한다.** `TaskOutput`은 회당 평균 7,831자를 컨텍스트에 싣는데 그 대부분이 빈 문자열이거나 스피너다 — codex 출력은 `phases/{N}/step{N}-codex.stdout.log`·`.stderr.log` 파일로 직행하고(phase 13에서 파이프 제거 — 상세 진단은 이 로그를 tail), 진행 표시는 `
 ` 없는 `

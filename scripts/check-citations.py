@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check string-valued source citations; report args/globs use cwd, sources use repo root."""
+"""Check sources and declared paths; report args/globs use cwd, claims use repo root."""
 
 import argparse
 import glob
@@ -19,6 +19,20 @@ def sources(value):
     elif isinstance(value, list):
         for child in value:
             yield from sources(child)
+
+
+def path_claims(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in ("paths_verified", "paths_expected_absent", "fabricated_paths") and isinstance(child, list):
+                for item in child:
+                    file = item.get("path") if isinstance(item, dict) else item
+                    exists = not isinstance(item, dict) or item.get("exists") is not False
+                    yield key, file, key == "paths_verified" and exists
+            yield from path_claims(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from path_claims(child)
 
 
 def require_file(path):
@@ -82,6 +96,16 @@ def main():
                         resolve(read_json(path), pointer)
                 except (ValueError, OSError) as error:
                     failure(report, file, pointer if separator else None, error)
+                    failed = True
+            for field, file, expected in path_claims(data):
+                try:
+                    if not isinstance(file, str) or not file:
+                        raise ValueError(f"path_claim_invalid: {field} requires a path")
+                    if (ROOT / file).exists() != expected:
+                        reason = "path_claim_missing" if expected else "path_claim_unexpected"
+                        raise ValueError(f"{reason}: {field} requires exists={expected}")
+                except (ValueError, OSError) as error:
+                    failure(report, file, None, error)
                     failed = True
     return int(failed)
 
