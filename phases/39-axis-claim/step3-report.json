@@ -1,0 +1,1278 @@
+{
+  "step": 3,
+  "name": "docs-elevation-close",
+  "status": "completed",
+  "numbers_used": [
+    {
+      "value": "phases/38-elevation-close/step3-report.json",
+      "source": "phases/38-elevation-close/step3-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": " 넘지 않는다」다. `phases/38-elevation-close/step3-report.json`의 `short_dimensio"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "최종 출력 동일성은 `phases/38-elevation-close/step3-report.json`에 있다. 출력이 허용비를 구별"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "지만 근거로 남긴다(`phases/38-elevation-close/step3-report.json`). 문장도 통과하는 레벨 화이"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step2-report.json",
+      "source": "phases/39-axis-claim/step2-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "인 상수가 아니다. `phases/39-axis-claim/step2-report.json`의 `f1_comment_ver"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "별한 뒤로 유보했다(`phases/39-axis-claim/step2-report.json`). 階高의 한 면 상수 문제는"
+        }
+      ]
+    },
+    {
+      "value": "counterexamples.ratio_0_45",
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_0_45",
+      "kind": "report_key",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": " 편차를 기록하고, `counterexamples.ratio_0_45`는 0.45에서 tsu 꼬리가 "
+        }
+      ]
+    },
+    {
+      "value": "counterexamples.ratio_5_0",
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0",
+      "kind": "report_key",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": " 바뀜을 확인했다. `counterexamples.ratio_5_0`에서는 hirosaki 경쟁 꼬"
+        }
+      ]
+    },
+    {
+      "value": "R15",
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C5",
+      "kind": "risk_identifier",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": " 오탐은 그대로 남아 R15 자체는 열림이다.**"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": " 생기는 부분 격자는 R15의 오탐이다. 전사한 axis는 "
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": " 문턱 때문에 R10·R15는 열림을 유지한다."
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "スト 미지원. R10·R15 열림 — 근거는 docs/RIS"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "スト 미지원. R10·R15 열림 — 근거는 docs/RIS"
+        },
+        {
+          "document": "CLAUDE.md#| R15 |",
+          "context": "| R15 | 열림 | 伏図 문턱 안정성과"
+        },
+        {
+          "document": "CLAUDE.md#| R15 |",
+          "context": "cs/RISKS.md R15 |"
+        },
+        {
+          "document": "AGENTS.md#| R15 |",
+          "context": "| R15 | 열림 | 伏図 문턱 안정성과"
+        },
+        {
+          "document": "AGENTS.md#| R15 |",
+          "context": "cs/RISKS.md R15 |"
+        }
+      ]
+    },
+    {
+      "value": "1.0",
+      "source": "phases/38-elevation-close/step3-report.json#/implementation/constant",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "TOLERANCE_RATIO = 1.0`을 짧은 치수 공통 허용비로 쓴다. 뜻은 「"
+        },
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "s_sweep`은 0.49 대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다."
+        },
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": " 달라져도 5.0의 최종 출력이 1.0과 같았다. 따라서 최종 출력만으로 허용비를 "
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "TOLERANCE_RATIO = 1.0`이다. 36면 편차 조사, 0.45의 tsu"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": " 면의 변화, hirosaki의 1.0·5.0 최종 출력 동일성은 `phases/3"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "TOLERANCE_RATIO = 1.0`의 공통 규칙으로 정리했다. 36면 실측에서"
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는"
+        },
+        {
+          "document": "CLAUDE.md#| R15 |",
+          "context": "TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선"
+        },
+        {
+          "document": "AGENTS.md#| R15 |",
+          "context": "TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선"
+        }
+      ]
+    },
+    {
+      "value": "36",
+      "source": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/pages",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "dimension_sweep`은 36면의 편차를 기록하고, `counterexam"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "る。` 같은 문장도 통과시킨다. 36면 조사에서는 이 문장들이 가로 창·레벨 위치"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "E_RATIO = 1.0`이다. 36면 편차 조사, 0.45의 tsu 꼬리 누락,"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "0`의 공통 규칙으로 정리했다. 36면 실측에서 확인된 허용비의 효과와 최종 출력"
+        },
+        {
+          "document": "CLAUDE.md#| R15 |",
+          "context": "ANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 "
+        },
+        {
+          "document": "AGENTS.md#| R15 |",
+          "context": "ANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 "
+        }
+      ]
+    },
+    {
+      "value": "0.45",
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_0_45",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "ples.ratio_0_45`는 0.45에서 tsu 꼬리가 빠짐을, `corpus_s"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": ".0`이다. 36면 편차 조사, 0.45의 tsu 꼬리 누락, 0.49 대비 tsu "
+        }
+      ]
+    },
+    {
+      "value": "0.49",
+      "source": "phases/38-elevation-close/step3-report.json#/corpus_sweep/comparison",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": ", `corpus_sweep`은 0.49 대비 1.0에서 tsu-p21·p22만 바뀜"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": " 0.45의 tsu 꼬리 누락, 0.49 대비 tsu 두 면의 변화, hirosaki"
+        }
+      ]
+    },
+    {
+      "value": "21",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/source/page",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": ".49 대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다. `countere"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": " 38·39 보충**: tsu-p21·p22의 階高는 각각 6레벨·5구간으로 확정"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": " 38·39 결과**: tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블"
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "| **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "| **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 "
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 "
+        }
+      ]
+    },
+    {
+      "value": "22",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/page",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다. `counterexamp"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "39 보충**: tsu-p21·p22의 階高는 각각 6레벨·5구간으로 확정했고 두"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "39 결과**: tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 "
+        },
+        {
+          "document": "tests/fixtures/section-import/SOURCES.md#tsu-p22",
+          "context": "su-kanritou.pdf` p22, **S-22 軸組図(2)**, **三重県津"
+        },
+        {
+          "document": "tests/fixtures/section-import/SOURCES.md#tsu-p22",
+          "context": "tou.pdf` p22, **S-22 軸組図(2)**, **三重県津市**다. 원본"
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "0 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. "
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "0 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. "
+        }
+      ]
+    },
+    {
+      "value": "5.0",
+      "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "쟁 꼬리의 후보 자격이 달라져도 5.0의 최종 출력이 1.0과 같았다. 따라서 최종"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "변화, hirosaki의 1.0·5.0 최종 출력 동일성은 `phases/38-el"
+        }
+      ]
+    },
+    {
+      "value": "1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R15",
+          "context": "2-report.json`의 `f1_comment_verification`도 이"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "·X3)와 `elevations[1]`(X4·X5). 제목 수나 실제 通り 수를"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step0-report.json#claims.C4",
+      "source": "phases/38-elevation-close/step0-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "벨 대조를 통과한다(`phases/38-elevation-close/step0-report.json#claims.C4`, `phases/38-elev"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step3-report.json#implementation.golden",
+      "source": "phases/38-elevation-close/step3-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "laims.C4`, `phases/38-elevation-close/step3-report.json#implementation.golden`, `tests/plan-imp"
+        }
+      ]
+    },
+    {
+      "value": "tests/plan-import/corpus2-elevation.test.ts",
+      "source": "tests/plan-import/corpus2-elevation.test.ts#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "n.golden`, `tests/plan-import/corpus2-elevation.test.ts`). 레벨 라벨 화이트리스트는 "
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "고 미전사로 남긴다(`tests/plan-import/corpus2-elevation.test.ts`, `phases/39-axis"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step4-report.json#survey",
+      "source": "phases/38-elevation-close/step4-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "칙은 만들지 않았다(`phases/38-elevation-close/step4-report.json#survey`). `1SL`·`2SL`·`S"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step1-report.json#skipped_axis_count",
+      "source": "phases/39-axis-claim/step1-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": " 골든 항목**이다(`phases/39-axis-claim/step1-report.json#skipped_axis_count`): `tsu-kanritou-"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "ort.json`, `phases/39-axis-claim/step1-report.json#skipped_axis_count`). 키 커버리지 가드는 전체 "
+        }
+      ]
+    },
+    {
+      "value": "tsu-kanritou-p21-elevation.json",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#",
+      "kind": "fixture_identifier",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "s_count`): `tsu-kanritou-p21-elevation.json`의 `elevations[1]`"
+        }
+      ]
+    },
+    {
+      "value": "tsu-kanritou-p22-elevation.json",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#",
+      "kind": "fixture_identifier",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "제목 공유 항목), `tsu-kanritou-p22-elevation.json`의 `elevations[0]`"
+        }
+      ]
+    },
+    {
+      "value": "Y1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "vations[1]`(Y1·Y2 제목 공유 항목), `ts"
+        }
+      ]
+    },
+    {
+      "value": "Y2",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "ions[1]`(Y1·Y2 제목 공유 항목), `tsu-k"
+        }
+      ]
+    },
+    {
+      "value": "X1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "vations[0]`(X1·X2·X3)와 `elevatio"
+        }
+      ]
+    },
+    {
+      "value": "X2",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "ions[0]`(X1·X2·X3)와 `elevations["
+        }
+      ]
+    },
+    {
+      "value": "X3",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "s[0]`(X1·X2·X3)와 `elevations[1]`"
+        }
+      ]
+    },
+    {
+      "value": "X4",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "vations[1]`(X4·X5). 제목 수나 실제 通り "
+        }
+      ]
+    },
+    {
+      "value": "X5",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "ions[1]`(X4·X5). 제목 수나 실제 通り 수를 "
+        }
+      ]
+    },
+    {
+      "value": "1FL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey",
+      "kind": "level_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "트는 `・基礎梁天端から1FLまでは打増しとする。` 같은 문장도"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "su의 `1SL`은 `1FL`과 같은 높이의 보조 표기여서,"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "ama p8의 `中央棟1FL`·`基準GL`이 그 사례다(`p"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "L −12.7pt / 1FL −12.7pt / GL +9.3"
+        }
+      ]
+    },
+    {
+      "value": "1SL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey",
+      "kind": "level_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "#survey`). `1SL`·`2SL`·`SL+…` 계열은"
+        },
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "제외한다. tsu의 `1SL`은 `1FL`과 같은 높이의 보"
+        }
+      ]
+    },
+    {
+      "value": "2SL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey",
+      "kind": "level_label",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "y`). `1SL`·`2SL`·`SL+…` 계열은 의도적으로"
+        }
+      ]
+    },
+    {
+      "value": "38",
+      "source": "phases/38-elevation-close/step3-report.json#",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "**phase 38·39 보충**: tsu-p21·p22의 階高"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "**phase 38·39 보충 — 階高 대응과 골든의 청구 규약"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "밀어낸다. 이 반례는 phase 38의 step 2 사양에 기록돼 있고, 같은 수"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "지만 검증이 아니다. phase 38의 step 6에서는 axis 스팬을 바꿔도 "
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "   - **phase 38·39 결과**: tsu-p21·p22 階高의"
+        }
+      ]
+    },
+    {
+      "value": "39",
+      "source": "phases/39-axis-claim/step2-report.json#",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "**phase 38·39 보충**: tsu-p21·p22의 階高는 각"
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "**phase 38·39 보충 — 階高 대응과 골든의 청구 규약**\n"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "   - **phase 38·39 결과**: tsu-p21·p22 階高의 6레"
+        }
+      ]
+    },
+    {
+      "value": "6",
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "u-p21·p22의 階高는 각각 6레벨·5구간으로 확정했고 두 면의 모든 제목 "
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": ": tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 대조하고, "
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "su-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "su-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": " | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 a"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": " | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 a"
+        }
+      ]
+    },
+    {
+      "value": "5",
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "1·p22의 階高는 각각 6레벨·5구간으로 확정했고 두 면의 모든 제목 블록이 "
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "u-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 대조하고, 레벨 라"
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "su-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "su-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는"
+        }
+      ]
+    },
+    {
+      "value": "3",
+      "source": "phases/39-axis-claim/step1-report.json#/skipped_axis_count",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "대조한다. 미전사 axis는 **3개 골든 항목**이다(`phases/39-ax"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "를 추가했다. 미전사 axis는 3개 골든 항목으로 남는다(`phases/39-"
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "골든과 전사 상호검증하며 미전사 3항목은 남는다. 잔여: 伏図 문턱·부분 격자 "
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "골든과 전사 상호검증하며 미전사 3항목은 남는다. 잔여: 伏図 문턱·부분 격자 "
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "검증하는 기준 데이터이며 미전사 3항목은 남는다. 레벨 화이트리스트의 문장 통과"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "검증하는 기준 데이터이며 미전사 3항목은 남는다. 레벨 화이트리스트의 문장 통과"
+        }
+      ]
+    },
+    {
+      "value": "1",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "son`의 `elevations[1]`(Y1·Y2 제목 공유 항목), `tsu-"
+        }
+      ]
+    },
+    {
+      "value": "0",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/RISKS.md#R10",
+          "context": "son`의 `elevations[0]`(X1·X2·X3)와 `elevations"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step2-report.json#implementation",
+      "source": "phases/38-elevation-close/step2-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "GL`이 그 사례다(`phases/38-elevation-close/step2-report.json#implementation`, `tests/plan-imp"
+        }
+      ]
+    },
+    {
+      "value": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "있고, 같은 수치는 `tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json`의 좌표에서 재대조했다.\n\n짧은"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step2-report.json#f1_comment_verification",
+      "source": "phases/39-axis-claim/step2-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "값으로 쓰지 않는다(`phases/39-axis-claim/step2-report.json#f1_comment_verification`).\n\n**골든의 값 필드는 반"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step6-report.json#items.2_golden_falsifiability",
+      "source": "phases/38-elevation-close/step6-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "` 누락이 드러났다(`phases/38-elevation-close/step6-report.json#items.2_golden_falsifiability`, `phases/39-axis"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step0-report.json#claims",
+      "source": "phases/39-axis-claim/step0-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "iability`, `phases/39-axis-claim/step0-report.json#claims`). `tests/plan-im"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step2-report.json#deferred_claims",
+      "source": "phases/39-axis-claim/step2-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "를 청구하는 조건은 `phases/39-axis-claim/step2-report.json#deferred_claims`에 남는다. 이 가드는 등록의 "
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step1-report.json",
+      "source": "phases/39-axis-claim/step1-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": ".test.ts`, `phases/39-axis-claim/step1-report.json`).\n\n"
+        }
+      ]
+    },
+    {
+      "value": "X5",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations",
+      "kind": "axis_label",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "u의 마지막 通り芯 `X5` 누락이 드러났다(`phases"
+        },
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "을 계기로 tsu의 `X5` 누락을 바로잡고, 軸組図 ax"
+        }
+      ]
+    },
+    {
+      "value": "2FL",
+      "source": "phases/38-elevation-close/step4-report.json#/survey",
+      "kind": "level_label",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "上 −12.4pt / 2FL −12.7pt / 1FL −12"
+        }
+      ]
+    },
+    {
+      "value": "step 2",
+      "source": "phases/38-elevation-close/step2-report.json#",
+      "kind": "step_identifier",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "는 phase 38의 step 2 사양에 기록돼 있고, 같은 수치"
+        }
+      ]
+    },
+    {
+      "value": "step 6",
+      "source": "phases/38-elevation-close/step6-report.json#",
+      "kind": "step_identifier",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": ". phase 38의 step 6에서는 axis 스팬을 바꿔도 테"
+        }
+      ]
+    },
+    {
+      "value": "8",
+      "source": "tests/plan-import/elevation.test.ts",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "는 규칙이다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다("
+        }
+      ]
+    },
+    {
+      "value": "−12.4",
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "레벨 위치의 차이는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −1"
+        }
+      ]
+    },
+    {
+      "value": "−12.7",
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "L水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9."
+        },
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": "2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`로 부호가 다르며,"
+        }
+      ]
+    },
+    {
+      "value": "+9.3",
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/ADR.md#ADR-030",
+          "context": " 1FL −12.7pt / GL +9.3pt`로 부호가 다르며, 일괄 보정하면 GL을"
+        }
+      ]
+    },
+    {
+      "value": "phases/38-elevation-close/step4-report.json",
+      "source": "phases/38-elevation-close/step4-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "열 제외는 유지한다(`phases/38-elevation-close/step4-report.json`). axis 기대값을 흔들어도"
+        }
+      ]
+    },
+    {
+      "value": "phases/39-axis-claim/step0-report.json",
+      "source": "phases/39-axis-claim/step0-report.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "든 항목으로 남는다(`phases/39-axis-claim/step0-report.json`, `phases/39-axis"
+        }
+      ]
+    },
+    {
+      "value": "R10",
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C5",
+      "kind": "risk_identifier",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "와 伏図 문턱 때문에 R10·R15는 열림을 유지한다."
+        },
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "형 柱リスト 미지원. R10·R15 열림 — 근거는 docs"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "형 柱リスト 미지원. R10·R15 열림 — 근거는 docs"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "| R10 | 열림 | tsu-p21·p2"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "cs/RISKS.md R10 |"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "| R10 | 열림 | tsu-p21·p2"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "cs/RISKS.md R10 |"
+        }
+      ]
+    },
+    {
+      "value": "32",
+      "source": "phases/39-axis-claim/step2-report.json#/key_paths_total",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "`). 키 커버리지 가드는 전체 32개 경로 중 18개를 실제 대조 테스트, 14"
+        }
+      ]
+    },
+    {
+      "value": "18",
+      "source": "phases/39-axis-claim/step2-report.json#/claimed",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "지 가드는 전체 32개 경로 중 18개를 실제 대조 테스트, 14개를 출처·주석 "
+        }
+      ]
+    },
+    {
+      "value": "14",
+      "source": "phases/39-axis-claim/step2-report.json#/reference_only",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "docs/MILESTONES.md#도면-인식",
+          "context": "중 18개를 실제 대조 테스트, 14개를 출처·주석 등 참고 전용으로 등록한다. "
+        }
+      ]
+    },
+    {
+      "value": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#",
+      "kind": "reference",
+      "used_in": [
+        {
+          "document": "tests/fixtures/section-import/SOURCES.md#tsu-p22",
+          "context": "신규 階高 골든 `tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json`의 출처는 위 표에 이미 등록된"
+        }
+      ]
+    },
+    {
+      "value": "2",
+      "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/sheet",
+      "kind": "numeric_value_or_page",
+      "used_in": [
+        {
+          "document": "tests/fixtures/section-import/SOURCES.md#tsu-p22",
+          "context": "` p22, **S-22 軸組図(2)**, **三重県津市**다. 원본 캐시 파일"
+        }
+      ]
+    },
+    {
+      "value": "ADR-030",
+      "source": "tests/plan-import/corpus2-elevation.test.ts",
+      "kind": "decision_identifier",
+      "used_in": [
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "ocs/ADR.md의 ADR-030 보충 |"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "ocs/ADR.md의 ADR-030 보충 |"
+        }
+      ]
+    },
+    {
+      "value": "2段筋",
+      "source": "phases/38-elevation-close/step0-report.json#/claims/C5",
+      "kind": "domain_term",
+      "used_in": [
+        {
+          "document": "CLAUDE.md#| 도면 인식(로컬) |",
+          "context": "ata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リ"
+        },
+        {
+          "document": "AGENTS.md#| 도면 인식(로컬) |",
+          "context": "ata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リ"
+        },
+        {
+          "document": "CLAUDE.md#| R10 |",
+          "context": "오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リ"
+        },
+        {
+          "document": "AGENTS.md#| R10 |",
+          "context": "오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リ"
+        }
+      ]
+    }
+  ],
+  "paths_verified": [
+    {
+      "path": ".cache/dwg-tsu-kanritou.pdf",
+      "command": "test -f .cache/dwg-tsu-kanritou.pdf",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "AGENTS.md",
+      "command": "test -f AGENTS.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "command": "test -f CLAUDE.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "docs/ADR.md",
+      "command": "test -f docs/ADR.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "docs/MILESTONES.md",
+      "command": "test -f docs/MILESTONES.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "docs/RISKS.md",
+      "command": "test -f docs/RISKS.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step0-report.json",
+      "command": "test -f phases/38-elevation-close/step0-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step2-report.json",
+      "command": "test -f phases/38-elevation-close/step2-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step2.md",
+      "command": "test -f phases/38-elevation-close/step2.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step3-report.json",
+      "command": "test -f phases/38-elevation-close/step3-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step4-report.json",
+      "command": "test -f phases/38-elevation-close/step4-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/38-elevation-close/step6-report.json",
+      "command": "test -f phases/38-elevation-close/step6-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/39-axis-claim/step0-report.json",
+      "command": "test -f phases/39-axis-claim/step0-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/39-axis-claim/step1-report.json",
+      "command": "test -f phases/39-axis-claim/step1-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "phases/39-axis-claim/step2-report.json",
+      "command": "test -f phases/39-axis-claim/step2-report.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "command": "test -f tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+      "command": "test -f tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/fixtures/section-import/SOURCES.md",
+      "command": "test -f tests/fixtures/section-import/SOURCES.md",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "command": "test -f tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/plan-import/corpus2-elevation.test.ts",
+      "command": "test -f tests/plan-import/corpus2-elevation.test.ts",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/plan-import/elevation.test.ts",
+      "command": "test -f tests/plan-import/elevation.test.ts",
+      "exit_code": 0,
+      "exists": true
+    },
+    {
+      "path": "tests/plan-import/key-coverage.test.ts",
+      "command": "test -f tests/plan-import/key-coverage.test.ts",
+      "exit_code": 0,
+      "exists": true
+    }
+  ],
+  "evidence_limits": [
+    {
+      "claim": "연속 무차별 구간 경계",
+      "source": "phases/39-axis-claim/step2-report.json#/f1_comment_verification",
+      "resolution": "미측정 구간 경계를 되살리지 않았다. 36면 편차 조사와 hirosaki에서 확인한 1.0·5.0 최종 출력 동일성만 서술한다."
+    },
+    {
+      "claim": "karatsu 오프셋",
+      "original_record": "phases/38-elevation-close/step2.md",
+      "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "resolution": "step2-report.json에는 오프셋 수치가 없어 step2 사양 수치를 TextItem 좌표로 재대조했다. 라벨 중심 y에서 대응 레벨 positionPt를 뺀 값이다.",
+      "offsets_pt": [
+        -12.419849999999983,
+        -12.660414000000003,
+        -12.660414000000031,
+        9.293999999999983
+      ]
+    }
+  ],
+  "sources_precheck": {
+    "pdf_exists": true,
+    "source_document_exists": true,
+    "golden_exists": true,
+    "pdf_row_already_present": true,
+    "golden_link_already_present": false,
+    "sha256_matches": true,
+    "action": "기존 PDF 행 유지, 신규 골든 연결 문장 추가"
+  },
+  "verification": {
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "기존 route.test.ts:161 _omitted unused"
+    },
+    "vitest": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "files_passed": 101,
+      "tests_passed": 1808
+    },
+    "source_fragments": {
+      "result": "all JSON Pointer targets exist"
+    },
+    "document_sync": {
+      "command": "diff -u <(rg '^[|]' CLAUDE.md) <(rg '^[|]' AGENTS.md)",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "selected_row_prefixes": [
+        "| 도면 인식(로컬) |",
+        "| R10 |",
+        "| R15 |"
+      ],
+      "selected_rows_string_identical": true,
+      "all_markdown_table_rows_identical": true,
+      "preexisting_non_table_difference": "AGENTS.md에만 상단 동기화 안내문이 있다. 요청 범위 밖이므로 그대로 유지했다."
+    },
+    "scope": {
+      "only_requested_document_sections_changed": true,
+      "product_code_tests_and_goldens_unchanged": true,
+      "harness_logs_excluded_from_commit": true
+    }
+  },
+  "number_coverage": {
+    "method": "새로 쓴 문장과 교체한 표 행의 숫자 전수 검사. 경로·도면명·라벨·phase/step 식별자도 장부에 포함. 기존 문장을 그대로 유지한 숫자는 신규 인용으로 세지 않는다.",
+    "blocks": [
+      {
+        "document": "docs/RISKS.md#R15",
+        "numeric_occurrences": 19,
+        "unaccounted": 0
+      },
+      {
+        "document": "docs/RISKS.md#R10",
+        "numeric_occurrences": 36,
+        "unaccounted": 0
+      },
+      {
+        "document": "docs/ADR.md#ADR-030",
+        "numeric_occurrences": 40,
+        "unaccounted": 0
+      },
+      {
+        "document": "docs/MILESTONES.md#도면-인식",
+        "numeric_occurrences": 25,
+        "unaccounted": 0
+      },
+      {
+        "document": "tests/fixtures/section-import/SOURCES.md#tsu-p22",
+        "numeric_occurrences": 4,
+        "unaccounted": 0
+      },
+      {
+        "document": "CLAUDE.md#| 도면 인식(로컬) |",
+        "numeric_occurrences": 10,
+        "unaccounted": 0
+      },
+      {
+        "document": "AGENTS.md#| 도면 인식(로컬) |",
+        "numeric_occurrences": 10,
+        "unaccounted": 0
+      },
+      {
+        "document": "CLAUDE.md#| R10 |",
+        "numeric_occurrences": 8,
+        "unaccounted": 0
+      },
+      {
+        "document": "AGENTS.md#| R10 |",
+        "numeric_occurrences": 8,
+        "unaccounted": 0
+      },
+      {
+        "document": "CLAUDE.md#| R15 |",
+        "numeric_occurrences": 4,
+        "unaccounted": 0
+      },
+      {
+        "document": "AGENTS.md#| R15 |",
+        "numeric_occurrences": 4,
+        "unaccounted": 0
+      }
+    ],
+    "unaccounted": []
+  },
+  "summary": "階高 한 면 상수 항목과 tsu 전체 레벨·axis 청구 규약을 문서에 반영하고 숫자·출처 장부를 작성했다. R10·R15는 열림이며 문서 표 동기화·전체 테스트·lint를 통과했다."
+}
