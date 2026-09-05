@@ -54,15 +54,18 @@ const BLOCK_TITLE_PATTERN = /伏図|柱芯線図/
 const BAND_TOLERANCE_PT = 8
 /** 치수 열이 라벨 밴드에서 떨어질 수 있는 거리. 실측 최대 50pt(kani X) */
 const DIMENSION_WINDOW_PT = 60
-/** 치수 중심과 인접 축 중점의 어긋남 허용. 36면의 반환 격자·블록에서 실측한
- *  채택 이탈 최댓값 A는 10.379846pt(saiki-p2, X 2–1, 「700」)다.
+/** 치수 중심과 인접 축 중점의 어긋남 허용. 현재 파서의 36면 반환 격자·블록
+ *  축 열 합집합 206스팬에서 A는 7.685713pt(shibata-p13, X 1–5, 「41,000」)다.
+ *  shibata-p13은 R15의 열린 블록 오탐 면이므로 A는 정답 스팬의 인증이 아니다.
+ *  현재 A 재계측: phases/43-midpoint-comment-currency/step0-report.json#/remeasured
  *  같은 치수 창(라벨 밴드 ±60pt)의 미채택 경쟁 이탈 최솟값 B는
  *  0.018265pt(hirosaki-p25, Y Y8–Y9, 「24000」合計)다. 合計 미확인 축만
  *  보아도 B는 6.180000pt(karatsu-fukuzu-p1, Y Y1–Y0, 「180」)이므로
  *  A ≤ 15 < B는 불성립이다. 중점 거리만의 안전 여백을 주장하지 않는다.
- *  T=4/6/15/30/40에서 격자 면은 23/23/26/26/26, 블록 면은 7/15/16/16/16.
+ *  phase 42 step 0의 T=4/6/15/30/40 sweep에서 격자 면은 23/23/26/26/26,
+ *  블록 면은 7/15/16/16/16.
  *  골든 7면의 전체 출력은 T=6만 15와 같고 4·30·40은 다르다(30은 issues만).
- *  재현·좌표 근거: phases/42-plan-grid-soundness/step0-report.json */
+ *  B·sweep 근거: phases/42-plan-grid-soundness/step0-report.json */
 const MIDPOINT_TOLERANCE_PT = 15
 /** 스팬별 실측 축척(pt/mm)의 중앙값 대비 허용 편차. 실측 최대 0.5% */
 const SCALE_TOLERANCE_RATIO = 0.03
