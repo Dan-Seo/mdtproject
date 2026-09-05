@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "docs-citations",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 382.3594561,
+  "stdout_log": "phases\\40-citation-integrity\\step2-codex.stdout.log",
+  "stderr_log": "phases\\40-citation-integrity\\step2-codex.stderr.log"
+}
