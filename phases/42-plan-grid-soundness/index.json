@@ -1,0 +1,29 @@
+{
+  "project": "Kijun",
+  "phase": "42-plan-grid-soundness",
+  "steps": [
+    {
+      "step": 0,
+      "name": "midpoint-margin-sweep",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "grid-geometry-soundness",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "document-open-items",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "refute-plan-grid-soundness",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-09-05T19:30:00+0900"
+}
