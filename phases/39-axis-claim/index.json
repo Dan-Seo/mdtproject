@@ -2,11 +2,38 @@
   "project": "Kijun",
   "phase": "39-axis-claim",
   "steps": [
-    { "step": 0, "name": "refute-transcription-fix", "kind": "verify", "gate": true, "status": "pending" },
-    { "step": 1, "name": "claim-axis-crosscheck", "status": "pending" },
-    { "step": 2, "name": "unclaimed-key-guard", "status": "pending" },
-    { "step": 3, "name": "docs-elevation-close", "status": "pending" },
-    { "step": 4, "name": "refute-fixes", "kind": "verify", "gate": true, "status": "pending" }
+    {
+      "step": 0,
+      "name": "refute-transcription-fix",
+      "kind": "verify",
+      "gate": true,
+      "status": "refuted",
+      "started_at": "2026-09-05T09:12:54+0900",
+      "completed_at": "2026-09-05T09:22:52+0900",
+      "summary": "A1~A5 주장은 성립하지만 A5의 세 변조 경로가 레포에 없어 paths_verified에 false가 포함되므로 AC에 따라 refuted"
+    },
+    {
+      "step": 1,
+      "name": "claim-axis-crosscheck",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "unclaimed-key-guard",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "docs-elevation-close",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "refute-fixes",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    }
   ],
   "created_at": "2026-09-05T00:40:00+0900"
 }
