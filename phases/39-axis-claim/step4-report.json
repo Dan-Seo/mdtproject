@@ -1,9 +1,812 @@
 {
   "step": 4,
   "name": "refute-fixes",
-  "reviewed_head": "3b84839872dfe4bc42fd1431d9e7325b1aa09547",
-  "items": [],
+  "reviewed_head": "7ff9a83d6c8b20e9077ce8d0bb15084abdaba93e",
+  "items": [
+    {
+      "id": "axis_claimed",
+      "holds": true,
+      "method": "ls의 실제 11개 파일을 열어 elevations[].axis가 있는 7개 항목을 찾고, 스팬 전 칸 +1·라벨 전 칸 삭제·null 아닌 합계 전 칸 +1을 독립 실행했다. 각 변조 전에 test -f로 존재를 확인했으며 매 실행 직후 원본 바이트·git diff --stat -- tests/ src/로 원복을 확인했다.",
+      "evidence": {
+        "axis_census": {
+          "spans": 39,
+          "labels": 46,
+          "totals": 4,
+          "axis_blocks": 7,
+          "unclaimed_axis_blocks": 3
+        },
+        "attempted": 89,
+        "detected": 89,
+        "prior_span_label_count": 85,
+        "measured_span_label_count": 85,
+        "difference_from_prior": 0,
+        "additional_total_mutations": 4,
+        "raw_results": "mutations 중 item=1"
+      }
+    },
+    {
+      "id": "crosscheck_not_tautological",
+      "holds": true,
+      "method": "hirosaki y·tsu x·karatsu y의 grid blocks[0].spansMm[0]만 +1하고 軸組図 파일은 그대로 뒀다. -t 축 부분열이다로 직접 두 파일을 비교하는 세 테스트만 실행했다. 자기 정합성 테스트를 제외하여 그 테스트가 실패한 것을 상호검증의 증거로 쓰지 않았다. 변조 전에는 동일 필터로 3 passed였다.",
+      "evidence": {
+        "baseline": "crosscheck_baseline",
+        "valid_attempts": 3,
+        "detected": 3,
+        "startup_errors_not_counted_as_detection": 3,
+        "raw_results": "mutations 중 item=2; 실패한 초기 명령도 삭제하지 않고 보존"
+      }
+    },
+    {
+      "id": "key_guard_works",
+      "holds": true,
+      "method": "실재 tsu-p21 골든 axis에 __unknown 값 키 하나를 더하고 검사했다. 원복 뒤 CLAIMED에서 elevations[].axis.spansMm[] 등록 한 항목만 제거했다. 타입/문법 오류 없이 각각 미청구 경로 assertion으로 실패했다.",
+      "evidence": {
+        "mutations": "mutations 중 item=3",
+        "exit_codes": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "no_parser_growth",
+      "holds": true,
+      "method": "rg -n axis|spansMm가 원문 출력 0건인지 확인하고 git diff main...HEAD -- src/의 모든 추가·삭제 본문 줄을 검토했다. 유일한 변경 파일은 elevation.ts이며 전부 블록 주석 줄이다.",
+      "evidence": {
+        "search": {
+          "command": "rg -n 'axis|spansMm' src/lib/import/framing-plan/elevation.ts",
+          "chunk_id": "aee667",
+          "wall_time_seconds": 0.3056116,
+          "exit_code": 1,
+          "original_token_count": 0,
+          "output": ""
+        },
+        "diff": {
+          "command": "git diff main...HEAD -- src/",
+          "exit_code": 0,
+          "stdout": "diff --git a/src/lib/import/framing-plan/elevation.ts b/src/lib/import/framing-plan/elevation.ts\nindex d1fb628..92991cd 100644\n--- a/src/lib/import/framing-plan/elevation.ts\n+++ b/src/lib/import/framing-plan/elevation.ts\n@@ -62,8 +62,11 @@ const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4\n  * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\n  * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와\n  * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의\n- * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,\n- * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.\n+ * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의\n+ * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과\n+ * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,\n+ * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`\n+ * 에서는 5.0의 최종 출력이 1.0과 같았다.\n  */\n const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\n /**\n",
+          "stderr": ""
+        },
+        "changed_content_lines": [
+          "- * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,",
+          "- * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.",
+          "+ * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의",
+          "+ * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과",
+          "+ * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,",
+          "+ * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`",
+          "+ * 에서는 5.0의 최종 출력이 1.0과 같았다."
+        ],
+        "all_changed_lines_comment_or_whitespace": true
+      }
+    },
+    {
+      "id": "no_golden_edits",
+      "holds": true,
+      "method": "main...HEAD의 tests/fixtures diff와 전체 커밋 기록을 확인했다. 골든 JSON 변경은 없다. Claude의 tsu X5 수정 bd5ae60은 이미 main의 조상이므로 이 diff에 나타나지 않는다. 현재 차이인 section-import/SOURCES.md 3줄은 step3 §6이 명시적으로 허용한 출처 문서 추가이며 골든 값 변경이 아니다.",
+      "evidence": {
+        "log": {
+          "command": "git log --oneline -- tests/fixtures",
+          "exit_code": 0,
+          "stdout": "e0e7dba feat(39-axis-claim): step 3 — docs-elevation-close\ncc16d0c feat(39-axis-claim): step 3 — docs-elevation-close\nbd5ae60 fix(plan-import): tsu p21 軸組図 골든에서 누락된 通り芯 라벨 X5\n68f1240 docs(38-elevation-close): 軸組図 레벨 대응·짧은 치수 상수 정리 사양과 tsu 두 면 골든\n113bbf4 feat(37-corpus-widen-2-close): step 6 — docs-corpus-widen-2\n8c5f907 chore(37-corpus-widen-2-close): step 2 인계 — fuji 골든 정정의 정정·karatsu 위치 출처 조사 지시, step 2 재개\na3e2ca1 test(36-corpus-widen-2): step 5 반증 재대조 판정·골든 정정(축 페이지 순서·hirosaki X2 RFL·ojkk-p4 対象外 12칸)·phase 37 사양\n040bcf3 feat(36-corpus-widen-2): step 0 — register-corpus-and-cmap\n0dc6a1d test(36-corpus-widen-2): 발주처 7곳 22면의 전사 골든·출처 등록·phase 사양\n2e4d891 feat(34-stbridge-apply): step 2 — stb-apply\ne621638 feat(34-stbridge-apply): step 1 — fix-mini-fixture-nodes\n5812aed feat(33-stbridge-skeleton-import): step 5 — record-corpus-limits\nd49419b feat(33-stbridge-skeleton-import): step 3 — stb-skeleton-candidates\n0c140ab feat(33-stbridge-skeleton-import): step 2 — stb-document-ir\n637b841 feat(33-stbridge-skeleton-import): step 1 — stb-corpus-and-decode\n1d5ffd7 spec(19-wall-slab-lists): 표 형식 壁リスト・スラブリスト를 파싱하고 취입 화면에 반영하게 한다\nc43d334 feat(18-plan-corpus-widen): step 0 — widen-textitem-corpus\n2b3fb5d feat(7-section-fields): step 3 — apply\n19e2112 feat(7-section-fields): step 2 — cutoff-raw\n55a74b0 fix(plan-import): 軸組図 계열의 검증을 반증 가능하게 만든다 (R10)\n4541c3e feat(plan-import): 軸組図에서 階高를 읽는다 (ADR-030 B3)\ndf4b854 feat(plan-import): 伏図의 通り芯 그리드를 텍스트 레이어에서 후보로 읽는다 (ADR-030)\n16ee18a feat(column): 円形柱을 断面形状으로 받는다 (ADR-026)\n6bbad8d feat(section-import): 大梁 스케치 세로 치수를 짝지어 断面을 확정한다\nb939e19 feat(section-import): 断面リスト PDF를 브라우저 로컬로 파싱해 행 단위 승인으로 반영한다 (phase 6-section-import)\n8bcad4e chore(phases): 6-section-import 하네스 스펙과 검증 도면 전사 픽스처를 추가한다\n",
+          "stderr": ""
+        },
+        "stat": {
+          "command": "git diff main...HEAD --stat -- tests/fixtures",
+          "exit_code": 0,
+          "stdout": " tests/fixtures/section-import/SOURCES.md | 3 +++\n 1 file changed, 3 insertions(+)\n",
+          "stderr": ""
+        },
+        "diff": {
+          "command": "git diff main...HEAD -- tests/fixtures",
+          "exit_code": 0,
+          "stdout": "diff --git a/tests/fixtures/section-import/SOURCES.md b/tests/fixtures/section-import/SOURCES.md\nindex 03fe42b..87e2fb6 100644\n--- a/tests/fixtures/section-import/SOURCES.md\n+++ b/tests/fixtures/section-import/SOURCES.md\n@@ -63,6 +63,9 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용\n | `dwg-hirosaki-kikyono.pdf` | 青森県弘前市 | 令和7年度 桔梗野小学校等複合施設新築工事(建築工事) 構造図1 | p21 1階床梁伏図 (S-019), p25 軸組図(1) (S-023) | `f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8` |\n | `dwg-shibata-fire.pdf` | 新発田地域広域事務組合 | 新発田広域消防本部解体工事（既存建物 構造図一式） | p1 1F伏図 (S-1), p7 柱リスト (S-7), p13 軸組図 (S-13) | `e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985` |\n \n+신규 階高 골든의 출처:\n+- `tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json` — `dwg-tsu-kanritou.pdf` p22, **S-22 軸組図(2)**, **三重県津市**. 위 PDF 표의 출처 행과 연결된다.\n+\n ### 전수 조사 후 제외한 페이지\n \n - yokohama p5 杭伏図・杭リスト — 말뚝은 산정 스코프 밖 부재다.\n",
+          "stderr": ""
+        },
+        "claude_label_fix": {
+          "command": "git show bd5ae60 -- tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+          "chunk_id": "50c061",
+          "wall_time_seconds": 0.3012867,
+          "exit_code": 0,
+          "original_token_count": 940,
+          "output": "commit bd5ae60ff9c66e5809b88de5b8e5551ff9f0fd01\nAuthor: Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nDate:   Sat Sep 5 09:12:29 2026 +0900\n\n    fix(plan-import): tsu p21 軸組図 골든에서 누락된 通り芯 라벨 X5\n    \n    phase 38 step 6이 「elevation 골든의 axis 블록을 아무 테스트도 대조하지\n    않는다」로 반증한 뒤, 그 미청구 영역을 원본과 대조하다 결함을 하나 찾았다.\n    \n    tsu-kanritou-p21-elevation.json elevations[0].axis 가 라벨 4개(X1..X4)에\n    스팬 4개를 담아 「라벨 = 스팬 + 1」을 깨고 있었고, 같은 건물의\n    tsu-kanritou-p16-grid.json x축(X1..X5, 동일 스팬, 合計 22,000)과도 어긋났다.\n    \n    .cache/dwg-tsu-kanritou.pdf 21면을 다시 읽어 확인했다. 이 면에는 軸組図\n    블록이 셋(Y1·Y2·Y3通り) 있고 셋 다 전각 라벨 Ｘ１〜Ｘ５ 다섯 개를 가진다.\n    회전 페이지(span dir (0,-1))라 표시 좌우는 fitz y 내림차순 = X1→X5이며,\n    인접 라벨 사이 치수 5,850 / 5,150 / 7,175 / 3,825 와 合計 22,000 은\n    전사값과 이미 일치했다. 즉 스팬은 옳았고 라벨만 빠져 있었다.\n    \n    karatsu-jikugumi1-p1(3블록)·hirosaki-kikyono-p25(3블록)의 axis 전사는\n    같은 방법으로 원본과 전부 일치해 수정 대상이 아니다. 이 수정으로\n    plan-import 골든 전체(23개 axis 블록)에서 불변식 위반은 0건이 된다.\n    \n    이 골든을 읽는 테스트가 아직 없으므로 이 커밋만으로는 회귀가 잡히지\n    않는다. 청구는 phase 39가 한다.\n    \n    Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>\n    Claude-Session: https://claude.ai/code/session_01H8hBKEmN9WHGTnG3AnTny4\n\ndiff --git a/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json b/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\nindex 0ac7226..58bfea1 100644\n--- a/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\n+++ b/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\n@@ -1,5 +1,5 @@\n {\n-  \"$comment\": \"원문 독립 전사 (ADR-010 준용) — 150dpi 렌더링 전체와 300dpi 크롭을 눈으로 읽어 적었다. 파서 출력에서 유도하지 않았다. 스팬은 라벨 순서대로 인접 라벨 사이 mm이고 totalMm은 도면에 적힌 合計(없으면 null)다. 階高는 위→아래. 이 페이지는 아래쪽 레벨만 확정했다.\",\n+  \"$comment\": \"원문 독립 전사 (ADR-010 준용) — 150dpi 렌더링 전체와 300dpi 크롭을 눈으로 읽어 적었다. 파서 출력에서 유도하지 않았다. 스팬은 라벨 순서대로 인접 라벨 사이 mm이고 totalMm은 도면에 적힌 合計(없으면 null)다. 階高는 위→아래. 이 페이지는 아래쪽 레벨만 확정했다. 2026-09-05 수정(Claude, phase 38 step6 반증 후속): axis.labels에서 마지막 통り芯 X5가 빠져 있었다 — 라벨 4개에 스팬 4개로 「라벨=스팬+1」 불변식을 깨고 있었고, 같은 건물의 tsu-kanritou-p16-grid.json x축(X1..X5, 동일 스팬, 合計 22,000)과도 어긋났다. 원본 재확인: dwg-tsu-kanritou.pdf 21면은 軸組図 블록이 셋(Y1·Y2·Y3通り)이고 셋 다 전각 라벨 Ｘ１..Ｘ５ 다섯 개를 가진다(회전 페이지라 표시 좌우는 fitz y 내림차순 = X1→X5). 스팬 배열과 totalMm은 원본과 일치했으므로 라벨만 보정했다.\",\n   \"source\": {\n     \"cacheFile\": \"dwg-tsu-kanritou.pdf\",\n     \"sha256\": \"e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f\",\n@@ -43,7 +43,8 @@\n           \"X1\",\n           \"X2\",\n           \"X3\",\n-          \"X4\"\n+          \"X4\",\n+          \"X5\"\n         ],\n         \"spansMm\": [\n           5850,\n"
+        },
+        "label_fix_is_ancestor_of_main": {
+          "command": "git merge-base --is-ancestor bd5ae60 main",
+          "chunk_id": "558789",
+          "wall_time_seconds": 0.3447008,
+          "exit_code": 0,
+          "original_token_count": 0,
+          "output": ""
+        }
+      }
+    },
+    {
+      "id": "tests_are_not_fitted",
+      "holds": true,
+      "method": "새 key-coverage와 확장된 corpus2-elevation을 읽고 phase diff를 대조했다. 새 toHaveLength는 양쪽 골든의 길이 관계이며 수치 기대값 하드코딩이 아니다. 네 자리 이상 리터럴은 두 파일에 0건이다. 기존 합성 기하 테스트의 고정 길이는 phase 변경 대상이 아니다. axis는 두 독립 파일의 라벨 순서·구간 합으로 대조하고 parser가 낸 mm를 기대값으로 복사하지 않는다.",
+      "evidence": {
+        "length_search": {
+          "command": "rg -n \"toHaveLength\\(\" tests/plan-import/",
+          "chunk_id": "dc2ac9",
+          "wall_time_seconds": 0.2633192,
+          "exit_code": 0,
+          "original_token_count": 137,
+          "output": "tests/plan-import/corpus2-elevation.test.ts:273:      expect(golden.levels).toHaveLength(golden.levelTexts!.length)\ntests/plan-import/corpus2.test.ts:127:    expect(parsed.blocks).toHaveLength(golden.blocks.length)\r\ntests/plan-import/elevation.test.ts:36:    expect(parsed.elevations).toHaveLength(2)\r\ntests/plan-import/elevation.test.ts:42:      expect(elevation.levels).toHaveLength(5)\r\ntests/plan-import/parse.test.ts:162:    expect(parsed.grids).toHaveLength(2)\r\ntests/plan-import/parse.test.ts:221:    expect(parsed.grids).toHaveLength(2)\r\n"
+        },
+        "literal_search": {
+          "command": "rg -n \"[0-9]{4,}\" tests/plan-import/corpus2-elevation.test.ts tests/plan-import/key-coverage.test.ts",
+          "chunk_id": "4e66b0",
+          "wall_time_seconds": 0.2242242,
+          "exit_code": 1,
+          "original_token_count": 0,
+          "output": ""
+        },
+        "diff": "static_evidence.test_diff",
+        "fixed_count_explanation": "미전사 axis 3항목은 사양이 청구하는 미전사 목록 수이며 치수 기대값이 아니다."
+      }
+    },
+    {
+      "id": "docs_numbers_sourced",
+      "holds": false,
+      "method": "step3의 최종 numbers_used 사본과 문서 추가분을 대조하고 모든 source 파일에 test -f를 실행했다. source의 #/ JSON 포인터도 실제 객체를 내려가며 확인했다. 새 수량·비율·좌표·페이지 값은 장부에 있으나 12개 source 포인터가 존재하지 않는다. 파일 존재만으로는 가리킨 값의 출처가 실재함을 증명하지 못한다.",
+      "evidence": {
+        "numbers_used_entries": 36,
+        "all_source_files_exist": true,
+        "nonexistent_source_pointers": [
+          {
+            "value": "1SL",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/0/text",
+            "exists": true,
+            "check": {
+              "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'rejectedLevelLikeStrings'"
+          },
+          {
+            "value": "2SL",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/1/text",
+            "exists": true,
+            "check": {
+              "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'rejectedLevelLikeStrings'"
+          },
+          {
+            "value": "SL+756.70",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/3/text",
+            "exists": true,
+            "check": {
+              "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'rejectedLevelLikeStrings'"
+          },
+          {
+            "value": "1FL",
+            "source": "phases/38-elevation-close/step4-report.json#/acceptedSentences/0/text",
+            "exists": true,
+            "check": {
+              "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'acceptedSentences'"
+          },
+          {
+            "value": "2FL",
+            "source": "phases/38-elevation-close/step4-report.json#/acceptedTrueLevelLabels/1/text",
+            "exists": true,
+            "check": {
+              "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'acceptedTrueLevelLabels'"
+          },
+          {
+            "value": "Y1",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "Y2",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "X1",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "X2",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "X3",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "X4",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          },
+          {
+            "value": "X5",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels",
+            "exists": true,
+            "check": {
+              "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+              "exit_code": 0,
+              "stdout": "EXISTS\n",
+              "stderr": ""
+            },
+            "pointer_exists": false,
+            "pointer_error": "'axis'"
+          }
+        ],
+        "ledger_and_checks": "static_evidence.number_audit",
+        "new_documentation": "static_evidence.new_docs",
+        "coverage_values": [
+          1.0,
+          36,
+          0.45,
+          0.49,
+          5.0,
+          6,
+          5,
+          3,
+          32,
+          18,
+          14,
+          -12.4,
+          -12.7,
+          9.3,
+          21,
+          22,
+          0,
+          1,
+          2,
+          8
+        ],
+        "counterexample": "1SL·2SL의 source는 step4-report.json#/rejectedLevelLikeStrings/...를 가리키지만 그 최상위 키가 없다. Y1·Y2·X1~X5의 source는 미전사라 axis가 없는 elevation 항목의 axis/labels를 가리킨다."
+      }
+    },
+    {
+      "id": "full_gates",
+      "holds": true,
+      "method": "변조를 모두 원복한 뒤 npx vitest run 전체·npm run lint·npx tsc --noEmit을 실행했다. build 직전에 Node 프로세스 CommandLine을 확인해 Next 프로세스가 빈 배열임을 확인한 뒤 npm run build를 실행했다. 하네스와 다른 프로세스는 종료하지 않았다.",
+      "evidence": {
+        "results": {
+          "vitest": {
+            "command": "npx vitest run",
+            "chunk_id": "336ae0",
+            "wall_time_seconds": 2.5e-06,
+            "exit_code": 0,
+            "original_token_count": 47,
+            "output": "\n RUN  v4.1.10 C:/Users/emper/mdtproject\n\n\n Test Files  101 passed (101)\n      Tests  1808 passed (1808)\n   Start at  10:31:55\n   Duration  12.70s (transform 17.98s, setup 16.15s, import 31.46s, tests 42.17s, environment 89.64s)\n\n"
+          },
+          "lint": {
+            "command": "npm run lint",
+            "chunk_id": "1e4afb",
+            "wall_time_seconds": 1e-06,
+            "exit_code": 0,
+            "original_token_count": 51,
+            "output": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 1 problem (0 errors, 1 warning)\n\n"
+          },
+          "typecheck": {
+            "command": "npx tsc --noEmit",
+            "chunk_id": "bea66a",
+            "wall_time_seconds": 4e-07,
+            "exit_code": 0,
+            "original_token_count": 0,
+            "output": ""
+          },
+          "build": {
+            "command": "Next process check (empty), then npm run build",
+            "chunk_id": "7cefff",
+            "wall_time_seconds": 3.7e-06,
+            "exit_code": 0,
+            "original_token_count": 218,
+            "output": "[\r\n\r\n]\r\n\n> kijun@0.1.0 prebuild\n> node scripts/copy-pdfjs-assets.mjs\n\n\n> kijun@0.1.0 build\n> next build\n\n   ▲ Next.js 15.5.23\n   - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1153ms\n   Skipping linting\n   Checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/6) ...\n   Generating static pages (1/6) \r\n   Generating static pages (2/6) \r\n   Generating static pages (4/6) \r\n ✓ Generating static pages (6/6)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                     108 kB         213 kB\n├ ○ /_not-found                            995 B         105 kB\n├ ƒ /api/oncall/alert                      122 B         105 kB\n└ ○ /icon.svg                                0 B            0 B\n+ First Load JS shared by all             105 kB\n  ├ chunks/255-4ff60647f670442d.js       46.4 kB\n  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB\n  └ other shared chunks (total)          3.89 kB\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n"
+          }
+        },
+        "dev_process_check": {
+          "chunk_id": "8746ff",
+          "wall_time_seconds": 3.3084095,
+          "exit_code": 0,
+          "original_token_count": 2,
+          "output": "[\r\n\r\n]\r\n"
+        },
+        "vitest_tests_passed": 1808,
+        "vitest_files_passed": 101,
+        "lint": "0 errors, 기존 route.test.ts _omitted 경고 1개"
+      }
+    },
+    {
+      "id": "comment_numbers_measured",
+      "holds": false,
+      "method": "상수 바로 앞 주석의 숫자를 전부 추출해 지정 phase38 step3-report에 각각 grep -nF를 실행하고 키 경로를 대조했다. 근사 소수는 명시된 실측값의 반올림으로 확인했다. 150은 원문 검색 0건이며 의미를 뒷받침하는 키도 없다. 다른 파일에서 수치를 가져와 근거를 바꾸지 않았다.",
+      "evidence": {
+        "comment": "/**\n * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는\n * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\n * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와\n * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의\n * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의\n * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과\n * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,\n * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`\n * 에서는 5.0의 최종 출력이 1.0과 같았다.\n */\n",
+        "raw_grep": [
+          {
+            "value": "150",
+            "command": "grep -nF -- \"150\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "value": "0.176",
+            "command": "grep -nF -- \"0.176\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n",
+            "stderr": ""
+          },
+          {
+            "value": "1170",
+            "command": "grep -nF -- \"1170\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n",
+            "stderr": ""
+          },
+          {
+            "value": "0.4879",
+            "command": "grep -nF -- \"0.4879\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "48:          \"1170\": [0.490606, 0.487933]\n",
+            "stderr": ""
+          },
+          {
+            "value": "0.4906",
+            "command": "grep -nF -- \"0.4906\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n",
+            "stderr": ""
+          },
+          {
+            "value": "30",
+            "command": "grep -nF -- \"30\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n",
+            "stderr": ""
+          },
+          {
+            "value": "4.33",
+            "command": "grep -nF -- \"4.33\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n",
+            "stderr": ""
+          },
+          {
+            "value": "5.33",
+            "command": "grep -nF -- \"5.33\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "value": "38",
+            "command": "grep -nF -- \"38\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "value": "3",
+            "command": "grep -nF -- \"3\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n27:    \"pages\": 36,\n29:    \"pages_without_short_rule\": 32,\n33:        \"short_dimension_deviations\": [0.000296, 0.000293, 0.000293, 0.000293],\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n48:          \"1170\": [0.490606, 0.487933]\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n61:    \"pages\": 36,\n64:    \"unchanged_pages\": 34\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "0",
+            "command": "grep -nF -- \"0\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "4:    \"constant\": \"SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\",\n10:    \"ratio_0_45\": {\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n16:    \"ratio_5_0\": {\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n21:      \"final_output_same_as_1_0\": true,\n33:        \"short_dimension_deviations\": [0.000296, 0.000293, 0.000293, 0.000293],\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n41:        \"short_dimension_deviations\": [0.200295],\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n48:          \"1170\": [0.490606, 0.487933]\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n68:    \"lint\": \"0 errors, 1 existing warning\",\n70:    \"old_constant_search\": \"rg -n SHORT_TAIL_SCALE_TOLERANCE_RATIO src → 0 matches\"\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "45",
+            "command": "grep -nF -- \"45\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "10:    \"ratio_0_45\": {\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "0.45",
+            "command": "grep -nF -- \"0.45\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "0.49",
+            "command": "grep -nF -- \"0.49\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n",
+            "stderr": ""
+          },
+          {
+            "value": "21",
+            "command": "grep -nF -- \"21\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "7:    \"golden\": \"tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조\"\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n45:        \"page\": \"tsu-p21.json\",\n63:    \"changed_pages\": [\"tsu-p21.json\", \"tsu-p22.json\"],\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "22",
+            "command": "grep -nF -- \"22\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "7:    \"golden\": \"tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조\"\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n52:        \"page\": \"tsu-p22.json\",\n63:    \"changed_pages\": [\"tsu-p21.json\", \"tsu-p22.json\"],\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "1.0",
+            "command": "grep -nF -- \"1.0\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "4:    \"constant\": \"SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\",\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "5",
+            "command": "grep -nF -- \"5\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "10:    \"ratio_0_45\": {\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n16:    \"ratio_5_0\": {\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n32:        \"page\": \"hirosaki-p25.json\",\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n41:        \"short_dimension_deviations\": [0.200295],\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n67:    \"targeted_tests\": \"11 files, 257 tests passed\",\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          },
+          {
+            "value": "5.0",
+            "command": "grep -nF -- \"5.0\" \"phases/38-elevation-close/step3-report.json\"",
+            "exit_code": 0,
+            "stdout": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+            "stderr": ""
+          }
+        ],
+        "mapping": "comment_number_mapping",
+        "forbidden_20_present": false,
+        "decisive_missing_value": "150mm"
+      }
+    },
+    {
+      "id": "position_map_explicit",
+      "holds": true,
+      "method": "OUT_OF_SCOPE_POSITION_ROLE은 端部=end·中央=center·先端=unclaimed를 명시하고 표에 없는 위치를 throw한다. CB1 上端筋에 __unknown=9-D25 한 칸을 넣어 실제 테스트 실패를 확인했다. 원복 뒤 先端을 2-D25에서 3-D25로 바꾸면 통과했다. 先端은 표에서 명시적으로 미청구이므로 이 통과가 예상 결과다. 두 경우 모두 즉시 원복했다.",
+      "evidence": {
+        "exit_codes": [
+          1,
+          0
+        ],
+        "raw_results": "mutations 중 item=10",
+        "position_mapping_source": "tests/section-import/parse.test.ts:683",
+        "mapping": {
+          "端部": "end",
+          "中央": "center",
+          "先端": "unclaimed"
+        }
+      }
+    }
+  ],
   "paths_verified": [
+    {
+      "path": ".cache/dwg-tsu-kanritou.pdf",
+      "exists": true,
+      "check": {
+        "command": "test -f \".cache/dwg-tsu-kanritou.pdf\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f"
+    },
+    {
+      "path": "AGENTS.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"AGENTS.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "87f2149c5804debf7819e39e0a4998a8d405fd99512fd5b7a6e9cd1cfcc223f9"
+    },
+    {
+      "path": "CLAUDE.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"CLAUDE.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "38f18308afcf28204305970dcb5c9e787518e88c2c9f1a224c386b446c428063"
+    },
+    {
+      "path": "docs/ADR.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"docs/ADR.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "7d95c7b0db002ac1d516b356816f58362b2ef21e9dacf0651c7ab5564cf66871"
+    },
+    {
+      "path": "docs/MILESTONES.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"docs/MILESTONES.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "4397bec76d63dc3c9e08ff4bc5ec551c23667d50ed51d673a170699282bc16c6"
+    },
+    {
+      "path": "docs/RISKS.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"docs/RISKS.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "726be899691afa5841277fd398791df9b308e8638571708c81feeefa03e869e7"
+    },
+    {
+      "path": "package.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"package.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "48d99bc8b8f04937ad422f632cd222b114ae4a7630b90fd0cde8511af37ca78b"
+    },
+    {
+      "path": "phases/36-corpus-widen-2/step5-adjudication.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/36-corpus-widen-2/step5-adjudication.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "96b361e0e686c8f7901b1bc714f66df3d0a2480b18d8e034f5ecc5b7aac791ac"
+    },
+    {
+      "path": "phases/37-corpus-widen-2-close/step5-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/37-corpus-widen-2-close/step5-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "7113dce2341411dc193a0f263fff9c44ca517550bb73855a8f5f85aebe553d54"
+    },
+    {
+      "path": "phases/38-elevation-close/step0-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step0-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "07e6df5304bdf90bdee031be8f28ba19262d7439db0eed40503d0281333fd735"
+    },
+    {
+      "path": "phases/38-elevation-close/step2-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step2-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "99d417e67646f97dd70867a568c2bfffa2f72d91baaf12844181515d9e228922"
+    },
+    {
+      "path": "phases/38-elevation-close/step2.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step2.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "7f83801276eae2444a90654551ee0d42ebbce6ef52dd86a30cd6f6e75f87b18d"
+    },
+    {
+      "path": "phases/38-elevation-close/step3-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "cbe9321aeca8b98c2d832a90f84786a8db8dec6a10909fb4385fd45a66f92240"
+    },
+    {
+      "path": "phases/38-elevation-close/step4-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "fde37c90bd5c5420731718a23f512667601589ecbaf966a2d2d49b1d05529752"
+    },
+    {
+      "path": "phases/38-elevation-close/step6-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/38-elevation-close/step6-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "59962bfc4d34f07166bb1d1fac960a2a1e75d8ca178d9536fdd8e83bb6aec1cf"
+    },
+    {
+      "path": "phases/39-axis-claim/index.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/index.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "d8b923113624ca1225b6fe8322ccf7c3f2b2be0c67433ed769c517036b2414e7"
+    },
+    {
+      "path": "phases/39-axis-claim/step0-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step0-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "14cd8529d2d864eba9a70100229b682aa650be090149e463269aaa8981e01284"
+    },
+    {
+      "path": "phases/39-axis-claim/step1-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step1-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "9317986e6a38c871a141a7358137d8c891bd553a5ccab193b065b375736086f1"
+    },
+    {
+      "path": "phases/39-axis-claim/step2-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step2-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "0d43ecc5c4f70f45d58d6e6d3ef04586dbbb58a3581606e6117fbb1022eacce6"
+    },
+    {
+      "path": "phases/39-axis-claim/step3-report.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step3-report.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "dd644cb7f7f663012c8bdebebe863e284dd496d7376e6073342f50d6edd47e92"
+    },
+    {
+      "path": "phases/39-axis-claim/step3.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step3.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "45d13357cc96f3d8c13ae00c210170f1bcf8656845001859072121950e45176b"
+    },
+    {
+      "path": "phases/39-axis-claim/step4.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"phases/39-axis-claim/step4.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "d4c60a046099995bed39466fefb687bfce18f574af91c107812c33e9f0e35ace"
+    },
+    {
+      "path": "src/lib/import/framing-plan/elevation.ts",
+      "exists": true,
+      "check": {
+        "command": "test -f \"src/lib/import/framing-plan/elevation.ts\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "bc08eb054437274d1d36bbb10f432342bbb8827ccc75cd4c420e26fc40071ed2"
+    },
     {
       "path": "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
       "exists": true,
@@ -126,6 +929,17 @@
       "sha256": "870fc98ab4a4ce34b4c9fdae049a8ac567c8ee0737122108db5b899fd988cb05"
     },
     {
+      "path": "tests/fixtures/section-import/SOURCES.md",
+      "exists": true,
+      "check": {
+        "command": "test -f \"tests/fixtures/section-import/SOURCES.md\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "728347c17509e724420920f2fb92bfb2e2b0be760ee4d008818484cc3e316965"
+    },
+    {
       "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
       "exists": true,
       "check": {
@@ -135,6 +949,17 @@
         "stderr": ""
       },
       "sha256": "590a477a371e71250d52475da41027cd4d7b3c78a9754f2d904fa7b181d5bf59"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "exists": true,
+      "check": {
+        "command": "test -f \"tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b"
     },
     {
       "path": "tests/plan-import/corpus2-elevation.test.ts",
@@ -148,6 +973,28 @@
       "sha256": "29cf56511af8004ccc0517e2fe2d60e306a1e8d1df7ab8a2f4ab86e369c6acae"
     },
     {
+      "path": "tests/plan-import/corpus2.test.ts",
+      "exists": true,
+      "check": {
+        "command": "test -f \"tests/plan-import/corpus2.test.ts\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "899764a930591da66685b1a43c40372bb60cd9d0d1de299ef1a4a68402d10ac9"
+    },
+    {
+      "path": "tests/plan-import/elevation.test.ts",
+      "exists": true,
+      "check": {
+        "command": "test -f \"tests/plan-import/elevation.test.ts\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "dbbb9c41803bb0c35b5732f942ebce280f80568da2fd152e66bdb37351c8910e"
+    },
+    {
       "path": "tests/plan-import/key-coverage.test.ts",
       "exists": true,
       "check": {
@@ -157,6 +1004,17 @@
         "stderr": ""
       },
       "sha256": "645028d0172feac7d0fe784a8639f8969098691d2b9893bc4d3c7124b59ec3cf"
+    },
+    {
+      "path": "tests/plan-import/parse.test.ts",
+      "exists": true,
+      "check": {
+        "command": "test -f \"tests/plan-import/parse.test.ts\" && echo EXISTS",
+        "exit_code": 0,
+        "stdout": "EXISTS\n",
+        "stderr": ""
+      },
+      "sha256": "f730c6a91db2bae663cbe3d8d3b05ece43280b321169ba8d932f9588bc614fa8"
     },
     {
       "path": "tests/section-import/parse.test.ts",
@@ -170,72 +1028,6 @@
       "sha256": "24632548ea662e6e765568286809814e6f9e28d1952f9297502adc6830fe34aa"
     },
     {
-      "path": "src/lib/import/framing-plan/elevation.ts",
-      "exists": true,
-      "check": {
-        "command": "test -f \"src/lib/import/framing-plan/elevation.ts\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "bc08eb054437274d1d36bbb10f432342bbb8827ccc75cd4c420e26fc40071ed2"
-    },
-    {
-      "path": "phases/39-axis-claim/step3-report.json",
-      "exists": true,
-      "check": {
-        "command": "test -f \"phases/39-axis-claim/step3-report.json\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "f0a62bf91385ba1938795573fa193cc0f865ae993c06386766501a7a5df3d0ea"
-    },
-    {
-      "path": "phases/38-elevation-close/step3-report.json",
-      "exists": true,
-      "check": {
-        "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "cbe9321aeca8b98c2d832a90f84786a8db8dec6a10909fb4385fd45a66f92240"
-    },
-    {
-      "path": "phases/39-axis-claim/index.json",
-      "exists": true,
-      "check": {
-        "command": "test -f \"phases/39-axis-claim/index.json\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "4a45fb45c717ee545807b33679fe10d4f0cbbe5e58dd2983a8a624c5948fc22a"
-    },
-    {
-      "path": "phases/39-axis-claim/step4.md",
-      "exists": true,
-      "check": {
-        "command": "test -f \"phases/39-axis-claim/step4.md\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "d4c60a046099995bed39466fefb687bfce18f574af91c107812c33e9f0e35ace"
-    },
-    {
-      "path": "phases/39-axis-claim/step3.md",
-      "exists": true,
-      "check": {
-        "command": "test -f \"phases/39-axis-claim/step3.md\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "45d13357cc96f3d8c13ae00c210170f1bcf8656845001859072121950e45176b"
-    },
-    {
       "path": "vitest.config.ts",
       "exists": true,
       "check": {
@@ -245,17 +1037,6 @@
         "stderr": ""
       },
       "sha256": "7a8559a29efc9f5fb0b1f3b581235bb0962ed63daa77322e8ae89289dab7c0d7"
-    },
-    {
-      "path": "package.json",
-      "exists": true,
-      "check": {
-        "command": "test -f \"package.json\" && echo EXISTS",
-        "exit_code": 0,
-        "stdout": "EXISTS\n",
-        "stderr": ""
-      },
-      "sha256": "48d99bc8b8f04937ad422f632cd222b114ae4a7630b90fd0cde8511af37ca78b"
     }
   ],
   "mutation_census": {
@@ -3516,5 +4297,1240 @@
     "exit_code": 0,
     "stdout": "\n RUN  v4.1.10 C:/Users/emper/mdtproject\n\n\n Test Files  1 passed (1)\n      Tests  3 passed | 8 skipped (11)\n   Start at  10:31:29\n   Duration  168ms (transform 37ms, setup 0ms, import 51ms, tests 3ms, environment 0ms)\n\n",
     "stderr": ""
-  }
+  },
+  "static_evidence": {
+    "parser_search": {
+      "command": "rg -n 'axis|spansMm' src/lib/import/framing-plan/elevation.ts",
+      "chunk_id": "aee667",
+      "wall_time_seconds": 0.3056116,
+      "exit_code": 1,
+      "original_token_count": 0,
+      "output": ""
+    },
+    "source_diff": {
+      "command": "git diff main...HEAD -- src/",
+      "exit_code": 0,
+      "stdout": "diff --git a/src/lib/import/framing-plan/elevation.ts b/src/lib/import/framing-plan/elevation.ts\nindex d1fb628..92991cd 100644\n--- a/src/lib/import/framing-plan/elevation.ts\n+++ b/src/lib/import/framing-plan/elevation.ts\n@@ -62,8 +62,11 @@ const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4\n  * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\n  * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와\n  * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의\n- * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,\n- * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.\n+ * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의\n+ * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과\n+ * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,\n+ * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`\n+ * 에서는 5.0의 최종 출력이 1.0과 같았다.\n  */\n const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\n /**\n",
+      "stderr": ""
+    },
+    "fixture_log": {
+      "command": "git log --oneline -- tests/fixtures",
+      "exit_code": 0,
+      "stdout": "e0e7dba feat(39-axis-claim): step 3 — docs-elevation-close\ncc16d0c feat(39-axis-claim): step 3 — docs-elevation-close\nbd5ae60 fix(plan-import): tsu p21 軸組図 골든에서 누락된 通り芯 라벨 X5\n68f1240 docs(38-elevation-close): 軸組図 레벨 대응·짧은 치수 상수 정리 사양과 tsu 두 면 골든\n113bbf4 feat(37-corpus-widen-2-close): step 6 — docs-corpus-widen-2\n8c5f907 chore(37-corpus-widen-2-close): step 2 인계 — fuji 골든 정정의 정정·karatsu 위치 출처 조사 지시, step 2 재개\na3e2ca1 test(36-corpus-widen-2): step 5 반증 재대조 판정·골든 정정(축 페이지 순서·hirosaki X2 RFL·ojkk-p4 対象外 12칸)·phase 37 사양\n040bcf3 feat(36-corpus-widen-2): step 0 — register-corpus-and-cmap\n0dc6a1d test(36-corpus-widen-2): 발주처 7곳 22면의 전사 골든·출처 등록·phase 사양\n2e4d891 feat(34-stbridge-apply): step 2 — stb-apply\ne621638 feat(34-stbridge-apply): step 1 — fix-mini-fixture-nodes\n5812aed feat(33-stbridge-skeleton-import): step 5 — record-corpus-limits\nd49419b feat(33-stbridge-skeleton-import): step 3 — stb-skeleton-candidates\n0c140ab feat(33-stbridge-skeleton-import): step 2 — stb-document-ir\n637b841 feat(33-stbridge-skeleton-import): step 1 — stb-corpus-and-decode\n1d5ffd7 spec(19-wall-slab-lists): 표 형식 壁リスト・スラブリスト를 파싱하고 취입 화면에 반영하게 한다\nc43d334 feat(18-plan-corpus-widen): step 0 — widen-textitem-corpus\n2b3fb5d feat(7-section-fields): step 3 — apply\n19e2112 feat(7-section-fields): step 2 — cutoff-raw\n55a74b0 fix(plan-import): 軸組図 계열의 검증을 반증 가능하게 만든다 (R10)\n4541c3e feat(plan-import): 軸組図에서 階高를 읽는다 (ADR-030 B3)\ndf4b854 feat(plan-import): 伏図의 通り芯 그리드를 텍스트 레이어에서 후보로 읽는다 (ADR-030)\n16ee18a feat(column): 円形柱을 断面形状으로 받는다 (ADR-026)\n6bbad8d feat(section-import): 大梁 스케치 세로 치수를 짝지어 断面을 확정한다\nb939e19 feat(section-import): 断面リスト PDF를 브라우저 로컬로 파싱해 행 단위 승인으로 반영한다 (phase 6-section-import)\n8bcad4e chore(phases): 6-section-import 하네스 스펙과 검증 도면 전사 픽스처를 추가한다\n",
+      "stderr": ""
+    },
+    "fixture_diff_stat": {
+      "command": "git diff main...HEAD --stat -- tests/fixtures",
+      "exit_code": 0,
+      "stdout": " tests/fixtures/section-import/SOURCES.md | 3 +++\n 1 file changed, 3 insertions(+)\n",
+      "stderr": ""
+    },
+    "fixture_branch_log": {
+      "command": "git log --format=fuller main..HEAD -- tests/fixtures",
+      "chunk_id": "dfa70f",
+      "wall_time_seconds": 0.3938427,
+      "exit_code": 0,
+      "original_token_count": 161,
+      "output": "commit e0e7dba019d8d7d4be211a545aeb0d8e2f10d335\nAuthor:     Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nAuthorDate: Sat Sep 5 10:24:56 2026 +0900\nCommit:     Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nCommitDate: Sat Sep 5 10:24:56 2026 +0900\n\n    feat(39-axis-claim): step 3 — docs-elevation-close\n\ncommit cc16d0c25bc7b22d16cf8756780c5bb242c58e92\nAuthor:     Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nAuthorDate: Sat Sep 5 10:23:03 2026 +0900\nCommit:     Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nCommitDate: Sat Sep 5 10:23:03 2026 +0900\n\n    feat(39-axis-claim): step 3 — docs-elevation-close\n"
+    },
+    "fixture_diff": {
+      "command": "git diff main...HEAD -- tests/fixtures",
+      "exit_code": 0,
+      "stdout": "diff --git a/tests/fixtures/section-import/SOURCES.md b/tests/fixtures/section-import/SOURCES.md\nindex 03fe42b..87e2fb6 100644\n--- a/tests/fixtures/section-import/SOURCES.md\n+++ b/tests/fixtures/section-import/SOURCES.md\n@@ -63,6 +63,9 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용\n | `dwg-hirosaki-kikyono.pdf` | 青森県弘前市 | 令和7年度 桔梗野小学校等複合施設新築工事(建築工事) 構造図1 | p21 1階床梁伏図 (S-019), p25 軸組図(1) (S-023) | `f4dfcfab190970d8df305ce53319b98efb17873b81e77462b112a89978135fa8` |\n | `dwg-shibata-fire.pdf` | 新発田地域広域事務組合 | 新発田広域消防本部解体工事（既存建物 構造図一式） | p1 1F伏図 (S-1), p7 柱リスト (S-7), p13 軸組図 (S-13) | `e9b5225f841e58d1434127e0d179e45422d91a4246cf7c2b9175b37232daf985` |\n \n+신규 階高 골든의 출처:\n+- `tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json` — `dwg-tsu-kanritou.pdf` p22, **S-22 軸組図(2)**, **三重県津市**. 위 PDF 표의 출처 행과 연결된다.\n+\n ### 전수 조사 후 제외한 페이지\n \n - yokohama p5 杭伏図・杭リスト — 말뚝은 산정 스코프 밖 부재다.\n",
+      "stderr": ""
+    },
+    "golden_label_fix": {
+      "command": "git show bd5ae60 -- tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+      "chunk_id": "50c061",
+      "wall_time_seconds": 0.3012867,
+      "exit_code": 0,
+      "original_token_count": 940,
+      "output": "commit bd5ae60ff9c66e5809b88de5b8e5551ff9f0fd01\nAuthor: Dan-Seo <310402442+Dan-Seo@users.noreply.github.com>\nDate:   Sat Sep 5 09:12:29 2026 +0900\n\n    fix(plan-import): tsu p21 軸組図 골든에서 누락된 通り芯 라벨 X5\n    \n    phase 38 step 6이 「elevation 골든의 axis 블록을 아무 테스트도 대조하지\n    않는다」로 반증한 뒤, 그 미청구 영역을 원본과 대조하다 결함을 하나 찾았다.\n    \n    tsu-kanritou-p21-elevation.json elevations[0].axis 가 라벨 4개(X1..X4)에\n    스팬 4개를 담아 「라벨 = 스팬 + 1」을 깨고 있었고, 같은 건물의\n    tsu-kanritou-p16-grid.json x축(X1..X5, 동일 스팬, 合計 22,000)과도 어긋났다.\n    \n    .cache/dwg-tsu-kanritou.pdf 21면을 다시 읽어 확인했다. 이 면에는 軸組図\n    블록이 셋(Y1·Y2·Y3通り) 있고 셋 다 전각 라벨 Ｘ１〜Ｘ５ 다섯 개를 가진다.\n    회전 페이지(span dir (0,-1))라 표시 좌우는 fitz y 내림차순 = X1→X5이며,\n    인접 라벨 사이 치수 5,850 / 5,150 / 7,175 / 3,825 와 合計 22,000 은\n    전사값과 이미 일치했다. 즉 스팬은 옳았고 라벨만 빠져 있었다.\n    \n    karatsu-jikugumi1-p1(3블록)·hirosaki-kikyono-p25(3블록)의 axis 전사는\n    같은 방법으로 원본과 전부 일치해 수정 대상이 아니다. 이 수정으로\n    plan-import 골든 전체(23개 axis 블록)에서 불변식 위반은 0건이 된다.\n    \n    이 골든을 읽는 테스트가 아직 없으므로 이 커밋만으로는 회귀가 잡히지\n    않는다. 청구는 phase 39가 한다.\n    \n    Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>\n    Claude-Session: https://claude.ai/code/session_01H8hBKEmN9WHGTnG3AnTny4\n\ndiff --git a/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json b/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\nindex 0ac7226..58bfea1 100644\n--- a/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\n+++ b/tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\n@@ -1,5 +1,5 @@\n {\n-  \"$comment\": \"원문 독립 전사 (ADR-010 준용) — 150dpi 렌더링 전체와 300dpi 크롭을 눈으로 읽어 적었다. 파서 출력에서 유도하지 않았다. 스팬은 라벨 순서대로 인접 라벨 사이 mm이고 totalMm은 도면에 적힌 合計(없으면 null)다. 階高는 위→아래. 이 페이지는 아래쪽 레벨만 확정했다.\",\n+  \"$comment\": \"원문 독립 전사 (ADR-010 준용) — 150dpi 렌더링 전체와 300dpi 크롭을 눈으로 읽어 적었다. 파서 출력에서 유도하지 않았다. 스팬은 라벨 순서대로 인접 라벨 사이 mm이고 totalMm은 도면에 적힌 合計(없으면 null)다. 階高는 위→아래. 이 페이지는 아래쪽 레벨만 확정했다. 2026-09-05 수정(Claude, phase 38 step6 반증 후속): axis.labels에서 마지막 통り芯 X5가 빠져 있었다 — 라벨 4개에 스팬 4개로 「라벨=스팬+1」 불변식을 깨고 있었고, 같은 건물의 tsu-kanritou-p16-grid.json x축(X1..X5, 동일 스팬, 合計 22,000)과도 어긋났다. 원본 재확인: dwg-tsu-kanritou.pdf 21면은 軸組図 블록이 셋(Y1·Y2·Y3通り)이고 셋 다 전각 라벨 Ｘ１..Ｘ５ 다섯 개를 가진다(회전 페이지라 표시 좌우는 fitz y 내림차순 = X1→X5). 스팬 배열과 totalMm은 원본과 일치했으므로 라벨만 보정했다.\",\n   \"source\": {\n     \"cacheFile\": \"dwg-tsu-kanritou.pdf\",\n     \"sha256\": \"e09d156150d191096b190283f455e4e7c6875bb8000f89048aabda2326acfc7f\",\n@@ -43,7 +43,8 @@\n           \"X1\",\n           \"X2\",\n           \"X3\",\n-          \"X4\"\n+          \"X4\",\n+          \"X5\"\n         ],\n         \"spansMm\": [\n           5850,\n"
+    },
+    "golden_label_ancestor": {
+      "command": "git merge-base --is-ancestor bd5ae60 main",
+      "chunk_id": "558789",
+      "wall_time_seconds": 0.3447008,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    "length_assertions": {
+      "command": "rg -n \"toHaveLength\\(\" tests/plan-import/",
+      "chunk_id": "dc2ac9",
+      "wall_time_seconds": 0.2633192,
+      "exit_code": 0,
+      "original_token_count": 137,
+      "output": "tests/plan-import/corpus2-elevation.test.ts:273:      expect(golden.levels).toHaveLength(golden.levelTexts!.length)\ntests/plan-import/corpus2.test.ts:127:    expect(parsed.blocks).toHaveLength(golden.blocks.length)\r\ntests/plan-import/elevation.test.ts:36:    expect(parsed.elevations).toHaveLength(2)\r\ntests/plan-import/elevation.test.ts:42:      expect(elevation.levels).toHaveLength(5)\r\ntests/plan-import/parse.test.ts:162:    expect(parsed.grids).toHaveLength(2)\r\ntests/plan-import/parse.test.ts:221:    expect(parsed.grids).toHaveLength(2)\r\n"
+    },
+    "numeric_literals": {
+      "command": "rg -n \"[0-9]{4,}\" tests/plan-import/corpus2-elevation.test.ts tests/plan-import/key-coverage.test.ts",
+      "chunk_id": "4e66b0",
+      "wall_time_seconds": 0.2242242,
+      "exit_code": 1,
+      "original_token_count": 0,
+      "output": ""
+    },
+    "test_diff": {
+      "command": "git diff main...HEAD -- tests/plan-import/corpus2-elevation.test.ts tests/plan-import/key-coverage.test.ts tests/section-import/parse.test.ts",
+      "chunk_id": "1476b2",
+      "wall_time_seconds": 0.2862526,
+      "exit_code": 0,
+      "original_token_count": 4594,
+      "output": "diff --git a/tests/plan-import/corpus2-elevation.test.ts b/tests/plan-import/corpus2-elevation.test.ts\nindex 1274bd9..8598fa5 100644\n--- a/tests/plan-import/corpus2-elevation.test.ts\n+++ b/tests/plan-import/corpus2-elevation.test.ts\n@@ -1,4 +1,4 @@\n-import { readFileSync } from 'node:fs'\n+import { readdirSync, readFileSync } from 'node:fs'\n import { resolve } from 'node:path'\n \n import { describe, expect, it } from 'vitest'\n@@ -12,18 +12,48 @@ type TextItemFixture = {\n   items: TextPage['items']\n }\n \n+type AxisFixture = {\n+  labels: string[]\n+  spansMm: number[]\n+  totalMm: number | null\n+}\n+\n+type ElevationEntryFixture = {\n+  title?: string\n+  titles?: string[]\n+  levels?: string[]\n+  heightsMm?: number[]\n+  levelsBottom?: string[]\n+  heightsBottomMm?: number[]\n+  axis?: AxisFixture\n+}\n+\n type ElevationFixture = {\n   heightsMm?: number[]\n   levels?: string[]\n   levelTexts?: string[]\n-  elevations: Array<{\n-    title?: string\n-    titles?: string[]\n-    levels?: string[]\n-    heightsMm?: number[]\n+  elevations: ElevationEntryFixture[]\n+}\n+\n+type GridFixture = {\n+  blocks: Array<{\n+    x: AxisFixture\n+    y: AxisFixture\n   }>\n }\n \n+const GOLDEN_DIR = resolve(\n+  process.cwd(),\n+  'tests/fixtures/plan-import/expected',\n+)\n+\n+function goldenFiles(suffix: '-elevation.json' | '-grid.json'): string[] {\n+  return readdirSync(GOLDEN_DIR, { withFileTypes: true })\n+    .filter((entry) => entry.isFile() && entry.name.endsWith(suffix))\n+    .map((entry) => entry.name)\n+    .sort()\n+}\n+\n function readPage(file: string): TextPage {\n   const fixturePath = resolve(\n     process.cwd(),\n@@ -40,12 +70,93 @@ function readPage(file: string): TextPage {\n function readGolden(file: string): ElevationFixture {\n   return JSON.parse(\n     readFileSync(\n-      resolve(process.cwd(), 'tests/fixtures/plan-import/expected', file),\n+      resolve(GOLDEN_DIR, file),\n       'utf8',\n     ),\n   ) as ElevationFixture\n }\n \n+function readGridGolden(file: string): GridFixture {\n+  return JSON.parse(\n+    readFileSync(resolve(GOLDEN_DIR, file), 'utf8'),\n+  ) as GridFixture\n+}\n+\n+function expectAxisSelfConsistent(axis: AxisFixture): void {\n+  expect(axis.labels.length).toBe(axis.spansMm.length + 1)\n+  if (axis.totalMm !== null) {\n+    expect(axis.spansMm.reduce((sum, span) => sum + span, 0)).toBe(\n+      axis.totalMm,\n+    )\n+  }\n+}\n+\n+function orientedAxis(\n+  axis: AxisFixture,\n+  reverse: boolean,\n+): AxisFixture {\n+  return reverse\n+    ? {\n+        labels: [...axis.labels].reverse(),\n+        spansMm: [...axis.spansMm].reverse(),\n+        totalMm: axis.totalMm,\n+      }\n+    : axis\n+}\n+\n+function axisIsOrderedSubsequence(\n+  elevation: AxisFixture,\n+  grid: AxisFixture,\n+): boolean {\n+  for (const reverse of [false, true]) {\n+    const candidate = orientedAxis(grid, reverse)\n+    let previousGridIndex = -1\n+    let matches = true\n+\n+    for (const [elevationLabelIndex, label] of elevation.labels.entries()) {\n+      const gridIndex = candidate.labels.indexOf(label)\n+      if (gridIndex <= previousGridIndex) {\n+        matches = false\n+        break\n+      }\n+\n+      if (elevationLabelIndex > 0) {\n+        const gridSpan = candidate.spansMm\n+          .slice(previousGridIndex, gridIndex)\n+          .reduce((sum, span) => sum + span, 0)\n+        if (elevation.spansMm[elevationLabelIndex - 1] !== gridSpan) {\n+          matches = false\n+          break\n+        }\n+      }\n+\n+      previousGridIndex = gridIndex\n+    }\n+\n+    if (matches) return true\n+  }\n+\n+  return false\n+}\n+\n+const AXIS_CROSSCHECKS = [\n+  {\n+    elevationFile: 'hirosaki-kikyono-p25-elevation.json',\n+    gridFile: 'hirosaki-kikyono-p21-grid.json',\n+    axis: 'y',\n+  },\n+  {\n+    elevationFile: 'tsu-kanritou-p21-elevation.json',\n+    gridFile: 'tsu-kanritou-p16-grid.json',\n+    axis: 'x',\n+  },\n+  {\n+    elevationFile: 'karatsu-jikugumi1-p1-elevation.json',\n+    gridFile: 'karatsu-fukuzu-p1-grid.json',\n+    axis: 'y',\n+  },\n+] as const\n+\n function elevationForTitle(\n   parsed: ReturnType<typeof parseFrameElevations>,\n   title: string,\n@@ -150,4 +261,110 @@ describe('階高 corpus 2 골든', () => {\n       'hirosaki-kikyono-p25-elevation.json',\n     )\n   })\n+\n+  it('levels가 있으면 levelTexts와 순서·접두사 관계를 대조한다', () => {\n+    let checked = 0\n+\n+    for (const file of goldenFiles('-elevation.json')) {\n+      const golden = readGolden(file)\n+      if (golden.levels === undefined) continue\n+\n+      expect(golden.levelTexts).toBeDefined()\n+      expect(golden.levels).toHaveLength(golden.levelTexts!.length)\n+      golden.levels.forEach((level, index) => {\n+        expect(golden.levelTexts![index]!.startsWith(level)).toBe(true)\n+      })\n+      checked += 1\n+    }\n+\n+    expect(checked).toBeGreaterThan(0)\n+  })\n+})\n+\n+describe('軸組図·伏図 axis 골든 상호검증', () => {\n+  it('모든 골든의 axis가 라벨·스팬·합계에 대해 자기 정합성을 갖는다', () => {\n+    let axisCount = 0\n+\n+    for (const file of goldenFiles('-grid.json')) {\n+      const golden = readGridGolden(file)\n+      for (const block of golden.blocks) {\n+        for (const axis of [block.x, block.y]) {\n+          expectAxisSelfConsistent(axis)\n+          axisCount += 1\n+        }\n+      }\n+    }\n+\n+    for (const file of goldenFiles('-elevation.json')) {\n+      const golden = readGolden(file)\n+      for (const elevation of golden.elevations) {\n+        if (elevation.axis === undefined) continue\n+        expectAxisSelfConsistent(elevation.axis)\n+        axisCount += 1\n+      }\n+    }\n+\n+    expect(axisCount).toBeGreaterThan(0)\n+  })\n+\n+  it('levelsBottom·heightsBottomMm이 있으면 전체 계열의 꼬리와 일치한다', () => {\n+    for (const file of goldenFiles('-elevation.json')) {\n+      const golden = readGolden(file)\n+      for (const elevation of golden.elevations) {\n+        if (elevation.levelsBottom !== undefined) {\n+          expect(elevation.levels).toBeDefined()\n+          if (elevation.levels !== undefined) {\n+            expect(elevation.levelsBottom).toEqual(\n+              elevation.levels.slice(\n+                elevation.levels.length - elevation.levelsBottom.length,\n+              ),\n+            )\n+          }\n+        }\n+\n+        if (elevation.heightsBottomMm !== undefined) {\n+          expect(elevation.heightsMm).toBeDefined()\n+          if (elevation.heightsMm !== undefined) {\n+            expect(elevation.heightsBottomMm).toEqual(\n+              elevation.heightsMm.slice(\n+                elevation.heightsMm.length -\n+                  elevation.heightsBottomMm.length,\n+              ),\n+            )\n+          }\n+        }\n+      }\n+    }\n+  })\n+\n+  it.each(AXIS_CROSSCHECKS)(\n+    '$elevationFile의 axis가 $gridFile의 $axis 축 부분열이다',\n+    ({ elevationFile, gridFile, axis }) => {\n+      const elevationGolden = readGolden(elevationFile)\n+      const gridGolden = readGridGolden(gridFile)\n+      const gridAxis = gridGolden.blocks[0]?.[axis]\n+      expect(gridAxis).toBeDefined()\n+      if (gridAxis === undefined) return\n+\n+      for (const elevation of elevationGolden.elevations) {\n+        if (elevation.axis === undefined) continue\n+        expect(\n+          axisIsOrderedSubsequence(elevation.axis, gridAxis),\n+        ).toBe(true)\n+      }\n+    },\n+  )\n+\n+  it('axis 없는 elevation 항목은 건너뛰되 그 수가 3개로 고정된다', () => {\n+    let skippedAxisCount = 0\n+\n+    for (const file of goldenFiles('-elevation.json')) {\n+      const golden = readGolden(file)\n+      for (const elevation of golden.elevations) {\n+        if (elevation.axis === undefined) skippedAxisCount += 1\n+      }\n+    }\n+\n+    expect(skippedAxisCount).toBe(3)\n+  })\n })\ndiff --git a/tests/plan-import/key-coverage.test.ts b/tests/plan-import/key-coverage.test.ts\nnew file mode 100644\nindex 0000000..d9c349c\n--- /dev/null\n+++ b/tests/plan-import/key-coverage.test.ts\n@@ -0,0 +1,272 @@\n+import { readdirSync, readFileSync } from 'node:fs'\n+import { resolve } from 'node:path'\n+\n+import { describe, expect, it } from 'vitest'\n+\n+type JsonValue =\n+  | null\n+  | boolean\n+  | number\n+  | string\n+  | JsonValue[]\n+  | { [key: string]: JsonValue }\n+\n+type ClaimedPath = {\n+  path: string\n+  test: string\n+}\n+\n+type ReferenceOnlyPath = {\n+  path: string\n+  reason: string\n+}\n+\n+const GOLDEN_DIR = resolve(\n+  process.cwd(),\n+  'tests/fixtures/plan-import/expected',\n+)\n+\n+/**\n+ * 골든의 값 필드와 이를 실제로 대조하는 테스트를 함께 선언한다.\n+ * 배열 원소는 인덱스가 아니라 `[]`로 표기한다.\n+ */\n+const CLAIMED: readonly ClaimedPath[] = [\n+  {\n+    path: 'blocks[].x.labels[]',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'blocks[].x.spansMm[]',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'blocks[].x.totalMm',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'blocks[].y.labels[]',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'blocks[].y.spansMm[]',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'blocks[].y.totalMm',\n+    test: 'tests/plan-import/corpus2.test.ts > 2차 7면 伏図 격자 골든',\n+  },\n+  {\n+    path: 'elevations[].axis.labels[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증',\n+  },\n+  {\n+    path: 'elevations[].axis.spansMm[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증',\n+  },\n+  {\n+    path: 'elevations[].axis.totalMm',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > axis 골든 상호검증',\n+  },\n+  {\n+    path: 'elevations[].heightsBottomMm[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > levelsBottom·heightsBottomMm 꼬리 대조',\n+  },\n+  {\n+    path: 'elevations[].heightsMm[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'elevations[].levelsBottom[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > levelsBottom·heightsBottomMm 꼬리 대조',\n+  },\n+  {\n+    path: 'elevations[].levels[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'elevations[].title',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'elevations[].titles[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'heightsMm[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'levelTexts[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > 階高 corpus 2 골든',\n+  },\n+  {\n+    path: 'levels[]',\n+    test: 'tests/plan-import/corpus2-elevation.test.ts > levels·levelTexts 관계 대조',\n+  },\n+]\n+\n+const REFERENCE_ONLY: readonly ReferenceOnlyPath[] = [\n+  {\n+    path: '$comment',\n+    reason: '독립 전사 방법과 변경 경위를 설명하는 주석이다.',\n+  },\n+  {\n+    path: 'blocks[].notes[]',\n+    reason: '블록별 판독 주석이며 파서 값의 기대값이 아니다.',\n+  },\n+  {\n+    path: 'blocks[].title',\n+    reason:\n+      '7개 grid 골든의 8개 title 중 도면 문자열 5건(예: 屋根伏図)과 전사자 주석 3건(예: 伏図(공통))이 섞여 있어 균일한 기대값으로 전체 대조할 수 없는 블록 설명 메타데이터다.',\n+  },\n+  {\n+    path: 'elevations[].levelsBottomNote',\n+    reason: '부분 전사 꼬리의 경위를 설명하는 주석이다.',\n+  },\n+  {\n+    path: 'elevations[].note',\n+    reason: '특정 계열의 원문 대조 메모이며 산출 기대값이 아니다.',\n+  },\n+  {\n+    path: 'levelNote',\n+    reason: '페이지 전체 레벨 전사의 주석이다.',\n+  },\n+  {\n+    path: 'notes[]',\n+    reason: '도면 판독 한계와 범위를 설명하는 주석이다.',\n+  },\n+  {\n+    path: 'source.cacheFile',\n+    reason: '원본 캐시 파일 식별자이며 파서 출력값이 아니다.',\n+  },\n+  {\n+    path: 'source.issuer',\n+    reason: '도면 발주처 메타데이터다.',\n+  },\n+  {\n+    path: 'source.page',\n+    reason: '원본 도면의 쪽 메타데이터다.',\n+  },\n+  {\n+    path: 'source.project',\n+    reason: '원본 프로젝트명 메타데이터다.',\n+  },\n+  {\n+    path: 'source.sha256',\n+    reason: '원본 무결성 확인용 해시다.',\n+  },\n+  {\n+    path: 'source.sheet',\n+    reason: '원본 도면명 메타데이터다.',\n+  },\n+  {\n+    path: 'source.transcribedAt',\n+    reason: '독립 전사 일자 메타데이터다.',\n+  },\n+]\n+\n+function addValuePath(\n+  paths: Map<string, Set<string>>,\n+  valuePath: string,\n+  file: string,\n+): void {\n+  const files = paths.get(valuePath) ?? new Set<string>()\n+  files.add(file)\n+  paths.set(valuePath, files)\n+}\n+\n+function collectValuePaths(\n+  value: JsonValue,\n+  currentPath: string,\n+  file: string,\n+  paths: Map<string, Set<string>>,\n+): void {\n+  if (Array.isArray(value)) {\n+    const arrayPath = `${currentPath}[]`\n+    if (value.length === 0) {\n+      addValuePath(paths, arrayPath, file)\n+      return\n+    }\n+\n+    for (const item of value) {\n+      if (item !== null && typeof item === 'object') {\n+        collectValuePaths(item, arrayPath, file, paths)\n+      } else {\n+        addValuePath(paths, arrayPath, file)\n+      }\n+    }\n+    return\n+  }\n+\n+  if (value !== null && typeof value === 'object') {\n+    for (const [key, child] of Object.entries(value)) {\n+      const childPath = currentPath ? `${currentPath}.${key}` : key\n+      if (child !== null && typeof child === 'object') {\n+        collectValuePaths(child, childPath, file, paths)\n+      } else {\n+        addValuePath(paths, childPath, file)\n+      }\n+    }\n+  }\n+}\n+\n+function goldenValuePaths(): Map<string, Set<string>> {\n+  const paths = new Map<string, Set<string>>()\n+  const files = readdirSync(GOLDEN_DIR, { withFileTypes: true })\n+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))\n+    .map((entry) => entry.name)\n+    .sort()\n+\n+  for (const file of files) {\n+    const golden = JSON.parse(\n+      readFileSync(resolve(GOLDEN_DIR, file), 'utf8'),\n+    ) as JsonValue\n+    collectValuePaths(golden, '', file, paths)\n+  }\n+\n+  return paths\n+}\n+\n+function listedPaths(entries: ReadonlyArray<{ path: string }>): Set<string> {\n+  return new Set(entries.map((entry) => entry.path))\n+}\n+\n+describe('plan-import 골든 값 키 커버리지', () => {\n+  it('골든의 모든 값 경로가 대조 또는 명시적 참고 전용으로 등록된다', () => {\n+    const actual = goldenValuePaths()\n+    const claimed = listedPaths(CLAIMED)\n+    const referenceOnly = listedPaths(REFERENCE_ONLY)\n+    const covered = new Set([...claimed, ...referenceOnly])\n+\n+    const unclaimed = [...actual.entries()]\n+      .filter(([path]) => !covered.has(path))\n+      .map(([path, files]) => ({ path, files: [...files].sort() }))\n+    expect(\n+      unclaimed,\n+      [\n+        'unclaimed value paths: make an explicit claim or report the field as blocked',\n+        ...unclaimed.map(({ path, files }) => `${path}: ${files.join(', ')}`),\n+      ].join('\\n'),\n+    ).toEqual([])\n+  })\n+\n+  it('등록한 경로는 실제 골든에 존재하고 두 목록이 겹치지 않는다', () => {\n+    const actual = goldenValuePaths()\n+    const claimed = listedPaths(CLAIMED)\n+    const referenceOnly = listedPaths(REFERENCE_ONLY)\n+    const stale = [...new Set([...claimed, ...referenceOnly])]\n+      .filter((path) => !actual.has(path))\n+      .sort()\n+\n+    expect(\n+      stale,\n+      'CLAIMED/REFERENCE_ONLY contains a path absent from the golden',\n+    ).toEqual([])\n+    expect(\n+      new Set([...claimed].filter((path) => referenceOnly.has(path))),\n+      'a path cannot be both CLAIMED and REFERENCE_ONLY',\n+    ).toEqual(new Set())\n+  })\n+})\n+\n+export { CLAIMED, REFERENCE_ONLY }\ndiff --git a/tests/section-import/parse.test.ts b/tests/section-import/parse.test.ts\nindex a84364d..bc38f60 100644\n--- a/tests/section-import/parse.test.ts\n+++ b/tests/section-import/parse.test.ts\n@@ -679,6 +679,26 @@ function isCenterPosition(position: string): boolean {\n   return position.includes('中央')\n }\n \n+/** 대상 외 리스트의 위치를 본수 필드에 대응시키는 명시적 표다. */\n+const OUT_OF_SCOPE_POSITION_ROLE = {\n+  端部: 'end',\n+  中央: 'center',\n+  // 先端은 中央으로 접을 근거가 없으므로 이 대조에서 청구하지 않는다.\n+  先端: 'unclaimed',\n+} as const\n+\n+type OutOfScopePositionRole =\n+  (typeof OUT_OF_SCOPE_POSITION_ROLE)[keyof typeof OUT_OF_SCOPE_POSITION_ROLE]\n+\n+function outOfScopePositionRole(position: string): OutOfScopePositionRole {\n+  if (!Object.prototype.hasOwnProperty.call(OUT_OF_SCOPE_POSITION_ROLE, position)) {\n+    throw new Error(`지원하지 않는 대상 외 리스트 위치: ${position}`)\n+  }\n+  return OUT_OF_SCOPE_POSITION_ROLE[\n+    position as keyof typeof OUT_OF_SCOPE_POSITION_ROLE\n+  ]\n+}\n+\n function sweepGirders(\n   pageFile: string,\n   expectedFile: string,\n@@ -1290,14 +1310,17 @@ describe('전사 픽스처 전 셀 대조 (ADR-010)', () => {\n           const topByPosition = top as Record<string, string>\n           const bottomByPosition = bottom as Record<string, string>\n           for (const [position, text] of Object.entries(topByPosition)) {\n-            const count = position === '端部' ? main.endTopCount : main.topCount\n+            const role = outOfScopePositionRole(position)\n+            if (role === 'unclaimed') continue\n+            const count = role === 'end' ? main.endTopCount : main.topCount\n             expect(`${count}-${main.size}`, `${entry.mark} 上端筋 ${position}`).toBe(\n               text,\n             )\n           }\n           for (const [position, text] of Object.entries(bottomByPosition)) {\n-            const count =\n-              position === '端部' ? main.endBottomCount : main.bottomCount\n+            const role = outOfScopePositionRole(position)\n+            if (role === 'unclaimed') continue\n+            const count = role === 'end' ? main.endBottomCount : main.bottomCount\n             expect(`${count}-${main.size}`, `${entry.mark} 下端筋 ${position}`).toBe(\n               text,\n             )\n"
+    },
+    "new_docs": {
+      "command": "git diff --unified=0 main...HEAD -- docs/ADR.md docs/RISKS.md docs/MILESTONES.md AGENTS.md CLAUDE.md tests/fixtures/section-import/SOURCES.md",
+      "chunk_id": "52b113",
+      "wall_time_seconds": 0.3166819,
+      "exit_code": 0,
+      "original_token_count": 4679,
+      "output": "diff --git a/AGENTS.md b/AGENTS.md\nindex 26df149..ca3ba12 100644\n--- a/AGENTS.md\n+++ b/AGENTS.md\n@@ -59 +59 @@\n-| 도면 인식(로컬) | **진행 중** | 2차 코퍼스 22면·발주처 7곳을 추가해 골든 격자 7/7·階高 3/3·リスト 5/5면 통과. 잔여: 골든 외 伏図 면의 `寸法列曖昧`·`通り芯対応不明`·`ラベル文字混在`, リスト·軸組図 면의 부분 격자 오탐(`寸法欠落`), 壁·スラブ·shibata 大梁 미전사, 2段筋 본수·特記 기본값·스케치 주기형 柱リスト 미지원, 階高 SHORT_TAIL 허용오차 0.49는 tsu 한 면 상수(R15). R10·R15는 열림이며, 伏図 발주처는 2→8곳. ADR-018·ADR-030 |\n+| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 3항목은 남는다. 잔여: 伏図 문턱·부분 격자 오탐, 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |\n@@ -83 +83 @@\n-| R10 | 열림 | 2차 코퍼스에서 골든 격자 7/7·階高 3/3·リスト 5/5면 통과. 남은 것은 골든 외 면의 `寸法列曖昧`·`通り芯対応不明`·`ラベル文字混在`와 リスト·軸組図 면의 부분 격자 오탐, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원 |\n+| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 3항목은 남는다. 레벨 화이트리스트의 문장 통과·SL 계열 제외, 伏図 오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계는 계속 열림. 근거: docs/RISKS.md R10 |\n@@ -88 +88 @@\n-| R15 | 열림 | T=4에서 기존 4면 `寸法欠落` 재현, T=6에서 복원·T=15/30/40 `gridPages=26`이나 T=40에 fuji-p17 오탐. T=6→15의 3면은 伏図 아닌 부분 격자이며, 伏図 발주처 2→8곳이라 더 넓은 코퍼스 필요. 階高 SHORT_TAIL 0.49는 tsu 한 면 상수 — 후속 결정 필요 |\n+| R15 | 열림 | 伏図 문턱 안정성과 부분 격자 오탐은 계속 열림. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |\ndiff --git a/CLAUDE.md b/CLAUDE.md\nindex e099104..09c7dbe 100644\n--- a/CLAUDE.md\n+++ b/CLAUDE.md\n@@ -56 +56 @@\n-| 도면 인식(로컬) | **진행 중** | 2차 코퍼스 22면·발주처 7곳을 추가해 골든 격자 7/7·階高 3/3·リスト 5/5면 통과. 잔여: 골든 외 伏図 면의 `寸法列曖昧`·`通り芯対応不明`·`ラベル文字混在`, リスト·軸組図 면의 부분 격자 오탐(`寸法欠落`), 壁·スラブ·shibata 大梁 미전사, 2段筋 본수·特記 기본값·스케치 주기형 柱リスト 미지원, 階高 SHORT_TAIL 허용오차 0.49는 tsu 한 면 상수(R15). R10·R15는 열림이며, 伏図 발주처는 2→8곳. ADR-018·ADR-030 |\n+| 도면 인식(로컬) | **진행 중** | tsu-p21·p22 階高 골든의 6레벨·5구간을 전 블록에서 대조하고 짧은 치수 허용비 1.0을 공통 규칙으로 정리했다. 軸組図 axis는 伏図 골든과 전사 상호검증하며 미전사 3항목은 남는다. 잔여: 伏図 문턱·부분 격자 오탐, 레벨 문장·SL 계열 한계, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원. R10·R15 열림 — 근거는 docs/RISKS.md의 해당 항과 docs/ADR.md의 ADR-030 보충 |\n@@ -80 +80 @@\n-| R10 | 열림 | 2차 코퍼스에서 골든 격자 7/7·階高 3/3·リスト 5/5면 통과. 남은 것은 골든 외 면의 `寸法列曖昧`·`通り芯対応不明`·`ラベル文字混在`와 リスト·軸組図 면의 부분 격자 오탐, 壁·スラブ·shibata 大梁 미전사, 2段筋·特記 기본값·스케치 주기형 柱リスト 미지원 |\n+| R10 | 열림 | tsu-p21·p22 階高 6레벨·5구간의 전 블록 대조 완료. 軸組図 axis는 伏図 골든과 상호검증하는 기준 데이터이며 미전사 3항목은 남는다. 레벨 화이트리스트의 문장 통과·SL 계열 제외, 伏図 오탐과 リスト 미전사·2段筋·特記 기본값·스케치 주기형 柱リスト 한계는 계속 열림. 근거: docs/RISKS.md R10 |\n@@ -85 +85 @@\n-| R15 | 열림 | T=4에서 기존 4면 `寸法欠落` 재현, T=6에서 복원·T=15/30/40 `gridPages=26`이나 T=40에 fuji-p17 오탐. T=6→15의 3면은 伏図 아닌 부분 격자이며, 伏図 발주처 2→8곳이라 더 넓은 코퍼스 필요. 階高 SHORT_TAIL 0.49는 tsu 한 면 상수 — 후속 결정 필요 |\n+| R15 | 열림 | 伏図 문턱 안정성과 부분 격자 오탐은 계속 열림. 階高의 한 면 상수 문제는 해소: SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0, 36면 편차 조사와 보고된 동일 출력의 선택지에 근거한 공통 규칙이다. 미측정 연속구간 경계는 주장하지 않는다. 근거: docs/RISKS.md R15 |\ndiff --git a/docs/ADR.md b/docs/ADR.md\nindex 2c5bcbe..ca61d3c 100644\n--- a/docs/ADR.md\n+++ b/docs/ADR.md\n@@ -424,0 +425,16 @@ python -c \"import fitz,sys; d=fitz.open(sys.argv[1]); [print(t, [i+1 for i,p in\n+**phase 38·39 보충 — 階高 대응과 골든의 청구 규약**\n+\n+레벨 라벨은 가로 창과 레벨 위치 허용 범위를 통과한 것만 위에서 아래로 읽고, 아직 대응하지 않은 레벨 중 허용 범위에 드는 첫 레벨에 순서대로 붙인다. 다음 대응 레벨이 없을 때만 허용 범위 안의 직전 레벨에 겹친다. 이는 도면에 사이 치수가 없어 같은 레벨로 읽는 라벨을 보존하는 규칙이다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다(`phases/38-elevation-close/step2-report.json#/implementation`, `tests/plan-import/elevation.test.ts`). 오프셋 중앙값 보정은 쓰지 않는다. karatsu의 라벨 중심과 대응 레벨 위치의 차이는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`로 부호가 다르며, 일괄 보정하면 GL을 허용 범위 밖으로 밀어낸다. 이 반례는 phase 38의 step 2 사양에 기록돼 있고, 같은 수치는 `tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json`의 좌표에서 재대조했다.\n+\n+짧은 치수의 허용은 「밀림이 기대 간격을 넘지 않는다」는 공통 규칙이며 `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`이다. 36면 편차 조사, 0.45의 tsu 꼬리 누락, 0.49 대비 tsu 두 면의 변화, hirosaki의 1.0·5.0 최종 출력 동일성은 `phases/38-elevation-close/step3-report.json`에 있다. 출력이 허용비를 구별하지 못하는 선택지 안에서 의미가 있는 값을 고른다. 기록되지 않은 연속구간의 경계를 측정값으로 쓰지 않는다(`phases/39-axis-claim/step2-report.json#/f1_comment_verification`).\n+\n+**골든의 값 필드는 반드시 실제로 대조하는 테스트에 청구돼야 한다.** 청구되지 않은 기대값은 검증처럼 보이지만 검증이 아니다. phase 38의 step 6에서는 axis 스팬을 바꿔도 테스트가 통과했고, 그 뒤 원문 대조에서 tsu의 마지막 通り芯 `X5` 누락이 드러났다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step0-report.json#/claims`). `tests/plan-import/key-coverage.test.ts`가 값 경로와 청구 테스트를 등록하고 누락·유령 등록·중복을 검사한다. 출처·주석은 사유가 있는 `REFERENCE_ONLY`로 구별한다. 특히 `blocks[].title`은 원문 제목과 전사자 주석이 섞여 있어 참고 전용이며, 구조를 구별한 뒤 제목 대조를 청구하는 조건은 `phases/39-axis-claim/step2-report.json#/deferred_claims`에 남는다. 이 가드는 등록의 완전성을 검사하므로 실제 대조의 효력은 변조 반증으로 함께 확인한다.\n+\n+軸組図의 `axis`는 파서가 그 면에서 격자를 내라는 기대값이 아니라, 같은 건물 伏図 격자와 전사를 상호검증하는 기준 데이터다. 페이지 방향이 뒤집힐 수 있으므로 伏図 축의 정방향·역방향을 모두 허용한다. 軸組図 라벨은 그 방향의 순서 있는 부분열이어야 하고, 인접 라벨 사이 스팬은 伏図에서 건너뛴 구간의 합과 같아야 한다. 라벨·스팬 개수 관계와 기재된 合計도 별도로 대조한다. axis 미전사 항목은 격자로 근사하지 않고 미전사로 남긴다(`tests/plan-import/corpus2-elevation.test.ts`, `phases/39-axis-claim/step1-report.json`).\n+\n+**추기 정정**: 레벨 라벨은 레벨과 y 순서를 지켜 대응하며, 오프셋 보정으로 가장 가까운 레벨에 옮기지 않는다. karatsu-jikugumi1의 반례는 `RFL水上 −12.4pt / 2FL −12.7pt / 1FL −12.7pt / GL +9.3pt`이고, 중앙값 보정은 `GL`을 허용 범위 밖으로 밀어 라벨을 잃게 한다(`phases/38-elevation-close/step2.md#배경`). 도면에 두 레벨 사이 치수가 없을 때만 두 라벨을 한 레벨에 겹쳐 대응한다. yokohama p8의 `中央棟1FL`·`基準GL`이 그 사례다.\n+\n+짧은 치수 허용은 「밀림이 기대 간격을 넘지 않는다」는 뜻이며, `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`은 36면에서 출력이 서로 구별되지 않는 무차별 구간 안에서 고른 값이다(`phases/38-elevation-close/step3-report.json#/implementation/constant`, `#/short_dimension_sweep/pages`, `#/corpus_sweep/comparison`). 골든의 모든 값 필드는 실제 대조 테스트에 청구돼야 한다. 청구되지 않은 기대값은 검증처럼 보일 뿐 검증이 아니며, phase 38 step 6의 axis 스팬 반증과 그로 인한 tsu `X5` 누락이 이를 보였다. phase 39 step 2의 키 커버리지 가드가 32개 경로 중 18개를 대조 테스트에 청구하고 14개를 `REFERENCE_ONLY`로 구별한다(`phases/38-elevation-close/step6-report.json#/items/2_golden_falsifiability`, `phases/39-axis-claim/step2-report.json#/key_paths_total`, `#/claimed`, `#/reference_only`, `tests/plan-import/key-coverage.test.ts`).\n+\n+軸組図 골든의 `axis`는 軸組図 면에서 격자를 만들라는 파서 기대값이 아니라, 같은 건물 伏図 격자와 대조하는 전사 상호검증용 기준 데이터다. 페이지 순서가 뒤집힐 수 있으므로 정방향·역방향을 모두 허용하고, 라벨은 부분열이며 스팬은 건너뛴 구간의 합과 같아야 한다. 미전사 axis는 격자로 근사하지 않고 미전사로 남긴다(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`).\n+\ndiff --git a/docs/MILESTONES.md b/docs/MILESTONES.md\nindex eefbe4b..62dd809 100644\n--- a/docs/MILESTONES.md\n+++ b/docs/MILESTONES.md\n@@ -19,0 +20 @@\n+   - **phase 38·39 결과**: tsu-p21·p22 階高의 6레벨·5구간을 모든 제목 블록에서 대조하고, 레벨 라벨은 순서 대응으로, 짧은 치수는 `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`의 공통 규칙으로 정리했다. 36면 실측에서 확인된 허용비의 효과와 최종 출력 동일성까지만 근거로 남긴다(`phases/38-elevation-close/step3-report.json`). 문장도 통과하는 레벨 화이트리스트와 SL 계열 제외는 유지한다(`phases/38-elevation-close/step4-report.json`). axis 기대값을 흔들어도 통과하던 반증을 계기로 tsu의 `X5` 누락을 바로잡고, 軸組図 axis와 같은 건물 伏図 격자의 정·역방향 부분열·스팬 합 대조를 추가했다. 미전사 axis는 3개 골든 항목으로 남는다(`phases/39-axis-claim/step0-report.json`, `phases/39-axis-claim/step1-report.json#/skipped_axis_count`). 키 커버리지 가드는 전체 32개 경로 중 18개를 실제 대조 테스트, 14개를 출처·주석 등 참고 전용으로 등록한다. 혼합 제목 `blocks[].title`의 대조는 구조를 구별한 뒤로 유보했다(`phases/39-axis-claim/step2-report.json`). 階高의 한 면 상수 문제는 해소했으며, 코퍼스 한계와 伏図 문턱 때문에 R10·R15는 열림을 유지한다.\ndiff --git a/docs/RISKS.md b/docs/RISKS.md\nindex 4794c87..496f2ef 100644\n--- a/docs/RISKS.md\n+++ b/docs/RISKS.md\n@@ -21,0 +22,2 @@\n+\n+  **phase 38·39 보충**: tsu-p21·p22의 階高는 각각 6레벨·5구간으로 확정했고 두 면의 모든 제목 블록이 전체 높이·라벨 대조를 통과한다(`phases/38-elevation-close/step0-report.json#/claims/C4`, `phases/38-elevation-close/step3-report.json#/implementation/golden`, `tests/plan-import/corpus2-elevation.test.ts`). 레벨 라벨 화이트리스트는 `・基礎梁天端から1FLまでは打増しとする。` 같은 문장도 통과시킨다. 36면 조사에서는 이 문장들이 가로 창·레벨 위치 허용 범위 밖이라 결과에 닿지 않았으며, 현재 코퍼스로 효과를 반증할 수 없는 문장 배제 규칙은 만들지 않았다(`phases/38-elevation-close/step4-report.json#/survey`). `1SL`·`2SL`·`SL+…` 계열은 의도적으로 제외한다. tsu의 `1SL`은 `1FL`과 같은 높이의 보조 표기여서, FL/GL 계열에 넣으면 같은 레벨의 라벨이 늘어난다. SL 계열 자체의 골든을 확보하기 전에는 지원하지 않는다. **軸組図 골든의 `axis`는 通り芯 라벨·스팬의 전사 상호검증용 기준 데이터다.** 軸組図 파서에 격자 생성을 요구하는 기대값이 아니며, 軸組図 면에서 생기는 부분 격자는 R15의 오탐이다. 전사한 axis는 같은 건물의 伏図 격자 골든과 대조한다. 미전사 axis는 **3개 골든 항목**이다(`phases/39-axis-claim/step1-report.json#/skipped_axis_count`): `tsu-kanritou-p21-elevation.json`의 `elevations[1]`(Y1·Y2 제목 공유 항목), `tsu-kanritou-p22-elevation.json`의 `elevations[0]`(X1·X2·X3)와 `elevations[1]`(X4·X5). 제목 수나 실제 通り 수를 세는 수치가 아니며, 이 항목들은 階高만 대조한다. 레벨 전사의 개선과 axis 대조 보강으로 코퍼스 대표성 문제까지 닫지는 않는다.\n@@ -25 +27,3 @@\n-- **R15 (열림 — 合計 없는 축의 문턱 안정성)** phase 37 step 5의 sweep에서 T=4는 36면·`gridPages=23`이고 기존 `kani-p38`·`kani-p39`·`yokohama-p6`·`yokohama-p7`의 `寸法欠落`을 재현했다. T=6은 같은 `gridPages=23`에서 요구한 4면을 복원했고, T=15는 `gridPages=26`, T=30도 `gridPages=26`, T=40도 `gridPages=26`이었으나 `fuji-p17`에서만 `寸法列曖昧` 오탐이 추가됐다. T=6→15 사이에 늘어난 3면은 `fuji-p20`(断面リスト)·`saiki-p2`(柱・壁・スラブリスト)·`shibata-p13`(軸組図)으로, 伏図가 아닌 면의 부분 격자 오탐이다. 伏図 골든 7면과 기존 14면은 T=6에서 동일했다. 이번에는 `alongDistance` 최댓값과 경쟁 치수 최솟값을 미측정했다. 伏図를 가진 발주처는 SOURCES.md 기준 2곳에서 8곳으로 늘었지만, R15를 닫지는 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`·`phases/37-corpus-widen-2-close/step5-report.json`). **階高의 한 면 상수(Claude 판정, 2026-09-03)**: `SHORT_TAIL_SCALE_TOLERANCE_RATIO`를 step 3이 0.5→0.49로 줄였으나 tsu-p21 1170mm의 실측 오차 0.488에 맞춘 값이다 — step 5 항목 10에서 0.25로 낮추면 tsu만 깨졌다. 원인은 1170 치수가 연쇄 열(x≈180)과 다른 왼쪽 치수 열(x≈160.5)에 있어 중점 간격 모델이 맞지 않는 것이므로, 레벨 라벨 정렬로 잇거나 정직하게 미검출로 두는 규칙을 후속 phase에서 정한다\n+- **R15 (열림 — 合計 없는 축의 문턱 안정성)** phase 37 step 5의 sweep에서 T=4는 36면·`gridPages=23`이고 기존 `kani-p38`·`kani-p39`·`yokohama-p6`·`yokohama-p7`의 `寸法欠落`을 재현했다. T=6은 같은 `gridPages=23`에서 요구한 4면을 복원했고, T=15는 `gridPages=26`, T=30도 `gridPages=26`, T=40도 `gridPages=26`이었으나 `fuji-p17`에서만 `寸法列曖昧` 오탐이 추가됐다. T=6→15 사이에 늘어난 3면은 `fuji-p20`(断面リスト)·`saiki-p2`(柱・壁・スラブリスト)·`shibata-p13`(軸組図)으로, 伏図가 아닌 면의 부분 격자 오탐이다. 伏図 골든 7면과 기존 14면은 T=6에서 동일했다. 이번에는 `alongDistance` 최댓값과 경쟁 치수 최솟값을 미측정했다. 伏図를 가진 발주처는 SOURCES.md 기준 2곳에서 8곳으로 늘었지만, R15를 닫지는 않는다 (판정서 `phases/36-corpus-widen-2/step5-adjudication.json`·`phases/37-corpus-widen-2-close/step5-report.json`).\n+\n+  **階高 한 면 상수 항목은 해소**: `SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0`을 짧은 치수 공통 허용비로 쓴다. 뜻은 「밀림이 기대 간격 자체를 넘지 않는다」다. `phases/38-elevation-close/step3-report.json`의 `short_dimension_sweep`은 36면의 편차를 기록하고, `counterexamples.ratio_0_45`는 0.45에서 tsu 꼬리가 빠짐을, `corpus_sweep`은 0.49 대비 1.0에서 tsu-p21·p22만 바뀜을 확인했다. `counterexamples.ratio_5_0`에서는 hirosaki 경쟁 꼬리의 후보 자격이 달라져도 5.0의 최종 출력이 1.0과 같았다. 따라서 최종 출력만으로 허용비를 구별하지 못하는 무차별성이 있지만, 보고서가 측정하지 않은 연속구간의 양 끝값까지 확정하지 않는다. 채택값은 관측된 동일 출력의 선택지 가운데 기하적 의미가 있는 값이며, 실측 편차에 붙인 상수가 아니다. `phases/39-axis-claim/step2-report.json`의 `f1_comment_verification`도 이 근거 범위를 확인한다. **伏図 문턱과 부분 격자 오탐은 그대로 남아 R15 자체는 열림이다.**\ndiff --git a/tests/fixtures/section-import/SOURCES.md b/tests/fixtures/section-import/SOURCES.md\nindex 03fe42b..87e2fb6 100644\n--- a/tests/fixtures/section-import/SOURCES.md\n+++ b/tests/fixtures/section-import/SOURCES.md\n@@ -65,0 +66,3 @@ x=1847.5로 살아남아 커밋됐다). 넓힌 뒤에도 제외되는 표 내용\n+신규 階高 골든의 출처:\n+- `tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json` — `dwg-tsu-kanritou.pdf` p22, **S-22 軸組図(2)**, **三重県津市**. 위 PDF 표의 출처 행과 연결된다.\n+\n"
+    },
+    "number_audit": {
+      "comment": "/**\n * 짧은 치수의 텍스트는 자기 구간이 좁아 중점에서 밀릴 수 있다. 이 허용비는\n * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.\n * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와\n * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의\n * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의\n * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과\n * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,\n * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`\n * 에서는 5.0의 최종 출력이 1.0과 같았다.\n */\n",
+      "numeric_grep": [
+        {
+          "value": "150",
+          "command": "grep -nF -- \"150\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 1,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "value": "0.176",
+          "command": "grep -nF -- \"0.176\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n",
+          "stderr": ""
+        },
+        {
+          "value": "1170",
+          "command": "grep -nF -- \"1170\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n",
+          "stderr": ""
+        },
+        {
+          "value": "0.4879",
+          "command": "grep -nF -- \"0.4879\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "48:          \"1170\": [0.490606, 0.487933]\n",
+          "stderr": ""
+        },
+        {
+          "value": "0.4906",
+          "command": "grep -nF -- \"0.4906\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n",
+          "stderr": ""
+        },
+        {
+          "value": "30",
+          "command": "grep -nF -- \"30\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n",
+          "stderr": ""
+        },
+        {
+          "value": "4.33",
+          "command": "grep -nF -- \"4.33\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n",
+          "stderr": ""
+        },
+        {
+          "value": "5.33",
+          "command": "grep -nF -- \"5.33\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 1,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "value": "38",
+          "command": "grep -nF -- \"38\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 1,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "value": "3",
+          "command": "grep -nF -- \"3\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n27:    \"pages\": 36,\n29:    \"pages_without_short_rule\": 32,\n33:        \"short_dimension_deviations\": [0.000296, 0.000293, 0.000293, 0.000293],\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n48:          \"1170\": [0.490606, 0.487933]\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n61:    \"pages\": 36,\n64:    \"unchanged_pages\": 34\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "0",
+          "command": "grep -nF -- \"0\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "4:    \"constant\": \"SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\",\n10:    \"ratio_0_45\": {\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n16:    \"ratio_5_0\": {\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n21:      \"final_output_same_as_1_0\": true,\n33:        \"short_dimension_deviations\": [0.000296, 0.000293, 0.000293, 0.000293],\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n41:        \"short_dimension_deviations\": [0.200295],\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n48:          \"1170\": [0.490606, 0.487933]\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n68:    \"lint\": \"0 errors, 1 existing warning\",\n70:    \"old_constant_search\": \"rg -n SHORT_TAIL_SCALE_TOLERANCE_RATIO src → 0 matches\"\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "45",
+          "command": "grep -nF -- \"45\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "10:    \"ratio_0_45\": {\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "0.45",
+          "command": "grep -nF -- \"0.45\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "0.49",
+          "command": "grep -nF -- \"0.49\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "48:          \"1170\": [0.490606, 0.487933]\n55:          \"1170\": [0.490606, 0.492583]\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n",
+          "stderr": ""
+        },
+        {
+          "value": "21",
+          "command": "grep -nF -- \"21\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "7:    \"golden\": \"tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조\"\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n45:        \"page\": \"tsu-p21.json\",\n63:    \"changed_pages\": [\"tsu-p21.json\", \"tsu-p22.json\"],\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "22",
+          "command": "grep -nF -- \"22\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "7:    \"golden\": \"tsu p21·p22의 모든 elevations 항목과 각 titles를 전체 heightsMm·레벨 라벨로 대조\"\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n52:        \"page\": \"tsu-p22.json\",\n63:    \"changed_pages\": [\"tsu-p21.json\", \"tsu-p22.json\"],\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "1.0",
+          "command": "grep -nF -- \"1.0\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "4:    \"constant\": \"SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0\",\n62:    \"comparison\": \"ratio 0.49 대비 ratio 1.0\",\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "5",
+          "command": "grep -nF -- \"5\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "10:    \"ratio_0_45\": {\n13:      \"observed\": \"5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.\",\n16:    \"ratio_5_0\": {\n18:      \"candidate\": \"hirosaki-p25의 30mm 꼬리 후보\",\n19:      \"deviations\": [4.3321887991, 5.3271613186, 4.7101499289],\n32:        \"page\": \"hirosaki-p25.json\",\n35:          \"2310\": [0.000563, 0.000561, 0.000559],\n36:          \"2580\": [0.000503]\n41:        \"short_dimension_deviations\": [0.200295],\n46:        \"short_dimension_deviations\": [0.175584, 0.176031],\n53:        \"short_dimension_deviations\": [0.178491, 0.17435],\n55:          \"1170\": [0.490606, 0.492583]\n67:    \"targeted_tests\": \"11 files, 257 tests passed\",\n72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        },
+        {
+          "value": "5.0",
+          "command": "grep -nF -- \"5.0\" \"phases/38-elevation-close/step3-report.json\"",
+          "exit_code": 0,
+          "stdout": "72:  \"summary\": \"짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다.\"\n",
+          "stderr": ""
+        }
+      ],
+      "ledger_snapshot": {
+        "step": 3,
+        "name": "docs-elevation-close",
+        "status": "completed",
+        "numbers_used": [
+          {
+            "value": 1,
+            "source": "phases/38-elevation-close/step3-report.json#/implementation/constant"
+          },
+          {
+            "value": 36,
+            "source": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/pages"
+          },
+          {
+            "value": 0.45,
+            "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_0_45"
+          },
+          {
+            "value": 0.49,
+            "source": "phases/38-elevation-close/step3-report.json#/corpus_sweep/comparison"
+          },
+          {
+            "value": 5,
+            "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0"
+          },
+          {
+            "value": 6,
+            "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2"
+          },
+          {
+            "value": 5,
+            "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2"
+          },
+          {
+            "value": 3,
+            "source": "phases/39-axis-claim/step1-report.json#/skipped_axis_count"
+          },
+          {
+            "value": 32,
+            "source": "phases/39-axis-claim/step2-report.json#/key_paths_total"
+          },
+          {
+            "value": 18,
+            "source": "phases/39-axis-claim/step2-report.json#/claimed"
+          },
+          {
+            "value": 14,
+            "source": "phases/39-axis-claim/step2-report.json#/reference_only"
+          },
+          {
+            "value": -12.4,
+            "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+          },
+          {
+            "value": -12.7,
+            "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+          },
+          {
+            "value": 9.3,
+            "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items"
+          },
+          {
+            "value": 21,
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/source/page"
+          },
+          {
+            "value": 22,
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/page"
+          },
+          {
+            "value": 0,
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0"
+          },
+          {
+            "value": 1,
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1"
+          },
+          {
+            "value": 2,
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/sheet"
+          },
+          {
+            "value": 8,
+            "source": "tests/plan-import/elevation.test.ts#yokohama-p8"
+          },
+          {
+            "value": "1SL",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/0/text"
+          },
+          {
+            "value": "2SL",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/1/text"
+          },
+          {
+            "value": "SL+756.70",
+            "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/3/text"
+          },
+          {
+            "value": "1FL",
+            "source": "phases/38-elevation-close/step4-report.json#/acceptedSentences/0/text"
+          },
+          {
+            "value": "2FL",
+            "source": "phases/38-elevation-close/step4-report.json#/acceptedTrueLevelLabels/1/text"
+          },
+          {
+            "value": "Y1",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels"
+          },
+          {
+            "value": "Y2",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels"
+          },
+          {
+            "value": "X1",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+          },
+          {
+            "value": "X2",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+          },
+          {
+            "value": "X3",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels"
+          },
+          {
+            "value": "X4",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels"
+          },
+          {
+            "value": "X5",
+            "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels"
+          },
+          {
+            "value": 38,
+            "source": "phases/38-elevation-close/step3-report.json#/summary"
+          },
+          {
+            "value": 39,
+            "source": "phases/39-axis-claim/step2-report.json#/summary"
+          },
+          {
+            "value": 2,
+            "source": "phases/38-elevation-close/step2-report.json#/summary"
+          },
+          {
+            "value": 6,
+            "source": "phases/38-elevation-close/step6-report.json#/summary"
+          }
+        ],
+        "paths_verified": [
+          "phases/38-elevation-close/step0-report.json",
+          "phases/38-elevation-close/step2.md",
+          "phases/38-elevation-close/step2-report.json",
+          "phases/38-elevation-close/step3-report.json",
+          "phases/38-elevation-close/step4-report.json",
+          "phases/38-elevation-close/step6-report.json",
+          "phases/39-axis-claim/step0-report.json",
+          "phases/39-axis-claim/step1-report.json",
+          "phases/39-axis-claim/step2-report.json",
+          "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+          "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+          "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+          "tests/fixtures/section-import/SOURCES.md",
+          "tests/plan-import/corpus2-elevation.test.ts",
+          "tests/plan-import/elevation.test.ts",
+          "tests/plan-import/key-coverage.test.ts",
+          ".cache/dwg-tsu-kanritou.pdf",
+          "docs/RISKS.md",
+          "docs/ADR.md",
+          "CLAUDE.md",
+          "AGENTS.md",
+          "docs/MILESTONES.md"
+        ],
+        "checks": {
+          "source_precheck": {
+            "command": "Test-Path -LiteralPath <path> -PathType Leaf (Windows equivalent of test -f)",
+            "source_pdf": ".cache/dwg-tsu-kanritou.pdf",
+            "source_pdf_exists": true,
+            "golden_file": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+            "golden_file_exists": true,
+            "dedicated_source_line_absent_before_edit": true
+          },
+          "claude_agents_rows_identical": {
+            "command": "diff --no-index <CLAUDE rows> <AGENTS rows>",
+            "exit_code": 0,
+            "rows_checked": [
+              "도면 인식(로컬)",
+              "R10",
+              "R15"
+            ]
+          },
+          "vitest": {
+            "command": "npx vitest run",
+            "exit_code": 0,
+            "files_passed": 101,
+            "tests_passed": 1808
+          },
+          "lint": {
+            "command": "npm run lint",
+            "exit_code": 0,
+            "errors": 0,
+            "warnings": 1,
+            "warning": "기존 src/app/api/oncall/alert/route.test.ts:161 _omitted unused warning"
+          }
+        },
+        "summary": "R15의 階高 짧은 치수 상수 항목을 1.0·36면 근거로 해소하되 R15는 열림으로 유지하고, R10·ADR-030·마일스톤·출처 문서를 갱신했으며 CLAUDE/AGENTS 대응 행 일치와 전체 테스트·lint를 확인했다."
+      },
+      "source_checks": [
+        {
+          "value": 1,
+          "source": "phases/38-elevation-close/step3-report.json#/implementation/constant",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0"
+        },
+        {
+          "value": 36,
+          "source": "phases/38-elevation-close/step3-report.json#/short_dimension_sweep/pages",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": 36
+        },
+        {
+          "value": 0.45,
+          "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_0_45",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "result": "confirmed_failure",
+            "command": "npx vitest run tests/plan-import/corpus2-elevation.test.ts",
+            "observed": "5 tests 중 3 failed. tsu-p21·p22의 1,170mm 꼬리가 계열에서 빠졌고, 새 전체 골든 대조와 기존 p21 부분 골든이 실패했다.",
+            "restored": true
+          }
+        },
+        {
+          "value": 0.49,
+          "source": "phases/38-elevation-close/step3-report.json#/corpus_sweep/comparison",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "ratio 0.49 대비 ratio 1.0"
+        },
+        {
+          "value": 5,
+          "source": "phases/38-elevation-close/step3-report.json#/counterexamples/ratio_5_0",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "result": "confirmed_candidate_qualification",
+            "candidate": "hirosaki-p25의 30mm 꼬리 후보",
+            "deviations": [
+              4.3321887991,
+              5.3271613186,
+              4.7101499289
+            ],
+            "qualifies": [
+              true,
+              false,
+              true
+            ],
+            "final_output_same_as_1_0": true,
+            "restored": true,
+            "temporary_log_committed": false
+          }
+        },
+        {
+          "value": 6,
+          "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step0-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json 및 tsu-kanritou-p22-elevation.json의 독립 전사는 네 블록 모두 6레벨·5구간 [600,3500,3500,150,1170]이다. 따라서 같은 도면 계열에서 블록별 결과가 불일치하고 현행 파서가 1170을 누락한다는 주장이 성립한다."
+        },
+        {
+          "value": 5,
+          "source": "phases/38-elevation-close/step0-report.json#/claims/C4/evidence/2",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step0-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json 및 tsu-kanritou-p22-elevation.json의 독립 전사는 네 블록 모두 6레벨·5구간 [600,3500,3500,150,1170]이다. 따라서 같은 도면 계열에서 블록별 결과가 불일치하고 현행 파서가 1170을 누락한다는 주장이 성립한다."
+        },
+        {
+          "value": 3,
+          "source": "phases/39-axis-claim/step1-report.json#/skipped_axis_count",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/39-axis-claim/step1-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": 3
+        },
+        {
+          "value": 32,
+          "source": "phases/39-axis-claim/step2-report.json#/key_paths_total",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/39-axis-claim/step2-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": 32
+        },
+        {
+          "value": 18,
+          "source": "phases/39-axis-claim/step2-report.json#/claimed",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/39-axis-claim/step2-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "type": "list",
+            "length": 18
+          }
+        },
+        {
+          "value": 14,
+          "source": "phases/39-axis-claim/step2-report.json#/reference_only",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/39-axis-claim/step2-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": [
+            {
+              "path": "$comment",
+              "reason": "독립 전사 방법과 변경 경위를 설명하는 주석이다."
+            },
+            {
+              "path": "blocks[].notes[]",
+              "reason": "블록별 판독 주석이며 파서 값의 기대값이 아니다."
+            },
+            {
+              "path": "blocks[].title",
+              "reason": "7개 grid 골든의 8개 title 중 도면 문자열 5건(예: 屋根伏図)과 전사자 주석 3건(예: 伏図(공통))이 섞여 있어 균일한 기대값으로 전체 대조할 수 없는 블록 설명 메타데이터다."
+            },
+            {
+              "path": "elevations[].levelsBottomNote",
+              "reason": "부분 전사 꼬리의 경위를 설명하는 주석이다."
+            },
+            {
+              "path": "elevations[].note",
+              "reason": "특정 계열의 원문 대조 메모이며 산출 기대값이 아니다."
+            },
+            {
+              "path": "levelNote",
+              "reason": "페이지 전체 레벨 전사의 주석이다."
+            },
+            {
+              "path": "notes[]",
+              "reason": "도면 판독 한계와 범위를 설명하는 주석이다."
+            },
+            {
+              "path": "source.cacheFile",
+              "reason": "원본 캐시 파일 식별자이며 파서 출력값이 아니다."
+            },
+            {
+              "path": "source.issuer",
+              "reason": "도면 발주처 메타데이터다."
+            },
+            {
+              "path": "source.page",
+              "reason": "원본 도면의 쪽 메타데이터다."
+            },
+            {
+              "path": "source.project",
+              "reason": "원본 프로젝트명 메타데이터다."
+            },
+            {
+              "path": "source.sha256",
+              "reason": "원본 무결성 확인용 해시다."
+            },
+            {
+              "path": "source.sheet",
+              "reason": "원본 도면명 메타데이터다."
+            },
+            {
+              "path": "source.transcribedAt",
+              "reason": "독립 전사 일자 메타데이터다."
+            }
+          ]
+        },
+        {
+          "value": -12.4,
+          "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "type": "list",
+            "length": 672
+          }
+        },
+        {
+          "value": -12.7,
+          "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "type": "list",
+            "length": 672
+          }
+        },
+        {
+          "value": 9.3,
+          "source": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json#/items",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "type": "list",
+            "length": 672
+          }
+        },
+        {
+          "value": 21,
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/source/page",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": 21
+        },
+        {
+          "value": 22,
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/page",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": 22
+        },
+        {
+          "value": 0,
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "titles": [
+              "X1通り軸組図 S=1/100",
+              "X2通り軸組図 S=1/100",
+              "X3通り軸組図 S=1/100"
+            ],
+            "levels": [
+              "パラペット天端",
+              "RFL(水下)",
+              "2FL",
+              "1FL",
+              "設計GL",
+              "基礎下端"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500,
+              150,
+              1170
+            ]
+          }
+        },
+        {
+          "value": 1,
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": {
+            "titles": [
+              "Y1通り軸組図 S=1/100",
+              "Y2通り軸組図 S=1/100"
+            ],
+            "levels": [
+              "パラペット天端",
+              "RFL(水下)",
+              "2FL",
+              "1FL",
+              "設計GL",
+              "基礎下端"
+            ],
+            "heightsMm": [
+              600,
+              3500,
+              3500,
+              150,
+              1170
+            ],
+            "note": "위 블록이다. 아래 블록(Y3)과 레벨 계열이 같다 — 300dpi 크롭 두 장에서 각각 읽었다. 通り芯 스팬은 이 블록에서 전사하지 않았다."
+          }
+        },
+        {
+          "value": 2,
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/source/sheet",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "S-22 軸組図(2)"
+        },
+        {
+          "value": 8,
+          "source": "tests/plan-import/elevation.test.ts#yokohama-p8",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/plan-import/elevation.test.ts\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          }
+        },
+        {
+          "value": "1SL",
+          "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/0/text",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'rejectedLevelLikeStrings'"
+        },
+        {
+          "value": "2SL",
+          "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/1/text",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'rejectedLevelLikeStrings'"
+        },
+        {
+          "value": "SL+756.70",
+          "source": "phases/38-elevation-close/step4-report.json#/rejectedLevelLikeStrings/3/text",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'rejectedLevelLikeStrings'"
+        },
+        {
+          "value": "1FL",
+          "source": "phases/38-elevation-close/step4-report.json#/acceptedSentences/0/text",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'acceptedSentences'"
+        },
+        {
+          "value": "2FL",
+          "source": "phases/38-elevation-close/step4-report.json#/acceptedTrueLevelLabels/1/text",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step4-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'acceptedTrueLevelLabels'"
+        },
+        {
+          "value": "Y1",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "Y2",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json#/elevations/1/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "X1",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "X2",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "X3",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/0/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "X4",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": "X5",
+          "source": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json#/elevations/1/axis/labels",
+          "exists": true,
+          "check": {
+            "command": "test -f \"tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": false,
+          "pointer_error": "'axis'"
+        },
+        {
+          "value": 38,
+          "source": "phases/38-elevation-close/step3-report.json#/summary",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step3-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "짧은 치수 허용비를 1.0의 공통 규칙으로 일반화하고 tsu p21·p22 전체 골든을 추가했으며, 0.45·5.0 반증과 36면 sweep·지정 AC를 통과했다."
+        },
+        {
+          "value": 39,
+          "source": "phases/39-axis-claim/step2-report.json#/summary",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/39-axis-claim/step2-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "32개 골든 키 경로를 CLAIMED 18개·REFERENCE_ONLY 14개로 등록하고 levels 관계와 F1/F2를 확인했으며, 7건 변조가 모두 실패하고 전체 1808개 테스트·lint·타입 검사가 통과했다."
+        },
+        {
+          "value": 2,
+          "source": "phases/38-elevation-close/step2-report.json#/summary",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step2-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "레벨 라벨을 y 순서 커서로 대응하고 최근접·짧은 치수 휴리스틱을 제거했으며, 36면 스윕에서 tsu-p21·tsu-p22만 변경되고 지정 AC·전체 테스트·lint·typecheck가 통과했다."
+        },
+        {
+          "value": 6,
+          "source": "phases/38-elevation-close/step6-report.json#/summary",
+          "exists": true,
+          "check": {
+            "command": "test -f \"phases/38-elevation-close/step6-report.json\" && echo EXISTS",
+            "exit_code": 0,
+            "stdout": "EXISTS\n",
+            "stderr": ""
+          },
+          "pointer_exists": true,
+          "source_value": "karatsu·hirosaki·tsu-p21의 axis.spansMm 골든 값을 +1mm로 변조해도 대응 테스트가 통과했다. 스팬 기대값 대조가 없어 Step 6 게이트를 반증했으며, 임시 변조는 전부 원복했다."
+        }
+      ]
+    },
+    "dev_process_check": {
+      "chunk_id": "8746ff",
+      "wall_time_seconds": 3.3084095,
+      "exit_code": 0,
+      "original_token_count": 2,
+      "output": "[\r\n\r\n]\r\n"
+    }
+  },
+  "initial_reviewed_head": "3b84839872dfe4bc42fd1431d9e7325b1aa09547",
+  "concurrent_change": {
+    "observed": "검증 도중 step3-report.json이 복원되어 커밋되었다. 검증자는 이 파일을 쓰거나 고치지 않았다. 최종 사본의 내용을 source_checks와 ledger_snapshot으로 기록했다.",
+    "diff_stat": " phases/39-axis-claim/index.json             |    2 +-\n phases/39-axis-claim/step3-codex.stdout.log |   49 +\n phases/39-axis-claim/step3-invoke.json      |    2 +-\n phases/39-axis-claim/step3-report.json      |  208 ++\n phases/39-axis-claim/step4-codex.stderr.log |    8 +-\n phases/39-axis-claim/step4-codex.stdout.log |   89 +-\n phases/39-axis-claim/step4-report.json      | 3520 +++++++++++++++++++++++++++\n 7 files changed, 3853 insertions(+), 25 deletions(-)\n",
+    "ledger_current_matches_snapshot": true
+  },
+  "full_gates": {
+    "vitest": {
+      "command": "npx vitest run",
+      "chunk_id": "336ae0",
+      "wall_time_seconds": 2.5e-06,
+      "exit_code": 0,
+      "original_token_count": 47,
+      "output": "\n RUN  v4.1.10 C:/Users/emper/mdtproject\n\n\n Test Files  101 passed (101)\n      Tests  1808 passed (1808)\n   Start at  10:31:55\n   Duration  12.70s (transform 17.98s, setup 16.15s, import 31.46s, tests 42.17s, environment 89.64s)\n\n"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "chunk_id": "1e4afb",
+      "wall_time_seconds": 1e-06,
+      "exit_code": 0,
+      "original_token_count": 51,
+      "output": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 1 problem (0 errors, 1 warning)\n\n"
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "chunk_id": "bea66a",
+      "wall_time_seconds": 4e-07,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    "build": {
+      "command": "Next process check (empty), then npm run build",
+      "chunk_id": "7cefff",
+      "wall_time_seconds": 3.7e-06,
+      "exit_code": 0,
+      "original_token_count": 218,
+      "output": "[\r\n\r\n]\r\n\n> kijun@0.1.0 prebuild\n> node scripts/copy-pdfjs-assets.mjs\n\n\n> kijun@0.1.0 build\n> next build\n\n   ▲ Next.js 15.5.23\n   - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1153ms\n   Skipping linting\n   Checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/6) ...\n   Generating static pages (1/6) \r\n   Generating static pages (2/6) \r\n   Generating static pages (4/6) \r\n ✓ Generating static pages (6/6)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                     108 kB         213 kB\n├ ○ /_not-found                            995 B         105 kB\n├ ƒ /api/oncall/alert                      122 B         105 kB\n└ ○ /icon.svg                                0 B            0 B\n+ First Load JS shared by all             105 kB\n  ├ chunks/255-4ff60647f670442d.js       46.4 kB\n  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB\n  └ other shared chunks (total)          3.89 kB\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n"
+    }
+  },
+  "subject_changes_during_review": {
+    "command": "git diff --stat 3b84839872dfe4bc42fd1431d9e7325b1aa09547 7ff9a83d6c8b20e9077ce8d0bb15084abdaba93e -- src/ tests/ docs/ AGENTS.md CLAUDE.md",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "valid_mutation_census": {
+    "attempted": 92,
+    "detected": 92
+  },
+  "mutation_census_note": "1항·2항의 실제 변조 실행은 95회다. 첫 grid 3회는 PowerShell 기본 stdin 인코딩으로 한글 test-name 정규식이 깨져 Vitest 시작 전에 종료했으므로 검출로 세지 않았다. UTF-8로 고친 실행 명령으로 세 칸을 각각 다시 검사했고 전부 assertion 실패했다. 서로 다른 칸 92개(89+3)에 대한 유효 검사 92/92 검출. 3항·F2는 별도 집계하며 이 census에 넣지 않는다. F2 준비 중 인코딩 때문에 JSON 경로를 못 읽은 1회는 파일을 쓰기 전 종료하고 원본을 보존했으므로 변조 횟수에 포함하지 않는다.",
+  "comment_number_mapping": [
+    {
+      "value": "150",
+      "source_key_paths": [],
+      "holds": false,
+      "reason": "주석의 tsu 150mm가 지정 report에 없다. grep -nF 150의 종료 코드 1·출력 빈 문자열."
+    },
+    {
+      "value": "0.176",
+      "source_key_paths": [
+        "/short_dimension_sweep/observed/2/short_dimension_deviations/0",
+        "/short_dimension_sweep/observed/2/short_dimension_deviations/1"
+      ],
+      "source_values": [
+        0.175584,
+        0.176031
+      ],
+      "relation": "소수 3자리 반올림",
+      "holds": true
+    },
+    {
+      "value": "1170",
+      "source_key_paths": [
+        "/short_dimension_sweep/observed/2/short_tail_candidates/1170",
+        "/short_dimension_sweep/observed/3/short_tail_candidates/1170"
+      ],
+      "relation": "키 이름에 명시",
+      "holds": true
+    },
+    {
+      "value": "0.4879",
+      "source_key_paths": [
+        "/short_dimension_sweep/observed/2/short_tail_candidates/1170/1"
+      ],
+      "source_values": [
+        0.487933
+      ],
+      "relation": "소수 4자리 반올림",
+      "holds": true
+    },
+    {
+      "value": "0.4906",
+      "source_key_paths": [
+        "/short_dimension_sweep/observed/2/short_tail_candidates/1170/0"
+      ],
+      "source_values": [
+        0.490606
+      ],
+      "relation": "소수 4자리 반올림",
+      "holds": true
+    },
+    {
+      "value": "30",
+      "source_key_paths": [
+        "/counterexamples/ratio_5_0/candidate"
+      ],
+      "relation": "30mm 명시",
+      "holds": true
+    },
+    {
+      "value": "4.33",
+      "source_key_paths": [
+        "/counterexamples/ratio_5_0/deviations/0"
+      ],
+      "source_values": [
+        4.3321887991
+      ],
+      "relation": "소수 2자리 반올림",
+      "holds": true
+    },
+    {
+      "value": "5.33",
+      "source_key_paths": [
+        "/counterexamples/ratio_5_0/deviations/1"
+      ],
+      "source_values": [
+        5.3271613186
+      ],
+      "relation": "grep 원문 일치는 없으나 소수 2자리 반올림으로 근거가 성립한다.",
+      "holds": true
+    },
+    {
+      "value": "0.45",
+      "source_key_paths": [
+        "/counterexamples/ratio_0_45",
+        "/summary"
+      ],
+      "relation": "반례 키와 summary에 명시",
+      "holds": true
+    },
+    {
+      "value": "0.49",
+      "source_key_paths": [
+        "/corpus_sweep/comparison"
+      ],
+      "relation": "비교 문자열에 명시",
+      "holds": true
+    },
+    {
+      "value": "21",
+      "source_key_paths": [
+        "/corpus_sweep/changed_pages/0"
+      ],
+      "relation": "도면 페이지 식별자",
+      "holds": true
+    },
+    {
+      "value": "22",
+      "source_key_paths": [
+        "/corpus_sweep/changed_pages/1"
+      ],
+      "relation": "도면 페이지 식별자",
+      "holds": true
+    },
+    {
+      "value": "1.0",
+      "source_key_paths": [
+        "/implementation/constant",
+        "/corpus_sweep/comparison"
+      ],
+      "relation": "채택값 명시",
+      "holds": true
+    },
+    {
+      "value": "5.0",
+      "source_key_paths": [
+        "/counterexamples/ratio_5_0",
+        "/summary"
+      ],
+      "relation": "반례 키와 summary에 명시",
+      "holds": true
+    }
+  ],
+  "comment_reference_tokens": {
+    "38": "phases/38-elevation-close라는 출처 파일 식별자. 수치 실측 주장이 아니다.",
+    "3": "step3-report.json이라는 출처 파일 식별자.",
+    "0,45,5": "ratio_0_45 및 ratio_5_0 키의 구성 숫자이며 0.45·5.0에서 대조한다."
+  },
+  "verdict": "refuted",
+  "summary": "F1 주석의 150mm가 지정 report에 없고 문서 numbers_used의 source 12개가 존재하지 않는 JSON 키를 가리켜 반증했다. 유효 axis·grid 변조 92/92 검출, 키 가드·F2 정상, 전체 1808 테스트·lint·tsc·build 통과. 대상은 수정하지 않았고 원복 diff는 비어 있다.",
+  "completed_at": "2026-09-05T10:37:26.626553+09:00"
 }
