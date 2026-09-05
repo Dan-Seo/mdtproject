@@ -17,7 +17,8 @@
       "name": "comment-and-crosscheck",
       "status": "completed",
       "summary": "36면 계측으로 150mm 편차 귀속·주석 숫자 20개를 검증하고 p22↔p16 y축 상호검증·한 칸 변조 실패를 확인; 전체 1809개 테스트·lint·tsc 통과(step1-report.json).",
-      "started_at": "2026-09-05T11:05:46+0900"
+      "started_at": "2026-09-05T11:05:46+0900",
+      "completed_at": "2026-09-05T11:12:58+0900"
     },
     {
       "step": 2,
