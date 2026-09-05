@@ -348,7 +348,7 @@ class StepExecutor:
             # 전역 설정이 바뀌어도 phase 재현이 흔들리지 않아야 한다.
             [codex_bin, "exec", "--dangerously-bypass-approvals-and-sandbox",
              "--dangerously-bypass-hook-trust",
-             "-m", "gpt-5.6-luna", "-c", 'model_reasoning_effort="xhigh"',
+             "-m", "gpt-6-astra", "-c", 'model_reasoning_effort="xhigh"',
              "--json", "-"],
             prompt,
             stdout_path,

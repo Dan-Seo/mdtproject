@@ -62,8 +62,11 @@ const SHORT_TAIL_COLUMN_WINDOW_PT = LABEL_WINDOW_PT / 4
  * 그 밀림이 기대 간격 자체를 넘지 않는지 판정한다 — 짧은 치수 공통 규칙이다.
  * 코퍼스에서 실제로 짧은 치수 분기가 발동한 값은 tsu 150mm(편차 0.176)와
  * tsu 1170mm(편차 0.4879/0.4906)이고, 탈락시키는 경쟁 꼬리 후보는 hirosaki의
- * 30mm(편차 4.33〜5.33)다. 0.5〜20.0에서 36면 출력은 모두 같았으므로,
- * 실측 최댓값에 맞추지 않고 그 구간 안에서 뜻이 있는 1.0을 사용한다.
+ * 30mm(편차 4.33〜5.33)다. `phases/38-elevation-close/step3-report.json`의
+ * `counterexamples.ratio_0_45`에서 0.45는 실패했고, `corpus_sweep.comparison`과
+ * `corpus_sweep.changed_pages`에서 0.49는 tsu-p21·p22의 결과를 바꿨으며,
+ * `implementation.constant`에서 채택값 1.0을 확인했다. `counterexamples.ratio_5_0`
+ * 에서는 5.0의 최종 출력이 1.0과 같았다.
  */
 const SHORT_DIMENSION_SCALE_TOLERANCE_RATIO = 1.0
 /**
