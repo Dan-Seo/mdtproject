@@ -1,0 +1,8 @@
+2026-09-05T10:38:28.723247Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-05T10:38:28.818832Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorization provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-09-05T10:38:28.960493Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-09-05T10:43:58.033434Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\import\framing-plan\parse.ts:
+/** 치수 중심과 인접 축 중점의 어긋남 허용. 14면 sweep의 안전 창은 6pt 이상
+ *  30pt 미만이다. 4pt에서는 기존 치수가 빠져 合計不一致, 30pt부터는 노이즈가 들어와
+ *  合計不一致가 된다. 채택 최댓값은 5.803722pt, 合計 미확인 축의 최근접 미사용
+ *  경쟁 치수는 140.325470pt다 */
