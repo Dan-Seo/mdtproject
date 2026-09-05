@@ -1,0 +1,1011 @@
+{
+  "phase": "41-report-record-integrity",
+  "step": 0,
+  "status": "completed",
+  "scope": {
+    "glob": "phases/*/step*-report*.json",
+    "files_scanned": 124,
+    "files": [
+      "phases/12-plan-apply-story/step1-report.json",
+      "phases/12-plan-apply-story/step2-report.json",
+      "phases/13-harness-fixes/step0-report.json",
+      "phases/13-harness-fixes/step1-report.json",
+      "phases/14-plan-track-unify/step0-report.json",
+      "phases/14-plan-track-unify/step1-report.json",
+      "phases/15-plan-guard-debts/step0-report.json",
+      "phases/15-plan-guard-debts/step1-report.json",
+      "phases/16-span1-record/step0-report.json",
+      "phases/16-span1-record/step1-report.json",
+      "phases/16-span1-record/step2-report.json",
+      "phases/17-total-unconfirmed-risk/step0-report.json",
+      "phases/17-total-unconfirmed-risk/step1-report.json",
+      "phases/17-total-unconfirmed-risk/step2-report.json",
+      "phases/18-plan-corpus-widen/step0-report.json",
+      "phases/18-plan-corpus-widen/step1-report.json",
+      "phases/19-wall-slab-lists/step0-report.json",
+      "phases/19-wall-slab-lists/step1-report.json",
+      "phases/19-wall-slab-lists/step2-report.json",
+      "phases/20-girder-end-asymmetry/step0-report.json",
+      "phases/20-girder-end-asymmetry/step1-report.json",
+      "phases/20-girder-end-asymmetry/step2-report.json",
+      "phases/21-asym-import/step0-report.json",
+      "phases/21-asym-import/step1-report.json",
+      "phases/21-asym-import/step2-report.json",
+      "phases/22-opening-reinforcement/step0-report.json",
+      "phases/22-opening-reinforcement/step1-report.json",
+      "phases/22-opening-reinforcement/step2-report.json",
+      "phases/22-opening-reinforcement/step3-report.json",
+      "phases/23-story-label/step0-report.json",
+      "phases/23-story-label/step1-report.json",
+      "phases/23-story-label/step2-report.json",
+      "phases/23-story-label/step3-report.json",
+      "phases/24-wall-class/step0-report.json",
+      "phases/24-wall-class/step1-report.json",
+      "phases/24-wall-class/step2-report.json",
+      "phases/25-wall-extent/step0-report.json",
+      "phases/25-wall-extent/step1-report.json",
+      "phases/25-wall-extent/step2-report.json",
+      "phases/25-wall-extent/step3-report.json",
+      "phases/26-plan-place/step0-report.json",
+      "phases/26-plan-place/step1-report.json",
+      "phases/26-plan-place/step2-report.json",
+      "phases/27-cantilever-slab/step0-report.json",
+      "phases/27-cantilever-slab/step1-report.json",
+      "phases/27-cantilever-slab/step2-report.json",
+      "phases/27-cantilever-slab/step3-report.json",
+      "phases/28-shear-hook-shape/step0-report.json",
+      "phases/28-shear-hook-shape/step0b-report.json",
+      "phases/28-shear-hook-shape/step1-report.json",
+      "phases/28-shear-hook-shape/step2-report.json",
+      "phases/28-shear-hook-shape/step2b-report.json",
+      "phases/28-shear-hook-shape/step3-report.json",
+      "phases/28-shear-hook-shape/step4-report.json",
+      "phases/28-shear-hook-shape/step5-report.json",
+      "phases/29-harness-verify-gate/step0-report.json",
+      "phases/29-harness-verify-gate/step1-report.json",
+      "phases/29-harness-verify-gate/step2-report.json",
+      "phases/30-rulepack-review-sheet/step0a-report.json",
+      "phases/30-rulepack-review-sheet/step0b-report.json",
+      "phases/30-rulepack-review-sheet/step1-report.json",
+      "phases/30-rulepack-review-sheet/step2-report.json",
+      "phases/30-rulepack-review-sheet/step3-report.json",
+      "phases/30-rulepack-review-sheet/step4-report.json",
+      "phases/31-wall-shiki-decision/step0-report.json",
+      "phases/31-wall-shiki-decision/step1-report.json",
+      "phases/31-wall-shiki-decision/step2-report.json",
+      "phases/32-harness-test-rot/step0-report.json",
+      "phases/32-harness-test-rot/step0a-report.json",
+      "phases/32-harness-test-rot/step1-report.json",
+      "phases/32-harness-test-rot/step2-report.json",
+      "phases/32-harness-test-rot/step3-report.json",
+      "phases/33-stbridge-skeleton-import/step0-report.json",
+      "phases/33-stbridge-skeleton-import/step1-report.json",
+      "phases/33-stbridge-skeleton-import/step2-report.json",
+      "phases/33-stbridge-skeleton-import/step3-report.json",
+      "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+      "phases/33-stbridge-skeleton-import/step4-report.json",
+      "phases/33-stbridge-skeleton-import/step5-report.json",
+      "phases/34-stbridge-apply/step0-report.json",
+      "phases/34-stbridge-apply/step6-report.json",
+      "phases/34-stbridge-apply/step7-report.json",
+      "phases/34-stbridge-apply/step8-report.json",
+      "phases/35-ledger-reconciliation/step0-report.json",
+      "phases/35-ledger-reconciliation/step1-report.json",
+      "phases/35-ledger-reconciliation/step2-report.json",
+      "phases/35-ledger-reconciliation/step3-report.json",
+      "phases/35-ledger-reconciliation/step4-report.json",
+      "phases/35-ledger-reconciliation/step5-report.json",
+      "phases/36-corpus-widen-2/step0-report.json",
+      "phases/36-corpus-widen-2/step1-report.json",
+      "phases/36-corpus-widen-2/step2-report.json",
+      "phases/36-corpus-widen-2/step3-report.json",
+      "phases/36-corpus-widen-2/step4-report.json",
+      "phases/36-corpus-widen-2/step5-report.json",
+      "phases/37-corpus-widen-2-close/step0-report.json",
+      "phases/37-corpus-widen-2-close/step1-report.json",
+      "phases/37-corpus-widen-2-close/step2-report.json",
+      "phases/37-corpus-widen-2-close/step3-report.json",
+      "phases/37-corpus-widen-2-close/step4-report.json",
+      "phases/37-corpus-widen-2-close/step5-report.json",
+      "phases/37-corpus-widen-2-close/step6-report.json",
+      "phases/37-corpus-widen-2-close/step7-report.json",
+      "phases/38-elevation-close/step0-report.json",
+      "phases/38-elevation-close/step1-report.json",
+      "phases/38-elevation-close/step2-report.json",
+      "phases/38-elevation-close/step3-report.json",
+      "phases/38-elevation-close/step4-report.json",
+      "phases/38-elevation-close/step5-report.json",
+      "phases/38-elevation-close/step6-report.json",
+      "phases/39-axis-claim/step0-report.attempt1.json",
+      "phases/39-axis-claim/step0-report.json",
+      "phases/39-axis-claim/step1-report.json",
+      "phases/39-axis-claim/step2-report.attempt1.json",
+      "phases/39-axis-claim/step2-report.attempt2.json",
+      "phases/39-axis-claim/step2-report.json",
+      "phases/39-axis-claim/step3-report.json",
+      "phases/39-axis-claim/step4-report.json",
+      "phases/40-citation-integrity/step0-report.json",
+      "phases/40-citation-integrity/step1-report.json",
+      "phases/40-citation-integrity/step2-report.json",
+      "phases/40-citation-integrity/step3-report.json",
+      "phases/40-citation-integrity/step4-report.attempt1.json",
+      "phases/40-citation-integrity/step4-report.json"
+    ],
+    "occurrence_unit": "One matching string value at a JSON pointer; runs enumerates every maximal consecutive question-mark run with length >= 2 (Unicode code-point offsets).",
+    "self_report_exclusion": "This evidence file did not exist in the initial 124-file population. Both scans use that identical population; copied before-values and excerpts in this new report are historical evidence, not new restoration targets.",
+    "baseline_head": "746329fffa39700f855b8b343469be7f1e9d1d71"
+  },
+  "occurrences": [
+    {
+      "file": "phases/22-opening-reinforcement/step0-report.json",
+      "pointer": "/checks/2/evidence/2",
+      "excerpt": " 없는 기존 경로는 src/domain/model/project.ts:715 및 src/domain/rebar/wall.ts:237의 ?? []로 이전 의미를 유지한다.",
+      "classification": "captured_io",
+      "reason": "The Korean explanation explicitly cites the TypeScript nullish-coalescing expression at two source sites; the question marks are the operator.",
+      "runs": [
+        {
+          "start": 154,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/27-cantilever-slab/step0-report.json",
+      "pointer": "/premises/6/evidence/1/source/1/text",
+      "excerpt": "t openings = members.flatMap((candidate, index) =>\n    (candidate.openings ?? []).map((opening) => ({\n      ...opening,\n      xMm: opening.xMm + (axis =",
+      "classification": "captured_io",
+      "reason": "The excerpt is TypeScript source moving openings into run coordinates; candidate.openings uses the nullish-coalescing operator.",
+      "runs": [
+        {
+          "start": 227,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/27-cantilever-slab/step0-report.json",
+      "pointer": "/twoSupportSites/1/source/1/text",
+      "excerpt": "t openings = members.flatMap((candidate, index) =>\n    (candidate.openings ?? []).map((opening) => ({\n      ...opening,\n      xMm: opening.xMm + (axis =",
+      "classification": "captured_io",
+      "reason": "The repeated two-support-site excerpt is the same TypeScript source; candidate.openings uses the nullish-coalescing operator.",
+      "runs": [
+        {
+          "start": 227,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step2-report.json",
+      "pointer": "/mutations/A/changed",
+      "excerpt": "document.ts: missing distance was assigned distance ?? '0'",
+      "classification": "captured_io",
+      "reason": "The mutation description quotes the deliberate TypeScript fallback expression distance followed by the nullish-coalescing operator and a zero string.",
+      "runs": [
+        {
+          "start": 52,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+      "pointer": "/premises/3/note",
+      "excerpt": "in 누락의 0은 절점 일치 검사의 내부 원점일 뿐 candidate 숫자 필드에 실리지 않는다. decode.ts의 declared ?? ''도 미지원 인코딩 오류 메타데이터이며 candidate 경로가 아니다.",
+      "classification": "captured_io",
+      "reason": "The Korean note quotes decode.ts's declared encoding fallback; the consecutive question marks are valid TypeScript syntax.",
+      "runs": [
+        {
+          "start": 79,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+      "pointer": "/fabrication_candidates/0/pattern",
+      "excerpt": "declared ?? ''",
+      "classification": "captured_io",
+      "reason": "The complete value is the TypeScript expression for the declared encoding fallback, containing a nullish-coalescing operator.",
+      "runs": [
+        {
+          "start": 9,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+      "pointer": "/premises/3/note",
+      "excerpt": "in 누락의 0은 절점 일치 검사의 내부 원점일 뿐 candidate 숫자 필드에 실리지 않는다. decode.ts의 declared ?? ''도 미지원 인코딩 오류 메타데이터이며 candidate 경로가 아니다.",
+      "classification": "captured_io",
+      "reason": "The retained Korean note quotes decode.ts's declared encoding fallback; the question marks are valid TypeScript syntax.",
+      "runs": [
+        {
+          "start": 79,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+      "pointer": "/fabrication_candidates/0/pattern",
+      "excerpt": "declared ?? ''",
+      "classification": "captured_io",
+      "reason": "The complete retained pattern is the TypeScript declared encoding fallback expression, containing a nullish-coalescing operator.",
+      "runs": [
+        {
+          "start": 9,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+      "pointer": "/pre_commit_status/3",
+      "excerpt": "?? phases/33-stbridge-skeleton-import/step5-codex.stderr.log",
+      "classification": "captured_io",
+      "reason": "The line is Git's untracked-file status for the step 5 stderr log; its two leading question marks are the porcelain status code.",
+      "runs": [
+        {
+          "start": 0,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+      "pointer": "/pre_commit_status/4",
+      "excerpt": "?? phases/33-stbridge-skeleton-import/step5-codex.stdout.log",
+      "classification": "captured_io",
+      "reason": "The line is Git's untracked-file status for the step 5 stdout log; its two leading question marks are the porcelain status code.",
+      "runs": [
+        {
+          "start": 0,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+      "pointer": "/pre_commit_status/5",
+      "excerpt": "?? phases/33-stbridge-skeleton-import/step5-report.json",
+      "classification": "captured_io",
+      "reason": "The line is Git's untracked-file status for the step 5 report; its two leading question marks are the porcelain status code.",
+      "runs": [
+        {
+          "start": 0,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+      "pointer": "/pre_commit_status/6",
+      "excerpt": "?? tests/stb-import/sources-limits.test.ts",
+      "classification": "captured_io",
+      "reason": "The line is Git's untracked-file status for the sources-limits test; its two leading question marks are the porcelain status code.",
+      "runs": [
+        {
+          "start": 0,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/36-corpus-widen-2/step0-report.json",
+      "pointer": "/summary",
+      "excerpt": "CMap/standard-font ?? ??? ?????Node ???? ?? ????, ?? ??? 0.5pt ???? ???? 2? 22?? ????. ?? 14?? ??? ???? 36? ??? e2e ?? ???? ????.",
+      "classification": "authored_mangled",
+      "reason": "This is the author's implementation summary, with Korean prose replaced by question marks between intact asset names and counts; the same-step report-writing command contains its original sentence.",
+      "runs": [
+        {
+          "start": 19,
+          "length": 2
+        },
+        {
+          "start": 22,
+          "length": 3
+        },
+        {
+          "start": 26,
+          "length": 5
+        },
+        {
+          "start": 36,
+          "length": 4
+        },
+        {
+          "start": 41,
+          "length": 2
+        },
+        {
+          "start": 44,
+          "length": 4
+        },
+        {
+          "start": 50,
+          "length": 2
+        },
+        {
+          "start": 53,
+          "length": 3
+        },
+        {
+          "start": 63,
+          "length": 4
+        },
+        {
+          "start": 68,
+          "length": 4
+        },
+        {
+          "start": 78,
+          "length": 2
+        },
+        {
+          "start": 81,
+          "length": 4
+        },
+        {
+          "start": 87,
+          "length": 2
+        },
+        {
+          "start": 92,
+          "length": 2
+        },
+        {
+          "start": 95,
+          "length": 3
+        },
+        {
+          "start": 99,
+          "length": 4
+        },
+        {
+          "start": 108,
+          "length": 3
+        },
+        {
+          "start": 116,
+          "length": 2
+        },
+        {
+          "start": 119,
+          "length": 4
+        },
+        {
+          "start": 124,
+          "length": 4
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/89/command",
+      "excerpt": "es/vitest/vitest.mjs run tests/plan-import/corpus2-elevation.test.ts -t \"? ?????\"",
+      "classification": "captured_io",
+      "reason": "This is the actual failed Vitest invocation with a corrupted test-name regex, paired with a startup SyntaxError; preserving it records what ran.",
+      "runs": [
+        {
+          "start": 90,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/89/stderr",
+      "excerpt": "⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯\nSyntaxError: Invalid regular expression: /? ?????/: Nothing to repeat\n    at new RegExp (<anonymous>)\n    at resolveConfig$1",
+      "classification": "captured_io",
+      "reason": "This is the captured startup SyntaxError and stack for mutation 89, including the exact invalid regex that Vitest received.",
+      "runs": [
+        {
+          "start": 76,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/90/command",
+      "excerpt": "es/vitest/vitest.mjs run tests/plan-import/corpus2-elevation.test.ts -t \"? ?????\"",
+      "classification": "captured_io",
+      "reason": "This is the actual failed Vitest invocation for mutation 90 with the same corrupted regex, rather than an authored conclusion.",
+      "runs": [
+        {
+          "start": 90,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/90/stderr",
+      "excerpt": "⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯\nSyntaxError: Invalid regular expression: /? ?????/: Nothing to repeat\n    at new RegExp (<anonymous>)\n    at resolveConfig$1",
+      "classification": "captured_io",
+      "reason": "This is the captured startup SyntaxError and stack for mutation 90, including the exact invalid regex that Vitest received.",
+      "runs": [
+        {
+          "start": 76,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/91/command",
+      "excerpt": "es/vitest/vitest.mjs run tests/plan-import/corpus2-elevation.test.ts -t \"? ?????\"",
+      "classification": "captured_io",
+      "reason": "This is the actual failed Vitest invocation for mutation 91 with the same corrupted regex, rather than an authored conclusion.",
+      "runs": [
+        {
+          "start": 90,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/mutations/91/stderr",
+      "excerpt": "⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯\nSyntaxError: Invalid regular expression: /? ?????/: Nothing to repeat\n    at new RegExp (<anonymous>)\n    at resolveConfig$1",
+      "classification": "captured_io",
+      "reason": "This is the captured startup SyntaxError and stack for mutation 91, including the exact invalid regex that Vitest received.",
+      "runs": [
+        {
+          "start": 76,
+          "length": 5
+        }
+      ]
+    },
+    {
+      "file": "phases/39-axis-claim/step4-report.json",
+      "pointer": "/static_evidence/test_diff/output",
+      "excerpt": " string,\n+  file: string,\n+): void {\n+  const files = paths.get(valuePath) ?? new Set<string>()\n+  files.add(file)\n+  paths.set(valuePath, files)\n+}\n+\n+",
+      "classification": "captured_io",
+      "reason": "The value is a git diff with diff headers and hunks; its consecutive question marks occur in the added TypeScript nullish-coalescing expression paths.get(valuePath).",
+      "runs": [
+        {
+          "start": 11855,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/validation/behavior_unchanged/method",
+      "excerpt": "HEAD? ?? ??? TypeScript transpileModule(removeComments:true, ES2022, ESNext)? ??? ?? ???? ????.",
+      "classification": "authored_mangled",
+      "reason": "This is the author's explanation of comparing emitted JavaScript, with prose around intact transpileModule options destroyed; the log contains the method assignment.",
+      "runs": [
+        {
+          "start": 6,
+          "length": 2
+        },
+        {
+          "start": 9,
+          "length": 3
+        },
+        {
+          "start": 78,
+          "length": 3
+        },
+        {
+          "start": 82,
+          "length": 2
+        },
+        {
+          "start": 85,
+          "length": 4
+        },
+        {
+          "start": 90,
+          "length": 4
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/comment_verification/scope",
+      "excerpt": "?? ?? ?? ? ?? ??. ??? ??? ????report ?? ???? ??? ??? ????. grep? ?? ?? ???? ? JSON ???? ??? ????? ????.",
+      "classification": "authored_mangled",
+      "reason": "This is the author's description of the comment audit scope and JSON-pointer checks, with prose destroyed; the log contains the scope assignment.",
+      "runs": [
+        {
+          "start": 0,
+          "length": 2
+        },
+        {
+          "start": 3,
+          "length": 2
+        },
+        {
+          "start": 6,
+          "length": 2
+        },
+        {
+          "start": 11,
+          "length": 2
+        },
+        {
+          "start": 14,
+          "length": 2
+        },
+        {
+          "start": 18,
+          "length": 3
+        },
+        {
+          "start": 22,
+          "length": 3
+        },
+        {
+          "start": 26,
+          "length": 4
+        },
+        {
+          "start": 37,
+          "length": 2
+        },
+        {
+          "start": 40,
+          "length": 4
+        },
+        {
+          "start": 45,
+          "length": 3
+        },
+        {
+          "start": 49,
+          "length": 3
+        },
+        {
+          "start": 53,
+          "length": 4
+        },
+        {
+          "start": 65,
+          "length": 2
+        },
+        {
+          "start": 68,
+          "length": 2
+        },
+        {
+          "start": 71,
+          "length": 4
+        },
+        {
+          "start": 83,
+          "length": 4
+        },
+        {
+          "start": 88,
+          "length": 3
+        },
+        {
+          "start": 92,
+          "length": 5
+        },
+        {
+          "start": 98,
+          "length": 4
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/summary",
+      "excerpt": "36? ????? tsu 150mm ?? ??? ???? ?? ?? 20?? ????. p22?p16 y? ????? grid ? ? ?? ??? ????? ?? 1809? ????lint?tsc? ????.",
+      "classification": "authored_mangled",
+      "reason": "This is the author's measurement and validation summary, with prose around tsu, p22, p16 and test counts destroyed; the log contains the summary assignment.",
+      "runs": [
+        {
+          "start": 4,
+          "length": 5
+        },
+        {
+          "start": 20,
+          "length": 2
+        },
+        {
+          "start": 23,
+          "length": 3
+        },
+        {
+          "start": 27,
+          "length": 4
+        },
+        {
+          "start": 32,
+          "length": 2
+        },
+        {
+          "start": 35,
+          "length": 2
+        },
+        {
+          "start": 40,
+          "length": 2
+        },
+        {
+          "start": 43,
+          "length": 4
+        },
+        {
+          "start": 60,
+          "length": 5
+        },
+        {
+          "start": 75,
+          "length": 2
+        },
+        {
+          "start": 78,
+          "length": 3
+        },
+        {
+          "start": 82,
+          "length": 5
+        },
+        {
+          "start": 88,
+          "length": 2
+        },
+        {
+          "start": 97,
+          "length": 4
+        },
+        {
+          "start": 111,
+          "length": 4
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step4-report.json",
+      "pointer": "/items/1_comment_clean/grep_source_comment/command",
+      "excerpt": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" -lc \"grep -nF -e '36? ?????' -e 'tsu-p21? 1170mm' -e '30mm ?? ??' -e '?? report?? 0.45' -e '0.49? ???' -e '5.0? ?? ??' src/lib/import/framing-plan/elevation.ts\"",
+      "classification": "captured_io",
+      "reason": "The value records an executed bash grep command whose search patterns already contain question marks; repairing it would change the historical command.",
+      "runs": [
+        {
+          "start": 62,
+          "length": 5
+        },
+        {
+          "start": 99,
+          "length": 2
+        },
+        {
+          "start": 102,
+          "length": 2
+        },
+        {
+          "start": 110,
+          "length": 2
+        },
+        {
+          "start": 119,
+          "length": 2
+        },
+        {
+          "start": 138,
+          "length": 3
+        },
+        {
+          "start": 152,
+          "length": 2
+        },
+        {
+          "start": 155,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step4-report.json",
+      "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/command",
+      "excerpt": "vitest/vitest.mjs run tests/plan-import/corpus2-elevation.test.ts -t \"axis ?? elevation ??? ??\" --reporter=json --outputFile=C:\\Users\\emper\\AppData\\Local\\Temp\\kijun-phas",
+      "classification": "captured_io",
+      "reason": "The value records the diagnostic Vitest invocation with the corrupted axis test-name regex and its output path; the paired stderr confirms it actually failed at startup.",
+      "runs": [
+        {
+          "start": 93,
+          "length": 2
+        },
+        {
+          "start": 106,
+          "length": 3
+        },
+        {
+          "start": 110,
+          "length": 2
+        }
+      ]
+    },
+    {
+      "file": "phases/40-citation-integrity/step4-report.json",
+      "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/stderr",
+      "excerpt": "⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯\nSyntaxError: Invalid regular expression: /axis ?? elevation ??? ??/: Nothing to repeat\n    at new RegExp (<anonymous>)\n    at resolveConfig$1",
+      "classification": "captured_io",
+      "reason": "The value is the captured startup SyntaxError and stack for that diagnostic command, including the exact corrupted regex.",
+      "runs": [
+        {
+          "start": 79,
+          "length": 2
+        },
+        {
+          "start": 92,
+          "length": 3
+        },
+        {
+          "start": 96,
+          "length": 2
+        }
+      ]
+    }
+  ],
+  "census": {
+    "captured_io": 22,
+    "authored_mangled": 4
+  },
+  "question_mark_run_census": {
+    "total": 94,
+    "by_classification": {
+      "captured_io": 33,
+      "authored_mangled": 61
+    }
+  },
+  "restorations": [
+    {
+      "file": "phases/36-corpus-widen-2/step0-report.json",
+      "pointer": "/summary",
+      "stored_before": "CMap/standard-font ?? ??? ?????Node ???? ?? ????, ?? ??? 0.5pt ???? ???? 2? 22?? ????. ?? 14?? ??? ???? 36? ??? e2e ?? ???? ????.",
+      "restored": "CMap/standard-font 자산 경로를 브라우저·Node 추출기에 공통 적용하고, 겹침 글자를 0.5pt 기준으로 정규화해 2차 22면을 생성했다. 기존 14면은 바이트 동일하며 36면 실태와 e2e 환경 미기동을 기록했다.",
+      "log": {
+        "file": "phases/36-corpus-widen-2/step0-codex.stdout.log",
+        "line": 99
+      },
+      "skeleton_match": true
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/validation/behavior_unchanged/method",
+      "stored_before": "HEAD? ?? ??? TypeScript transpileModule(removeComments:true, ES2022, ESNext)? ??? ?? ???? ????.",
+      "restored": "HEAD와 작업 파일을 TypeScript transpileModule(removeComments:true, ES2022, ESNext)로 변환한 출력 문자열이 동일하다.",
+      "log": {
+        "file": "phases/40-citation-integrity/step1-codex.stdout.log",
+        "line": 44
+      },
+      "skeleton_match": true
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/comment_verification/scope",
+      "stored_before": "?? ?? ?? ? ?? ??. ??? ??? ????report ?? ???? ??? ??? ????. grep? ?? ?? ???? ? JSON ???? ??? ????? ????.",
+      "restored": "대상 상수 바로 위 주석 전체. 수치뿐 아니라 페이지·report 경로 식별자에 포함된 숫자도 등록했다. grep은 표기 존재 확인이며 각 JSON 포인터도 해석해 값·맥락을 확인했다.",
+      "log": {
+        "file": "phases/40-citation-integrity/step1-codex.stdout.log",
+        "line": 44
+      },
+      "skeleton_match": true
+    },
+    {
+      "file": "phases/40-citation-integrity/step1-report.json",
+      "pointer": "/summary",
+      "stored_before": "36? ????? tsu 150mm ?? ??? ???? ?? ?? 20?? ????. p22?p16 y? ????? grid ? ? ?? ??? ????? ?? 1809? ????lint?tsc? ????.",
+      "restored": "36면 재계측으로 tsu 150mm 편차 귀속을 확인하고 주석 숫자 20개를 검증했다. p22↔p16 y축 상호검증과 grid 한 칸 변조 실패를 확인했으며 전체 1809개 테스트·lint·tsc가 통과했다.",
+      "log": {
+        "file": "phases/40-citation-integrity/step1-codex.stdout.log",
+        "line": 52
+      },
+      "skeleton_match": true
+    }
+  ],
+  "unrecoverable": [],
+  "after_rescan": {
+    "files_scanned": 124,
+    "matching_string_values": 22,
+    "census": {
+      "authored_mangled": 0,
+      "captured_io": 22
+    },
+    "question_mark_runs": 33,
+    "captured_io_unchanged": true,
+    "captured_io_values_equal_byte_for_byte": true,
+    "remaining": [
+      {
+        "file": "phases/22-opening-reinforcement/step0-report.json",
+        "pointer": "/checks/2/evidence/2",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/27-cantilever-slab/step0-report.json",
+        "pointer": "/premises/6/evidence/1/source/1/text",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/27-cantilever-slab/step0-report.json",
+        "pointer": "/twoSupportSites/1/source/1/text",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step2-report.json",
+        "pointer": "/mutations/A/changed",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+        "pointer": "/premises/3/note",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report-refuted-1.json",
+        "pointer": "/fabrication_candidates/0/pattern",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+        "pointer": "/premises/3/note",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step4-report.json",
+        "pointer": "/fabrication_candidates/0/pattern",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+        "pointer": "/pre_commit_status/3",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+        "pointer": "/pre_commit_status/4",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+        "pointer": "/pre_commit_status/5",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/33-stbridge-skeleton-import/step5-report.json",
+        "pointer": "/pre_commit_status/6",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/89/command",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/89/stderr",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/90/command",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/90/stderr",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/91/command",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/mutations/91/stderr",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/39-axis-claim/step4-report.json",
+        "pointer": "/static_evidence/test_diff/output",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/40-citation-integrity/step4-report.json",
+        "pointer": "/items/1_comment_clean/grep_source_comment/command",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/40-citation-integrity/step4-report.json",
+        "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/command",
+        "classification": "captured_io"
+      },
+      {
+        "file": "phases/40-citation-integrity/step4-report.json",
+        "pointer": "/mutation_census/records/171/diagnostic_control_on_restored_fixture/stderr",
+        "classification": "captured_io"
+      }
+    ]
+  },
+  "validation": {
+    "skeleton": {
+      "expression": "''.join(c if ord(c) < 128 else '?' for c in candidate) == stored_before",
+      "passed": 4,
+      "failed": 0,
+      "log_locations": "Physical 1-based UTF-8 JSONL line; decode item.command, then extract the quoted assigned literal without running that command."
+    },
+    "restored_files_json_load": {
+      "passed": true,
+      "files": [
+        "phases/36-corpus-widen-2/step0-report.json",
+        "phases/40-citation-integrity/step1-report.json"
+      ]
+    },
+    "byte_preservation": [
+      {
+        "file": "phases/36-corpus-widen-2/step0-report.json",
+        "before_sha256": "0397482173efa01f2a42c0031963d30cd96bfc31b501fe8736be45e65d5ba059",
+        "after_sha256": "0a2318774eb339c5121a35369754317a3c3934c283c4bf84f0b0b108b9a425ac",
+        "reverse_field_substitutions_restore_all_original_bytes": true
+      },
+      {
+        "file": "phases/40-citation-integrity/step1-report.json",
+        "before_sha256": "054bd5efb96d3bf4f8bce65c047c3f2f0f52dcff52989eacfaa1317cf5b9370d",
+        "after_sha256": "742b0c452d445d08c22859a57c3f026d8b0aedd35b670bd856373d9b8ded06d9",
+        "reverse_field_substitutions_restore_all_original_bytes": true
+      }
+    ],
+    "other_historical_reports_byte_identical": 122,
+    "independent_recheck": {
+      "passed": true,
+      "baseline": "git show 746329fffa39700f855b8b343469be7f1e9d1d71:<file>",
+      "historical_files": 124,
+      "matching_string_values_before": 26,
+      "matching_string_values_after": 22,
+      "question_mark_runs_before": 94,
+      "question_mark_runs_after": 33,
+      "restored_values": 4,
+      "unchanged_captured_io_values": 22,
+      "other_json_paths_unchanged": true,
+      "reverse_substitution_sha256_checks": 2,
+      "log_provenance_checks": 4
+    },
+    "git_diff_stat": {
+      "command": "git diff --stat",
+      "exit_code": 0,
+      "output": " phases/36-corpus-widen-2/step0-report.json     | 2 +-\n phases/40-citation-integrity/step1-report.json | 6 +++---\n 2 files changed, 4 insertions(+), 4 deletions(-)\n",
+      "paths": [
+        "phases/36-corpus-widen-2/step0-report.json",
+        "phases/40-citation-integrity/step1-report.json"
+      ],
+      "restoration_files": [
+        "phases/36-corpus-widen-2/step0-report.json",
+        "phases/40-citation-integrity/step1-report.json"
+      ],
+      "exact_path_set_match": true,
+      "measurement_stage": "Unfiltered worktree diff, before staging historical restorations. The pre-existing harness edit to the current phase index was already staged for the required commit; this new audit report was untracked. Final commit also includes that index and this report, as required by the task.",
+      "required_metadata_files": [
+        "phases/41-report-record-integrity/index.json",
+        "phases/41-report-record-integrity/step0-report.json"
+      ]
+    },
+    "full_tests": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "test_files_passed": 101,
+      "tests_passed": 1809,
+      "duration_seconds": 12.08,
+      "output": "Test Files  101 passed (101)\n     Tests  1809 passed (1809)\n"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "errors": 0,
+      "existing_warnings": 1,
+      "output": "\n> kijun@0.1.0 lint\n> eslint .\n\n\nC:\\Users\\emper\\mdtproject\\src\\app\\api\\oncall\\alert\\route.test.ts\n  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 1 problem (0 errors, 1 warning)\n\n"
+    }
+  },
+  "summary": "과거 report 124개에서 26건을 분류하고, 로그 원문과 치환이 일치한 손상 문장 4건을 2개 파일에서 복원했다. captured_io 22건 보존, 잔여 손상 0건, 전체 테스트 1809개와 lint 통과.",
+  "completed_at": "2026-09-05T04:46:16.167130+00:00"
+}

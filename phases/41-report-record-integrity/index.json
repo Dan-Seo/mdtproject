@@ -5,7 +5,9 @@
     {
       "step": 0,
       "name": "restore-mangled-records",
-      "status": "pending"
+      "status": "completed",
+      "summary": "과거 report 124개에서 26건을 분류하고, 로그 원문과 치환이 일치한 손상 문장 4건을 2개 파일에서 복원했다. captured_io 22건 보존, 잔여 손상 0건, 전체 테스트 1809개와 lint 통과.",
+      "started_at": "2026-09-05T13:39:55+0900"
     },
     {
       "step": 1,
