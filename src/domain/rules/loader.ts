@@ -6,6 +6,20 @@ import type {
   RulePack,
 } from './types'
 
+// 룰팩 문서를 읽는 입구. **값은 여기서 하나도 바뀌지 않는다** — 어느 경로로 들어와도
+// 같은 문서 트리가 나온다.
+//
+// 브라우저 번들에서는 `.yaml`이 빌드 시점에 JSON으로 굳어져 들어온다
+// (`scripts/build/yaml-json-loader.cjs`). YAML → JSON 변환도 같은 js-yaml `load`가
+// **빌드 때** 하므로 해석은 동일하고, 실행 시점에는 파서가 필요 없어진다 —
+// js-yaml 41,143 B(min)를 초기 로드에서 뺀 것이 이 분기의 목적이다.
+// 테스트·Node 경로는 원문 YAML을 그대로 넘기므로 아래 fallback으로 간다.
+function loadDocument(text: string): unknown {
+  const head = text.trimStart()[0]
+  if (head === '{' || head === '[') return JSON.parse(text)
+  return load(text)
+}
+
 interface SourceDefinition {
   short: string
   doc: string
@@ -60,7 +74,7 @@ function parseNullableString(
 
 function parseSources(sourceYaml: string): SourceDictionary {
   const fileName = 'sources.yaml'
-  const parsed: unknown = load(sourceYaml)
+  const parsed: unknown = loadDocument(sourceYaml)
   if (!isRecord(parsed)) {
     fail(fileName, '<sources>', 'expected a source dictionary')
   }
@@ -246,7 +260,7 @@ export function parseRulePack(files: Record<string, string>): RulePack {
   for (const [fileName, yaml] of Object.entries(files)) {
     if (fileName === 'sources.yaml') continue
 
-    const parsed: unknown = load(yaml)
+    const parsed: unknown = loadDocument(yaml)
     if (!Array.isArray(parsed)) {
       fail(fileName, '<unknown>', 'expected a list of rule entries')
     }

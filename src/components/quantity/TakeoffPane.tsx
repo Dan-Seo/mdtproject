@@ -22,7 +22,6 @@ import {
 } from '@/domain/quantity'
 import type { RuleHit } from '@/domain/rules/types'
 import { lookupMarkup } from '@/domain/rules/lookup'
-import { exportTakeoffXlsx } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
 import { sourceLabel, sourceTooltip } from '@/lib/rule-source'
@@ -785,23 +784,29 @@ export function TakeoffActions() {
     // 룰팩 key만 싣는다. 치수·본수는 도면 데이터라 브라우저 밖으로 내보내지 않는다.
     // lines.length 원값도 부재 수에서 파생된 모델 규모라 마찬가지다 — 원문을
     // 복원할 수 없는 버킷으로만 보낸다.
-    exportTakeoffXlsx({ project, lines, locale }).then(
-      () => {
-        capture('takeoff_exported', {
-          locale,
-          size_bucket: sizeBucket(lines.length),
-          // 텔레메트리 키는 「원문에 값이 없는 근거를 썼는가」 그대로 둔다 —
-          // 独立検討 대기(transcribed)는 전 행에 붙어 있어 신호가 되지 않는다.
-          has_inferred: inferredRules.length > 0,
-          has_unverified: hasUnverified,
-          inferred_rules: inferredRules.map(({ key }) => key),
-        })
-      },
-      (error: unknown) => {
-        captureException(error, { stage: 'takeoff_export' })
-        capture('takeoff_export_failed', { locale })
-      },
-    )
+    // 내역서 조립기는 이 釦를 누르기 전에는 쓰이지 않는다 — exceljs를 이미 눌린
+    // 뒤에 받는 것과 같은 이유로, 조립기 자신도 누른 때 받는다 (초기 로드 −9,000 B min).
+    import('@/lib/export')
+      .then(({ exportTakeoffXlsx }) =>
+        exportTakeoffXlsx({ project, lines, locale }),
+      )
+      .then(
+        () => {
+          capture('takeoff_exported', {
+            locale,
+            size_bucket: sizeBucket(lines.length),
+            // 텔레메트리 키는 「원문에 값이 없는 근거를 썼는가」 그대로 둔다 —
+            // 独立検討 대기(transcribed)는 전 행에 붙어 있어 신호가 되지 않는다.
+            has_inferred: inferredRules.length > 0,
+            has_unverified: hasUnverified,
+            inferred_rules: inferredRules.map(({ key }) => key),
+          })
+        },
+        (error: unknown) => {
+          captureException(error, { stage: 'takeoff_export' })
+          capture('takeoff_export_failed', { locale })
+        },
+      )
   }
 
   return (

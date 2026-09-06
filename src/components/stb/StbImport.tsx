@@ -2,9 +2,6 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 
-import { decodeStbBytes } from '@/lib/import/stb/decode'
-import { parseStbDocument } from '@/lib/import/stb/document'
-import { toSkeletonCandidate } from '@/lib/import/stb/candidates'
 import { applyStbGrid, applyStbStories } from '@/lib/import/stb/apply'
 import type { StbGridCandidate, StbSkeletonCandidate } from '@/lib/import/stb/types'
 import { t } from '@/lib/i18n'
@@ -109,6 +106,14 @@ export function StbImport({ initialCandidate }: StbImportProps) {
     setDiscardStoryMembers(false)
 
     try {
+      // .stb 해석기는 파일을 고른 뒤에만 쓰인다 — 초기 로드에서 뺀다.
+      // 이 경로는 이미 비동기(arrayBuffer 대기)라 사용자가 기다리는 시점이 늘지 않는다.
+      const [{ decodeStbBytes }, { parseStbDocument }, { toSkeletonCandidate }] =
+        await Promise.all([
+          import('@/lib/import/stb/decode'),
+          import('@/lib/import/stb/document'),
+          import('@/lib/import/stb/candidates'),
+        ])
       const decoded = decodeStbBytes(await file.arrayBuffer())
       if (requestRef.current !== requestId) return
 

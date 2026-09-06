@@ -17,9 +17,17 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+// 이 목록은 **본문 서체(sans)의** 사정이다. 等幅(mono)은 사정이 다르다 —
+// 디자인 시스템이 부르는 축이 `JetBrains+Mono:wght@400;500`이고
+// (design/kijun-design-system/tokens/fonts.css), 이 앱에서 mono를 쓰는 CSS 규칙
+// 15개는 전부 400이거나 굵기를 정하지 않는다. 그래서 400 하나만 받는다:
+// 31,340 → 21,212 B (−10,128, 실측).
+// 굵기를 정하지 않던 규칙에는 `font-weight: 400`을 함께 박았다 — 상속으로 600·700이
+// 흘러들면 브라우저가 가짜 굵게(synthetic bold)를 그리기 때문이다. mono를 600 이상으로
+// 쓸 일이 생기면 그 굵기를 이 목록에 먼저 더할 것.
 const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['400'],
   variable: '--font-jetbrains-mono',
 })
 

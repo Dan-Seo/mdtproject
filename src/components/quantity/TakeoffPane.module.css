@@ -148,6 +148,8 @@
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   font-family: var(--font-mono);
+  /* mono는 400 하나만 싣는다 (src/app/layout.tsx) — 상속된 굵기로 가짜 굵게가 그려지지 않게 못 박는다. */
+  font-weight: 400;
   font-size: 10px;
   line-height: 1;
 }
@@ -219,6 +221,8 @@ a.transcribedSourceChip:hover {
   padding: var(--space-sm) 30px;
   color: var(--text-body);
   font-family: var(--font-mono);
+  /* mono는 400 하나만 싣는다 (src/app/layout.tsx) — 상속된 굵기로 가짜 굵게가 그려지지 않게 못 박는다. */
+  font-weight: 400;
   font-size: var(--type-code-size);
   line-height: var(--type-code-lh);
   white-space: pre-wrap;
@@ -257,6 +261,8 @@ a.transcribedSourceChip:hover {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
+  /* mono는 400 하나만 싣는다 (src/app/layout.tsx) — 상속된 굵기로 가짜 굵게가 그려지지 않게 못 박는다. */
+  font-weight: 400;
 }
 
 .exportButton {
