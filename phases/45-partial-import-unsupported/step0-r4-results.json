@@ -1,0 +1,244 @@
+[
+  {
+    "case": "B1-column-only",
+    "applied": 1,
+    "skipped": [
+      {
+        "mark": "G1",
+        "reason": "断面未登録"
+      }
+    ],
+    "direct": {
+      "message": "No touching 大梁 found above 柱: 1F-C1-0-0",
+      "stack": "Error: No touching 大梁 found above 柱: 1F-C1-0-0\n    at beamDepthAbove (C:/Users/emper/mdtproject-p45/src/domain/model/project.ts:1547:11)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:21:27\n    at errorOf (C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:12:8)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:21:15\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+    },
+    "pipeline": {
+      "message": "No touching 大梁 found above 柱: 1F-C1-0-0",
+      "stack": "Error: No touching 大梁 found above 柱: 1F-C1-0-0\n    at beamDepthAbove (C:/Users/emper/mdtproject-p45/src/domain/model/project.ts:1547:11)\n    at buildTakeoff (C:/Users/emper/mdtproject-p45/src/lib/hooks/useTakeoff.ts:113:31)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:21:87\n    at errorOf (C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:12:8)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:21:75\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)"
+    }
+  },
+  {
+    "case": "r3-pitch-control",
+    "pitch": 100.1,
+    "error": {
+      "message": "Invalid あばら筋 gap: 100.10000000000002",
+      "stack": "Error: Invalid あばら筋 gap: 100.10000000000002\n    at stirrupPositions (C:/Users/emper/mdtproject-p45/src/domain/rebar/stirrup-layout.ts:77:15)\n    at generateColumnRebar (C:/Users/emper/mdtproject-p45/src/domain/rebar/column.ts:285:22)\n    at buildTakeoff (C:/Users/emper/mdtproject-p45/src/lib/hooks/useTakeoff.ts:108:14)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:29:27\n    at errorOf (C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:12:8)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:29:15\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)"
+    }
+  },
+  {
+    "case": "r3-pitch-control",
+    "pitch": 100,
+    "error": null
+  },
+  {
+    "case": "r3-pitch-control",
+    "pitch": 150,
+    "error": null
+  },
+  {
+    "case": "r3-pitch-control",
+    "pitch": 200,
+    "error": null
+  },
+  {
+    "case": "integer-pitch-fractional-offset",
+    "pitch": 100,
+    "startOffsetMm": 0.1,
+    "error": {
+      "message": "Invalid あばら筋 gap: 100.00000000000003",
+      "stack": "Error: Invalid あばら筋 gap: 100.00000000000003\n    at stirrupPositions (C:/Users/emper/mdtproject-p45/src/domain/rebar/stirrup-layout.ts:77:15)\n    at generateColumnRebar (C:/Users/emper/mdtproject-p45/src/domain/rebar/column.ts:285:22)\n    at buildTakeoff (C:/Users/emper/mdtproject-p45/src/lib/hooks/useTakeoff.ts:108:14)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:36:26\n    at errorOf (C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:12:8)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:36:14\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)"
+    },
+    "direct": {
+      "message": "Invalid あばら筋 gap: 100.00000000000003",
+      "stack": "Error: Invalid あばら筋 gap: 100.00000000000003\n    at stirrupPositions (C:/Users/emper/mdtproject-p45/src/domain/rebar/stirrup-layout.ts:77:15)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:37:27\n    at errorOf (C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:12:8)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r4.test.ts:37:15\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+    },
+    "project": {
+      "schemaVersion": 11,
+      "name": "サンプル案件 / RC 2階建て",
+      "grid": {
+        "xSpans": [
+          6000
+        ],
+        "ySpans": [
+          6000
+        ],
+        "xLabels": [
+          "X1",
+          "X2"
+        ],
+        "yLabels": [
+          "Y1",
+          "Y2"
+        ]
+      },
+      "stories": [
+        {
+          "id": "1F",
+          "name": "1階",
+          "height": 4200
+        },
+        {
+          "id": "2F",
+          "name": "2階",
+          "height": 4200
+        }
+      ],
+      "sections": [
+        {
+          "id": "column-a",
+          "kind": "柱",
+          "mark": "C1",
+          "shape": "矩形",
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "count": 12
+          },
+          "hoop": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 0.1
+          },
+          "storyLabel": "a"
+        },
+        {
+          "id": "column-b",
+          "kind": "柱",
+          "mark": "C1",
+          "shape": "矩形",
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "count": 12
+          },
+          "hoop": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 0.1
+          },
+          "storyLabel": "b"
+        },
+        {
+          "id": "section-G1",
+          "kind": "大梁",
+          "mark": "G1",
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "top": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "bottom": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          },
+          "widthTie": {
+            "size": "D10",
+            "pitch": 1000
+          },
+          "sideBar": {
+            "size": "D10",
+            "count": 2,
+            "extraLengthMm": 0
+          }
+        }
+      ],
+      "members": [
+        {
+          "id": "1F-C1-0-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-a",
+          "storyId": "1F",
+          "position": {
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-C1-1-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-a",
+          "storyId": "1F",
+          "position": {
+            "ix": 1,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-G1-0-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G1",
+          "storyId": "1F",
+          "position": {
+            "axis": "X",
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-C1-0-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-b",
+          "storyId": "2F",
+          "position": {
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-C1-1-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-b",
+          "storyId": "2F",
+          "position": {
+            "ix": 1,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-G1-0-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G1",
+          "storyId": "2F",
+          "position": {
+            "axis": "X",
+            "ix": 0,
+            "iy": 0
+          }
+        }
+      ]
+    }
+  }
+]

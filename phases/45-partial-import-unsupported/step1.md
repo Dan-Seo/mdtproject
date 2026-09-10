@@ -1,4 +1,4 @@
-# Step 1: unsupported-support — 支持柱なし·上部大梁なし는 부재 단위 未対応으로, 大梁 런은 같은 断面일 때만 잇는다
+# Step 1: unsupported-support — 支持柱なし·上部大梁なし는 부재 단위 未対応으로, 大梁 런은 같은 断面일 때만 잇고, あばら筋 배치의 부동소수 경계를 없앤다
 
 ## 읽어야 할 파일
 - `phases/45-partial-import-unsupported/step0.md`·`step0-report.json`·`step0-report-r1.json`(census·counterexample)
@@ -6,6 +6,7 @@
 - `src/domain/model/project.ts` — `supportColumnSection`·`girderSupportSections`·`girderSpan`·≈L728~752의 片持 경로(`supportColumnSection(..., true)` 호출 2곳)·`girderRun`(≈L1384~1450)·`slabRun`(≈L1240~1300)·`beamDepthAbove`(≈L1520~1550)
 - `src/domain/model/project.test.ts` (`girderSpan`·`girderRun`·`beamDepthAbove`/`columnEnds` 테스트 블록)
 - `src/locales/ja.json`·`ko.json`의 `takeoff.unsupported.*`, `src/lib/i18n.test.ts`의 `Record<UnsupportedReason, true>`
+- `src/domain/rebar/stirrup-layout.ts` L55~80(`stirrupPositions`의 gap 검사), `phases/45-partial-import-unsupported/step0-report-r3.json`·`step0-report-r4.json`(pitch 100.1·offset 0.1 재현)
 - `docs/ADR.md` — ADR-028 부근의 「連続する床板은 大梁의 런과 같은 형태로 잡는다」 단락(같은 断面이 연속의 조건), `CLAUDE.md` CRITICAL 규칙
 
 ## 작업 (TDD — 테스트를 먼저 빨갛게 만들고 구현)
@@ -19,23 +20,24 @@
    - `supportColumnSection`의 `unsupported` 매개변수를 없애고 支持柱 없음은 항상 `MemberUnsupportedError('支持柱なし', message)`. 「柱 member references a non-柱 section」은 내부 결함이라 plain `Error` 유지. ≈L736·L744의 `true` 인자 제거.
    - `beamDepthAbove`의 `depths.length === 0` → `MemberUnsupportedError('上部大梁なし', ...)`.
    - `girderRun`: 후보 필터에 `candidate.sectionId === member.sectionId`를 더해 **같은 断面인 인접 부재만** 런으로 잇는다 — `slabRun`의 조건과 주석(「同一断面であることを連続の条件にする … 図面にない連続を作らない」)을 그대로 따른다. 그러면 mixed sections throw는 도달 불가가 되므로 **삭제**한다(죽은 검사를 남기지 않는다).
-4. 로케일: `ja.json`·`ko.json`에 `takeoff.unsupported.reason.支持柱なし`·`plan.支持柱なし`·`reason.上部大梁なし`·`plan.上部大梁なし`. ja는 일본어, ko는 한국어(柱·大梁·断面은 원어). plan은 사용자가 할 일: 「その格子点の柱の断面を登録して再取込するか、柱を配置する」／「その柱に取り付く大梁の断面を登録して再取込するか、大梁を配置する」 취지. `i18n.test.ts`의 `Record<UnsupportedReason, true>`에 두 값을 추가한다.
-5. 반증 가능성 기록: 구현 뒤 ①②의 throw를 **일시적으로** plain `Error`로 되돌리고, ③은 `sectionId` 조건을 빼서 1의 테스트가 빨갛게 되는 것을 확인하고 원복한다(실패 테스트명을 report의 `mutations`에. 원복 후 `git diff --stat`이 의도한 파일만).
+4. ⑤ `stirrup-layout.ts`: `startOffset + index*pitch`의 부동소수 오차로 `gap > pitch`가 거짓 양성이 된다(pitch 100.1, 또는 pitch 100＋startOffsetMm 0.1 → gap 100.00000000000003). **테스트 먼저** `stirrup-layout.test.ts`(없으면 만든다): 그 두 입력으로 `stirrupPositions`가 throw 없이 위치를 내고, 마지막 위치와 구간 끝의 차가 pitch 이하이며, 정수 입력의 기존 결과는 바뀌지 않는다. **구현**: 비교를 허용오차(예: `gap - pitchMm > 1e-6`) 또는 위치를 1e-6mm로 반올림해 계산하는 방식 중 하나로 고친다 — 규준 수치가 아니라 부동소수 오차 한계다(주석에 이유). 진짜 gap 초과(예: pitch보다 큰 offset)는 계속 throw한다(테스트 유지).
+5. 로케일: `ja.json`·`ko.json`에 `takeoff.unsupported.reason.支持柱なし`·`plan.支持柱なし`·`reason.上部大梁なし`·`plan.上部大梁なし`. ja는 일본어, ko는 한국어(柱·大梁·断面은 원어). plan은 사용자가 할 일: 「その格子点の柱の断面を登録して再取込するか、柱を配置する」／「その柱に取り付く大梁の断面を登録して再取込するか、大梁を配置する」 취지. `i18n.test.ts`의 `Record<UnsupportedReason, true>`에 두 값을 추가한다.
+6. 반증 가능성 기록: 구현 뒤 ①②의 throw를 **일시적으로** plain `Error`로 되돌리고, ③은 `sectionId` 조건을 빼서 1의 테스트가 빨갛게 되는 것을 확인하고 원복한다(실패 테스트명을 report의 `mutations`에. 원복 후 `git diff --stat`이 의도한 파일만).
 
 ## Acceptance Criteria
 ```bash
-npx vitest run src/domain/model/project.test.ts src/domain/rebar src/lib/i18n.test.ts
+npx vitest run src/domain/model/project.test.ts src/domain/rebar src/lib/i18n.test.ts   # stirrup-layout 테스트 포함
 npx tsc --noEmit
 npm run lint
 npx vitest run   # 전체 — 기존 테스트가 깨지면 이유를 report에 적고, 위 1의 범위 밖 테스트를 고쳐야 한다면 blocked
 ```
 
 ## 산출물
-`phases/45-partial-import-unsupported/step1-report.json`: `{ "changed_files": [...], "tests_added": [...], "tests_tightened": [...], "tests_replaced": [...], "mutations": [{ "site": "supportColumnSection", "failing_tests": [...] }, { "site": "beamDepthAbove", "failing_tests": [...] }, { "site": "girderRun sectionId", "failing_tests": [...] }], "paths_verified": [...] }`
+`phases/45-partial-import-unsupported/step1-report.json`: `{ "changed_files": [...], "tests_added": [...], "tests_tightened": [...], "tests_replaced": [...], "mutations": [{ "site": "supportColumnSection", "failing_tests": [...] }, { "site": "beamDepthAbove", "failing_tests": [...] }, { "site": "girderRun sectionId", "failing_tests": [...] }, { "site": "stirrupPositions tolerance", "failing_tests": [...] }], "paths_verified": [...] }`
 
 ## 금지사항
 - `Rule not found`·`Section not found`·`non-柱 section`·`storyNotFound` 같은 내부 결함을 `MemberUnsupportedError`로 감싸지 마라. 이유: `unsupported.ts` 머리 주석 — 결함이 「미지원 부재」로 흡수되면 화면에서 사라진다.
 - 런을 断面 외의 기준(径·본수 일치 등)으로 잇지 마라. 이유: `slabRun` 주석대로 「断面이 같음」이 충분조건이고 도면에 없는 연속을 만들지 않는다.
-- `src/lib/import/**`·`src/rulepack/**`·`tests/fixtures/**`·`src/domain/rebar/**`의 생성 로직을 만지지 마라. 이유: 이 phase는 엔진의 오류 등급과 런 조건만 바꾼다. 취입 계층에 엔진 불변식을 복제하지 않는다.
+- `src/lib/import/**`·`src/rulepack/**`·`tests/fixtures/**`·`src/domain/rebar/**`(⑤의 `stirrup-layout.ts` gap 비교 한 곳 제외)의 생성 로직을 만지지 마라. 이유: 이 phase는 엔진의 오류 등급과 런 조건만 바꾼다. 취입 계층에 엔진 불변식을 복제하지 않는다.
 - 규준 수치 리터럴을 `.ts`에 쓰지 마라 (ADR-002). `src/domain`에 React·DOM을 import하지 마라.
 - 테스트를 구현에 맞추지 마라 — 「구현을 되돌리면 실패하는가」가 기준이다.

@@ -1,0 +1,235 @@
+{
+  "verdict": "refuted",
+  "round": 4,
+  "head": "bdc1c26b13f7afbdee1efe182a6fa51e4656ad84",
+  "scope": "Verification only. No completeness claim, product fixes, or later steps. B2-B6/B8 inherited.",
+  "claims": [
+    {
+      "id": "B1",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction",
+          "note": "Inherited executable tsu imports: 6 and 42 members both reach supportColumnSection. Two tests passed; exact error retained."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/counterexample",
+          "note": "Inherited accepted adjacent G1/G2 import reaches mixed-section girderRun; supports individually resolve."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-r4-results.json#/0",
+          "note": "New column-only registration accepts one column, skips unregistered G1, passes deserializeProject and columnEnds; beamDepthAbove and actual buildTakeoff throw the same plain Error."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "note": "beamDepthAbove runs at 113 before columnEnds argument at 114; catch at 120 rethrows plain Error. columnEnds itself does not call beamDepthAbove.",
+          "line": 113
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/1",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/1",
+          "note": "Round 3 inherited result retained. git diff 52bb8da HEAD -- src tests is empty."
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/2",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/2",
+          "note": "Round 3 inherited result retained. git diff 52bb8da HEAD -- src tests is empty."
+        }
+      ]
+    },
+    {
+      "id": "B4",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/3",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/3",
+          "note": "Round 3 inherited result retained. git diff 52bb8da HEAD -- src tests is empty."
+        }
+      ]
+    },
+    {
+      "id": "B5",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/4",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/4",
+          "note": "Round 3 inherited result retained. git diff 52bb8da HEAD -- src tests is empty."
+        }
+      ]
+    },
+    {
+      "id": "B6",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/5",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/5",
+          "note": "Round 3 inherited result retained. git diff 52bb8da HEAD -- src tests is empty."
+        }
+      ]
+    },
+    {
+      "id": "B7",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts",
+          "note": "notes documents QuantityLine.id keys at 107; setNote writes notes[lineId] at 1561.",
+          "line": 107
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "note": "memberGroupKey includes story.name, member code, section.mark.",
+          "line": 194
+        },
+        {
+          "source": "src/domain/quantity/index.ts",
+          "note": "quantityLineId includes group, role, length, count, splice count and points, omits size; aggregate assigns id at 305 and rejects size/shape collision at 289.",
+          "line": 201
+        },
+        {
+          "source": "src/components/quantity/TakeoffPane.tsx",
+          "note": "Reads notes[lineId] and writes via setNote at 225.",
+          "line": 215
+        },
+        {
+          "source": "src/lib/export/index.ts",
+          "note": "Reads notes[line.id] for exported remarks.",
+          "line": 406
+        }
+      ],
+      "qualification": "Migration necessity upheld, not the literal universal wording that every conceivable key changes: story.id may equal story.name; splice IDs have a separate format. Same qualification as round 3. Unmigrated changed keys lose association."
+    },
+    {
+      "id": "B8",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/7",
+          "note": "Inherited as requested; tsu six and yokohama four nonempty level names are distinct."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/golden_level_check",
+          "note": "Recorded names and empty duplicate lists; no rerun. Only excludes the specified duplicate-name trigger."
+        }
+      ]
+    },
+    {
+      "id": "B9",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample",
+          "note": "Deferred aggregate size collision remains supported."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/counterexample",
+          "note": "Float pitch 100.1 input retained as baseline."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-r4-results.json",
+          "note": "Baseline pitch 100.1 reproduces 100.10000000000002; changing only pitch to 100, 150, 200 succeeds (entries 1-4)."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-r4-results.json#/5",
+          "note": "Integer pitch 100 plus finite nonnegative startOffsetMm 0.1 yields gap 100.00000000000003. deserializeProject accepts the Project. Both actual buildTakeoff and direct stirrupPositions(3450,100,0.1) throw Error at line 77."
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "note": "Both pitch and startOffsetMm accept finite numbers; no integer-only offset contract.",
+          "line": 1640
+        },
+        {
+          "source": "src/domain/rebar/stirrup-layout.ts",
+          "note": "Position = startOffset + index*pitch at 61; subtraction at 75 and strict gap > pitch check at 76 produce the same fifth error with integer pitch.",
+          "line": 75
+        }
+      ],
+      "limitation": "The 0.1 offset is a valid synthetic registered-section input, not claimed to occur in tsu/yokohama source drawings. B9 explicitly says integer pitch cannot reach this site; that general exclusion is false. Existing round-3 accepted import placements/references are unchanged; only hoop pitch and offset are changed."
+    }
+  ],
+  "deferred": [
+    {
+      "site": "src/domain/quantity/index.ts#L289",
+      "why": "Same-name Story and differing size collision; persisted quantity-ID notes need migration (B7). Remains deferred."
+    },
+    {
+      "site": "src/domain/rebar/stirrup-layout.ts#L77",
+      "why": "Proposed float-pitch-only deferral refuted: integer pitch 100 also fails with offset 0.1. Specification requests scope reconsideration when this occurs; no implementation changed."
+    }
+  ],
+  "validation": {
+    "reproduction": {
+      "command": "npx vitest run --config phases/45-partial-import-unsupported/step0-r4.config.mjs --no-color",
+      "exit_code": 0,
+      "files": 1,
+      "tests": 2,
+      "passed": 2,
+      "duration_ms": 374
+    },
+    "config": {
+      "source": "phases/45-partial-import-unsupported/step0-r4.config.mjs",
+      "note": "Node Vitest; YAML loader and in-memory buildTakeoff export. Product source remains unchanged."
+    },
+    "source_currency": {
+      "command": "git diff --name-only 52bb8da HEAD -- src tests docs/ADR.md",
+      "exit_code": 0,
+      "output": ""
+    },
+    "citations": {
+      "command": "python scripts/check-citations.py phases/45-partial-import-unsupported/step0-report.json",
+      "exit_code": 0,
+      "output": ""
+    }
+  },
+  "archive_note": "Requested step0-repro-r3.test.ts.txt and step0-r3.config.mjs are absent at this HEAD. Round-3 report contains the full counterexample Project; round 4 loads that recorded input. R1/R2 archived reproduction sources exist and were read. Historical paths inside archived reports are not asserted to exist now.",
+  "paths_verified": [
+    "src/domain/model/project.ts",
+    "src/domain/quantity/index.ts",
+    "src/lib/hooks/useTakeoff.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/lib/export/index.ts",
+    "src/lib/i18n.test.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "docs/ADR.md",
+    "phases/45-partial-import-unsupported/step0-report-r1.json",
+    "phases/45-partial-import-unsupported/step0-report-r2.json",
+    "phases/45-partial-import-unsupported/step0-report-r3.json",
+    "phases/45-partial-import-unsupported/step0-repro-r1.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-repro-r4.test.ts",
+    "phases/45-partial-import-unsupported/step0-r4.config.mjs",
+    "phases/45-partial-import-unsupported/step0-r4-results.json"
+  ]
+}
