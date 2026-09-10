@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "overlap-census",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 492.2463946000007,
+  "stdout_log": "phases\\44-drawing-set-assembly\\step1-codex.stdout.log",
+  "stderr_log": "phases\\44-drawing-set-assembly\\step1-codex.stderr.log"
+}

@@ -21,7 +21,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T12:00:53+0900",
-      "summary": "36-page census: list 13 / block 16 / elevation 8 / multi-role 4; 66 regions, no-title margin fails, title-inclusive margin holds; parser bytes and 36 output hashes restored; 190 tests pass."
+      "summary": "36-page census: list 13 / block 16 / elevation 8 / multi-role 4; 66 regions, no-title margin fails, title-inclusive margin holds; parser bytes and 36 output hashes restored; 190 tests pass.",
+      "completed_at": "2026-09-10T12:09:05+0900"
     },
     {
       "step": 2,
