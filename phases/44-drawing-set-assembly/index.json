@@ -41,7 +41,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T12:13:12+0900",
-      "summary": "Implemented descriptive roles and membership-based grid/story reconciliation; five goldens with 19 live gaps, 38 claimed paths, 17 targeted and 1864 full tests pass; max-review split-alias finding fixed."
+      "summary": "Implemented descriptive roles and membership-based grid/story reconciliation; five goldens with 19 live gaps, 38 claimed paths, 17 targeted and 1864 full tests pass; max-review split-alias finding fixed.",
+      "completed_at": "2026-09-10T12:31:54+0900"
     },
     {
       "step": 4,
