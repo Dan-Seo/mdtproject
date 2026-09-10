@@ -1,0 +1,9 @@
+{
+  "step": 4,
+  "name": "set-plan-apply",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 824.9585248999992,
+  "stdout_log": "phases\\44-drawing-set-assembly\\step4-codex.stdout.log",
+  "stderr_log": "phases\\44-drawing-set-assembly\\step4-codex.stderr.log"
+}

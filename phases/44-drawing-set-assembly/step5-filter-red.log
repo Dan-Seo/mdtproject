@@ -1,0 +1,105 @@
+
+ RUN  v4.1.10 C:/Users/emper/mdtproject-p44
+
+ ❯ |ui| src/components/plan/PlanImport.drawing-set.test.tsx (5 tests | 1 failed) 414ms
+   × clearing the section filter removes it instead of filtering by an empty label 73ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |ui| src/components/plan/PlanImport.drawing-set.test.tsx > clearing the section filter removes it instead of filtering by an empty label
+AssertionError: expected [] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "id": "story-4-G1-0-0-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 0,
+-       "iy": 0,
+-     },
+-     "sectionId": "section-G1",
+-     "storyId": "story-4",
+-   },
+-   {
+-     "id": "story-4-G1-1-0-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 1,
+-       "iy": 0,
+-     },
+-     "sectionId": "section-G1",
+-     "storyId": "story-4",
+-   },
+-   {
+-     "id": "story-4-G1-1-1-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 1,
+-       "iy": 1,
+-     },
+-     "sectionId": "section-G1",
+-     "storyId": "story-4",
+-   },
+-   {
+-     "id": "story-4-G2-2-1-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 2,
+-       "iy": 1,
+-     },
+-     "sectionId": "section-G2",
+-     "storyId": "story-4",
+-   },
+-   {
+-     "id": "story-4-G1-0-2-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 0,
+-       "iy": 2,
+-     },
+-     "sectionId": "section-G1",
+-     "storyId": "story-4",
+-   },
+-   {
+-     "id": "story-4-G1-1-2-X",
+-     "kind": "大梁",
+-     "memberClass": "躯体",
+-     "position": {
+-       "axis": "X",
+-       "ix": 1,
+-       "iy": 2,
+-     },
+-     "sectionId": "section-G1",
+-     "storyId": "story-4",
+-   },
+- ]
++ []
+
+ ❯ src/components/plan/PlanImport.drawing-set.test.tsx:131:50
+    129|   const expected = applyDrawingSet(before, resolved.plan).project
+    130|   expect(expected.members.length).toBeGreaterThan(0)
+    131|   expect(useAppStore.getState().project.members).toEqual(expected.memb…
+       |                                                  ^
+    132| })
+    133|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  13:02:08
+   Duration  2.31s (transform 493ms, setup 205ms, import 573ms, tests 414ms, environment 951ms)

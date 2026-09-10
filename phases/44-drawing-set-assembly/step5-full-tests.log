@@ -1,0 +1,8 @@
+
+ RUN  v4.1.10 C:/Users/emper/mdtproject-p44
+
+
+ Test Files  104 passed (104)
+      Tests  1879 passed (1879)
+   Start at  13:03:25
+   Duration  17.24s (transform 30.07s, setup 23.30s, import 50.14s, tests 56.95s, environment 122.43s)

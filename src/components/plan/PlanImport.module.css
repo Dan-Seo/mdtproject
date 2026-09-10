@@ -118,3 +118,28 @@
   gap: var(--space-2xs, 4px);
   align-items: center;
 }
+
+.drawingSet {
+  box-shadow: none;
+  overflow-wrap: anywhere;
+}
+
+.drawingSet .storyPicker {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.drawingSet .panelBody > * {
+  min-width: 0;
+}
+
+.drawingSet select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.drawingSet .applyButton:disabled {
+  cursor: default;
+  color: var(--text-muted);
+}

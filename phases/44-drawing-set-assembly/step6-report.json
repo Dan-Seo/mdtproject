@@ -1,0 +1,167 @@
+{
+  "baseline_commit": "a900e85ef7f147610463867eadbd89c21a22811b",
+  "numbers_used": [
+    {
+      "doc": "docs/RISKS.md",
+      "value": 2,
+      "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/0/known_gaps_confirmed"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 1,
+      "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/1/known_gaps_confirmed"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 6,
+      "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/2/known_gaps_confirmed"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 5,
+      "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/3/known_gaps_confirmed"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 5,
+      "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/4/known_gaps_confirmed"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 0,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/pages/10/elevations"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 0,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/pages/11/elevations"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 1,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/5/maximum"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 0,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/10/maximum"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 0,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/12/maximum"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 0.21009416775716538,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/demotion_margin/legitimate_max/value"
+    },
+    {
+      "doc": "docs/RISKS.md",
+      "value": 1,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/10/with_titles_maximum"
+    },
+    {
+      "doc": "docs/ADR.md",
+      "value": 36,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/pages_total"
+    },
+    {
+      "doc": "docs/ADR.md",
+      "value": 13,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/list_pages"
+    },
+    {
+      "doc": "docs/ADR.md",
+      "value": 16,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/block_pages"
+    },
+    {
+      "doc": "docs/ADR.md",
+      "value": 8,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/elevation_pages"
+    },
+    {
+      "doc": "docs/ADR.md",
+      "value": 4,
+      "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/multi_role_pages"
+    }
+  ],
+  "mirror_rows": {
+    "claude_md_lines": [
+      57,
+      81,
+      86
+    ],
+    "agents_md_lines": [
+      60,
+      84,
+      89
+    ],
+    "identical": true,
+    "diff": "",
+    "comparison": "Selected rows including line terminators compared as bytes; three rows each."
+  },
+  "docs_changed": [
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "docs/ADR.md",
+    "CLAUDE.md",
+    "AGENTS.md"
+  ],
+  "changed_paths": [
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "docs/ADR.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/44-drawing-set-assembly/step6-report.json",
+    "phases/44-drawing-set-assembly/index.json",
+    "phases/44-drawing-set-assembly/step3-report.json"
+  ],
+  "paths_verified": [
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "docs/ADR.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/44-drawing-set-assembly/step0-report.json",
+    "phases/44-drawing-set-assembly/step1-report.json",
+    "phases/44-drawing-set-assembly/step2-report.json",
+    "phases/44-drawing-set-assembly/step3-report.json",
+    "phases/44-drawing-set-assembly/step4-report.json",
+    "phases/44-drawing-set-assembly/step5-report.json",
+    "scripts/check-citations.py",
+    "src/lib/import/drawing-set/plan.ts",
+    "src/lib/import/drawing-set/apply.ts",
+    "src/lib/import/drawing-set/roles.ts"
+  ],
+  "paths_expected_absent": [],
+  "historical_path_declarations": {
+    "updated_report": "phases/44-drawing-set-assembly/step3-report.json",
+    "paths": [
+      "src/lib/import/drawing-set/apply.ts",
+      "tests/e2e/uc24-drawing-set.js"
+    ],
+    "reason": "Successor steps created files previously declared absent; retain historical absence as a dated note and verify current existence."
+  },
+  "validation": {
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "warnings": 1,
+      "note": "Existing unused _omitted warning in oncall route test."
+    },
+    "citation_check": {
+      "command": "python scripts/check-citations.py phases/44-drawing-set-assembly/step*-report*.json",
+      "exit_code": 0
+    },
+    "mirror_byte_comparison": {
+      "exit_code": 0,
+      "diff": ""
+    },
+    "numbers_match_sources": true,
+    "adr_original_prefix_preserved": true,
+    "code_tests_goldens_unchanged": true
+  }
+}

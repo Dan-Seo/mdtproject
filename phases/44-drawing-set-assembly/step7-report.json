@@ -1,0 +1,1461 @@
+{
+  "verdict": "upheld",
+  "base_commit": "d29b73a7a105df775edf477989f9c5dffefca5ef",
+  "head_verified": "e62f6d119a27eb188a5af91ea6fd155c36e0f40c",
+  "baseline_status": [
+    " M phases/44-drawing-set-assembly/index.json",
+    "?? phases/44-drawing-set-assembly/step7-codex.stderr.log",
+    "?? phases/44-drawing-set-assembly/step7-codex.stdout.log"
+  ],
+  "baseline_hashes": {
+    "phases/44-drawing-set-assembly/index.json": "aa57068187b891d4680558917b0e37eb6b54b89f3453888dbd4c6dbd7ed418c2",
+    "phases/44-drawing-set-assembly/step7-codex.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phases/44-drawing-set-assembly/step7-codex.stdout.log": "ee1139cca74866367c5d9399200a832c31fcf959be8f133296917749f75a65cd"
+  },
+  "claims": [
+    {
+      "id": 1,
+      "holds": true,
+      "method": "Directly ran runPageParsers (calls all three current parsers) on every textitems JSON. Recursively sorted object keys, retained array order, omitted undefined object members like JSON.stringify, serialized compact UTF-8 JSON, SHA-256; compared against step 1 working-file hashes.",
+      "evidence": {
+        "pages": 36,
+        "parser_output_hashes": {
+          "fuji-p15": "ecd906918dc26f8839441b6b383a9c886c96e1558f57af948524784f48ad0273",
+          "fuji-p17": "cc468bdf3ce2bad126ab431783e8938e8dc9bdc3031aaefb151a291347f0eb37",
+          "fuji-p18": "a1fed6615e3d92dc7ee1693f27dcd72fb1021556eab69d6fbb752f26b85187da",
+          "fuji-p20": "de3bf48ec1ce99468956d428e01404b255799a98e56bf03de10e713ecb794883",
+          "hirosaki-p21": "adcf608e2cb5ae0a8d5e543c8772c8adcf92e90c90e6bc226643b7ea1c6dfd07",
+          "hirosaki-p25": "f2dc98b0ed1616652019a1381f5ce53c59e9258c36e34ab728ab8bfc4afab55b",
+          "ina-p6": "be2e370af8b042abf4523e7b41fec65219da9a580222c7469071b1c032eae645",
+          "ina-p7": "25853c11b3d7536d7e5074ef851084fdc5956f0df782e819dc395d6baaf1d369",
+          "kani-p38": "8efdaeaec50ee908295bda42b3e713905b763994d4612271b0b4b43c915ff09f",
+          "kani-p39": "8b2b7316777ed65392ad297a8762ae05cf8b9fe6405b7fd1bb55a452c6761d6c",
+          "kani-p40": "361fd4cc38ff58cf89b05f9e0e834ffb090f93cd8aa07d7167a0d73bda3d3ba3",
+          "kani-p41": "4db6e85feabb01d57d07d9f7d8d66c97e935bbf838eadf1356ab43fe2e0c661c",
+          "karatsu-fukuzu-p1": "d8e1c41ec96767d77fc4e52612171a810138766e9d486f4a4fd2e4da0c3fc953",
+          "karatsu-hashirashin-p1": "7d43b7a5fee35d9cb1b7a530823ccef28b00df00cf6d76cf8ab84ee69d1eefb9",
+          "karatsu-jikugumi1-p1": "8fd9a22f677662981e40f7c894e3829889c0d504241758b32647196ae9b71736",
+          "karatsu-jikugumi2-p1": "2c98aef5626e9a6f786f940c80508554d6323121475ef86a82bb9a027391cf10",
+          "karatsu-shousai-p1": "fd665406f6f49bad352e0cf39ba9eda0a6a99da78b2e62c80366079060248c95",
+          "ojkk-p2": "9156ded6da7d2440dcf6f519453d9bd565ccaa83f0efad61232cd7a4a5d0fd09",
+          "ojkk-p3": "1d90b4913dfbfc8caf031f33a8286f181aadcaa891cf7f9d260c7321a9043fe6",
+          "ojkk-p4": "6fd6e047fe52dcccae27b72bbe6cfa98c110b52e5d67e444dee4c398631a8586",
+          "saiki-p1": "32d4988fbd5f59f5f9e43cd0ce5905058b2c01f335a3b42480a1a93ac58a1a18",
+          "saiki-p2": "0415f01397fb6e3c6b339a9ed0b5a91f12f4d2782e6b261c4a31069053bbfe3e",
+          "shibata-p1": "c8a12b198666273830782cdfd5e0bd2d7e6b1fd838cdb11318bf35d85bd07295",
+          "shibata-p13": "ab88bc4f52e011921b22676025961a33d2b80090df1df5e6f60dc0d19a12879f",
+          "shibata-p7": "2abba85d7ec17379af1ba88d80390111fb8eba66aeb892c789de09bcce531998",
+          "tsu-p16": "194f2fec02e37b92efe52f287fbb3aa89f93815d3e3dcaa0b1939fa6cd204444",
+          "tsu-p20": "fd65ff73fadf2b16846abe0dd584cc08038d15892cef775fe5fa4ccd628a0bb9",
+          "tsu-p21": "d1ca3e6e8584f511e365212fb08b39649a32f66fd51d59963986b2f915de19bb",
+          "tsu-p22": "a4343940f4dc4ceb77d16cf9a60b18ac588c83b77ea9165eaf3a3c48f84397b5",
+          "yokohama-p13": "cda0705581bb4506983aeea7f85cbb52fdda7f804b93370fda0360e98407f861",
+          "yokohama-p14": "96d9d3909c913902017c9313af2c5f235026c822c58f2ff10aa732171b1172e7",
+          "yokohama-p15": "4c7869d591c0db7c1dcd42f6ffb1dfc4b7a2427506e19cc73e2d6009d88bac22",
+          "yokohama-p6": "a1ffd52a05d6b98745bac80d0ace583752fdfed8bf21baad996a013627c80e2f",
+          "yokohama-p7": "813455bd8680d8021a0accb3d0885db2be2ca8fa4a74e1eb2a6ea35fdf9323a1",
+          "yokohama-p8": "5bb2749fb67b1c975b7918734020dc5b40bbd7506609a93b9b96146e0912ec0c",
+          "yokohama-p9": "1fa3189967a3019c237e384913c48c5b91d597057ba8577ae471413f314234f2"
+        },
+        "mismatches": []
+      }
+    },
+    {
+      "id": 2,
+      "holds": true,
+      "method": "Direct tsx calls for each step2 grammar_table row, plus existing story-label.test.ts executed by the full Vitest run. Existing PH, B1F and other legacy rejection tests pass.",
+      "evidence": {
+        "grammar_table": [
+          {
+            "function": "levelStoryKey",
+            "input": "1FL",
+            "expected": "1",
+            "actual": "1"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "２ＦＬ",
+            "expected": "2",
+            "actual": "2"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "1SL",
+            "expected": "1",
+            "actual": "1"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "01F",
+            "expected": "1",
+            "actual": "1"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "3階",
+            "expected": "3",
+            "actual": "3"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RFL",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RSL+760.00",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RFL(水下)",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": " R ＦＬ（ 水下 ） ",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "2FL-12.5",
+            "expected": "2",
+            "actual": "2"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "1SL±0",
+            "expected": "1",
+            "actual": "1"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RFL760.00",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "R",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RF",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "R階",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RFL水上",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "中央棟1FL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "GL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "設計GL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "基礎下端",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "PHFL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "B1F",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "RCL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "note1FL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "1FLまで",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "levelStoryKey",
+            "input": "1FL／1SL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "1FL／1SL",
+            "expected": "1",
+            "actual": "1"
+          },
+          {
+            "function": "storyNameKey",
+            "input": "中央棟1FL／基準GL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "1FL／2SL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "1FL／GL",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "1FL／",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "",
+            "expected": null,
+            "actual": null
+          },
+          {
+            "function": "storyNameKey",
+            "input": "RFL／RSL+760.00",
+            "expected": "R",
+            "actual": "R"
+          },
+          {
+            "function": "storyNameKey",
+            "input": "２ＦＬ/02SL",
+            "expected": "2",
+            "actual": "2"
+          }
+        ],
+        "legacy_rejections": [
+          {
+            "input": "PH",
+            "actual": null
+          },
+          {
+            "input": "B1F",
+            "actual": null
+          }
+        ],
+        "existing_test_file": "src/lib/import/story-label.test.ts",
+        "passed_tests_in_file": 42
+      }
+    },
+    {
+      "id": 3,
+      "holds": true,
+      "method": "Recomputed five assemblies. Used the reviewed existing order-preserving projection contract, independently enumerated unequal primitive leaves in both directions, excluded only registered subtrees/unsure in the stipulated direction, and checked each gap has witnesses for every registered direction. Also reran existing golden tests.",
+      "evidence": {
+        "sets": [
+          {
+            "set": "yokohama",
+            "actual_leaves": 96,
+            "golden_leaves": 93,
+            "unregistered_missing": [],
+            "unregistered_extra": [],
+            "gap_witness_counts": [
+              {
+                "path": "stories",
+                "direction": "both",
+                "missing": 7,
+                "extra": 9
+              },
+              {
+                "path": "conflicts[0].payload.series.titles",
+                "direction": "extra",
+                "missing": 0,
+                "extra": 1
+              }
+            ],
+            "stale_gaps": [],
+            "illegal_blocking": []
+          },
+          {
+            "set": "hirosaki",
+            "actual_leaves": 70,
+            "golden_leaves": 69,
+            "unregistered_missing": [],
+            "unregistered_extra": [],
+            "gap_witness_counts": [
+              {
+                "path": "storiesReference.titles",
+                "direction": "extra",
+                "missing": 0,
+                "extra": 1
+              }
+            ],
+            "stale_gaps": [],
+            "illegal_blocking": []
+          },
+          {
+            "set": "ina",
+            "actual_leaves": 35,
+            "golden_leaves": 50,
+            "unregistered_missing": [],
+            "unregistered_extra": [],
+            "gap_witness_counts": [
+              {
+                "path": "pages[0].blockTitles",
+                "direction": "missing",
+                "missing": 3,
+                "extra": 0
+              },
+              {
+                "path": "pages[1].roles",
+                "direction": "extra",
+                "missing": 0,
+                "extra": 1
+              },
+              {
+                "path": "stories",
+                "direction": "both",
+                "missing": 2,
+                "extra": 4
+              },
+              {
+                "path": "blockToStory",
+                "direction": "missing",
+                "missing": 6,
+                "extra": 0
+              },
+              {
+                "path": "unmatchedBlocks",
+                "direction": "both",
+                "missing": 1,
+                "extra": 1
+              },
+              {
+                "path": "conflicts",
+                "direction": "missing",
+                "missing": 9,
+                "extra": 0
+              }
+            ],
+            "stale_gaps": [],
+            "illegal_blocking": []
+          },
+          {
+            "set": "kani",
+            "actual_leaves": 34,
+            "golden_leaves": 56,
+            "unregistered_missing": [],
+            "unregistered_extra": [],
+            "gap_witness_counts": [
+              {
+                "path": "pages[2].roles",
+                "direction": "missing",
+                "missing": 1,
+                "extra": 0
+              },
+              {
+                "path": "pages[3].roles",
+                "direction": "missing",
+                "missing": 1,
+                "extra": 0
+              },
+              {
+                "path": "stories",
+                "direction": "missing",
+                "missing": 9,
+                "extra": 0
+              },
+              {
+                "path": "storiesReference",
+                "direction": "missing",
+                "missing": 2,
+                "extra": 0
+              },
+              {
+                "path": "conflicts",
+                "direction": "missing",
+                "missing": 9,
+                "extra": 0
+              }
+            ],
+            "stale_gaps": [],
+            "illegal_blocking": []
+          },
+          {
+            "set": "tsu",
+            "actual_leaves": 51,
+            "golden_leaves": 58,
+            "unregistered_missing": [],
+            "unregistered_extra": [],
+            "gap_witness_counts": [
+              {
+                "path": "pages[0].blockTitles",
+                "direction": "missing",
+                "missing": 1,
+                "extra": 0
+              },
+              {
+                "path": "pages[1].blockTitles",
+                "direction": "missing",
+                "missing": 1,
+                "extra": 0
+              },
+              {
+                "path": "stories.levels[3]",
+                "direction": "both",
+                "missing": 1,
+                "extra": 1
+              },
+              {
+                "path": "blockToStory",
+                "direction": "both",
+                "missing": 6,
+                "extra": 3
+              },
+              {
+                "path": "unmatchedBlocks",
+                "direction": "missing",
+                "missing": 2,
+                "extra": 0
+              }
+            ],
+            "stale_gaps": [],
+            "illegal_blocking": []
+          }
+        ],
+        "known_gaps_total": 19,
+        "blocking_codes": [
+          "通り芯不一致",
+          "階重複ブロック"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "holds": true,
+      "method": "Eight physical working-file mutations, each in isolation. Ran the entire owning test file with JSON reporter, extracted failed full test names, then restored original bytes in finally and compared SHA-256. No test-name filters.",
+      "evidence": {
+        "mutations": 8,
+        "killed": 8,
+        "restored": true,
+        "claimed_path_per_set": "grid.xSpansMm[]"
+      }
+    },
+    {
+      "id": 5,
+      "holds": true,
+      "method": "Read all drawing-set product files, projection/expected/normalization helpers, and applyElevation naming loop. Renamed all source identifiers to opaque names and added 1000 to page numbers on all five sets; after remapping only reference identities, complete candidate objects are identical. Projection map/flatMap preserve index order; title normalization removes spelling/scale formatting, not order. Reference ranking sorts a fresh series list; floor ordering is deliberately bottom-to-top.",
+      "evidence": {
+        "identity_invariance": [
+          {
+            "set": "yokohama",
+            "equal": true
+          },
+          {
+            "set": "hirosaki",
+            "equal": true
+          },
+          {
+            "set": "ina",
+            "equal": true
+          },
+          {
+            "set": "kani",
+            "equal": true
+          },
+          {
+            "set": "tsu",
+            "equal": true
+          }
+        ],
+        "fixture_specific_product_branches": [],
+        "projection": "tests/drawing-set/assemble.test.ts:44",
+        "floor_naming": "src/lib/import/framing-plan/apply.ts:272",
+        "delegates": [
+          "src/lib/import/drawing-set/reconcile.ts:87",
+          "src/lib/import/drawing-set/plan.ts:46"
+        ],
+        "note": "Unlabelled floor fallback names also come from existing applyElevation; reconciliation does not invent a new naming rule."
+      }
+    },
+    {
+      "id": 6,
+      "holds": true,
+      "method": "Reran the unchanged tsu composition test in the full suite, then reran apply.test.ts with verbose output to capture its exact member count (JSON reporter suppresses console output). It uses step4 fixture selection and matching plus competing section labels, checks exact manual applyElevation/applyFramingPlan composition, and asserts nonempty members. Manual duplicate assignment test passes.",
+      "evidence": {
+        "recorded_members_created": 42,
+        "reproduced_members_created": 42,
+        "stories_created": 5,
+        "manual_composition_equal": true,
+        "duplicate_refusal": "未解決の矛盾",
+        "duplicate_test": "drawing-set plan and apply rejects unmatched blocks and final duplicates, but manual choices win"
+      }
+    },
+    {
+      "id": 7,
+      "holds": true,
+      "method": "SHA-256 of every frozen file after mutation restoration. For ADR reconstruct the baseline Git blob with checkout CRLF and require its hash to equal the step0 frozen hash before comparing the complete 219443-byte prefix; remaining bytes begin the added ADR-046 supplement.",
+      "evidence": {
+        "files": 66,
+        "manifest_checks": [
+          {
+            "path": "docs/ADR.md",
+            "expected": "c6e3ee31bf628b58c8a82f013a1fff17b1bc348739a9b79397d87b78584019c7",
+            "actual": "37c2520641091effac1c3359f6182054f30c8331db3fa1c4aa06249860db8c22",
+            "equal": true,
+            "original_sha256": "c6e3ee31bf628b58c8a82f013a1fff17b1bc348739a9b79397d87b78584019c7",
+            "prefix_bytes": 219443,
+            "prefix_equal": true
+          },
+          {
+            "path": "tests/fixtures/drawing-set/expected/hirosaki.json",
+            "expected": "8ad7c9876a08a33f8b2da5fd4f8cff01747a040cc857ee95c476b69d13b02f38",
+            "actual": "8ad7c9876a08a33f8b2da5fd4f8cff01747a040cc857ee95c476b69d13b02f38",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/drawing-set/expected/ina.json",
+            "expected": "9f7d68a5bf837d49fc88bfc02327579e6628f2ba1e23f8884fdd55fad4542fc6",
+            "actual": "9f7d68a5bf837d49fc88bfc02327579e6628f2ba1e23f8884fdd55fad4542fc6",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/drawing-set/expected/kani.json",
+            "expected": "c0a5db143b494db50e19f7b3b17b922f110d0b25d19eeddacbc2a1ac801d2cd5",
+            "actual": "c0a5db143b494db50e19f7b3b17b922f110d0b25d19eeddacbc2a1ac801d2cd5",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/drawing-set/expected/tsu.json",
+            "expected": "a60860fe9534f5b4a867379099e52994d66c00d0c2fc0038fc0f7a35abf98363",
+            "actual": "a60860fe9534f5b4a867379099e52994d66c00d0c2fc0038fc0f7a35abf98363",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/drawing-set/expected/yokohama.json",
+            "expected": "00d10cc21a9db969bdd86a13262d57303ee28b63d89793e687ccb0a7cc26c281",
+            "actual": "00d10cc21a9db969bdd86a13262d57303ee28b63d89793e687ccb0a7cc26c281",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+            "expected": "ba109c46019bf7d68cc1b9ea41480c8e625769228b3a1873fa8b632a1ee9cd69",
+            "actual": "ba109c46019bf7d68cc1b9ea41480c8e625769228b3a1873fa8b632a1ee9cd69",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+            "expected": "19a9be29f6906818d830450662bcc56ef5f76d8212660252a16b231533cbe04d",
+            "actual": "19a9be29f6906818d830450662bcc56ef5f76d8212660252a16b231533cbe04d",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+            "expected": "367376c6296a38812ed8f6d0dbf8c82ebe931a1a068119e3c1065b6f4bd20c6f",
+            "actual": "367376c6296a38812ed8f6d0dbf8c82ebe931a1a068119e3c1065b6f4bd20c6f",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+            "expected": "40515e95da3af3004852e447e8a0c4e391dd87e4b9fc6266a5d051fb59f8d034",
+            "actual": "40515e95da3af3004852e447e8a0c4e391dd87e4b9fc6266a5d051fb59f8d034",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+            "expected": "8f2fc1b4b9247f593bee197141434c6c957a3552bdecfab7b01a0fba9c280976",
+            "actual": "8f2fc1b4b9247f593bee197141434c6c957a3552bdecfab7b01a0fba9c280976",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+            "expected": "a88d9e50eba35c1ddc943eeea7ce2644fd0cc1746d04f6033baf428663b4f8e6",
+            "actual": "a88d9e50eba35c1ddc943eeea7ce2644fd0cc1746d04f6033baf428663b4f8e6",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+            "expected": "de4edeb84b88905eda0036a28c516c57e130320465881860d331acbdce86c683",
+            "actual": "de4edeb84b88905eda0036a28c516c57e130320465881860d331acbdce86c683",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+            "expected": "4124a1394edb499d63978887772322c8a1cb5608ae328efe97a8319fcf710fb3",
+            "actual": "4124a1394edb499d63978887772322c8a1cb5608ae328efe97a8319fcf710fb3",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+            "expected": "dfd2dfd4ded4f883e15d42ae06ab688a63292590b59850dd86adab3fab992675",
+            "actual": "dfd2dfd4ded4f883e15d42ae06ab688a63292590b59850dd86adab3fab992675",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+            "expected": "e70c9600214c58d62f9a634c8d02e473a46406051db7e946c4cdc755dcc657d6",
+            "actual": "e70c9600214c58d62f9a634c8d02e473a46406051db7e946c4cdc755dcc657d6",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+            "expected": "d3e584599ab86c17277ae7d021e4c6f8eb52fcfed1661959107f105b0911210c",
+            "actual": "d3e584599ab86c17277ae7d021e4c6f8eb52fcfed1661959107f105b0911210c",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/fuji-kanritou-p20-lists.json",
+            "expected": "6c63c3c5c530fab93f5c825e6b59e55c1326674a11d26da0f96a7a6d09db5a84",
+            "actual": "6c63c3c5c530fab93f5c825e6b59e55c1326674a11d26da0f96a7a6d09db5a84",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+            "expected": "0943af656e376e7ac67d2cb7aea31fed994e1a276e47436883aa7bc2be16931d",
+            "actual": "0943af656e376e7ac67d2cb7aea31fed994e1a276e47436883aa7bc2be16931d",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json",
+            "expected": "52595ffc53ba64cf935fa227a3caa4ab0cdc31bf55243522b5ded740b5f8bca7",
+            "actual": "52595ffc53ba64cf935fa227a3caa4ab0cdc31bf55243522b5ded740b5f8bca7",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/karatsu-karayaku-s4-foundation-girders.json",
+            "expected": "c1640efb5010bf4733694bf316eea7335804b580d0bf0add43ad80ed83f684f0",
+            "actual": "c1640efb5010bf4733694bf316eea7335804b580d0bf0add43ad80ed83f684f0",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p2-columns.json",
+            "expected": "69e0994e9ecd38f0878786b0659d1a4f285ae3043ce705615893ea0c2d47d62e",
+            "actual": "69e0994e9ecd38f0878786b0659d1a4f285ae3043ce705615893ea0c2d47d62e",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p3-girders.json",
+            "expected": "31509592e746df404b5cac6bacc8c048d3998e9fd6cd5a3fbb56373cd7eba977",
+            "actual": "31509592e746df404b5cac6bacc8c048d3998e9fd6cd5a3fbb56373cd7eba977",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+            "expected": "590a477a371e71250d52475da41027cd4d7b3c78a9754f2d904fa7b181d5bf59",
+            "actual": "590a477a371e71250d52475da41027cd4d7b3c78a9754f2d904fa7b181d5bf59",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/saiki-fire-p1-girders.json",
+            "expected": "b3c11ec843b4da54edf487b2563dc89217cd682f6f70ff87ce22268afe16f52f",
+            "actual": "b3c11ec843b4da54edf487b2563dc89217cd682f6f70ff87ce22268afe16f52f",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/saiki-fire-p2-columns.json",
+            "expected": "f6f7d5eb089299026e6d3617b0dab51f5eca1a6fbaaff32a9cecc090301110d7",
+            "actual": "f6f7d5eb089299026e6d3617b0dab51f5eca1a6fbaaff32a9cecc090301110d7",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p13-columns.json",
+            "expected": "d067936ede685dd916fe0476daa1742c3aa18157101880551b9ee81d12bc515e",
+            "actual": "d067936ede685dd916fe0476daa1742c3aa18157101880551b9ee81d12bc515e",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p14-girders.json",
+            "expected": "ff5c85395910900e641f096ce0e7f2bb23b0fc6f2dc500357548be65aa1033d3",
+            "actual": "ff5c85395910900e641f096ce0e7f2bb23b0fc6f2dc500357548be65aa1033d3",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+            "expected": "0b202db8e14c95c038551210813119e0f4dac0f02285344f5fbf363553add07a",
+            "actual": "0b202db8e14c95c038551210813119e0f4dac0f02285344f5fbf363553add07a",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p15.json",
+            "expected": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+            "actual": "dbef193a729e920dd65a19b005a057f0336ed3255b2872e13574f4d4ae7e2eef",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p17.json",
+            "expected": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+            "actual": "4ad626a5b0531b3522ebb9ccdb743d71573c07b056d09573e3ce19e494e9f3f1",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p18.json",
+            "expected": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+            "actual": "9c76f8006eaad160b5d1321e0d0339f134634176fdc9082a8dbf178c1d9d6d2c",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/fuji-p20.json",
+            "expected": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+            "actual": "b487ff2c3f9e05cdefde11107aea1c09184261400bfa0c3a78e818f16c86b320",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+            "expected": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+            "actual": "cfe271bf5a079d5ff6e7babea535866efda6c9547945b5081b5fefb3163efa77",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+            "expected": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+            "actual": "844cc454f51f78805103c4d4380499489f00dbd2bd3a66513007f54a5e2d5da4",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ina-p6.json",
+            "expected": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+            "actual": "f0ab95970644d9887743804f5b6f8b321c1714dfe5248f65a0ebc1c155dacf5e",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ina-p7.json",
+            "expected": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+            "actual": "e8d251f13b8522011c1b73ed5881dbe6e172c30fe127bb9d7a261e290f8bf365",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p38.json",
+            "expected": "ca755538d7f6af783b937dcbc409a6f255eb16cf51b445b0273218b2cfec4cbc",
+            "actual": "ca755538d7f6af783b937dcbc409a6f255eb16cf51b445b0273218b2cfec4cbc",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p39.json",
+            "expected": "17e11a0f232b9bc2202245180719d41db822146caf8dfef994c7c324e2a1634c",
+            "actual": "17e11a0f232b9bc2202245180719d41db822146caf8dfef994c7c324e2a1634c",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p40.json",
+            "expected": "0b049e8d16469a3f98ead33526570f68d53e1d20a274515d7d4cab99abd4a29c",
+            "actual": "0b049e8d16469a3f98ead33526570f68d53e1d20a274515d7d4cab99abd4a29c",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/kani-p41.json",
+            "expected": "c59d4837d9d6e33f0edcca83c66a24ecb2c7805419963140f58d6c7ee73cb291",
+            "actual": "c59d4837d9d6e33f0edcca83c66a24ecb2c7805419963140f58d6c7ee73cb291",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+            "expected": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+            "actual": "85531645a56e930f0f8b4973236040c99e18d9860aa55ad7aadee1bce416d464",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+            "expected": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+            "actual": "020dce588ce997d35b2513974e14a44b24590c6c7888f0ea37e11b01cd3f8651",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+            "expected": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+            "actual": "a617ac8945d26bde0ad9b3546ffd04c3d4c5a1622bfdc8e8c73d293fec56563b",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+            "expected": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+            "actual": "4ca1a6ede495e00d16020d1f4a14bdd15fcaded12492dbd11ce534fa9626ebde",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+            "expected": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+            "actual": "48540a95fa0df72ff79da0ce122e4a746297296a8cc4cccaacfafbc4835d06f5",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p2.json",
+            "expected": "43d98c5eeddd54cb9baa4ea1653057d9e243e0da6df08883818af3ccc2b210a0",
+            "actual": "43d98c5eeddd54cb9baa4ea1653057d9e243e0da6df08883818af3ccc2b210a0",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p3.json",
+            "expected": "a3bedcce09a4d02b8300e69522c6aa1ee209f1fdb660124e19307acaef2f58d4",
+            "actual": "a3bedcce09a4d02b8300e69522c6aa1ee209f1fdb660124e19307acaef2f58d4",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/ojkk-p4.json",
+            "expected": "74da99742de8b7d00c117246a77f01d880a0271621fc05aac895ae72b6d6d930",
+            "actual": "74da99742de8b7d00c117246a77f01d880a0271621fc05aac895ae72b6d6d930",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/saiki-p1.json",
+            "expected": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+            "actual": "786d28c9532888802d67be471b2c5d9efc4e2d10a6d236de5ef4df6067334b85",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/saiki-p2.json",
+            "expected": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+            "actual": "6b2833d46d041cb4fb0d4d571dd390a95b64d30d42db79da5657fcafc4325007",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p1.json",
+            "expected": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+            "actual": "9f231a24411ee26e859161823e14fc207344d551c6e7426afa265d44e9d055b8",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p13.json",
+            "expected": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+            "actual": "6bbe2de7d202661aff2bcdcd944cdd72ed826383b6d52558cd2a8fb233637554",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/shibata-p7.json",
+            "expected": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+            "actual": "05e4a9e271779d1491e1a52160d3c011849ef0ff1d10e7c1c690de08d273b92d",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p16.json",
+            "expected": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+            "actual": "9cfd8f2947d8ca6db10175e065b6f5a83e98b99d71b8cf6f4a0e0d233d69e13f",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p20.json",
+            "expected": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+            "actual": "653de993ef69888b79379358fb74b07cd3a063031e5cdc6c22e5aa1f4d634be7",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p21.json",
+            "expected": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+            "actual": "8c1e25e08a022ac30767fa806f04f4a186fe73b94955dbe9627085cafee70e67",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/tsu-p22.json",
+            "expected": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+            "actual": "ad87c13acbaef2f705a7adff1c710500a635f01e74787af004debc8057fff5b4",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p13.json",
+            "expected": "bc22f4060266677a9342ebf82170a11e712f4e69c38a21e3fb44e3d806ddfba7",
+            "actual": "bc22f4060266677a9342ebf82170a11e712f4e69c38a21e3fb44e3d806ddfba7",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p14.json",
+            "expected": "4f5d299a5c250f963940db4b5903596d8281639da03f76fb5ea8cd6649060c38",
+            "actual": "4f5d299a5c250f963940db4b5903596d8281639da03f76fb5ea8cd6649060c38",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p15.json",
+            "expected": "b7f5460648a0c4332f537693c45ddd4493cf2eeee659d73296d117cdb42f325b",
+            "actual": "b7f5460648a0c4332f537693c45ddd4493cf2eeee659d73296d117cdb42f325b",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p6.json",
+            "expected": "0e91da7c83350b9f491aa06e73137d16b38da42603a448f057c0facd640a83fc",
+            "actual": "0e91da7c83350b9f491aa06e73137d16b38da42603a448f057c0facd640a83fc",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p7.json",
+            "expected": "ad9cb16b13a5738974338208ac254f8ff39295463def3398f6c361e5fd95df0a",
+            "actual": "ad9cb16b13a5738974338208ac254f8ff39295463def3398f6c361e5fd95df0a",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p8.json",
+            "expected": "cc225b6473310aeb36593de08cab6f5ed3d9cabc9336358c63f946652cdbb7cf",
+            "actual": "cc225b6473310aeb36593de08cab6f5ed3d9cabc9336358c63f946652cdbb7cf",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/textitems/yokohama-p9.json",
+            "expected": "f33c703d36999a0d0e5bbbe5199aa7277312954c02c3daa64b5c150c91c4c942",
+            "actual": "f33c703d36999a0d0e5bbbe5199aa7277312954c02c3daa64b5c150c91c4c942",
+            "equal": true
+          },
+          {
+            "path": "tests/fixtures/section-import/title-block-exclusions.json",
+            "expected": "e40126d0fce585033acf6bbeef61dd47e54c81505b3faf56caebf6376ba3e449",
+            "actual": "e40126d0fce585033acf6bbeef61dd47e54c81505b3faf56caebf6376ba3e449",
+            "equal": true
+          }
+        ],
+        "line_ending_note": "Initial LF Git-blob comparison did not match working-file CRLF. Verifying the reconstructed blob against the original frozen hash established the exact original bytes; no document was edited."
+      }
+    },
+    {
+      "id": 8,
+      "holds": true,
+      "method": "Selected the three named table rows including their line terminators and compared bytes.",
+      "evidence": {
+        "count": 3,
+        "equal": true
+      }
+    },
+    {
+      "id": 9,
+      "holds": true,
+      "method": "Ran wildcard report citation checker with exit 0. Read the complete step6 documentation diff, resolved all 17 entries in numbers_used, matched their literal numeric statements and cited pointers, and separately checked false minimum 0 through its cited parent object. Identifiers such as R10 and PDF page labels are not measured quantities.",
+      "evidence": {
+        "wildcard_command": "python scripts/check-citations.py phases/44-drawing-set-assembly/step*-report*.json",
+        "exit_code": 0,
+        "numeric_statements_checked": 18,
+        "numbers": [
+          {
+            "doc": "docs/RISKS.md",
+            "value": 2,
+            "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/0/known_gaps_confirmed",
+            "resolved": 2,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 1,
+            "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/1/known_gaps_confirmed",
+            "resolved": 1,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 6,
+            "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/2/known_gaps_confirmed",
+            "resolved": 6,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 5,
+            "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/3/known_gaps_confirmed",
+            "resolved": 5,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 5,
+            "source": "phases/44-drawing-set-assembly/step3-report.json#/sets/4/known_gaps_confirmed",
+            "resolved": 5,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/pages/10/elevations",
+            "resolved": 0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/pages/11/elevations",
+            "resolved": 0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 1,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/5/maximum",
+            "resolved": 1.0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/10/maximum",
+            "resolved": 0.0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/12/maximum",
+            "resolved": 0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0.21009416775716538,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/demotion_margin/legitimate_max/value",
+            "resolved": 0.21009416775716538,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 1,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/overlaps/10/with_titles_maximum",
+            "resolved": 1.0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/ADR.md",
+            "value": 36,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/pages_total",
+            "resolved": 36,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/ADR.md",
+            "value": 13,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/list_pages",
+            "resolved": 13,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/ADR.md",
+            "value": 16,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/block_pages",
+            "resolved": 16,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/ADR.md",
+            "value": 8,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/elevation_pages",
+            "resolved": 8,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/ADR.md",
+            "value": 4,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/census/summary/multi_role_pages",
+            "resolved": 4,
+            "equal": true,
+            "literal_and_pointer_in_doc": true
+          },
+          {
+            "doc": "docs/RISKS.md",
+            "value": 0,
+            "source": "phases/44-drawing-set-assembly/step1-report.json#/demotion_margin/known_false_min/value",
+            "resolved": 0.0,
+            "equal": true,
+            "literal_and_pointer_in_doc": true,
+            "note": "The sentence states false minimum 0 and cites its parent /demotion_margin object; inspected the numeric child explicitly."
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "holds": true,
+      "method": "Union of git diff BASE --name-only and untracked paths; exclude a step1 baseline path only when its current SHA-256 equals the recorded hash. Harness paths remain untouched and are outside cleanliness judgments; all are within the allowed phases prefix anyway.",
+      "evidence": {
+        "base_commit": "d29b73a7a105df775edf477989f9c5dffefca5ef",
+        "changed_paths": [
+          "AGENTS.md",
+          "CLAUDE.md",
+          "docs/ADR.md",
+          "docs/MILESTONES.md",
+          "docs/RISKS.md",
+          "phases/44-drawing-set-assembly/index.json",
+          "phases/44-drawing-set-assembly/step1-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step1-invoke.json",
+          "phases/44-drawing-set-assembly/step1-report.json",
+          "phases/44-drawing-set-assembly/step2-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step2-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step2-invoke.json",
+          "phases/44-drawing-set-assembly/step2-lint.txt",
+          "phases/44-drawing-set-assembly/step2-red.txt",
+          "phases/44-drawing-set-assembly/step2-report.json",
+          "phases/44-drawing-set-assembly/step2-tests.txt",
+          "phases/44-drawing-set-assembly/step2-tsc.txt",
+          "phases/44-drawing-set-assembly/step3-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step3-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step3-invoke.json",
+          "phases/44-drawing-set-assembly/step3-report.json",
+          "phases/44-drawing-set-assembly/step3-tests.json",
+          "phases/44-drawing-set-assembly/step4-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step4-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step4-invoke.json",
+          "phases/44-drawing-set-assembly/step4-report.json",
+          "phases/44-drawing-set-assembly/step5-build.log",
+          "phases/44-drawing-set-assembly/step5-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step5-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step5-consent-red.log",
+          "phases/44-drawing-set-assembly/step5-dev-error.log",
+          "phases/44-drawing-set-assembly/step5-dev.log",
+          "phases/44-drawing-set-assembly/step5-e2e.log",
+          "phases/44-drawing-set-assembly/step5-filter-red.log",
+          "phases/44-drawing-set-assembly/step5-full-tests.log",
+          "phases/44-drawing-set-assembly/step5-invoke.json",
+          "phases/44-drawing-set-assembly/step5-lint.log",
+          "phases/44-drawing-set-assembly/step5-red.log",
+          "phases/44-drawing-set-assembly/step5-report.json",
+          "phases/44-drawing-set-assembly/step5-selection-red.log",
+          "phases/44-drawing-set-assembly/step5-targeted.log",
+          "phases/44-drawing-set-assembly/step5-types.log",
+          "phases/44-drawing-set-assembly/step6-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step6-codex.stdout.log",
+          "phases/44-drawing-set-assembly/step6-invoke.json",
+          "phases/44-drawing-set-assembly/step6-report.json",
+          "phases/44-drawing-set-assembly/step7-codex.stderr.log",
+          "phases/44-drawing-set-assembly/step7-codex.stdout.log",
+          "src/components/plan/PlanImport.drawing-set.test.tsx",
+          "src/components/plan/PlanImport.module.css",
+          "src/components/plan/PlanImport.tsx",
+          "src/lib/import/drawing-set/apply.ts",
+          "src/lib/import/drawing-set/plan.ts",
+          "src/lib/import/drawing-set/reconcile.ts",
+          "src/lib/import/drawing-set/roles.ts",
+          "src/lib/import/drawing-set/types.ts",
+          "src/lib/import/story-label.test.ts",
+          "src/lib/import/story-label.ts",
+          "src/locales/ja.json",
+          "src/locales/ko.json",
+          "tests/drawing-set/apply.test.ts",
+          "tests/drawing-set/assemble.test.ts",
+          "tests/drawing-set/claims.ts",
+          "tests/e2e/README.md",
+          "tests/e2e/uc24-drawing-set.js"
+        ],
+        "disallowed": [],
+        "domain_parser_fixture_changes": []
+      }
+    },
+    {
+      "id": 11,
+      "holds": true,
+      "method": "Read step5 report/e2e log, the complete uc24 script, and the new UI section. Both phases are asserted: full PDF conflict plus disabled approval, then page/block checkbox selection and successful X-span comparison. Product load iterates every file and extracted page; exclusion is membership state driven by UI testids, with no fixture-name/page-number constant branch.",
+      "evidence": {
+        "source": "phases/44-drawing-set-assembly/step5-report.json#/e2e",
+        "phase1_conflict_seen": true,
+        "phase2_spans": [
+          5850,
+          5150,
+          7175,
+          3825
+        ],
+        "report_exit_code": 0,
+        "uc24_rerun_in_step7": false,
+        "note": "This property asks for report and script inspection, not a second browser run. The five UI component tests were independently rerun with the full suite."
+      }
+    },
+    {
+      "id": 12,
+      "holds": true,
+      "method": "Ran all four requested gates after restoring mutations. Before build, Win32_Process query for node/next processes whose command line contains next returned zero; no process was terminated. Build ran after tests, lint and tsc completed.",
+      "evidence": {
+        "commands": [
+          {
+            "command": "npx vitest run",
+            "exit_code": 0,
+            "passed": 1879,
+            "failed": 0,
+            "pending": 0,
+            "files": 104
+          },
+          {
+            "command": "npm run lint",
+            "exit_code": 0,
+            "errors": 0,
+            "warnings": 1,
+            "warning": "Existing route.test.ts unused _omitted at line 161."
+          },
+          {
+            "command": "npx tsc --noEmit",
+            "exit_code": 0
+          },
+          {
+            "command": "npm run build",
+            "exit_code": 0
+          }
+        ],
+        "next_processes_before_build": []
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "id": "yokohama",
+      "file": "tests/fixtures/drawing-set/expected/yokohama.json",
+      "sha256_before": "00d10cc21a9db969bdd86a13262d57303ee28b63d89793e687ccb0a7cc26c281",
+      "sha256_after": "00d10cc21a9db969bdd86a13262d57303ee28b63d89793e687ccb0a7cc26c281",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set golden claims yokohama: primitive claims and live directional gaps"
+      ],
+      "elapsed_seconds": 1.88,
+      "operation": "Increment grid.xSpansMm[0] by 1; CLAIMED grid.xSpansMm[]; run whole assemble.test.ts."
+    },
+    {
+      "id": "hirosaki",
+      "file": "tests/fixtures/drawing-set/expected/hirosaki.json",
+      "sha256_before": "8ad7c9876a08a33f8b2da5fd4f8cff01747a040cc857ee95c476b69d13b02f38",
+      "sha256_after": "8ad7c9876a08a33f8b2da5fd4f8cff01747a040cc857ee95c476b69d13b02f38",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set golden claims hirosaki: primitive claims and live directional gaps"
+      ],
+      "elapsed_seconds": 1.59,
+      "operation": "Increment grid.xSpansMm[0] by 1; CLAIMED grid.xSpansMm[]; run whole assemble.test.ts."
+    },
+    {
+      "id": "ina",
+      "file": "tests/fixtures/drawing-set/expected/ina.json",
+      "sha256_before": "9f7d68a5bf837d49fc88bfc02327579e6628f2ba1e23f8884fdd55fad4542fc6",
+      "sha256_after": "9f7d68a5bf837d49fc88bfc02327579e6628f2ba1e23f8884fdd55fad4542fc6",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set golden claims ina: primitive claims and live directional gaps"
+      ],
+      "elapsed_seconds": 1.56,
+      "operation": "Increment grid.xSpansMm[0] by 1; CLAIMED grid.xSpansMm[]; run whole assemble.test.ts."
+    },
+    {
+      "id": "kani",
+      "file": "tests/fixtures/drawing-set/expected/kani.json",
+      "sha256_before": "c0a5db143b494db50e19f7b3b17b922f110d0b25d19eeddacbc2a1ac801d2cd5",
+      "sha256_after": "c0a5db143b494db50e19f7b3b17b922f110d0b25d19eeddacbc2a1ac801d2cd5",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set golden claims kani: primitive claims and live directional gaps"
+      ],
+      "elapsed_seconds": 1.52,
+      "operation": "Increment grid.xSpansMm[0] by 1; CLAIMED grid.xSpansMm[]; run whole assemble.test.ts."
+    },
+    {
+      "id": "tsu",
+      "file": "tests/fixtures/drawing-set/expected/tsu.json",
+      "sha256_before": "a60860fe9534f5b4a867379099e52994d66c00d0c2fc0038fc0f7a35abf98363",
+      "sha256_after": "a60860fe9534f5b4a867379099e52994d66c00d0c2fc0038fc0f7a35abf98363",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set golden claims tsu: primitive claims and live directional gaps"
+      ],
+      "elapsed_seconds": 1.54,
+      "operation": "Increment grid.xSpansMm[0] by 1; CLAIMED grid.xSpansMm[]; run whole assemble.test.ts."
+    },
+    {
+      "id": "grid",
+      "file": "src/lib/import/drawing-set/reconcile.ts",
+      "sha256_before": "f917a71fe09679a075d5441ee54147f676a488038f49d5ee0371b08185042262",
+      "sha256_after": "f917a71fe09679a075d5441ee54147f676a488038f49d5ee0371b08185042262",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "reconciliation perturbations identifies an outlier span and restores the grid after block exclusion",
+        "reconciliation perturbations reports all blocks on a tie and ignores diagnostic grids and drawing coordinates"
+      ],
+      "elapsed_seconds": 1.66,
+      "operation": "Replace const key = JSON.stringify(gridValues(b.block)) with const key = 'all-grids-equal'."
+    },
+    {
+      "id": "duplicate",
+      "file": "src/lib/import/drawing-set/reconcile.ts",
+      "sha256_before": "f917a71fe09679a075d5441ee54147f676a488038f49d5ee0371b08185042262",
+      "sha256_after": "f917a71fe09679a075d5441ee54147f676a488038f49d5ee0371b08185042262",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "reconciliation perturbations requires unique story keys, records duplicate blocks by level index, and never assigns the top"
+      ],
+      "elapsed_seconds": 1.56,
+      "operation": "Replace if (group.length > 1) conflicts.push with if (false) conflicts.push in reconcile.ts."
+    },
+    {
+      "id": "blocking",
+      "file": "src/lib/import/drawing-set/plan.ts",
+      "sha256_before": "a8cf57695c64584d947a4701ca2724f72412f811bc5638421faff66a8c1fcb23",
+      "sha256_after": "a8cf57695c64584d947a4701ca2724f72412f811bc5638421faff66a8c1fcb23",
+      "restored": true,
+      "exit_code": 1,
+      "failed_tests": [
+        "drawing-set plan and apply rejects unmatched blocks and final duplicates, but manual choices win",
+        "drawing-set plan and apply preserves information conflicts but refuses a membership grid conflict"
+      ],
+      "elapsed_seconds": 1.61,
+      "operation": "Replace both if (duplicates.length) return and if (gridConflicts.length) return with if (false) return in plan.ts."
+    }
+  ],
+  "paths_verified": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/ADR.md",
+    "docs/MILESTONES.md",
+    "docs/RISKS.md",
+    "phases/44-drawing-set-assembly/step0-report.json",
+    "phases/44-drawing-set-assembly/step1-report.json",
+    "phases/44-drawing-set-assembly/step2-report.json",
+    "phases/44-drawing-set-assembly/step3-report.json",
+    "phases/44-drawing-set-assembly/step4-report.json",
+    "phases/44-drawing-set-assembly/step5-e2e.log",
+    "phases/44-drawing-set-assembly/step5-report.json",
+    "phases/44-drawing-set-assembly/step7.md",
+    "scripts/check-citations.py",
+    "src/components/plan/PlanImport.drawing-set.test.tsx",
+    "src/components/plan/PlanImport.module.css",
+    "src/components/plan/PlanImport.tsx",
+    "src/lib/import/drawing-set/apply.ts",
+    "src/lib/import/drawing-set/plan.ts",
+    "src/lib/import/drawing-set/reconcile.ts",
+    "src/lib/import/drawing-set/roles.ts",
+    "src/lib/import/drawing-set/types.ts",
+    "src/lib/import/framing-plan/apply.ts",
+    "src/lib/import/story-label.test.ts",
+    "src/lib/import/story-label.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/drawing-set/apply.test.ts",
+    "tests/drawing-set/assemble.test.ts",
+    "tests/drawing-set/claims.ts",
+    "tests/e2e/uc24-drawing-set.js",
+    "tests/fixtures/drawing-set/expected/hirosaki.json",
+    "tests/fixtures/drawing-set/expected/ina.json",
+    "tests/fixtures/drawing-set/expected/kani.json",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "tests/fixtures/plan-import/expected/fuji-kanritou-p17-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json",
+    "tests/fixtures/plan-import/expected/hirosaki-kikyono-p25-elevation.json",
+    "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-fukuzu-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-hashirashin-p1-grid.json",
+    "tests/fixtures/plan-import/expected/karatsu-jikugumi1-p1-elevation.json",
+    "tests/fixtures/plan-import/expected/shibata-fire-p1-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json",
+    "tests/fixtures/plan-import/expected/tsu-kanritou-p22-elevation.json",
+    "tests/fixtures/section-import/expected/fuji-kanritou-p20-lists.json",
+    "tests/fixtures/section-import/expected/ina-pump-p7-lists.json",
+    "tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json",
+    "tests/fixtures/section-import/expected/karatsu-karayaku-s4-foundation-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p2-columns.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p3-girders.json",
+    "tests/fixtures/section-import/expected/ojkk-akamichi-p4-walls-slabs.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p1-girders.json",
+    "tests/fixtures/section-import/expected/saiki-fire-p2-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p13-columns.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p14-girders.json",
+    "tests/fixtures/section-import/expected/yokohama-kanazawa-p15-slabs-walls.json",
+    "tests/fixtures/section-import/textitems/fuji-p15.json",
+    "tests/fixtures/section-import/textitems/fuji-p17.json",
+    "tests/fixtures/section-import/textitems/fuji-p18.json",
+    "tests/fixtures/section-import/textitems/fuji-p20.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+    "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+    "tests/fixtures/section-import/textitems/ina-p6.json",
+    "tests/fixtures/section-import/textitems/ina-p7.json",
+    "tests/fixtures/section-import/textitems/kani-p38.json",
+    "tests/fixtures/section-import/textitems/kani-p39.json",
+    "tests/fixtures/section-import/textitems/kani-p40.json",
+    "tests/fixtures/section-import/textitems/kani-p41.json",
+    "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+    "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+    "tests/fixtures/section-import/textitems/ojkk-p2.json",
+    "tests/fixtures/section-import/textitems/ojkk-p3.json",
+    "tests/fixtures/section-import/textitems/ojkk-p4.json",
+    "tests/fixtures/section-import/textitems/saiki-p1.json",
+    "tests/fixtures/section-import/textitems/saiki-p2.json",
+    "tests/fixtures/section-import/textitems/shibata-p1.json",
+    "tests/fixtures/section-import/textitems/shibata-p13.json",
+    "tests/fixtures/section-import/textitems/shibata-p7.json",
+    "tests/fixtures/section-import/textitems/tsu-p16.json",
+    "tests/fixtures/section-import/textitems/tsu-p20.json",
+    "tests/fixtures/section-import/textitems/tsu-p21.json",
+    "tests/fixtures/section-import/textitems/tsu-p22.json",
+    "tests/fixtures/section-import/textitems/yokohama-p13.json",
+    "tests/fixtures/section-import/textitems/yokohama-p14.json",
+    "tests/fixtures/section-import/textitems/yokohama-p15.json",
+    "tests/fixtures/section-import/textitems/yokohama-p6.json",
+    "tests/fixtures/section-import/textitems/yokohama-p7.json",
+    "tests/fixtures/section-import/textitems/yokohama-p8.json",
+    "tests/fixtures/section-import/textitems/yokohama-p9.json",
+    "tests/fixtures/section-import/title-block-exclusions.json",
+    "vitest.config.ts"
+  ],
+  "paths_expected_absent": [],
+  "limits": [
+    "Verification is scoped to the twelve step7 properties and current corpus; it does not resolve R6, R10, R15 or certify source transcription.",
+    "Temporary verification drivers and raw command output are in ignored .cache; only this report and step status are committed. No product, test, golden or documentation edits remain."
+  ],
+  "ac": {
+    "citation_check": {
+      "command": "python scripts/check-citations.py phases/44-drawing-set-assembly/step7-report.json",
+      "exit_code": 0
+    }
+  }
+}

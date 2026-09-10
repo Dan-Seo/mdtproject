@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "set-reconcile",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1121.7204570999984,
+  "stdout_log": "phases\\44-drawing-set-assembly\\step3-codex.stdout.log",
+  "stderr_log": "phases\\44-drawing-set-assembly\\step3-codex.stderr.log"
+}

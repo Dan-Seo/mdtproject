@@ -7,43 +7,85 @@
       "name": "refute-adr-and-goldens",
       "kind": "verify",
       "gate": true,
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T11:46:18+0900",
+      "summary": "ADR-046·세트 골든 5개 독립 검증: A1~A11 성립(upheld), knownGaps 19개 방향 확인, 66개 파일 동결 해시와 원문 근거 기록, 인용 검사 통과.",
+      "completed_at": "2026-09-10T12:00:52+0900"
     },
     {
       "step": 1,
       "name": "overlap-census",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:00:53+0900",
+      "summary": "36-page census: list 13 / block 16 / elevation 8 / multi-role 4; 66 regions, no-title margin fails, title-inclusive margin holds; parser bytes and 36 output hashes restored; 190 tests pass.",
+      "completed_at": "2026-09-10T12:09:05+0900"
     },
     {
       "step": 2,
       "name": "level-story-key",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "low",
+      "started_at": "2026-09-10T12:09:05+0900",
+      "summary": "Added levelStoryKey and unanimous alias storyNameKey with 35 grammar rows; 42 targeted and 1847 full tests pass, lint and tsc exit 0.",
+      "completed_at": "2026-09-10T12:13:11+0900"
     },
     {
       "step": 3,
       "name": "set-reconcile",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:13:12+0900",
+      "summary": "Implemented descriptive roles and membership-based grid/story reconciliation; five goldens with 19 live gaps, 38 claimed paths, 17 targeted and 1864 full tests pass; max-review split-alias finding fixed.",
+      "completed_at": "2026-09-10T12:31:54+0900"
     },
     {
       "step": 4,
       "name": "set-plan-apply",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:31:54+0900",
+      "summary": "Implemented pure plan resolution and existing apply composition; tsu creates 5 stories and 42 members, 10 targeted and 1874 full tests pass, lint/tsc pass, max review clear after three mutation-sensitive test improvements.",
+      "completed_at": "2026-09-10T12:45:39+0900"
     },
     {
       "step": 5,
       "name": "set-import-ui",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:45:40+0900",
+      "summary": "Added local drawing-set UI with explicit approval, membership and Story controls; 5 component tests and uc24 pass, 1879 full tests/lint/tsc/build pass; max-review findings fixed.",
+      "completed_at": "2026-09-10T13:12:28+0900"
     },
     {
       "step": 6,
       "name": "docs-sync",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "low",
+      "started_at": "2026-09-10T13:12:29+0900",
+      "summary": "Synced RISKS, MILESTONES, ADR-046 supplement and mirrored rows; documented overlap variants and live gaps; citations, byte comparison and lint pass.",
+      "completed_at": "2026-09-10T13:16:18+0900"
     },
     {
       "step": 7,
       "name": "refute-phase",
       "kind": "verify",
-      "status": "pending"
+      "status": "completed",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T13:16:19+0900",
+      "summary": "Independent verification upheld all 12 claims: 36 parser hashes, 35 grammar rows, five goldens with 19 live gaps, eight killed/restored mutations, 42 created members, frozen bytes/scope/citations; 1879 tests, lint, tsc and build pass.",
+      "completed_at": "2026-09-10T13:24:47+0900"
     }
-  ]
+  ],
+  "created_at": "2026-09-10T11:46:18+0900",
+  "completed_at": "2026-09-10T13:24:48+0900"
 }

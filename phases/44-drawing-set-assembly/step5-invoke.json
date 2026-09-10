@@ -1,0 +1,9 @@
+{
+  "step": 5,
+  "name": "set-import-ui",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1607.6920756,
+  "stdout_log": "phases\\44-drawing-set-assembly\\step5-codex.stdout.log",
+  "stderr_log": "phases\\44-drawing-set-assembly\\step5-codex.stderr.log"
+}

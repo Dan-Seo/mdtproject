@@ -1,0 +1,483 @@
+
+ RUN  v4.1.10 C:/Users/emper/mdtproject-p44
+
+ ❯ |ui| src/components/plan/PlanImport.drawing-set.test.tsx (4 tests | 1 failed) 338ms
+   × does not retain hidden discard consent after the proposed range changes 60ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |ui| src/components/plan/PlanImport.drawing-set.test.tsx > does not retain hidden discard consent after the proposed range changes
+AssertionError: expected { schemaVersion: 11, …(5) } to be { schemaVersion: 11, …(5) } // Object.is equality
+
+- Expected
++ Received
+
+@@ -1,383 +1,102 @@
+  {
+    "grid": {
++     "xLabels": [
++       "X1",
++       "X2",
++       "X3",
++       "X4",
++       "X5",
++     ],
+      "xSpans": [
+-       6000,
++       5850,
++       5150,
++       7175,
++       3825,
++     ],
++     "yLabels": [
++       "Y3",
++       "Y2",
++       "Y1",
+      ],
+      "ySpans": [
+-       6000,
+-       6000,
++       5825,
++       7175,
+      ],
+    },
+    "members": [
+-     {
+-       "id": "1F-X1Y1",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-X2Y1",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 1,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+      {
+-       "id": "1F-X1Y2",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-X2Y2",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 1,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-X1Y3",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 2,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-X2Y3",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 1,
+-         "iy": 2,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-G1-X1Y1-X",
++       "id": "story-4-G1-0-0-X",
+        "kind": "大梁",
+        "memberClass": "躯体",
+        "position": {
+          "axis": "X",
+          "ix": 0,
+          "iy": 0,
+        },
+        "sectionId": "section-G1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-G2-X1Y2-X",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "X",
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-G2",
+-       "storyId": "1F",
++       "storyId": "story-4",
+      },
+      {
+-       "id": "1F-G1-X1Y3-X",
++       "id": "story-4-G1-1-0-X",
+        "kind": "大梁",
+        "memberClass": "躯体",
+        "position": {
+          "axis": "X",
+-         "ix": 0,
+-         "iy": 2,
+-       },
+-       "sectionId": "section-G1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-G1-X1Y1-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-G1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-G1-X1Y2-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-G1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-G2-X2Y1-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+          "ix": 1,
+          "iy": 0,
+        },
+-       "sectionId": "section-G2",
+-       "storyId": "1F",
++       "sectionId": "section-G1",
++       "storyId": "story-4",
+      },
+      {
+-       "id": "1F-G2-X2Y2-Y",
++       "id": "story-4-G1-1-1-X",
+        "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 1,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-G2",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-W1-X1Y1-Y",
+-       "kind": "耐震壁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-W1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-S1-X1Y1",
+-       "kind": "床板",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-S1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "1F-S1-X1Y2",
+-       "kind": "床板",
+        "memberClass": "躯体",
+        "position": {
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-S1",
+-       "storyId": "1F",
+-     },
+-     {
+-       "id": "2F-X1Y1",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-X2Y1",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 1,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-X1Y2",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-X2Y2",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
++         "axis": "X",
+          "ix": 1,
+          "iy": 1,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+        },
+-     {
+-       "id": "2F-X1Y3",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 2,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-X2Y3",
+-       "kind": "柱",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 1,
+-         "iy": 2,
+-       },
+-       "sectionId": "section-C1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-G1-X1Y1-X",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "X",
+-         "ix": 0,
+-         "iy": 0,
+-       },
+        "sectionId": "section-G1",
+-       "storyId": "2F",
++       "storyId": "story-4",
+      },
+      {
+-       "id": "2F-G2-X1Y2-X",
++       "id": "story-4-G2-2-1-X",
+        "kind": "大梁",
+        "memberClass": "躯体",
+        "position": {
+          "axis": "X",
+-         "ix": 0,
++         "ix": 2,
+          "iy": 1,
+        },
+        "sectionId": "section-G2",
+-       "storyId": "2F",
++       "storyId": "story-4",
+      },
+      {
+-       "id": "2F-G1-X1Y3-X",
++       "id": "story-4-G1-0-2-X",
+        "kind": "大梁",
+        "memberClass": "躯体",
+        "position": {
+          "axis": "X",
+          "ix": 0,
+          "iy": 2,
+        },
+        "sectionId": "section-G1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-G1-X1Y1-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-G1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-G1-X1Y2-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-G1",
+-       "storyId": "2F",
++       "storyId": "story-4",
+      },
+      {
+-       "id": "2F-G2-X2Y1-Y",
++       "id": "story-4-G1-1-2-X",
+        "kind": "大梁",
+        "memberClass": "躯体",
+        "position": {
+-         "axis": "Y",
+-         "ix": 1,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-G2",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-G2-X2Y2-Y",
+-       "kind": "大梁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
++         "axis": "X",
+          "ix": 1,
+-         "iy": 1,
+-       },
+-       "sectionId": "section-G2",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-W1-X1Y1-Y",
+-       "kind": "耐震壁",
+-       "memberClass": "躯体",
+-       "position": {
+-         "axis": "Y",
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-W1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-S1-X1Y1",
+-       "kind": "床板",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 0,
+-       },
+-       "sectionId": "section-S1",
+-       "storyId": "2F",
+-     },
+-     {
+-       "id": "2F-S1-X1Y2",
+-       "kind": "床板",
+-       "memberClass": "躯体",
+-       "position": {
+-         "ix": 0,
+-         "iy": 1,
++         "iy": 2,
+        },
+-       "sectionId": "section-S1",
+-       "storyId": "2F",
++       "sectionId": "section-G1",
++       "storyId": "story-4",
+      },
+    ],
+    "name": "サンプル案件 / RC 2階建て",
+    "schemaVersion": 11,
+    "sections": [
+@@ -527,16 +246,26 @@
+        },
+      },
+    ],
+    "stories": [
+      {
+-       "height": 4200,
+-       "id": "1F",
+-       "name": "1階",
++       "height": 1170,
++       "id": "story-1",
++       "name": "基礎下端",
+      },
+      {
+-       "height": 3600,
+-       "id": "2F",
+-       "name": "2階",
++       "height": 150,
++       "id": "story-2",
++       "name": "設計GL",
++     },
++     {
++       "height": 3500,
++       "id": "story-3",
++       "name": "1FL",
++     },
++     {
++       "height": 3500,
++       "id": "story-4",
++       "name": "2FL",
+      },
+    ],
+  }
+
+ ❯ src/components/plan/PlanImport.drawing-set.test.tsx:112:42
+    110|   expect(screen.queryByTestId('drawing-set-discard-members')).toBeNull…
+    111|   fireEvent.click(screen.getByTestId('drawing-set-apply'))
+    112|   expect(useAppStore.getState().project).toBe(before)
+       |                                          ^
+    113|   expect(screen.getByTestId('drawing-set-discard-members')).not.toBeCh…
+    114| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  13:00:47
+   Duration  1.83s (transform 441ms, setup 146ms, import 517ms, tests 338ms, environment 676ms)

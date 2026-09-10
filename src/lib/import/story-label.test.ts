@@ -1,6 +1,39 @@
 import { describe, expect, it } from 'vitest'
 
-import { storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
+import { levelStoryKey, storyNameKey, storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
+
+const levelGrammar = [
+  ['1FL', '1'], ['２ＦＬ', '2'], ['1SL', '1'], ['01F', '1'], ['3階', '3'],
+  ['RFL', 'R'], ['RSL+760.00', 'R'], ['RFL(水下)', 'R'],
+  [' R ＦＬ（ 水下 ） ', 'R'], ['2FL-12.5', '2'], ['1SL±0', '1'],
+  ['RFL760.00', 'R'], ['R', 'R'], ['RF', 'R'], ['R階', 'R'],
+  ['RFL水上', undefined], ['中央棟1FL', undefined], ['GL', undefined],
+  ['設計GL', undefined], ['基礎下端', undefined], ['PHFL', undefined],
+  ['B1F', undefined], ['RCL', undefined], ['', undefined],
+  ['note1FL', undefined], ['1FLまで', undefined], ['1FL／1SL', undefined],
+] as const
+
+describe('levelStoryKey', () => {
+  it.each(levelGrammar)('%s -> %s', (label, key) => {
+    expect(levelStoryKey(label)).toBe(key)
+    if (key !== undefined) expect(storyKey(key === 'R' ? 'RF' : `${key}F`)).toBe(key)
+  })
+  it('keeps the existing story grammar unchanged', () => {
+    expect(storyKey('1FL')).toBeUndefined()
+  })
+})
+
+const nameGrammar = [
+  ['1FL／1SL', '1'], ['中央棟1FL／基準GL', undefined],
+  ['1FL／2SL', undefined], ['1FL／GL', undefined], ['1FL／', undefined],
+  ['', undefined], ['RFL／RSL+760.00', 'R'], ['２ＦＬ/02SL', '2'],
+] as const
+
+describe('storyNameKey', () => {
+  it.each(nameGrammar)('%s -> %s', (name, key) => {
+    expect(storyNameKey(name)).toBe(key)
+  })
+})
 
 describe('storyKey', () => {
   it('normalizes numeric floor labels and the roof aliases', () => {

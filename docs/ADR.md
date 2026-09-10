@@ -1027,3 +1027,12 @@ D10·D13 → 6000, D16〜D32 → 7000의 8행으로 펼쳐져 있다. **帯 축�
 **트레이드오프**: 通り芯 정확 일치는 엄격해서 라벨 배열이나 `spansMm`이 면마다 다른 세트는 조립되지 않는다 — 정규화를 넣으면 계층이 값을 만드는 쪽으로 미끄러지므로 넣지 않고 충돌로 드러낸다. 강등을 유보했으므로 **ina-p7·karatsu-jikugumi2-p1·shibata-p13의 블록 오탐은 화면에 그대로 남고**(R15 열린 채), 사용자가 세트 구성원 선택으로 빼야 한다 — 자동으로 지우는 것보다 손이 가지만, 반증된 문턱으로 정당한 블록까지 버리는 것보다 낫다. 그리고 이 계층이 조립할 수 있는 범위는 현재 파서가 내는 만큼이라 골든의 `knownGaps`가 비지 않는다 — 「사람이 읽은 도면」과 「제품이 낸 것」의 거리가 골든에 명시적으로 남는다는 뜻이고, 그것을 줄이는 것은 파서 트랙의 일이다. 세트 골든은 다섯뿐이라 R10(코퍼스 대표성)은 그대로다.
 
 **재검토 조건**: ① 파서가 계열별 수평 축을 내게 되면 결정 4를 풀고 `軸組図軸不一致`를 연다(검토 C R3의 양방향 부분열＋인접 스팬 합 규칙 그대로). ② 伏図 블록 오탐의 **다른 증거**(영역이 아닌 것)가 실측으로 서면 결정 2의 유보를 푼다. ③ 층마다 通り芯이 다른 세트(세트백·塔屋)가 코퍼스에 들어와 `通り芯不一致`가 정상 세트에서 반복될 때 — 층별 `grid`는 `Project` 모델 변경이라 별개 ADR이다. ④ 사용자의 실제 도면 세트가 들어와(R3) 면 구성이 현재 픽스처의 출처들과 다를 때. ⑤ 래스터 면이 코퍼스에 들어올 때(이 항은 텍스트 레이어만 전제한다). ⑥ PH·Bn 階를 여는 결정(ADR-035)이 바뀔 때 — `levelStoryKey`의 문법이 함께 넓어진다.
+
+
+#### ADR-046 구현 보충 — 図面セット 조립과 남은 범위
+
+본문의 현황·잠정 계측은 설계 당시 기록으로 보존한다. 현재는 조립·계획 해결·승인 반영 UI가 구현되어 있으며, 잠정 census 대신 다음 확정 계측을 인용한다. 전체 면 36(`phases/44-drawing-set-assembly/step1-report.json#/census/summary/pages_total`). リスト 출력 면 13(`phases/44-drawing-set-assembly/step1-report.json#/census/summary/list_pages`). 블록 출력 면 16(`phases/44-drawing-set-assembly/step1-report.json#/census/summary/block_pages`). 軸組図 계열 출력 면 8(`phases/44-drawing-set-assembly/step1-report.json#/census/summary/elevation_pages`). 복수 역할 면 4(`phases/44-drawing-set-assembly/step1-report.json#/census/summary/multi_role_pages`).
+
+제목 제외 영역의 강등 문턱은 불성립이다. 제목을 포함한 별도 영역에서는 해당 모집단의 부등식이 성립하지만, shibata-p13에는 경쟁 출력 자체가 없고 대조군도 정답 인증이 아니므로 자동 강등 규칙을 검증한 것으로 읽지 않는다(`phases/44-drawing-set-assembly/step1-report.json#/demotion_margin`, `phases/44-drawing-set-assembly/step1-report.json#/shibata_p13`). 자동 강등을 만들지 않는 결정은 유지하며 사용자가 세트 구성원을 선택한다.
+
+`levelStoryKey`·`storyNameKey`의 문법 표는 `phases/44-drawing-set-assembly/step2-report.json#/grammar_table`에 있다. 키 정규화의 SL 지원은 軸組図 파서의 SL 인식 지원이 아니다. 조립의 knownGaps는 `phases/44-drawing-set-assembly/step3-report.json#/sets`에 계속 남는다. 계획은 선택 구간의 미래 Story와 수동 대응으로 중복을 재판정하고 기존 반영 함수를 합성한다(`phases/44-drawing-set-assembly/step4-report.json#/selection_checks`, `phases/44-drawing-set-assembly/step4-report.json#/equivalence`). UI는 명시 승인만 받으며 断面の階 자동 제안은 없다(`phases/44-drawing-set-assembly/step5-report.json#/implementation`). **軸組図 축 대조는 후속**이며 이 phase에서는 파서 개선·Project 모델 변경도 하지 않았다.

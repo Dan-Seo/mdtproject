@@ -1,0 +1,22 @@
+
+> kijun@0.1.0 predev
+> node scripts/copy-pdfjs-assets.mjs
+
+
+> kijun@0.1.0 dev
+> next dev -p 3000
+
+   ▲ Next.js 15.5.23
+   - Local:        http://localhost:3000
+   - Network:      http://100.98.75.55:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1603ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.8s (1468 modules)
+ GET / 200 in 5588ms
+ GET / 200 in 379ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 529ms (959 modules)
+ GET /icon.svg?d70ceb207074c950 200 in 628ms

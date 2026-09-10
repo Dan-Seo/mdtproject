@@ -21,6 +21,23 @@ export function storyKey(label: string): string | undefined {
   return numeric === undefined ? undefined : canonicalNumber(numeric)
 }
 
+/** Map an elevation level label into the existing storyKey space. */
+export function levelStoryKey(levelLabel: string): string | undefined {
+  const value = compact(levelLabel)
+    .replace(/[+±-]?\d+(?:\.\d+)?$/, '')
+    .replace(/\([^()]*\)/g, '')
+  if (/^(?:R|RF|RFL|RSL|R階)$/.test(value)) return 'R'
+  const numeric = value.match(/^(\d+)(?:FL|SL|F|階)$/)?.[1]
+  return numeric === undefined ? undefined : canonicalNumber(numeric)
+}
+
+/** Same-height aliases only identify a story when every alias agrees. */
+export function storyNameKey(storyName: string): string | undefined {
+  const keys = compact(storyName).split('/').map(levelStoryKey)
+  const key = keys[0]
+  return key !== undefined && keys.every((candidate) => candidate === key) ? key : undefined
+}
+
 function isStandaloneStoryToken(text: string, index: number): boolean {
   const previous = text[index - 1]
   if (previous !== undefined && /[A-Za-z0-9]/.test(previous)) return false

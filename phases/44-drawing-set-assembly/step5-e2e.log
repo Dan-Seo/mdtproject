@@ -1,0 +1,44 @@
+{
+  "fullSet": {
+    "pageCount": 30,
+    "conflictText": "反映不可 · 通り芯不一致 — dwg-tsu-kanritou.pdf p.15 ·  · dwg-tsu-kanritou.pdf p.15 [1]",
+    "applyDisabled": true
+  },
+  "selected": {
+    "reference": "dwg-tsu-kanritou.pdf#21#0",
+    "top": "0",
+    "bottom": "5",
+    "blockPresent": true,
+    "blockValue": "2",
+    "applyEnabled": true,
+    "discardBeforeApply": false,
+    "referenceMatches": true
+  },
+  "refusal": {
+    "discardVisible": true,
+    "result": "部材があるため階を置き換えられません"
+  },
+  "applied": {
+    "spans": [
+      5850,
+      5150,
+      7175,
+      3825
+    ],
+    "result": "作った階: 52FL: 反映した部材: 6 / B15: 断面一覧にこの符号がありません / B150: 断面一覧にこの符号がありません / G3: 断面一覧にこの符号がありません / C3: 断面一覧にこの符号がありません / C2: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B30: 断面一覧にこの符号がありません / B29: 断面一覧にこの符号がありません / B24: 断面一覧にこの符号がありません / B29: 断面一覧にこの符号がありません / G3: 断面一覧にこの符号がありません / C3: 断面一覧にこの符号がありません / C4: 断面一覧にこの符号がありません / C4: 断面一覧にこの符号がありません / B34: 断面一覧にこの符号がありません / B30: 断面一覧にこの符号がありません / B24: 断面一覧にこの符号がありません / B34: 断面一覧にこの符号がありません / B30: 断面一覧にこの符号がありません / B24: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / C2: 断面一覧にこの符号がありません / G1A: 断面一覧にこの符号がありません / C2: 断面一覧にこの符号がありません / G3: 断面一覧にこの符号がありません / C3: 断面一覧にこの符号がありません / G11: 断面一覧にこの符号がありません / G11: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / G13: 断面一覧にこの符号がありません / G13: 断面一覧にこの符号がありません / B20: 断面一覧にこの符号がありません / G11A: 断面一覧にこの符号がありません / G11: 断面一覧にこの符号がありません / B35: 断面一覧にこの符号がありません / B39: 断面一覧にこの符号がありません / G11: 断面一覧にこの符号がありません / G11: 断面一覧にこの符号がありません / B15: 断面一覧にこの符号がありません / B24: 断面一覧にこの符号がありません / B244: 断面一覧にこの符号がありません / G12: 断面一覧にこの符号がありません / G12: 断面一覧にこの符号がありません"
+  },
+  "checks": {
+    "fullPdfHasThirtyPages": true,
+    "fullPdfReportsGridConflict": true,
+    "referenceUsesSourcePageIndex": true,
+    "rangeUsesNumericLevelIndexes": true,
+    "p20BlockStoryUsesSourcePageIndexKey": true,
+    "p20BlockHasAutomaticStory": true,
+    "applyIsReadyAfterMembershipAndRange": true,
+    "discardIsNotShownBeforeRefusal": true,
+    "discardIsShownOnlyAfterMemberRefusal": true,
+    "appliedXSpansMatchTsuGolden": true
+  }
+}
+SHOT C:\Users\emper\.dev-browser\tmp\uc24-drawing-set.png
+ALL CHECKS PASSED
