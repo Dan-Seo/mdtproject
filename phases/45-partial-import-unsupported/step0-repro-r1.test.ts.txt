@@ -1,0 +1,81 @@
+import { readFileSync } from 'node:fs'
+import { expect, it } from 'vitest'
+import { createSampleProject } from '@/domain/model/sample-project'
+import { beamDepthAbove, deserializeProject, girderRun, girderSpan } from '@/domain/model/project'
+import { MemberUnsupportedError } from '@/domain/model/unsupported'
+import type { Section } from '@/domain/model/member'
+import { applyFramingPlan } from '@/lib/import/framing-plan/apply'
+import type { PlanBlock } from '@/lib/import/framing-plan/types'
+import { assembleDrawingSet } from '@/lib/import/drawing-set/reconcile'
+import { resolveDrawingSetPlan } from '@/lib/import/drawing-set/plan'
+import { applyDrawingSet } from '@/lib/import/drawing-set/apply'
+import type { DrawingSetPage } from '@/lib/import/drawing-set/types'
+
+function plainError(call: () => unknown): string {
+  let caught: unknown
+  try { call() } catch (error) { caught = error }
+  expect(caught).toBeInstanceOf(Error)
+  expect(caught).not.toBeInstanceOf(MemberUnsupportedError)
+  expect((caught as Error).constructor).toBe(Error)
+  return (caught as Error).message
+}
+
+it('A1: imports adjacent different sections and reaches a third plain throw', () => {
+  const sample = createSampleProject()
+  const axis = (direction: 'X' | 'Y', count: number) => ({ direction,
+    axes: Array.from({ length: count + 1 }, (_, i) => ({ label: `${direction}${i + 1}`, positionPt: i * 100 })),
+    spansMm: Array.from({ length: count }, () => 6000), scalePtPerMm: 1 / 60, totalConfirmed: false })
+  const block: PlanBlock = { xGrid: axis('X', 2), yGrid: axis('Y', 1), unplacedMarks: [], placements: [
+    ...[0, 1, 2].map(ix => ({ mark: 'C1', role: '格子点' as const, ix, iy: 0 })),
+    { mark: 'G1', role: '辺', ix: 0, iy: 0, axis: 'X' },
+    { mark: 'G2', role: '辺', ix: 1, iy: 0, axis: 'X' },
+  ] }
+  const result = applyFramingPlan(sample, { block, storyId: sample.stories[0].id, discardOtherStories: true })
+  expect(result.refusal).toBeUndefined()
+  expect(result.applied).toBe(5)
+  expect(result.skipped).toEqual([])
+  const project = deserializeProject(JSON.stringify(result.project))
+  const girders = project.members.filter(m => m.kind === '大梁')
+  for (const member of girders) expect(girderSpan(project, member).clear).toBeGreaterThan(0)
+  for (const member of project.members.filter(m => m.kind === '柱')) expect(beamDepthAbove(project, member)).toBeGreaterThan(0)
+  const error = plainError(() => girderRun(project, girders[0]))
+  expect(error).toContain('大梁 run contains mixed sections:')
+  console.log('A1_RESULT ' + JSON.stringify({ error, project }))
+})
+
+it('A6: tsu set composition reaches the missing start support plain error', () => {
+  const golden = JSON.parse(readFileSync('tests/fixtures/drawing-set/expected/tsu.json', 'utf8'))
+  const pages: DrawingSetPage[] = golden.pages.map((p: { source: string; pageNumber: number; fixture: string }) => {
+    const f = JSON.parse(readFileSync(`tests/fixtures/section-import/textitems/${p.fixture}.json`, 'utf8'))
+    return { source: p.source, pageNumber: p.pageNumber, page: { ...f.page, items: f.items } }
+  })
+  const all = assembleDrawingSet(pages, { excludedPages: [], excludedBlocks: [] })
+  const excludedBlocks = all.blocks.filter(b => b.ref.pageNumber === 16 && b.block.title?.startsWith('杭伏図')).map(b => b.ref)
+  expect(excludedBlocks).toHaveLength(1)
+  const candidate = assembleDrawingSet(pages, { excludedPages: [], excludedBlocks })
+  const resolved = resolveDrawingSetPlan(candidate, { reference: candidate.stories!.reference,
+    topLevelIndex: 0, bottomLevelIndex: candidate.stories!.levels.length - 1, discardMembers: true })
+  expect(resolved).toHaveProperty('plan')
+  if (!('plan' in resolved)) throw new Error(JSON.stringify(resolved))
+  const result = applyDrawingSet(createSampleProject(), resolved.plan)
+  expect(result.refusal).toBeUndefined()
+  expect(result.project.members.length).toBeGreaterThan(0)
+  const member = result.project.members.find(m => m.kind === '大梁')!
+  expect(member).toBeDefined()
+  const error = plainError(() => girderSpan(result.project, member))
+  expect(error).toBe(`Missing start support 柱 for 大梁: ${member.id}`)
+  console.log('A6_RESULT ' + JSON.stringify({ error, memberCount: result.project.members.length,
+    note: 'Same assembly/order/discard as the composition test; original sample sections, without its fabricated all-mark registration.' }))
+  const sample = createSampleProject()
+  const marks = new Map(candidate.blocks.flatMap(b => b.block.placements.map(m => [m.mark, m.role] as const)))
+  sample.sections = [...marks].map(([mark, role], i): Section => ({ ...sample.sections.find(s => s.kind === (role === '格子点' ? '柱' : role === '辺' ? '大梁' : '床板'))!, id: `registered-${i}`, mark, storyLabel: 'selected' }))
+  sample.sections.push(...sample.sections.map(s => ({ ...s, id: `${s.id}-other`, storyLabel: 'other' })))
+  const exactPlan = resolveDrawingSetPlan(candidate, { reference: candidate.stories!.reference,
+    topLevelIndex: 0, bottomLevelIndex: candidate.stories!.levels.length - 1, discardMembers: true, sectionStoryLabels: { 2: 'selected' } })
+  if (!('plan' in exactPlan)) throw new Error(JSON.stringify(exactPlan))
+  const exact = applyDrawingSet(sample, exactPlan.plan)
+  const firstGirder = exact.project.members.find(m => m.kind === '大梁')!
+  const exactError = plainError(() => girderSpan(exact.project, firstGirder))
+  expect(exactError).toBe(`Missing start support 柱 for 大梁: ${firstGirder.id}`)
+  console.log('A6_EXACT_RESULT ' + JSON.stringify({ error: exactError, memberCount: exact.project.members.length }))
+})

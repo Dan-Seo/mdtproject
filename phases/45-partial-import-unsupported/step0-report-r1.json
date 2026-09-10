@@ -1,0 +1,683 @@
+{
+  "verdict": "refuted",
+  "head": "6ab8a36",
+  "scope": "Step 0 only. No product/test-suite/docs fixes. Census assumes a valid starting Project and normal accepted imports; corrupt pre-existing references and direct API misuse are not counted as import-created failures.",
+  "claims": [
+    {
+      "id": "A1",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 1437,
+          "note": "Third input-reachable plain Error: girderRun joins adjacent same-axis/same-story members without filtering sectionId (1390-1434), then throws on mixed sectionIds before resolving spans (1442)."
+        },
+        {
+          "source": "src/lib/import/framing-plan/apply.ts",
+          "line": 176,
+          "note": "Role/grid checks permit adjacent G1 and G2 with different registered sections. Members inherit each matching sectionId at 190."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-repro.test.ts",
+          "line": 24,
+          "note": "Imports three C1 supports and adjacent G1/G2 from an unmodified sample, applied=5/skipped=0; deserializeProject accepts JSON; both girderSpan calls and every beamDepthAbove succeed; girderRun alone throws mixed sections. Complete Project attached under counterexample."
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "line": 106,
+          "note": "Column try 106-119 contains beamDepthAbove 113 and columnEnds 114; instanceof guard 120 and unsupported append 122."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "line": 143,
+          "note": "Slab try 143-152 contains slabRun 144 and generation 150; catch guard 153, append 157. Wall try 177-184 contains wallSpan 180; guard 185 and append 187."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "line": 205,
+          "note": "Girder try 205-217 contains girderRun 206; it calls girderSpan at project.ts:1442. Catch 218 rethrows all non-MemberUnsupportedError values. There are FOUR try/catch sites, not the reading-list estimate of three."
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": "src/components/viewer/Viewer3D.tsx",
+          "line": 1400,
+          "note": "Unsupported lookup and early return 1400-1404 are present; useTakeoff 1568 supplies IDs, buildingLayout 1592 receives them."
+        },
+        {
+          "source": "src/lib/viewer/building.ts",
+          "line": 303,
+          "note": "The rebar loop skips unsupported IDs before girderSpan at 341. This does not skip all concrete boxes: a separate member loop starts at 130."
+        },
+        {
+          "source": "src/components/viewer/Viewer3D.tsx",
+          "line": 1373,
+          "note": "Literal requested no-other-calls-outside-try condition is false: runSupportSections calls girderSupportSections at 1373/1375, from selectedMemberView at 1498, outside a try. These are guarded by the earlier unsupported return, so their existence alone is NOT evidence of an unhandled missing-support regression."
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 1437,
+          "note": "Broader claim that changing only the two throws makes imported projects render is not established: the A1 imported mixed-section counterexample still throws a plain Error within buildTakeoff. No source mutation was made to simulate the proposed fix."
+        }
+      ]
+    },
+    {
+      "id": "A4",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": "src/locales/ja.json",
+          "line": 104,
+          "note": "All four existing takeoff reason and plan keys exist at 104-111; Korean has corresponding entries at the same lines."
+        },
+        {
+          "source": "src/locales/ko.json",
+          "line": 104,
+          "note": "Four reason and four plan keys present."
+        },
+        {
+          "source": "src/lib/i18n.test.ts",
+          "line": 19,
+          "note": "The asserted expression is Object.keys(ja).filter((key) => !(key in ko)) equals []. It checks ja is a subset of ko, not key-set equality: ko-only extra keys cannot fail it. Thus the literal claim that the test checks equal key sets is false."
+        },
+        {
+          "source": "src/lib/i18n.test.ts",
+          "line": 30,
+          "note": "Record<UnsupportedReason,true> enumerates four reasons and t() checks both panes/both kinds/both locales. Korean fallback means these t() assertions alone do not establish direct Korean key presence; the subset test supplies that. Current locale keys were separately compared."
+        }
+      ]
+    },
+    {
+      "id": "A5",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "tests/drawing-set/apply.test.ts",
+          "line": 47,
+          "note": "tsu composition test builds registered sections for all placement marks, compares apply with manual composition and asserts members >=1; contains no takeoff/rebar generation call."
+        },
+        {
+          "source": "tests/e2e/uc24-drawing-set.js",
+          "line": 128,
+          "note": "After approval/discard, reads span inputs and result text and checks X spans; no panel-close action or post-import pane failure/canvas/quantity assertion. Initial grand-total/canvas waits at 50-51 precede import."
+        },
+        {
+          "source": "phases/44-drawing-set-assembly/orchestration-report.md",
+          "note": "stage2-result / Issues and limitations item 2 already limits real-PDF proof to approval/grid/Story: six imported members, 49 skipped; 42 is the separate registered fixture."
+        }
+      ]
+    },
+    {
+      "id": "A6",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "line": 77,
+          "note": "buildTakeoff is not exported. Used the expressly permitted direct girderSpan fallback on the applied Project, not a claim of executing the hook."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-repro.test.ts",
+          "line": 48,
+          "note": "Runs assemble -> resolve -> apply with discardMembers and same tsu block exclusion/range. Both unchanged sample sections (6 members) and exact composition fixture section registration/filter (42 members) throw Error, constructor exactly Error, not MemberUnsupportedError."
+        }
+      ]
+    }
+  ],
+  "throw_census": [
+    {
+      "line": 174,
+      "message": "Section not found: ${sectionId}",
+      "class": "internal",
+      "why": "Accepted imports select an existing section and assign its id; missing references require invalid pre-existing data or a later defect."
+    },
+    {
+      "line": 188,
+      "message": "Member and section kinds do not match",
+      "class": "internal",
+      "why": "apply constructs kind from the selected section after role validation."
+    },
+    {
+      "line": 553,
+      "message": "girderSupportSections requires a 大梁",
+      "class": "internal",
+      "why": "Caller/type-position contract. Import role checks and positionOf construct compatible members."
+    },
+    {
+      "line": 578,
+      "message": "message (Missing start/end support 柱; or non-柱 section)",
+      "class": "input-reachable",
+      "why": "Absent support is permitted by import; registered support section kind mismatch is an internal reference violation. Missing start and end are one throw site."
+    },
+    {
+      "line": 606,
+      "message": "girderSpan requires a 大梁",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 723,
+      "message": "wallSpan requires a 耐震壁",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 937,
+      "message": "slabBay requires a 床板",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 1240,
+      "message": "slabRun requires a 床板",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 1386,
+      "message": "girderRun requires a 大梁",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 1407,
+      "message": "大梁 run contains a non-girder position",
+      "class": "internal",
+      "why": "Immediately preceding filter excludes non-girder positions."
+    },
+    {
+      "line": 1414,
+      "message": "大梁 member not found in project",
+      "class": "internal",
+      "why": "buildTakeoff passes a current member from project.members; filter retains itself."
+    },
+    {
+      "line": 1437,
+      "message": "大梁 run contains mixed sections",
+      "class": "input-reachable",
+      "why": "Adjacent different registered 断面 accepted by applyFramingPlan; counterexample reproduces without missing supports."
+    },
+    {
+      "line": 1495,
+      "message": "columnEnds requires a 柱",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 1525,
+      "message": "beamDepthAbove requires a 柱",
+      "class": "internal",
+      "why": "Type-position contract guarded by import and caller."
+    },
+    {
+      "line": 1539,
+      "message": "大梁 member references a non-大梁 section",
+      "class": "internal",
+      "why": "Imported member.kind and sectionId come from the same matched section."
+    },
+    {
+      "line": 1547,
+      "message": "No touching 大梁 found above 柱",
+      "class": "input-reachable",
+      "why": "Import may create a column and skip all touching unregistered girders. No connectivity check in apply."
+    },
+    {
+      "line": 1971,
+      "message": "Unsupported Project schemaVersion",
+      "class": "internal",
+      "why": "External JSON-load validation; not a throw reached by processing a valid accepted drawing import. Serialized counterexample passes this guard."
+    },
+    {
+      "line": 1977,
+      "message": "Project shape mismatch",
+      "class": "internal",
+      "why": "External JSON-load validation; not reached for a valid accepted import. Classified internal only relative to requested two-way import-output census; malformed user JSON is independently input-reachable outside that scope."
+    }
+  ],
+  "reproduction": {
+    "command": "npx vitest run phases/45-partial-import-unsupported/step0-repro.test.ts --config $env:TEMP/kijun-p45-step0.config.mjs --silent=false --disableConsoleIntercept --no-color",
+    "error": "Missing start support 柱 for 大梁: story-4-G1-0-0-X",
+    "counterexample_error": "大梁 run contains mixed sections: 1F-G1-0-0-X:section-G1, 1F-G2-1-0-X:section-G2",
+    "tests": 2,
+    "passed": 2,
+    "exact_composition_members": 42,
+    "sample_sections_members": 6
+  },
+  "validation": {
+    "requested_vitest": {
+      "command": "npx vitest run phases/45-partial-import-unsupported/step0-repro.test.ts",
+      "exit_code": 1,
+      "result": "No test files found. Root vitest.config.ts project include lists exclude phases. This is a specification/AC wiring defect, not a passing reproduction."
+    },
+    "temporary_config": {
+      "path": "$env:TEMP/kijun-p45-step0.config.mjs",
+      "content": "export default { resolve: { alias: { '@': '<absolute-repo>/src' } }, test: { environment: 'node', include: ['phases/45-partial-import-unsupported/step0-repro.test.ts'] } };",
+      "note": "Write this content to the temporary config, replace <absolute-repo> with cwd using forward slashes, then run reproduction.command. No repository config was changed."
+    },
+    "existing_tests": {
+      "command": "npx vitest run src/lib/i18n.test.ts tests/drawing-set/apply.test.ts",
+      "exit_code": 0,
+      "tests": 16,
+      "files": 2
+    },
+    "citations": {
+      "command": "python scripts/check-citations.py phases/45-partial-import-unsupported/step0-report.json",
+      "exit_code": 0
+    }
+  },
+  "paths_verified": [
+    "docs/ADR.md",
+    "docs/ARCHITECTURE.md",
+    "phases/44-drawing-set-assembly/orchestration-report.md",
+    "phases/45-partial-import-unsupported/step0-repro.test.ts",
+    "src/components/viewer/Viewer3D.tsx",
+    "src/domain/model/project.ts",
+    "src/domain/model/unsupported.ts",
+    "src/domain/rebar/column.ts",
+    "src/lib/hooks/useTakeoff.ts",
+    "src/lib/i18n.test.ts",
+    "src/lib/import/framing-plan/apply.ts",
+    "src/lib/viewer/building.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/drawing-set/apply.test.ts",
+    "tests/e2e/uc24-drawing-set.js",
+    "vitest.config.ts"
+  ],
+  "census_summary": {
+    "plain_throw_sites": 18,
+    "input_reachable_sites": 3,
+    "internal_or_outside_import_output_scope": 15,
+    "note": "Also inspected throw storyNotFound helper calls; imported story IDs are checked/created by apply. The requested literal throw new Error census does not count helper returns or MemberUnsupportedError sites."
+  },
+  "counterexample": {
+    "error": "大梁 run contains mixed sections: 1F-G1-0-0-X:section-G1, 1F-G2-1-0-X:section-G2",
+    "project": {
+      "schemaVersion": 11,
+      "name": "サンプル案件 / RC 2階建て",
+      "grid": {
+        "xSpans": [
+          6000,
+          6000
+        ],
+        "ySpans": [
+          6000
+        ],
+        "xLabels": [
+          "X1",
+          "X2",
+          "X3"
+        ],
+        "yLabels": [
+          "Y1",
+          "Y2"
+        ]
+      },
+      "stories": [
+        {
+          "id": "1F",
+          "name": "1階",
+          "height": 4200
+        },
+        {
+          "id": "2F",
+          "name": "2階",
+          "height": 3600
+        }
+      ],
+      "sections": [
+        {
+          "id": "section-C1",
+          "kind": "柱",
+          "mark": "C1",
+          "shape": "矩形",
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "count": 12
+          },
+          "hoop": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 0
+          }
+        },
+        {
+          "id": "section-G1",
+          "kind": "大梁",
+          "mark": "G1",
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "top": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "bottom": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          },
+          "widthTie": {
+            "size": "D10",
+            "pitch": 1000
+          },
+          "sideBar": {
+            "size": "D10",
+            "count": 2,
+            "extraLengthMm": 0
+          }
+        },
+        {
+          "id": "section-G2",
+          "kind": "大梁",
+          "mark": "G2",
+          "b": 400,
+          "depth": 700,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D22",
+            "top": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "bottom": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 150,
+            "startOffsetMm": 50
+          }
+        },
+        {
+          "id": "section-W1",
+          "kind": "耐震壁",
+          "mark": "W1",
+          "thickness": 200,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋内",
+          "finish": "仕上げあり",
+          "spliceMethod": "重ね継手",
+          "layers": 2,
+          "vertical": {
+            "size": "D13",
+            "pitch": 200,
+            "startOffsetMm": 100
+          },
+          "horizontal": {
+            "size": "D13",
+            "pitch": 200,
+            "startOffsetMm": 100
+          }
+        },
+        {
+          "id": "section-S1",
+          "kind": "床板",
+          "mark": "S1",
+          "thickness": 200,
+          "fc": 24,
+          "grade": "SD345",
+          "finish": "仕上げあり",
+          "spliceMethod": "重ね継手",
+          "x": {
+            "top": {
+              "size": "D13",
+              "pitch": 200,
+              "startOffsetMm": 100
+            },
+            "bottom": {
+              "size": "D13",
+              "pitch": 200,
+              "startOffsetMm": 100
+            }
+          },
+          "y": {
+            "top": {
+              "size": "D13",
+              "pitch": 200,
+              "startOffsetMm": 100
+            },
+            "bottom": {
+              "size": "D13",
+              "pitch": 200,
+              "startOffsetMm": 100
+            }
+          }
+        }
+      ],
+      "members": [
+        {
+          "id": "1F-C1-0-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "section-C1",
+          "storyId": "1F",
+          "position": {
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-C1-1-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "section-C1",
+          "storyId": "1F",
+          "position": {
+            "ix": 1,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-C1-2-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "section-C1",
+          "storyId": "1F",
+          "position": {
+            "ix": 2,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-G1-0-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G1",
+          "storyId": "1F",
+          "position": {
+            "axis": "X",
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-G2-1-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G2",
+          "storyId": "1F",
+          "position": {
+            "axis": "X",
+            "ix": 1,
+            "iy": 0
+          }
+        }
+      ]
+    }
+  },
+  "call_site_audit": {
+    "command": "rg -n \"girderSpan|beamDepthAbove|columnEnds|girderSupportSections\" src -g \"*.ts\" -g \"*.tsx\"",
+    "production_matches": [
+      {
+        "source": "src/components/viewer/Viewer3D.tsx",
+        "line": 21,
+        "text": "girderSupportSections,"
+      },
+      {
+        "source": "src/components/viewer/Viewer3D.tsx",
+        "line": 1373,
+        "text": "girderSupportSections(project, firstMember).start,"
+      },
+      {
+        "source": "src/components/viewer/Viewer3D.tsx",
+        "line": 1375,
+        "text": "(runMember) => girderSupportSections(project, runMember).end,"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 548,
+        "text": "export function girderSupportSections("
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 553,
+        "text": "throw new Error(`girderSupportSections requires a 大梁: ${member.id}`)"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 604,
+        "text": "export function girderSpan(project: Project, member: Member): GirderSpan {"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 606,
+        "text": "throw new Error(`girderSpan requires a 大梁: ${member.id}`)"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 614,
+        "text": "const { start: startSection, end: endSection } = girderSupportSections("
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 1442,
+        "text": "const spans = members.map((candidate) => girderSpan(project, candidate))"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 1491,
+        "text": "export function columnEnds(project: Project, member: Member): ColumnEnds {"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 1495,
+        "text": "throw new Error(`columnEnds requires a 柱: ${member.id}`)"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 1523,
+        "text": "export function beamDepthAbove(project: Project, member: Member): number {"
+      },
+      {
+        "source": "src/domain/model/project.ts",
+        "line": 1525,
+        "text": "throw new Error(`beamDepthAbove requires a 柱: ${member.id}`)"
+      },
+      {
+        "source": "src/domain/rebar/column.ts",
+        "line": 28,
+        "text": "beamDepthAbove: number"
+      },
+      {
+        "source": "src/domain/rebar/column.ts",
+        "line": 29,
+        "text": "/** 스택 안에서의 단부 조건. `columnEnds()`가 판정한다 (R7). */"
+      },
+      {
+        "source": "src/domain/rebar/column.ts",
+        "line": 101,
+        "text": "const { member, section, story, beamDepthAbove, ends } = input"
+      },
+      {
+        "source": "src/domain/rebar/column.ts",
+        "line": 265,
+        "text": "const hoopSpan = story.height - beamDepthAbove"
+      },
+      {
+        "source": "src/domain/rebar/column.ts",
+        "line": 270,
+        "text": "`(階高 ${story.height} − 上部大梁せい ${beamDepthAbove})`,"
+      },
+      {
+        "source": "src/lib/hooks/useTakeoff.ts",
+        "line": 7,
+        "text": "beamDepthAbove,"
+      },
+      {
+        "source": "src/lib/hooks/useTakeoff.ts",
+        "line": 8,
+        "text": "columnEnds,"
+      },
+      {
+        "source": "src/lib/hooks/useTakeoff.ts",
+        "line": 113,
+        "text": "beamDepthAbove: beamDepthAbove(project, member),"
+      },
+      {
+        "source": "src/lib/hooks/useTakeoff.ts",
+        "line": 114,
+        "text": "ends: columnEnds(project, member),"
+      },
+      {
+        "source": "src/lib/import/framing-plan/apply.ts",
+        "line": 269,
+        "text": "// 도면은 위에서 아래, `Project.stories`는 아래에서 위다 (columnEnds가"
+      },
+      {
+        "source": "src/lib/viewer/building.ts",
+        "line": 11,
+        "text": "girderSpan,"
+      },
+      {
+        "source": "src/lib/viewer/building.ts",
+        "line": 341,
+        "text": "const span = girderSpan(project, member)"
+      }
+    ]
+  },
+  "locale_audit": {
+    "ja_keys": 322,
+    "ko_keys": 322,
+    "ja_only": [],
+    "ko_only": [],
+    "extra_ko_key_would_fail_existing_subset_assertion": false
+  }
+}

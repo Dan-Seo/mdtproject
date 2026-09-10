@@ -1,16 +1,16 @@
 # Step 4: docs-sync — ADR-047과 대장 갱신
 
 ## 읽어야 할 파일
-- `docs/ADR.md`(ADR-046 본문과 「ADR-046 구현 보충」 절, 번호 규약), `docs/RISKS.md` R10, `docs/MILESTONES.md` 도면 인식 행, `CLAUDE.md`와 `AGENTS.md`의 「도면 인식(로컬)」 행(둘은 같은 문장이어야 한다)
-- step 0~3 report
+- `docs/ADR.md`(ADR-046 본문과 「ADR-046 구현 보충」 절, 번호 규약, ADR-028 부근의 「連続する床板은 大梁의 런과 같은 형태로 잡는다」 단락), `docs/RISKS.md` R10, `docs/MILESTONES.md` 도면 인식 행, `CLAUDE.md`와 `AGENTS.md`의 「도면 인식(로컬)」 행(둘은 같은 문장이어야 한다)
+- step 0~3 report(`step0-report-r1.json` 포함)
 
 ## 작업
-1. `docs/ADR.md` 끝에 **ADR-047** 추가: 「부분 취입의 支持不成立은 부재 단위 未対応으로 강등한다」.
-   - 맥락: 2026-09-10 phase 44 브라우저 검증에서 tsu·yokohama 실물 PDF 반영 직후 3D·数量 페인이 `Missing … support 柱`·`No touching 大梁 found above 柱`로 비었다(근거: `phases/44-drawing-set-assembly/orchestration-report.md`, `phases/45-partial-import-unsupported/step0-report.json#/reproduction`). 실물 도면은 断面 미등록·미인식으로 항상 부분 취입이다.
-   - 결정: `supportColumnSection`·`beamDepthAbove`의 두 검증을 `MemberUnsupportedError('支持柱なし' | '上部大梁なし')`로 낮춘다. 취입 계층에 엔진 불변식을 복제하지 않는다(기각한 대안: `applyFramingPlan`에서 柱 없는 大梁을 건너뛰기 — 규칙이 두 곳에 생겨 어긋난다). 내부 결함(`Rule not found`·`Section not found`·non-柱 section)은 계속 plain Error다(`unsupported.ts` 원칙).
-   - 결과: 그 부재는 数量·3D에서 빠지고 未対応 고지에 사유와 할 일이 뜬다. 값을 지어내지 않는다. 검증: step 2 테스트·uc24 새 체크 4개.
-2. `docs/RISKS.md` R10에 한 줄: 부분 취입은 부재 단위 강등으로 앱이 죽지 않지만, 断面 미인식 부재(tsu 断面リスト 0행·yokohama 14행)는 여전히 未対応이며 파서 커버리지 과제다(근거 경로 인용).
-3. `docs/MILESTONES.md` 도면 인식 행과 `CLAUDE.md`·`AGENTS.md`의 같은 행에 「부분 취입은 支持柱なし·上部大梁なし 未対応으로 강등(ADR-047)」 한 구절을 **동일 문장**으로 추가.
+1. `docs/ADR.md` 끝에 **ADR-047** 추가: 「부분 취입의 支持不成立은 부재 단위 未対応으로 강등하고, 大梁 런은 같은 断面일 때만 잇는다」.
+   - 맥락: 2026-09-10 phase 44 브라우저 검증에서 tsu·yokohama 실물 PDF 반영 직후 3D·数量 페인이 `Missing … support 柱`·`No touching 大梁 found above 柱`로 비었다(근거: `phases/44-drawing-set-assembly/orchestration-report.md`, `phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction`). phase 45 step 0이 셋째 자리를 찾았다 — 인접 大梁의 断面이 다르면 `girderRun`이 지점이 다 있어도 plain Error(`step0-report-r1.json#/counterexample`). 실물 도면은 断面 미등록·미인식으로 항상 부분 취입이고, G1 옆에 G2가 오는 것은 보통이다.
+   - 결정: ① `supportColumnSection`·`beamDepthAbove`의 검증을 `MemberUnsupportedError('支持柱なし' | '上部大梁なし')`로 낮춘다. ② `girderRun`은 `slabRun`과 같은 조건 — 인접 부재의 断面이 같을 때만 연속 — 으로 런을 나눈다. 「断面이 같음」은 通し筋의 충분조건이고 도면에 없는 연속을 만들지 않는다는 기존 원칙의 적용이다. mixed sections throw는 삭제. ③ 취입 계층에 엔진 불변식을 복제하지 않는다(기각한 대안: `applyFramingPlan`에서 柱 없는 大梁 건너뛰기 — 규칙이 두 곳에 생겨 어긋난다). 내부 결함(`Rule not found`·`Section not found`·non-柱 section)은 계속 plain Error다(`unsupported.ts` 원칙).
+   - 결과: 未対応 부재는 数量·3D에서 빠지고 고지에 사유와 할 일이 뜬다. 断面이 갈리는 곳에서 런이 끊겨 양 끝에 定着이 붙는다. 값을 지어내지 않는다. 검증: step 1·2 테스트, uc24 새 체크 4개(step 3 report).
+2. `docs/RISKS.md` R10에 한 줄: 부분 취입은 부재 단위 강등으로 앱이 죽지 않지만, 断面 미인식 부재(tsu 断面リスト 0행·yokohama 14행 — 근거는 이 phase 밖의 실측이므로 수치는 쓰지 말고 「断面リスト 미인식 부재는 未対応으로 남는다」로만)는 파서 커버리지 과제다.
+3. `docs/MILESTONES.md` 도면 인식 행과 `CLAUDE.md`·`AGENTS.md`의 같은 행에 「부분 취입은 支持柱なし·上部大梁なし 未対応으로 강등하고 大梁 런은 같은 断面일 때만 잇는다(ADR-047)」 한 구절을 **동일 문장**으로 추가.
 
 ## Acceptance Criteria
 ```bash
