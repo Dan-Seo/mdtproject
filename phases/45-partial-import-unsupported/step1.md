@@ -22,7 +22,7 @@
    - `girderRun`: 후보 필터에 `candidate.sectionId === member.sectionId`를 더해 **같은 断面인 인접 부재만** 런으로 잇는다 — `slabRun`의 조건과 주석(「同一断面であることを連続の条件にする … 図面にない連続を作らない」)을 그대로 따른다. 그러면 mixed sections throw는 도달 불가가 되므로 **삭제**한다(죽은 검사를 남기지 않는다).
 4. ⑤ `stirrup-layout.ts`: `startOffset + index*pitch`의 부동소수 오차로 `gap > pitch`가 거짓 양성이 된다(pitch 100.1, 또는 pitch 100＋startOffsetMm 0.1 → gap 100.00000000000003). **테스트 먼저** `stirrup-layout.test.ts`(없으면 만든다): 그 두 입력으로 `stirrupPositions`가 throw 없이 위치를 내고, 마지막 위치와 구간 끝의 차가 pitch 이하이며, 정수 입력의 기존 결과는 바뀌지 않는다. **구현**: 비교를 허용오차(예: `gap - pitchMm > 1e-6`) 또는 위치를 1e-6mm로 반올림해 계산하는 방식 중 하나로 고친다 — 규준 수치가 아니라 부동소수 오차 한계다(주석에 이유). 진짜 gap 초과(예: pitch보다 큰 offset)는 계속 throw한다(테스트 유지).
 5. 로케일: `ja.json`·`ko.json`에 `takeoff.unsupported.reason.支持柱なし`·`plan.支持柱なし`·`reason.上部大梁なし`·`plan.上部大梁なし`. ja는 일본어, ko는 한국어(柱·大梁·断面은 원어). plan은 사용자가 할 일: 「その格子点の柱の断面を登録して再取込するか、柱を配置する」／「その柱に取り付く大梁の断面を登録して再取込するか、大梁を配置する」 취지. `i18n.test.ts`의 `Record<UnsupportedReason, true>`에 두 값을 추가한다.
-6. 반증 가능성 기록: 구현 뒤 ①②의 throw를 **일시적으로** plain `Error`로 되돌리고, ③은 `sectionId` 조건을 빼서 1의 테스트가 빨갛게 되는 것을 확인하고 원복한다(실패 테스트명을 report의 `mutations`에. 원복 후 `git diff --stat`이 의도한 파일만).
+6. 반증 가능성 기록: 구현 뒤 ①②의 throw를 **일시적으로** plain `Error`로 되돌리고, ③은 `sectionId` 조건을 빼고, ⑤는 허용오차를 빼서 1·4의 테스트가 빨갛게 되는 것을 확인하고 원복한다(실패 테스트명을 report의 `mutations`에. 원복 후 `git diff --stat`이 의도한 파일만).
 
 ## Acceptance Criteria
 ```bash
