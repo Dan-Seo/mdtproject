@@ -18,7 +18,7 @@
 - **C5 문서**: ADR-047·R17이 있고 CLAUDE.md·AGENTS.md의 「도면 인식(로컬)」 행과 R17 행이 동일하다. `python scripts/check-citations.py phases/45-partial-import-unsupported/step*-report*.json`이 0으로 끝난다.
 - **C6 게이트 기준선**: `npm run lint`·`npx tsc --noEmit`·`npx vitest run`이 이 브랜치 HEAD에서 통과한다(전체 테스트 수 기록).
 - **C7 런 분할의 의미**: 인접 G1·G2(지점 다 있음)의 `lines`에서 두 大梁의 定着이 각각 양 끝에 계상되고, 같은 断面 둘을 이었을 때는 중간 柱에 定着이 없다(기존 通し筋 동작 유지) — step 2의 ③ 테스트 또는 직접 계산으로 확인.
-- **C8 미룬 자리**: 2판 counterexample(`step0-report-r2.json#/counterexample`)은 이 브랜치 HEAD에서도 여전히 plain `Error`로 멎는다(고치지 않았음이 문서와 일치) — 임시 config로 한 번 재현.
+- **C8 미룬 자리**: 2판 counterexample(`step0-report-r2.json#/counterexample`)과 3판의 pitch 100.1 재현은 이 브랜치 HEAD에서도 여전히 plain `Error`로 멎는다(고치지 않았음이 ADR-047·R17과 일치) — 임시 config로 한 번씩 재현.
 
 ## 산출물
 `phases/45-partial-import-unsupported/step5-report.json`: `{ "verdict": "upheld|refuted", "base_commit": "...", "claims": [{ "id": "C1", "status": "...", "evidence": [...] }], "mutations": [{ "id": "M1", "failing_tests": [...], "restored": true }], "gates": { "lint": 0, "tsc": 0, "vitest": { "passed": n, "files": m } }, "paths_verified": [...], "limits": [...] }`

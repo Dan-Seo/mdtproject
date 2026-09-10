@@ -1,0 +1,441 @@
+{
+  "verdict": "refuted",
+  "round": 3,
+  "head": "d1c2ebd8ca1581bbad7d58439b9956c393425811",
+  "scope": "Verification only, registered sections, integral in-grid role-matched accepted placements, valid references and positive finite pitch. No product changes. B2-B6 inherited except requested B2 line-order check.",
+  "claims": [
+    {
+      "id": "B1",
+      "status": "refuted",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/throw_census",
+          "note": "The original 18 project.ts sites remain unchanged; the four-site revision still omits a reachable helper throw."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/helper_and_entry_point_audit",
+          "note": "Reference/type exclusions remain valid but do not establish numerical exactness of the downstream spacing helper."
+        },
+        {
+          "source": "src/domain/rebar/stirrup-layout.ts",
+          "line": 77,
+          "note": "Fifth plain Error origin: gapMm > pitchMm after floating-point subtraction (75-77). Positive finite pitch 100.1 produces gap 100.10000000000002."
+        },
+        {
+          "source": "src/domain/rebar/column.ts",
+          "line": 285,
+          "note": "Calls stirrupPositions with the registered hoop pitch and imported story clear height; ordinary typed dimension checks at 265-282 succeed."
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 1640,
+          "note": "Pitch validation is isFiniteNumber, not an integer restriction. 100.1 is positive and finite."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "line": 120,
+          "note": "The column catch rethrows this Error because it is not MemberUnsupportedError."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-repro-r3.test.ts",
+          "line": 15,
+          "note": "Executable counterexample: valid empty starting Project completes buildTakeoff; both accepted imports apply three placements with zero skips, deserializeProject accepts output, all supports and girder runs resolve, then actual buildTakeoff throws the fifth Error. Distinct Story names and equal hoop sizes avoid site four."
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/1",
+          "note": "Inherited upheld claim; not rerun as instructed. Product source has no changes since round 2."
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 1436,
+          "note": "Rechecked current lines: mixed-section test 1436 / throw 1437 precedes girderSpan map 1442."
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/2",
+          "note": "Inherited upheld claim; not rerun as instructed. Product source has no changes since round 2."
+        }
+      ]
+    },
+    {
+      "id": "B4",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/3",
+          "note": "Inherited upheld claim; not rerun as instructed. Product source has no changes since round 2."
+        }
+      ]
+    },
+    {
+      "id": "B5",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/4",
+          "note": "Inherited upheld claim; not rerun as instructed. Product source has no changes since round 2."
+        }
+      ]
+    },
+    {
+      "id": "B6",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/5",
+          "note": "Inherited upheld claim; not rerun as instructed. Product source has no changes since round 2."
+        }
+      ]
+    },
+    {
+      "id": "B7",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 107,
+          "note": "Project.notes documents QuantityLine.id as its key; setNote writes notes[lineId] at 1561."
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "line": 194,
+          "note": "Group ID uses story.name, member code and mark."
+        },
+        {
+          "source": "src/domain/quantity/index.ts",
+          "line": 201,
+          "note": "Quantity ID includes group, role, length, count, splice count and points, but not size. aggregateQuantity assigns it to line.id at 305."
+        },
+        {
+          "source": "src/components/quantity/TakeoffPane.tsx",
+          "line": 215,
+          "note": "Reads project.notes[lineId]; writes through setNote at 225."
+        },
+        {
+          "source": "src/lib/export/index.ts",
+          "line": 406,
+          "note": "Export reads project.notes[line.id]."
+        }
+      ],
+      "qualification": "Migration rationale upheld: keys changed by adding size or replacing story.name need migration. This does not mean every possible key must change: story.id can already equal story.name, and splice IDs use a separate format."
+    },
+    {
+      "id": "B8",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "tests/fixtures/drawing-set/expected/tsu.json#/stories/levels",
+          "note": "6 nonempty level names; no duplicate joined names."
+        },
+        {
+          "source": "tests/fixtures/drawing-set/expected/yokohama.json#/stories/levels",
+          "note": "4 nonempty level names; no duplicate joined names."
+        }
+      ],
+      "limitation": "This verifies only the specified duplicate-name trigger on these two golden level lists; it is not proof that real imports cannot fail elsewhere."
+    }
+  ],
+  "deferred": [
+    {
+      "site": "src/domain/quantity/index.ts#L289",
+      "why": "ID-keyed persisted notes require migration when grouping/quantity keys change; B7 supports deferral of the known fourth site. The fifth spacing-helper failure independently refutes B1."
+    }
+  ],
+  "counterexample": {
+    "project": {
+      "schemaVersion": 11,
+      "name": "サンプル案件 / RC 2階建て",
+      "grid": {
+        "xSpans": [
+          6000
+        ],
+        "ySpans": [
+          6000
+        ],
+        "xLabels": [
+          "X1",
+          "X2"
+        ],
+        "yLabels": [
+          "Y1",
+          "Y2"
+        ]
+      },
+      "stories": [
+        {
+          "id": "1F",
+          "name": "1階",
+          "height": 4200
+        },
+        {
+          "id": "2F",
+          "name": "2階",
+          "height": 4200
+        }
+      ],
+      "sections": [
+        {
+          "id": "column-a",
+          "kind": "柱",
+          "mark": "C1",
+          "shape": "矩形",
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "count": 12
+          },
+          "hoop": {
+            "size": "D13",
+            "pitch": 100.1,
+            "startOffsetMm": 0
+          },
+          "storyLabel": "a"
+        },
+        {
+          "id": "column-b",
+          "kind": "柱",
+          "mark": "C1",
+          "shape": "矩形",
+          "b": 800,
+          "d": 800,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "count": 12
+          },
+          "hoop": {
+            "size": "D13",
+            "pitch": 100.1,
+            "startOffsetMm": 0
+          },
+          "storyLabel": "b"
+        },
+        {
+          "id": "section-G1",
+          "kind": "大梁",
+          "mark": "G1",
+          "b": 400,
+          "depth": 750,
+          "fc": 24,
+          "grade": "SD345",
+          "exposure": "屋外",
+          "finish": "仕上げなし",
+          "spliceMethod": "重ね継手",
+          "main": {
+            "size": "D25",
+            "top": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "bottom": {
+              "endCount": 4,
+              "centerCount": 4
+            },
+            "cutoffFromSupportFaceMm": 1500
+          },
+          "stirrup": {
+            "size": "D13",
+            "pitch": 100,
+            "startOffsetMm": 50
+          },
+          "widthTie": {
+            "size": "D10",
+            "pitch": 1000
+          },
+          "sideBar": {
+            "size": "D10",
+            "count": 2,
+            "extraLengthMm": 0
+          }
+        }
+      ],
+      "members": [
+        {
+          "id": "1F-C1-0-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-a",
+          "storyId": "1F",
+          "position": {
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-C1-1-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-a",
+          "storyId": "1F",
+          "position": {
+            "ix": 1,
+            "iy": 0
+          }
+        },
+        {
+          "id": "1F-G1-0-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G1",
+          "storyId": "1F",
+          "position": {
+            "axis": "X",
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-C1-0-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-b",
+          "storyId": "2F",
+          "position": {
+            "ix": 0,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-C1-1-0",
+          "kind": "柱",
+          "memberClass": "躯体",
+          "sectionId": "column-b",
+          "storyId": "2F",
+          "position": {
+            "ix": 1,
+            "iy": 0
+          }
+        },
+        {
+          "id": "2F-G1-0-0-X",
+          "kind": "大梁",
+          "memberClass": "躯体",
+          "sectionId": "section-G1",
+          "storyId": "2F",
+          "position": {
+            "axis": "X",
+            "ix": 0,
+            "iy": 0
+          }
+        }
+      ]
+    },
+    "error": "Invalid あばら筋 gap: 100.10000000000002",
+    "stack": "Error: Invalid あばら筋 gap: 100.10000000000002\n    at stirrupPositions (C:/Users/emper/mdtproject-p45/src/domain/rebar/stirrup-layout.ts:77:15)\n    at generateColumnRebar (C:/Users/emper/mdtproject-p45/src/domain/rebar/column.ts:285:22)\n    at buildTakeoff (C:/Users/emper/mdtproject-p45/src/lib/hooks/useTakeoff.ts:108:14)\n    at C:/Users/emper/mdtproject-p45/phases/45-partial-import-unsupported/step0-repro-r3.test.ts:50:9\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///C:/Users/emper/mdtproject/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20"
+  },
+  "golden_level_check": {
+    "tsu": {
+      "levels": [
+        "パラペット天端",
+        "RFL(水下)",
+        "2FL",
+        "1FL／1SL",
+        "設計GL",
+        "基礎下端"
+      ],
+      "duplicates": [],
+      "count": 6
+    },
+    "yokohama": {
+      "levels": [
+        "中央棟RCL(水下)",
+        "2FL",
+        "中央棟1FL／基準GL",
+        "基礎下端"
+      ],
+      "duplicates": [],
+      "count": 4
+    }
+  },
+  "validation": {
+    "reproduction": {
+      "command": "npx vitest run --config phases/45-partial-import-unsupported/step0-r3.config.mjs --no-color",
+      "exit_code": 0,
+      "files": 1,
+      "tests": 1,
+      "passed": 1,
+      "output": "Test Files 1 passed (1); Tests 1 passed (1); Duration 367ms. Assertions confirm actual buildTakeoff failure and successful support/run checks."
+    },
+    "config": {
+      "source": "phases/45-partial-import-unsupported/step0-r3.config.mjs",
+      "note": "Verification-only config exports actual buildTakeoff through an in-memory transform and loads YAML. No copied engine and no src edits."
+    },
+    "source_currency": {
+      "command": "git diff --stat 52bb8da HEAD -- src tests",
+      "exit_code": 0,
+      "output": ""
+    },
+    "goldens": {
+      "command": "Python json.load: compare nonempty stories.levels length with set length for tsu and yokohama",
+      "output": {
+        "tsu": {
+          "levels": [
+            "パラペット天端",
+            "RFL(水下)",
+            "2FL",
+            "1FL／1SL",
+            "設計GL",
+            "基礎下端"
+          ],
+          "duplicates": [],
+          "count": 6
+        },
+        "yokohama": {
+          "levels": [
+            "中央棟RCL(水下)",
+            "2FL",
+            "中央棟1FL／基準GL",
+            "基礎下端"
+          ],
+          "duplicates": [],
+          "count": 4
+        }
+      }
+    },
+    "citations": {
+      "command": "python scripts/check-citations.py phases/45-partial-import-unsupported/step0-report.json",
+      "exit_code": 0,
+      "output": ""
+    },
+    "retry_note": "A follow-up run found the verification files externally removed and index reset while HEAD was unchanged. Recreated only the owned verification files and reran successfully; no product files changed."
+  },
+  "paths_verified": [
+    "src/domain/model/project.ts",
+    "src/domain/quantity/index.ts",
+    "src/lib/hooks/useTakeoff.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/lib/export/index.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "src/domain/rebar/column.ts",
+    "src/lib/i18n.test.ts",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "phases/45-partial-import-unsupported/step0-report-r1.json",
+    "phases/45-partial-import-unsupported/step0-report-r2.json",
+    "phases/45-partial-import-unsupported/step0-repro-r1.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-repro-r3.test.ts",
+    "phases/45-partial-import-unsupported/step0-r3.config.mjs"
+  ]
+}
