@@ -171,6 +171,35 @@ class RunCodexProcessTests(unittest.TestCase):
 
 
 class InvokeArtifactTests(unittest.TestCase):
+    def _run_invoke_with_step(self, step_payload: dict) -> tuple[list[str], dict]:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            phase_dir = root / "phases" / "t"
+            phase_dir.mkdir(parents=True)
+            (phase_dir / "index.json").write_text(
+                json.dumps({"project": "test", "phase": "t", "steps": [step_payload]}),
+                encoding="utf-8",
+            )
+            (phase_dir / f"step{step_payload['step']}.md").write_text("test prompt", encoding="utf-8")
+            subprocess.run(["git", "init"], cwd=root, capture_output=True, check=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+
+            executor = execute.StepExecutor("t", root=root)
+            captured: list[list[str]] = []
+            fake_result = {"exitCode": 0, "timedOut": False, "elapsed": 0.12}
+
+            def fake_run_codex_process(cmd, prompt, stdout_path, stderr_path, timeout_sec, cwd) -> dict:
+                captured.append(cmd)
+                return fake_result
+
+            with mock.patch.object(execute, "run_codex_process", side_effect=fake_run_codex_process), mock.patch.object(
+                execute.shutil, "which", return_value=sys.executable
+            ):
+                result = executor._invoke_codex(step_payload, "preamble\n")
+
+            return captured[0], result
+
     def test_invoke_uses_new_artifact_names_and_does_not_write_output_json(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -199,6 +228,40 @@ class InvokeArtifactTests(unittest.TestCase):
             self.assertNotIn("stdout", saved)
             self.assertNotIn("stderr", saved)
             self.assertIn("timedOut", saved)
+
+    def test_invoke_uses_default_model_and_effort(self) -> None:
+        cmd, _ = self._run_invoke_with_step({"step": 0, "name": "sample"})
+
+        model_index = cmd.index("-m")
+        effort_index = cmd.index("-c")
+        self.assertEqual(cmd[model_index + 1], "gpt-6-astra")
+        self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="xhigh"')
+
+    def test_invoke_uses_step_model_when_set(self) -> None:
+        cmd, _ = self._run_invoke_with_step({"step": 0, "name": "sample", "model": "gpt-5"})
+
+        model_index = cmd.index("-m")
+        effort_index = cmd.index("-c")
+        self.assertEqual(cmd[model_index + 1], "gpt-5")
+        self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="xhigh"')
+
+    def test_invoke_uses_step_reasoning_effort_when_set(self) -> None:
+        cmd, _ = self._run_invoke_with_step({"step": 0, "name": "sample", "reasoning_effort": "low"})
+
+        model_index = cmd.index("-m")
+        effort_index = cmd.index("-c")
+        self.assertEqual(cmd[model_index + 1], "gpt-6-astra")
+        self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="low"')
+
+    def test_invoke_uses_step_model_and_effort_when_both_set(self) -> None:
+        cmd, _ = self._run_invoke_with_step(
+            {"step": 0, "name": "sample", "model": "gpt-5.6-luna", "reasoning_effort": "medium"}
+        )
+
+        model_index = cmd.index("-m")
+        effort_index = cmd.index("-c")
+        self.assertEqual(cmd[model_index + 1], "gpt-5.6-luna")
+        self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="medium"')
 
 
 class FakeStepExecutor(execute.StepExecutor):

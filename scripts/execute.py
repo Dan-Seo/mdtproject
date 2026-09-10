@@ -325,6 +325,8 @@ class StepExecutor:
 
     def _invoke_codex(self, step: dict, preamble: str) -> dict:
         step_num, step_name = step["step"], step["name"]
+        model = step.get("model", "gpt-6-astra")
+        reasoning_effort = step.get("reasoning_effort", "xhigh")
         step_file = self._phase_dir / f"step{step_num}.md"
 
         if not step_file.exists():
@@ -346,10 +348,18 @@ class StepExecutor:
             # 모델·추론강도는 ~/.codex/config.toml에 맡기지 않고 여기서 못박는다.
             # 하네스가 무엇으로 돌았는지가 phase 기록에서 읽혀야 하고, 사용자의
             # 전역 설정이 바뀌어도 phase 재현이 흔들리지 않아야 한다.
-            [codex_bin, "exec", "--dangerously-bypass-approvals-and-sandbox",
-             "--dangerously-bypass-hook-trust",
-             "-m", "gpt-6-astra", "-c", 'model_reasoning_effort="xhigh"',
-             "--json", "-"],
+            [
+                codex_bin,
+                "exec",
+                "--dangerously-bypass-approvals-and-sandbox",
+                "--dangerously-bypass-hook-trust",
+                "-m",
+                model,
+                "-c",
+                f'model_reasoning_effort="{reasoning_effort}"',
+                "--json",
+                "-",
+            ],
             prompt,
             stdout_path,
             stderr_path,
