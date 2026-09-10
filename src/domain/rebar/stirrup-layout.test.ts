@@ -6,6 +6,35 @@ import { stirrupPositions } from './stirrup-layout'
 const startOffsetMm = 50
 
 describe('stirrupPositions', () => {
+  it.each([
+    [100.1, 50],
+    [100, 0.1],
+  ])('accepts fractional placement pitch %s offset %s', (pitch, offset) => {
+    const { positionsMm, lastGapMm } = stirrupPositions(3450, pitch, offset)
+    expect(positionsMm[0]).toBe(offset)
+    expect(positionsMm.at(-1)).toBe(3450 - offset)
+    expect(3450 - positionsMm.at(-1)!).toBeLessThanOrEqual(pitch)
+    expect(lastGapMm).toBeGreaterThan(0)
+    expect(lastGapMm).toBeLessThanOrEqual(pitch)
+    for (let i = 1; i < positionsMm.length; i += 1) {
+      expect(positionsMm[i]).toBeGreaterThan(positionsMm[i - 1])
+      expect(positionsMm[i] - positionsMm[i - 1] - pitch).toBeLessThanOrEqual(1e-6)
+    }
+  })
+
+  it('preserves the exact integer placement result', () => {
+    expect(stirrupPositions(500, 100, 50)).toEqual({
+      positionsMm: [50, 150, 250, 350, 450], lastGapMm: 100,
+    })
+  })
+
+  it('still rejects a genuine gap excess beyond floating-point tolerance', () => {
+    // At this magnitude representable coordinates are 2 mm apart: a 3 mm
+    // pitch rounds to a 4 mm gap. This is real precision loss, not tiny noise.
+    const offset = 2 ** 53
+    expect(() => stirrupPositions(2 * offset + 8, 3, offset)).toThrow(/Invalid.*gap/)
+  })
+
   it('never places a stirrup beyond the offset interval', () => {
     const layout = stirrupPositions(
       5200,

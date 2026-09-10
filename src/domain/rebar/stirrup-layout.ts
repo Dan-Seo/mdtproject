@@ -73,7 +73,9 @@ export function stirrupPositions(
 
     if (index > 0) {
       const gapMm = positionMm - positionsMm[index - 1]
-      if (gapMm <= 0 || gapMm > pitchMm) {
+      // Subtracting startOffset + index*pitch coordinates introduces tiny
+      // floating-point noise. 1e-6 mm is a numerical tolerance, not a rule value.
+      if (gapMm <= 0 || gapMm - pitchMm > 1e-6) {
         throw new Error(`Invalid あばら筋 gap: ${gapMm}`)
       }
     }

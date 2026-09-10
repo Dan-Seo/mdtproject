@@ -1036,3 +1036,17 @@ D10·D13 → 6000, D16〜D32 → 7000의 8행으로 펼쳐져 있다. **帯 축�
 제목 제외 영역의 강등 문턱은 불성립이다. 제목을 포함한 별도 영역에서는 해당 모집단의 부등식이 성립하지만, shibata-p13에는 경쟁 출력 자체가 없고 대조군도 정답 인증이 아니므로 자동 강등 규칙을 검증한 것으로 읽지 않는다(`phases/44-drawing-set-assembly/step1-report.json#/demotion_margin`, `phases/44-drawing-set-assembly/step1-report.json#/shibata_p13`). 자동 강등을 만들지 않는 결정은 유지하며 사용자가 세트 구성원을 선택한다.
 
 `levelStoryKey`·`storyNameKey`의 문법 표는 `phases/44-drawing-set-assembly/step2-report.json#/grammar_table`에 있다. 키 정규화의 SL 지원은 軸組図 파서의 SL 인식 지원이 아니다. 조립의 knownGaps는 `phases/44-drawing-set-assembly/step3-report.json#/sets`에 계속 남는다. 계획은 선택 구간의 미래 Story와 수동 대응으로 중복을 재판정하고 기존 반영 함수를 합성한다(`phases/44-drawing-set-assembly/step4-report.json#/selection_checks`, `phases/44-drawing-set-assembly/step4-report.json#/equivalence`). UI는 명시 승인만 받으며 断面の階 자동 제안은 없다(`phases/44-drawing-set-assembly/step5-report.json#/implementation`). **軸組図 축 대조는 후속**이며 이 phase에서는 파서 개선·Project 모델 변경도 하지 않았다.
+
+
+### ADR-047: 부분 취입의 支持不成立은 부재 단위 **未対応**으로 강등하고, 大梁 런은 같은 断面일 때만 잇는다 (ADR-046 후속·ADR-029의 未対応 규약 확장)
+
+**맥락**: 2026-09-10 phase 44의 브라우저 검증에서 tsu·yokohama 실물 PDF의 図面セット를 반영한 직후 3D·数量 페인이 통째로 비었다 — 엔진이 `Missing … support 柱`·`No touching 大梁 found above 柱`라는 plain Error를 던져 계산이 맨 앞에서 끊겼기 때문이다(근거: `phases/44-drawing-set-assembly/orchestration-report.md`, `phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction`). phase 45 step 0의 두 판이 같은 성격의 자리를 더 찾았다. 인접 大梁의 断面이 다르면 지점이 다 있어도 `girderRun`이 `大梁 run contains mixed sections`로 멎고(`phases/45-partial-import-unsupported/step0-report-r1.json#/counterexample`), 같은 이름의 階가 둘이고 거기에 같은 符号·径이 다른 断面이 걸리면 `aggregateQuantity`가 멎는다(`phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample`). 실물 도면은 断面 미등록·미인식 때문에 **항상 부분 취입**이고, G1 옆에 G2가 오는 것은 보통 있는 일이다. 즉 이 throw들은 데이터 오류가 아니라 부분 취입의 정상 상태에서 닿는다.
+
+**결정**:
+① `supportColumnSection`·`beamDepthAbove`의 검증을 plain Error에서 `MemberUnsupportedError('支持柱なし' | '上部大梁なし')`로 낮춘다. 부재 하나가 성립하지 않는 것은 案件 전체의 실패가 아니다.
+② `girderRun`은 `slabRun`과 **같은 조건** — 인접 부재의 断面이 같을 때만 연속 — 으로 런을 나눈다. 「断面이 같음」은 通し筋의 충분조건이고, 이는 「도면에 없는 연속을 제품이 만들지 않는다」는 기존 원칙(ADR-028의 連続する床板 취급)의 적용이다. mixed sections throw는 삭제한다.
+③ 취입 계층에 엔진 불변식을 복제하지 않는다. 기각한 대안은 `applyFramingPlan`에서 柱 없는 大梁를 건너뛰는 것이었다 — 같은 규칙이 취입과 엔진 두 곳에 생겨 서로 어긋나게 된다. 내부 결함(`Rule not found`·`Section not found`·non-柱 section)은 계속 plain Error다(`src/domain/model/unsupported.ts`의 원칙: 사용자 데이터의 불성립만 未対応이고 제품의 결함은 터뜨린다).
+④ 같은 이름의 階 둘 ＋ 같은 符号 ＋ 径이 다른 断面에서 `aggregateQuantity`가 던지는 것은 **이번에 고치지 않는다**. 고치려면 `QuantityLine.id` 형식을 바꿔야 하고 그 id가 저장된 案件의 備考 키라 이행(migration)이 필요하다(`phases/45-partial-import-unsupported/step0-report.json#/deferred`). 실물 도면 값으로는 階 이름이 서로 달라 닿지 않는다(`phases/45-partial-import-unsupported/step0-report-r3.json`의 B8).
+⑤ あばら筋 배치의 strict `gap > pitch` 비교가 부동소수 오차(pitch 100.1, 또는 정수 pitch 100 ＋ offset 0.1)로 거짓 양성을 내던 것은 허용오차 비교로 고쳤다(`phases/45-partial-import-unsupported/step0-report-r3.json`·`phases/45-partial-import-unsupported/step0-report-r4.json`, `phases/45-partial-import-unsupported/step1-report.json`). **「도달 가능한 plain throw의 완전한 목록」은 주장하지 않는다** — 부동소수 경계까지 세면 끝이 없고, step 0의 네 판이 실제로 판마다 자리를 하나씩 더 찾았다.
+
+**결과**: 未対応으로 강등된 부재는 数量·3D에서 빠지고, 고지에 사유(`支持柱なし`·`上部大梁なし`)와 할 일이 부재 단위로 뜬다. 값을 지어내지 않으며 앱이 죽지도 않는다. 断面이 갈리는 곳에서 런이 끊기므로 그 양 끝에 定着이 붙는다 — 通し筋으로 이어 붙이던 것보다 짧지 않고, 도면에 없는 연속을 만들지 않는다. 검증은 step 1·step 2의 단위 테스트와 uc24의 새 체크 4개다(`phases/45-partial-import-unsupported/step3-report.json#/new_checks`).

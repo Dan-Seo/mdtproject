@@ -17,6 +17,7 @@ import type { Rebar } from '@/domain/model/rebar'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { generateSlabRebar } from '@/domain/rebar/slab'
 import { jpMlitRulePack } from '@/rulepack'
+import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 
 import {
   buildingLayout,
@@ -27,6 +28,25 @@ import { rebarRadius, rebarSegments } from './geometry'
 
 const project = createSampleProject()
 const noUnsupportedMembers = new Set<string>()
+
+it('omits unsupported support and beam members while rendering the remaining rebars', () => {
+  const base = createSampleProject()
+  const incomplete: Project = {
+    ...base,
+    grid: { ...base.grid, xSpans: [...base.grid.xSpans, 6000] },
+    members: [...base.members,
+      { id: 'missing-end', kind: '大梁', memberClass: '躯体', sectionId: 'section-G2', storyId: '1F', position: { axis: 'X', ix: 1, iy: 0 } },
+      { id: 'no-beam', kind: '柱', memberClass: '躯体', sectionId: 'section-C1', storyId: '1F', position: { ix: 2, iy: 2 } },
+    ],
+  }
+  const takeoff = buildTakeoff(incomplete)
+  const ids = new Set(takeoff.unsupportedMembers.map(({ memberId }) => memberId))
+  expect(ids).toEqual(new Set(['missing-end', 'no-beam']))
+  const layout = buildingLayout(incomplete, takeoff.rebars, ids)
+  expect(layout.rebar.length).toBeGreaterThan(0)
+  expect(layout.rebar.some(({ memberId }) => ids.has(memberId))).toBe(false)
+  expect(layout.rebar).toEqual(buildingLayout(base, buildTakeoff(base).rebars, noUnsupportedMembers).rebar)
+})
 
 // geometry.test.ts와 같은 대표 배근 픽스처 — memberId만 X2Y2(그리드 중앙)로 잡는다.
 const main: Rebar = {

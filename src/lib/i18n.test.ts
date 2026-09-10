@@ -28,6 +28,8 @@ describe('t', () => {
   // Record にしてあるので、UnsupportedReason が増えれば型で落ちる。
   it('names every 未対応 reason and plan in both panes', () => {
     const reasons: Record<UnsupportedReason, true> = {
+      支持柱なし: true,
+      上部大梁なし: true,
       定着不成立: true,
       寸法不成立: true,
       カットオフ位置不成立: true,

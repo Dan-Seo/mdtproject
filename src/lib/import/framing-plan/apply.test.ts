@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
+import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 
 import type { TextItem } from '../types'
 import type { TextPage } from '../section-list/types'
@@ -114,6 +115,23 @@ function block(overrides: Partial<PlanBlock> = {}): PlanBlock {
 }
 
 describe('applyFramingPlan', () => {
+  it('keeps imported columns without registered girders as unsupported', () => {
+    const result = applyFramingPlan(project({ sections: [columnSection('C1')] }), {
+      storyId: 'story-1',
+      block: block({ placements: [
+        { mark: 'C1', role: '格子点', ix: 0, iy: 0 },
+        { mark: 'C1', role: '格子点', ix: 1, iy: 0 },
+        { mark: 'G1', role: '辺', ix: 0, iy: 0, axis: 'X' },
+      ] }),
+    })
+    expect(result.applied).toBe(2)
+    expect(result.skipped).toEqual([{ mark: 'G1', reason: '断面未登録' }])
+    const takeoff = buildTakeoff(result.project)
+    expect(takeoff.unsupportedMembers).toEqual(result.project.members.map(m => ({
+      memberId: m.id, mark: 'C1', storyName: '1F', reason: '上部大梁なし',
+    })))
+    expect(takeoff.lines).toEqual([])
+  })
   it('同じ符号の断面が複数階にあれば階指定なしで反映しない', () => {
     const result = applyFramingPlan(
       project({

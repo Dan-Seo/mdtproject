@@ -569,15 +569,7 @@ function supportColumnSection(
   ix: number,
   iy: number,
   end: 'start' | 'end',
-  unsupported = false,
 ): ColumnSection {
-  const reject = (message: string): never => {
-    if (unsupported) {
-      throw new MemberUnsupportedError('寸法不成立', message)
-    }
-    throw new Error(message)
-  }
-
   const support = project.members.find(
     (candidate) =>
       candidate.kind === '柱' &&
@@ -588,14 +580,15 @@ function supportColumnSection(
   )
 
   if (!support) {
-    return reject(
+    throw new MemberUnsupportedError(
+      '支持柱なし',
       `Missing ${end} support 柱 for ${supported.kind}: ${supported.id}`,
     )
   }
 
   const section = findSection(project, support.sectionId)
   if (section.kind !== '柱') {
-    return reject(`柱 member references a non-柱 section: ${support.id}`)
+    throw new Error(`柱 member references a non-柱 section: ${support.id}`)
   }
 
   return section
@@ -739,7 +732,6 @@ export function wallSpan(project: Project, member: Member): WallSpan {
     ix,
     iy,
     'start',
-    true,
   )
   const endSection = supportColumnSection(
     project,
@@ -747,7 +739,6 @@ export function wallSpan(project: Project, member: Member): WallSpan {
     endIx,
     endIy,
     'end',
-    true,
   )
 
   const centerSpan =
@@ -1103,7 +1094,10 @@ function cantileverSupport(
   const endColumn = columnAt(project, member.storyId, endIx, endIy)
 
   if (startColumn === undefined || endColumn === undefined) {
-    throw cantileverError(member, '支持辺の両端に柱がない')
+    throw new MemberUnsupportedError(
+      '支持柱なし',
+      `片持床板の支持辺の両端に柱がない: ${member.id}`,
+    )
   }
 
   const startSection = findSection(project, startColumn.sectionId)
@@ -1391,6 +1385,8 @@ export function girderRun(project: Project, member: Member): GirderRun {
     .filter((candidate) => {
       if (
         candidate.kind !== '大梁' ||
+        // 同一断面であることを連続の条件にする。図面にない連続を作らない。
+        candidate.sectionId !== member.sectionId ||
         candidate.storyId !== member.storyId ||
         !isGirderPosition(candidate.position) ||
         candidate.position.axis !== position.axis
@@ -1432,13 +1428,6 @@ export function girderRun(project: Project, member: Member): GirderRun {
   }
 
   const members = candidates.slice(first, last + 1)
-  const sectionId = members[0].sectionId
-  if (members.some((candidate) => candidate.sectionId !== sectionId)) {
-    throw new Error(
-      `大梁 run contains mixed sections: ${members.map(({ id, sectionId: idOfSection }) => `${id}:${idOfSection}`).join(', ')}`,
-    )
-  }
-
   const spans = members.map((candidate) => girderSpan(project, candidate))
   // 스팬 시작면들의 누적 위치. 마지막 스팬 시작면 ＋ 그 内法이 코어 길이다 —
   // 두 값을 따로 세면 곧 어긋나므로 한 번만 누적한다.
@@ -1544,7 +1533,10 @@ export function beamDepthAbove(project: Project, member: Member): number {
     })
 
   if (depths.length === 0) {
-    throw new Error(`No touching 大梁 found above 柱: ${member.id}`)
+    throw new MemberUnsupportedError(
+      '上部大梁なし',
+      `No touching 大梁 found above 柱: ${member.id}`,
+    )
   }
 
   return Math.max(...depths)

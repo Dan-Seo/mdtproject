@@ -1,0 +1,9 @@
+{
+  "step": 2,
+  "name": "takeoff-import-tests",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 297.52100029999974,
+  "stdout_log": "phases\\45-partial-import-unsupported\\step2-codex.stdout.log",
+  "stderr_log": "phases\\45-partial-import-unsupported\\step2-codex.stderr.log"
+}

@@ -270,7 +270,12 @@ describe('project lookup helpers', () => {
   })
 
   it('throws when no same-story 大梁 touches the 柱', () => {
-    expect(() => beamDepthAbove(createProject(), column)).toThrow()
+    const calculate = () => beamDepthAbove(createProject(), column)
+    expect(calculate).toThrow(MemberUnsupportedError)
+    expect(calculate).toThrow(expect.objectContaining({
+      reason: '上部大梁なし',
+      message: expect.stringContaining(column.id),
+    }))
   })
 })
 
@@ -862,15 +867,23 @@ describe('girderSpan', () => {
     })
   })
 
-  it('throws when either end support 柱 is missing', () => {
-    const member = girder('X')
-    const project = spanProject([
-      supportColumn('start', columnSection.id, 0, 0),
-      member,
-    ])
-
-    expect(() => girderSpan(project, member)).toThrow()
-  })
+  it.each(['start', 'end'] as const)(
+    'reports 支持柱なし when the %s support is missing',
+    (missingEnd) => {
+      const member = girder('X')
+      const project = spanProject([
+        supportColumn('start', columnSection.id, 0, 0),
+        supportColumn('end', columnSection.id, 1, 0),
+        member,
+      ].filter(({ id }) => id !== missingEnd))
+      const calculate = () => girderSpan(project, member)
+      expect(calculate).toThrow(MemberUnsupportedError)
+      expect(calculate).toThrow(expect.objectContaining({
+        reason: '支持柱なし',
+        message: expect.stringContaining(member.id),
+      }))
+    },
+  )
 
   it('throws when passed a 柱 member', () => {
     const member = supportColumn('start', columnSection.id, 0, 0)
@@ -964,21 +977,45 @@ describe('girderRun', () => {
     expect(run.memberOffsetsMm).toEqual([0])
   })
 
-  it('throws a plain Error when adjacent run members use mixed sections', () => {
+  it('splits adjacent different sections into separate single-member runs', () => {
     const first = sampleGirder('1F-G1-X1Y1-Y')
-    const second = sampleGirder('1F-G1-X1Y2-Y')
+    const second = { ...sampleGirder('1F-G1-X1Y2-Y'), sectionId: 'section-G2' }
     const mixed: Project = {
       ...sample,
       members: sample.members.map((candidate) =>
-        candidate.id === second.id
-          ? { ...candidate, sectionId: 'section-G2' }
-          : candidate,
+        candidate.id === second.id ? second : candidate,
       ),
     }
-
-    expect(() => girderRun(mixed, first)).toThrow(Error)
-    expect(() => girderRun(mixed, first)).not.toThrow(MemberUnsupportedError)
+    for (const member of [first, second]) {
+      expect(girderSpan(mixed, member).clear).toBeGreaterThan(0)
+      expect(girderRun(mixed, member).members).toEqual([member])
+    }
   })
+
+  it('keeps G1 G2 G1 as three runs without bridging the middle section', () => {
+    const first = sampleGirder('1F-G1-X1Y1-Y')
+    const second = { ...sampleGirder('1F-G1-X1Y2-Y'), sectionId: 'section-G2' }
+    const third: Member = {
+      ...first, id: 'third', position: { axis: 'Y', ix: 0, iy: 2 },
+    }
+    const lastSupport: Member = {
+      ...sample.members.find(({ id }) => id === '1F-X1Y1')!,
+      id: 'last-support', position: { ix: 0, iy: 3 },
+    }
+    const mixed: Project = {
+      ...sample,
+      grid: { ...sample.grid, ySpans: [6000, 6000, 6000] },
+      members: [
+        ...sample.members.map((candidate) => candidate.id === second.id ? second : candidate),
+        third, lastSupport,
+      ],
+    }
+    for (const member of [first, second, third]) {
+      expect(girderSpan(mixed, member).clear).toBeGreaterThan(0)
+      expect(girderRun(mixed, member).members).toEqual([member])
+    }
+  })
+
 })
 
 describe('project serialization', () => {
@@ -1318,9 +1355,9 @@ describe('片持床板 geometry', () => {
   })
 
   it.each([
-    ['missing support girder', '1F-G1-X1Y1-X'],
-    ['missing support endpoint 柱', '1F-X2Y1'],
-  ])('rejects a cantilever without %s', (_label, removedId) => {
+    ['missing support girder', '1F-G1-X1Y1-X', '寸法不成立'],
+    ['missing support endpoint 柱', '1F-X2Y1', '支持柱なし'],
+  ])('rejects a cantilever without %s', (_label, removedId, reason) => {
     const project = createCantileverProject()
     const slab = project.members.find((member) => member.kind === '床板')!
     const missingSupport = {
@@ -1333,7 +1370,7 @@ describe('片持床板 geometry', () => {
       throw new Error('expected cantilever geometry to be rejected')
     } catch (error) {
       expect(error).toBeInstanceOf(MemberUnsupportedError)
-      expect((error as MemberUnsupportedError).reason).toBe('寸法不成立')
+      expect((error as MemberUnsupportedError).reason).toBe(reason)
     }
   })
 

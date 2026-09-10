@@ -1,0 +1,154 @@
+{
+  "verdict": "upheld",
+  "base_commit": "9b5a72a",
+  "by": "Claude (spec author ran the verify checklist; codex quota conservation). Cross-check limitation: verifier and spec author coincide for this step; code (steps 1-2) was written by codex and reviewed by Claude, docs (step 4) by an Opus worker and reviewed by Claude.",
+  "claims": [
+    {
+      "id": "C1",
+      "status": "upheld",
+      "evidence": [
+        "git diff main...HEAD --stat: 25 files, all inside the allowed set (src/domain/model/{project,unsupported,project.test}.ts, src/domain/rebar/stirrup-layout{.ts,.test.ts}, src/lib/hooks/useTakeoff{.ts,.test.tsx}, src/lib/viewer/building.test.ts, src/lib/import/framing-plan/apply.test.ts, tests/drawing-set/apply.test.ts, tests/e2e/uc24-drawing-set.js, src/locales/{ja,ko}.json, src/lib/i18n.test.ts, docs/{ADR,RISKS,MILESTONES}.md, CLAUDE.md, AGENTS.md, phases/45-*/**). 0 lines in src/lib/import non-test files, tests/fixtures, src/rulepack, src/domain/quantity; src/domain/rebar only stirrup-layout.ts gap comparison (4 lines) + its test."
+      ]
+    },
+    {
+      "id": "C2",
+      "status": "upheld",
+      "evidence": [
+        "grep of added src/domain lines for react/three/next/document/window: none. Added non-test .ts lines with multi-digit numerals: only the two doc comments citing ADR-047; 1e-6 in stirrup-layout.ts is a float tolerance (commented), not a rule value."
+      ]
+    },
+    {
+      "id": "C3",
+      "status": "upheld",
+      "evidence": [
+        "all six mutations killed, see mutations[]"
+      ]
+    },
+    {
+      "id": "C4",
+      "status": "upheld",
+      "evidence": [
+        "step3-report.json#/e2e/checks: 14/14 true; run 2 exit_code 0 (run 1: ALL CHECKS PASSED then QuickJS teardown assertion, exit 1); tests/e2e/uc24-drawing-set.js contains the 4 new check names. M1-with-e2e not run (limits)."
+      ]
+    },
+    {
+      "id": "C5",
+      "status": "upheld",
+      "evidence": [
+        "docs/ADR.md has ADR-047 and no ADR-048; docs/RISKS.md has R17; step4-check.py prints docs ok; check-citations on step0-report.json,step1..4-report.json exits 0 (archived refuted rounds r1-r4 cite temp repro files: see limits)"
+      ]
+    },
+    {
+      "id": "C6",
+      "status": "upheld",
+      "evidence": [
+        "npm run lint 0 errors (1 pre-existing warning src/app/api/oncall/alert/route.test.ts), npx tsc --noEmit 0, npx vitest run 365 files 1866 passed 4 skipped 0 failed at 9b5a72a"
+      ]
+    },
+    {
+      "id": "C7",
+      "status": "upheld",
+      "evidence": [
+        "src/lib/hooks/useTakeoff.test.tsx 'keeps adjacent G1 and G2 as two independently anchored runs': two 大梁 lines per role, G1 lengthMm 8200 / G2 6960, each formula contains 定着; same-section continuity test in src/domain/model/project.test.ts unchanged (mutation M5 turns 5 tests red)."
+      ]
+    },
+    {
+      "id": "C8",
+      "status": "upheld",
+      "evidence": [
+        "step0-repro-r2.test.ts.txt copied as step0-repro-r2.test.ts and run with a temporary vitest config (root=worktree, include only that file, yaml-raw plugin, '@' alias): 1 passed, i.e. the aggregateQuantity size collision still throws a plain Error at HEAD (test asserts non-MemberUnsupportedError). Temporary files removed. ⑤: src/domain/rebar/stirrup-layout.test.ts covers pitch 100.1 and offset 0.1 without throwing."
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M1",
+      "failing_tests": [
+        "useTakeoff isolates missing supports and beams without changing existing quantity lines",
+        "omits unsupported support and beam members while rendering the remaining rebars",
+        "drawing-set plan and apply takes off a tsu set applied with only the sample sections without throwing: six 2FL girders are unsupported for lack of support columns",
+        "wall and slab placement topology rejects a wall edge when its 大梁 or either endpoint 柱 is absent",
+        "girderSpan reports 支持柱なし when the start support is missing",
+        "girderSpan reports 支持柱なし when the end support is missing"
+      ],
+      "failed": 6,
+      "restored": true
+    },
+    {
+      "id": "M2",
+      "failing_tests": [
+        "useTakeoff isolates missing supports and beams without changing existing quantity lines",
+        "omits unsupported support and beam members while rendering the remaining rebars",
+        "applyFramingPlan keeps imported columns without registered girders as unsupported",
+        "project lookup helpers throws when no same-story 大梁 touches the 柱"
+      ],
+      "failed": 4,
+      "restored": true
+    },
+    {
+      "id": "M3",
+      "failing_tests": [
+        "t names every 未対応 reason and plan in both panes"
+      ],
+      "failed": 1,
+      "restored": true
+    },
+    {
+      "id": "M4",
+      "failing_tests": [
+        "buildingLayout keeps unsupported member concrete but filters all of its rebar instances"
+      ],
+      "failed": 1,
+      "restored": true
+    },
+    {
+      "id": "M5",
+      "failing_tests": [
+        "useTakeoff isolates missing supports and beams without changing existing quantity lines",
+        "useTakeoff keeps adjacent G1 and G2 as two independently anchored runs",
+        "omits unsupported support and beam members while rendering the remaining rebars",
+        "girderRun splits adjacent different sections into separate single-member runs",
+        "girderRun keeps G1 G2 G1 as three runs without bridging the middle section"
+      ],
+      "failed": 5,
+      "restored": true
+    },
+    {
+      "id": "M6",
+      "failing_tests": [
+        "stirrupPositions accepts fractional placement pitch 100.1 offset 50",
+        "stirrupPositions accepts fractional placement pitch 100 offset 0.1"
+      ],
+      "failed": 2,
+      "restored": true
+    }
+  ],
+  "gates": {
+    "lint": 0,
+    "tsc": 0,
+    "vitest": {
+      "passed": 1866,
+      "files": 365,
+      "skipped": 4,
+      "failed": 0
+    }
+  },
+  "paths_verified": [
+    "src/domain/model/project.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "src/lib/viewer/building.ts",
+    "src/locales/ja.json",
+    "src/lib/hooks/useTakeoff.test.tsx",
+    "tests/e2e/uc24-drawing-set.js",
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "phases/45-partial-import-unsupported/step3-report.json",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "src/domain/rebar/stirrup-layout.test.ts"
+  ],
+  "limits": [
+    "C4 optional M1+e2e rerun skipped (one heavy job at a time on the local PC).",
+    "check-citations over step0-report-r1..r4.json fails on paths_verified entries for temporary repro/config files those refuted rounds created and deleted (step0-repro.test.ts, step0-repro-r3.test.ts, step0-r3.config.mjs, step0-repro-r4.test.ts, step0-r4.config.mjs); the repro sources survive as step0-repro-r1/-r2/-r3.test.ts.txt. Archives left untouched.",
+    "Verifier is not independent of the spec author for this step."
+  ]
+}
