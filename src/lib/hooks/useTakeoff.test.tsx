@@ -5,9 +5,56 @@ import { createSampleProject } from '@/domain/model/sample-project'
 import { girderRun, gridPointCount } from '@/domain/model/project'
 import { useAppStore } from '@/lib/store'
 
-import { useTakeoff } from './useTakeoff'
+import { buildTakeoff, useTakeoff } from './useTakeoff'
 
 describe('useTakeoff', () => {
+  it('isolates missing supports and beams without changing existing quantity lines', () => {
+    const base = createSampleProject()
+    const baseline = buildTakeoff(base)
+    expect(baseline.unsupportedMembers).toEqual([])
+    const project = {
+      ...base,
+      grid: { ...base.grid, xSpans: [...base.grid.xSpans, 6000] },
+      members: [...base.members,
+        { id: 'missing-end', kind: '大梁' as const, memberClass: '躯体' as const, sectionId: 'section-G2', storyId: '1F', position: { axis: 'X' as const, ix: 1, iy: 0 } },
+        { id: 'no-beam', kind: '柱' as const, memberClass: '躯体' as const, sectionId: 'section-C1', storyId: '1F', position: { ix: 2, iy: 2 } },
+      ],
+    }
+    const result = buildTakeoff(project)
+    expect(result.unsupportedMembers).toEqual([
+      { memberId: 'missing-end', mark: 'G2', storyName: '1階', reason: '支持柱なし' },
+      { memberId: 'no-beam', mark: 'C1', storyName: '1階', reason: '上部大梁なし' },
+    ])
+    // Full equality includes IDs, counts, totals and formulas, even when kg is null.
+    expect(baseline.lines.length).toBeGreaterThan(0)
+    expect(result.lines).toEqual(baseline.lines)
+  })
+
+  it('keeps adjacent G1 and G2 as two independently anchored runs', () => {
+    // Step 0 round-1 counterexample: three supports and two different sections.
+    const base = createSampleProject()
+    const project = {
+      ...base,
+      grid: { xSpans: [6000, 6000], ySpans: [6000], xLabels: ['X1', 'X2', 'X3'], yLabels: ['Y1', 'Y2'] },
+      members: [
+        ...[0, 1, 2].map(ix => ({ id: `1F-C1-${ix}-0`, kind: '柱' as const, memberClass: '躯体' as const, sectionId: 'section-C1', storyId: '1F', position: { ix, iy: 0 } })),
+        ...['G1', 'G2'].map((mark, ix) => ({ id: `1F-${mark}-${ix}-0-X`, kind: '大梁' as const, memberClass: '躯体' as const, sectionId: `section-${mark}`, storyId: '1F', position: { axis: 'X' as const, ix, iy: 0 } })),
+      ],
+    }
+    const result = buildTakeoff(project)
+    expect(result.unsupportedMembers).toEqual([])
+    for (const role of ['上端筋', '下端筋']) {
+      const lines = result.lines.filter(line => line.memberKind === '大梁' && line.unit === 'kg' && line.role === role)
+      expect(lines).toHaveLength(2)
+      // 5200 clear + two independently resolved end anchorages, plus splice.
+      expect(lines).toMatchObject([
+        { mark: 'G1', places: 1, countPerMember: 4, lengthMm: 8200 },
+        { mark: 'G2', places: 1, countPerMember: 4, lengthMm: 6960 },
+      ])
+      for (const line of lines) expect(line.formula).toContain('定着')
+    }
+  })
+
   beforeEach(() => {
     useAppStore.setState({ project: createSampleProject() })
   })

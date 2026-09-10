@@ -27,9 +27,11 @@
     {
       "step": 2,
       "name": "takeoff-import-tests",
-      "status": "pending",
+      "status": "blocked",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T16:01:38+0900",
+      "blocked_reason": "Existing tsu composition registers sections for every placement mark, and its imported Project contains columns. Step 2 requires no columns and six unsupported 2FL girders. The explicit prohibition says to mark blocked instead of moving the test when import results do not match."
     },
     {
       "step": 3,

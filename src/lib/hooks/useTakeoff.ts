@@ -76,7 +76,7 @@ export function useTakeoff(): TakeoffResult {
   return useMemo(() => computeTakeoff(project), [project])
 }
 
-function buildTakeoff(project: Project): TakeoffResult {
+export function buildTakeoff(project: Project): TakeoffResult {
   const rebars: Rebar[] = []
   const unsupportedMembers: UnsupportedMember[] = []
   const processedGirderMemberIds = new Set<string>()

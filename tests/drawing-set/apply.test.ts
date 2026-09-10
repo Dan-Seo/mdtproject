@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { createSampleProject } from '@/domain/model/sample-project'
+import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import type { Section } from '@/domain/model/member'
 import { applyElevation, applyFramingPlan } from '@/lib/import/framing-plan/apply'
 import { assembleDrawingSet, reconcileAssessments } from '@/lib/import/drawing-set/reconcile'
@@ -59,6 +60,18 @@ describe('drawing-set plan and apply', () => {
       for (const b of p.perStory.filter(b => b.levelIndex === levelIndex)) manual = applyFramingPlan(manual, { block: b.block, storyId: created[i].id, sectionStoryLabel: ch.sectionStoryLabels?.[levelIndex], discardOtherStories: false }).project
     }
     expect(result.project).toEqual(manual)
+    const takeoff = buildTakeoff(result.project)
+    const imported = result.project.members.filter(m => m.kind === '大梁')
+    expect(result.project.members.some(m => m.kind === '柱')).toBe(false)
+    expect(imported).toHaveLength(6)
+    expect(takeoff.unsupportedMembers).toEqual(imported.map(m => ({
+      memberId: m.id,
+      mark: result.project.sections.find(s => s.id === m.sectionId)!.mark,
+      storyName: '2FL',
+      reason: '支持柱なし',
+    })))
+    const otherStories = { ...result.project, members: result.project.members.filter(m => !imported.some(g => g.id === m.id)) }
+    expect(takeoff.lines.filter(line => line.storyName !== '2FL')).toEqual(buildTakeoff(otherStories).lines)
     expect(result.storiesApplied).toBe(5)
     expect(p.perStory).toHaveLength(1)
     expect(result.project.members.length).toBeGreaterThanOrEqual(1)
