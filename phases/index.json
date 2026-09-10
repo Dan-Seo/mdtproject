@@ -235,7 +235,8 @@
     },
     {
       "dir": "46-quantity-line-size-key",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-09-10T17:20:18+0900"
     }
   ]
 }

@@ -88,7 +88,7 @@
 | R14 | 해소 | 開口部 欠除과 開口補強筋 設計図書 전사 입력을 구현. 미전사 開口의 과소 계상은 상시 고지로 안내 |
 | R15 | 열림 | 중점 문턱 안전 여백과 ina-p7·shibata-p13·karatsu-jikugumi2-p1 블록 오탐은 남는다. 제목 제외 영역의 겹침 강등 문턱은 불성립이고, 제목 포함 별도 부등식 성립도 강등 검증은 아니다. 자동 강등 없이 면·블록 구성원 선택으로 사용자가 제외한다. 근거: docs/RISKS.md R15, `phases/44-drawing-set-assembly/step1-report.json#/demotion_margin` |
 | R16 | 열림 | ST-Bridge 코퍼스는 오픈소스 테스트 픽스처이고 사용자 `.stb`는 0건이며, RC 배근 파일·현실 규모 ver 2.1 파일이 부족하다 |
-| R17 | 열림 | 부분 취입의 支持不成立은 부재 단위 未対応으로 강등했지만, 같은 이름의 階 둘에 같은 符号·径이 다른 断面이면 内訳 집계가 아직 plain Error로 멎는다. `QuantityLine.id` 이행이 필요해 미뤘고 실물 도면 값으로는 닿지 않으며, 완전한 목록도 아니다. 근거: docs/RISKS.md R17, `phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample` |
+| R17 | 해소 | 같은 이름의 階 둘에 같은 符号·径이 다른 断面이면 内訳 집계가 plain Error로 멎던 것을 `quantityLineId`·`spliceLineId` 맨 끝의 `径${size}` 세그먼트로 닫았다(ADR-048). 数量 값은 무변화이고, 저장된 備考는 구 鍵으로 읽어 편집 시점에 이행한다. 도달 가능한 plain throw의 완전한 목록은 여전히 주장하지 않는다. 근거: docs/RISKS.md R17, `phases/46-quantity-line-size-key/step1-report.json#/r17_reproduction` |
 
 ## 명령어
 npm run dev          # 개발 서버

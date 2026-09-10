@@ -2,27 +2,33 @@
   "project": "Kijun",
   "phase": "46-quantity-line-size-key",
   "created_at": "2026-09-10T17:12:13+09:00",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     {
       "step": 1,
       "name": "size-in-line-key",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T17:12:22+0900",
+      "summary": "数量行・継手行の末尾に径を追加しR17を2行へ分離、旧備考の読取fallbackと編集時移行を実装。全AC・3変異検証通過。",
+      "completed_at": "2026-09-10T17:20:17+0900"
     },
     {
       "step": 2,
       "name": "docs-sync",
-      "status": "deferred",
-      "note": "Claude/Opus worker, no codex (quota conservation until 2026-09-16)"
+      "status": "completed",
+      "note": "Claude/Opus worker, no codex (quota conservation until 2026-09-16)",
+      "summary": "Recorded ADR-048 and closed R17 in docs/RISKS.md, CLAUDE.md and AGENTS.md; no code touched."
     },
     {
       "step": 3,
       "name": "refute-phase",
       "kind": "verify",
-      "status": "deferred",
-      "note": "Claude, no codex"
+      "status": "completed",
+      "note": "Claude, no codex",
+      "summary": "Upheld: scope, values unchanged (golden + 64 sample lines), four mutations killed, R17 repro no longer throws, docs consistent, gates green (1874 tests)."
     }
-  ]
+  ],
+  "completed_at": "2026-09-10T17:20:18+0900"
 }

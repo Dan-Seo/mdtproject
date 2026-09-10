@@ -1,0 +1,22 @@
+{
+  "adr": "ADR-048",
+  "risk": "R17 closed",
+  "by": "Claude Opus worker (codex quota conservation)",
+  "files": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/46-quantity-line-size-key/step2-check.py",
+    "phases/46-quantity-line-size-key/step2-report.json",
+    "phases/46-quantity-line-size-key/index.json"
+  ],
+  "notes": "ADR-048 appended at the end of docs/ADR.md; ADR-047 and earlier text untouched. RISKS.md R17 head changed to the closed form while keeping the 'not a complete list' clause. CLAUDE.md and AGENTS.md R17 rows are byte-identical. No code or numbers were invented.",
+  "paths_verified": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/46-quantity-line-size-key/step1-report.json"
+  ]
+}

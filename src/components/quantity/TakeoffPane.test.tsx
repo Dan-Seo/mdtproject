@@ -889,3 +889,17 @@ describe('単位質量の入力', () => {
     )
   })
 })
+
+
+it('displays a legacy-key note and migrates it on editing', () => {
+  const lineId = lineFor('主筋').id
+  const legacyId = lineId.replace(/\|径[^|]+$/, '')
+  act(() => useAppStore.getState().updateProject((project) => ({
+    ...project, notes: { [legacyId]: '要確認' },
+  })))
+  render(<TakeoffPane />)
+  const input = screen.getByLabelText(`${lineId} 備考`)
+  expect(input).toHaveValue('要確認')
+  fireEvent.change(input, { target: { value: '済' } })
+  expect(useAppStore.getState().project.notes).toEqual({ [lineId]: '済' })
+})

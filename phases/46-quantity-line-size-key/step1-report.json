@@ -1,0 +1,153 @@
+{
+  "changed_files": [
+    "src/domain/quantity/index.ts",
+    "src/domain/quantity/index.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/components/quantity/TakeoffPane.test.tsx",
+    "src/lib/export/index.ts",
+    "src/lib/export/index.test.ts",
+    "phases/46-quantity-line-size-key/index.json",
+    "phases/46-quantity-line-size-key/step1-report.json"
+  ],
+  "tests_added": [
+    "displays a legacy-key note and migrates it on editing",
+    "buildTakeoffWorkbook writes a legacy-key note into the note column",
+    "legacy quantity notes removes only the trailing size segment",
+    "legacy quantity notes reads saved legacy notes, prefers the new key including empty values, and defaults to empty",
+    "legacy quantity notes editing one size retires the shared legacy note for the other size",
+    "legacy quantity notes clearing a new key deletes both new and legacy entries",
+    "quantity size keys appends size to mass and splice keys and separates equal geometry by size",
+    "quantity size keys aggregates the saved R17 repeated-story-name project without losing either hoop size"
+  ],
+  "tests_tightened": [
+    {
+      "file": "src/domain/quantity/index.test.ts",
+      "test": "groups nine members with the same 符号 into one row and nine 箇所",
+      "change": "Exact mass id now ends with |径D25; numeric expectations unchanged."
+    },
+    {
+      "file": "src/domain/quantity/index.test.ts",
+      "test": "emits a 箇所 line beside the kg line and never mixes the two units",
+      "change": "Exact splice id now ends with |径D25; numeric expectations unchanged."
+    }
+  ],
+  "shape_decision": {
+    "removed_check": true,
+    "shape_in_key": false,
+    "reason": "Within the existing group/role key, generator shape is determined by its point sequence: straight bars have two points; bent girder/slab bars add an endpoint for each bend; hoop roles always use hoop. Identical points and role do not carry different shapes in these generators. No generator, shape geometry, or rule was modified.",
+    "evidence": [
+      "src/domain/rebar/column.ts#L307",
+      "src/domain/rebar/column.ts#L310",
+      "src/domain/rebar/column.ts#L354",
+      "src/domain/rebar/girder.ts#L121",
+      "src/domain/rebar/girder.ts#L368",
+      "src/domain/rebar/girder.ts#L674",
+      "src/domain/rebar/girder.ts#L789",
+      "src/domain/rebar/girder.ts#L883",
+      "src/domain/rebar/girder.ts#L942",
+      "src/domain/rebar/wall.ts#L187",
+      "src/domain/rebar/wall.ts#L378",
+      "src/domain/rebar/wall.ts#L435",
+      "src/domain/rebar/slab.ts#L156",
+      "src/domain/rebar/slab.ts#L303",
+      "src/domain/rebar/slab.ts#L346",
+      "src/domain/rebar/slab.ts#L544"
+    ]
+  },
+  "r17_reproduction": {
+    "lines_for_C1_hoop": 2,
+    "sizes": [
+      "D10",
+      "D13"
+    ],
+    "places": [
+      2,
+      2
+    ],
+    "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample/project",
+    "method": "Generate all columns and girders of the recorded Project and aggregate together; no size/shape or quantity-rules exception. Initial red test reproduced the original Inconsistent size or shape exception."
+  },
+  "mutations": [
+    {
+      "site": "quantityLineId size segment",
+      "failing_tests": [
+        "aggregateQuantity groups nine members with the same 符号 into one row and nine 箇所",
+        "quantity size keys appends size to mass and splice keys and separates equal geometry by size",
+        "quantity size keys aggregates the saved R17 repeated-story-name project without losing either hoop size"
+      ]
+    },
+    {
+      "site": "noteFor legacy fallback",
+      "failing_tests": [
+        "displays a legacy-key note and migrates it on editing",
+        "buildTakeoffWorkbook writes a legacy-key note into the note column",
+        "legacy quantity notes reads saved legacy notes, prefers the new key including empty values, and defaults to empty",
+        "legacy quantity notes editing one size retires the shared legacy note for the other size"
+      ]
+    },
+    {
+      "site": "setNote legacy delete",
+      "failing_tests": [
+        "displays a legacy-key note and migrates it on editing",
+        "legacy quantity notes reads saved legacy notes, prefers the new key including empty values, and defaults to empty",
+        "legacy quantity notes editing one size retires the shared legacy note for the other size",
+        "legacy quantity notes clearing a new key deletes both new and legacy entries"
+      ]
+    }
+  ],
+  "validation": {
+    "targeted": {
+      "command": "npx vitest run src/domain/quantity/index.test.ts src/domain/model/project.test.ts src/lib/export/index.test.ts src/components/quantity/TakeoffPane.test.tsx",
+      "passed": 208
+    },
+    "golden": {
+      "command": "npm run test:golden",
+      "passed": 393,
+      "files": 7,
+      "fixtures_changed": false
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "existing_warning": "src/app/api/oncall/alert/route.test.ts:161 _omitted unused"
+    },
+    "all_after_mutation_restore": {
+      "command": "npx vitest run",
+      "passed": 1874,
+      "skipped": 4,
+      "failed": 0
+    },
+    "tdd_red": {
+      "passed": 200,
+      "failed": 8,
+      "note": "Reader tests initially used the then-current generated legacy ids, so reader fallback sensitivity is established by the later fallback mutation, which fails both UI and export tests."
+    },
+    "mutations_restored": true
+  },
+  "migration_note_for_step2": "구 鍵을 공유하는 두 径 행 중 하나를 편집하면 구 鍵을 제거하므로 다른 행은 공유하던 備考를 더 이상 읽지 않는다. 새 鍵의 별도 備考는 유지한다. 빈 문자열 저장은 새 鍵과 구 鍵 모두 제거한다. ADR-048 기록은 별도 docs-sync step 2 범위이므로 여기서는 문서를 수정하지 않았다.",
+  "scope": "memberGroupKey and PROJECT_SCHEMA_VERSION unchanged; generators, rulepack, golden fixtures and import modules unchanged. Internal markup consistency check retained.",
+  "paths_verified": [
+    "src/domain/quantity/index.ts",
+    "src/domain/quantity/index.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/components/quantity/TakeoffPane.test.tsx",
+    "src/lib/export/index.ts",
+    "src/lib/export/index.test.ts",
+    "phases/45-partial-import-unsupported/step0-report-r2.json",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "src/domain/rebar/column.ts",
+    "src/domain/rebar/girder.ts",
+    "src/domain/rebar/wall.ts",
+    "src/domain/rebar/slab.ts",
+    "phases/46-quantity-line-size-key/step2.md",
+    "src/app/api/oncall/alert/route.test.ts"
+  ]
+}
