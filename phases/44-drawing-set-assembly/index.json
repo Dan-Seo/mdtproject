@@ -47,9 +47,11 @@
     {
       "step": 4,
       "name": "set-plan-apply",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:31:54+0900",
+      "summary": "Implemented pure plan resolution and existing apply composition; tsu creates 5 stories and 42 members, 10 targeted and 1874 full tests pass, lint/tsc pass, max review clear after three mutation-sensitive test improvements."
     },
     {
       "step": 5,

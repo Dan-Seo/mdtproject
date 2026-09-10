@@ -1,0 +1,63 @@
+{
+  "baseline_commit": "e791f9b327eb7bd88c277cac7929c2f12be9db2b",
+  "equivalence": { "set": "tsu", "stories": 5, "blocks": 1, "equal": true },
+  "members_created": 42,
+  "fixture_selection": "Includes tsu pages 16, 20, 21, 22; excludes only the p16 pile-plan block because its title has no story key. Registers matching sample-derived sections with selected and competing story labels; these are test inputs, not imported section-list candidates.",
+  "refusal_propagation": { "refusal": "部材あり階置換不可", "original_project_reference": true, "storiesApplied": 0, "perStory": [] },
+  "preconditions": [
+    { "case": "missing grid", "refusal": "通り芯未確定" },
+    { "case": "kani has no stories, irrespective of reference/range choices", "refusal": "階未確定" },
+    { "case": "yokohama reference switched from p8 to p9 with previous choices", "refusal": "基準不一致" },
+    { "case": "invalid top/bottom or manual floor index", "refusal": "階範囲不正" },
+    { "case": "included block has no final correspondence", "refusal": "階未対応ブロック" },
+    { "case": "two blocks assigned to the same floor", "refusal": "未解決の矛盾" },
+    { "case": "membership grid conflict", "refusal": "未解決の矛盾" }
+  ],
+  "selection_checks": {
+    "manual_overrides_automatic": true,
+    "manual_resolution_of_initial_duplicate_accepted": true,
+    "narrowed_range_recomputes_unique_automatic_match": true,
+    "same_name_stories_use_distinct_floor_indices": true,
+    "information_conflicts_preserved": true,
+    "unmapped_index_has_no_invented_id": true
+  },
+  "purity": { "project": true, "candidate": true, "choices": true, "plan": true, "method": "candidate/choices snapshot before the first resolve; project/plan snapshots before apply; all compared after calls" },
+  "final_review": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "max",
+    "transport": "Herdr sibling pane; native agent start failed on codex.ps1, same-pane shell launch succeeded and model/readiness were verified",
+    "verdict": "No remaining actionable findings",
+    "test_improvements": ["Snapshot candidate and choices before the first resolver call", "Distinct placements and exact floor/ref assertions for identically named stories", "Reverse plan entries to test actual floor application order"],
+    "reviewer_mutation_evidence": "Reviewer reports both previously surviving mutations now fail, as does a separate mutation that applies blocks in plan order. In-memory transforms only; product code unchanged."
+  },
+  "validation": {
+    "tdd_red": "Targeted suite failed because the new plan module did not exist, before implementation.",
+    "targeted": { "command": "npx vitest run tests/drawing-set/apply.test.ts", "exit_code": 0, "passed": 10 },
+    "full": { "command": "npx vitest run --reporter=json --outputFile=phases/44-drawing-set-assembly/step4-tests.json", "exit_code": 0, "passed": 1874, "failed": 0, "pending": 0, "temporary_raw_report_removed_after_summary": true },
+    "lint": { "command": "npm run lint", "exit_code": 0, "errors": 0, "existing_warnings": 1 },
+    "types": { "command": "npx tsc --noEmit", "exit_code": 0 }
+  },
+  "changed_paths": [
+    "src/lib/import/drawing-set/plan.ts",
+    "src/lib/import/drawing-set/apply.ts",
+    "tests/drawing-set/apply.test.ts",
+    "phases/44-drawing-set-assembly/step4-report.json",
+    "phases/44-drawing-set-assembly/index.json"
+  ],
+  "paths_verified": [
+    "src/lib/import/drawing-set/types.ts",
+    "src/lib/import/drawing-set/reconcile.ts",
+    "src/lib/import/drawing-set/plan.ts",
+    "src/lib/import/drawing-set/apply.ts",
+    "src/lib/import/framing-plan/apply.ts",
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/sample-project.ts",
+    "tests/drawing-set/apply.test.ts",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "tests/fixtures/drawing-set/expected/kani.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "phases/44-drawing-set-assembly/step4.md"
+  ],
+  "paths_expected_absent": []
+}
