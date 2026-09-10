@@ -11,7 +11,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T11:46:18+0900",
-      "summary": "ADR-046·세트 골든 5개 독립 검증: A1~A11 성립(upheld), knownGaps 19개 방향 확인, 66개 파일 동결 해시와 원문 근거 기록, 인용 검사 통과."
+      "summary": "ADR-046·세트 골든 5개 독립 검증: A1~A11 성립(upheld), knownGaps 19개 방향 확인, 66개 파일 동결 해시와 원문 근거 기록, 인용 검사 통과.",
+      "completed_at": "2026-09-10T12:00:52+0900"
     },
     {
       "step": 1,
