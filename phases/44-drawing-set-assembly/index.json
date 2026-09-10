@@ -82,7 +82,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T13:16:19+0900",
-      "summary": "Independent verification upheld all 12 claims: 36 parser hashes, 35 grammar rows, five goldens with 19 live gaps, eight killed/restored mutations, 42 created members, frozen bytes/scope/citations; 1879 tests, lint, tsc and build pass."
+      "summary": "Independent verification upheld all 12 claims: 36 parser hashes, 35 grammar rows, five goldens with 19 live gaps, eight killed/restored mutations, 42 created members, frozen bytes/scope/citations; 1879 tests, lint, tsc and build pass.",
+      "completed_at": "2026-09-10T13:24:47+0900"
     }
   ],
   "created_at": "2026-09-10T11:46:18+0900"
