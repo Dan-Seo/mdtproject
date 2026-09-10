@@ -1,0 +1,128 @@
+{
+  "verdict": "upheld",
+  "base_commit": "7730c15",
+  "by": "Claude (spec author ran the verify checklist; codex quota conservation). Code by codex (step 1), docs by an Opus worker (step 2), both reviewed by Claude.",
+  "claims": [
+    {
+      "id": "C1",
+      "status": "upheld",
+      "evidence": [
+        "git diff main...HEAD --stat: src/domain/quantity/index{.ts,.test.ts}, src/domain/model/project{.ts,.test.ts}, src/components/quantity/TakeoffPane{.tsx,.test.tsx}, src/lib/export/index{.ts,.test.ts}, docs/{ADR,RISKS}.md, CLAUDE.md, AGENTS.md, phases/46-*/**. 0 lines in src/domain/rebar, src/rulepack, tests/golden/fixtures, src/lib/import."
+      ]
+    },
+    {
+      "id": "C2",
+      "status": "upheld",
+      "evidence": [
+        "npm run test:golden: 7 files 393 passed",
+        "buildTakeoff(createSampleProject()).lines with id/groupId stripped: 64 lines on main and on HEAD, deep-equal (temporary c2-lines.test.ts + c2.config.mjs run in both trees, removed afterwards)"
+      ]
+    },
+    {
+      "id": "C3",
+      "status": "upheld",
+      "evidence": [
+        "all four mutations killed, see mutations[]"
+      ]
+    },
+    {
+      "id": "C4",
+      "status": "upheld",
+      "evidence": [
+        "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt run at HEAD with a temporary config: 1 failed — 'AssertionError: expected undefined to be an instance of Error', i.e. aggregateQuantity no longer throws for the counterexample"
+      ]
+    },
+    {
+      "id": "C5",
+      "status": "upheld",
+      "evidence": [
+        "docs/ADR.md has ADR-048 (no ADR-049); step2-check.py prints docs ok; check-citations on step1/step2 reports exits 0"
+      ]
+    },
+    {
+      "id": "C6",
+      "status": "upheld",
+      "evidence": [
+        "npm run lint 0 errors (1 pre-existing warning), npx tsc --noEmit 0, npx vitest run 367 files 1874 passed 4 skipped 0 failed"
+      ]
+    },
+    {
+      "id": "C7",
+      "status": "upheld",
+      "evidence": [
+        "added src/domain lines contain no react/three/next/document/window; no rule numerals (only the 径 label and the key format)"
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M1",
+      "failing_tests": [
+        "aggregateQuantity groups nine members with the same 符号 into one row and nine 箇所",
+        "quantity size keys appends size to mass and splice keys and separates equal geometry by size",
+        "quantity size keys aggregates the saved R17 repeated-story-name project without losing either hoop size"
+      ],
+      "failed": 3,
+      "restored": true
+    },
+    {
+      "id": "M2",
+      "failing_tests": [
+        "displays a legacy-key note and migrates it on editing",
+        "buildTakeoffWorkbook writes a legacy-key note into the note column",
+        "legacy quantity notes reads saved legacy notes, prefers the new key including empty values, and defaults to empty",
+        "legacy quantity notes editing one size retires the shared legacy note for the other size"
+      ],
+      "failed": 4,
+      "restored": true
+    },
+    {
+      "id": "M3",
+      "failing_tests": [
+        "displays a legacy-key note and migrates it on editing",
+        "legacy quantity notes reads saved legacy notes, prefers the new key including empty values, and defaults to empty",
+        "legacy quantity notes editing one size retires the shared legacy note for the other size",
+        "legacy quantity notes clearing a new key deletes both new and legacy entries"
+      ],
+      "failed": 4,
+      "restored": true
+    },
+    {
+      "id": "M4",
+      "failing_tests": [
+        "aggregateQuantity emits a 箇所 line beside the kg line and never mixes the two units",
+        "quantity size keys appends size to mass and splice keys and separates equal geometry by size"
+      ],
+      "failed": 2,
+      "restored": true
+    }
+  ],
+  "gates": {
+    "lint": 0,
+    "tsc": 0,
+    "golden": {
+      "passed": 393
+    },
+    "vitest": {
+      "passed": 1874,
+      "files": 367,
+      "skipped": 4,
+      "failed": 0
+    }
+  },
+  "paths_verified": [
+    "src/domain/quantity/index.ts",
+    "src/domain/model/project.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/lib/export/index.ts",
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "phases/46-quantity-line-size-key/step1-report.json",
+    "phases/46-quantity-line-size-key/step2-report.json"
+  ],
+  "limits": [
+    "Verifier is not independent of the spec author for this step.",
+    "src/domain/quantity/index.test.ts imports phases/45-partial-import-unsupported/step0-report-r2.json as the R17 fixture — a src test now depends on a phases archive file; acceptable but the file must not be moved."
+  ]
+}

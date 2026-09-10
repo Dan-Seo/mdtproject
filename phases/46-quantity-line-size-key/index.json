@@ -2,7 +2,7 @@
   "project": "Kijun",
   "phase": "46-quantity-line-size-key",
   "created_at": "2026-09-10T17:12:13+09:00",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     {
       "step": 1,
@@ -25,8 +25,9 @@
       "step": 3,
       "name": "refute-phase",
       "kind": "verify",
-      "status": "deferred",
-      "note": "Claude, no codex"
+      "status": "completed",
+      "note": "Claude, no codex",
+      "summary": "Upheld: scope, values unchanged (golden + 64 sample lines), four mutations killed, R17 repro no longer throws, docs consistent, gates green (1874 tests)."
     }
   ],
   "completed_at": "2026-09-10T17:20:18+0900"
