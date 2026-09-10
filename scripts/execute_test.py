@@ -234,7 +234,7 @@ class InvokeArtifactTests(unittest.TestCase):
 
         model_index = cmd.index("-m")
         effort_index = cmd.index("-c")
-        self.assertEqual(cmd[model_index + 1], "gpt-6-astra")
+        self.assertEqual(cmd[model_index + 1], "gpt-5.6-luna")
         self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="xhigh"')
 
     def test_invoke_uses_step_model_when_set(self) -> None:
@@ -250,7 +250,7 @@ class InvokeArtifactTests(unittest.TestCase):
 
         model_index = cmd.index("-m")
         effort_index = cmd.index("-c")
-        self.assertEqual(cmd[model_index + 1], "gpt-6-astra")
+        self.assertEqual(cmd[model_index + 1], "gpt-5.6-luna")
         self.assertEqual(cmd[effort_index + 1], 'model_reasoning_effort="low"')
 
     def test_invoke_uses_step_model_and_effort_when_both_set(self) -> None:

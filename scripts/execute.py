@@ -325,7 +325,7 @@ class StepExecutor:
 
     def _invoke_codex(self, step: dict, preamble: str) -> dict:
         step_num, step_name = step["step"], step["name"]
-        model = step.get("model", "gpt-6-astra")
+        model = step.get("model", "gpt-5.6-luna")
         reasoning_effort = step.get("reasoning_effort", "xhigh")
         step_file = self._phase_dir / f"step{step_num}.md"
 
