@@ -33,6 +33,14 @@ fi
 #   - package.json이 아직 없다 → 검증 대상 자체가 없다
 #   - package.json은 생겼지만 lint·build·test가 아직 다 정의되지 않았다
 #     → `npm run`이 "Missing script"로 실패해 무의미한 차단이 된다
+# 하네스(scripts/execute.py)가 워크트리에서 도는 동안은 건너뛴다. 하네스의 codex 스텝이
+# 이미 lint·build·test를 돌리고 있어, 여기서 또 build·test를 겹쳐 돌리면 CPU·메모리가
+# 두 배로 들고(2026-09-10 실제로 PC가 멎어 재부팅) 같은 .next를 쓰는 다른 세션의 빌드도
+# ENOENT로 깨진다. 잠금 파일은 하네스를 띄우는 세션이 만들고 끝나면 지운다.
+if [ -f "$(git -C "$ROOT" rev-parse --git-common-dir 2>/dev/null)/harness-running" ]; then
+  exit 0
+fi
+
 if [ ! -f "$ROOT/package.json" ]; then
   exit 0
 fi
