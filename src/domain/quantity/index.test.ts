@@ -1,3 +1,4 @@
+import r17 from '../../../phases/45-partial-import-unsupported/step0-report-r2.json'
 import { describe, expect, it } from 'vitest'
 
 import type { BarSize, ColumnSection, Member } from '../model/member'
@@ -18,6 +19,8 @@ import { generateGirderRebar } from '../rebar/girder'
 import { coverConditions, lookupRule } from '../rules/lookup'
 import { jpMlitRulePack } from '../../rulepack'
 import {
+  quantityLineId,
+  spliceLineId,
   aggregateQuantity,
   grandTotal,
   hasUnverified,
@@ -187,7 +190,7 @@ describe('aggregateQuantity', () => {
 
     expect(lines).toHaveLength(1)
     expect(lines[0]).toMatchObject({
-      id: '1階|C|C1|主筋|1000|12|形状0,0,0;0,1000,0',
+      id: '1階|C|C1|主筋|1000|12|形状0,0,0;0,1000,0|径D25',
       groupId: '1階|C|C1',
       storyName: '1階',
       memberKind: '柱',
@@ -483,7 +486,7 @@ describe('aggregateQuantity', () => {
     // 質量行のすぐ後に来る — 内訳書で主筋と離れると別物に見える。
     expect(lines.map(({ unit }) => unit)).toEqual(['kg', '箇所'])
     expect(spliceLine).toMatchObject({
-      id: '1階|C|C1|主筋|継手|重ね継手|1|12|1000',
+      id: '1階|C|C1|主筋|継手|重ね継手|1|12|1000|径D25',
       groupId: mass.groupId,
       role: '主筋',
       method: '重ね継手',
@@ -774,5 +777,45 @@ describe('sizeSubtotals', () => {
     expect(bySize[0].size).toBe('D25')
     expect(bySize[0].designKg).toBe(432)
     expect(bySize[0].requiredKg).toBeCloseTo(449.28, 6)
+  })
+})
+
+describe('quantity size keys', () => {
+  it('appends size to mass and splice keys and separates equal geometry by size', () => {
+    const project = projectWithStories([{ id: '1F', name: '1階', height: 4200 }])
+    const a = mainRebar(project.members[0].id, { splice: splice() })
+    const b = mainRebar(project.members[1].id, { size: 'D13', splice: splice() })
+    expect(quantityLineId('group', a)).toBe('group|主筋|1000|12|継手1|形状0,0,0;0,1000,0|径D25')
+    expect(quantityLineId('group', b)).toBe('group|主筋|1000|12|継手1|形状0,0,0;0,1000,0|径D13')
+    expect(spliceLineId('group', b)).toBe('group|主筋|継手|重ね継手|1|12|1000|径D13')
+    const lines = aggregateQuantity(project, [a, b], jpMlitRulePack)
+    expect(massLines(lines).map(({ size, places }) => ({ size, places }))).toEqual([
+      { size: 'D25', places: 1 }, { size: 'D13', places: 1 },
+    ])
+    expect(spliceLines(lines).map(({ size, places }) => ({ size, places }))).toEqual([
+      { size: 'D25', places: 1 }, { size: 'D13', places: 1 },
+    ])
+  })
+
+  it('aggregates the saved R17 repeated-story-name project without losing either hoop size', () => {
+    const project = r17.counterexample.project as Project
+    const rebars = project.members.flatMap((member) => {
+      const section = findSection(project, member.sectionId)
+      if (section.kind === '大梁') {
+        return generateGirderRebar(
+          { run: girderRun(project, member), section }, jpMlitRulePack,
+        )
+      }
+      if (section.kind !== '柱') throw new Error('unexpected R17 member kind')
+      return generateColumnRebar({ member, section,
+        story: project.stories.find(({ id }) => id === member.storyId)!,
+        beamDepthAbove: beamDepthAbove(project, member),
+        ends: columnEnds(project, member) }, jpMlitRulePack)
+    })
+    const lines = aggregateQuantity(project, rebars, jpMlitRulePack)
+    expect(massLines(lines).filter(({ mark, role }) => mark === 'C1' && role === '帯筋')
+      .map(({ size, places }) => ({ size, places }))).toEqual([
+        { size: 'D10', places: 2 }, { size: 'D13', places: 2 },
+      ])
   })
 })

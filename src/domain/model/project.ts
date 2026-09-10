@@ -104,7 +104,7 @@ export interface Project {
   stories: Story[]
   sections: Section[]
   members: Member[]
-  /** 내역서 備考. QuantityLine.id를 키로 쓴다. 값이 없는 행은 키 자체가 없다. */
+  /** 내역서 備考. QuantityLine.id를 키로 쓴다. 구 키는 noteFor로 읽고 setNote로 이행한다. */
   notes?: Record<string, string>
   /**
    * 径별 単位質量 (kg/m) — 利用者入力. 미입력 径은 키가 없다.
@@ -1542,12 +1542,28 @@ export function beamDepthAbove(project: Project, member: Member): number {
   return Math.max(...depths)
 }
 
+/** Recover the pre-size quantity key without changing group labels or geometry. */
+export function legacyQuantityLineId(lineId: string): string {
+  return lineId.replace(/\|径[^|]+$/, '')
+}
+
+/** Saved notes remain readable until the user edits that row. */
+export function noteFor(project: Project, lineId: string): string {
+  return (
+    project.notes?.[lineId] ??
+    project.notes?.[legacyQuantityLineId(lineId)] ??
+    ''
+  )
+}
+
 export function setNote(
   project: Project,
   lineId: string,
   note: string,
 ): Project {
   const notes = { ...project.notes }
+  // Retire the shared legacy entry, including when clearing a note.
+  delete notes[legacyQuantityLineId(lineId)]
 
   if (note === '') delete notes[lineId]
   else notes[lineId] = note

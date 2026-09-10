@@ -28,6 +28,8 @@ import {
   serializeProject,
   slabBay,
   slabRun,
+  legacyQuantityLineId,
+  noteFor,
   setNote,
   storyElevation,
   wallSpan,
@@ -1516,5 +1518,41 @@ describe('setNote', () => {
       '1階|C|C1|主筋': '要確認',
       '1階|C|C1|帯筋': 'ピッチ確認',
     })
+  })
+})
+
+
+describe('legacy quantity notes', () => {
+  const oldId = '1階|C|C1|主筋|1000|12|形状0,0,0;0,1000,0'
+  const newId = `${oldId}|径D25`
+  it('removes only the trailing size segment', () => {
+    expect(legacyQuantityLineId(newId)).toBe(oldId)
+    expect(legacyQuantityLineId(oldId)).toBe(oldId)
+    expect(legacyQuantityLineId('group|径D13|主筋')).toBe('group|径D13|主筋')
+    expect(legacyQuantityLineId(`${oldId}|径K13`)).toBe(oldId)
+  })
+  it('reads saved legacy notes, prefers the new key including empty values, and defaults to empty', () => {
+    const project = { ...createProject(), notes: { [oldId]: '要確認' } }
+    const restored = deserializeProject(serializeProject(project))
+    expect(noteFor(restored, newId)).toBe('要確認')
+    expect(noteFor({ ...project, notes: { ...project.notes, [newId]: '済' } }, newId)).toBe('済')
+    expect(noteFor({ ...project, notes: { ...project.notes, [newId]: '' } }, newId)).toBe('')
+    expect(noteFor(createProject(), newId)).toBe('')
+    const next = setNote(restored, newId, '済')
+    expect(next.notes).toEqual({ [newId]: '済' })
+    expect(project.notes).toEqual({ [oldId]: '要確認' })
+  })
+  it('editing one size retires the shared legacy note for the other size', () => {
+    const project = { ...createProject(), notes: { [oldId]: '要確認', unrelated: 'keep' } }
+    const otherId = `${oldId}|径D13`
+    expect(noteFor(project, otherId)).toBe('要確認')
+    const next = setNote(project, newId, '済')
+    expect(next.notes).toEqual({ [newId]: '済', unrelated: 'keep' })
+    expect(noteFor(next, otherId)).toBe('')
+    expect(noteFor(next, newId)).toBe('済')
+  })
+  it('clearing a new key deletes both new and legacy entries', () => {
+    const project = { ...createProject(), notes: { [oldId]: 'old', [newId]: 'new', unrelated: 'keep' } }
+    expect(setNote(project, newId, '').notes).toEqual({ unrelated: 'keep' })
   })
 })

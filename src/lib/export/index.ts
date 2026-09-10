@@ -1,4 +1,4 @@
-import type { Project } from '@/domain/model/project'
+import { noteFor, type Project } from '@/domain/model/project'
 import {
   grandTotal,
   hasUnverified,
@@ -403,7 +403,7 @@ function storyBlocks(
 
     return [
       ...storyLines.map((line) =>
-        dataRow(line, locale, project.notes?.[line.id] ?? ''),
+        dataRow(line, locale, noteFor(project, line.id)),
       ),
       row('subtotal', [
         cell(`${storyName}　${t(locale, 'export.subtotal')}`),

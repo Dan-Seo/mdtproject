@@ -196,9 +196,11 @@ export function quantityLineId(groupId: string, rebar: Rebar): string {
   // 鍵に入れる — 設計長さが同じでも折れ線が違えば別の鉄筋だ (ADR-019)。同じ行に
   // 落とすと places は部材数で数えるため、同じ部材から来た片方の本数がまるごと
   // 数量から消える（カットオフ筋で実際に起こる — girder.ts の束ね鍵を見よ）。
+  // Within a role, generators distinguish straight/hook90 by the point sequence;
+  // hoops have their own roles. Size is the remaining specification discriminator.
   const shapeKey = rebar.points.map((point) => point.join(',')).join(';')
 
-  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}|形状${shapeKey}`
+  return `${groupId}|${rebar.role}|${rebar.length}|${rebar.count}${spliceKey}|形状${shapeKey}|径${rebar.size}`
 }
 
 /**
@@ -211,7 +213,7 @@ export function spliceLineId(groupId: string, rebar: Rebar): string {
     throw new Error(`Rebar has no splice to key: ${rebar.id}`)
   }
 
-  return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}|${rebar.length}`
+  return `${groupId}|${rebar.role}|継手|${splice.method}|${splice.countPerBar}|${rebar.count}|${rebar.length}|径${rebar.size}`
 }
 
 function recalculate(grouped: GroupedLine): void {
@@ -281,12 +283,6 @@ export function aggregateQuantity(
     if (existing) {
       if (existing.kind !== 'kg') {
         throw new Error(`Quantity line ${id} is not measured in kg`)
-      }
-      if (
-        existing.line.size !== rebar.size ||
-        existing.line.shape !== rebar.shape
-      ) {
-        throw new Error(`Inconsistent size or shape in quantity group ${id}`)
       }
       if (existing.markupRate !== contributions.markup.value) {
         throw new Error(`Inconsistent quantity rules in group ${id}`)

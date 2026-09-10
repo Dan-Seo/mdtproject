@@ -7,9 +7,11 @@
     {
       "step": 1,
       "name": "size-in-line-key",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T17:12:22+0900",
+      "summary": "数量行・継手行の末尾に径を追加しR17を2行へ分離、旧備考の読取fallbackと編集時移行を実装。全AC・3変異検証通過。"
     },
     {
       "step": 2,

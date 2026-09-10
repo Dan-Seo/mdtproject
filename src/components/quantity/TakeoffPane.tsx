@@ -11,7 +11,7 @@ import {
 
 import type { ShearBarSize } from '@/domain/model/member'
 import type { RebarShape } from '@/domain/model/rebar'
-import { memberGroupKey, setNote, setUnitMass } from '@/domain/model/project'
+import { memberGroupKey, noteFor, setNote, setUnitMass } from '@/domain/model/project'
 import {
   grandTotal,
   isMassLine,
@@ -212,7 +212,7 @@ function isActivationKey(event: KeyboardEvent<HTMLTableRowElement>): boolean {
 }
 
 function NoteInput({ lineId }: { lineId: string }) {
-  const note = useAppStore(({ project }) => project.notes?.[lineId] ?? '')
+  const note = useAppStore(({ project }) => noteFor(project, lineId))
   const updateProject = useAppStore(({ updateProject }) => updateProject)
 
   return (
