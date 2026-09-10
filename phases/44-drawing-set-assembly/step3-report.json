@@ -601,12 +601,11 @@
     "tests/fixtures/drawing-set/expected/hirosaki.json",
     "tests/fixtures/drawing-set/expected/ina.json",
     "tests/fixtures/drawing-set/expected/kani.json",
-    "tests/fixtures/drawing-set/expected/tsu.json"
-  ],
-  "paths_expected_absent": [
+    "tests/fixtures/drawing-set/expected/tsu.json",
     "src/lib/import/drawing-set/apply.ts",
     "tests/e2e/uc24-drawing-set.js"
   ],
+  "paths_expected_absent": [],
   "report_reference_convention": "Product refs use source as an opaque PDF identifier. This report spells that field source_id to avoid treating identifiers as repository-file citations. Source identifiers and page/index values are unchanged.",
   "changed_paths": [
     "phases/44-drawing-set-assembly/step3-report.json",
@@ -1118,5 +1117,12 @@
       }
     ],
     "closure": "Reviewer independently reproduced only the two expected height conflicts (0 vs 100 and 200 vs 100); no remaining issue with the P2."
+  },
+  "step6_path_currency": {
+    "absent_at_step3_now_created": [
+      "src/lib/import/drawing-set/apply.ts",
+      "tests/e2e/uc24-drawing-set.js"
+    ],
+    "note": "Historical step3 absence was correct; step4 added apply.ts and step5 added uc24. Current path declarations updated for phase-wide citation validation; original findings unchanged."
   }
 }

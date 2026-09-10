@@ -67,9 +67,11 @@
     {
       "step": 6,
       "name": "docs-sync",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "low"
+      "reasoning_effort": "low",
+      "started_at": "2026-09-10T13:12:29+0900",
+      "summary": "Synced RISKS, MILESTONES, ADR-046 supplement and mirrored rows; documented overlap variants and live gaps; citations, byte comparison and lint pass."
     },
     {
       "step": 7,
