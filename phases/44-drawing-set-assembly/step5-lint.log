@@ -1,0 +1,9 @@
+
+> kijun@0.1.0 lint
+> eslint .
+
+
+C:\Users\emper\mdtproject-p44\src\app\api\oncall\alert\route.test.ts
+  161:23  warning  '_omitted' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)

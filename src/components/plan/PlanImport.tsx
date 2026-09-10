@@ -26,6 +26,10 @@ import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 import { t } from '@/lib/i18n'
 import { storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
+import { assembleDrawingSet } from '@/lib/import/drawing-set/reconcile'
+import { previewDrawingSetPlan, resolveDrawingSetPlan, type DrawingSetChoices } from '@/lib/import/drawing-set/plan'
+import { applyDrawingSet, type DrawingSetApplyResult } from '@/lib/import/drawing-set/apply'
+import type { Conflict, DrawingSetMembership, DrawingSetPage, Evidence, SeriesRef } from '@/lib/import/drawing-set/types'
 
 import styles from './PlanImport.module.css'
 
@@ -398,6 +402,7 @@ export function PlanImport({
 
   return (
     <div className={styles.control}>
+      <DrawingSetImport />
       <button
         type="button"
         className={styles.openButton}
@@ -636,4 +641,173 @@ export function PlanImport({
       ) : null}
     </div>
   )
+}
+
+const refKey = (r: SeriesRef) => `${r.source}#${r.pageNumber}#${r.index}`
+const samePage = (a: Evidence, b: Evidence) => a.source === b.source && a.pageNumber === b.pageNumber
+
+/** Selection state only. Reconciliation and future Story assignments live in lib. */
+function DrawingSetImport() {
+  const locale = useAppStore(s => s.locale)
+  const project = useAppStore(s => s.project)
+  const loadProject = useAppStore(s => s.loadProject)
+  const input = useRef<HTMLInputElement>(null)
+  const request = useRef(0)
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const [pages, setPages] = useState<DrawingSetPage[]>([])
+  const [membership, setMembership] = useState<DrawingSetMembership>({ excludedPages: [], excludedBlocks: [] })
+  const [reference, setReference] = useState<SeriesRef>()
+  const [top, setTop] = useState('')
+  const [bottom, setBottom] = useState('')
+  const [blockStories, setBlockStories] = useState<Record<string, number>>({})
+  const [sectionStoryLabels, setSectionStoryLabels] = useState<Record<number, string>>({})
+  const [discardMembers, setDiscardMembers] = useState(false)
+  const [result, setResult] = useState<DrawingSetApplyResult>()
+  const candidate = useMemo(() => assembleDrawingSet(pages, membership, reference), [pages, membership, reference])
+  const choices: DrawingSetChoices = {
+    reference: candidate.stories?.reference ?? { source: '', pageNumber: 0, index: 0 },
+    topLevelIndex: top === '' ? NaN : Number(top), bottomLevelIndex: bottom === '' ? NaN : Number(bottom),
+    blockStories, sectionStoryLabels, discardMembers,
+  }
+  const preview = previewDrawingSetPlan(candidate, choices)
+  const resolved = resolveDrawingSetPlan(candidate, choices)
+  const future = 'stories' in preview ? preview.stories : []
+  // Initial duplicate suggestions are replaced by the selected range's final mapping.
+  const conflicts = [
+    ...candidate.conflicts.filter(c => c.code !== '階重複ブロック'),
+    ...('duplicates' in preview ? preview.duplicates : candidate.conflicts.filter(c => c.code === '階重複ブロック')),
+  ]
+  const sectionLabels = [...new Set(project.sections.flatMap(s => s.storyLabel ? [s.storyLabel] : []))]
+  const clearResult = () => { setResult(undefined); setDiscardMembers(false) }
+  const clearChoices = () => {
+    setTop(''); setBottom(''); setBlockStories({}); setSectionStoryLabels({})
+    setResult(undefined); setDiscardMembers(false)
+  }
+  const updateMembership = (next: DrawingSetMembership) => {
+    // Re-select automatically only if the old reference is no longer included.
+    const nextCandidate = assembleDrawingSet(pages, next, candidate.stories?.reference)
+    if (!nextCandidate.stories) { setReference(undefined); clearChoices() }
+    else setReference(nextCandidate.stories.reference)
+    setMembership(next); setResult(undefined); setDiscardMembers(false)
+  }
+  const load = async (event: ChangeEvent<HTMLInputElement>) => {
+    const element = event.currentTarget
+    const files = Array.from(element.files ?? [])
+    if (!files.length) return
+    const id = ++request.current
+    setOpen(true); setLoading(true); setFailed(false); setPages([])
+    setReference(undefined); setMembership({ excludedPages: [], excludedBlocks: [] }); clearChoices()
+    try {
+      const next: DrawingSetPage[] = []
+      for (const file of files) {
+        const extracted = await extractTextPages(file)
+        if (request.current !== id) return
+        next.push(...extracted.map((page, i) => ({ source: file.name, pageNumber: i + 1, page })))
+      }
+      setPages(next)
+    } catch {
+      if (request.current === id) setFailed(true)
+    } finally {
+      if (request.current === id) { setLoading(false); element.value = '' }
+    }
+  }
+  const applySet = () => {
+    if (!('plan' in resolved) || loading) return
+    const applied = applyDrawingSet(useAppStore.getState().project, resolved.plan)
+    // Replacing the entire floor stack invalidates selection just like JSON import.
+    if (!applied.refusal) loadProject(applied.project)
+    setResult(applied)
+  }
+  const refLabel = (r: SeriesRef) => {
+    const page = candidate.pages.find(p => samePage(p, r))
+    return `${r.source} p.${r.pageNumber} · ${r.index + 1} · ${page?.elevations[r.index]?.titles.join('／') || t(locale, 'planImport.elevationUntitled')}`
+  }
+  const conflictSummary = (c: Conflict) => {
+    const location = c.evidence.map(e => `${e.source} p.${e.pageNumber}`).join(' / ')
+    if (c.code === '階高不一致') return `${location} · ${c.payload.levelA} → ${c.payload.levelB}: ${c.payload.referenceMm} / ${c.payload.seriesMm} mm · ${refLabel(c.payload.series)}`
+    if (c.code === '階未収録レベル') return `${location} · ${c.payload.level} · ${refLabel(c.payload.series)}`
+    return `${location} · ${'storyName' in c.payload ? c.payload.storyName : ''} · ${c.payload.blocks.map(r => `${r.source} p.${r.pageNumber} [${r.index + 1}]`).join(' / ')}`
+  }
+  return <>
+    <button type="button" className={styles.openButton} onClick={() => pages.length ? setOpen(true) : input.current?.click()}>{t(locale, 'drawingSet.title')}</button>
+    <input ref={input} className={styles.fileInput} type="file" multiple accept="application/pdf" data-testid="drawing-set-files" aria-label={t(locale, 'drawingSet.files')} onChange={e => void load(e)} />
+    {open && <section className={`${styles.panel} ${styles.drawingSet}`} aria-label={t(locale, 'drawingSet.title')}>
+      <header className={styles.panelHeader}><h3>{t(locale, 'drawingSet.title')}</h3><div className={styles.panelActions}>
+        <button type="button" className={styles.chooseButton} onClick={() => input.current?.click()}>{t(locale, 'drawingSet.files')}</button>
+        <button type="button" className={styles.closeButton} onClick={() => setOpen(false)}>{t(locale, 'planImport.close')}</button>
+      </div></header>
+      <div className={styles.panelBody}>
+        {loading && <p role="status">{t(locale, 'planImport.loading')}</p>}
+        {failed && <p role="alert">{t(locale, 'planImport.error')}</p>}
+        <div data-testid="drawing-set-pages" className={styles.group}>
+          {candidate.pages.map((p, i) => {
+            const included = !membership.excludedPages.some(e => samePage(e, p))
+            return <div key={`${p.source}-${p.pageNumber}-${i}`} data-testid={`drawing-set-page-${i}`} className={styles.block}>
+              <label className={styles.storyPicker}><input type="checkbox" data-testid={`drawing-set-page-include-${i}`} checked={included} onChange={e => updateMembership({ ...membership, excludedPages: e.target.checked ? membership.excludedPages.filter(x => !samePage(x, p)) : [...membership.excludedPages, { source: p.source, pageNumber: p.pageNumber }] })} />
+                {p.source} p.{p.pageNumber} · {p.roles.map(r => t(locale, `drawingSet.role.${r}`)).join(' / ') || t(locale, 'drawingSet.noRole')}
+              </label>
+              {p.blocks.map((b, j) => {
+                const r = { source: p.source, pageNumber: p.pageNumber, index: j }
+                return <label key={j} className={styles.storyPicker}><input type="checkbox" data-testid={`drawing-set-block-include-${i}-${j}`} disabled={!included} checked={!membership.excludedBlocks.some(x => refKey(x) === refKey(r))} onChange={e => updateMembership({ ...membership, excludedBlocks: e.target.checked ? membership.excludedBlocks.filter(x => refKey(x) !== refKey(r)) : [...membership.excludedBlocks, r] })} />
+                  [{j + 1}] {b.title || (b.xGrid.axes.map(a => a.label).join('·') + ' / ' + b.yGrid.axes.map(a => a.label).join('·'))}
+                </label>
+              })}
+            </div>
+          })}
+        </div>
+        <label className={styles.storyPicker}>{t(locale, 'drawingSet.reference')}
+          <select data-testid="drawing-set-reference" value={candidate.stories ? refKey(candidate.stories.reference) : ''} onChange={e => { setReference(candidate.referenceChoices.find(r => refKey(r) === e.target.value)); clearChoices() }}>
+            <option value="">{t(locale, 'planImport.storyAny')}</option>
+            {candidate.referenceChoices.map(r => <option key={refKey(r)} value={refKey(r)}>{refLabel(r)}</option>)}
+          </select>
+        </label>
+        {(['top', 'bottom'] as const).map(side => <label key={side} className={styles.storyPicker}>{t(locale, side === 'top' ? 'planImport.topLevel' : 'planImport.bottomLevel')}
+          <select data-testid={`drawing-set-level-${side}`} value={side === 'top' ? top : bottom} onChange={e => { (side === 'top' ? setTop : setBottom)(e.target.value); clearResult() }}>
+            <option value="">{t(locale, 'planImport.storyAny')}</option>
+            {candidate.stories?.levels.map((name, i) => <option key={i} value={i}>{name || t(locale, 'planImport.levelUnlabelled')} [{i}]</option>)}
+          </select>
+        </label>)}
+        {candidate.blocks.map(b => {
+          const key = refKey(b.ref)
+          const assignment = 'perStory' in preview ? preview.perStory.find(x => refKey(x.ref) === key) : undefined
+          const value = blockStories[key] ?? assignment?.levelIndex
+          return <label key={key} className={styles.storyPicker}>
+            {b.ref.source} p.{b.ref.pageNumber} · {b.block.title || t(locale, 'planImport.blockUntitled')}
+            <select data-testid={`drawing-set-block-story-${key}`} value={future.some(s => s.levelIndex === value) ? value : ''} onChange={e => { setBlockStories(current => ({ ...current, [key]: e.target.value === '' ? NaN : Number(e.target.value) })); clearResult() }}>
+              <option value="">{t(locale, 'planImport.storyAny')}</option>
+              {future.map(s => <option key={s.levelIndex} value={s.levelIndex}>{s.storyName} [{s.levelIndex}]</option>)}
+            </select>
+            {blockStories[key] === undefined && assignment && <span>{t(locale, 'drawingSet.automatic')}</span>}
+          </label>
+        })}
+        {future.map(s => <label key={s.levelIndex} className={styles.storyPicker}>{s.storyName} · {t(locale, 'planImport.sectionStory')}
+          <select data-testid={`drawing-set-section-story-${s.levelIndex}`} value={sectionStoryLabels[s.levelIndex] ?? ''} onChange={e => {
+            const value = e.target.value
+            setSectionStoryLabels(current => {
+              const next = { ...current }
+              if (value === '') delete next[s.levelIndex]
+              else next[s.levelIndex] = value
+              return next
+            })
+            clearResult()
+          }}>
+            <option value="">{t(locale, 'planImport.sectionStoryAny')}</option>
+            {sectionLabels.map(label => <option key={label} value={label}>{label}</option>)}
+          </select>
+        </label>)}
+        <ul data-testid="drawing-set-conflicts" className={styles.issues}>{conflicts.map((c, i) => <li key={i} data-testid={`drawing-set-conflict-${i}`}>
+          <strong>{t(locale, c.blocking ? 'drawingSet.blocking' : 'drawingSet.information')} · {t(locale, `drawingSet.conflict.${c.code}`)}</strong> — {conflictSummary(c)}
+        </li>)}</ul>
+        {'refusal' in resolved && <p data-testid="drawing-set-plan-refusal">{t(locale, `drawingSet.refusal.${resolved.refusal}`)}</p>}
+        {result?.refusal === '部材あり階置換不可' && <label className={styles.storyPicker}><input type="checkbox" data-testid="drawing-set-discard-members" checked={discardMembers} onChange={e => setDiscardMembers(e.target.checked)} />{t(locale, 'planImport.discardMembers')}</label>}
+        <button type="button" className={styles.applyButton} data-testid="drawing-set-apply" disabled={loading || !('plan' in resolved)} onClick={applySet}>{t(locale, 'planImport.apply')}</button>
+        {result && <div data-testid="drawing-set-result" role="status">
+          {result.refusal ? t(locale, `planImport.elevationRefusal.${result.refusal}`) : `${t(locale, 'planImport.appliedStories')}: ${result.storiesApplied}`}
+          {result.perStory.map((s, i) => <p key={i}>{s.storyName}: {'unmapped' in s ? t(locale, 'drawingSet.unmapped') : `${t(locale, 'planImport.applied')}: ${s.applied}${s.refusal ? ` / ${t(locale, `planImport.refusal.${s.refusal}`)}` : ''}${s.skipped.map(x => ` / ${x.mark}: ${t(locale, `planImport.skip.${x.reason}`)}`).join('')}`}</p>)}
+        </div>}
+      </div>
+    </section>}
+  </>
 }

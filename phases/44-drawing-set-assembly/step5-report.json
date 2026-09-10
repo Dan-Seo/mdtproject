@@ -1,0 +1,215 @@
+{
+  "baseline_commit": "173ed2253e680e89e812166951e9da3ea4ed3a98",
+  "step": 5,
+  "status": "completed",
+  "implementation": [
+    "Multiple local PDF extraction, page/block membership, reference and range selection, numeric Story assignments, section label filters, conflicts and explicit approval.",
+    "Shared plan preview supplies selectors without duplicating assembly or assignment rules in UI.",
+    "Successful application loads the new project through the existing store selection reset; refusal never mutates the project."
+  ],
+  "testids": [
+    "drawing-set-files",
+    "drawing-set-pages",
+    "drawing-set-page-{i}",
+    "drawing-set-page-include-{i}",
+    "drawing-set-block-include-{i}-{j}",
+    "drawing-set-reference",
+    "drawing-set-level-top",
+    "drawing-set-level-bottom",
+    "drawing-set-block-story-{key}",
+    "drawing-set-section-story-{levelIndex}",
+    "drawing-set-conflicts",
+    "drawing-set-conflict-{i}",
+    "drawing-set-apply",
+    "drawing-set-plan-refusal",
+    "drawing-set-discard-members",
+    "drawing-set-result"
+  ],
+  "locale_keys": {
+    "ja": [
+      "drawingSet.title",
+      "drawingSet.files",
+      "drawingSet.reference",
+      "drawingSet.noRole",
+      "drawingSet.automatic",
+      "drawingSet.blocking",
+      "drawingSet.information",
+      "drawingSet.unmapped",
+      "drawingSet.conflict.通り芯不一致",
+      "drawingSet.conflict.階高不一致",
+      "drawingSet.conflict.階未収録レベル",
+      "drawingSet.conflict.階重複ブロック",
+      "drawingSet.refusal.基準不一致",
+      "drawingSet.refusal.通り芯未確定",
+      "drawingSet.refusal.階未確定",
+      "drawingSet.refusal.未解決の矛盾",
+      "drawingSet.refusal.階未対応ブロック",
+      "drawingSet.refusal.階範囲不正",
+      "drawingSet.role.断面リスト",
+      "drawingSet.role.伏図",
+      "drawingSet.role.軸組図"
+    ],
+    "ko": [
+      "drawingSet.title",
+      "drawingSet.files",
+      "drawingSet.reference",
+      "drawingSet.noRole",
+      "drawingSet.automatic",
+      "drawingSet.blocking",
+      "drawingSet.information",
+      "drawingSet.unmapped",
+      "drawingSet.conflict.通り芯不一致",
+      "drawingSet.conflict.階高不一致",
+      "drawingSet.conflict.階未収録レベル",
+      "drawingSet.conflict.階重複ブロック",
+      "drawingSet.refusal.基準不一致",
+      "drawingSet.refusal.通り芯未確定",
+      "drawingSet.refusal.階未確定",
+      "drawingSet.refusal.未解決の矛盾",
+      "drawingSet.refusal.階未対応ブロック",
+      "drawingSet.refusal.階範囲不正",
+      "drawingSet.role.断面リスト",
+      "drawingSet.role.伏図",
+      "drawingSet.role.軸組図"
+    ]
+  },
+  "validation": {
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "note": "Existing route.test.ts unused _omitted warning only."
+    },
+    "types": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "tests": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "files": 104,
+      "tests": 1879
+    },
+    "targeted": {
+      "tests": 15,
+      "component_tests": 5,
+      "existing_plan_tests": 10,
+      "exit_code": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "domain_and_fixtures_changed": false,
+    "citations": {
+      "command": "python scripts/check-citations.py phases/44-drawing-set-assembly/step5-report.json",
+      "exit_code": 0
+    }
+  },
+  "e2e": {
+    "command": "npx dev-browser --browser kijun --timeout 120 run tests/e2e/uc24-drawing-set.js",
+    "exit_code": 0,
+    "phase1_conflict_seen": true,
+    "phase2_spans": [
+      5850,
+      5150,
+      7175,
+      3825
+    ],
+    "checks": {
+      "fullPdfHasThirtyPages": true,
+      "fullPdfReportsGridConflict": true,
+      "referenceUsesSourcePageIndex": true,
+      "rangeUsesNumericLevelIndexes": true,
+      "p20BlockStoryUsesSourcePageIndexKey": true,
+      "p20BlockHasAutomaticStory": true,
+      "applyIsReadyAfterMembershipAndRange": true,
+      "discardIsNotShownBeforeRefusal": true,
+      "discardIsShownOnlyAfterMemberRefusal": true,
+      "appliedXSpansMatchTsuGolden": true
+    },
+    "selected_pages": [
+      16,
+      20,
+      21,
+      22
+    ],
+    "excluded_block": "page 16 block 0 (pile plan has no matching Story key)",
+    "created_stories": 5
+  },
+  "build_order_respected": true,
+  "build_order_scope": "Final clean validation: no port 3000 listener, fresh build exit 0, start own dev server, uc24 exit 0, terminate own dev and stop dev-browser. Port 3000 has no listener after cleanup.",
+  "earlier_build_order_incident": "An earlier rebuild overlapped surviving Next child processes after their Bash wrapper was stopped and failed with missing chunk 823.js. Verified and stopped only this step Next/npm PIDs, moved .next into ignored .cache/step5-next-stale after recursive deletion was denied, then performed the final clean sequence. The earlier attempt did not respect the required order; build_order_respected describes the recovered final sequence only.",
+  "red_green_evidence": [
+    "Initial UI tests failed before implementation.",
+    "Active Story regression failed before using loadProject.",
+    "Changing range after prior discard consent failed before revoking consent.",
+    "Clearing a section filter failed before deleting the override instead of retaining an empty filter."
+  ],
+  "review": {
+    "worker": "Herdr gpt-5.6-terra medium, uc24 and README only",
+    "reviewer": "Herdr gpt-6-astra max (review-max)",
+    "findings_fixed": [
+      "Empty section filter excluded all marks.",
+      "Hidden discard consent survived range edits."
+    ],
+    "final_verdict": "Clear: no remaining actionable Step 5 findings. CSS containment is scoped appropriately. Subsequent final build and uc24 both passed.",
+    "temporary_panes_closed": true
+  },
+  "limits": [
+    "Real PDF e2e uses existing sample sections: 6 matching members are imported and 49 unmatched placements are skipped by existing apply semantics. It verifies approval, grid and Story application, not complete building quantities; partial support coverage can leave quantity/3D errors. No domain behavior or fixture was changed."
+  ],
+  "changed_paths": [
+    "src/components/plan/PlanImport.tsx",
+    "src/components/plan/PlanImport.module.css",
+    "src/components/plan/PlanImport.drawing-set.test.tsx",
+    "src/lib/import/drawing-set/plan.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/e2e/uc24-drawing-set.js",
+    "tests/e2e/README.md",
+    "phases/44-drawing-set-assembly/index.json",
+    "phases/44-drawing-set-assembly/step5-report.json",
+    "phases/44-drawing-set-assembly/step5-build.log",
+    "phases/44-drawing-set-assembly/step5-consent-red.log",
+    "phases/44-drawing-set-assembly/step5-dev-error.log",
+    "phases/44-drawing-set-assembly/step5-dev.log",
+    "phases/44-drawing-set-assembly/step5-e2e.log",
+    "phases/44-drawing-set-assembly/step5-filter-red.log",
+    "phases/44-drawing-set-assembly/step5-full-tests.log",
+    "phases/44-drawing-set-assembly/step5-lint.log",
+    "phases/44-drawing-set-assembly/step5-red.log",
+    "phases/44-drawing-set-assembly/step5-selection-red.log",
+    "phases/44-drawing-set-assembly/step5-targeted.log",
+    "phases/44-drawing-set-assembly/step5-types.log"
+  ],
+  "paths_verified": [
+    "src/components/plan/PlanImport.tsx",
+    "src/components/plan/PlanImport.module.css",
+    "src/components/plan/PlanImport.drawing-set.test.tsx",
+    "src/lib/import/drawing-set/plan.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "tests/e2e/uc24-drawing-set.js",
+    "tests/e2e/README.md",
+    "phases/44-drawing-set-assembly/step5-build.log",
+    "phases/44-drawing-set-assembly/step5-consent-red.log",
+    "phases/44-drawing-set-assembly/step5-dev-error.log",
+    "phases/44-drawing-set-assembly/step5-dev.log",
+    "phases/44-drawing-set-assembly/step5-e2e.log",
+    "phases/44-drawing-set-assembly/step5-filter-red.log",
+    "phases/44-drawing-set-assembly/step5-full-tests.log",
+    "phases/44-drawing-set-assembly/step5-lint.log",
+    "phases/44-drawing-set-assembly/step5-red.log",
+    "phases/44-drawing-set-assembly/step5-selection-red.log",
+    "phases/44-drawing-set-assembly/step5-targeted.log",
+    "phases/44-drawing-set-assembly/step5-types.log",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "phases/44-drawing-set-assembly/index.json"
+  ],
+  "paths_expected_absent": [],
+  "log_format": "Committed command logs retain output content with trailing whitespace and final blank lines normalized."
+}

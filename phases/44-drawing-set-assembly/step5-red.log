@@ -1,0 +1,94 @@
+
+ RUN  v4.1.10 C:/Users/emper/mdtproject-p44
+
+ ❯ |ui| src/components/plan/PlanImport.drawing-set.test.tsx (2 tests | 2 failed) 31ms
+   × shows four roles and reference choices, composes only after explicit discard consent 26ms
+   × exposes conflicting pages, allows exclusion, and clears choices on reference change 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |ui| src/components/plan/PlanImport.drawing-set.test.tsx > shows four roles and reference choices, composes only after explicit discard consent
+TestingLibraryElementError: Unable to find an element by: [data-testid="drawing-set-files"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_control_788ac1"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"_openButton_788ac1"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0m伏図を取り込み[0m
+      [36m</button>[39m
+      [36m<input[39m
+        [33maccept[39m=[32m"application/pdf"[39m
+        [33maria-label[39m=[32m"伏図・軸組図のPDF"[39m
+        [33mclass[39m=[32m"_fileInput_788ac1"[39m
+        [33mdata-testid[39m=[32m"plan-import-file"[39m
+        [33mtype[39m=[32m"file"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../mdtproject/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ load src/components/plan/PlanImport.drawing-set.test.tsx:27:27
+     25|   vi.mocked(extractTextPages).mockResolvedValue([...pages, ...(extra ?…
+     26|   render(<PlanImport />)
+     27|   fireEvent.change(screen.getByTestId('drawing-set-files'), { target: …
+       |                           ^
+     28|   await waitFor(() => expect(screen.getByTestId('drawing-set-page-3'))…
+     29|   const pile = [...screen.getByTestId('drawing-set-page-0').querySelec…
+ ❯ src/components/plan/PlanImport.drawing-set.test.tsx:36:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |ui| src/components/plan/PlanImport.drawing-set.test.tsx > exposes conflicting pages, allows exclusion, and clears choices on reference change
+TestingLibraryElementError: Unable to find an element by: [data-testid="drawing-set-files"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_control_788ac1"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"_openButton_788ac1"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0m伏図を取り込み[0m
+      [36m</button>[39m
+      [36m<input[39m
+        [33maccept[39m=[32m"application/pdf"[39m
+        [33maria-label[39m=[32m"伏図・軸組図のPDF"[39m
+        [33mclass[39m=[32m"_fileInput_788ac1"[39m
+        [33mdata-testid[39m=[32m"plan-import-file"[39m
+        [33mtype[39m=[32m"file"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../mdtproject/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../mdtproject/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ load src/components/plan/PlanImport.drawing-set.test.tsx:27:27
+     25|   vi.mocked(extractTextPages).mockResolvedValue([...pages, ...(extra ?…
+     26|   render(<PlanImport />)
+     27|   fireEvent.change(screen.getByTestId('drawing-set-files'), { target: …
+       |                           ^
+     28|   await waitFor(() => expect(screen.getByTestId('drawing-set-page-3'))…
+     29|   const pile = [...screen.getByTestId('drawing-set-page-0').querySelec…
+ ❯ src/components/plan/PlanImport.drawing-set.test.tsx:55:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  12:47:56
+   Duration  1.87s (transform 582ms, setup 202ms, import 683ms, tests 31ms, environment 796ms)

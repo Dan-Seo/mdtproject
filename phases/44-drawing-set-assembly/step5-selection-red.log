@@ -1,0 +1,32 @@
+
+ RUN  v4.1.10 C:/Users/emper/mdtproject-p44
+
+ ❯ |ui| src/components/plan/PlanImport.drawing-set.test.tsx (3 tests | 1 failed) 299ms
+   × shows four roles and reference choices, composes only after explicit discard consent 156ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |ui| src/components/plan/PlanImport.drawing-set.test.tsx > shows four roles and reference choices, composes only after explicit discard consent
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/plan/PlanImport.drawing-set.test.tsx:53:73
+     51|   expect(useAppStore.getState().project).toEqual(applyDrawingSet(befor…
+     52|   const state = useAppStore.getState()
+     53|   expect(state.project.stories.some(s => s.id === state.activeStoryId)…
+       |                                                                         ^
+     54|   expect(state.hoverRowId).toBeNull()
+     55|   expect(screen.getByTestId('drawing-set-result').textContent).toConta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  12:59:15
+   Duration  1.94s (transform 469ms, setup 176ms, import 543ms, tests 299ms, environment 770ms)

@@ -23,8 +23,10 @@ export interface DrawingSetPlan {
   conflicts: Conflict[]
 }
 
-export function resolveDrawingSetPlan(candidate: DrawingSetCandidate, choices: DrawingSetChoices): { plan: DrawingSetPlan } | { refusal: PlanRefusal; detail: unknown } {
-  if (!candidate.grid) return { refusal: '通り芯未確定', detail: null }
+/** Shared range/assignment preview for selectors, including unresolved blocks. */
+export function previewDrawingSetPlan(candidate: DrawingSetCandidate, choices: DrawingSetChoices):
+  | { refusal: PlanRefusal; detail: unknown }
+  | { elevation: ElevationApplyOptions; stories: DrawingSetPlan['stories']; perStory: DrawingSetPlan['perStory']; unmatched: BlockRef[]; duplicates: Conflict[]; invalidAssignments: Array<{ block: BlockRef; levelIndex: number }> } {
   if (!candidate.stories) return { refusal: '階未確定', detail: null }
   const reference = candidate.stories.reference
   // SeriesRef is a flat value object; property order does not affect identity.
@@ -44,6 +46,7 @@ export function resolveDrawingSetPlan(candidate: DrawingSetCandidate, choices: D
   const stories = future.project.stories.map((s, i) => ({ levelIndex: choices.bottomLevelIndex - i, storyName: s.name }))
   const perStory: DrawingSetPlan['perStory'] = []
   const unmatched: BlockRef[] = []
+  const invalidAssignments: Array<{ block: BlockRef; levelIndex: number }> = []
   for (const b of candidate.blocks) {
     const label = b.block.title === undefined ? undefined : storyLabelFromTitle(b.block.title)
     const key = label === undefined ? undefined : storyKey(label)
@@ -53,12 +56,11 @@ export function resolveDrawingSetPlan(candidate: DrawingSetCandidate, choices: D
     if (choices.blockStories && Object.prototype.hasOwnProperty.call(choices.blockStories, blockKey)) {
       const levelIndex = choices.blockStories[blockKey]
       story = stories.find(s => s.levelIndex === levelIndex)
-      if (!story) return { refusal: '階範囲不正', detail: { block: b.ref, levelIndex } }
+      if (!story) invalidAssignments.push({ block: b.ref, levelIndex })
     }
     if (!story) unmatched.push(b.ref)
     else perStory.push({ ...story, block: b.block, ref: b.ref, ...(choices.sectionStoryLabels?.[story.levelIndex] === undefined ? {} : { sectionStoryLabel: choices.sectionStoryLabels[story.levelIndex] }) })
   }
-  if (unmatched.length) return { refusal: '階未対応ブロック', detail: { blocks: unmatched } }
   const duplicates: Conflict[] = []
   for (const story of stories) {
     const group = perStory.filter(b => b.levelIndex === story.levelIndex)
@@ -67,6 +69,16 @@ export function resolveDrawingSetPlan(candidate: DrawingSetCandidate, choices: D
       return out
     }, []), payload: { ...story, blocks: group.map(b => b.ref) } })
   }
+  return { elevation, stories, perStory, unmatched, duplicates, invalidAssignments }
+}
+
+export function resolveDrawingSetPlan(candidate: DrawingSetCandidate, choices: DrawingSetChoices): { plan: DrawingSetPlan } | { refusal: PlanRefusal; detail: unknown } {
+  if (!candidate.grid) return { refusal: '通り芯未確定', detail: null }
+  const preview = previewDrawingSetPlan(candidate, choices)
+  if ('refusal' in preview) return preview
+  const { elevation, stories, perStory, unmatched, duplicates, invalidAssignments } = preview
+  if (invalidAssignments.length) return { refusal: '階範囲不正', detail: invalidAssignments[0] }
+  if (unmatched.length) return { refusal: '階未対応ブロック', detail: { blocks: unmatched } }
   if (duplicates.length) return { refusal: '未解決の矛盾', detail: { conflicts: duplicates } }
   const gridConflicts = candidate.conflicts.filter(c => c.code === '通り芯不一致')
   if (gridConflicts.length) return { refusal: '未解決の矛盾', detail: { conflicts: gridConflicts } }

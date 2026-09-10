@@ -57,9 +57,11 @@
     {
       "step": 5,
       "name": "set-import-ui",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T12:45:40+0900",
+      "summary": "Added local drawing-set UI with explicit approval, membership and Story controls; 5 component tests and uc24 pass, 1879 full tests/lint/tsc/build pass; max-review findings fixed."
     },
     {
       "step": 6,

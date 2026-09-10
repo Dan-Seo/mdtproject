@@ -1,0 +1,37 @@
+
+> kijun@0.1.0 prebuild
+> node scripts/copy-pdfjs-assets.mjs
+
+
+> kijun@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.23
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 7.1s
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6)
+   Generating static pages (2/6)
+   Generating static pages (4/6)
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                     113 kB         217 kB
+├ ○ /_not-found                            991 B         105 kB
+├ ƒ /api/oncall/alert                      122 B         104 kB
+└ ○ /icon.svg                                0 B            0 B
++ First Load JS shared by all             104 kB
+  ├ chunks/685-22f227449e53cf43.js       45.9 kB
+  ├ chunks/8596ad3c-bcc0e57245a4952e.js  54.2 kB
+  └ other shared chunks (total)          3.88 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
