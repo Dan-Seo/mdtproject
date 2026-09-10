@@ -60,18 +60,6 @@ describe('drawing-set plan and apply', () => {
       for (const b of p.perStory.filter(b => b.levelIndex === levelIndex)) manual = applyFramingPlan(manual, { block: b.block, storyId: created[i].id, sectionStoryLabel: ch.sectionStoryLabels?.[levelIndex], discardOtherStories: false }).project
     }
     expect(result.project).toEqual(manual)
-    const takeoff = buildTakeoff(result.project)
-    const imported = result.project.members.filter(m => m.kind === '大梁')
-    expect(result.project.members.some(m => m.kind === '柱')).toBe(false)
-    expect(imported).toHaveLength(6)
-    expect(takeoff.unsupportedMembers).toEqual(imported.map(m => ({
-      memberId: m.id,
-      mark: result.project.sections.find(s => s.id === m.sectionId)!.mark,
-      storyName: '2FL',
-      reason: '支持柱なし',
-    })))
-    const otherStories = { ...result.project, members: result.project.members.filter(m => !imported.some(g => g.id === m.id)) }
-    expect(takeoff.lines.filter(line => line.storyName !== '2FL')).toEqual(buildTakeoff(otherStories).lines)
     expect(result.storiesApplied).toBe(5)
     expect(p.perStory).toHaveLength(1)
     expect(result.project.members.length).toBeGreaterThanOrEqual(1)
@@ -81,6 +69,24 @@ describe('drawing-set plan and apply', () => {
     expect(resolveDrawingSetPlan(c, ch)).toEqual({ plan: p })
     expect({ c, ch, project, p }).toEqual(before)
     console.log(JSON.stringify({ equivalence: { set: 'tsu', stories: result.storiesApplied, blocks: p.perStory.length, equal: true }, members_created: result.project.members.length }))
+  })
+  it('takes off a tsu set applied with only the sample sections without throwing: six 2FL girders are unsupported for lack of support columns', () => {
+    // Browser scenario (phase 44 verification): real drawings are always partial imports because most marks have no registered section.
+    // The sample project registers C1/G1/G2/W1/S1 only, so the tsu 2FL block yields girders and no columns.
+    const c = tsu(); const result = applyDrawingSet(createSampleProject(), plan(c))
+    expect(result.refusal).toBeUndefined()
+    const imported = result.project.members.filter(m => m.kind === '大梁')
+    expect(result.project.members.some(m => m.kind === '柱')).toBe(false)
+    expect(imported).toHaveLength(6)
+    const takeoff = buildTakeoff(result.project)
+    expect(takeoff.unsupportedMembers).toEqual(imported.map(m => ({
+      memberId: m.id,
+      mark: result.project.sections.find(s => s.id === m.sectionId)!.mark,
+      storyName: '2FL',
+      reason: '支持柱なし',
+    })))
+    const otherStories = { ...result.project, members: result.project.members.filter(m => !imported.some(g => g.id === m.id)) }
+    expect(takeoff.lines.filter(line => line.storyName !== '2FL')).toEqual(buildTakeoff(otherStories).lines)
   })
   it('propagates elevation refusal with the original project reference', () => {
     const c = synthetic(); const project = createSampleProject()

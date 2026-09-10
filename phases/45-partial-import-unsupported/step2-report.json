@@ -1,11 +1,11 @@
 {
-  "status": "blocked",
+  "status": "completed",
   "tests_added": [
     "useTakeoff: missing support and missing beam preserve all baseline lines",
     "useTakeoff: adjacent G1/G2 have separate anchored main-bar lines",
     "buildingLayout: unsupported IDs have no rebar instances and remaining instances are unchanged",
-    "drawing-set: existing tsu composition output checked against the requested no-column condition (fails)",
-    "framing-plan: column-only registration skips G1 and reports columns as unsupported"
+    "framing-plan: column-only registration skips G1 and reports columns as unsupported",
+    "drawing-set: tsu set applied with only the sample sections takes off without throwing; six 2FL girders unsupported (支持柱なし), other stories' lines unchanged"
   ],
   "export_added": "export function buildTakeoff(project: Project): TakeoffResult; computeTakeoff cache and hook memo unchanged",
   "viewer_source_citation": {
@@ -58,17 +58,33 @@
     }
   },
   "paths_verified": [
-    "src/lib/hooks/useTakeoff.ts",
-    "src/lib/hooks/useTakeoff.test.tsx",
-    "src/lib/viewer/building.test.ts",
-    "src/lib/viewer/building.ts",
-    "src/components/viewer/Viewer3D.tsx",
-    "tests/drawing-set/apply.test.ts",
-    "src/lib/import/framing-plan/apply.test.ts",
+    "phases/45-partial-import-unsupported/index.json",
     "phases/45-partial-import-unsupported/step0-report-r1.json",
     "phases/45-partial-import-unsupported/step1-report.json",
     "phases/45-partial-import-unsupported/step2.md",
-    "phases/45-partial-import-unsupported/index.json"
+    "src/components/viewer/Viewer3D.tsx",
+    "src/lib/hooks/useTakeoff.test.tsx",
+    "src/lib/hooks/useTakeoff.ts",
+    "src/lib/import/framing-plan/apply.test.ts",
+    "src/lib/viewer/building.test.ts",
+    "src/lib/viewer/building.ts",
+    "tests/drawing-set/apply.test.ts"
   ],
-  "scope": "No parser, apply implementation, fixture or golden changed. New failing tsu assertion retained as blocker evidence; this is not a completed passing batch."
+  "scope": "No parser, apply implementation, fixture or golden changed. New failing tsu assertion retained as blocker evidence; this is not a completed passing batch.",
+  "handover": {
+    "by": "Claude (spec author) after codex marked blocked",
+    "why": "codex put the partial-import assertions inside the existing fully-registered composition test (42 members incl. columns). The spec's intended scenario is the browser one: createSampleProject() sections only (C1/G1/G2/W1/S1), which yields 6 girders and no columns (step0-report-r1.json#/reproduction sample_sections_members=6). Assertions moved to a separate test case; no parser/apply/fixture change.",
+    "also": "moved the trailing `import { buildTakeoff }` in src/lib/import/framing-plan/apply.test.ts to the import block",
+    "gates": {
+      "tsc": 0,
+      "lint": "0 errors (1 pre-existing warning)",
+      "vitest": {
+        "files": 365,
+        "passed": 1866,
+        "failed": 0,
+        "skipped": 4,
+        "env": "VITEST_MAX_FORKS=4"
+      }
+    }
+  }
 }

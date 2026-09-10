@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Section } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
 import { createSampleProject } from '@/domain/model/sample-project'
+import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 
 import type { TextItem } from '../types'
 import type { TextPage } from '../section-list/types'
@@ -744,4 +745,3 @@ describe('applyElevation', () => {
     expect(result.project.stories).toHaveLength(2)
   })
 })
-import { buildTakeoff } from '@/lib/hooks/useTakeoff'
