@@ -11,7 +11,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T15:50:57+0900",
-      "summary": "Round 5 upheld: import-reachable support/beam/mixed-section errors confirmed; quantity-ID notes justify deferring aggregate collision, while stirrup float comparison is assigned to step 1; inherited B2-B6/B8 and citation checks retained."
+      "summary": "Round 5 upheld: import-reachable support/beam/mixed-section errors confirmed; quantity-ID notes justify deferring aggregate collision, while stirrup float comparison is assigned to step 1; inherited B2-B6/B8 and citation checks retained.",
+      "completed_at": "2026-09-10T15:53:07+0900"
     },
     {
       "step": 1,
