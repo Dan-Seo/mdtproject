@@ -231,7 +231,7 @@
     },
     {
       "dir": "45-partial-import-unsupported",
-      "status": "pending"
+      "status": "completed"
     }
   ]
 }
