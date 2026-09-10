@@ -1,0 +1,59 @@
+import { writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { expect, it } from 'vitest'
+import { createSampleProject } from '@/domain/model/sample-project'
+import { deserializeProject, girderRun, beamDepthAbove } from '@/domain/model/project'
+import { MemberUnsupportedError } from '@/domain/model/unsupported'
+import { applyFramingPlan } from '@/lib/import/framing-plan/apply'
+import type { PlanBlock } from '@/lib/import/framing-plan/types'
+// The temporary Vite transform exports the existing function without editing src.
+// @ts-expect-error verification-only in-memory export
+import { buildTakeoff } from '@/lib/hooks/useTakeoff'
+
+it('B1: accepted imports with repeated story names reach quantity size collision', () => {
+  const sample = createSampleProject()
+  sample.members = []
+  sample.stories = sample.stories.map(s => ({ ...s, name: '1FL', height: 4200 }))
+  const column = sample.sections.find(s => s.kind === '柱')!
+  if (column.kind !== '柱') throw new Error('column fixture required')
+  const girder = sample.sections.find(s => s.kind === '大梁')!
+  sample.sections = [
+    { ...column, id: 'column-a', storyLabel: 'a', hoop: { ...column.hoop, size: 'D10' } },
+    { ...column, id: 'column-b', storyLabel: 'b', hoop: { ...column.hoop, size: 'D13' } },
+    girder,
+  ]
+  expect(deserializeProject(JSON.stringify(sample))).toEqual(sample)
+  const axis = (direction: 'X' | 'Y') => ({ direction,
+    axes: [{ label: `${direction}1`, positionPt: 0 }, { label: `${direction}2`, positionPt: 100 }],
+    spansMm: [6000], scalePtPerMm: 1 / 60, totalConfirmed: false })
+  const block: PlanBlock = { xGrid: axis('X'), yGrid: axis('Y'), unplacedMarks: [], placements: [
+    { mark: column.mark, role: '格子点', ix: 0, iy: 0 },
+    { mark: column.mark, role: '格子点', ix: 1, iy: 0 },
+    { mark: girder.mark, role: '辺', ix: 0, iy: 0, axis: 'X' },
+  ] }
+  let project = sample
+  for (const [i, story] of sample.stories.entries()) {
+    const result = applyFramingPlan(project, { block, storyId: story.id, sectionStoryLabel: i === 0 ? 'a' : 'b' })
+    expect(result.refusal).toBeUndefined()
+    expect(result.skipped).toEqual([])
+    expect(result.applied).toBe(3)
+    project = result.project
+  }
+  expect(deserializeProject(JSON.stringify(project))).toEqual(project)
+  for (const story of project.stories) {
+    expect(() => buildTakeoff({ ...project, members: project.members.filter(m => m.storyId === story.id) })).not.toThrow()
+  }
+  for (const member of project.members) {
+    if (member.kind === '柱') expect(beamDepthAbove(project, member)).toBeGreaterThan(0)
+    if (member.kind === '大梁') expect(girderRun(project, member).members).toHaveLength(1)
+  }
+  let caught: unknown
+  try { buildTakeoff(project) } catch (error) { caught = error }
+  expect(caught).toBeInstanceOf(Error)
+  expect(caught).not.toBeInstanceOf(MemberUnsupportedError)
+  expect((caught as Error).constructor).toBe(Error)
+  expect((caught as Error).message).toContain('Inconsistent size or shape in quantity group')
+  expect((caught as Error).stack).toContain('aggregateQuantity')
+  writeFileSync(join(tmpdir(), 'kijun-p45-b1-counterexample.json'), JSON.stringify({ project, error: (caught as Error).message, stack: (caught as Error).stack }, null, 2))
+})
