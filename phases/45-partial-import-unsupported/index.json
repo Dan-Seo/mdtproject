@@ -21,7 +21,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
       "started_at": "2026-09-10T15:53:07+0900",
-      "summary": "Missing supports are member-level unsupported; girder runs require identical sections; stirrup floating-point gaps tolerate numerical noise. 1861 tests passed, 4 skipped; four mutations killed, types/lint/citations passed."
+      "summary": "Missing supports are member-level unsupported; girder runs require identical sections; stirrup floating-point gaps tolerate numerical noise. 1861 tests passed, 4 skipped; four mutations killed, types/lint/citations passed.",
+      "completed_at": "2026-09-10T16:01:37+0900"
     },
     {
       "step": 2,
@@ -33,24 +34,27 @@
     {
       "step": 3,
       "name": "e2e-panes-alive",
-      "status": "pending",
+      "status": "deferred",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "summary": "codex weekly quota conservation (2026-09-10): executed by the Claude session outside the harness"
     },
     {
       "step": 4,
       "name": "docs-sync",
-      "status": "pending",
+      "status": "deferred",
       "model": "gpt-6-astra",
-      "reasoning_effort": "low"
+      "reasoning_effort": "low",
+      "summary": "codex weekly quota conservation (2026-09-10): executed by the Claude session outside the harness"
     },
     {
       "step": 5,
       "name": "refute-phase",
       "kind": "verify",
-      "status": "pending",
+      "status": "deferred",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "summary": "codex weekly quota conservation (2026-09-10): executed by the Claude session outside the harness"
     }
   ],
   "created_at": "2026-09-10T15:50:57+0900"

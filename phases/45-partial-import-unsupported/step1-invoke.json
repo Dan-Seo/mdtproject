@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "name": "unsupported-support",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 510.02071620000015,
+  "stdout_log": "phases\\45-partial-import-unsupported\\step1-codex.stdout.log",
+  "stderr_log": "phases\\45-partial-import-unsupported\\step1-codex.stderr.log"
+}
