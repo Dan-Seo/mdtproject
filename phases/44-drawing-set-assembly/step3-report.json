@@ -1,0 +1,1122 @@
+{
+  "baseline_commit": "a05c627c5ea0126e4b382ce3b9a8f34922e2547f",
+  "baseline_status": [
+    " M phases/44-drawing-set-assembly/index.json",
+    "?? phases/44-drawing-set-assembly/step3-codex.stderr.log",
+    "?? phases/44-drawing-set-assembly/step3-codex.stdout.log"
+  ],
+  "baseline_hashes": {
+    "phases/44-drawing-set-assembly/index.json": "1be43d5073ec447d1d4a6aa9acbd2059e3791b126b3402151f8c8382597d89be",
+    "phases/44-drawing-set-assembly/step3-codex.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phases/44-drawing-set-assembly/step3-codex.stdout.log": "5f7f9ba324132263485ac86708f5b5b17ea22e77b60a6b4347475d3e28fee5e8"
+  },
+  "sets": [
+    {
+      "set": "yokohama",
+      "grid": {
+        "xLabels": [
+          "bX1",
+          "bX2",
+          "bX3",
+          "cX1"
+        ],
+        "xSpansMm": [
+          8700,
+          8700,
+          1200
+        ],
+        "yLabels": [
+          "bY6",
+          "bY5",
+          "bY4",
+          "bY3",
+          "bY2",
+          "bY1"
+        ],
+        "ySpansMm": [
+          5000,
+          6000,
+          10000,
+          6000,
+          5000
+        ],
+        "evidence": [
+          {
+            "source_id": "dwg-yokohama.pdf",
+            "pageNumber": 6
+          },
+          {
+            "source_id": "dwg-yokohama.pdf",
+            "pageNumber": 7
+          }
+        ]
+      },
+      "stories": {
+        "levels": [
+          "",
+          "中央棟RCL(水下)",
+          "2FL",
+          "中央棟1FL／基準GL",
+          "基礎下端"
+        ],
+        "heightsMm": [
+          1400,
+          4100,
+          4480,
+          2690
+        ]
+      },
+      "reference": {
+        "source_id": "dwg-yokohama.pdf",
+        "pageNumber": 8,
+        "index": 0
+      },
+      "conflicts": [
+        {
+          "code": "階高不一致",
+          "blocking": false,
+          "evidence": [
+            {
+              "source_id": "dwg-yokohama.pdf",
+              "pageNumber": 8
+            },
+            {
+              "source_id": "dwg-yokohama.pdf",
+              "pageNumber": 9
+            }
+          ],
+          "payload": {
+            "reference": {
+              "source_id": "dwg-yokohama.pdf",
+              "pageNumber": 8,
+              "index": 0
+            },
+            "series": {
+              "source_id": "dwg-yokohama.pdf",
+              "pageNumber": 9,
+              "index": 0
+            },
+            "levelA": "中央棟1FL／基準GL",
+            "levelB": "基礎下端",
+            "referenceMm": 2690,
+            "seriesMm": 2490
+          }
+        }
+      ],
+      "known_gaps_confirmed": 2,
+      "unsure_excluded": [
+        "stories.levels[0]",
+        "stories.levels[2]",
+        "grid.xLabels",
+        "grid.xSpansMm[2]",
+        "pages[4].listKinds[1]",
+        "unmatchedBlocks"
+      ]
+    },
+    {
+      "set": "hirosaki",
+      "grid": {
+        "xLabels": [
+          "X1",
+          "X2",
+          "X3",
+          "X4",
+          "X5",
+          "X6",
+          "X7",
+          "X8",
+          "X9",
+          "X10",
+          "X11",
+          "X12"
+        ],
+        "xSpansMm": [
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000
+        ],
+        "yLabels": [
+          "Y10",
+          "Y9",
+          "Y8",
+          "Y7",
+          "Y6",
+          "Y5",
+          "Y4",
+          "Y3",
+          "Y2",
+          "Y1"
+        ],
+        "ySpansMm": [
+          8000,
+          8000,
+          8000,
+          11000,
+          8000,
+          8000,
+          8000,
+          8000,
+          8000
+        ],
+        "evidence": [
+          {
+            "source_id": "dwg-hirosaki-kikyono.pdf",
+            "pageNumber": 21
+          }
+        ]
+      },
+      "stories": {
+        "levels": [
+          "RFL",
+          "PHFL",
+          "3FL",
+          "2FL",
+          "1FL",
+          "設計GL",
+          "基礎下端"
+        ],
+        "heightsMm": [
+          3400,
+          4000,
+          4000,
+          4500,
+          100,
+          2310
+        ]
+      },
+      "reference": {
+        "source_id": "dwg-hirosaki-kikyono.pdf",
+        "pageNumber": 25,
+        "index": 0
+      },
+      "conflicts": [],
+      "known_gaps_confirmed": 1,
+      "unsure_excluded": [
+        "stories.levels[0]",
+        "stories.levels[5]"
+      ]
+    },
+    {
+      "set": "ina",
+      "grid": {
+        "xLabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "xSpansMm": [
+          4050,
+          4050
+        ],
+        "yLabels": [
+          "B",
+          "A"
+        ],
+        "ySpansMm": [
+          6400
+        ],
+        "evidence": [
+          {
+            "source_id": "dwg-ina-pump.pdf",
+            "pageNumber": 6
+          },
+          {
+            "source_id": "dwg-ina-pump.pdf",
+            "pageNumber": 7
+          }
+        ]
+      },
+      "stories": {
+        "levels": [
+          "",
+          "GL+756.50",
+          "1FL+755.30",
+          ""
+        ],
+        "heightsMm": [
+          3300,
+          1400,
+          800
+        ]
+      },
+      "reference": {
+        "source_id": "dwg-ina-pump.pdf",
+        "pageNumber": 6,
+        "index": 0
+      },
+      "conflicts": [],
+      "known_gaps_confirmed": 6,
+      "unsure_excluded": [
+        "stories",
+        "storiesReference.titles",
+        "blockToStory"
+      ]
+    },
+    {
+      "set": "kani",
+      "grid": {
+        "xLabels": [
+          "X1",
+          "X2",
+          "X3",
+          "X4"
+        ],
+        "xSpansMm": [
+          6000,
+          6000,
+          8000
+        ],
+        "yLabels": [
+          "Y3",
+          "Y2",
+          "Y1"
+        ],
+        "ySpansMm": [
+          6000,
+          10500
+        ],
+        "evidence": [
+          {
+            "source_id": "dwg-kani-kids.pdf",
+            "pageNumber": 38
+          },
+          {
+            "source_id": "dwg-kani-kids.pdf",
+            "pageNumber": 39
+          }
+        ]
+      },
+      "stories": null,
+      "reference": null,
+      "conflicts": [],
+      "known_gaps_confirmed": 5,
+      "unsure_excluded": [
+        "stories.heightsMm[2]",
+        "storiesReference.titles",
+        "conflicts"
+      ]
+    },
+    {
+      "set": "tsu",
+      "grid": {
+        "xLabels": [
+          "X1",
+          "X2",
+          "X3",
+          "X4",
+          "X5"
+        ],
+        "xSpansMm": [
+          5850,
+          5150,
+          7175,
+          3825
+        ],
+        "yLabels": [
+          "Y3",
+          "Y2",
+          "Y1"
+        ],
+        "ySpansMm": [
+          5825,
+          7175
+        ],
+        "evidence": [
+          {
+            "source_id": "dwg-tsu-kanritou.pdf",
+            "pageNumber": 16
+          },
+          {
+            "source_id": "dwg-tsu-kanritou.pdf",
+            "pageNumber": 20
+          }
+        ]
+      },
+      "stories": {
+        "levels": [
+          "パラペット天端",
+          "RFL(水下)",
+          "2FL",
+          "1FL",
+          "設計GL",
+          "基礎下端"
+        ],
+        "heightsMm": [
+          600,
+          3500,
+          3500,
+          150,
+          1170
+        ]
+      },
+      "reference": {
+        "source_id": "dwg-tsu-kanritou.pdf",
+        "pageNumber": 21,
+        "index": 0
+      },
+      "conflicts": [],
+      "known_gaps_confirmed": 5,
+      "unsure_excluded": [
+        "pages[0].blockTitles",
+        "pages[1].blockTitles"
+      ]
+    }
+  ],
+  "claims_ledger": {
+    "claimed": 38,
+    "reference_only": 9
+  },
+  "validation": {
+    "tdd_red": {
+      "command": "npx vitest run tests/drawing-set",
+      "exit_code": 1,
+      "reason": "reconcile module not yet implemented"
+    },
+    "targeted": {
+      "command": "npx vitest run tests/drawing-set",
+      "exit_code": 0,
+      "passed": 17
+    },
+    "full": {
+      "command": "npx vitest run --reporter=json --outputFile=phases/44-drawing-set-assembly/step3-tests.json",
+      "exit_code": 0,
+      "passed": 1864,
+      "failed": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "remaining_warning": "Pre-existing unused _omitted in src/app/api/oncall/alert/route.test.ts:161; no new warnings."
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "citation_check": {
+      "command": "python scripts/check-citations.py phases/44-drawing-set-assembly/step3-report.json",
+      "exit_code": 0
+    }
+  },
+  "perturbations": [
+    {
+      "kind": "span",
+      "mutated": "page 2 block xGrid.spansMm[0]: 4000 -> 4001",
+      "expected": {
+        "code": "通り芯不一致",
+        "grid": null,
+        "blocks": [
+          {
+            "source_id": "synthetic.pdf",
+            "pageNumber": 2,
+            "index": 0
+          }
+        ]
+      },
+      "observed": {
+        "code": "通り芯不一致",
+        "grid": null,
+        "blocks": [
+          {
+            "source_id": "synthetic.pdf",
+            "pageNumber": 2,
+            "index": 0
+          }
+        ]
+      },
+      "evidence_test": "identifies an outlier span and restores the grid after block exclusion"
+    },
+    {
+      "kind": "membership",
+      "mutated": "exclude page 2 block 0 after span mutation",
+      "expected": {
+        "xSpansMm": [
+          4000
+        ],
+        "conflicts": []
+      },
+      "observed": {
+        "xSpansMm": [
+          4000
+        ],
+        "conflicts": []
+      },
+      "evidence_test": "identifies an outlier span and restores the grid after block exclusion"
+    },
+    {
+      "kind": "height",
+      "mutated": "page 2 heightsMm[1]: 3100 -> 3101",
+      "expected": {
+        "code": "階高不一致",
+        "referenceMm": 3100,
+        "seriesMm": 3101
+      },
+      "observed": {
+        "code": "階高不一致",
+        "referenceMm": 3100,
+        "seriesMm": 3101
+      },
+      "evidence_test": "compares cumulative common intervals with reference names"
+    },
+    {
+      "kind": "cumulative-height",
+      "mutated": "remove page 2 level 2 and merge intervals as 6301",
+      "expected": {
+        "code": "階高不一致",
+        "referenceMm": 6300,
+        "seriesMm": 6301
+      },
+      "observed": {
+        "code": "階高不一致",
+        "referenceMm": 6300,
+        "seriesMm": 6301
+      },
+      "evidence_test": "compares cumulative common intervals with reference names"
+    },
+    {
+      "kind": "unknown-label",
+      "mutated": "page 2 level 2 label -> unknown",
+      "expected": {
+        "code": "階未収録レベル",
+        "level": "unknown"
+      },
+      "observed": {
+        "code": "階未収録レベル",
+        "level": "unknown"
+      },
+      "evidence_test": "rejects ambiguous level correspondence: unknown"
+    },
+    {
+      "kind": "reference-duplicate",
+      "mutated": "reference level 1 label -> 2FL, matching level 2",
+      "expected": {
+        "code": "階未収録レベル",
+        "level": "2FL"
+      },
+      "observed": {
+        "code": "階未収録レベル",
+        "level": "2FL"
+      },
+      "evidence_test": "rejects ambiguous level correspondence: reference-duplicate"
+    },
+    {
+      "kind": "series-duplicate",
+      "mutated": "page 2 level 1 label -> 2FL, matching level 2",
+      "expected": {
+        "code": "階未収録レベル",
+        "level": "2FL"
+      },
+      "observed": {
+        "code": "階未収録レベル",
+        "level": "2FL"
+      },
+      "evidence_test": "rejects ambiguous level correspondence: series-duplicate"
+    },
+    {
+      "kind": "alias-conflict",
+      "mutated": "page 2 level 2 aliases -> [2FL,1FL], level 3 -> other",
+      "expected": {
+        "code": "階未収録レベル",
+        "level": "2FL／1FL"
+      },
+      "observed": {
+        "code": "階未収録レベル",
+        "level": "2FL／1FL"
+      },
+      "evidence_test": "rejects ambiguous level correspondence: alias-conflict"
+    },
+    {
+      "kind": "block-title",
+      "mutated": "page 2 block title 2F -> 9F and page 3 -> RF",
+      "expected": {
+        "levelIndex": "absent",
+        "storyName": "absent",
+        "conflicts": []
+      },
+      "observed": {
+        "levelIndex": "absent",
+        "storyName": "absent",
+        "conflicts": []
+      },
+      "evidence_test": "requires unique story keys, records duplicate blocks by level index, and never assigns the top"
+    },
+    {
+      "kind": "duplicate-story",
+      "mutated": "page 2 block title -> 1F",
+      "expected": {
+        "code": "階重複ブロック",
+        "levelIndex": 3,
+        "storyName": "1FL"
+      },
+      "observed": {
+        "code": "階重複ブロック",
+        "levelIndex": 3,
+        "storyName": "1FL"
+      },
+      "evidence_test": "requires unique story keys, records duplicate blocks by level index, and never assigns the top"
+    },
+    {
+      "kind": "split-alias",
+      "mutated": "Reference levels [2FL,1FL/GL,foundation] heights [3000,200]; series [2FL,1FL,GL,foundation] heights [3000,100,100]. Explicit reference selection.",
+      "expected": [
+        {
+          "referenceMm": 0,
+          "seriesMm": 100
+        },
+        {
+          "referenceMm": 200,
+          "seriesMm": 100
+        }
+      ],
+      "observed": [
+        {
+          "referenceMm": 0,
+          "seriesMm": 100
+        },
+        {
+          "referenceMm": 200,
+          "seriesMm": 100
+        }
+      ],
+      "evidence_test": "preserves individually unique split aliases and exposes their height differences"
+    }
+  ],
+  "mutation_files": [],
+  "mutation_note": "Perturbations mutate only in-memory synthetic PageAssessment objects. No parser or fixture file was modified.",
+  "paths_verified": [
+    "src/lib/import/drawing-set/types.ts",
+    "src/lib/import/drawing-set/roles.ts",
+    "src/lib/import/drawing-set/reconcile.ts",
+    "tests/drawing-set/assemble.test.ts",
+    "tests/drawing-set/claims.ts",
+    "phases/44-drawing-set-assembly/step3-tests.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "tests/fixtures/drawing-set/expected/hirosaki.json",
+    "tests/fixtures/drawing-set/expected/ina.json",
+    "tests/fixtures/drawing-set/expected/kani.json",
+    "tests/fixtures/drawing-set/expected/tsu.json"
+  ],
+  "paths_expected_absent": [
+    "src/lib/import/drawing-set/apply.ts",
+    "tests/e2e/uc24-drawing-set.js"
+  ],
+  "report_reference_convention": "Product refs use source as an opaque PDF identifier. This report spells that field source_id to avoid treating identifiers as repository-file citations. Source identifiers and page/index values are unchanged.",
+  "changed_paths": [
+    "phases/44-drawing-set-assembly/step3-report.json",
+    "phases/44-drawing-set-assembly/step3-tests.json",
+    "src/lib/import/drawing-set/reconcile.ts",
+    "src/lib/import/drawing-set/roles.ts",
+    "src/lib/import/drawing-set/types.ts",
+    "tests/drawing-set/assemble.test.ts",
+    "tests/drawing-set/claims.ts"
+  ],
+  "scope_check": {
+    "allowed_prefixes": [
+      "src/lib/import/drawing-set/",
+      "tests/drawing-set/",
+      "phases/"
+    ],
+    "unexpected": []
+  },
+  "protected_files_unchanged": [
+    {
+      "path": "src/components/plan/PlanImport.tsx",
+      "baseline_lf_sha256": "c063c59584f0d5cb30471fcd5b247772712e65ab981087e915a6da03c8c43803",
+      "current_lf_sha256": "c063c59584f0d5cb30471fcd5b247772712e65ab981087e915a6da03c8c43803"
+    },
+    {
+      "path": "src/domain/model/member.test.ts",
+      "baseline_lf_sha256": "494f2417039cd07723def9e81591655b9c754b90048dcfdcb8a9e27d92452abe",
+      "current_lf_sha256": "494f2417039cd07723def9e81591655b9c754b90048dcfdcb8a9e27d92452abe"
+    },
+    {
+      "path": "src/domain/model/member.ts",
+      "baseline_lf_sha256": "5a06fe25412bf7c6d9523fa6263a1714be15f17adacd3c6aaa21479c78dae852",
+      "current_lf_sha256": "5a06fe25412bf7c6d9523fa6263a1714be15f17adacd3c6aaa21479c78dae852"
+    },
+    {
+      "path": "src/domain/model/project.test.ts",
+      "baseline_lf_sha256": "10e3a2272690e3aa3364f9be01e9454dd6a58a91116dfda897b9ba2fac4b8a1e",
+      "current_lf_sha256": "10e3a2272690e3aa3364f9be01e9454dd6a58a91116dfda897b9ba2fac4b8a1e"
+    },
+    {
+      "path": "src/domain/model/project.ts",
+      "baseline_lf_sha256": "b5a6d29ada5e8bcc1cba6e42022936a1290652e7072ad61e0d9a676c91f8fdf2",
+      "current_lf_sha256": "b5a6d29ada5e8bcc1cba6e42022936a1290652e7072ad61e0d9a676c91f8fdf2"
+    },
+    {
+      "path": "src/domain/model/rebar.test.ts",
+      "baseline_lf_sha256": "2ce8b3590cfb0953032fae9ffd33d636bc79fc1cb6ea498b72efa6fbccf640a5",
+      "current_lf_sha256": "2ce8b3590cfb0953032fae9ffd33d636bc79fc1cb6ea498b72efa6fbccf640a5"
+    },
+    {
+      "path": "src/domain/model/rebar.ts",
+      "baseline_lf_sha256": "5e36fc81185296f666e10df80708f19173e2cccbae4ed879661db3c73975d9cc",
+      "current_lf_sha256": "5e36fc81185296f666e10df80708f19173e2cccbae4ed879661db3c73975d9cc"
+    },
+    {
+      "path": "src/domain/model/sample-project.test.ts",
+      "baseline_lf_sha256": "7ef58e7b72bbef082b010e527f4aada5c6589190eb9c2114f4b349321e7d1baf",
+      "current_lf_sha256": "7ef58e7b72bbef082b010e527f4aada5c6589190eb9c2114f4b349321e7d1baf"
+    },
+    {
+      "path": "src/domain/model/sample-project.ts",
+      "baseline_lf_sha256": "41145613d4aad48c4620d5c6bfb0b51c343a086d21e8acc9fc6d36f80657b7b1",
+      "current_lf_sha256": "41145613d4aad48c4620d5c6bfb0b51c343a086d21e8acc9fc6d36f80657b7b1"
+    },
+    {
+      "path": "src/domain/model/stress-project.test.ts",
+      "baseline_lf_sha256": "e479d41f6492746e09fc36a56dbc687082066232217f1ad637c5606699a7094e",
+      "current_lf_sha256": "e479d41f6492746e09fc36a56dbc687082066232217f1ad637c5606699a7094e"
+    },
+    {
+      "path": "src/domain/model/stress-project.ts",
+      "baseline_lf_sha256": "5f9cb62d7ff32e455b5e3ce91a6fe257a623c3916d71af5c29fb7b52fbbf4214",
+      "current_lf_sha256": "5f9cb62d7ff32e455b5e3ce91a6fe257a623c3916d71af5c29fb7b52fbbf4214"
+    },
+    {
+      "path": "src/domain/model/unsupported.test.ts",
+      "baseline_lf_sha256": "aba7875d53555a46bdcecb006e0383f0d28577b7ab50bd244be1ede8c9b5e62a",
+      "current_lf_sha256": "aba7875d53555a46bdcecb006e0383f0d28577b7ab50bd244be1ede8c9b5e62a"
+    },
+    {
+      "path": "src/domain/model/unsupported.ts",
+      "baseline_lf_sha256": "3fbcee6958175c9d7643ab1deb272e7c55e76319e8e9495431b9fc18e8c354b6",
+      "current_lf_sha256": "3fbcee6958175c9d7643ab1deb272e7c55e76319e8e9495431b9fc18e8c354b6"
+    },
+    {
+      "path": "src/domain/quantity/index.test.ts",
+      "baseline_lf_sha256": "3f6dfe8b67bd9f9cbf4e40bfa666f7b579e1a65494e2dc2b80fc7d90a60da9a8",
+      "current_lf_sha256": "3f6dfe8b67bd9f9cbf4e40bfa666f7b579e1a65494e2dc2b80fc7d90a60da9a8"
+    },
+    {
+      "path": "src/domain/quantity/index.ts",
+      "baseline_lf_sha256": "26ac1d45062a46c134ea39a8cd56e9e70e038e84422249ceaa6b8713d157deef",
+      "current_lf_sha256": "26ac1d45062a46c134ea39a8cd56e9e70e038e84422249ceaa6b8713d157deef"
+    },
+    {
+      "path": "src/domain/rebar/column.test.ts",
+      "baseline_lf_sha256": "c00429b353db62b50cb25f572577fb1304663b5324b0515c24d313863ad1be0f",
+      "current_lf_sha256": "c00429b353db62b50cb25f572577fb1304663b5324b0515c24d313863ad1be0f"
+    },
+    {
+      "path": "src/domain/rebar/column.ts",
+      "baseline_lf_sha256": "8c911779360a901d504a8eb51656bec2c65f3017b47873f0f7ccbe2ab25fcb69",
+      "current_lf_sha256": "8c911779360a901d504a8eb51656bec2c65f3017b47873f0f7ccbe2ab25fcb69"
+    },
+    {
+      "path": "src/domain/rebar/girder-ends.test.ts",
+      "baseline_lf_sha256": "347cf5bd92125f2eb44d63a7dad6f14dce96bcb1a9c1a02852a7eda146641edd",
+      "current_lf_sha256": "347cf5bd92125f2eb44d63a7dad6f14dce96bcb1a9c1a02852a7eda146641edd"
+    },
+    {
+      "path": "src/domain/rebar/girder-ends.ts",
+      "baseline_lf_sha256": "2e523b8c478b9250a61235b8a5241cedc88c1815be1ee2646533a1bb7c84c176",
+      "current_lf_sha256": "2e523b8c478b9250a61235b8a5241cedc88c1815be1ee2646533a1bb7c84c176"
+    },
+    {
+      "path": "src/domain/rebar/girder.test.ts",
+      "baseline_lf_sha256": "df6354c955e65299f43e2ea59213204f080ba891f79e49e5ff2616eab88efa59",
+      "current_lf_sha256": "df6354c955e65299f43e2ea59213204f080ba891f79e49e5ff2616eab88efa59"
+    },
+    {
+      "path": "src/domain/rebar/girder.ts",
+      "baseline_lf_sha256": "2bdd684da981be52216a5710f3c52d3faf34c3eb2ab1835dbeb930f976be4151",
+      "current_lf_sha256": "2bdd684da981be52216a5710f3c52d3faf34c3eb2ab1835dbeb930f976be4151"
+    },
+    {
+      "path": "src/domain/rebar/hook-direction.test.ts",
+      "baseline_lf_sha256": "fa7e6076bf24c073d2bbc008fbce02a28c73238d710875b50944f0e9cba7a4ce",
+      "current_lf_sha256": "fa7e6076bf24c073d2bbc008fbce02a28c73238d710875b50944f0e9cba7a4ce"
+    },
+    {
+      "path": "src/domain/rebar/measurement.test.ts",
+      "baseline_lf_sha256": "14df2805b43d7d21fd01cb96afe9a5736f45ae8b3d94b3627ff3965f4eebec60",
+      "current_lf_sha256": "14df2805b43d7d21fd01cb96afe9a5736f45ae8b3d94b3627ff3965f4eebec60"
+    },
+    {
+      "path": "src/domain/rebar/measurement.ts",
+      "baseline_lf_sha256": "05c9746b407415e729833195f11996d07d27d61f3bddb19bceb15d3a46e8d31f",
+      "current_lf_sha256": "05c9746b407415e729833195f11996d07d27d61f3bddb19bceb15d3a46e8d31f"
+    },
+    {
+      "path": "src/domain/rebar/opening.test.ts",
+      "baseline_lf_sha256": "44a476858592780994d709883c21adec5d054e23879c845e29d8d904f7d4bd7e",
+      "current_lf_sha256": "44a476858592780994d709883c21adec5d054e23879c845e29d8d904f7d4bd7e"
+    },
+    {
+      "path": "src/domain/rebar/opening.ts",
+      "baseline_lf_sha256": "d2d3058b38e07a3de791e2763b39725ad134eef891d5c1d5e076fde67a997dbd",
+      "current_lf_sha256": "d2d3058b38e07a3de791e2763b39725ad134eef891d5c1d5e076fde67a997dbd"
+    },
+    {
+      "path": "src/domain/rebar/slab-ends.test.ts",
+      "baseline_lf_sha256": "44e116b46400cbf17057a2e3c0b366f258c0ba2cfb0d4c82a72f9af198e7f368",
+      "current_lf_sha256": "44e116b46400cbf17057a2e3c0b366f258c0ba2cfb0d4c82a72f9af198e7f368"
+    },
+    {
+      "path": "src/domain/rebar/slab-ends.ts",
+      "baseline_lf_sha256": "485fa9ce277da1c52c4e1c7069bee08043e241e08f98ab5cce89d173c3f2910f",
+      "current_lf_sha256": "485fa9ce277da1c52c4e1c7069bee08043e241e08f98ab5cce89d173c3f2910f"
+    },
+    {
+      "path": "src/domain/rebar/slab.test.ts",
+      "baseline_lf_sha256": "a5f463e430ae78cb4c7b059cdb5a7da7a942c22c1a5bb412bed0e2cd059da598",
+      "current_lf_sha256": "a5f463e430ae78cb4c7b059cdb5a7da7a942c22c1a5bb412bed0e2cd059da598"
+    },
+    {
+      "path": "src/domain/rebar/slab.ts",
+      "baseline_lf_sha256": "b42462ca0ac3be61133a3a4a39c807b5f14b1a44965c55686be200212c1fb9ca",
+      "current_lf_sha256": "b42462ca0ac3be61133a3a4a39c807b5f14b1a44965c55686be200212c1fb9ca"
+    },
+    {
+      "path": "src/domain/rebar/stirrup-layout.test.ts",
+      "baseline_lf_sha256": "4a0fde30c8c28b6114f98f0246accff638f1c23807fa5074f5b224f6c7dc2683",
+      "current_lf_sha256": "4a0fde30c8c28b6114f98f0246accff638f1c23807fa5074f5b224f6c7dc2683"
+    },
+    {
+      "path": "src/domain/rebar/stirrup-layout.ts",
+      "baseline_lf_sha256": "b6f1e0c8ce44ddfa2888302cd9f815f06cef27d75d5230ee99a83ff0bf901d4b",
+      "current_lf_sha256": "b6f1e0c8ce44ddfa2888302cd9f815f06cef27d75d5230ee99a83ff0bf901d4b"
+    },
+    {
+      "path": "src/domain/rebar/wall.test.ts",
+      "baseline_lf_sha256": "b6368f6e8a9e0fb779f8a60033f85f52cfcf4b3a4ff9a0e69c96c02fc67da8fe",
+      "current_lf_sha256": "b6368f6e8a9e0fb779f8a60033f85f52cfcf4b3a4ff9a0e69c96c02fc67da8fe"
+    },
+    {
+      "path": "src/domain/rebar/wall.ts",
+      "baseline_lf_sha256": "afc416503004104379f81d92267f06ea3f3e4b15b4aed298717137f4a47a82d4",
+      "current_lf_sha256": "afc416503004104379f81d92267f06ea3f3e4b15b4aed298717137f4a47a82d4"
+    },
+    {
+      "path": "src/domain/rules/loader.test.ts",
+      "baseline_lf_sha256": "ae1ed3deb9f895ce1d739908053ceace165f65b1ab6a1e8e899933164e8e1443",
+      "current_lf_sha256": "ae1ed3deb9f895ce1d739908053ceace165f65b1ab6a1e8e899933164e8e1443"
+    },
+    {
+      "path": "src/domain/rules/loader.ts",
+      "baseline_lf_sha256": "504ab21abb458d15db430d4934d8f2ce776a6115881eaba477baaec387e25ae6",
+      "current_lf_sha256": "504ab21abb458d15db430d4934d8f2ce776a6115881eaba477baaec387e25ae6"
+    },
+    {
+      "path": "src/domain/rules/lookup.test.ts",
+      "baseline_lf_sha256": "8e02ee3f2479e80c60532a074e60402afc3eca51ef236bca882a7d9ae9061b19",
+      "current_lf_sha256": "8e02ee3f2479e80c60532a074e60402afc3eca51ef236bca882a7d9ae9061b19"
+    },
+    {
+      "path": "src/domain/rules/lookup.ts",
+      "baseline_lf_sha256": "2aa0a5e91fabb25b81ecb7b9bbc3296236f3908f0cb39a66677f06bbd70cfc9c",
+      "current_lf_sha256": "2aa0a5e91fabb25b81ecb7b9bbc3296236f3908f0cb39a66677f06bbd70cfc9c"
+    },
+    {
+      "path": "src/domain/rules/types.ts",
+      "baseline_lf_sha256": "4fa195a040324457923223464830e31ca6a991f75b914778c84d4af6aa9e1606",
+      "current_lf_sha256": "4fa195a040324457923223464830e31ca6a991f75b914778c84d4af6aa9e1606"
+    },
+    {
+      "path": "src/lib/import/framing-plan/apply.test.ts",
+      "baseline_lf_sha256": "b359dce7be4b23aa7ca008032b7f05b1002133ac51a46a42b82f67e64e1378cf",
+      "current_lf_sha256": "b359dce7be4b23aa7ca008032b7f05b1002133ac51a46a42b82f67e64e1378cf"
+    },
+    {
+      "path": "src/lib/import/framing-plan/apply.ts",
+      "baseline_lf_sha256": "5a616ada65e99d1e07b776dcf7129cd36ae65c6ce34abd199e46f93f91a29c04",
+      "current_lf_sha256": "5a616ada65e99d1e07b776dcf7129cd36ae65c6ce34abd199e46f93f91a29c04"
+    },
+    {
+      "path": "src/lib/import/framing-plan/elevation.test.ts",
+      "baseline_lf_sha256": "1f050420c66f82ecc4a271bcb255c5644a9546a585b06a1875a9e0486688d94a",
+      "current_lf_sha256": "1f050420c66f82ecc4a271bcb255c5644a9546a585b06a1875a9e0486688d94a"
+    },
+    {
+      "path": "src/lib/import/framing-plan/elevation.ts",
+      "baseline_lf_sha256": "37278eeacd756ad4c85a8dd2148a4c3157521965e7a94a95b00fea2aa6ad613e",
+      "current_lf_sha256": "37278eeacd756ad4c85a8dd2148a4c3157521965e7a94a95b00fea2aa6ad613e"
+    },
+    {
+      "path": "src/lib/import/framing-plan/parse.test.ts",
+      "baseline_lf_sha256": "1e25c86952d930e4c9f8c3b15e17ce78c92d709adba89fd9da99989df880bc73",
+      "current_lf_sha256": "1e25c86952d930e4c9f8c3b15e17ce78c92d709adba89fd9da99989df880bc73"
+    },
+    {
+      "path": "src/lib/import/framing-plan/parse.ts",
+      "baseline_lf_sha256": "86ae3704297da0b1d0572f191d49aa6da59ba87b2a7c79c898ba03281e76e104",
+      "current_lf_sha256": "86ae3704297da0b1d0572f191d49aa6da59ba87b2a7c79c898ba03281e76e104"
+    },
+    {
+      "path": "src/lib/import/framing-plan/types.test.ts",
+      "baseline_lf_sha256": "cecd343a3d87a0cb4f86a4adeb1a1fcf6990bea372414cbd38cbaea0ea68baa9",
+      "current_lf_sha256": "cecd343a3d87a0cb4f86a4adeb1a1fcf6990bea372414cbd38cbaea0ea68baa9"
+    },
+    {
+      "path": "src/lib/import/framing-plan/types.ts",
+      "baseline_lf_sha256": "64583a08c84ff93d769e6e872344f870b87c6108a0e8cb6c8c889dc1bfe96fac",
+      "current_lf_sha256": "64583a08c84ff93d769e6e872344f870b87c6108a0e8cb6c8c889dc1bfe96fac"
+    },
+    {
+      "path": "src/lib/import/runs.ts",
+      "baseline_lf_sha256": "3373fc5e5bfa755d99aaba0358b7200f46165e8c140c94291c5e00e19407ac52",
+      "current_lf_sha256": "3373fc5e5bfa755d99aaba0358b7200f46165e8c140c94291c5e00e19407ac52"
+    },
+    {
+      "path": "src/lib/import/section-list/parse.test.ts",
+      "baseline_lf_sha256": "730b2f813ef637a9989e8ac7d1b76b73aa86413d4ea0bf80d667ce9147cbd2f7",
+      "current_lf_sha256": "730b2f813ef637a9989e8ac7d1b76b73aa86413d4ea0bf80d667ce9147cbd2f7"
+    },
+    {
+      "path": "src/lib/import/section-list/parse.ts",
+      "baseline_lf_sha256": "491f39c46603c8a52b4597562af6fd4777bd44e42568dd12ec3ce63c24578adc",
+      "current_lf_sha256": "491f39c46603c8a52b4597562af6fd4777bd44e42568dd12ec3ce63c24578adc"
+    },
+    {
+      "path": "src/lib/import/section-list/types.test.ts",
+      "baseline_lf_sha256": "f2681c703262ccb2228aed3681421fbd4d7f5f556e35da6d10c9ebddd55655e7",
+      "current_lf_sha256": "f2681c703262ccb2228aed3681421fbd4d7f5f556e35da6d10c9ebddd55655e7"
+    },
+    {
+      "path": "src/lib/import/section-list/types.ts",
+      "baseline_lf_sha256": "04dafbb77e1062b216d7411a70178962f52595d21137afc849de25ae49926b66",
+      "current_lf_sha256": "04dafbb77e1062b216d7411a70178962f52595d21137afc849de25ae49926b66"
+    },
+    {
+      "path": "src/lib/import/story-label.ts",
+      "baseline_lf_sha256": "99af04549c8ff663dcc7ee888b59f1cf2d3e3e0ea19aee54322170ebd4ff33ed",
+      "current_lf_sha256": "99af04549c8ff663dcc7ee888b59f1cf2d3e3e0ea19aee54322170ebd4ff33ed"
+    },
+    {
+      "path": "tests/fixtures/drawing-set/expected/hirosaki.json",
+      "baseline_lf_sha256": "0a750fb013f39b5f44887e94e9180899a0bf8daf436057e5aa66308cd7c3c1db",
+      "current_lf_sha256": "0a750fb013f39b5f44887e94e9180899a0bf8daf436057e5aa66308cd7c3c1db"
+    },
+    {
+      "path": "tests/fixtures/drawing-set/expected/ina.json",
+      "baseline_lf_sha256": "e15b52c6635ea7b67dae2224accd464442b708839778de4517f32733bd674604",
+      "current_lf_sha256": "e15b52c6635ea7b67dae2224accd464442b708839778de4517f32733bd674604"
+    },
+    {
+      "path": "tests/fixtures/drawing-set/expected/kani.json",
+      "baseline_lf_sha256": "d485592d97c74a84338efc9bd62c2896fc82ed53f3a0102db27d7850434fb847",
+      "current_lf_sha256": "d485592d97c74a84338efc9bd62c2896fc82ed53f3a0102db27d7850434fb847"
+    },
+    {
+      "path": "tests/fixtures/drawing-set/expected/tsu.json",
+      "baseline_lf_sha256": "d2ed273f35c9fa4dbc5c56dbc66292c9da2d409f5edc0435b1f999cf4cd23846",
+      "current_lf_sha256": "d2ed273f35c9fa4dbc5c56dbc66292c9da2d409f5edc0435b1f999cf4cd23846"
+    },
+    {
+      "path": "tests/fixtures/drawing-set/expected/yokohama.json",
+      "baseline_lf_sha256": "b099a97d8e93e0da00abf56783089d2dfa5dcf058a492f14e896a52dfbb01886",
+      "current_lf_sha256": "b099a97d8e93e0da00abf56783089d2dfa5dcf058a492f14e896a52dfbb01886"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/fuji-p15.json",
+      "baseline_lf_sha256": "8f94040d0dd01add0b55b39db7a33966ded033a7a53256b3069df0725b59cbc0",
+      "current_lf_sha256": "8f94040d0dd01add0b55b39db7a33966ded033a7a53256b3069df0725b59cbc0"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/fuji-p17.json",
+      "baseline_lf_sha256": "b6c7ccfe3d94d32af36e854025af1ef8d5e7e56be52c58d146f04d751d5c0633",
+      "current_lf_sha256": "b6c7ccfe3d94d32af36e854025af1ef8d5e7e56be52c58d146f04d751d5c0633"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/fuji-p18.json",
+      "baseline_lf_sha256": "2d1b3f96b198a868b3d083fbaa57111cf25f8e8ce590e51b1b98ff5b30c25bbb",
+      "current_lf_sha256": "2d1b3f96b198a868b3d083fbaa57111cf25f8e8ce590e51b1b98ff5b30c25bbb"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/fuji-p20.json",
+      "baseline_lf_sha256": "4c8e1d7c9eb0a8deaffb2241be1475991193e27cea2ad49d97716b44c744fc26",
+      "current_lf_sha256": "4c8e1d7c9eb0a8deaffb2241be1475991193e27cea2ad49d97716b44c744fc26"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/hirosaki-p21.json",
+      "baseline_lf_sha256": "b1e8ba09eb5935cec33d6600038c08b0eabb4dfd7821fcc134d3adc63972fe07",
+      "current_lf_sha256": "b1e8ba09eb5935cec33d6600038c08b0eabb4dfd7821fcc134d3adc63972fe07"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/hirosaki-p25.json",
+      "baseline_lf_sha256": "ffee3a2e2e27b969c5b09a39330c75718c80b1ebde7df4b6d40b60edc548fd2c",
+      "current_lf_sha256": "ffee3a2e2e27b969c5b09a39330c75718c80b1ebde7df4b6d40b60edc548fd2c"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/ina-p6.json",
+      "baseline_lf_sha256": "fe2aaaedffb352534fd664816fc063eb83ffd1ea209c8d7a0357eff0f630b219",
+      "current_lf_sha256": "fe2aaaedffb352534fd664816fc063eb83ffd1ea209c8d7a0357eff0f630b219"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/ina-p7.json",
+      "baseline_lf_sha256": "d388eb22edb9a1a93b883630ac99a9e82ba10505f347edafacf6e4ca2ce759f6",
+      "current_lf_sha256": "d388eb22edb9a1a93b883630ac99a9e82ba10505f347edafacf6e4ca2ce759f6"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/kani-p38.json",
+      "baseline_lf_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7",
+      "current_lf_sha256": "7b5152923937d1069430c1d0ef207a419f8740c55e7ad2c711a80f6d446c23a7"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/kani-p39.json",
+      "baseline_lf_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8",
+      "current_lf_sha256": "dfed697fadc8da080e3d790f138e44206f4c05af5e62f4e376ad6cff6370d3f8"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/kani-p40.json",
+      "baseline_lf_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b",
+      "current_lf_sha256": "f70b2d17151330fb0d477a8d5a06249c8a56afe6296d3552e7fff2fc4258ec4b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/kani-p41.json",
+      "baseline_lf_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e",
+      "current_lf_sha256": "18da5cbc487e7c5abffe668f254e7ca70b0b4d0b111a92feb2dc1c22fc6daf5e"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-fukuzu-p1.json",
+      "baseline_lf_sha256": "787b5be569ecf717dbc39846ce7ef1d8d49d0eb704bfd6cbc914e9ab662d6c8a",
+      "current_lf_sha256": "787b5be569ecf717dbc39846ce7ef1d8d49d0eb704bfd6cbc914e9ab662d6c8a"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-hashirashin-p1.json",
+      "baseline_lf_sha256": "2103abe463e40e39da08ba67916e1d1bdd19a787558206616beab811a2efa9e5",
+      "current_lf_sha256": "2103abe463e40e39da08ba67916e1d1bdd19a787558206616beab811a2efa9e5"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi1-p1.json",
+      "baseline_lf_sha256": "d1cbcbd4e466b403f6a188154ed4018c8525827bac330c6938c142e75596e23a",
+      "current_lf_sha256": "d1cbcbd4e466b403f6a188154ed4018c8525827bac330c6938c142e75596e23a"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-jikugumi2-p1.json",
+      "baseline_lf_sha256": "4a04b5f8e7b9b45942a8ce195399001cb2a5ccf46c0f0c02d8049108f1788780",
+      "current_lf_sha256": "4a04b5f8e7b9b45942a8ce195399001cb2a5ccf46c0f0c02d8049108f1788780"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/karatsu-shousai-p1.json",
+      "baseline_lf_sha256": "40e08e7e5abce8026254e336be4c61b979d663a9e9ce4b63ba3604815879cb78",
+      "current_lf_sha256": "40e08e7e5abce8026254e336be4c61b979d663a9e9ce4b63ba3604815879cb78"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/ojkk-p2.json",
+      "baseline_lf_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d",
+      "current_lf_sha256": "016373e5b0e16bb1d949da91c59dd0edf89f9615ebe3f6c61e82f6b5b1cacf9d"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/ojkk-p3.json",
+      "baseline_lf_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc",
+      "current_lf_sha256": "b51cc8dbc2ce7ea519a6cbf086037ccd774dc4fc321a283c4d0f7cbe63fcaccc"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/ojkk-p4.json",
+      "baseline_lf_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b",
+      "current_lf_sha256": "48c9f95abf2132556c6b85bd7d8606ba492722a48e91d456ba89919e444f618b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/saiki-p1.json",
+      "baseline_lf_sha256": "dc9ee788900905fc377c857938ec2bbec655719c26f0aad67dbe89f0a3208b5d",
+      "current_lf_sha256": "dc9ee788900905fc377c857938ec2bbec655719c26f0aad67dbe89f0a3208b5d"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/saiki-p2.json",
+      "baseline_lf_sha256": "3e343f52571151310265431b409694c6148e2766430836033a9955f9d1d99010",
+      "current_lf_sha256": "3e343f52571151310265431b409694c6148e2766430836033a9955f9d1d99010"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/shibata-p1.json",
+      "baseline_lf_sha256": "7eef4034c76bd7405e2395262b28cdb092eb9bc933ec0eeed2cb084d1bc795a9",
+      "current_lf_sha256": "7eef4034c76bd7405e2395262b28cdb092eb9bc933ec0eeed2cb084d1bc795a9"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/shibata-p13.json",
+      "baseline_lf_sha256": "eedc41502360103360958043792ad18d36ed442bca07ec5dd2edbd0df80020fa",
+      "current_lf_sha256": "eedc41502360103360958043792ad18d36ed442bca07ec5dd2edbd0df80020fa"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/shibata-p7.json",
+      "baseline_lf_sha256": "b6e53e37f39f2756b9c2151da449513816be03f659a8242a3b53f6352f6a46d0",
+      "current_lf_sha256": "b6e53e37f39f2756b9c2151da449513816be03f659a8242a3b53f6352f6a46d0"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/tsu-p16.json",
+      "baseline_lf_sha256": "51c8c847f06272f997771daa491a77cd74d7937cece0900014e3f3e544d4791b",
+      "current_lf_sha256": "51c8c847f06272f997771daa491a77cd74d7937cece0900014e3f3e544d4791b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/tsu-p20.json",
+      "baseline_lf_sha256": "96627023cd3de6f1691ab48c4cb00b630e554271446efd833637826803fca2ef",
+      "current_lf_sha256": "96627023cd3de6f1691ab48c4cb00b630e554271446efd833637826803fca2ef"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/tsu-p21.json",
+      "baseline_lf_sha256": "ee0e4b5418a8a0a44dc0a0672ea37cbd4591dc1069bd32d8e70d6529f28a499f",
+      "current_lf_sha256": "ee0e4b5418a8a0a44dc0a0672ea37cbd4591dc1069bd32d8e70d6529f28a499f"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/tsu-p22.json",
+      "baseline_lf_sha256": "7ea5d64a8741234ba645a5152bd717ddc22ffbc10a9cb0dfab2190107a1f069b",
+      "current_lf_sha256": "7ea5d64a8741234ba645a5152bd717ddc22ffbc10a9cb0dfab2190107a1f069b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p13.json",
+      "baseline_lf_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b",
+      "current_lf_sha256": "5db9294c8ee4eac137256b860c98e2f65dc6b0075a5fa05250e114d2c7a1075b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p14.json",
+      "baseline_lf_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5",
+      "current_lf_sha256": "bcd5c4956531a529d393e29cb1e4f2c55e0f1db48eda6b4cb537b5b725be40c5"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p15.json",
+      "baseline_lf_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04",
+      "current_lf_sha256": "ada91c2a988c1c9c3fe0bdd07e919599386f98d5df0e533d4dddcbdaa758ae04"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p6.json",
+      "baseline_lf_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4",
+      "current_lf_sha256": "d9219f065333cac9cee9161fa27e443291518b210576702116fb8ed7ee8825e4"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p7.json",
+      "baseline_lf_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e",
+      "current_lf_sha256": "fcdb25d87b90d4e81492c0f994b1f8ead726b1b861de91271771c4862167845e"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p8.json",
+      "baseline_lf_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b",
+      "current_lf_sha256": "9344af11b9ab10de886f3de96125ec9718aa84e8d633b81743464d5bd46edb0b"
+    },
+    {
+      "path": "tests/fixtures/section-import/textitems/yokohama-p9.json",
+      "baseline_lf_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0",
+      "current_lf_sha256": "acc1c6e6f7978c7d490e6050fa18c8d2f7b14e34a31894d87b907b8d765227c0"
+    }
+  ],
+  "review": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "max",
+    "launch": "Herdr sibling pane; shell fallback after known Start-Process codex.ps1 startup failure",
+    "status": "completed; sole P2 resolved by independent closure probe",
+    "findings": [
+      {
+        "severity": "P2",
+        "finding": "Extra uniquePairs filtering discarded valid split-alias correspondences and hid a 200-versus-100 height conflict.",
+        "resolution": "Removed reference-index injectivity requirement, preserving the specified per-label uniqueness. Added split-alias red/green regression.",
+        "regression_red": {
+          "passed": 16,
+          "failed": 1
+        },
+        "regression_green": {
+          "passed": 17,
+          "failed": 0
+        }
+      }
+    ],
+    "closure": "Reviewer independently reproduced only the two expected height conflicts (0 vs 100 and 200 vs 100); no remaining issue with the P2."
+  }
+}
