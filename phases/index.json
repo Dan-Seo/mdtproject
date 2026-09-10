@@ -228,6 +228,10 @@
       "dir": "44-drawing-set-assembly",
       "status": "completed",
       "completed_at": "2026-09-10T13:24:48+0900"
+    },
+    {
+      "dir": "45-partial-import-unsupported",
+      "status": "pending"
     }
   ]
 }

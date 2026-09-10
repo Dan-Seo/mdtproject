@@ -1,0 +1,12 @@
+{
+  "project": "Kijun",
+  "phase": "45-partial-import-unsupported",
+  "steps": [
+    { "step": 0, "name": "refute-spec", "kind": "verify", "gate": true, "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "medium" },
+    { "step": 1, "name": "unsupported-support", "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "medium" },
+    { "step": 2, "name": "takeoff-import-tests", "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "medium" },
+    { "step": 3, "name": "e2e-panes-alive", "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "medium" },
+    { "step": 4, "name": "docs-sync", "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "low" },
+    { "step": 5, "name": "refute-phase", "kind": "verify", "status": "pending", "model": "gpt-6-astra", "reasoning_effort": "medium" }
+  ]
+}
