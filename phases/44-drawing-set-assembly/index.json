@@ -71,7 +71,8 @@
       "model": "gpt-6-astra",
       "reasoning_effort": "low",
       "started_at": "2026-09-10T13:12:29+0900",
-      "summary": "Synced RISKS, MILESTONES, ADR-046 supplement and mirrored rows; documented overlap variants and live gaps; citations, byte comparison and lint pass."
+      "summary": "Synced RISKS, MILESTONES, ADR-046 supplement and mirrored rows; documented overlap variants and live gaps; citations, byte comparison and lint pass.",
+      "completed_at": "2026-09-10T13:16:18+0900"
     },
     {
       "step": 7,
