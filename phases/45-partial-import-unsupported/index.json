@@ -17,9 +17,11 @@
     {
       "step": 1,
       "name": "unsupported-support",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "medium"
+      "reasoning_effort": "medium",
+      "started_at": "2026-09-10T15:53:07+0900",
+      "summary": "Missing supports are member-level unsupported; girder runs require identical sections; stirrup floating-point gaps tolerate numerical noise. 1861 tests passed, 4 skipped; four mutations killed, types/lint/citations passed."
     },
     {
       "step": 2,

@@ -1,0 +1,174 @@
+{
+  "changed_files": [
+    "phases/45-partial-import-unsupported/index.json",
+    "src/domain/model/project.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/unsupported.ts",
+    "src/domain/rebar/stirrup-layout.test.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "src/lib/i18n.test.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "phases/45-partial-import-unsupported/step1-report.json"
+  ],
+  "tests_added": [
+    "girderSpan reports 支持柱なし when the start support is missing",
+    "girderRun keeps G1 G2 G1 as three runs without bridging the middle section",
+    "stirrupPositions accepts fractional placement pitch 100.1 offset 50",
+    "stirrupPositions accepts fractional placement pitch 100 offset 0.1",
+    "stirrupPositions preserves the exact integer placement result",
+    "stirrupPositions still rejects a genuine gap excess beyond floating-point tolerance"
+  ],
+  "tests_tightened": [
+    "project lookup helpers throws when no same-story 大梁 touches the 柱: class, reason, member id",
+    "girderSpan missing end support: class, reason, member id; split from either-end test",
+    "片持床板 geometry rejects a cantilever without missing support endpoint 柱: 支持柱なし",
+    "t names every 未対応 reason and plan in both panes: two new reasons"
+  ],
+  "tests_replaced": [
+    {
+      "old": "girderRun throws a plain Error when adjacent run members use mixed sections",
+      "new": "girderRun splits adjacent different sections into separate single-member runs"
+    }
+  ],
+  "mutations": [
+    {
+      "site": "supportColumnSection",
+      "exit_code": 1,
+      "failing_tests": [
+        "wall and slab placement topology rejects a wall edge when its 大梁 or either endpoint 柱 is absent",
+        "girderSpan reports 支持柱なし when the start support is missing",
+        "girderSpan reports 支持柱なし when the end support is missing"
+      ]
+    },
+    {
+      "site": "beamDepthAbove",
+      "exit_code": 1,
+      "failing_tests": [
+        "project lookup helpers throws when no same-story 大梁 touches the 柱"
+      ]
+    },
+    {
+      "site": "girderRun sectionId",
+      "exit_code": 1,
+      "failing_tests": [
+        "girderRun splits adjacent different sections into separate single-member runs",
+        "girderRun keeps G1 G2 G1 as three runs without bridging the middle section"
+      ]
+    },
+    {
+      "site": "stirrupPositions tolerance",
+      "exit_code": 1,
+      "failing_tests": [
+        "stirrupPositions accepts fractional placement pitch 100.1 offset 50",
+        "stirrupPositions accepts fractional placement pitch 100 offset 0.1"
+      ]
+    }
+  ],
+  "validation": {
+    "red": {
+      "numTotalTests": 135,
+      "numPassedTests": 126,
+      "numFailedTests": 9,
+      "numPendingTests": 0,
+      "success": false,
+      "failing_tests": [
+        "t names every 未対応 reason and plan in both panes",
+        "project lookup helpers throws when no same-story 大梁 touches the 柱",
+        "girderSpan reports 支持柱なし when the start support is missing",
+        "girderSpan reports 支持柱なし when the end support is missing",
+        "girderRun splits adjacent different sections into separate single-member runs",
+        "girderRun keeps G1 G2 G1 as three runs without bridging the middle section",
+        "片持床板 geometry rejects a cantilever without missing support endpoint 柱",
+        "stirrupPositions accepts fractional placement pitch 100.1 offset 50",
+        "stirrupPositions accepts fractional placement pitch 100 offset 0.1"
+      ]
+    },
+    "focused": {
+      "command": "npx vitest run src/domain/model/project.test.ts src/domain/rebar src/lib/i18n.test.ts",
+      "exit_code": 0,
+      "numTotalTests": 334,
+      "numPassedTests": 334,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "types": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "warning": "Existing src/app/api/oncall/alert/route.test.ts:161 _omitted unused; zero errors."
+    },
+    "full": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "numTotalTests": 1865,
+      "numPassedTests": 1861,
+      "numFailedTests": 0,
+      "numPendingTests": 4,
+      "success": true,
+      "skipped_tests": [
+        "real-decode: .cache/stb の実物 .stb（ローカル限定） diffchecker-filea.stb uses declared Shift_JIS without replacement characters",
+        "real-decode: .cache/stb の実物 .stb（ローカル限定） dotnet-sample1.stb decodes with the declared UTF-8 encoding",
+        "real-decode: .cache/stb の実物 .stb（ローカル限定） hoaryfox-sample.stb decodes with the declared UTF-8 encoding",
+        "real-decode: .cache/stb の実物 .stb（ローカル限定） diffchecker-mini210.stb decodes with the declared UTF-8 encoding"
+      ]
+    },
+    "restored": {
+      "command": "npx vitest run src/domain/model/project.test.ts src/domain/rebar src/lib/i18n.test.ts",
+      "exit_code": 0,
+      "numTotalTests": 334,
+      "numPassedTests": 334,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "citations": {
+      "command": "python scripts/check-citations.py phases/45-partial-import-unsupported/step1-report.json",
+      "exit_code": 0
+    }
+  },
+  "scope_notes": [
+    "The specification calls the supportColumnSection(..., true) call sites a cantilever path; source actually places them in wallSpan. Removed both arguments as required.",
+    "cantileverSupport has a separate missing-column branch. Changed only that missing-column reason to 支持柱なし to satisfy the explicitly requested cantilever regression; other cantilever conditions stay unchanged.",
+    "supportColumnSection non-柱 and missing section errors remain plain Error. No catch wrapping added. Existing cantilever non-柱 behavior is untouched.",
+    "Both takeoff and viewer translations added because the existing exhaustive i18n test checks both panes.",
+    "Offset greater than pitch is not an invalid inter-stirrup gap in this algorithm: offsets bound the placement interval. No new offset restriction added. Genuine 4 mm gap versus 3 mm pitch at offset 2**53 remains rejected; small 1e-6 mm numerical tolerance is not a rulepack value.",
+    "Same-section chain tests and nonpositive-clear-span 寸法不成立 tests retained unchanged.",
+    "No import, rulepack, fixture, quantity-ID or rebar generation logic changed. Harness stdout/stderr logs excluded from commit. ADR-047 reference is required by this step; document creation is assigned to later documentation step.",
+    "Concurrent controller changes to index.json steps 3-5 are preserved in the working tree but excluded from this step commit."
+  ],
+  "paths_verified": [
+    "phases/45-partial-import-unsupported/index.json",
+    "src/domain/model/project.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/unsupported.ts",
+    "src/domain/rebar/stirrup-layout.test.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "src/lib/i18n.test.ts",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "phases/45-partial-import-unsupported/step1.md",
+    "phases/45-partial-import-unsupported/step0.md",
+    "phases/45-partial-import-unsupported/step0-report.json",
+    "phases/45-partial-import-unsupported/step0-report-r1.json",
+    "phases/45-partial-import-unsupported/step0-report-r3.json",
+    "phases/45-partial-import-unsupported/step0-report-r4.json",
+    "docs/ADR.md",
+    "src/app/api/oncall/alert/route.test.ts"
+  ],
+  "review": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "max",
+    "verdict": "No actionable findings",
+    "scope": "Final integrated source batch; controller-owned index edits excluded. Reviewer made no edits or test reruns.",
+    "transport": "Built-in agent tool after Herdr Start-Process startup failure; temporary Herdr pane closed."
+  }
+}
