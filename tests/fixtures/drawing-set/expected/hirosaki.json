@@ -1,0 +1,61 @@
+{
+  "$comment": "図面セット 골든 2판 (brief-rev2 §6.5) — 원문 독립 전사 (ADR-010 준용). 출처 PDF dwg-hirosaki-kikyono.pdf(青森県弘前市 桔梗野小学校等複合施設新築工事 構造図1, sha256 f4dfcfab…) p21(S-019 1階床梁伏図)·p25(S-023 軸組図(1)). 격자·階高 값은 기존 골든 tests/fixtures/plan-import/expected/hirosaki-kikyono-p21-grid.json·hirosaki-kikyono-p25-elevation.json(2026-09-03 전사)과 같고, 제목·レベル 라벨이 tests/fixtures/section-import/textitems/hirosaki-p21.json·p25.json의 텍스트 아이템에 있음을 다시 확인했다(가로 글리프는 같은 행 x 오름차순, rot −90 글리프는 같은 x에서 y 내림차순으로 이어 읽는다. 1FL은 '1'·'F'·'L' 세 아이템이다. 基礎下端 앞의 △·▽ 글리프는 라벨이 아니다). 문자열 비교 규약: NFKC 정규화 후 공백을 제거해 동일하면 같은 것으로 보며 표기는 기존 골든(X1·2FL)을 따른다. 제목은 한 텍스트 런(글리프 간격 약 14pt 미만)이며 이 도면의 축척 표기 A3:S=1/300은 14pt 이상 떨어져 있어 제목에 넣지 않는다. 라벨 순서는 페이지 순서(X 왼→오, Y 위→아래 = Y10→Y1). 軸組図 축(Y1→Y10 왼→오)은 伏図 Y축을 뒤집은 순서의 부분열이며 대응 스팬이 같으나 §6.1에 따라 이 phase는 축 대조를 하지 않는다. stories는 §6.2 기본 基準系列(라벨 있는 レベル 최다 7 = X1通り, X2通り와 동수라 앞의 X1通り)을 사람이 읽은 값이다. X3通り는 RFL이 없을 뿐 공통 이름 쌍(PHFL~基礎下端)의 누적합이 基準과 같아 §6.2로는 충돌이 없다. blockToStory는 전 구간 선택(top=RFL, bottom=基礎下端)의 미래 Story 이름 PHFL·3FL·2FL·1FL·設計GL·基礎下端에 대해 levelStoryKey/storyKey로 판정했다: 1階床梁伏図(키 '1')→1FL(키 '1'). 전사자＝Claude 세션 2026-09-10 (worker golden-y, 2판).",
+  "set": "hirosaki",
+  "pages": [
+    {
+      "fixture": "hirosaki-p21",
+      "source": "dwg-hirosaki-kikyono.pdf",
+      "pageNumber": 21,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["1階床梁伏図"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "hirosaki-p25",
+      "source": "dwg-hirosaki-kikyono.pdf",
+      "pageNumber": 25,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 3
+    }
+  ],
+  "grid": {
+    "xLabels": ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10", "X11", "X12"],
+    "xSpansMm": [8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000],
+    "yLabels": ["Y10", "Y9", "Y8", "Y7", "Y6", "Y5", "Y4", "Y3", "Y2", "Y1"],
+    "ySpansMm": [8000, 8000, 8000, 11000, 8000, 8000, 8000, 8000, 8000]
+  },
+  "stories": {
+    "levels": ["RFL", "PHFL", "3FL", "2FL", "1FL", "設計GL", "基礎下端"],
+    "heightsMm": [3400, 4000, 4000, 4500, 100, 2310]
+  },
+  "storiesReference": {
+    "fixture": "hirosaki-p25",
+    "titles": ["X1通り軸組図"]
+  },
+  "blockToStory": [
+    { "fixture": "hirosaki-p21", "blockTitle": "1階床梁伏図", "storyName": "1FL" }
+  ],
+  "unmatchedBlocks": [],
+  "conflicts": [],
+  "knownGaps": [
+    {
+      "path": "storiesReference.titles",
+      "direction": "extra",
+      "reason": "表題外テキスト結合 — 現行パーサは X1通り の高さ系列に y≈294 行のテキスト『X2通り+5765軸組図』(寸法 +5765 と混ざった文字列)も題名として付け、titles が 2 個になる。人はこの行を X2通り 図の上端寸法と読み、題名は X1通り軸組図 だけ。判定: 出力 titles は [X1通り軸組図, X2通り+5765軸組図] で [0] は一致し末尾に 1 要素多いだけなので extra。",
+      "ref": "docs/RISKS.md#R10"
+    }
+  ],
+  "unsure": [
+    {
+      "path": "stories.levels[0]",
+      "reason": "X3通り에는 RFL이 없다(PHFL부터 6レベル). §6.2의 基準系列 방식에서는 基準(X1通り)에만 있는 レベル이라 충돌도 未収録도 아니지만, 사용자가 基準을 X3通り로 바꾸면 X1·X2의 RFL이 階未収録レベル이 된다."
+    },
+    {
+      "path": "stories.levels[5]",
+      "reason": "設計GL은 1FL의 100 아래(원문 주기 '1FL=設計GL+100', 1/300에서 2.8pt)다. 기존 골든이 レベル로 포함해 그대로 두었다. 키가 없어 블록 자동 대응 대상은 아니다."
+    }
+  ]
+}

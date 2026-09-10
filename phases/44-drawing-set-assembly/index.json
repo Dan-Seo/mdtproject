@@ -1,0 +1,49 @@
+{
+  "project": "Kijun",
+  "phase": "44-drawing-set-assembly",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refute-adr-and-goldens",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "overlap-census",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "level-story-key",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "set-reconcile",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "set-plan-apply",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "set-import-ui",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "docs-sync",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "refute-phase",
+      "kind": "verify",
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "$comment": "図面セット 골든 2판(brief-rev2 §6.5) — 원문 독립 전사 (ADR-010 준용). 출처 PDF dwg-ina-pump.pdf(長野県伊那市 ポンプ施設築造工事) 6면(S-6 構造伏図・軸組図)·7면(S-7 部材リスト). 전사자=Claude 세션 2026-09-10(2판), 픽스처 tests/fixtures/section-import/textitems/ina-p6.json·ina-p7.json의 텍스트 아이템을 y·x 순으로 재구성해 읽었고(가로 글리프는 같은 y끼리 x 오름차순, rot -90 글리프는 같은 x끼리 y 내림차순으로 이어야 원문 문자열이 된다) 파서를 돌리지 않았다. 기존 골든 tests/fixtures/plan-import/expected/ina-pump-p6-grid.json·tests/fixtures/section-import/expected/ina-pump-p7-lists.json과 일치한다. 문자열 비교 규약: 원문 대조와 조립 출력 대조는 모두 NFKC 정규화＋공백 제거 후 동일이며, 通り芯·レベル 표기는 기존 골든(X1·2FL)을 따른다. blockTitles는 제목 글리프열에 축척 아이템을 읽은 순서로 이은 것(「R階床梁伏図 1/100」 — 글리프가 「R階 床 梁 伏 図」로 띄어 있으나 공백 제거 후 같다. 축척 「1/100」 글리프는 x≈200~230, y가 제목 기준선보다 약 0.6pt 위(272.39 대 273.0)라 행 복원에 y 허용폭이 필요하다). stories.levels는 ▽·△ 기호 아이템을 뺀 라벨 글리프열이고 同高 alias는 「／」로 잇는다(각 alias를 따로 대조). roles 순서는 断面リスト→伏図→軸組図, listKinds는 제목 y→x 순이며 제품 TITLE_PATTERN이 인식하는 종류만 적는다. frameCount는 사람이 읽은 通り(프레임) 수이고 파서 계열 수와 같다고 주장하지 않는다. stories는 R1 기본 基準(라벨 있는 レベル 최다, 동수면 면·index 순)으로 채우고, 직접 치수 문자열이 있는 구간만 넣었다 — SL+756.70→1FL+755.30 1,400은 원문 치수, GL+756.50은 SL 아래 200 치수가 있으나 GL→1FL 1,200은 유도값이라 stories에 넣지 않고 unsure에 둔다. blockToStory는 §6.2의 levelStoryKey(표고·괄호 제거 후 ^(\\d+)(FL|SL|F|階)$→숫자, R계열→R)·storyKey(블록 제목)로 전 구간 선택(top=첫 레벨, bottom=마지막)의 미래 Story 이름(바닥 레벨들)에 대해 산출했다. knownGaps는 현재 파서로 낼 수 없어 조립 출력이 이 골든과 달라지는 경로다.",
+  "set": "ina",
+  "pages": [
+    {
+      "fixture": "ina-p6",
+      "source": "dwg-ina-pump.pdf",
+      "pageNumber": 6,
+      "roles": ["伏図", "軸組図"],
+      "listKinds": [],
+      "blockTitles": ["R階床梁伏図 1/100", "1階上部床梁伏図 1/100", "1階床梁伏図 1/100"],
+      "frameCount": 3
+    },
+    {
+      "fixture": "ina-p7",
+      "source": "dwg-ina-pump.pdf",
+      "pageNumber": 7,
+      "roles": ["断面リスト"],
+      "listKinds": ["大梁リスト", "小梁リスト", "地中梁リスト", "壁リスト", "スラブリスト", "柱リスト"],
+      "blockTitles": [],
+      "frameCount": 0
+    }
+  ],
+  "grid": {
+    "xLabels": ["1", "2", "3"],
+    "xSpansMm": [4050, 4050],
+    "yLabels": ["B", "A"],
+    "ySpansMm": [6400]
+  },
+  "stories": {
+    "levels": ["RSL+760.00", "SL+756.70", "1FL+755.30"],
+    "heightsMm": [3300, 1400]
+  },
+  "storiesReference": { "fixture": "ina-p6", "titles": ["軸組図 1/100"] },
+  "blockToStory": [
+    { "fixture": "ina-p6", "blockTitle": "1階上部床梁伏図 1/100", "storyName": "1FL+755.30" },
+    { "fixture": "ina-p6", "blockTitle": "1階床梁伏図 1/100", "storyName": "1FL+755.30" }
+  ],
+  "unmatchedBlocks": [
+    { "fixture": "ina-p6", "blockTitle": "R階床梁伏図 1/100" }
+  ],
+  "conflicts": [
+    {
+      "code": "階重複ブロック",
+      "blocking": true,
+      "evidence": [{ "source": "dwg-ina-pump.pdf", "pageNumber": 6 }],
+      "payload": {
+        "storyName": "1FL+755.30",
+        "blocks": [
+          { "fixture": "ina-p6", "blockTitle": "1階上部床梁伏図 1/100" },
+          { "fixture": "ina-p6", "blockTitle": "1階床梁伏図 1/100" }
+        ]
+      }
+    }
+  ],
+  "knownGaps": [
+    {
+      "path": "pages[0].blockTitles",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 현재 파서는 ina-p6에서 제목 없는 블록 1개(placements 4)만 낸다. 원문 제목 셋은 텍스트에 있다. 判定(2026-09-10 3次): 出力は無題ブロック1個でblockTitlesが空。",
+      "ref": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json; tests/plan-import/corpus2.test.ts"
+    },
+    {
+      "path": "pages[1].roles",
+      "direction": "extra",
+      "reason": "伏図ブロック誤検出 — 현재 파서는 ina-p7(部材リスト 면)에서 제목 없는 블록 1개를 내므로 기술적 역할표에는 伏図가 붙는다. 사람이 읽는 p7에는 伏図가 없다(柱リスト 스케치 옆 通り芯 1·2·3·A·B와 4,050·6,400 치수가 원인으로 보임). 判定(2026-09-10 3次): 出力rolesは[断面リスト,伏図]で末尾に伏図が余分。",
+      "ref": "docs/RISKS.md R15; phases/42-plan-grid-soundness/step2-report.json"
+    },
+    {
+      "path": "stories",
+      "direction": "both",
+      "reason": "レベル表記除外(RSL·SL) — 현재 레벨 화이트리스트(FL·GL·RCL·天端/下端/上端)가 RSL+760.00·SL+756.70을 라벨로 받지 않아 파서 계열은 levels [[],[GL+756.50],[1FL+755.30],[]]·heightsMm [3300,1400,800]이다. 判定(2026-09-10 3次): 出力levels[0]は無ラベル(RSLと相違)、heightsMm[2]=800が余分。",
+      "ref": "src/lib/import/framing-plan/elevation.ts isLevelLabel; docs/RISKS.md R10"
+    },
+    {
+      "path": "blockToStory",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 블록 제목이 파서 출력에 없어 키 대응이 일어나지 않는다(pages[0].blockTitles와 같은 원인). 判定(2026-09-10 3次): 出力は空配列。",
+      "ref": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json"
+    },
+    {
+      "path": "unmatchedBlocks",
+      "direction": "both",
+      "reason": "伏図ブロック未分割 — 위와 같다. 제목 없는 블록 1개가 階未対応으로 나온다. 判定(2026-09-10 3次): 出力[0].blockTitleが不在。訂正(2026-09-10 5次, R2-02): 전부 포함하면 p7의 무제 오탐 블록(R15)도 未対応으로 나와 出力[1].fixture=ina-p7가 잉여 주장이다 — 골든 리프 부재와 출력 리프 잉여가 함께 있어 both。",
+      "ref": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json"
+    },
+    {
+      "path": "conflicts",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 블록이 하나라 階重複ブロック이 생기지 않는다. 判定(2026-09-10 3次): 出力は空配列。",
+      "ref": "tests/fixtures/plan-import/expected/ina-pump-p6-grid.json"
+    }
+  ],
+  "unsure": [
+    {
+      "path": "stories",
+      "reason": "GL+756.50(△, 설계 GL)은 SL+756.70 아래 200(회전 치수열 x≈560)에 있는 라벨 레벨이지만 GL→1FL 구간에 치수 문자열이 없다(1,200은 1,400−200 및 TP 표고 차에서 유도). 유도값을 넣지 않기 위해 GL을 stories에서 뺐다 — 사람이 읽는 전 계열은 RSL+760.00 −3300→ SL+756.70 −200→ GL+756.50 −1200→ 1FL+755.30 −800→ (무라벨, GL 아래 2,000)이고 RSL 위에 무라벨 600(パラペット로 보임)이 있다. x≈540 열의 600·3,500·2,000은 RSL 위·RSL→GL·GL 아래의 합계 치수다."
+    },
+    {
+      "path": "storiesReference.titles",
+      "reason": "이 면의 軸組図 제목 아이템은 「軸 組 図」＋「1/100」 하나뿐이고 세 프레임(A通り/1通り·B通り/2通り·3通り)은 캡션이다. 세 프레임의 레벨·치수는 같다."
+    },
+    {
+      "path": "blockToStory",
+      "reason": "R階床梁伏図(키 R)는 RSL+760.00(levelStoryKey R)에 대응하지만 전 구간 선택에서 RSL은 top 레벨이라 바닥 Story가 아니므로 未対応이다. top을 바꾸면 대응이 달라진다."
+    }
+  ]
+}

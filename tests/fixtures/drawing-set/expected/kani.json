@@ -1,0 +1,118 @@
+{
+  "$comment": "図面セット 골든 2판(brief-rev2 §6.5) — 원문 독립 전사 (ADR-010 준용). 출처 PDF dwg-kani-kids.pdf(岐阜県可児市 桜ケ丘小学校キッズクラブ新築工事) 38면(S-08 基礎伏図·基礎リスト·地中梁リスト)·39면(梁伏図)·40면(X2·X4·X1·X3通り軸組図)·41면(Y2·Y1通り軸組図). 전사자=Claude 세션 2026-09-10(2판), 픽스처 tests/fixtures/section-import/textitems/kani-p38..p41.json의 텍스트 아이템을 y·x 순으로 재구성해 읽었고(가로 글리프는 같은 y끼리 x 오름차순, rot -90 글리프는 같은 x끼리 y 내림차순 — 「150450」 한 열은 위가 450, 아래가 150) 파서를 돌리지 않았다. 기존 골든 tests/fixtures/section-import/expected/kani-sakuragaoka-p38-foundation-girder.json(地中梁リスト FG1)과 일치한다. 문자열 비교 규약: 원문 대조와 조립 출력 대조는 모두 NFKC 정규화＋공백 제거 후 동일이며 通り芯·レベル 표기는 기존 골든(X1·2FL)을 따른다. blockTitles는 제목 글리프열에 축척 아이템을 읽은 순서로 이은 것(「基礎伏図 S=1/100」). roles 순서는 断面リスト→伏図→軸組図, listKinds는 제목 y→x 순이며 제품 TITLE_PATTERN이 인식하는 종류만 적는다(p38의 基礎リスト F1·F2·F2H는 인식 대상이 아니고 기존 골든도 스코프 밖으로 뒀다). frameCount는 사람이 읽은 通り 수. stories는 R1 기본 基準(라벨 있는 レベル 최다 — p40의 네 프레임이 5레벨로 최다, 동수면 면·index 순이라 p40 페이지 순서 첫 프레임 X2通り)으로 채웠고 p40 네 프레임의 계열은 모두 같다. 다른 계열과의 대조는 §6.2(基準과 이름이 같은 유일 レベル 쌍 사이 heightsMm 누적합 비교, 基準에 없는 이름은 階未収録レベル)로 판정했다 — p41 Y1通り(RG(水下)·FL·GL·BL, 3300·450·150)는 전 구간 일치, p41 Y2通り(RG·FL·GL·BL, 4504·450·150)는 RG가 基準의 RG(水上)·RG(水下)와 이름이 달라 未収録이고 FL→GL→BL은 일치하므로 階高不一致는 없다. 軸組図 축(p40 Y1·Y2·Y3 10,500·6,000, p41 X1..X4 6,000·6,000·8,000)은 grid의 뒤집은 열·같은 열이지만 이 phase는 축 대조를 하지 않는다. blockToStory는 §6.2 levelStoryKey·storyKey로 전 구간 선택의 미래 Story 이름(RG(水下)·FL·GL·BL — 모두 키 없음)에 대해 산출했다. knownGaps는 현재 파서로 낼 수 없어 조립 출력이 이 골든과 달라지는 경로다. S造 건물이라 RC는 基礎·地中梁뿐이다.",
+  "set": "kani",
+  "pages": [
+    {
+      "fixture": "kani-p38",
+      "source": "dwg-kani-kids.pdf",
+      "pageNumber": 38,
+      "roles": ["断面リスト", "伏図"],
+      "listKinds": ["地中梁リスト"],
+      "blockTitles": ["基礎伏図 S=1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "kani-p39",
+      "source": "dwg-kani-kids.pdf",
+      "pageNumber": 39,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["梁伏図 S=1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "kani-p40",
+      "source": "dwg-kani-kids.pdf",
+      "pageNumber": 40,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 4
+    },
+    {
+      "fixture": "kani-p41",
+      "source": "dwg-kani-kids.pdf",
+      "pageNumber": 41,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 2
+    }
+  ],
+  "grid": {
+    "xLabels": ["X1", "X2", "X3", "X4"],
+    "xSpansMm": [6000, 6000, 8000],
+    "yLabels": ["Y3", "Y2", "Y1"],
+    "ySpansMm": [6000, 10500]
+  },
+  "stories": {
+    "levels": ["RG(水上)", "RG(水下)", "FL", "GL", "BL"],
+    "heightsMm": [1635, 3300, 450, 150]
+  },
+  "storiesReference": { "fixture": "kani-p40", "titles": ["X2通り軸組図 S=1/100"] },
+  "blockToStory": [],
+  "unmatchedBlocks": [
+    { "fixture": "kani-p38", "blockTitle": "基礎伏図 S=1/100" },
+    { "fixture": "kani-p39", "blockTitle": "梁伏図 S=1/100" }
+  ],
+  "conflicts": [
+    {
+      "code": "階未収録レベル",
+      "blocking": false,
+      "evidence": [
+        { "source": "dwg-kani-kids.pdf", "pageNumber": 40 },
+        { "source": "dwg-kani-kids.pdf", "pageNumber": 41 }
+      ],
+      "payload": {
+        "series": { "fixture": "kani-p41", "titles": ["Y2通り軸組図 S=1/100"] },
+        "level": "RG"
+      }
+    }
+  ],
+  "knownGaps": [
+    {
+      "path": "pages[2].roles",
+      "direction": "missing",
+      "reason": "軸組図候補なし — 현재 파서는 kani-p40에서 elevations: []·寸法列未検出이다(「150450」 결합 치수로 연쇄 불성립). 기술적 역할표에는 軸組図가 붙지 않는다. 判定(2026-09-10 3次): 出力rolesは空。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    },
+    {
+      "path": "pages[3].roles",
+      "direction": "missing",
+      "reason": "軸組図候補なし — kani-p41도 elevations: []·寸法列未検出이다. 判定(2026-09-10 3次): 出力rolesは空。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    },
+    {
+      "path": "stories",
+      "direction": "missing",
+      "reason": "軸組図候補なし — 基準으로 고를 후보가 파서 출력에 없어 조립은 stories: null이다. 값은 원문 전사다(RG·BL은 레벨 화이트리스트 밖이기도 하다). 判定(2026-09-10 3次): 出力はnull。",
+      "ref": "tests/plan-import/elevation.test.ts; src/lib/import/framing-plan/elevation.ts isLevelLabel; docs/RISKS.md R10"
+    },
+    {
+      "path": "storiesReference",
+      "direction": "missing",
+      "reason": "軸組図候補なし — 위와 같다. 判定(2026-09-10 3次): 出力はnull。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    },
+    {
+      "path": "conflicts",
+      "direction": "missing",
+      "reason": "軸組図候補なし — 대조할 계열이 없어 階未収録レベル이 나오지 않는다. 判定(2026-09-10 3次): 出力は空配列。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    }
+  ],
+  "unsure": [
+    {
+      "path": "stories.heightsMm[2]",
+      "reason": "FL→GL 450·GL→BL 150의 배분은 회전 글리프열 「150450」(x≈139.7)의 y 순서(450이 위)로만 읽었다. 라벨 ▽FL·▽GL·△BL의 y 간격은 12.7pt·12.8pt로 거의 같아 라벨 위치로는 확인할 수 없다(합 600은 5,535−1,635−3,300, 5,104−4,504, 3,900−3,300과 일치)."
+    },
+    {
+      "path": "storiesReference.titles",
+      "reason": "p40의 네 프레임(X2·X4 위, X1·X3 아래)은 레벨·치수가 같다. 파서가 후보를 내게 되면 어느 프레임이 index 0인지, 한 후보가 몇 제목을 묶는지는 파서 순서에 달려 있다."
+    },
+    {
+      "path": "conflicts",
+      "reason": "p41 Y2通り의 RG(4,504 위)는 경사 지붕의 다른 높이로 보이며 이름이 基準의 RG(水上)·RG(水下)와 다르므로 §6.2대로 未収録으로 적었다. 사람이 RG를 RG(水上)로 읽으면 4,504 대 1,635＋3,300=4,935의 불일치가 된다."
+    }
+  ]
+}

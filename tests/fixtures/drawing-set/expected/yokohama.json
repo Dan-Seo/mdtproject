@@ -1,0 +1,149 @@
+{
+  "$comment": "図面セット 골든 2판 (brief-rev2 §6.5) — 원문 독립 전사 (ADR-010 준용). 출처 PDF dwg-yokohama.pdf(横浜市建築局 金沢区総合庁舎改築工事 第2工区建築工事, sha256 37d20dba…) p6·p7·p8·p9·p13·p14·p15. 값은 tests/fixtures/section-import/textitems/yokohama-p*.json의 텍스트 아이템에서 사람이 읽어 적었다: 가로 글리프는 같은 행에서 x 오름차순으로, rot −90 글리프는 같은 x(±1pt)에서 y 내림차순으로 이어 원문 문자열을 만든다. 파서 출력에서 베끼지 않았다(파서 출력은 knownGaps 판정에만 썼다). 문자열 비교 규약: NFKC 정규화 후 공백을 제거해 동일하면 같은 것으로 보며 표기는 기존 골든(X1·2FL)을 따른다. 제목은 한 텍스트 런(글리프 간격 약 14pt 미만)을 통째로 적으므로 이 도면에서는 축척 표기가 붙는다(基礎伏図1/100·bY1通り軸組図1/100). 라벨 순서는 페이지 순서(X 왼→오, Y 위→아래). 通り芯 라벨은 원문대로 棟 접두 소문자(b·c)를 포함한다 — hirosaki-p21의 X 앞에는 접두 글리프가 없어 이 b·c는 심벌이 아니라 텍스트다. p8·p9는 軸組図 면(Y1~Y6通り 여섯 frame, X1·X2A·X2·X3通り 네 frame). stories는 §6.2 기본 基準系列(라벨 있는 レベル 최다, 동수면 면·index 순 = p8의 bY1~bY3通り 계열)을 사람이 읽은 값이다: 中央棟RCL(水下)·2FL·中央棟1FL／基準GL·基礎下端 / 4100·4480·2690. 中央棟1FL과 基準GL은 소치수 190(1/100에서 5pt) 차이로 같은 レベル의 aliases로 적었고 ／로 결합했다(applyElevation의 Story 이름 규칙과 같다). 基礎下端가 X1通り만 2490인 것은 階高不一致(정보)로 적었다. blockToStory는 전 구간 선택(top=中央棟RCL(水下), bottom=基礎下端)의 미래 Story 이름 2FL·中央棟1FL／基準GL·基礎下端에 대해 levelStoryKey/storyKey로 판정했다: 2階床伏図→2FL만 성립하고 1階(Story 쪽 키 없음)·R階(Story 없음)·基礎(블록 쪽 키 없음)는 階未対応. 전사자＝Claude 세션 2026-09-10 (worker golden-y, 2판).",
+  "set": "yokohama",
+  "pages": [
+    {
+      "fixture": "yokohama-p6",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 6,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["基礎伏図1/100", "1階床伏図1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "yokohama-p7",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 7,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["2階床伏図1/100", "R階床伏図1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "yokohama-p8",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 8,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 6
+    },
+    {
+      "fixture": "yokohama-p9",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 9,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 4
+    },
+    {
+      "fixture": "yokohama-p13",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 13,
+      "roles": ["断面リスト"],
+      "listKinds": ["柱断面リスト", "小梁断面リスト"],
+      "blockTitles": [],
+      "frameCount": 0
+    },
+    {
+      "fixture": "yokohama-p14",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 14,
+      "roles": ["断面リスト"],
+      "listKinds": ["大梁断面リスト"],
+      "blockTitles": [],
+      "frameCount": 0
+    },
+    {
+      "fixture": "yokohama-p15",
+      "source": "dwg-yokohama.pdf",
+      "pageNumber": 15,
+      "roles": ["断面リスト"],
+      "listKinds": ["壁リスト", "スラブリスト", "片持スラブリスト", "耐圧版リスト"],
+      "blockTitles": [],
+      "frameCount": 0
+    }
+  ],
+  "grid": {
+    "xLabels": ["bX1", "bX2", "bX3", "cX1"],
+    "xSpansMm": [8700, 8700, 1200],
+    "yLabels": ["bY6", "bY5", "bY4", "bY3", "bY2", "bY1"],
+    "ySpansMm": [5000, 6000, 10000, 6000, 5000]
+  },
+  "stories": {
+    "levels": ["中央棟RCL(水下)", "2FL", "中央棟1FL／基準GL", "基礎下端"],
+    "heightsMm": [4100, 4480, 2690]
+  },
+  "storiesReference": {
+    "fixture": "yokohama-p8",
+    "titles": ["bY1通り軸組図1/100", "bY2通り軸組図1/100", "bY3通り軸組図1/100"]
+  },
+  "blockToStory": [
+    { "fixture": "yokohama-p7", "blockTitle": "2階床伏図1/100", "storyName": "2FL" }
+  ],
+  "unmatchedBlocks": [
+    { "fixture": "yokohama-p6", "blockTitle": "基礎伏図1/100" },
+    { "fixture": "yokohama-p6", "blockTitle": "1階床伏図1/100" },
+    { "fixture": "yokohama-p7", "blockTitle": "R階床伏図1/100" }
+  ],
+  "conflicts": [
+    {
+      "code": "階高不一致",
+      "blocking": false,
+      "evidence": [
+        { "source": "dwg-yokohama.pdf", "pageNumber": 8 },
+        { "source": "dwg-yokohama.pdf", "pageNumber": 9 }
+      ],
+      "payload": {
+        "reference": { "fixture": "yokohama-p8", "titles": ["bY1通り軸組図1/100", "bY2通り軸組図1/100", "bY3通り軸組図1/100"] },
+        "series": { "fixture": "yokohama-p9", "titles": ["bX1通り軸組図1/100"] },
+        "levelA": "中央棟1FL／基準GL",
+        "levelB": "基礎下端",
+        "referenceMm": 2690,
+        "seriesMm": 2490
+      }
+    }
+  ],
+  "knownGaps": [
+    {
+      "path": "stories",
+      "direction": "both",
+      "reason": "無ラベル上端レベル — 現行パーサの候補は 中央棟RCL(水下) の上に無ラベルのレベルと寸法 1400 を含む(levels 5·heightsMm 4)。人はラベルの無い線をレベルと読まないので stories は 4 レベル·3 区間。判定: 出力は配列の先頭に要素が入り index が 1 つずれる(levels[0]·heightsMm[0] の値が異なり、末尾の levels[4]·heightsMm[3] は골든に無い)ので both。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    },
+    {
+      "path": "conflicts[0].payload.series.titles",
+      "direction": "extra",
+      "reason": "軸組図フレーム未分割 — 現行パーサは p9 上段の bX1通り と bX2A通り を一つの高さ系列(2490)に束ねる。原文では bX2A通り の右側(x≈1702)に独自の 2690 があり、2490 は bX1通り だけのもの。判定: 出力 titles は [bX1通り軸組図1/100, bX2A通り軸組図1/100] で [0] は一致し末尾に 1 要素多いだけなので extra。",
+      "ref": "tests/plan-import/elevation.test.ts"
+    }
+  ],
+  "unsure": [
+    {
+      "path": "stories.levels[0]",
+      "reason": "텍스트 아이템은 中·央·棟·R·C·L·(·水·下·)이다. 'RCL'이 RFL/RSL의 글리프 오추출인지 원문 표기인지 텍스트만으로 판정할 수 없어 원문 그대로 적었다. 키가 없어 R階床伏図는 수동 대응 대상이다."
+    },
+    {
+      "path": "stories.levels[2]",
+      "reason": "基準GL은 中央棟1FL의 190 아래(소치수 190·150·2350, 합 2690)에 별도 열(x=108)로 적혀 있다. GL→基礎下端 2500은 직접 적혀 있지 않아(유도값) GL을 독립 レベル로 세우지 않고 1FL의 alias로 적었다. 이 alias 때문에 Story 키가 없어 1階床伏図는 階未対応이 된다."
+    },
+    {
+      "path": "grid.xLabels",
+      "reason": "2階床伏図·R階床伏図(p7)의 아래쪽 라벨 행과 p8 bY2通り軸組図에만 bX2와 bX3 사이에 bX2A가 있다(위쪽 라벨 행·치수 행에는 없고 치수도 없다). 사람은 이를 치수 없는 보조축으로 읽어 주축 격자에서 뺐다. 현행 파서의 네 블록 격자도 bX2A를 세지 않아 通り芯不一致는 생기지 않는다."
+    },
+    {
+      "path": "grid.xSpansMm[2]",
+      "reason": "bX3→cX1의 1200은 EXP.J(텍스트 x=1011~1031, y=152) 구간이고 cX1은 c棟의 첫 축만 면 안에 있다. 인접 라벨 사이 치수로 적혀 있어 스팬으로 전사했으나 주축 스팬인지 棟 간 이격인지는 도면 해석이다."
+    },
+    {
+      "path": "pages[4].listKinds[1]",
+      "reason": "p13의 小梁断面リスト는 스코프 밖 부재라 기존 골든이 전사를 생략했다. 면 역할 기술용으로 제목만 적었다."
+    },
+    {
+      "path": "unmatchedBlocks",
+      "reason": "사람의 대응은 1階床伏図→中央棟1FL／基準GL, R階床伏図→中央棟RCL(水下)(전 구간 선택에서는 top이라 Story가 아님), 基礎伏図→基礎下端이다. §6.2 키 규칙(접두 있는 レベル·RCL은 키 없음)으로는 셋 다 자동 대응이 없어 수동 선택 항목으로 남긴다."
+    }
+  ]
+}

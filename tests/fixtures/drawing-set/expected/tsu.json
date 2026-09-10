@@ -1,0 +1,107 @@
+{
+  "$comment": "図面セット 골든 2판(brief-rev2 §6.5) — 원문 독립 전사 (ADR-010 준용). 출처 PDF dwg-tsu-kanritou.pdf(三重県津市 旧津市民プール跡地テニスコート整備工事 管理棟) 16면(S-16 杭・基礎・1階伏図)·20면(２階伏図·屋根伏図)·21면(S-21 軸組図(1) Y1·Y2·Y3通り)·22면(S-22 軸組図(2) X1..X5通り). 전사자=Claude 세션 2026-09-10(2판), 픽스처 tests/fixtures/section-import/textitems/tsu-p16·p20·p21·p22.json의 텍스트 아이템을 y·x 순으로 재구성해 읽었고(가로 글리프는 같은 y끼리 x 오름차순, rot -90 글리프는 같은 x끼리 y 내림차순 — 「3,500600」은 위가 600, 「1503,500」은 위가 3,500) 파서를 돌리지 않았다. 기존 골든 tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json·p21-elevation.json·p22-elevation.json과 일치한다. 문자열 비교 규약: 원문 대조와 조립 출력 대조는 모두 NFKC 정규화＋공백 제거 후 동일이며 通り芯·レベル 표기는 기존 골든(X1·2FL·設計GL·パラペット天端)을 따른다 — 원문은 전각(Ｘ１·Ｙ３·２ＦＬ·設計ＧＬ)·반각 가나(ﾊﾟﾗﾍﾟｯﾄ天端)이고 NFKC가 이를 접는다. blockTitles는 제목 글리프열에 축척 아이템을 읽은 순서로 이은 것(「２階伏図 S=1/100」 — NFKC 후 「2階伏図S=1/100」). roles 순서는 断面リスト→伏図→軸組図. frameCount는 사람이 읽은 通り 수(p21 3·p22 5). stories는 R1 기본 基準(라벨 있는 レベル 최다 — p21·p22의 여덟 프레임 모두 6레벨로 동수, 면·index 순이라 p21의 페이지 순서 첫 블록인 위쪽 Y1·Y2通り 블록)으로 채웠고 여덟 프레임의 계열(600·3,500·3,500·150·1,170)이 전부 같아 階高不一致·階未収録レベル이 없다. 1FL과 같은 높이의 1SL은 alias라 「1FL／1SL」로 이었다(각 alias를 따로 대조). 軸組図 축(p21 X1..X5, p22 Y1·Y2·Y3 7,175·5,825)은 grid와 같은 열·뒤집은 열이지만 이 phase는 축 대조를 하지 않는다. blockToStory는 §6.2 levelStoryKey(표고·괄호 제거 후 ^(\\d+)(FL|SL|F|階)$→숫자, R계열→R)·storyKey(블록 제목)로 전 구간 선택(top=パラペット天端, bottom=基礎下端)의 미래 Story 이름(RFL(水下)·2FL·1FL／1SL·設計GL·基礎下端)에 대해 산출했다. knownGaps는 현재 파서로 낼 수 없어 조립 출력이 이 골든과 달라지는 경로다.",
+  "set": "tsu",
+  "pages": [
+    {
+      "fixture": "tsu-p16",
+      "source": "dwg-tsu-kanritou.pdf",
+      "pageNumber": 16,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["杭伏図 S=1/100", "基礎・１階伏図 S=1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "tsu-p20",
+      "source": "dwg-tsu-kanritou.pdf",
+      "pageNumber": 20,
+      "roles": ["伏図"],
+      "listKinds": [],
+      "blockTitles": ["２階伏図 S=1/100", "屋根伏図 S=1/100"],
+      "frameCount": 0
+    },
+    {
+      "fixture": "tsu-p21",
+      "source": "dwg-tsu-kanritou.pdf",
+      "pageNumber": 21,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 3
+    },
+    {
+      "fixture": "tsu-p22",
+      "source": "dwg-tsu-kanritou.pdf",
+      "pageNumber": 22,
+      "roles": ["軸組図"],
+      "listKinds": [],
+      "blockTitles": [],
+      "frameCount": 5
+    }
+  ],
+  "grid": {
+    "xLabels": ["X1", "X2", "X3", "X4", "X5"],
+    "xSpansMm": [5850, 5150, 7175, 3825],
+    "yLabels": ["Y3", "Y2", "Y1"],
+    "ySpansMm": [5825, 7175]
+  },
+  "stories": {
+    "levels": ["パラペット天端", "RFL(水下)", "2FL", "1FL／1SL", "設計GL", "基礎下端"],
+    "heightsMm": [600, 3500, 3500, 150, 1170]
+  },
+  "storiesReference": {
+    "fixture": "tsu-p21",
+    "titles": ["Y1通り軸組図 S=1/100", "Y2通り軸組図 S=1/100"]
+  },
+  "blockToStory": [
+    { "fixture": "tsu-p16", "blockTitle": "基礎・１階伏図 S=1/100", "storyName": "1FL／1SL" },
+    { "fixture": "tsu-p20", "blockTitle": "２階伏図 S=1/100", "storyName": "2FL" }
+  ],
+  "unmatchedBlocks": [
+    { "fixture": "tsu-p16", "blockTitle": "杭伏図 S=1/100" },
+    { "fixture": "tsu-p20", "blockTitle": "屋根伏図 S=1/100" }
+  ],
+  "conflicts": [],
+  "knownGaps": [
+    {
+      "path": "pages[0].blockTitles",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 현재 파서는 tsu-p16에서 杭伏図 블록 1개(placements 0)만 내고 基礎・１階伏図 블록을 나누지 않는다. 判定(2026-09-10 3次): 出力[0]=杭伏図S=1/100は一致、[1]が不在。",
+      "ref": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json; tests/plan-import/corpus2.test.ts"
+    },
+    {
+      "path": "pages[1].blockTitles",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 현재 파서는 tsu-p20에서 2階伏図S=1/100 블록 1개(placements 55)만 내고 屋根伏図 블록을 나누지 않는다. 判定(2026-09-10 3次): 出力[0]=2階伏図S=1/100は一致、[1]が不在。",
+      "ref": "docs/RISKS.md R10"
+    },
+    {
+      "path": "stories.levels[3]",
+      "direction": "both",
+      "reason": "レベル表記除外(SL) — 레벨 화이트리스트가 SL 계열을 받지 않아 파서 계열의 이 레벨 라벨은 1FL뿐이고 미래 Story 이름도 「1FL」이다. 「1FL／1SL」은 원문 alias 전사다. 判定(2026-09-10 3次): 同じ経路の値が1FL／1SL対1FLで相違。",
+      "ref": "src/lib/import/framing-plan/elevation.ts isLevelLabel; tests/fixtures/plan-import/expected/tsu-kanritou-p21-elevation.json"
+    },
+    {
+      "path": "blockToStory",
+      "direction": "both",
+      "reason": "伏図ブロック未分割 — 基礎・１階伏図 블록이 파서 출력에 없어 첫 항목이 나오지 않고, 둘째 항목(２階伏図→2FL)만 나온다. 또 Story 이름이 1FL／1SL이 아니라 1FL이다(stories.levels[3]과 같은 원인). 判定(2026-09-10 3次): 出力[0]は２階伏図→2FLで黄金[0]と相違(indexずれ)、黄金[1]が不在。",
+      "ref": "tests/fixtures/plan-import/expected/tsu-kanritou-p16-grid.json; src/lib/import/framing-plan/elevation.ts isLevelLabel"
+    },
+    {
+      "path": "unmatchedBlocks",
+      "direction": "missing",
+      "reason": "伏図ブロック未分割 — 屋根伏図 블록이 파서 출력에 없어 杭伏図 항목만 나온다. 判定(2026-09-10 3次): 出力[0]=杭伏図は一致、[1]が不在。",
+      "ref": "docs/RISKS.md R10"
+    }
+  ],
+  "unsure": [
+    {
+      "path": "pages[0].blockTitles",
+      "reason": "두 블록이 같은 格子를 쓰는 것은 텍스트(Ｘ１..Ｘ５ 두 벌, Ｙ１..Ｙ３ 두 벌, 22,000·13,000 두 벌)로 확인했다. 기존 골든 tsu-kanritou-p16-grid.json은 블록 수를 확정하지 않았다."
+    },
+    {
+      "path": "pages[1].blockTitles",
+      "reason": "p20에는 기존 격자 골든이 없다. Ｘ 스팬(5,850·5,150·7,175·3,825, 合計 22,000)과 Ｙ 스팬(5,825·7,175, 合計 13,000)이 두 벌 있어 p16과 같은 格子임을 텍스트로 확인했다."
+    }
+  ]
+}
