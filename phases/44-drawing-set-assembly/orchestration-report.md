@@ -118,3 +118,87 @@ SHA-256 comparison confirmed all 41 tracked protected files checked under `evals
 No `scripts/execute.py` program/harness launch, staging, commit, branch switch, merge or push was performed. Tests import the module and exercise isolated fixtures. Stage 2 has not started. Stop here for conductor verification/commit and `STAGE2 GO`.
 
 Cleanup: the two temporary worker panes created by this lead (`w4:p8`, `w4:p9`) were closed after completion. User-owned panes were retained.
+
+## stage2-result
+
+**Harness result: completed.** All eight steps completed in the isolated worktree `C:\Users\emper\mdtproject-p44`, branch `feat-44-drawing-set-assembly`, final HEAD `8a13c3d`. The worktree `phases/index.json` records phase 44 as `completed`; `git status --porcelain` was empty after completion. Conductor cross-verification and main merge remain pending.
+
+### Execution and isolation
+
+Read the complete `stage2-go.md` instruction. Verified the existing worktree was clean on `7a765ac`, then added only the requested `model` and `reasoning_effort` keys to its eight step entries. A structural comparison confirmed all other index fields were unchanged at setup.
+
+Created dedicated Herdr pane `w4:pA` from the lead pane with `--cwd C:\Users\emper\mdtproject-p44 --no-focus`, then launched exactly:
+
+```text
+python -u scripts/execute.py 44-drawing-set-assembly
+```
+
+Progress was read only from the worktree phase index at approximately 90-second intervals. No stdout/log progress polling, direct worktree edits during execution, lead-triggered restarts, effort escalation, or process kills occurred. After terminal state was recorded, read reports, invocation artifacts, commit history and the finished pane for the required result report. The pane had returned to its PowerShell prompt; it was then closed. The worktree and its `node_modules` junction remain for the conductor.
+
+The lead made no main-tree Git writes or file edits in Stage 2 other than this append. No push or merge was requested or performed by the lead.
+
+### Per-step status and timing
+
+All primary harness invocations used `gpt-6-astra`. Elapsed seconds below come from each `stepN-invoke.json#/elapsed`, not the terminal's misleading `[0s]` completion display.
+
+| Step | Name | Status | Model | Effort | Invocation seconds | Observed harness retries |
+|---|---|---|---|---|---:|---:|
+| 0 | refute-adr-and-goldens | completed | gpt-6-astra | medium | 873.78 | 0 |
+| 1 | overlap-census | completed | gpt-6-astra | medium | 492.25 | 0 |
+| 2 | level-story-key | completed | gpt-6-astra | low | 245.87 | 0 |
+| 3 | set-reconcile | completed | gpt-6-astra | medium | 1121.72 | 0 |
+| 4 | set-plan-apply | completed | gpt-6-astra | medium | 824.96 | 0 |
+| 5 | set-import-ui | completed | gpt-6-astra | medium | 1607.69 | 0 |
+| 6 | docs-sync | completed | gpt-6-astra | low | 229.50 | 0 |
+| 7 | refute-phase | completed | gpt-6-astra | medium | 507.76 | 0 |
+
+Index elapsed interval: **2026-09-10 11:46:18–13:24:48 KST, 1h 38m 30s**. Sum of invocation elapsed values: **5903.53 seconds**. All eight invocation records have `exitCode: 0` and `timedOut: false`. Each retained stdout log contains one `thread.started`, one `turn.started` and one `turn.completed`, with no top-level `turn.failed` or `error` event. No harness retry was observed; these counts concern harness attempts, not test iterations or review fixes within a turn. The harness overwrites its per-step logs, so they are not a general historical retry ledger.
+
+Primary-turn usage reported by the eight retained `turn.completed` events totals **46,686,766 input tokens**, including **44,671,872 cached input tokens**, and **110,168 output tokens**. These are actual reported aggregate call usage, not unique context size or billed cost. Nested worker/reviewer usage and lead usage are not independently accounted for here; no total monetary cost is claimed. Reports disclose nested reviews, including Astra max reviews, and Step 5's Terra medium e2e worker. Those did not change the primary per-step model/effort assignments; no Sol or Spark primary invocation was used.
+
+### Verify-step results
+
+Source artifacts below are in the isolated worktree under `phases/44-drawing-set-assembly/`.
+
+- **Step 0 — `step0-report.json`, verdict `upheld`:** A1–A11 all hold. It checked ADR current-state claims and existing/planned symbols, the five set goldens against independent raw glyph evidence, reference/story mapping, and all 19 registered known-gap directions. It recorded a 66-file frozen manifest. This gate verified the specified corpus and plan claims; it did not certify future implementation or corpus completeness.
+- **Step 7 — `step7-report.json`, verdict `upheld`:** all twelve claims hold. It rechecked all 36 parser output hashes, the 35 grammar rows, five assemblies and 19 live gaps; eight isolated physical mutations each caused test failure and were restored byte-for-byte. It confirmed 42 members in the dedicated tsu composition fixture, frozen files (with the specified append-only ADR supplement exception), mirrored documentation rows, numeric citations and allowed changed paths.
+- Final Step 7 gates: **1,879 tests / 104 files passed**, lint exit 0 (one existing unused `_omitted` warning), TypeScript exit 0, build exit 0. Wildcard report citation checking and Step 7's own citation check exited 0.
+- Step 7 inspected the Step 5 e2e report and script as specified; it **did not rerun the browser e2e**. Step 5 records `uc24` exit 0, full-PDF conflict/disabled-approval checks followed by explicit page/block selection and successful span application.
+
+These are the harness verification artifacts, inspected and summarized by the lead after execution. The conductor still performs the requested independent acceptance review.
+
+### Issues and limitations for conductor review
+
+1. **Step 5 build-order incident:** `step5-report.json#/earlier_build_order_incident` records an earlier rebuild while surviving Next children were present, producing missing chunk `823.js`. The worker reports stopping only its own Next/npm PIDs, moving stale `.next` to ignored `.cache/step5-next-stale`, then completing a fresh build → own dev → `uc24` sequence. Its `build_order_respected: true` applies only to the recovered final sequence. This failure was discovered in the end report; Step 5 never exposed `blocked` or `error` in the lead's index observations. Step 7 subsequently verified no Next processes before its successful build.
+2. **E2E scope:** the real-PDF path with existing sample sections imported 6 matching members and skipped 49 unmatched placements. It proves approval/grid/Story behavior, not complete quantities; the 42-member result belongs to the separate deliberately matched composition fixture. Partial coverage can still leave quantity/3D errors.
+3. **Within-step corrections occurred:** Step 3 fixed a split-alias review finding; Step 4 strengthened three mutation-sensitive tests; Step 5 fixed empty section-filter handling and hidden discard consent after range edits. These are not harness retries or evidence of a flawless first implementation.
+4. **Existing risks remain:** verification does not close R6, R10 or R15, establish source-transcription approval, or remove the nineteen known gaps. Original frozen ADR bytes were checked as a preserved prefix; the permitted Step 6 supplement is appended.
+5. **Monitoring/reporting issue:** one lead index-read result could not be JSON-decoded; an immediate read returned valid JSON and showed normal progression. No file was changed to resolve it. Terminal completion timings displayed `0s`, so timing above uses invocation JSON. The first full report read was oversized/truncated; bounded structured extraction was then used for the summaries.
+
+### Worktree commits
+
+Captured using `git log --oneline main..feat-44-drawing-set-assembly` after harness completion:
+
+```text
+8a13c3d chore(44-drawing-set-assembly): mark phase completed
+3b4cd44 chore(44-drawing-set-assembly): step 7 output
+8e0468a feat(44-drawing-set-assembly): step 7 — refute-phase
+e62f6d1 chore(44-drawing-set-assembly): step 6 output
+55ca025 feat(44-drawing-set-assembly): step 6 — docs-sync
+a900e85 chore(44-drawing-set-assembly): step 5 output
+f7df958 feat(44-drawing-set-assembly): step 5 — set-import-ui
+173ed22 chore(44-drawing-set-assembly): step 4 output
+662ebe2 feat(44-drawing-set-assembly): step 4 — set-plan-apply
+e791f9b chore(44-drawing-set-assembly): step 3 output
+09d2717 feat(44-drawing-set-assembly): step 3 — set-reconcile
+a05c627 chore(44-drawing-set-assembly): step 2 output
+2b2d35c feat(44-drawing-set-assembly): step 2 — level-story-key
+26e9da1 chore(44-drawing-set-assembly): step 1 output
+bf77002 feat(44-drawing-set-assembly): step 1 — overlap-census
+d29b73a chore(44-drawing-set-assembly): step 0 output
+b6049bc feat(44-drawing-set-assembly): step 0 — refute-adr-and-goldens
+```
+
+Stage 2 stops here. The report append is uncommitted in main; implementation and harness artifacts remain committed only on the isolated phase branch for conductor verification and merge.
+
+Post-append observation: a final verification command could no longer enter `C:\Users\emper\mdtproject-p44` (OS error 267), and `Test-Path` confirmed that worktree path was absent. The lead did not remove it. The main report exists with exactly one `stage2-result` heading. Worktree cleanliness, branch location and commit statements above describe the observed harness-end state before this external change; subsequent merge/cleanup actions were not inspected. Byte-prefix comparison against the now-absent worktree copy could not run.
