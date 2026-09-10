@@ -232,6 +232,10 @@
     {
       "dir": "45-partial-import-unsupported",
       "status": "completed"
+    },
+    {
+      "dir": "46-quantity-line-size-key",
+      "status": "pending"
     }
   ]
 }
