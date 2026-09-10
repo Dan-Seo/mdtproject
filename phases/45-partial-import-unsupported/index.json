@@ -46,10 +46,10 @@
     {
       "step": 4,
       "name": "docs-sync",
-      "status": "deferred",
+      "status": "completed",
       "model": "gpt-6-astra",
       "reasoning_effort": "low",
-      "summary": "codex weekly quota conservation (2026-09-10): executed by the Claude session outside the harness"
+      "summary": "ADR-047 appended, RISKS R10 line plus new R17, and the 도면 인식 clause added identically to MILESTONES/CLAUDE.md/AGENTS.md; step4-check.py prints docs ok and check-citations exits 0."
     },
     {
       "step": 5,

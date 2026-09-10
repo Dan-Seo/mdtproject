@@ -1,0 +1,69 @@
+{
+  "adr": "ADR-047",
+  "risk": "R17",
+  "files": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "phases/45-partial-import-unsupported/step4-check.py",
+    "phases/45-partial-import-unsupported/step4-report.json",
+    "phases/45-partial-import-unsupported/index.json"
+  ],
+  "adr_decisions": [
+    {
+      "id": "1",
+      "text": "supportColumnSection / beamDepthAbove validation demoted to MemberUnsupportedError (支持柱なし / 上部大梁なし)",
+      "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction"
+    },
+    {
+      "id": "2",
+      "text": "girderRun splits runs on differing adjacent 断面 like slabRun; mixed-section throw deleted",
+      "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/counterexample"
+    },
+    {
+      "id": "3",
+      "text": "no engine invariant duplicated into the import layer; internal defects stay plain Error",
+      "source": "phases/45-partial-import-unsupported/step1-report.json#/changed_files"
+    },
+    {
+      "id": "4",
+      "text": "same-name Story aggregateQuantity collision deferred (QuantityLine.id migration)",
+      "source": "phases/45-partial-import-unsupported/step0-report.json#/deferred"
+    },
+    {
+      "id": "5",
+      "text": "stirrup strict gap comparison replaced with tolerance comparison; no completeness claim for reachable plain throws",
+      "source": "phases/45-partial-import-unsupported/step0-report-r4.json#/claims"
+    }
+  ],
+  "risk_r17": {
+    "text": "import-built Project can still hit a plain Error: two same-name 階 with the same 符号 and differing 径 stop 内訳 aggregation",
+    "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample"
+  },
+  "ledger_clause": "부분 취입은 支持柱なし·上部大梁なし 未対応으로 강등하고 大梁 런은 같은 断面일 때만 잇는다(ADR-047)",
+  "identical_rows": {
+    "checked_before_edit": true,
+    "were_identical_before_edit": true,
+    "note": "CLAUDE.md:57 and AGENTS.md:60 도면 인식(로컬) rows were byte-identical before the edit and remain identical after; R17 rows added identically after the R16 row in both"
+  },
+  "validation": {
+    "check_script": "python phases/45-partial-import-unsupported/step4-check.py",
+    "check_script_stdout": "docs ok",
+    "citations": "python scripts/check-citations.py phases/45-partial-import-unsupported/step4-report.json",
+    "code_touched": false
+  },
+  "verification_evidence": {
+    "source": "phases/45-partial-import-unsupported/step3-report.json#/new_checks",
+    "note": "uc24 four pane-liveness checks verifying the demotion"
+  },
+  "by": "Claude Opus worker (codex quota conservation)",
+  "paths_verified": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "CLAUDE.md",
+    "AGENTS.md"
+  ]
+}
