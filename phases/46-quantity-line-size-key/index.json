@@ -17,8 +17,9 @@
     {
       "step": 2,
       "name": "docs-sync",
-      "status": "deferred",
-      "note": "Claude/Opus worker, no codex (quota conservation until 2026-09-16)"
+      "status": "completed",
+      "note": "Claude/Opus worker, no codex (quota conservation until 2026-09-16)",
+      "summary": "Recorded ADR-048 and closed R17 in docs/RISKS.md, CLAUDE.md and AGENTS.md; no code touched."
     },
     {
       "step": 3,
