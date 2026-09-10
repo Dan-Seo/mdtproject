@@ -1,0 +1,228 @@
+{
+  "verdict": "upheld",
+  "round": 5,
+  "head": "6f98ecd70253d0106398741cdc248a1a733405ef",
+  "scope": "Verification only: B1 reachability, B7 migration rationale, B9 cause and scope. B2-B6/B8 inherited without rerunning. No exhaustive plain-throw claim and no product fixes.",
+  "claims": [
+    {
+      "id": "B1",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction",
+          "note": "Inherited executable tsu imports: 6 and 42 members both reach supportColumnSection. Two tests passed; exact error retained."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/counterexample",
+          "note": "Inherited accepted adjacent G1/G2 import reaches mixed-section girderRun; supports individually resolve."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-r4-results.json#/0",
+          "note": "Inherited round-4 executable result: column-only registration imports one column and skips unregistered G1; deserializeProject and columnEnds pass, while beamDepthAbove and actual buildTakeoff throw the same plain Error. Current source is unchanged."
+        },
+        {
+          "source": "src/lib/hooks/useTakeoff.ts",
+          "note": "beamDepthAbove runs at 113 before columnEnds argument at 114; catch at 120 rethrows plain Error. columnEnds itself does not call beamDepthAbove.",
+          "line": 113
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/1",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/1",
+          "note": "Round 3 inherited result retained. Current worktree diff against round 2 is empty for src/tests/ADR."
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/2",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/2",
+          "note": "Round 3 inherited result retained. Current worktree diff against round 2 is empty for src/tests/ADR."
+        }
+      ]
+    },
+    {
+      "id": "B4",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/3",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/3",
+          "note": "Round 3 inherited result retained. Current worktree diff against round 2 is empty for src/tests/ADR."
+        }
+      ]
+    },
+    {
+      "id": "B5",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/4",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/4",
+          "note": "Round 3 inherited result retained. Current worktree diff against round 2 is empty for src/tests/ADR."
+        }
+      ]
+    },
+    {
+      "id": "B6",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/claims/5",
+          "note": "Inherited; no rerun requested."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/5",
+          "note": "Round 3 inherited result retained. Current worktree diff against round 2 is empty for src/tests/ADR."
+        }
+      ]
+    },
+    {
+      "id": "B7",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "src/domain/model/project.ts",
+          "note": "notes documents QuantityLine.id keys at 107; setNote writes notes[lineId] at 1561.",
+          "line": 107
+        },
+        {
+          "source": "src/domain/model/project.ts",
+          "note": "memberGroupKey includes story.name, member code, section.mark.",
+          "line": 194
+        },
+        {
+          "source": "src/domain/quantity/index.ts",
+          "note": "quantityLineId includes group, role, length, count, splice count and points, omits size; aggregate assigns id at 305 and rejects size/shape collision at 289.",
+          "line": 201
+        },
+        {
+          "source": "src/components/quantity/TakeoffPane.tsx",
+          "note": "Reads notes[lineId] and writes via setNote at 225.",
+          "line": 215
+        },
+        {
+          "source": "src/lib/export/index.ts",
+          "note": "Reads notes[line.id] for exported remarks.",
+          "line": 406
+        }
+      ],
+      "qualification": "Migration necessity upheld, not the literal universal wording that every conceivable key changes: story.id may equal story.name; splice IDs have a separate format. Same qualification as round 3. Unmigrated changed keys lose association."
+    },
+    {
+      "id": "B8",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/claims/7",
+          "note": "Inherited as requested; tsu six and yokohama four nonempty level names are distinct."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/golden_level_check",
+          "note": "Recorded names and empty duplicate lists; no rerun. Only excludes the specified duplicate-name trigger."
+        }
+      ]
+    },
+    {
+      "id": "B9",
+      "status": "upheld",
+      "evidence": [
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r2.json#/counterexample",
+          "note": "Same-name Story / differing-size aggregate collision is reachable; B7 below establishes persisted-key migration risk."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-report-r3.json#/counterexample",
+          "note": "Inherited pitch 100.1 counterexample records gap 100.10000000000002 at stirrup-layout.ts:77."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step0-r4-results.json#/5",
+          "note": "Inherited integer pitch 100 with offset 0.1 records gap 100.00000000000003 at the same line, for direct helper and buildTakeoff."
+        },
+        {
+          "source": "src/domain/rebar/stirrup-layout.ts",
+          "line": 61,
+          "note": "Current position = intervalStartMm + index*pitchMm; subtraction at 75 and strict gapMm > pitchMm at 76 precede plain throw at 77. The cited cause still matches."
+        },
+        {
+          "source": "phases/45-partial-import-unsupported/step1.md",
+          "note": "Work item 4 explicitly fixes site 5 with tolerance or rounding and tests both fractional-pitch and fractional-offset cases. This is planned work, not an already implemented fix."
+        }
+      ]
+    }
+  ],
+  "deferred": [
+    {
+      "site": "src/domain/quantity/index.ts#L289",
+      "why": "Same-name Story and differing size collision; persisted quantity-ID notes need migration (B7). Remains deferred."
+    },
+    {
+      "site": "src/domain/rebar/stirrup-layout.ts#L77",
+      "why": "Fixed in step 1, not deferred: strict gap comparison produces floating-point false positives for pitch 100.1 and integer pitch 100 with offset 0.1. No fix made in this verify step."
+    }
+  ],
+  "validation": {
+    "method": "Read current numbered source and archived reports/reproduction sources; reuse prior executable evidence as permitted. No Vitest or B2-B6/B8 rerun in round 5.",
+    "source_currency": {
+      "command": "git diff --name-only 52bb8da -- src tests docs/ADR.md",
+      "exit_code": 0,
+      "output": ""
+    },
+    "prior_commands": [
+      {
+        "source": "phases/45-partial-import-unsupported/step0-report-r1.json#/reproduction",
+        "note": "Recorded command/output: two passing tests, tsu imports with 6 and 42 members reach missing-support Error; adjacent G1/G2 reaches mixed-section Error."
+      },
+      {
+        "source": "phases/45-partial-import-unsupported/step0-report-r4.json#/validation/reproduction",
+        "note": "Recorded round-4 command/output: two passing tests covering column-only import and floating-point controls. Not rerun."
+      }
+    ],
+    "citations": {
+      "command": "python scripts/check-citations.py phases/45-partial-import-unsupported/step0-report.json",
+      "exit_code": 0,
+      "output": ""
+    }
+  },
+  "archive_note": "R1/R2 archived reproduction sources were read. R3/R4 reproduction source/config files are absent at this HEAD; no claim that they exist now. Their reports and round-4 result JSON remain, and round 5 uses their recorded evidence as allowed. No new reproduction or config was needed.",
+  "paths_verified": [
+    "src/domain/model/project.ts",
+    "src/domain/quantity/index.ts",
+    "src/lib/hooks/useTakeoff.ts",
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/lib/export/index.ts",
+    "src/lib/i18n.test.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "tests/fixtures/drawing-set/expected/tsu.json",
+    "tests/fixtures/drawing-set/expected/yokohama.json",
+    "docs/ADR.md",
+    "phases/45-partial-import-unsupported/step0-report-r1.json",
+    "phases/45-partial-import-unsupported/step0-report-r2.json",
+    "phases/45-partial-import-unsupported/step0-report-r3.json",
+    "phases/45-partial-import-unsupported/step0-repro-r1.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-repro-r2.test.ts.txt",
+    "phases/45-partial-import-unsupported/step0-r4-results.json",
+    "phases/45-partial-import-unsupported/step0-report-r4.json",
+    "phases/45-partial-import-unsupported/step1.md"
+  ]
+}
