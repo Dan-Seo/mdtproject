@@ -27,9 +27,11 @@
     {
       "step": 2,
       "name": "level-story-key",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-6-astra",
-      "reasoning_effort": "low"
+      "reasoning_effort": "low",
+      "started_at": "2026-09-10T12:09:05+0900",
+      "summary": "Added levelStoryKey and unanimous alias storyNameKey with 35 grammar rows; 42 targeted and 1847 full tests pass, lint and tsc exit 0."
     },
     {
       "step": 3,

@@ -1,0 +1,232 @@
+{
+  "baseline_commit": "26e9da14f5063f6602b1b5af299a774f1e9d8d05",
+  "baseline_status": " M phases/44-drawing-set-assembly/index.json\n?? phases/44-drawing-set-assembly/step2-codex.stderr.log\n?? phases/44-drawing-set-assembly/step2-codex.stdout.log\n",
+  "baseline_hashes": {
+    "phases/44-drawing-set-assembly/index.json": "a5a7cda9bff35a22a3bf0f2bbb0473521495e9aea386bb59bf4a7e95b6490a4a",
+    "phases/44-drawing-set-assembly/step2-codex.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phases/44-drawing-set-assembly/step2-codex.stdout.log": "40bcec85e351508d1f3e29982ed10836bd4ff51b1923476a51a5c20a172b722a"
+  },
+  "grammar_table": [
+    {
+      "function": "levelStoryKey",
+      "input": "1FL",
+      "expected": "1"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "２ＦＬ",
+      "expected": "2"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "1SL",
+      "expected": "1"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "01F",
+      "expected": "1"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "3階",
+      "expected": "3"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RFL",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RSL+760.00",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RFL(水下)",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": " R ＦＬ（ 水下 ） ",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "2FL-12.5",
+      "expected": "2"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "1SL±0",
+      "expected": "1"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RFL760.00",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "R",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RF",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "R階",
+      "expected": "R"
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RFL水上",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "中央棟1FL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "GL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "設計GL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "基礎下端",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "PHFL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "B1F",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "RCL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "note1FL",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "1FLまで",
+      "expected": null
+    },
+    {
+      "function": "levelStoryKey",
+      "input": "1FL／1SL",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "1FL／1SL",
+      "expected": "1"
+    },
+    {
+      "function": "storyNameKey",
+      "input": "中央棟1FL／基準GL",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "1FL／2SL",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "1FL／GL",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "1FL／",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "",
+      "expected": null
+    },
+    {
+      "function": "storyNameKey",
+      "input": "RFL／RSL+760.00",
+      "expected": "R"
+    },
+    {
+      "function": "storyNameKey",
+      "input": "２ＦＬ/02SL",
+      "expected": "2"
+    }
+  ],
+  "validation": {
+    "targeted": {
+      "command": "npx vitest run src/lib/import/story-label.test.ts",
+      "exit_code": 0,
+      "passed": 42
+    },
+    "full": {
+      "command": "npx vitest run",
+      "exit_code": 0,
+      "files": 101,
+      "passed": 1847
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "warnings": 1,
+      "note": "Existing unused _omitted warning in route.test.ts."
+    },
+    "types": {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "tdd": {
+      "before_implementation_failed": 35,
+      "before_implementation_passed": 7
+    }
+  },
+  "temporary_mutations": [],
+  "paths_verified": [
+    "src/lib/import/story-label.ts",
+    "src/lib/import/story-label.test.ts",
+    "src/lib/import/runs.ts",
+    "docs/ADR.md",
+    "phases/44-drawing-set-assembly/step2.md"
+  ],
+  "paths_expected_absent": [],
+  "changed_paths": [
+    "src/lib/import/story-label.test.ts",
+    "src/lib/import/story-label.ts",
+    "phases/44-drawing-set-assembly/step2-lint.txt",
+    "phases/44-drawing-set-assembly/step2-red.txt",
+    "phases/44-drawing-set-assembly/step2-report.json",
+    "phases/44-drawing-set-assembly/step2-tests.txt",
+    "phases/44-drawing-set-assembly/step2-tsc.txt"
+  ],
+  "allowed_paths_check": true
+}
