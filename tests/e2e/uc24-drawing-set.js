@@ -124,6 +124,51 @@ const applied = await page.evaluate(() => ({
   result: document.querySelector("[data-testid='drawing-set-result']")?.textContent ?? "",
 }));
 
+// Phase 45 (ADR-047): after a partial import the panes must stay alive. The tsu
+// 2FL block yields six girders whose grid points have no registered column
+// section, so each is demoted to an unsupported member instead of throwing.
+// Locale keys: pane.failure, takeoff.unsupported.reason.支持柱なし (ja.json).
+const paneFailureText = "このペインを表示できません";
+const missingSupportText = "支点の柱がない";
+
+await page.evaluate(() => {
+  const panel = document.querySelector("section[aria-label='図面セット']");
+  const close = panel
+    ? [...panel.querySelectorAll("button")].find((b) => b.textContent.trim() === "閉じる")
+    : null;
+  if (close) close.click();
+});
+await page.waitForTimeout(700);
+
+const panes = await page.evaluate(
+  ({ failure, reason }) => {
+    const notice = document.querySelector("[data-testid='unsupported-notice']");
+    const items = notice ? [...notice.querySelectorAll("li")] : [];
+    return {
+      paneFailure: document.body.textContent.includes(failure),
+      tabCount: document.querySelectorAll("[aria-label='表示切替'] [role='tab']").length,
+      noticePresent: notice !== null,
+      noticeItems: items.length,
+      noticeItemsWithReason: items.filter((li) => li.textContent.includes(reason)).length,
+      noticeText: notice?.textContent ?? "",
+    };
+  },
+  { failure: paneFailureText, reason: missingSupportText },
+);
+
+let buildingCanvas = null;
+if (panes.tabCount >= 2) {
+  await page.click("[aria-label='表示切替'] [role='tab']:nth-of-type(2)");
+  try {
+    await page.waitForSelector("canvas[aria-label='建物全体の3D']", { timeout: 30000 });
+    buildingCanvas = await page.evaluate(
+      () => document.querySelector("canvas")?.getAttribute("aria-label") ?? null,
+    );
+  } catch (error) {
+    buildingCanvas = String(error);
+  }
+}
+
 const checks = {
   fullPdfHasThirtyPages: fullSet.pageCount === 30,
   fullPdfReportsGridConflict:
@@ -139,9 +184,14 @@ const checks = {
     refusal.result.includes("部材があるため階を置き換えられません"),
   appliedXSpansMatchTsuGolden:
     JSON.stringify(applied.spans) === JSON.stringify(golden.grid.xSpansMm),
+  panesRenderAfterApply: !panes.paneFailure,
+  buildingTabPresentAfterApply: panes.tabCount >= 2,
+  unsupportedNoticeListsSkippedGirders:
+    panes.noticePresent && panes.noticeItems === 6 && panes.noticeItemsWithReason === 6,
+  buildingViewRendersAfterApply: buildingCanvas === "建物全体の3D",
 };
 
-console.log(JSON.stringify({ fullSet, selected, refusal, applied, checks }, null, 2));
+console.log(JSON.stringify({ fullSet, selected, refusal, applied, panes, buildingCanvas, checks }, null, 2));
 console.log(
   "SHOT " + (await saveScreenshot(await page.screenshot(), "uc24-drawing-set.png")),
 );

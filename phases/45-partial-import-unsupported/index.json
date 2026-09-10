@@ -38,10 +38,10 @@
     {
       "step": 3,
       "name": "e2e-panes-alive",
-      "status": "deferred",
+      "status": "completed",
       "model": "gpt-6-astra",
       "reasoning_effort": "medium",
-      "summary": "codex weekly quota conservation (2026-09-10): executed by the Claude session outside the harness"
+      "summary": "uc24 extended with 4 pane-liveness checks; build->dev->e2e on port 3000: 14/14 checks true, notice lists six 2FL girders (missing support column), building 3D renders."
     },
     {
       "step": 4,

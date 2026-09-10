@@ -1,0 +1,64 @@
+{
+  "e2e": {
+    "command": "npx dev-browser --browser kijun --timeout 240 run tests/e2e/uc24-drawing-set.js",
+    "checks": {
+      "fullPdfHasThirtyPages": true,
+      "fullPdfReportsGridConflict": true,
+      "referenceUsesSourcePageIndex": true,
+      "rangeUsesNumericLevelIndexes": true,
+      "p20BlockStoryUsesSourcePageIndexKey": true,
+      "p20BlockHasAutomaticStory": true,
+      "applyIsReadyAfterMembershipAndRange": true,
+      "discardIsNotShownBeforeRefusal": true,
+      "discardIsShownOnlyAfterMemberRefusal": true,
+      "appliedXSpansMatchTsuGolden": true,
+      "panesRenderAfterApply": true,
+      "buildingTabPresentAfterApply": true,
+      "unsupportedNoticeListsSkippedGirders": true,
+      "buildingViewRendersAfterApply": true
+    },
+    "panes": {
+      "paneFailure": false,
+      "tabCount": 2,
+      "noticePresent": true,
+      "noticeItems": 6,
+      "noticeItemsWithReason": 6,
+      "noticeText": "未対応部材 6件G1（2FL）— 支点の柱がないG1（2FL）— 支点の柱がないG1（2FL）— 支点の柱がないG2（2FL）— 支点の柱がないG1（2FL）— 支点の柱がないG1（2FL）— 支点の柱がないその格子点の柱の断面を登録して再取込するか、柱を配置する"
+    },
+    "buildingCanvas": "建物全体の3D",
+    "exit_code": 0,
+    "screenshot": "C:/Users/emper/.dev-browser/tmp/uc24-drawing-set.png",
+    "runs": [
+      {
+        "run": 1,
+        "all_checks_passed": true,
+        "exit_code": 1,
+        "note": "ALL CHECKS PASSED printed, then QuickJS teardown assertion (JS_FreeRuntime gc_obj_list) after the script finished — dev-browser runtime flake, not a check failure"
+      },
+      {
+        "run": 2,
+        "all_checks_passed": true,
+        "exit_code": 0
+      }
+    ]
+  },
+  "order": "lint/tsc/vitest (step 2 handover commit) -> port 3000 free -> npm run build (exit 0) -> fixtures mirrored to ~/.dev-browser/tmp -> npm run dev -p 3000 (pid 26896) -> e2e x2",
+  "dev_server": {
+    "port": 3000,
+    "pid": 26896,
+    "pid_stopped": true,
+    "dev_browser_stopped": true
+  },
+  "new_checks": [
+    "panesRenderAfterApply",
+    "buildingTabPresentAfterApply",
+    "unsupportedNoticeListsSkippedGirders",
+    "buildingViewRendersAfterApply"
+  ],
+  "by": "Claude (codex quota conservation; step deferred from harness)",
+  "paths_verified": [
+    "tests/e2e/uc24-drawing-set.js",
+    "src/locales/ja.json",
+    "src/components/quantity/TakeoffPane.tsx"
+  ]
+}
