@@ -51,7 +51,18 @@ export function qaRequest(body: string, claudeMd: string) {
     model: SUBJECT_MODEL,
     max_tokens: 2000,
     temperature: 0,
-    system: qaSystem(claudeMd),
+    // CLAUDE.md(≈22KB)는 qa 케이스마다 동일한 접두사다 — 캐시 브레이크포인트를 걸어
+    // 두 번째 케이스부터 cache read 요금으로 읽는다. Sonnet 4.6의 최소 캐시 길이
+    // 1024토큰을 넘으므로 실제로 캐시된다. 적중 여부는 usage.cache_read_input_tokens로
+    // 확인한다(runCase가 출력). review 트랙의 시스템 프롬프트는 최소 길이 미만이라
+    // 브레이크포인트를 걸어도 조용히 캐시되지 않으므로 걸지 않는다.
+    system: [
+      {
+        type: 'text' as const,
+        text: qaSystem(claudeMd),
+        cache_control: { type: 'ephemeral' as const },
+      },
+    ],
     messages: [{ role: 'user' as const, content: body }],
   }
 }
@@ -106,6 +117,13 @@ async function runCase(
   const subjectRes = await client.messages.create(subjectParams)
   if (subjectRes.stop_reason === 'refusal')
     throw new Error('subject가 refusal로 종료됨')
+  if (c.track === 'qa') {
+    // 캐시가 조용히 깨지면(CLAUDE.md 접두사 변동 등) 여기서 0이 찍힌다 — 첫 케이스만 0이 정상.
+    const u = subjectRes.usage
+    console.log(
+      `    subject usage: cache_read=${u.cache_read_input_tokens ?? 0} cache_write=${u.cache_creation_input_tokens ?? 0} input=${u.input_tokens}`,
+    )
+  }
   const subjectOut = extractText(subjectRes.content)
 
   const prompt =

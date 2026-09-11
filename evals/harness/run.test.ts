@@ -30,8 +30,15 @@ describe('reviewerRequest', () => {
 describe('qaRequest', () => {
   test('라이브 CLAUDE.md가 시스템 컨텍스트에 들어간다', () => {
     const req = qaRequest('질문', '# CLAUDE-MD-MARKER')
-    expect(req.system).toContain('# CLAUDE-MD-MARKER')
+    expect(req.system[0].text).toContain('# CLAUDE-MD-MARKER')
     expect(req.temperature).toBe(0)
+  })
+
+  // 브레이크포인트가 빠지면 케이스마다 CLAUDE.md 전체를 정가로 다시 보낸다.
+  test('CLAUDE.md 시스템 블록에 캐시 브레이크포인트가 걸려 있다', () => {
+    const req = qaRequest('질문', '# CLAUDE-MD-MARKER')
+    expect(req.system).toHaveLength(1)
+    expect(req.system[0].cache_control).toEqual({ type: 'ephemeral' })
   })
 })
 

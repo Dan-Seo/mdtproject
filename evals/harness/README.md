@@ -29,6 +29,11 @@ evals/harness/
 - judge는 subject와 **다른 모델**(Opus 5)이고, 구조화 출력(json_schema)으로
   `{"pass", "reason"}`을 강제하며, 안전 분류기 오탐이 게이트를 흔들지 않게 서버측
   refusal 폴백(`fallbacks: "default"`)을 켠다.
+- qa 트랙의 시스템 블록(CLAUDE.md)에는 prompt caching 브레이크포인트(`cache_control`)가
+  걸려 있다 — 케이스마다 같은 접두사를 다시 보내므로 두 번째 케이스부터 cache read 요금이다.
+  `npm run eval` 출력의 `subject usage: cache_read=…`가 첫 케이스 이후에도 0이면 접두사가
+  깨진 것이다. review 트랙 프롬프트는 최소 캐시 길이(1024토큰) 미만이라 걸지 않는다.
+  Batch API는 완료까지 최대 24시간이라 PR 게이트에는 쓰지 않는다.
 - review 트랙의 리뷰어 시스템 프롬프트는 `scripts/githooks/pre-commit`의 LLM 퀵 패스와
   같은 룰 집합이다. **룰이 바뀌면 두 곳을 함께 고칠 것** (`prompts.ts` 주석 참조).
 
