@@ -2,10 +2,6 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 
-import { decodeStbBytes } from '@/lib/import/stb/decode'
-import { parseStbDocument } from '@/lib/import/stb/document'
-import { toSkeletonCandidate } from '@/lib/import/stb/candidates'
-import { applyStbGrid, applyStbStories } from '@/lib/import/stb/apply'
 import type { StbGridCandidate, StbSkeletonCandidate } from '@/lib/import/stb/types'
 import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
@@ -17,8 +13,12 @@ interface StbImportProps {
   initialCandidate?: StbSkeletonCandidate
 }
 
-type GridApplyResult = ReturnType<typeof applyStbGrid>
-type StoriesApplyResult = ReturnType<typeof applyStbStories>
+// ST-Bridge 파이프라인(디코더·파서·후보·적용)은 파일을 고르거나 적용을 누른
+// 뒤에만 돈다. 정적으로 끌면 초기 로드의 차단 경로에 통째로 얹히므로, 조작
+// 시점에 받는다. 형만 남기고 값은 동적 import로 가져온다.
+type StbApplyModule = typeof import('@/lib/import/stb/apply')
+type GridApplyResult = ReturnType<StbApplyModule['applyStbGrid']>
+type StoriesApplyResult = ReturnType<StbApplyModule['applyStbStories']>
 
 function GridCandidate({
   candidate,
@@ -109,7 +109,11 @@ export function StbImport({ initialCandidate }: StbImportProps) {
     setDiscardStoryMembers(false)
 
     try {
-      const decoded = decodeStbBytes(await file.arrayBuffer())
+      const [{ decodeStbBytes }, bytes] = await Promise.all([
+        import('@/lib/import/stb/decode'),
+        file.arrayBuffer(),
+      ])
+      const decoded = decodeStbBytes(bytes)
       if (requestRef.current !== requestId) return
 
       if (!decoded.ok) {
@@ -121,6 +125,12 @@ export function StbImport({ initialCandidate }: StbImportProps) {
           issues: [decoded.issue],
         })
       } else {
+        const [{ parseStbDocument }, { toSkeletonCandidate }] =
+          await Promise.all([
+            import('@/lib/import/stb/document'),
+            import('@/lib/import/stb/candidates'),
+          ])
+        if (requestRef.current !== requestId) return
         const document = parseStbDocument(decoded.text, decoded.encoding)
         setCandidate(toSkeletonCandidate(document))
       }
@@ -134,8 +144,9 @@ export function StbImport({ initialCandidate }: StbImportProps) {
     }
   }
 
-  const applyGrid = () => {
+  const applyGrid = async () => {
     if (!candidate) return
+    const { applyStbGrid } = await import('@/lib/import/stb/apply')
 
     let next: GridApplyResult | undefined
     updateProject((project) => {
@@ -147,8 +158,9 @@ export function StbImport({ initialCandidate }: StbImportProps) {
     if (next) setGridResult(next)
   }
 
-  const applyStories = () => {
+  const applyStories = async () => {
     if (!candidate) return
+    const { applyStbStories } = await import('@/lib/import/stb/apply')
 
     let next: StoriesApplyResult | undefined
     updateProject((project) => {
@@ -263,7 +275,7 @@ export function StbImport({ initialCandidate }: StbImportProps) {
                       type="button"
                       className={styles.applyButton}
                       data-testid="stb-import-apply-grid"
-                      onClick={applyGrid}
+                      onClick={() => void applyGrid()}
                     >
                       {t(locale, 'stbImport.applyGrid')}
                     </button>
@@ -313,7 +325,7 @@ export function StbImport({ initialCandidate }: StbImportProps) {
                       type="button"
                       className={styles.applyButton}
                       data-testid="stb-import-apply-stories"
-                      onClick={applyStories}
+                      onClick={() => void applyStories()}
                     >
                       {t(locale, 'stbImport.applyStories')}
                     </button>

@@ -24,7 +24,9 @@ import { PRINT_ROOT_ID, PRINTING_BODY_CLASS, TakeoffPrint } from './TakeoffPrint
 function capturePrintedDocument(): { current: HTMLElement | null } {
   const captured: { current: HTMLElement | null } = { current: null }
 
-  vi.spyOn(window, 'print').mockImplementation(() => {
+  // spyOn は既に spy になっているメソッドには同じ mock を返す — 前のテストの
+  // 呼び出し履歴が残っていると、waitFor が今回の印刷を待たずに通る。
+  vi.spyOn(window, 'print').mockClear().mockImplementation(() => {
     const root = document.getElementById(PRINT_ROOT_ID)
     captured.current =
       root === null ? null : (root.cloneNode(true) as HTMLElement)
@@ -129,7 +131,9 @@ describe('TakeoffPrint', () => {
 
   it('hides the rest of the page only while printing', async () => {
     const seen: boolean[] = []
-    vi.spyOn(window, 'print').mockImplementation(() => {
+    // spyOn は既に spy になっているメソッドには同じ mock を返す — 前のテストの
+  // 呼び出し履歴が残っていると、waitFor が今回の印刷を待たずに通る。
+  vi.spyOn(window, 'print').mockClear().mockImplementation(() => {
       seen.push(document.body.classList.contains(PRINTING_BODY_CLASS))
     })
     render(<TakeoffPrint />)

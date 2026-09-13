@@ -51,13 +51,25 @@ beforeEach(() => {
   })
 })
 
-function open(pages: TextPage[]) {
+// 伏図·軸組図 파서는 동적 import 경계 뒤에 있다 — 마운트 직후가 아니라 청크가
+// 풀린 뒤에 후보가 나온다. 단언은 그대로 두고 기다리는 방식만 바꾼다
+// (src/app/page.test.tsx가 Viewer3D 경계에 대해 한 것과 같다).
+const parsersReady = Promise.all([
+  import('@/lib/import/framing-plan/parse'),
+  import('@/lib/import/framing-plan/elevation'),
+])
+
+async function open(pages: TextPage[]) {
   render(<PlanImport initialPages={pages} />)
+  await parsersReady
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
 }
 
 describe('PlanImport', () => {
-  it('伏図에서 읽은 通り芯을 라벨과 스팬으로 보여준다', () => {
-    open([planPage])
+  it('伏図에서 읽은 通り芯을 라벨과 스팬으로 보여준다', async () => {
+    await open([planPage])
 
     const grid = screen.getByTestId('plan-import-grid-X-0')
     expect(grid.textContent).toContain('bX1')
@@ -69,7 +81,7 @@ describe('PlanImport', () => {
     expect(screen.queryByTestId('plan-import-section-story')).toBeNull()
   })
 
-  it('断面一覧의 階 후보를 첫 등장 순서로 보여주고 기본값은 고르지 않음이다', () => {
+  it('断面一覧의 階 후보를 첫 등장 순서로 보여주고 기본값은 고르지 않음이다', async () => {
     const base = createSampleProject()
     const source = base.sections.find((section) => section.kind === '柱')
     if (!source) throw new Error('sample has no 柱 section')
@@ -87,7 +99,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000)])
+    await open([framingPage(6000, 5000)])
 
     const picker = screen.getByTestId('plan-import-section-story')
     expect(picker).toHaveValue('')
@@ -108,7 +120,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000, '2階床伏図')])
+    await open([framingPage(6000, 5000, '2階床伏図')])
 
     const storyPicker = screen.getByTestId('plan-import-story')
     expect(storyPicker).toHaveValue('')
@@ -139,7 +151,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000, 'R階床伏図')])
+    await open([framingPage(6000, 5000, 'R階床伏図')])
 
     expect(screen.getByTestId('plan-import-story')).toHaveValue('')
     expect(screen.getByTestId('plan-import-section-story')).toHaveValue('')
@@ -171,7 +183,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000, '2階床伏図')])
+    await open([framingPage(6000, 5000, '2階床伏図')])
     fireEvent.click(screen.getByTestId('plan-import-apply-0'))
 
     await waitFor(() =>
@@ -202,7 +214,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000, '2階床伏図')])
+    await open([framingPage(6000, 5000, '2階床伏図')])
     fireEvent.change(screen.getByTestId('plan-import-story'), {
       target: { value: '1F' },
     })
@@ -225,7 +237,7 @@ describe('PlanImport', () => {
       useAppStore.setState({ project: { ...base, members: [] } })
     })
 
-    open([framingPage(6000, 5000)])
+    await open([framingPage(6000, 5000)])
     expect(screen.getByTestId('plan-import-story')).toHaveValue('')
     fireEvent.click(screen.getByTestId('plan-import-apply-0'))
 
@@ -244,7 +256,7 @@ describe('PlanImport', () => {
       })
     })
 
-    open([framingPage(6000, 5000)])
+    await open([framingPage(6000, 5000)])
     fireEvent.change(screen.getByTestId('plan-import-story'), {
       target: { value: '1F' },
     })
@@ -264,8 +276,8 @@ describe('PlanImport', () => {
     )
   })
 
-  it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', () => {
-    open([framingPage(6000, 5000), framingPage(8000, 7000)])
+  it('모든 通り芯 후보와 블록마다 짝지어진 자기 通り芯을 보여준다', async () => {
+    await open([framingPage(6000, 5000), framingPage(8000, 7000)])
 
     expect(screen.getByTestId('plan-import-grid-X-0').textContent).toContain(
       '6000',
@@ -302,15 +314,15 @@ describe('PlanImport', () => {
     ).toEqual(['plan-import-block-grid-0-X', 'plan-import-block-grid-0-Y'])
   })
 
-  it('伏図 한 장마다 블록을 제목과 함께 보여준다', () => {
-    open([planPage])
+  it('伏図 한 장마다 블록을 제목과 함께 보여준다', async () => {
+    await open([planPage])
 
     expect(screen.getByText('2階床伏図1/100')).toBeTruthy()
     expect(screen.getByText('R階床伏図1/100')).toBeTruthy()
   })
 
-  it('軸組図의 階高를 라벨과 함께 보여준다', () => {
-    open([elevationPage])
+  it('軸組図의 階高를 라벨과 함께 보여준다', async () => {
+    await open([elevationPage])
 
     const elevation = screen.getByTestId('plan-import-elevation-0')
     expect(elevation.textContent).toContain('4480')
@@ -320,8 +332,8 @@ describe('PlanImport', () => {
     expect(elevation.textContent).toContain('基準GL')
   })
 
-  it('読めなかった도면은 사유를 말한다 — 빈 화면으로 두지 않는다', () => {
-    open([{ widthPt: 100, heightPt: 100, items: [] }])
+  it('読めなかった도면은 사유를 말한다 — 빈 화면으로 두지 않는다', async () => {
+    await open([{ widthPt: 100, heightPt: 100, items: [] }])
 
     expect(screen.getByTestId('plan-import-issues').textContent).toBeTruthy()
   })
@@ -330,7 +342,7 @@ describe('PlanImport', () => {
     // 샘플 案件에는 이미 여러 층의 부재가 있다. 격자 index는 스팬 배열에 매여
     // 있어서, 스팬을 바꾸면 손대지 않은 층이 조용히 다른 자리로 옮겨간다
     const before = useAppStore.getState().project
-    open([planPage])
+    await open([planPage])
 
     fireEvent.click(screen.getByTestId('plan-import-apply-0'))
 
@@ -343,7 +355,7 @@ describe('PlanImport', () => {
   })
 
   it('동의하면 通り芯과 부재가 案件에 들어간다', async () => {
-    open([planPage])
+    await open([planPage])
 
     fireEvent.click(screen.getByTestId('plan-import-apply-0'))
     await waitFor(() => screen.getByTestId('plan-import-discard'))
@@ -358,7 +370,7 @@ describe('PlanImport', () => {
   })
 
   it('取入 결과를 넣지 못한 符号과 사유로 보고한다', async () => {
-    open([planPage])
+    await open([planPage])
 
     fireEvent.click(screen.getByTestId('plan-import-apply-0'))
     await waitFor(() => screen.getByTestId('plan-import-discard'))
@@ -374,7 +386,7 @@ describe('PlanImport', () => {
   })
 
   it('階高를 案件의 階로 넣는다 — 어느 레벨이 階인지는 사람이 고른다', async () => {
-    open([elevationPage])
+    await open([elevationPage])
 
     // 中央棟1FL(index 3)에서 中央棟RCL(index 1)까지 → 1階 4480·2階 4100.
     // パラペット(1400)와 基礎(2690)는 階가 아니므로 범위 밖이다
@@ -403,9 +415,9 @@ describe('PlanImport', () => {
     })
   })
 
-  it('階高 반영 전에는 案件의 階를 건드리지 않는다', () => {
+  it('階高 반영 전에는 案件의 階를 건드리지 않는다', async () => {
     const before = useAppStore.getState().project.stories
-    open([elevationPage])
+    await open([elevationPage])
 
     expect(useAppStore.getState().project.stories).toBe(before)
   })

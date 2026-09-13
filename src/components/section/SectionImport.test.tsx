@@ -48,6 +48,22 @@ const headerlessPage: TextPage = {
   ],
 }
 
+/**
+ * 断面リスト 파서는 동적 import 경계 뒤에 있다 — 마운트 직후가 아니라 청크가
+ * 풀린 뒤에 후보가 나온다. 단언은 그대로 두고 기다리는 방식만 바꾼다
+ * (src/app/page.test.tsx가 Viewer3D 경계에 대해 한 것과 같다).
+ */
+const parserReady = import('@/lib/import/section-list/parse')
+
+async function renderReady(ui: Parameters<typeof render>[0]) {
+  const result = render(ui)
+  await parserReady
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  return result
+}
+
 describe('SectionImport', () => {
   beforeEach(() => {
     useAppStore.setState({
@@ -56,10 +72,10 @@ describe('SectionImport', () => {
     })
   })
 
-  it('does not change Project before a candidate row is approved', () => {
+  it('does not change Project before a candidate row is approved', async () => {
     const before = useAppStore.getState().project
 
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     expect(screen.getByTestId('section-import-candidate-C51-1階')).toBeVisible()
     expect(useAppStore.getState().project).toBe(before)
@@ -82,8 +98,8 @@ describe('SectionImport', () => {
     await waitFor(() => expect(input).toHaveValue(''))
   })
 
-  it('creates a story-scoped section from a fully parsed candidate', () => {
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+  it('creates a story-scoped section from a fully parsed candidate', async () => {
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-C51-2階')
     // 복제 고지는 어떤 값이 흘러드는지 필드 단위로 보여야 한다 — 符号만으로는
@@ -123,8 +139,8 @@ describe('SectionImport', () => {
     ).toEqual([])
   })
 
-  it('keeps each story as its own section instead of overwriting', () => {
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+  it('keeps each story as its own section instead of overwriting', async () => {
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     // C53은 두 층 모두 완전 후보다 — 두 번째 반영이 첫 번째를 덮어쓰면 안 된다
     fireEvent.click(
@@ -145,7 +161,7 @@ describe('SectionImport', () => {
     expect(imported).toEqual(['2階', '1階'])
   })
 
-  it('clones the same 符号 of another 階 rather than the first 柱', () => {
+  it('clones the same 符号 of another 階 rather than the first 柱', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -171,7 +187,7 @@ describe('SectionImport', () => {
         ],
       },
     })
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-C51-2階')
     // 복제원은 무관한 C1이 아니라 같은 符号의 다른 階다 — 파싱되지 않는
@@ -193,9 +209,9 @@ describe('SectionImport', () => {
     expect(section.hoop.startOffsetMm).toBe(50)
   })
 
-  it('blocks approval for a new mark with unparsed fields', () => {
+  it('blocks approval for a new mark with unparsed fields', async () => {
     const before = useAppStore.getState().project
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     // G51 R階는 端部 主筋이 좌우로 다르다(外端 8-D25 / 内端 13-D25) — 어느 쪽이
     // 런의 始端인지 정할 수 없어 빈칸이므로 신규 符号로는 반영 불가다 (R13)
@@ -211,7 +227,7 @@ describe('SectionImport', () => {
     expect(useAppStore.getState().project).toBe(before)
   })
 
-  it('automatically maps 通り芯型端部 labels to 始端 by grid order', () => {
+  it('automatically maps 通り芯型端部 labels to 始端 by grid order', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -219,7 +235,7 @@ describe('SectionImport', () => {
         grid: { ...base.grid, yLabels: ['Y1', 'Y 2', 'Y3'] },
       },
     })
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G55-R階')
     const direction = within(row).getByTestId(
@@ -244,7 +260,7 @@ describe('SectionImport', () => {
     })
   })
 
-  it('reverses automatic 始端 mapping when grid labels are reversed', () => {
+  it('reverses automatic 始端 mapping when grid labels are reversed', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -252,7 +268,7 @@ describe('SectionImport', () => {
         grid: { ...base.grid, yLabels: ['Y3', 'Y2', 'Y1'] },
       },
     })
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G55-R階')
     expect(
@@ -273,8 +289,8 @@ describe('SectionImport', () => {
     })
   })
 
-  it('requires a manual 始端 choice when Grid has no matching labels', () => {
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+  it('requires a manual 始端 choice when Grid has no matching labels', async () => {
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G55-R階')
     const direction = within(row).getByTestId(
@@ -301,7 +317,7 @@ describe('SectionImport', () => {
     })
   })
 
-  it('does not auto-resolve 外端/内端 labels and applies cutoff with manual choice', () => {
+  it('does not auto-resolve 外端/内端 labels and applies cutoff with manual choice', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -309,7 +325,7 @@ describe('SectionImport', () => {
         grid: { ...base.grid, xLabels: ['外', '内'] },
       },
     })
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G51-R階')
     const direction = within(row).getByTestId(
@@ -336,7 +352,7 @@ describe('SectionImport', () => {
     })
   })
 
-  it('applies asymmetric fields and preserves other existing story-scoped values', () => {
+  it('applies asymmetric fields and preserves other existing story-scoped values', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -366,7 +382,7 @@ describe('SectionImport', () => {
         ],
       },
     })
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G51-R階')
     fireEvent.change(
@@ -396,7 +412,7 @@ describe('SectionImport', () => {
     })
   })
 
-  it('applies ojkk 腹筋 and 幅止め筋 onto an existing 大梁 section', () => {
+  it('applies ojkk 腹筋 and 幅止め筋 onto an existing 大梁 section', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -410,7 +426,7 @@ describe('SectionImport', () => {
         }),
       },
     })
-    render(<SectionImport initialPages={[ojkkGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[ojkkGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G1-RF')
     expect(row).toHaveTextContent('腹筋 2-D10')
@@ -431,7 +447,7 @@ describe('SectionImport', () => {
     expect(section.widthTie).toEqual({ size: 'D10', pitch: 1000 })
   })
 
-  it('keeps the entered 腹筋 余長 while updating parsed size and count', () => {
+  it('keeps the entered 腹筋 余長 while updating parsed size and count', async () => {
     const base = createSampleProject()
     useAppStore.setState({
       project: {
@@ -451,7 +467,7 @@ describe('SectionImport', () => {
         ),
       },
     })
-    render(<SectionImport initialPages={[ojkkGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[ojkkGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G1-RF')
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
@@ -509,10 +525,10 @@ describe('SectionImport', () => {
     ).toBeVisible()
   })
 
-  it('renders parser issues through the locale layer', () => {
+  it('renders parser issues through the locale layer', async () => {
     // 파서는 이슈 코드만 싣는다 — ko 사용자에게 일본어 완성 문장이 노출되면 안 된다
     useAppStore.setState({ locale: 'ko' })
-    render(<SectionImport initialPages={[yokohamaGirderPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaGirderPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-G51-R階')
     expect(row).toHaveTextContent(
@@ -520,8 +536,8 @@ describe('SectionImport', () => {
     )
   })
 
-  it('does not offer approval for 対象外 candidates', () => {
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+  it('does not offer approval for 対象外 candidates', async () => {
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     const group = screen.getByTestId('section-import-out-of-scope')
     const row = within(group).getByTestId('section-import-candidate-B51-none')
@@ -529,9 +545,9 @@ describe('SectionImport', () => {
     expect(within(row).queryByRole('button', { name: '反映' })).toBeNull()
   })
 
-  it('ignores one candidate without changing Project', () => {
+  it('ignores one candidate without changing Project', async () => {
     const before = useAppStore.getState().project
-    render(<SectionImport initialPages={[yokohamaPage]} />)
+    await renderReady(<SectionImport initialPages={[yokohamaPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-C52-2階')
     fireEvent.click(within(row).getByRole('button', { name: '無視' }))
@@ -540,8 +556,8 @@ describe('SectionImport', () => {
     expect(useAppStore.getState().project).toBe(before)
   })
 
-  it('shows a non-throwing empty result when no section list is found', () => {
-    render(
+  it('shows a non-throwing empty result when no section list is found', async () => {
+    await renderReady(
       <SectionImport
         initialPages={[{ widthPt: 100, heightPt: 100, items: [] }]}
       />,
@@ -552,8 +568,8 @@ describe('SectionImport', () => {
     ).toBeVisible()
   })
 
-  it('distinguishes a recognized list with no 符号 row from no list at all', () => {
-    render(<SectionImport initialPages={[headerlessPage]} />)
+  it('distinguishes a recognized list with no 符号 row from no list at all', async () => {
+    await renderReady(<SectionImport initialPages={[headerlessPage]} />)
 
     // 「리스트 자체가 없다」와 「리스트는 찾았지만 符号 행을 못 읽었다」는
     // 사용자가 할 일이 다르다 — 후자는 원도의 그 표를 확인하면 된다
@@ -565,8 +581,8 @@ describe('SectionImport', () => {
     ).toBeNull()
   })
 
-  it('applies 端部欄 as 位置別 主筋本数 onto the 大梁 section', () => {
-    render(
+  it('applies 端部欄 as 位置別 主筋本数 onto the 大梁 section', async () => {
+    await renderReady(
       <SectionImport
         initialPages={[
           {
@@ -621,8 +637,8 @@ describe('SectionImport', () => {
     expect(section.widthTie).toEqual(widthTieBefore)
   })
 
-  it('does not allow a new 床板 candidate before its direction is selected', () => {
-    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+  it('does not allow a new 床板 candidate before its direction is selected', async () => {
+    await renderReady(<SectionImport initialPages={[ojkkWallSlabPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-FS4-none')
     expect(
@@ -639,8 +655,8 @@ describe('SectionImport', () => {
     ['y', 150, 100],
   ] as const)(
     'maps 短辺 to the selected %s direction and 長辺 to the other direction',
-    (direction, xPitch, yPitch) => {
-      render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+    async (direction, xPitch, yPitch) => {
+      await renderReady(<SectionImport initialPages={[ojkkWallSlabPage]} />)
 
       const row = screen.getByTestId('section-import-candidate-FS4-none')
       fireEvent.change(
@@ -669,8 +685,8 @@ describe('SectionImport', () => {
     },
   )
 
-  it('blocks a new 壁 candidate when its thickness is unparsed', () => {
-    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+  it('blocks a new 壁 candidate when its thickness is unparsed', async () => {
+    await renderReady(<SectionImport initialPages={[ojkkWallSlabPage]} />)
 
     const row = screen.getByTestId('section-import-candidate-EW15-none')
     expect(within(row).getByRole('button', { name: '反映' })).toBeDisabled()
@@ -679,7 +695,7 @@ describe('SectionImport', () => {
     )
   })
 
-  it('preserves existing WallSection fields when applying parsed wall fields', () => {
+  it('preserves existing WallSection fields when applying parsed wall fields', async () => {
     const base = createSampleProject()
     const existing: WallSection = {
       id: 'section-EW15',
@@ -700,7 +716,7 @@ describe('SectionImport', () => {
       project: { ...base, sections: [...base.sections, existing] },
     })
 
-    render(<SectionImport initialPages={[ojkkWallSlabPage]} />)
+    await renderReady(<SectionImport initialPages={[ojkkWallSlabPage]} />)
     const row = screen.getByTestId('section-import-candidate-EW15-none')
     expect(within(row).getByRole('button', { name: '反映' })).not.toBeDisabled()
     fireEvent.click(within(row).getByRole('button', { name: '反映' }))
@@ -723,8 +739,8 @@ describe('SectionImport', () => {
     })
   })
 
-  it('names the unreadable list even when another list produced candidates', () => {
-    render(<SectionImport initialPages={[yokohamaPage, headerlessPage]} />)
+  it('names the unreadable list even when another list produced candidates', async () => {
+    await renderReady(<SectionImport initialPages={[yokohamaPage, headerlessPage]} />)
 
     // 부분 실패가 가장 위험하다 — 다른 표가 읽히면 실패한 표는 화면에서
     // 사라지고 사용자는 그 표를 반영했다고 믿는다
@@ -734,8 +750,8 @@ describe('SectionImport', () => {
     ).toHaveTextContent('柱断面リスト')
   })
 
-  it('points at the item rows when the 符号 header was read but nothing else', () => {
-    render(
+  it('points at the item rows when the 符号 header was read but nothing else', async () => {
+    await renderReady(
       <SectionImport
         initialPages={[
           {
