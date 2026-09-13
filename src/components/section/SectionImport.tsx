@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -16,8 +17,6 @@ import {
   type WallSection,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
-import { extractTextPages } from '@/lib/import/pdf-text'
-import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type {
   ListIssue,
   ParsedSectionList,
@@ -25,7 +24,7 @@ import type {
   TextPage,
 } from '@/lib/import/section-list/types'
 import { t } from '@/lib/i18n'
-import { compact } from '@/lib/import/runs'
+import { compact } from '@/lib/import/normalize'
 import { useAppStore, type Locale } from '@/lib/store'
 
 import styles from './SectionImport.module.css'
@@ -35,6 +34,17 @@ interface SectionImportProps {
   initialPages?: TextPage[]
   extractPages?(file: File): Promise<TextPage[]>
 }
+
+/**
+ * pdf.js 어댑터는 PDF 를 고른 뒤에만 돈다 — 초기 로드의 차단 경로에서 뺀다.
+ * 기본값을 이 래퍼로 두면 테스트가 주입하는 extractPages 경계는 그대로다.
+ */
+async function extractTextPagesLazily(file: File): Promise<TextPage[]> {
+  const { extractTextPages } = await import('@/lib/import/pdf-text')
+  return extractTextPages(file)
+}
+
+const loadSectionListParser = () => import('@/lib/import/section-list/parse')
 
 interface CandidateRow {
   id: string
@@ -821,7 +831,7 @@ function Candidate({
 
 export function SectionImport({
   initialPages,
-  extractPages = extractTextPages,
+  extractPages = extractTextPagesLazily,
 }: SectionImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
@@ -839,10 +849,23 @@ export function SectionImport({
   >({})
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
-  const lists = useMemo(
-    () => (pages ?? []).flatMap((page) => parseSectionLists(page)),
-    [pages],
-  )
+  // 断面リスト 파서는 이 화면에서 가장 무거운 덩어리이고, 파일을 고르기
+  // 전에는 한 번도 돌지 않는다. 초기 로드의 차단 경로에서 빼고 페이지가
+  // 들어온 뒤에 받는다 — 화면에 나타나는 순서는 그대로다(추출 → 후보).
+  const [lists, setLists] = useState<ParsedSectionList[]>([])
+  useEffect(() => {
+    if (!pages || pages.length === 0) {
+      setLists([])
+      return
+    }
+    let live = true
+    void loadSectionListParser().then(({ parseSectionLists }) => {
+      if (live) setLists(pages.flatMap((page) => parseSectionLists(page)))
+    })
+    return () => {
+      live = false
+    }
+  }, [pages])
   const rows = useMemo(() => parsedCandidates(lists), [lists])
   // 사유별로 어느 리스트가 걸렸는지 묶는다 — 후보가 하나라도 있으면 실패한 표가
   // 화면에서 사라지던 문제를 막으려면 이 안내가 후보 목록과 함께 늘 보여야 한다
@@ -871,6 +894,8 @@ export function SectionImport({
     setIgnored(new Set())
     setSlabDirections({})
     setGirderDirections({})
+    // 파서 청크는 PDF 추출과 나란히 받는다 — 대기가 직렬로 붙지 않게 한다.
+    void loadSectionListParser()
     try {
       const next = await extractPages(file)
       if (requestRef.current !== requestId) return

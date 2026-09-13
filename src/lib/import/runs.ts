@@ -1,4 +1,10 @@
+import { compact, normalized } from '@/lib/import/normalize'
 import type { TextItem } from '@/lib/import/types'
+
+// 정규화의 구현은 normalize.ts 한 곳에 있다 — 취입 **화면**이 라벨 하나를 맞춰
+// 보려고 이 파서 전체를 초기 로드에 끌고 오지 않게 갈라 두었다. 기존 호출부가
+// 그대로 돌도록 여기서 다시 내보낸다 (사본이 아니라 같은 함수다).
+export { compact, normalized }
 
 export interface TextSegment {
   text: string
@@ -79,22 +85,6 @@ export const PROXIMITY_MULTIPLIER = 2
  * 規準 수치가 아니라 도면 판독 임계값이라 룰팩이 아니라 여기 상수로 둔다.
  */
 export const VERTICAL_RUN_GAP_RATIO = 1.5
-
-/**
- * 하이픈류를 半角 '-'로 접는다. CP932 0x815C(全角ダッシュ)의 표준 매핑이 U+2014와
- * U+2015로 갈리므로 둘 다 넣는다 — 실물 도면(yokohama p13)은 U+2015를 쓴다.
- *
- * 長音符(ー U+30FC)는 넣지 않는다. 하이픈이 아니라 가나 글자라서, 접으면
- * 「コンクリート」가 「コンクリ-ト」가 되어 확정하지 못한 셀에 붙이는 원문 참고
- * 표시가 망가진다 — kani p38에 실제로 들어 있다.
- */
-export function normalized(value: string): string {
-  return value.normalize('NFKC').replace(/[‐‑‒–—―−]/g, '-')
-}
-
-export function compact(value: string): string {
-  return normalized(value).replace(/\s+/g, '')
-}
 
 /**
  * 인접 판정 배수의 기본값. 섹션리스트 파서가 지금까지 이 값으로 동작해 왔고,

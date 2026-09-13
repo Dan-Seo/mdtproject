@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import {
-  buildTakeoffWorkbook,
-  type WorkbookCellSpec,
-  type WorkbookRowSpec,
-  type WorkbookSheetSpec,
+import type {
+  WorkbookCellSpec,
+  WorkbookRowSpec,
+  WorkbookSheetSpec,
+  WorkbookSpec,
 } from '@/lib/export'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
 import { t } from '@/lib/i18n'
@@ -135,6 +135,15 @@ export function TakeoffPrint() {
   const locale = useAppStore(({ locale }) => locale)
   const { lines } = useTakeoff()
   const [printing, setPrinting] = useState(false)
+  // 表의 조립기는 내역서 내보내기와 같은 모듈이다. 이 釦를 누를 때만 필요하므로
+  // 초기 로드의 차단 경로에 두지 않고, 누른 뒤에 받아 그때 組む。
+  const [spec, setSpec] = useState<WorkbookSpec | null>(null)
+
+  const print = async () => {
+    const { buildTakeoffWorkbook } = await import('@/lib/export')
+    setSpec(buildTakeoffWorkbook({ project, lines, locale }))
+    setPrinting(true)
+  }
 
   useEffect(() => {
     if (!printing) return
@@ -151,19 +160,16 @@ export function TakeoffPrint() {
       // 複製を画面に残すと、行数ぶんの DOM が編集のたびに再描画される。
       document.body.classList.remove(PRINTING_BODY_CLASS)
       setPrinting(false)
+      setSpec(null)
     }
   }, [printing, locale, lines.length])
-
-  const spec = printing
-    ? buildTakeoffWorkbook({ project, lines, locale })
-    : null
 
   return (
     <>
       <button
         type="button"
         className={styles.printButton}
-        onClick={() => setPrinting(true)}
+        onClick={() => void print()}
       >
         {t(locale, 'takeoff.print')}
       </button>

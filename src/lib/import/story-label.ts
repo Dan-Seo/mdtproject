@@ -1,4 +1,4 @@
-import { compact } from './runs'
+import { compact } from './normalize'
 
 const STORY_TOKEN_PATTERN = /(?:RF|R階|\d+(?:F|階))/g
 

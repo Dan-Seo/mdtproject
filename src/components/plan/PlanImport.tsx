@@ -8,27 +8,22 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import {
-  applyElevation,
-  applyFramingPlan,
-  type ElevationApplyResult,
-  type PlanApplyResult,
+import type {
+  ElevationApplyResult,
+  PlanApplyResult,
 } from '@/lib/import/framing-plan/apply'
-import { parseFrameElevations } from '@/lib/import/framing-plan/elevation'
-import { parseFramingPlan } from '@/lib/import/framing-plan/parse'
 import type {
   ElevationCandidate,
+  ParsedFramingPlan,
   PlanBlock,
   PlanGridCandidate,
 } from '@/lib/import/framing-plan/types'
-import { extractTextPages } from '@/lib/import/pdf-text'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 import { t } from '@/lib/i18n'
 import { storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
-import { assembleDrawingSet } from '@/lib/import/drawing-set/reconcile'
-import { previewDrawingSetPlan, resolveDrawingSetPlan, type DrawingSetChoices } from '@/lib/import/drawing-set/plan'
-import { applyDrawingSet, type DrawingSetApplyResult } from '@/lib/import/drawing-set/apply'
+import type { DrawingSetChoices } from '@/lib/import/drawing-set/plan'
+import type { DrawingSetApplyResult } from '@/lib/import/drawing-set/apply'
 import type { Conflict, DrawingSetMembership, DrawingSetPage, Evidence, SeriesRef } from '@/lib/import/drawing-set/types'
 
 import styles from './PlanImport.module.css'
@@ -41,6 +36,48 @@ import styles from './PlanImport.module.css'
  * 간이 평면 에디터를 대체하지 않는다. 래스터 도면·미지 형식에서는 이 화면이
  * 빈 후보로 정직하게 실패하고, 그때 형상을 넣는 길은 손입력뿐이다 (ADR-004).
  */
+
+/**
+ * pdf.js 어댑터는 PDF 를 고른 뒤에만 돈다 — 초기 로드의 차단 경로에서 뺀다.
+ * 기본값을 이 래퍼로 두면 테스트가 주입하는 extractPages 경계는 그대로다.
+ */
+async function extractTextPagesLazily(file: File): Promise<TextPage[]> {
+  const { extractTextPages } = await import('@/lib/import/pdf-text')
+  return extractTextPages(file)
+}
+
+const loadFramingPlanParsers = () =>
+  Promise.all([
+    import('@/lib/import/framing-plan/parse'),
+    import('@/lib/import/framing-plan/elevation'),
+  ])
+const loadFramingPlanApply = () => import('@/lib/import/framing-plan/apply')
+
+/**
+ * 図面セット의 突合·計画·適用은 PDF 를 고른 뒤에만 돈다. 이 세 모듈이
+ * 伏図·軸組図·断面リスト 파서를 전부 끌고 오므로, 정적으로 두면 위의
+ * 지연 로드가 무의미해진다 — 조작 시점에 함께 받는다.
+ */
+type DrawingSetModules = {
+  assembleDrawingSet: typeof import('@/lib/import/drawing-set/reconcile')['assembleDrawingSet']
+  previewDrawingSetPlan: typeof import('@/lib/import/drawing-set/plan')['previewDrawingSetPlan']
+  resolveDrawingSetPlan: typeof import('@/lib/import/drawing-set/plan')['resolveDrawingSetPlan']
+  applyDrawingSet: typeof import('@/lib/import/drawing-set/apply')['applyDrawingSet']
+}
+
+const loadDrawingSet = async (): Promise<DrawingSetModules> => {
+  const [reconcile, plan, apply] = await Promise.all([
+    import('@/lib/import/drawing-set/reconcile'),
+    import('@/lib/import/drawing-set/plan'),
+    import('@/lib/import/drawing-set/apply'),
+  ])
+  return {
+    assembleDrawingSet: reconcile.assembleDrawingSet,
+    previewDrawingSetPlan: plan.previewDrawingSetPlan,
+    resolveDrawingSetPlan: plan.resolveDrawingSetPlan,
+    applyDrawingSet: apply.applyDrawingSet,
+  }
+}
 
 interface PlanImportProps {
   /** 테스트에서 PDF 추출을 건너뛰고 페이지를 직접 넣는다 */
@@ -248,7 +285,7 @@ function Elevation({
 
 export function PlanImport({
   initialPages,
-  extractPages = extractTextPages,
+  extractPages = extractTextPagesLazily,
 }: PlanImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const stories = useAppStore(({ project }) => project.stories)
@@ -281,14 +318,31 @@ export function PlanImport({
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
 
-  const plans = useMemo(
-    () => (pages ?? []).map((page) => parseFramingPlan(page)),
-    [pages],
-  )
-  const elevations = useMemo(
-    () => (pages ?? []).flatMap((page) => parseFrameElevations(page).elevations),
-    [pages],
-  )
+  // 伏図·軸組図 파서는 파일을 고르기 전에는 한 번도 돌지 않는다. 초기 로드의
+  // 차단 경로에서 빼고 페이지가 들어온 뒤에 받는다 — 화면에 나타나는 순서는
+  // 그대로다(추출 → 후보).
+  const [plans, setPlans] = useState<ParsedFramingPlan[]>([])
+  const [elevations, setElevations] = useState<ElevationCandidate[]>([])
+  useEffect(() => {
+    if (!pages || pages.length === 0) {
+      setPlans([])
+      setElevations([])
+      return
+    }
+    let live = true
+    void loadFramingPlanParsers().then(
+      ([{ parseFramingPlan }, { parseFrameElevations }]) => {
+        if (!live) return
+        setPlans(pages.map((page) => parseFramingPlan(page)))
+        setElevations(
+          pages.flatMap((page) => parseFrameElevations(page).elevations),
+        )
+      },
+    )
+    return () => {
+      live = false
+    }
+  }, [pages])
   const grids = plans.flatMap((plan) => plan.grids)
   const gridIndexes = { X: 0, Y: 0 }
   const displayedGrids = grids.map((candidate) => ({
@@ -329,6 +383,8 @@ export function PlanImport({
     setFailed(false)
     setResult(null)
     setElevationResults({})
+    // 파서 청크는 PDF 추출과 나란히 받는다 — 대기가 직렬로 붙지 않게 한다.
+    void loadFramingPlanParsers()
     try {
       const next = await extractPages(file)
       if (requestRef.current !== requestId) return
@@ -343,7 +399,8 @@ export function PlanImport({
     }
   }
 
-  const apply = (block: PlanBlock) => {
+  const apply = async (block: PlanBlock) => {
+    const { applyFramingPlan } = await loadFramingPlanApply()
     const automatic = automaticSelections(block, stories, sectionStoryLabels)
     const nextStoryId = storySelectionWasManual
       ? storyId
@@ -378,12 +435,13 @@ export function PlanImport({
     if (applied) setResult(applied)
   }
 
-  const applyStories = (
+  const applyStories = async (
     candidate: ElevationCandidate,
     index: number,
     topLevelIndex: number,
     bottomLevelIndex: number,
   ) => {
+    const { applyElevation } = await loadFramingPlanApply()
     let applied: ElevationApplyResult | undefined
     updateProject((project) => {
       applied = applyElevation(project, {
@@ -564,7 +622,7 @@ export function PlanImport({
                         type="button"
                         className={styles.applyButton}
                         data-testid={`plan-import-apply-${index}`}
-                        onClick={() => apply(block)}
+                        onClick={() => void apply(block)}
                       >
                         {t(locale, 'planImport.apply')}
                       </button>
@@ -598,7 +656,7 @@ export function PlanImport({
                     discardMembers={discardMembers}
                     onDiscardMembersChange={setDiscardMembers}
                     onApply={(topLevel, bottomLevel) =>
-                      applyStories(candidate, index, topLevel, bottomLevel)
+                      void applyStories(candidate, index, topLevel, bottomLevel)
                     }
                   />
                 ))}
@@ -665,32 +723,20 @@ function DrawingSetImport() {
   const [sectionStoryLabels, setSectionStoryLabels] = useState<Record<number, string>>({})
   const [discardMembers, setDiscardMembers] = useState(false)
   const [result, setResult] = useState<DrawingSetApplyResult>()
-  const candidate = useMemo(() => assembleDrawingSet(pages, membership, reference), [pages, membership, reference])
-  const choices: DrawingSetChoices = {
+  const [modules, setModules] = useState<DrawingSetModules | null>(null)
+  const candidate = useMemo(
+    () => (modules ? modules.assembleDrawingSet(pages, membership, reference) : null),
+    [modules, pages, membership, reference],
+  )
+  const choices: DrawingSetChoices | null = candidate && {
     reference: candidate.stories?.reference ?? { source: '', pageNumber: 0, index: 0 },
     topLevelIndex: top === '' ? NaN : Number(top), bottomLevelIndex: bottom === '' ? NaN : Number(bottom),
     blockStories, sectionStoryLabels, discardMembers,
   }
-  const preview = previewDrawingSetPlan(candidate, choices)
-  const resolved = resolveDrawingSetPlan(candidate, choices)
-  const future = 'stories' in preview ? preview.stories : []
-  // Initial duplicate suggestions are replaced by the selected range's final mapping.
-  const conflicts = [
-    ...candidate.conflicts.filter(c => c.code !== '階重複ブロック'),
-    ...('duplicates' in preview ? preview.duplicates : candidate.conflicts.filter(c => c.code === '階重複ブロック')),
-  ]
-  const sectionLabels = [...new Set(project.sections.flatMap(s => s.storyLabel ? [s.storyLabel] : []))]
   const clearResult = () => { setResult(undefined); setDiscardMembers(false) }
   const clearChoices = () => {
     setTop(''); setBottom(''); setBlockStories({}); setSectionStoryLabels({})
     setResult(undefined); setDiscardMembers(false)
-  }
-  const updateMembership = (next: DrawingSetMembership) => {
-    // Re-select automatically only if the old reference is no longer included.
-    const nextCandidate = assembleDrawingSet(pages, next, candidate.stories?.reference)
-    if (!nextCandidate.stories) { setReference(undefined); clearChoices() }
-    else setReference(nextCandidate.stories.reference)
-    setMembership(next); setResult(undefined); setDiscardMembers(false)
   }
   const load = async (event: ChangeEvent<HTMLInputElement>) => {
     const element = event.currentTarget
@@ -699,13 +745,18 @@ function DrawingSetImport() {
     const id = ++request.current
     setOpen(true); setLoading(true); setFailed(false); setPages([])
     setReference(undefined); setMembership({ excludedPages: [], excludedBlocks: [] }); clearChoices()
+    // 突合 모듈은 PDF 추출과 나란히 받는다 — 대기가 직렬로 붙지 않게 한다.
+    const pending = loadDrawingSet()
     try {
       const next: DrawingSetPage[] = []
       for (const file of files) {
-        const extracted = await extractTextPages(file)
+        const extracted = await extractTextPagesLazily(file)
         if (request.current !== id) return
         next.push(...extracted.map((page, i) => ({ source: file.name, pageNumber: i + 1, page })))
       }
+      const loaded = await pending
+      if (request.current !== id) return
+      setModules(loaded)
       setPages(next)
     } catch {
       if (request.current === id) setFailed(true)
@@ -713,9 +764,44 @@ function DrawingSetImport() {
       if (request.current === id) { setLoading(false); element.value = '' }
     }
   }
+  const trigger = <>
+    <button type="button" className={styles.openButton} onClick={() => pages.length ? setOpen(true) : input.current?.click()}>{t(locale, 'drawingSet.title')}</button>
+    <input ref={input} className={styles.fileInput} type="file" multiple accept="application/pdf" data-testid="drawing-set-files" aria-label={t(locale, 'drawingSet.files')} onChange={e => void load(e)} />
+  </>
+  const chooseButtons = <div className={styles.panelActions}>
+    <button type="button" className={styles.chooseButton} onClick={() => input.current?.click()}>{t(locale, 'drawingSet.files')}</button>
+    <button type="button" className={styles.closeButton} onClick={() => setOpen(false)}>{t(locale, 'planImport.close')}</button>
+  </div>
+  // 突合 모듈이 아직 오지 않았으면 후보를 만들 수 없다 — 읽는 중·실패만 말한다.
+  if (!modules || !candidate || !choices) return <>
+    {trigger}
+    {open && <section className={`${styles.panel} ${styles.drawingSet}`} aria-label={t(locale, 'drawingSet.title')}>
+      <header className={styles.panelHeader}><h3>{t(locale, 'drawingSet.title')}</h3>{chooseButtons}</header>
+      <div className={styles.panelBody}>
+        {loading && <p role="status">{t(locale, 'planImport.loading')}</p>}
+        {failed && <p role="alert">{t(locale, 'planImport.error')}</p>}
+      </div>
+    </section>}
+  </>
+  const preview = modules.previewDrawingSetPlan(candidate, choices)
+  const resolved = modules.resolveDrawingSetPlan(candidate, choices)
+  const future = 'stories' in preview ? preview.stories : []
+  // Initial duplicate suggestions are replaced by the selected range's final mapping.
+  const conflicts = [
+    ...candidate.conflicts.filter(c => c.code !== '階重複ブロック'),
+    ...('duplicates' in preview ? preview.duplicates : candidate.conflicts.filter(c => c.code === '階重複ブロック')),
+  ]
+  const sectionLabels = [...new Set(project.sections.flatMap(s => s.storyLabel ? [s.storyLabel] : []))]
+  const updateMembership = (next: DrawingSetMembership) => {
+    // Re-select automatically only if the old reference is no longer included.
+    const nextCandidate = modules.assembleDrawingSet(pages, next, candidate.stories?.reference)
+    if (!nextCandidate.stories) { setReference(undefined); clearChoices() }
+    else setReference(nextCandidate.stories.reference)
+    setMembership(next); setResult(undefined); setDiscardMembers(false)
+  }
   const applySet = () => {
     if (!('plan' in resolved) || loading) return
-    const applied = applyDrawingSet(useAppStore.getState().project, resolved.plan)
+    const applied = modules.applyDrawingSet(useAppStore.getState().project, resolved.plan)
     // Replacing the entire floor stack invalidates selection just like JSON import.
     if (!applied.refusal) loadProject(applied.project)
     setResult(applied)
@@ -731,13 +817,9 @@ function DrawingSetImport() {
     return `${location} · ${'storyName' in c.payload ? c.payload.storyName : ''} · ${c.payload.blocks.map(r => `${r.source} p.${r.pageNumber} [${r.index + 1}]`).join(' / ')}`
   }
   return <>
-    <button type="button" className={styles.openButton} onClick={() => pages.length ? setOpen(true) : input.current?.click()}>{t(locale, 'drawingSet.title')}</button>
-    <input ref={input} className={styles.fileInput} type="file" multiple accept="application/pdf" data-testid="drawing-set-files" aria-label={t(locale, 'drawingSet.files')} onChange={e => void load(e)} />
+    {trigger}
     {open && <section className={`${styles.panel} ${styles.drawingSet}`} aria-label={t(locale, 'drawingSet.title')}>
-      <header className={styles.panelHeader}><h3>{t(locale, 'drawingSet.title')}</h3><div className={styles.panelActions}>
-        <button type="button" className={styles.chooseButton} onClick={() => input.current?.click()}>{t(locale, 'drawingSet.files')}</button>
-        <button type="button" className={styles.closeButton} onClick={() => setOpen(false)}>{t(locale, 'planImport.close')}</button>
-      </div></header>
+      <header className={styles.panelHeader}><h3>{t(locale, 'drawingSet.title')}</h3>{chooseButtons}</header>
       <div className={styles.panelBody}>
         {loading && <p role="status">{t(locale, 'planImport.loading')}</p>}
         {failed && <p role="alert">{t(locale, 'planImport.error')}</p>}
