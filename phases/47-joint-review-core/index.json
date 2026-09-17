@@ -10,7 +10,8 @@
       "reasoning_effort": "xhigh",
       "started_at": "2026-09-17T15:40:10+0900",
       "status": "completed",
-      "summary": "Added review state types, validation/reducers, and parseProject delegation with TDD coverage."
+      "summary": "Added review state types, validation/reducers, and parseProject delegation with TDD coverage.",
+      "completed_at": "2026-09-17T15:56:03+0900"
     },
     {
       "step": 2,
