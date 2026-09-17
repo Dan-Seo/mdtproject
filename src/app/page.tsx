@@ -16,8 +16,8 @@ import { ViewerExportButton } from '@/components/viewer/ViewerExportButton'
 import { ViewerTabs } from '@/components/viewer/ViewerTabs'
 import { ReviewPane } from '@/components/review/ReviewPane'
 import { ReviewTabs } from '@/components/review/ReviewTabs'
+import { WorkPackageBoard } from '@/components/review/WorkPackageBoard'
 import { useProjectPersistence } from '@/lib/hooks/useProjectPersistence'
-import { t } from '@/lib/i18n'
 import { useAppStore } from '@/lib/store'
 
 // three.js가 초기 블로킹 JS의 절반 이상이다. 청크를 갈라 하이드레이션 경로에서 뺀다.
@@ -32,7 +32,6 @@ export default function Home() {
   // 復元中も画面はサンプル案件で動く — 待たせない (§4.2)。
   useProjectPersistence()
   const takeoffTab = useAppStore(({ takeoffTab }) => takeoffTab)
-  const locale = useAppStore(({ locale }) => locale)
 
   return (
     <AppShell
@@ -55,7 +54,7 @@ export default function Home() {
       }
       takeoff={
         takeoffTab === '内訳書' ? <TakeoffPane /> : takeoffTab === '検討' ? <ReviewPane /> : (
-          <section data-testid="work-packages">{t(locale, 'review.work.empty')}</section>
+          <WorkPackageBoard />
         )
       }
       takeoffActions={<><ReviewTabs /><TakeoffActions /></>}

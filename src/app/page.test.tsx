@@ -9,11 +9,20 @@ vi.mock('@/components/viewer/Viewer3D', () => ({
   Viewer3D: () => <div data-testid="viewer3d" />,
 }))
 
-const { reviewPane } = vi.hoisted(() => ({ reviewPane: vi.fn() }))
+const { reviewPane, workPackageBoard } = vi.hoisted(() => ({
+  reviewPane: vi.fn(),
+  workPackageBoard: vi.fn(),
+}))
 vi.mock('@/components/review/ReviewPane', () => ({
   ReviewPane: () => {
     reviewPane()
     return <div data-testid="review-pane" />
+  },
+}))
+vi.mock('@/components/review/WorkPackageBoard', () => ({
+  WorkPackageBoard: () => {
+    workPackageBoard()
+    return <div data-testid="work-packages" />
   },
 }))
 
@@ -49,5 +58,14 @@ describe('Home', () => {
     expect(reviewPane).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('tab', { name: '検討' }))
     expect(reviewPane).toHaveBeenCalledTimes(1)
+  })
+
+  it('mounts WorkPackageBoard only on the 作業 tab', () => {
+    workPackageBoard.mockClear()
+    render(<Home />)
+
+    expect(workPackageBoard).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: '作業' }))
+    expect(workPackageBoard).toHaveBeenCalledTimes(1)
   })
 })

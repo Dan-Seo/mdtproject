@@ -21,5 +21,9 @@ describe('ReviewTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: '検討' }))
 
     expect(useAppStore.getState().takeoffTab).toBe('検討')
+
+    fireEvent.click(screen.getByRole('tab', { name: '作業' }))
+
+    expect(useAppStore.getState().takeoffTab).toBe('作業')
   })
 })

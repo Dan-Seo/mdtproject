@@ -1,0 +1,87 @@
+{
+  "changed_files": [
+    "src/components/review/WorkPackageBoard.tsx",
+    "src/components/review/WorkPackageBoard.module.css",
+    "src/components/review/WorkPackageBoard.test.tsx",
+    "src/components/review/ReviewTabs.test.tsx",
+    "src/app/page.tsx",
+    "src/app/page.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "tests_added": [
+    "package creation, required unlinked checklist confirmation, and core readiness state",
+    "linked review item target model change produces the 前モデルの検討が残っている blocker",
+    "保留 requires a reason and preserves local typing without setReview per keystroke",
+    "blank assignee blocker and approval-word exclusion from state elements",
+    "package cards exclude quantities outside the footer and never edit the project",
+    "ReviewTabs switches to 作業 and Home mounts WorkPackageBoard only on that tab"
+  ],
+  "mutations": [
+    {
+      "id": 1,
+      "mutation": "packageReadiness の linked review item に対する itemValidity 再検討 blocker を削除",
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx vitest run src/components/review/WorkPackageBoard.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "WorkPackageBoard > keeps a linked item blocked when its target model is stale"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "期待値 準備未完 に対して 準備完了 が表示された",
+      "restoration": "itemValidity blocker を復元し、同テストファイルを再実行して 5 tests passed"
+    },
+    {
+      "id": 2,
+      "mutation": "カードが初回レンダー時の readiness.state を保存した値で表示するよう変更し、モデル更新後も再計算しない状態を模擬",
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx vitest run src/components/review/WorkPackageBoard.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "WorkPackageBoard > keeps a linked item blocked when its target model is stale",
+        "WorkPackageBoard > requires a reason for 保留, preserves local typing, and exposes an exception state"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "モデル変更後に 準備完了、保留理由保存後に 準備未完 が表示された",
+      "restoration": "保存した readiness state を削除し、packageReadiness の現在値を直接表示する実装へ復元"
+    },
+    {
+      "id": 3,
+      "mutation": "空の保留理由に対する UI 検証を削除して pending を閉じるよう変更",
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx vitest run src/components/review/WorkPackageBoard.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "WorkPackageBoard > requires a reason for 保留, preserves local typing, and exposes an exception state"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "空理由の保存で role=alert の理由メッセージが見つからなかった",
+      "restoration": "空理由時に error を表示する検証分岐を復元"
+    }
+  ],
+  "verification": [
+    {
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx vitest run src/components/review --maxWorkers=1",
+      "exit_code": 0,
+      "result": "3 files, 25 tests passed"
+    },
+    {
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx tsc --noEmit",
+      "exit_code": 0,
+      "result": "passed"
+    },
+    {
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npm run lint",
+      "exit_code": 0,
+      "result": "passed with 2 pre-existing warnings"
+    },
+    {
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npx vitest run --maxWorkers=1",
+      "exit_code": 0,
+      "result": "117 files passed, 2 skipped; 2008 tests passed, 4 skipped"
+    },
+    {
+      "command": "TMPDIR=.cache/phase48-tmp VITEST_MAX_WORKERS=1 npm run test:golden -- --maxWorkers=1",
+      "exit_code": 0,
+      "result": "7 files, 393 tests passed"
+    }
+  ],
+  "paths_verified": [
+    "src/components/review/WorkPackageBoard.tsx",
+    "src/components/review/WorkPackageBoard.test.tsx"
+  ]
+}

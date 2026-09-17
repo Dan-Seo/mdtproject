@@ -67,9 +67,12 @@
     {
       "step": 7,
       "name": "work-packages",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "started_at": "2026-09-17T23:47:21+0900",
+      "summary": "作業パッケージの作成·チェックリスト·準備状態派生表示を実装し、作業タブ接続と変異回帰を追加した。",
+      "completed_at": "2026-09-17T15:17:05+0000"
     },
     {
       "step": 8,
