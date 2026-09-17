@@ -1,0 +1,9 @@
+{
+  "step": 7,
+  "name": "refute-core",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 765.7415430999972,
+  "stdout_log": "phases\\47-joint-review-core\\step7-codex.stdout.log",
+  "stderr_log": "phases\\47-joint-review-core\\step7-codex.stderr.log"
+}

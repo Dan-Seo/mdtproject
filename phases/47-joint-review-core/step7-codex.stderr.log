@@ -1,0 +1,2 @@
+2026-09-17T09:27:06.745496Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\.tmp-phase47-base\tests\tmp-phase47-quantity.test.ts:
+      const digest = hashString(JSON.stringify(lines))
