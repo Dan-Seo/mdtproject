@@ -240,8 +240,9 @@
     },
     {
       "dir": "47-joint-review-core",
-      "status": "pending",
-      "created_at": "2026-09-17T11:30:00+0900"
+      "status": "completed",
+      "created_at": "2026-09-17T11:30:00+0900",
+      "completed_at": "2026-09-17T18:33:07+0900"
     }
   ]
 }
