@@ -1,0 +1,99 @@
+{
+  "verdict": "upheld",
+  "base_sha": "54ceb8210445221e251fc3dd438e3fc7a781fd66",
+  "checks": [
+    {
+      "id": 1,
+      "result": "pass",
+      "evidence": "Diff scope contains only the planned review/persistence/geometry/X-Ray files plus the ruleIdentity export and existing phase artifacts. No rulepack YAML, golden fixture, package dependency, Project field, PROJECT_SCHEMA_VERSION, or DATABASE_VERSION change; the scoped diff under src/rulepack, tests/golden/fixtures, src/domain/rebar, and src/domain/quantity contains only src/domain/quantity/index.ts ruleIdentity export."
+    },
+    {
+      "id": 2,
+      "result": "pass",
+      "evidence": "npm run test:golden passed 7 files/393 tests. Temporary Vitest digest on base and HEAD matched: sample 999b8f186e3f124f (64 lines), stress aa872511f1dff849 (46 lines)."
+    },
+    {
+      "id": 3,
+      "result": "pass",
+      "evidence": "rg found no forbidden imports or Date.now()/crypto. calls in production review domain files and no component/React/three imports in src/lib/review; source is pure by the requested import/runtime scan."
+    },
+    {
+      "id": 4,
+      "result": "pass",
+      "evidence": "One mutation was applied and reverted per step 1-6. Each selected mutation produced a non-zero targeted Vitest result: state guard 10 failed, empty-review persistence 1 failed, joint story filter 2 failed, reverse propagation 1 failed, clearance broad phase 1 failed, hook-tail length 1 failed."
+    },
+    {
+      "id": 5,
+      "result": "pass",
+      "evidence": "Temporary counterexample Vitest run passed 13 tests, covering all 12 requested core cases plus the requested two-story quantity shape."
+    },
+    {
+      "id": 6,
+      "result": "pass",
+      "evidence": "Review tests use independent fixture/input expectations, hard-coded geometric boundary facts, round-trip invariants, and an un-narrowed capsule oracle; no implementation-output-as-expected-value pattern or snapshot-only assertion was found."
+    },
+    {
+      "id": 7,
+      "result": "pass",
+      "evidence": "rg found no forbidden verdict terms 合格, 安全, 施工可能, or 承認 in review production code. 確認済 appears only as the explicit checklist/item status, not as a global geometry verdict."
+    }
+  ],
+  "counterexamples_run": [
+    { "case": 1, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: 1F-X2Y1 upper G1/G2 clash clearance -22; closest points inside column plan region; distinct girders" },
+    { "case": 2, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: lower-main gap 25 is absent at threshold 24 and present at 26; synthetic height-gap pair remains in broad phase" },
+    { "case": 3, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: 継手位置 and パネルゾーン帯筋 remain unchecked; no overall verdict; columns-only scope reports 検査対象なし" },
+    { "case": 4, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: same-member 接触 exclusion leaves 大梁 clash and kinds-only exclusion does not suppress it" },
+    { "case": 5, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: section-G2 pitch invalidates only dependent joint/member items; display, labels, pose, notes, and enteredAt do not" },
+    { "case": 6, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: check-condition change invalidates finding item only; deleted member reports 対象変更" },
+    { "case": 7, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: X-Ray design count/length equal Rebar fields and shape is separate; 開口補強筋 has no shape throw" },
+    { "case": 8, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: missing unit mass is null with 単位質量未入力; unsupported fingerprint result null differs from empty-rebar hash" },
+    { "case": 9, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: review file round-trip preserves targets/fingerprints/packages; empty review preserves bytes; saveBundle uses one transaction" },
+    { "case": 10, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: linked and unlinked confirmed packages become blocked after target change; unconfirmed entry is blocked" },
+    { "case": 11, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: member replacement is 対応要確認; review schema 2 throws; source URL changes rulepack fingerprint" },
+    { "case": 12, "command": "npx vitest run tests/tmp-phase47-verify.test.ts --reporter=verbose", "output_excerpt": "passed: repeated geometry check is equal to itself; narrowed candidates equal oracle; display radius differs from quantity radius" }
+  ],
+  "mutations_reproduced": [
+    { "step": 1, "mutation": "validateReviewState accepts the supported schema as invalid", "command": "npx vitest run src/domain/review/state.test.ts", "result": "failed: 10 tests" },
+    { "step": 2, "mutation": "serializeProjectFile no longer omits empty review", "command": "npx vitest run src/lib/persist/file.test.ts -t \"omits an empty review\"", "result": "failed: 1 test" },
+    { "step": 3, "mutation": "columnAt uses the opposite storyId comparison", "command": "npx vitest run src/domain/review/joint.test.ts", "result": "failed: 2 tests" },
+    { "step": 4, "mutation": "reverse propagation allowed flag is always false", "command": "npx vitest run src/domain/review/impact.test.ts", "result": "failed: 1 test" },
+    { "step": 5, "mutation": "broad-phase padding ignores user valueMm", "command": "npx vitest run src/lib/review/geometry-check.test.ts", "result": "failed: 1 test" },
+    { "step": 6, "mutation": "drawnLengthMm omits hook tails", "command": "npx vitest run src/lib/review/xray.test.ts", "result": "failed: 1 test" }
+  ],
+  "paths_verified": [
+    "phases/47-joint-review-core/README.md",
+    "phases/47-joint-review-core/step1.md",
+    "phases/47-joint-review-core/step2.md",
+    "phases/47-joint-review-core/step3.md",
+    "phases/47-joint-review-core/step4.md",
+    "phases/47-joint-review-core/step5.md",
+    "phases/47-joint-review-core/step6.md",
+    "phases/47-joint-review-core/step1-report.json",
+    "phases/47-joint-review-core/step2-report.json",
+    "phases/47-joint-review-core/step3-report.json",
+    "phases/47-joint-review-core/step4-report.json",
+    "phases/47-joint-review-core/step5-report.json",
+    "phases/47-joint-review-core/step6-report.json",
+    "src/domain/review/state.ts",
+    "src/domain/review/joint.ts",
+    "src/domain/review/impact.ts",
+    "src/domain/review/fingerprint.ts",
+    "src/domain/review/dependency.ts",
+    "src/domain/review/validity.ts",
+    "src/domain/review/readiness.ts",
+    "src/lib/persist/file.ts",
+    "src/lib/persist/indexeddb.ts",
+    "src/lib/review/segment-distance.ts",
+    "src/lib/review/geometry-check.ts",
+    "src/lib/review/xray.ts",
+    "src/domain/model/project.ts",
+    "src/domain/quantity/index.ts",
+    "src/domain/review/state.test.ts",
+    "src/domain/review/joint.test.ts",
+    "src/domain/review/impact.test.ts",
+    "src/domain/review/validity.test.ts",
+    "src/domain/review/readiness.test.ts",
+    "src/lib/review/geometry-check.test.ts",
+    "src/lib/review/xray.test.ts"
+  ]
+}
