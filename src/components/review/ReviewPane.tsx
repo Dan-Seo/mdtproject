@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { sectionMarkLabel } from '@/domain/model/member'
 import { findSection } from '@/domain/model/project'
 import { jointRebarMemberIds, resolveJoint } from '@/domain/review/joint'
-import type { TakeoffSnapshot } from '@/domain/review/impact'
+import type { EntityChange, LineChange, TakeoffSnapshot } from '@/domain/review/impact'
 import {
   addItem,
   addExclusion,
@@ -14,9 +14,11 @@ import {
   newReviewId,
   removeExclusion,
   setClearance,
+  setBaseline,
   updateItem,
 } from '@/domain/review/state'
 import type {
+  Baseline,
   CheckExclusion,
   ElementRef,
   FindingKind,
@@ -707,6 +709,240 @@ function targetLabel(ref: ElementRef): string {
   return `内訳 ${ref.lineId}`
 }
 
+function cloneProject(project: TakeoffSnapshot['project']): TakeoffSnapshot['project'] {
+  return JSON.parse(JSON.stringify(project)) as TakeoffSnapshot['project']
+}
+
+function lineForChange(
+  change: LineChange,
+  baseline: TakeoffSnapshot | null,
+  current: TakeoffSnapshot,
+): ReviewLine | undefined {
+  return current.lines.find(({ id }) => id === change.lineId)
+    ?? baseline?.lines.find(({ id }) => id === change.lineId)
+}
+
+function lineLabel(line: ReviewLine | undefined, lineId: string): string {
+  if (line === undefined) return lineId
+  return `${line.memberKind} ${line.role} ${line.mark} ${line.size}`
+}
+
+function massValue(value: number | null): string {
+  return value === null ? '—' : value.toFixed(3)
+}
+
+function massState(value: '算出' | '単位質量未入力' | null): string {
+  return value ?? '—'
+}
+
+type ComparableEntity = Exclude<EntityChange, { kind: 'displayOnly' }>
+
+function entityKindLabel(locale: Parameters<typeof t>[0], kind: ComparableEntity['kind']): string {
+  return t(locale, `review.compare.entity.kind.${kind}`)
+}
+
+function entityChangeLabel(locale: Parameters<typeof t>[0], change: ComparableEntity['change']): string {
+  if (change === '追加') return t(locale, 'review.compare.entity.change.added')
+  if (change === '削除') return t(locale, 'review.compare.entity.change.removed')
+  if (change === '変更') return t(locale, 'review.compare.entity.change.changed')
+  return t(locale, 'review.compare.entity.change.needsReview')
+}
+
+function ReviewCompareSection() {
+  const project = useAppStore(({ project }) => project)
+  const review = useAppStore(({ review }) => review)
+  const locale = useAppStore(({ locale }) => locale)
+  const setReview = useAppStore(({ setReview }) => setReview)
+  const selectMember = useAppStore(({ selectMember }) => selectMember)
+  const { current, currentSnapshot, baselineSnapshot } = useReviewModel()
+  const [label, setLabel] = useState('')
+  const [discardConfirmation, setDiscardConfirmation] = useState(false)
+  const baseline = review.baseline
+  const impact = current.impact
+
+  const captureBaseline = () => {
+    const capturedAt = new Date().toISOString()
+    const nextBaseline: Baseline = {
+      label: label.trim(),
+      capturedAt,
+      project: cloneProject(project),
+      fingerprints: current.fingerprints,
+    }
+    setReview((state) => setBaseline(state, nextBaseline))
+  }
+
+  const discardBaseline = () => {
+    if (!discardConfirmation) {
+      setDiscardConfirmation(true)
+      return
+    }
+    setReview((state) => setBaseline(state, null))
+    setDiscardConfirmation(false)
+  }
+
+  return (
+    <section className={styles.compare} aria-labelledby="review-compare-title" data-testid="review-compare">
+      <h2 id="review-compare-title">{t(locale, 'review.compare.title')}</h2>
+      {baseline === null ? (
+        <div>
+          <label>
+            {t(locale, 'review.compare.label')}
+            <input
+              aria-label={t(locale, 'review.compare.label')}
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+            />
+          </label>
+          <button type="button" onClick={captureBaseline}>
+            {t(locale, 'review.compare.capture')}
+          </button>
+        </div>
+      ) : (
+        <>
+          <dl>
+            <dt>{t(locale, 'review.compare.baseline')}</dt>
+            <dd>{baseline.label || t(locale, 'review.compare.untitled')}</dd>
+            <dt>{t(locale, 'review.compare.capturedAt')}</dt>
+            <dd><time dateTime={baseline.capturedAt}>{baseline.capturedAt}</time></dd>
+          </dl>
+          <button type="button" onClick={discardBaseline}>
+            {t(locale, 'review.compare.discard')}
+          </button>
+          {discardConfirmation && (
+            <p role="status">{t(locale, 'review.compare.discardConfirm')}</p>
+          )}
+          {impact === null ? (
+            <p>{t(locale, 'review.compare.noImpact')}</p>
+          ) : (
+            <>
+              <p data-testid="review-compare-summary">
+                {t(locale, 'review.compare.summary.members')} {impact.members.length} ·{' '}
+                {t(locale, 'review.compare.summary.lines')} {impact.lines.length} ·{' '}
+                {t(locale, 'review.compare.summary.displayOnly')} {impact.displayOnly.length}
+              </p>
+              {impact.rulepackChanged && (
+                <p>{t(locale, 'review.compare.rulepackChanged')}</p>
+              )}
+              {impact.checkVersionChanged && (
+                <p>{t(locale, 'review.compare.checkVersionChanged')}</p>
+              )}
+
+              <div>
+                <h3>{t(locale, 'review.compare.entities')}</h3>
+                <ul data-testid="review-compare-entities">
+                  {impact.entities
+                    .filter((entity) => entity.kind !== 'displayOnly')
+                    .map((entity, index) => (
+                      <li
+                        key={`${entity.kind}-${index}`}
+                        data-review-entity
+                        data-review-entity-kind={entity.kind}
+                        data-review-entity-change={entity.change}
+                      >
+                        <span className={styles.compareEntityKind}>{entityKindLabel(locale, entity.kind)}</span>{' '}
+                        <span className={entity.change === '対応要確認' ? styles.compareNeedsReview : styles.compareEntityChange} data-review-entity-needs-review={entity.change === '対応要確認' ? true : undefined}>
+                          {entityChangeLabel(locale, entity.change)}
+                        </span>{' '}
+                        <span>{entity.detail}</span>
+                        {entity.change === '対応要確認' && (
+                          <span> — {t(locale, 'review.compare.needsReviewDetail')}</span>
+                        )}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+
+              <div data-testid="review-compare-members">
+                <h3>{t(locale, 'review.compare.members')}</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t(locale, 'review.compare.member')}</th>
+                      <th>{t(locale, 'review.compare.categories')}</th>
+                      <th>{t(locale, 'review.compare.paths')}</th>
+                      <th>{t(locale, 'review.compare.support')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {impact.members.map((member) => {
+                      const canSelect = currentSnapshot.project.members.some(({ id }) => id === member.memberId)
+                      return (
+                        <tr key={member.memberId}>
+                          <td>
+                            <button
+                              type="button"
+                              disabled={!canSelect}
+                              onClick={() => { if (canSelect) selectMember(member.memberId) }}
+                            >
+                              {member.memberId}
+                            </button>
+                          </td>
+                          <td>
+                            {member.categories.map((category) => (
+                              <span className={styles.compareCategory} data-review-member-category={category} key={category}>{category}</span>
+                            ))}
+                          </td>
+                          <td>
+                            <ul>
+                              {member.path.map((path) => <li key={path}>{path}</li>)}
+                            </ul>
+                          </td>
+                          <td data-review-support>{member.support.before} → {member.support.after}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div data-testid="review-compare-lines">
+                <h3>{t(locale, 'review.compare.lines')}</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t(locale, 'review.compare.line')}</th>
+                      <th>{t(locale, 'review.compare.change')}</th>
+                      <th>{t(locale, 'review.compare.fields')}</th>
+                      <th>{t(locale, 'review.compare.mass')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {impact.lines.map((change) => {
+                      const line = lineForChange(change, baselineSnapshot, currentSnapshot)
+                      return (
+                        <tr key={change.lineId} data-line-id={change.lineId}>
+                          <td>{lineLabel(line, change.lineId)}</td>
+                          <td>{change.change}</td>
+                          <td>{change.fields.join('・')}</td>
+                          <td data-review-line-mass>
+                            {change.mass === undefined
+                              ? '—'
+                              : `${massState(change.mass.before)} → ${massState(change.mass.after)} ` +
+                                `(${massValue(change.mass.beforeKg)} → ${massValue(change.mass.afterKg)}kg)`}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <details data-testid="review-compare-display-only">
+                <summary>{t(locale, 'review.compare.displayOnly')}</summary>
+                <ul>
+                  {impact.displayOnly.map((change, index) => (
+                    <li data-review-display-only-item key={`${change.kind}-${index}`}>{change.detail}</li>
+                  ))}
+                </ul>
+              </details>
+            </>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
 function itemStatusLabel(locale: Parameters<typeof t>[0], status: ReturnType<typeof effectiveItemStatus>): string {
   if (status === '未確認') return t(locale, 'review.items.status.unconfirmed')
   if (status === '確認済') return t(locale, 'review.items.status.confirmed')
@@ -1018,6 +1254,7 @@ export function ReviewPane({ onCreateItem }: ReviewCheckProps) {
       <XRaySection />
       <ReviewCheckSection onCreateItem={requestItem} />
       <ReviewItemsSection request={request} onRequestConsumed={() => setRequest(null)} />
+      <ReviewCompareSection />
     </div>
   )
 }

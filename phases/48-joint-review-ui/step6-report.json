@@ -1,0 +1,102 @@
+{
+  "changed_files": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/ReviewPane.module.css",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "tests_added": [
+    "nested baseline.sections identity rejects an exact shallow-copy mutation",
+    "compare entities render kind, change, and detail, including correspondence review copy and badge",
+    "member impact rows render categories, paths, support before/after, and selectMember navigation",
+    "display-only detail items and normalized exact summary counts",
+    "scoped compare badge/chip classes and null-mass display remain refutable"
+  ],
+  "mutations": [
+    {
+      "id": 1,
+      "mutation": "基準案固定の project を cloneProject(project) から project: { ...project } に変更",
+      "command": "VITEST_MAX_WORKERS=1 npx vitest run src/components/review/ReviewPane.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "ReviewPane > fixes an immutable baseline and renders core impact counts and paths"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "fixed.project.sections.not.toBe(originalProject.sections) が失敗した",
+      "restoration": "cloneProject(project) に戻した後、同コマンドが 19 tests passed"
+    },
+    {
+      "id": 2,
+      "mutation": "null の質量表示を — から 0 に変更",
+      "command": "VITEST_MAX_WORKERS=1 npx vitest run src/components/review/ReviewPane.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "ReviewPane > shows display-only, mass transitions, and rulepack changes from the impact report"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "単位質量未入力 → 算出 の質量セルが — を含まない状態になった",
+      "restoration": "massValue の null 表示を — に戻した後、同コマンドが 19 tests passed"
+    },
+    {
+      "id": 3,
+      "mutation": "impact.rulepackChanged の案内描画を false に置換",
+      "command": "VITEST_MAX_WORKERS=1 npx vitest run src/components/review/ReviewPane.test.tsx --maxWorkers=1",
+      "failed_tests": [
+        "ReviewPane > shows display-only, mass transitions, and rulepack changes from the impact report"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "根拠（ルールパック）が変わった — 基準案の数量は現在のルールパックで再計算 が見つからなかった",
+      "restoration": "impact.rulepackChanged 条件を復元した後、同コマンドが 19 tests passed"
+    }
+  ],
+  "deletion_mutation_evidence": [
+    {
+      "mutation": "data-review-entity-kind を削除",
+      "exit_code": 1,
+      "failed_test": "ReviewPane > fixes an immutable baseline and renders core impact counts and paths"
+    },
+    {
+      "mutation": "display-only item の detail を削除",
+      "exit_code": 1,
+      "failed_test": "ReviewPane > shows display-only, mass transitions, and rulepack changes from the impact report"
+    },
+    {
+      "mutation": "compare memberId の selectMember 呼び出しを削除",
+      "exit_code": 1,
+      "failed_test": "ReviewPane > fixes an immutable baseline and renders core impact counts and paths"
+    }
+  ],
+  "verification": [
+    {
+      "command": "VITEST_MAX_WORKERS=1 npx vitest run src/components/review --maxWorkers=1",
+      "exit_code": 0,
+      "result": "2 files, 20 tests passed"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0,
+      "result": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "result": "passed with 2 warnings"
+    },
+    {
+      "command": "VITEST_MAX_WORKERS=1 npx vitest run --maxWorkers=1",
+      "exit_code": 0,
+      "result": "116 files passed, 2 skipped; 2002 tests passed, 4 skipped"
+    },
+    {
+      "command": "VITEST_MAX_WORKERS=1 npm run test:golden -- --maxWorkers=1",
+      "exit_code": 0,
+      "result": "7 files, 393 tests passed"
+    }
+  ],
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/ReviewPane.module.css",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ]
+}

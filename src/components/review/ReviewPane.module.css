@@ -84,3 +84,38 @@
 .itemStatus[data-review-status='再検討必要'] {
   color: var(--color-error);
 }
+
+.compare {
+  gap: var(--space-xs);
+}
+
+.compare .compareEntityKind,
+.compare .compareEntityChange,
+.compare .compareNeedsReview,
+.compare .compareCategory {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+}
+
+.compare .compareEntityKind {
+  color: var(--text-muted);
+}
+
+.compare .compareEntityChange {
+  color: var(--text-body);
+}
+
+.compare .compareNeedsReview {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  font-weight: 600;
+}
+
+.compare .compareCategory {
+  margin-right: var(--space-xs);
+  color: var(--text-muted);
+  border-color: var(--border-hairline-soft);
+}

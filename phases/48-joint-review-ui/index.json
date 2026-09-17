@@ -56,9 +56,13 @@
     {
       "step": 6,
       "name": "review-compare",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "started_at": "2026-09-17T22:42:34+0900",
+      "summary": "HOLDのS1〜S3を修正し、深い基準案コピー・entity/表示差分・対応確認バッジ・選択/support表示をTDDと実変異で検証した。",
+      "completed_at": "2026-09-17T23:47:21+0900",
+      "previous_hold": "Archived .git/phase48-run/step6-hold-original; must obtain fresh independent PASS"
     },
     {
       "step": 7,
