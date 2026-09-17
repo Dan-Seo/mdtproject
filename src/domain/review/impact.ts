@@ -275,10 +275,10 @@ function displayChanges(baseline: Project, current: Project): EntityChange[] {
     changes.push({ kind: 'displayOnly', what: '案件名', detail: `案件名 ${baseline.name}→${current.name}` })
   }
   if (canonicalJson(baseline.notes ?? {}) !== canonicalJson(current.notes ?? {})) {
-    changes.push({ kind: 'displayOnly', what: '備考', detail: '備考 변경' })
+    changes.push({ kind: 'displayOnly', what: '備考', detail: '備考 変更' })
   }
   if (canonicalJson({ x: baseline.grid.xLabels ?? null, y: baseline.grid.yLabels ?? null }) !== canonicalJson({ x: current.grid.xLabels ?? null, y: current.grid.yLabels ?? null })) {
-    changes.push({ kind: 'displayOnly', what: '通り芯名', detail: '通り芯名 변경' })
+    changes.push({ kind: 'displayOnly', what: '通り芯名', detail: '通り芯名 変更' })
   }
   return changes
 }
@@ -328,7 +328,7 @@ export function assessImpact(baseline: TakeoffSnapshot, current: TakeoffSnapshot
     }
     const changed = changedFields(old, member, MEMBER_FIELDS)
     if (changed.length > 0) {
-      entities.push({ kind: 'member', change: '変更', memberId: id, fields: changed, detail: `${id} ${changed.join('・')} 변경` })
+      entities.push({ kind: 'member', change: '変更', memberId: id, fields: changed, detail: `${id} ${changed.join('・')} 変更` })
     }
   }
   for (const id of baselineMembers.keys()) {

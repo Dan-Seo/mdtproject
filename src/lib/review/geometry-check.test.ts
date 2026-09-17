@@ -10,11 +10,13 @@ import {
 import type { CheckExclusion } from '@/domain/review/types'
 import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import { buildingLayout } from '@/lib/viewer/building'
-import { rebarRadius } from '@/lib/viewer/geometry'
+import { barDiameter, rebarRadius } from '@/lib/viewer/geometry'
 import { jpMlitRulePack } from '@/rulepack'
+import { capsuleClearanceMm } from './segment-distance'
 
 import {
   defaultExclusions,
+  NUMERICAL_TOLERANCE_MM,
   exclusionMatches,
   runGeometryCheck,
   type BarRef,
@@ -75,6 +77,81 @@ function check(
 ) {
   const input = sampleInput(jointId, clearance, createSampleProject(), exclusions)
   return runGeometryCheck(input)
+}
+
+function geometryBarKey(bar: {
+  memberId: string
+  rebarId: string
+  role: string
+  size: string
+  barIndex: number
+  segmentIndex: number
+}): string {
+  return JSON.stringify([
+    bar.memberId,
+    bar.rebarId,
+    bar.role,
+    bar.size,
+    bar.barIndex,
+    bar.segmentIndex,
+  ])
+}
+
+function allPairFindingKeys(
+  input: ReturnType<typeof sampleInput>,
+  result: ReturnType<typeof runGeometryCheck>,
+): string[] {
+  const targetMemberIds = new Set(
+    jointRebarMemberIds(input.project, input.joint)
+      .filter((memberId) => !input.unsupportedMemberIds.has(memberId)),
+  )
+  const layout = buildingLayout(
+    input.project,
+    input.rebars,
+    input.unsupportedMemberIds,
+    (size) => barDiameter(size) / 2,
+  )
+  const instances = layout.rebar.filter((instance) => targetMemberIds.has(instance.memberId))
+  const keys: string[] = []
+  for (let leftIndex = 0; leftIndex < instances.length; leftIndex += 1) {
+    const left = instances[leftIndex]
+    for (let rightIndex = leftIndex + 1; rightIndex < instances.length; rightIndex += 1) {
+      const right = instances[rightIndex]
+      if (left.rebarId === right.rebarId && left.barIndex === right.barIndex) continue
+      const measured = capsuleClearanceMm(
+        { from: left.from, to: left.to, radius: left.radius },
+        { from: right.from, to: right.to, radius: right.radius },
+      )
+      const middle = [
+        (measured.pa[0] + measured.pb[0]) / 2,
+        (measured.pa[1] + measured.pb[1]) / 2,
+        (measured.pa[2] + measured.pb[2]) / 2,
+      ] as const
+      const region = result.scope.regionMm
+      if (middle[0] < region.x[0] || middle[0] > region.x[1]
+        || middle[2] < region.z[0] || middle[2] > region.z[1]) continue
+
+      const kind = measured.clearanceMm < -NUMERICAL_TOLERANCE_MM
+        ? CLASH
+        : Math.abs(measured.clearanceMm) <= NUMERICAL_TOLERANCE_MM
+          ? CONTACT
+          : input.settings.clearance !== null
+            && measured.clearanceMm < input.settings.clearance.valueMm
+            ? CLEARANCE
+            : null
+      if (kind === null) continue
+      const bars = [left, right].map(geometryBarKey).sort()
+      keys.push(JSON.stringify([kind, ...bars]))
+    }
+  }
+  return keys.sort()
+}
+
+function resultFindingKeys(result: ReturnType<typeof runGeometryCheck>): string[] {
+  return result.findings.map(({ kind, a, b }) => JSON.stringify([
+    kind,
+    ...[a, b].map(geometryBarKey).sort(),
+  ])).sort()
 }
 
 function ref(memberId: string, role: string): BarRef {
@@ -172,6 +249,15 @@ describe('geometry check', () => {
     )
     expect(realInstance).toBeDefined()
     expect(displayInstance?.radius).not.toBe(realInstance?.radius)
+  })
+
+  it('keeps the region prefilter conservative for user clearance thresholds', () => {
+    // These are user-entered test thresholds, not code or construction tolerances.
+    for (const clearance of [null, 26, 40]) {
+      const input = sampleInput('1F-X2Y1', clearance)
+      const result = runGeometryCheck(input)
+      expect(resultFindingKeys(result)).toEqual(allPairFindingKeys(input, result))
+    }
   })
 
   it('changes check identity only for checked inputs and condition scopes', () => {

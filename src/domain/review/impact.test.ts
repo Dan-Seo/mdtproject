@@ -81,6 +81,19 @@ describe('review impact', () => {
       'displayOnly',
       'displayOnly',
     ])
+    expect(report.displayOnly.every(({ detail }) => !/[가-힣]/.test(detail))).toBe(true)
+    const changedMemberProject = cloneProject(sampleProject())
+    changedMemberProject.members = changedMemberProject.members.map((member) =>
+      member.id === '1F-G1-X1Y1-X'
+        ? { ...member, sectionId: 'section-G2' }
+        : member,
+    )
+    const memberChange = assessImpact(
+      reviewSnapshot(sampleProject()),
+      reviewSnapshot(changedMemberProject),
+    ).entities.find((entry) => entry.kind === 'member' && entry.change === '変更')
+    expect(memberChange?.detail).toBeDefined()
+    expect(memberChange?.detail).not.toMatch(/[가-힣]/)
   })
 
   it('reports unit-mass null to calculated as a state transition, never zero', () => {

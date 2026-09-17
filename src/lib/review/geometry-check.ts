@@ -180,9 +180,13 @@ function expandedSegmentRange(
   return [range[0] - padding, range[1] + padding]
 }
 
-function segmentIntersectsRegion(instance: RebarInstance, region: CheckScope['regionMm']): boolean {
-  return rangesOverlap(segmentRange(instance, 0), region.x)
-    && rangesOverlap(segmentRange(instance, 2), region.z)
+function segmentIntersectsRegion(
+  instance: RebarInstance,
+  region: CheckScope['regionMm'],
+  padding: number,
+): boolean {
+  return rangesOverlap(expandedSegmentRange(instance, 0, instance.radius + padding), region.x)
+    && rangesOverlap(expandedSegmentRange(instance, 2, instance.radius + padding), region.z)
 }
 
 function midpoint(a: Point3, b: Point3): Point3 {
@@ -326,8 +330,8 @@ export function runGeometryCheck(input: CheckInput): CheckResult {
     droppedOutsideRegion: 0,
   }
 
-  const candidates = targetInstances.filter((instance) => segmentIntersectsRegion(instance, regionMm))
   const padding = Math.max(NUMERICAL_TOLERANCE_MM, input.settings.clearance?.valueMm ?? 0)
+  const candidates = targetInstances.filter((instance) => segmentIntersectsRegion(instance, regionMm, padding))
   const findings: Finding[] = []
 
   for (let leftIndex = 0; leftIndex < candidates.length; leftIndex += 1) {
