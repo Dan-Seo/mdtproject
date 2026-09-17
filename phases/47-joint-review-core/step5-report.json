@@ -1,0 +1,47 @@
+{
+  "changed_files": [
+    "src/lib/review/segment-distance.ts",
+    "src/lib/review/segment-distance.test.ts",
+    "src/lib/review/geometry-check.ts",
+    "src/lib/review/geometry-check.test.ts"
+  ],
+  "tests_added": [
+    "src/lib/review/segment-distance.test.ts",
+    "src/lib/review/geometry-check.test.ts"
+  ],
+  "mutations": [
+    "같은 rebarId·barIndex 세그먼트 비교를 제거하면 자기 겹침 반례가 실패",
+    "rebarRadius로 검사 반경을 바꾸면 -22mm·25mm 골든 반례가 실패",
+    "sameMemberOnly를 무시하면 exclusionMatches 교차 member 반례가 실패",
+    "broad phase에서 사용자 입력 valueMm 팽창을 제거하면 26mm 경계 반례가 실패"
+  ],
+  "sample_findings": {
+    "joint": "1F-X2Y1",
+    "clash_pairs": [
+      {
+        "a": { "memberId": "1F-G1-X1Y1-X", "role": "上端筋" },
+        "b": { "memberId": "1F-G2-X2Y1-Y", "role": "上端筋" },
+        "clearanceMm": -22
+      }
+    ],
+    "clearance_pair_mm": 25,
+    "unchecked": [
+      "継手位置",
+      "パネルゾーン帯筋",
+      "折曲げ内法直径・曲げ部の伸び",
+      "幅止め筋の余長",
+      "開口補強筋",
+      "上下階柱の主筋・継手との干渉"
+    ]
+  },
+  "perf_unit": {
+    "note": "vitest 실행시간, 브라우저 응답시간 아님",
+    "stress_joint_ms": 51.9328,
+    "pairsTested": 680,
+    "segmentCount": 1580
+  },
+  "paths_verified": [
+    "src/lib/review/geometry-check.ts",
+    "src/lib/review/segment-distance.ts"
+  ]
+}

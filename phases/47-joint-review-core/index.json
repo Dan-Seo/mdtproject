@@ -46,9 +46,12 @@
     {
       "step": 5,
       "name": "geometry-check",
-      "status": "pending",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T17:15:22+0900",
+      "status": "completed",
+      "summary": "Added pure segment capsule distance and joint-scoped geometry findings, exclusions, verdicts, unchecked items, and TDD/performance evidence.",
+      "completed_at": "2026-09-17T17:35:00+0900"
     },
     {
       "step": 6,
