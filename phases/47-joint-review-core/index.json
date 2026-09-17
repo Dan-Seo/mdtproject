@@ -1,0 +1,43 @@
+{
+  "project": "Kijun",
+  "phase": "47-joint-review-core",
+  "status": "pending",
+  "steps": [
+    {
+      "step": 1,
+      "name": "review-state",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 2,
+      "name": "joint-and-fingerprint",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 3,
+      "name": "impact-and-validity",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 4,
+      "name": "geometry-check-xray",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 5,
+      "name": "refute-core",
+      "kind": "verify",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    }
+  ]
+}
