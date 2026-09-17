@@ -80,7 +80,7 @@ export type EffectiveItemStatus = ReviewHumanStatus | '再検討必要'
 export function effectiveItemStatus(item: ReviewItem, validity: ReviewValidity): EffectiveItemStatus
 export function itemsNeedingRecheck(items: ReviewItem[], current: CurrentModel): ReviewItem[]   // 「이번 변경으로 다시 봐야 하는 것만」
 ```
-- `itemTargetMemberIds`: `member` → 자신; `joint` → `resolveJoint`가 `joint`면 `jointMemberIds`, 아니면 `missing`; `rebar` → `rebarId`의 `|` 앞 부분(`Rebar.id` 규약)이 존재하면 그 부재; `quantityLine` → 부재를 특정할 수 없으므로 memberIds에 기여하지 않고 `unresolved`에 넣는다(무시가 아니다). validity는 다른 ref로 판정하고, quantityLine만 있는 항목은 `対象なし`.
+- `itemTargetMemberIds`: `member` → 자신; `joint` → `resolveJoint`가 `joint`면 `jointRebarMemberIds(project, joint)`(런 대표 포함 — 通し筋 결과 변경을 놓치지 않기 위해), 아니면 `missing`; `rebar` → `rebarId`의 `|` 앞 부분(`Rebar.id` 규약)이 존재하면 그 부재; `quantityLine` → 부재를 특정할 수 없으므로 memberIds에 기여하지 않고 `unresolved`에 넣는다(무시가 아니다). validity는 다른 ref로 판정하고, quantityLine만 있는 항목은 `対象なし`.
 - `itemValidity`: 대상 부재마다 `item.snapshot.fingerprints.members[id]`와 `current.fingerprints.members[id]`를 비교 — `input` 다름→`入力変更`, `result` 다름→`結果変更`, null 전이→`対応状態変更`; `snapshot.fingerprints.rulepack !== current.fingerprints.rulepack`→`根拠変更`; `item.finding`이 있고 `checkVersion` 다름→`検査版変更`; 대상 없음→`対象なし`; `impact`에 그 부재가 `対応要確認`이면→`対応要確認`. 이유가 하나도 없으면 `有効`.
 - **무효화하지 않는 것**(테스트로 고정): 카메라 pose·clip·layers·selection·案件名·備考·通り芯名·다른 부재의 변경.
 - `effectiveItemStatus`: validity가 `再検討必要`면 그것(사람 status와 별개로 표시). `有効`면 사람 status.

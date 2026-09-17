@@ -30,6 +30,13 @@ export type JointResolution =
   | { status: 'unsupported'; reason: '柱ではない' | '円形柱' | '取り付く大梁なし' | '部材なし' }
 export function resolveJoint(project: Project, columnMemberId: string): JointResolution
 export function jointMemberIds(joint: Joint): string[]   // 柱 + girders (reference 제외)
+/**
+ * 접합부에 **철근이 지나가는** 부재 id ＝ jointMemberIds ∪ 각 大梁 런의 대표(`girderRun(...).ownerId`).
+ * 通し筋·カットオフ筋은 런 대표 부재에 귀속되므로(`generateMain`의 `memberId: run.ownerId`),
+ * 접합부 大梁가 대표가 아니면 그 主筋의 `Rebar.memberId`는 접합부 밖 부재다 — 이 목록으로 걸러야 빠지지 않는다.
+ * `girderRun`이 throw(支持柱なし)하면 그 大梁는 자기 id만.
+ */
+export function jointRebarMemberIds(project: Project, joint: Joint): string[]
 ```
 - 판정은 **위치와 階**로 한다: `candidate.kind === '大梁' && candidate.storyId === column.storyId && touchesColumn(candidate.position, column.position)`. `touchesColumn`은 `project.ts`의 private 함수다 — **export해서 재사용**하고 복사하지 마라. 大梁가 `MemberUnsupportedError`(支持柱なし 등)인지는 여기서 판정하지 않는다(그건 `buildTakeoff`의 결과이고 step 4가 `unsupportedMemberIds`로 받는다).
 - `円形柱`는 `unsupported`로 명시한다(첫 지원 대상은 矩形 柱 — 화면은 이 사유를 그대로 보여줄 것이다). 大梁가 하나도 없으면 `取り付く大梁なし`.
@@ -64,7 +71,7 @@ export function memberDependencies(project: Project, memberId: string): Dependen
 - `memberWorldPoint(project: Project, member: Member, options?: { role?: RebarRole }): (point: Point3) => Point3`를 `building.ts`에서 **export**로 추출한다 — 현재 `buildingLayout` 안의 `worldPoint` 클로저 4분기(柱·大梁·床板·耐震壁)를 그대로 옮기고 `buildingLayout`이 그것을 호출하게. 床板은 role로 X/Y 런을 고른다(현재 `openings` 계산과 같은 분기). 추출 전후 `buildingLayout` 출력이 `toEqual`로 같아야 한다(테스트로 고정).
 
 ## 테스트 (먼저 쓴다)
-- `src/domain/review/joint.test.ts`: 샘플 案件 `1F-X1Y1`(모서리, 大梁 2개)·`1F-X2Y2`(大梁 4개, 始端/終端 혼재)·`2F-X1Y1`(위층 없음 → reference에 1F 柱만); 大梁를 선택하면 `柱ではない`; `shape: '円形'` 断面이면 `円形柱`; 大梁를 전부 지운 柱면 `取り付く大梁なし`; 격자에 가까이 있어도 **다른 階**의 大梁는 들어가지 않는다(반례).
+- `src/domain/review/joint.test.ts`: 샘플 案件 `1F-X1Y1`(모서리, 大梁 2개)·`1F-X2Y2`(大梁 4개, 始端/終端 혼재)·`2F-X1Y1`(위층 없음 → reference에 1F 柱만); **`1F-X1Y3`**(Y 런의 終端 — 접합 大梁 `1F-G1-X1Y2-Y`의 런 대표는 `1F-G1-X1Y1-Y`라 `jointMemberIds`에는 없고 `jointRebarMemberIds`에는 있다; 그 대표에 귀속된 `上端筋` Rebar의 memberId가 후자에 포함됨을 `buildTakeoff`로 확인); 大梁를 선택하면 `柱ではない`; `shape: '円形'` 断面이면 `円形柱`; 大梁를 전부 지운 柱면 `取り付く大梁なし`; 격자에 가까이 있어도 **다른 階**의 大梁는 들어가지 않는다(반례).
 - `src/domain/review/dependency.test.ts`: 大梁 `1F-G1-X1Y1-X`의 의존에 始端·終端 柱가 via 支持柱로, Y방향 連続 大梁의 의존에 런 동료와 3개 柱; 柱의 의존에 上部大梁 4개(X2Y2)와 2F 柱; 耐震壁·床板은 `untracked`; 支持柱를 지운 大梁는 throw 없이 `detail`에 支持柱なし.
 - `src/domain/review/fingerprint.test.ts`: `canonicalJson` 키 순서 무관; `rulepackFingerprint`가 `note` 변경에 불변·`value` 변경에 가변; 柱 断面 `b`를 바꾸면 그 柱와 **인접 大梁**의 input fingerprint가 바뀌고 반대편 격자의 大梁·다른 階는 불변; `unitMass`·`notes`·`xLabels`·案件名 변경은 어떤 부재 fingerprint도 바꾸지 않는다; 帯筋 피치 변경은 柱 result 변경·大梁 result 불변; 通し筋 런 동료의 断面 변경이 대표 부재 input에 반영.
 - `src/lib/viewer/building.test.ts`·`geometry.test.ts`: `barIndex`가 배치 수만큼 0..n-1로 나오고 開口 clip 뒤에도 유지; `memberWorldPoint` 추출 전후 `buildingLayout` 동일(추출 **전에** 샘플·스트레스 案件의 `buildingLayout` 결과를 JSON으로 픽스처에 저장해 두고 비교 — 픽스처는 `tests/fixtures/viewer/building-layout-sample.json`, 크기가 크면 해시만).

@@ -37,7 +37,7 @@ export interface Finding {
   excludedBy: string | null          // CheckExclusion.id — 제외돼도 결과에 남는다(숨기지 않는다)
 }
 export interface UncheckedItem { what: string; reason: string; source: string }   // 예: {'継手位置', '表5.3.3が原文で画像 — 3Dに継手を描かない', 'ADR-019'}
-export interface CheckScope { memberIds: string[]; referenceMemberIds: string[]; barCount: number; segmentCount: number; regionMm: Bounds; pairsTested: number }
+export interface CheckScope { memberIds: string[]; rebarMemberIds: string[]; referenceMemberIds: string[]; barCount: number; segmentCount: number; regionMm: Bounds; pairsTested: number }
 export interface CheckVerdict {
   clash: '干渉候補あり' | '干渉候補なし（検査条件内）'
   clearance: 'あき不足候補あり' | 'あき不足候補なし（検査条件内）' | '判断不可（あき基準未入力）'
@@ -66,7 +66,7 @@ export function runGeometryCheck(input: CheckInput): CheckResult
 export function defaultExclusions(now: string): CheckExclusion[]   // 아래 2건
 ```
 규칙:
-- 형상은 `buildingLayout(project, rebars, unsupportedMemberIds, (size) => barDiameter(size) / 2)`로 만든다(実寸. glTF와 같은 경로). `jointMemberIds(joint)`에 속한 인스턴스만 검사 대상, `reference`는 대상이 아니다(결과 scope에 둘 다 기록).
+- 형상은 `buildingLayout(project, rebars, unsupportedMemberIds, (size) => barDiameter(size) / 2)`로 만든다(実寸. glTF와 같은 경로). `jointRebarMemberIds(project, joint)`에 속한 인스턴스(`instance.memberId`)만 검사 대상 — 通し筋은 런 대표 부재에 귀속되므로 `jointMemberIds`로 거르면 대표가 아닌 접합 大梁의 主筋이 빠진다. `reference`는 대상이 아니다(결과 scope에 `memberIds`·`rebarMemberIds`·`referenceMemberIds` 셋 다 기록). 테스트에 `1F-X1Y3`(런 終端) 접합부에서 Y 大梁 上端筋 세그먼트가 검사 대상에 들어오는 케이스를 넣어라.
 - **영역 축소**: 검사 영역 ＝ 柱 콘크리트 박스(建物 뷰 `boxes`의 그 柱)를 각 축으로 「대상 철근 중 최대 径」만큼 넓힌 AABB. 이 영역과 AABB가 겹치는 세그먼트만 후보. 그 다음 세그먼트 쌍은 AABB 교차(각각 반경만큼 팽창)로 거른 뒤 `capsuleClearanceMm`. `pairsTested`에 실제 계산한 쌍 수.
 - **같은 개체의 세그먼트끼리는 비교하지 않는다**(`rebarId`＋`barIndex` 동일) — 꺾인점에서의 자기 겹침은 형상이 아니다.
 - 판정: `clearance < −tolerance` → `干渉候補`(basis 幾何学的重なり; 기준값 불필요). `|clearance| ≤ tolerance` → `接触`. `tolerance < clearance < settings.clearance.valueMm` → `あき不足候補`(basis 利用者入力 — settings가 null이면 이 종류는 만들지 않고 verdict.clearance가 `判断不可（あき基準未入力）`). 그 외는 결과 없음.
