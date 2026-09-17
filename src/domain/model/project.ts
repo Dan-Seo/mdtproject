@@ -509,7 +509,7 @@ export function placeableSlabPositions(
   return positions
 }
 
-function touchesColumn(
+export function touchesColumn(
   girder: GirderPosition,
   column: ColumnPosition,
 ): boolean {

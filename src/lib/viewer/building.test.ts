@@ -1,8 +1,13 @@
+import { createHash } from 'node:crypto'
+
 import { describe, expect, it } from 'vitest'
 
-import type { GirderSection, Member } from '@/domain/model/member'
+import type { ColumnSection, GirderSection, Member } from '@/domain/model/member'
 import { createSampleProject } from '@/domain/model/sample-project'
+import { createStressProject } from '@/domain/model/stress-project'
 import {
+  beamDepthAbove,
+  columnEnds,
   findSection,
   girderRun,
   girderSpan,
@@ -14,6 +19,7 @@ import {
   type Project,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
+import { generateColumnRebar } from '@/domain/rebar/column'
 import { generateGirderRebar } from '@/domain/rebar/girder'
 import { generateSlabRebar } from '@/domain/rebar/slab'
 import { jpMlitRulePack } from '@/rulepack'
@@ -22,9 +28,11 @@ import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import {
   buildingLayout,
   groupInstancesByLayerAndRadius,
+  memberWorldPoint,
   type RebarInstance,
 } from './building'
 import { rebarRadius, rebarSegments } from './geometry'
+import layoutFixture from '../../../tests/fixtures/viewer/building-layout-sample.json'
 
 const project = createSampleProject()
 const noUnsupportedMembers = new Set<string>()
@@ -120,6 +128,34 @@ function girderFixture(
       jpMlitRulePack,
     ),
   }
+}
+
+function stressRebars(source: Project): Rebar[] {
+  const rebars: Rebar[] = []
+  const processed = new Set<string>()
+  for (const member of source.members) {
+    if (member.kind === '大梁' && processed.has(member.id)) continue
+    const section = findSection(source, member.sectionId)
+    const story = source.stories.find(({ id }) => id === member.storyId)
+    if (!story) throw new Error(`Story not found: ${member.storyId}`)
+    if (member.kind === '柱') {
+      if (section.kind !== '柱') throw new Error(`柱 section not found: ${member.id}`)
+      rebars.push(...generateColumnRebar({
+        member,
+        section: section as ColumnSection,
+        story,
+        beamDepthAbove: beamDepthAbove(source, member),
+        ends: columnEnds(source, member),
+      }, jpMlitRulePack))
+      continue
+    }
+    if (member.kind !== '大梁') throw new Error(`stress fixture contains an unsupported member: ${member.id}`)
+    const run = girderRun(source, member)
+    for (const runMember of run.members) processed.add(runMember.id)
+    if (section.kind !== '大梁') throw new Error(`大梁 section not found: ${member.id}`)
+    rebars.push(...generateGirderRebar({ run, section }, jpMlitRulePack))
+  }
+  return rebars
 }
 
 function roleRebar(rebars: Rebar[], role: Rebar['role']): Rebar {
@@ -257,7 +293,7 @@ describe('buildingLayout', () => {
     expect(box?.size).toEqual([6000, 700, 400])
   })
 
-  it('translates 柱 rebar segments to the member grid position', () => {
+it('translates 柱 rebar segments to the member grid position', () => {
     const layout = buildingLayout(
       project,
       [main, hoop],
@@ -289,8 +325,60 @@ describe('buildingLayout', () => {
     // 폐합 4변 × 3본
     expect(hoops).toHaveLength(12)
     expect(hoops[0].from[0]).toBeCloseTo(offsetX + 40 + rebarRadius('D13'))
-    expect(hoops[0].from[2]).toBeCloseTo(offsetZ + 40 + rebarRadius('D13'))
-  })
+  expect(hoops[0].from[2]).toBeCloseTo(offsetZ + 40 + rebarRadius('D13'))
+})
+
+it('identifies each rebar placement and preserves the extracted world-point layout', () => {
+  const layout = buildingLayout(project, [main, hoop], noUnsupportedMembers)
+  const mains = layout.rebar.filter(({ rebarId }) => rebarId === main.id)
+  const hoops = layout.rebar.filter(({ rebarId }) => rebarId === hoop.id)
+
+  expect(mains.map(({ barIndex, segmentIndex }) => [barIndex, segmentIndex])).toEqual(
+    Array.from({ length: 12 }, (_, barIndex) => [barIndex, 0]),
+  )
+  expect(hoops.map(({ barIndex, segmentIndex }) => [barIndex, segmentIndex])).toEqual(
+    Array.from({ length: 3 }, (_, barIndex) =>
+      Array.from({ length: 4 }, (_, segmentIndex) => [barIndex, segmentIndex]),
+    ).flat(),
+  )
+  expect(memberWorldPoint(project, project.members.find(({ id }) => id === main.memberId)!)(main.points[0])).toEqual(
+    [gridPoint(project.grid, 1, 1).x - 360, -875, gridPoint(project.grid, 1, 1).y - 360],
+  )
+
+  const projected = {
+    boxes: layout.boxes,
+    rebar: layout.rebar.map(({ memberId, from, to, radius, size, role, layer }) => ({
+      memberId,
+      from,
+      to,
+      radius,
+      size,
+      role,
+      layer,
+    })),
+    bounds: layout.bounds,
+  }
+  expect(createHash('sha256').update(JSON.stringify(projected)).digest('hex')).toBe(layoutFixture.sample.sha256)
+
+  const stress = createStressProject({ xSpanCount: 4, ySpanCount: 3, storyCount: 2 })
+  const stressLayout = buildingLayout(stress, stressRebars(stress), noUnsupportedMembers)
+  const stressProjected = {
+    boxes: stressLayout.boxes,
+    rebar: stressLayout.rebar.map(({ memberId, from, to, radius, size, role, layer }) => ({
+      memberId,
+      from,
+      to,
+      radius,
+      size,
+      role,
+      layer,
+    })),
+    bounds: stressLayout.bounds,
+  }
+  expect(stressLayout.boxes).toHaveLength(layoutFixture.stress.boxes)
+  expect(stressLayout.rebar).toHaveLength(layoutFixture.stress.rebar)
+  expect(createHash('sha256').update(JSON.stringify(stressProjected)).digest('hex')).toBe(layoutFixture.stress.sha256)
+})
 
   it('includes both single-span and continuous-run 大梁 rebar', () => {
     const supportedX = girderFixture(project, '1F-G1-X1Y1-X')
@@ -343,7 +431,7 @@ describe('buildingLayout', () => {
 
     expect(
       buildingLayout(project, fixture.rebars, noUnsupportedMembers).rebar,
-    ).toContainEqual({
+    ).toContainEqual(expect.objectContaining({
       memberId: fixture.member.id,
       from: expectedFrom,
       to: expectedTo,
@@ -351,7 +439,7 @@ describe('buildingLayout', () => {
       size: 'D25',
       role: top.role,
       layer: 'main',
-    })
+    }))
   })
 
   it('maps a supported Y-axis 大梁 上端筋 with span along world Z', () => {
@@ -399,7 +487,7 @@ describe('buildingLayout', () => {
         fixture.rebars,
         noUnsupportedMembers,
       ).rebar,
-    ).toContainEqual({
+    ).toContainEqual(expect.objectContaining({
       memberId: fixture.member.id,
       from: expectedFrom,
       to: expectedTo,
@@ -407,7 +495,7 @@ describe('buildingLayout', () => {
       size: 'D25',
       role: top.role,
       layer: 'main',
-    })
+    }))
   })
 
   it('keeps every supported 大梁 segment inside the support 柱 exterior faces', () => {
@@ -637,6 +725,9 @@ describe('groupInstancesByLayerAndRadius', () => {
     const instances: RebarInstance[] = [
       {
         memberId: 'main',
+        rebarId: 'main-rebar',
+        barIndex: 0,
+        segmentIndex: 0,
         from: [0, 0, 0],
         to: [0, 1, 0],
         radius,
@@ -646,6 +737,9 @@ describe('groupInstancesByLayerAndRadius', () => {
       },
       {
         memberId: 'hoop',
+        rebarId: 'hoop-rebar',
+        barIndex: 0,
+        segmentIndex: 0,
         from: [0, 0, 0],
         to: [1, 0, 0],
         radius,

@@ -24,6 +24,8 @@ export interface Segment {
   from: Point3
   to: Point3
   radius: number
+  barIndex?: number
+  hookTail?: boolean
 }
 
 export interface Bounds {
@@ -931,6 +933,8 @@ function clipSegment(segment: Segment, openings: Opening[]): Segment[] {
         from: lerpPoint(segment.from, segment.to, walked),
         to: lerpPoint(segment.from, segment.to, enter),
         radius: segment.radius,
+        ...(segment.barIndex === undefined ? {} : { barIndex: segment.barIndex }),
+        ...(segment.hookTail ? { hookTail: true } : {}),
       })
     }
     walked = Math.max(walked, leave)
@@ -941,6 +945,8 @@ function clipSegment(segment: Segment, openings: Opening[]): Segment[] {
       from: lerpPoint(segment.from, segment.to, walked),
       to: segment.to,
       radius: segment.radius,
+      ...(segment.barIndex === undefined ? {} : { barIndex: segment.barIndex }),
+      ...(segment.hookTail ? { hookTail: true } : {}),
     })
   }
 
@@ -1004,11 +1010,13 @@ function rebarSegmentRuns(
     // 開口部は 3D でだけ鉄筋を断つ。数量は `Rebar.length` が別に持っている
     // ので、ここで切っても本数・質量は動かない (ADR-029)。
     segments: clipSegments(
-      placements.flatMap((offset) =>
+      placements.flatMap((offset, barIndex) =>
         segments.map(({ from, to, hookTail }) => ({
           from: translate(hookTail ? hookTailPoint(from) : displayPoint(from), offset),
           to: translate(hookTail ? hookTailPoint(to) : displayPoint(to), offset),
           radius,
+          barIndex,
+          ...(hookTail ? { hookTail: true } : {}),
         })),
       ),
       openings,

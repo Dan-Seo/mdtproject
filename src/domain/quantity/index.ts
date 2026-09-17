@@ -147,7 +147,7 @@ function sectionLabel(section: Section): string {
   return `t${section.thickness}`
 }
 
-function ruleIdentity(rule: RuleHit): string {
+export function ruleIdentity(rule: RuleHit): string {
   const conditions = Object.entries(rule.conditions).sort(
     ([left], [right]) => left.localeCompare(right),
   )

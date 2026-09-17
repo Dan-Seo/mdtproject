@@ -1,0 +1,16 @@
+{
+  "algorithm": "sha256(JSON.stringify(projected layout; identity fields excluded))",
+  "sample": {
+    "sha256": "16a9eb5f0d77416c8a20ef60a9e9fc60c74df74d1dc8891dd8910b9c0145e68e",
+    "boxes": 32,
+    "rebar": 24
+  },
+  "stress": {
+    "stories": 2,
+    "xSpanCount": 4,
+    "ySpanCount": 3,
+    "sha256": "dde1d1b9b534b5f4796ebc9c2f1aeeef5844b5b4796c7494393837b7c933957b",
+    "boxes": 102,
+    "rebar": 26874
+  }
+}

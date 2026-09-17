@@ -26,9 +26,12 @@
     {
       "step": 3,
       "name": "joint-and-fingerprint",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T16:13:16+0900",
+      "summary": "Added joint resolution, read-field dependencies, fingerprints, stable 3D identity, and world-point extraction with regression coverage.",
+      "completed_at": "2026-09-17T16:49:28+0900"
     },
     {
       "step": 4,
