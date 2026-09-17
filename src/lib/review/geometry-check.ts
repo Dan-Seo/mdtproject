@@ -49,9 +49,9 @@ export interface Finding {
   closestPoints: [Point3, Point3]
   midpoint: Point3
   basis:
-    | { kind: '\u5E7E\u4F55\u5B66\u7684\u91CD\u306A\u308A' }
-    | { kind: '\u5229\u7528\u8005\u5165\u529B\u3042\u304D'; valueMm: number; scope: string }
-    | { kind: '\u63A5\u89E6\uFF08\u8A31\u5BB9\u8AA4\u5DEE\u5185\uFF09' }
+    | { kind: '幾何学的重なり' }
+    | { kind: '利用者入力あき'; valueMm: number; scope: string }
+    | { kind: '接触（許容誤差内）' }
   excludedBy: string | null
 }
 
@@ -80,14 +80,14 @@ export interface CheckScope {
 export type AxisVerdict<Yes extends string, No extends string> =
   | Yes
   | No
-  | '\u691C\u67FB\u5BFE\u8C61\u306A\u3057'
+  | '検査対象なし'
 
 export interface CheckVerdict {
-  clash: AxisVerdict<'\u5E72\u6E09\u5019\u88DC\u3042\u308A', '\u5E72\u6E09\u5019\u88DC\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09'>
+  clash: AxisVerdict<'干渉候補あり', '干渉候補なし（検査条件内）'>
   clearance:
-    | AxisVerdict<'\u3042\u304D\u4E0D\u8DB3\u5019\u88DC\u3042\u308A', '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09'>
-    | '\u5224\u65AD\u4E0D\u53EF\uFF08\u3042\u304D\u57FA\u6E96\u672A\u5165\u529B\uFF09'
-  contact: AxisVerdict<'\u63A5\u89E6\u3042\u308A', '\u63A5\u89E6\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09'>
+    | AxisVerdict<'あき不足候補あり', 'あき不足候補なし（検査条件内）'>
+    | '判断不可（あき基準未入力）'
+  contact: AxisVerdict<'接触あり', '接触なし（検査条件内）'>
   excludedCounts: Record<FindingKind, number>
 }
 
@@ -113,18 +113,18 @@ export interface CheckInput {
   fingerprints: ReviewFingerprints
 }
 
-const CLASH: FindingKind = '\u5E72\u6E09\u5019\u88DC'
-const CLEARANCE: FindingKind = '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC'
-const CONTACT: FindingKind = '\u63A5\u89E6'
-const NO_TARGET = '\u691C\u67FB\u5BFE\u8C61\u306A\u3057'
-const NOT_ENOUGH = '\u5224\u65AD\u4E0D\u53EF\uFF08\u3042\u304D\u57FA\u6E96\u672A\u5165\u529B\uFF09'
+const CLASH: FindingKind = '干渉候補'
+const CLEARANCE: FindingKind = 'あき不足候補'
+const CONTACT: FindingKind = '接触'
+const NO_TARGET = '検査対象なし'
+const NOT_ENOUGH = '判断不可（あき基準未入力）'
 
 const ASSUMPTIONS = [
-  '\u547C\u3073\u5F84\uFF1D\u5916\u5F84\uFF08\u7BC0\u3092\u542B\u3080\u6700\u5916\u5F84\u3067\u306F\u306A\u3044\uFF09',
-  '\u4E3B\u7B4B\u306F\u5E2F\u7B4B\u5185\u9762\u306B\u63A5\u3059\u308B\u4F5C\u56F3\u898F\u5247\u306E\u4F4D\u7F6E\uFF08\u8A2D\u8A08\u56F3\u66F8\u306E\u6BB5\u914D\u7F6E\u3067\u306F\u306A\u3044\uFF09',
-  '\u6298\u66F2\u3052\u306F\u89D2\u3067\u63CF\u304F',
-  '\u7D99\u624B\u3092\u63CF\u304B\u306A\u3044',
-  '\u5927\u6881\u306E\u4EA4\u5DEE\u90E8\u3067\u4E0A\u4E0B\u95A2\u4FC2\u3092\u6301\u305F\u306A\u3044\uFF08\u540C\u3058\u9AD8\u3055\u306B\u63CF\u304F\uFF09',
+  '呼び径＝外径（節を含む最外径ではない）',
+  '主筋は帯筋内面に接する作図規則の位置（設計図書の段配置ではない）',
+  '折曲げは角で描く',
+  '継手を描かない',
+  '大梁の交差部で上下関係を持たない（同じ高さに描く）',
 ] as string[]
 
 function emptyExcludedCounts(): Record<FindingKind, number> {
@@ -226,15 +226,15 @@ function checkRegion(
 
 function uncheckedItems(unsupportedMemberIds: string[]): UncheckedItem[] {
   const items: UncheckedItem[] = [
-    { what: '\u7D99\u624B\u4F4D\u7F6E', reason: '\u88685.3.3\u304C\u539F\u6587\u3067\u753B\u50CF\u2014 3D\u306B\u7D99\u624B\u3092\u63CF\u304B\u306A\u3044', source: 'ADR-019' },
-    { what: '\u30D1\u30CD\u30EB\u30BE\u30FC\u30F3\u5E2F\u7B4B', reason: '\u30E2\u30C7\u30EB\u306B\u306A\u3044\uFF08hoopSpan = story.height - beamDepthAbove\uFF09', source: 'ADR-022' },
-    { what: '\u6298\u66F2\u3052\u5185\u6CD5\u76F4\u5F84\u30FB\u66F2\u3052\u90E8\u306E\u4F38\u3073', reason: '\u6298\u66F2\u3052\u70B9\u3092\u89D2\u3067\u63CF\u304F', source: 'docs/RISKS.md R12' },
-    { what: '\u5E45\u6B62\u3081\u7B4B\u306E\u4F59\u9577', reason: '\u4F59\u9577\u306E\u6839\u62E0\u304C\u672A\u78BA\u5B9A', source: 'docs/RISKS.md R12' },
-    { what: '\u958B\u53E3\u88DC\u5F37\u7B4B', reason: '\u5F62\u72B6\u3092\u88FD\u54C1\u304C\u4F5C\u3089\u306A\u3044', source: 'ADR-034' },
-    { what: '\u4E0A\u4E0B\u968E\u67F1\u306E\u4E3B\u7B4B\u30FB\u7D99\u624B\u3068\u306E\u5E72\u6E09', reason: '\u53C2\u7167\u90E8\u6750\u306F\u691C\u67FB\u5BFE\u8C61\u5916', source: 'ADR-019' },
+    { what: '継手位置', reason: '表5.3.3が原文で画像— 3Dに継手を描かない', source: 'ADR-019' },
+    { what: 'パネルゾーン帯筋', reason: 'モデルにない（hoopSpan = story.height - beamDepthAbove）', source: 'ADR-022' },
+    { what: '折曲げ内法直径・曲げ部の伸び', reason: '折曲げ点を角で描く', source: 'docs/RISKS.md R12' },
+    { what: '幅止め筋の余長', reason: '余長の根拠が未確定', source: 'docs/RISKS.md R12' },
+    { what: '開口補強筋', reason: '形状を製品が作らない', source: 'ADR-034' },
+    { what: '上下階柱の主筋・継手との干渉', reason: '参照部材は検査対象外', source: 'ADR-019' },
   ]
   for (const memberId of unsupportedMemberIds.slice().sort()) {
-    items.push({ what: `\u672A\u5BFE\u5FDC\u90E8\u6750: ${memberId}`, reason: '\u90E8\u6750\u5358\u4F4D\u3067\u691C\u67FB\u5BFE\u8C61\u304B\u3089\u9664\u5916', source: 'ADR-047' })
+    items.push({ what: `未対応部材: ${memberId}`, reason: '部材単位で検査対象から除外', source: 'ADR-047' })
   }
   return items
 }
@@ -256,11 +256,11 @@ function verdictFor(findings: Finding[], pairsTested: number, clearance: Clearan
   if (pairsTested === 0) return noTargetVerdict()
   const visible = (kind: FindingKind) => findings.some((finding) => finding.kind === kind && finding.excludedBy === null)
   return {
-    clash: visible(CLASH) ? '\u5E72\u6E09\u5019\u88DC\u3042\u308A' : '\u5E72\u6E09\u5019\u88DC\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09',
+    clash: visible(CLASH) ? '干渉候補あり' : '干渉候補なし（検査条件内）',
     clearance: clearance === null
       ? NOT_ENOUGH
-      : visible(CLEARANCE) ? '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC\u3042\u308A' : '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09',
-    contact: visible(CONTACT) ? '\u63A5\u89E6\u3042\u308A' : '\u63A5\u89E6\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09',
+      : visible(CLEARANCE) ? 'あき不足候補あり' : 'あき不足候補なし（検査条件内）',
+    contact: visible(CONTACT) ? '接触あり' : '接触なし（検査条件内）',
     excludedCounts: findings.reduce((counts, finding) => {
       if (finding.excludedBy !== null) counts[finding.kind] += 1
       return counts
@@ -285,11 +285,11 @@ export function exclusionMatches(
 }
 
 export function defaultExclusions(now: string): CheckExclusion[] {
-  const reason = '\u4F5C\u56F3\u898F\u5247\u306B\u3088\u308B\u610F\u56F3\u3055\u308C\u305F\u63A5\u89E6 \u2014 \u5E2F\u7B4B/\u3042\u3070\u3089\u7B4B\u306E\u5916\u9762\u3092\u304B\u3076\u308A\u9762\u306B\u3001\u4E3B\u7B4B\u3092\u305D\u306E\u5185\u9762\u306B\u63A5\u3059\u308B\u3088\u3046\u914D\u7F6E\u3059\u308B\uFF08src/lib/viewer/geometry.ts rebarPlacements\uFF09'
+  const reason = '作図規則による意図された接触 — 帯筋/あばら筋の外面をかぶり面に、主筋をその内面に接するよう配置する（src/lib/viewer/geometry.ts rebarPlacements）'
   return [
-    ['\u5E2F\u7B4B', '\u4E3B\u7B4B'],
-    ['\u3042\u3070\u3089\u7B4B', '\u4E0A\u7AEF\u7B4B'],
-    ['\u3042\u3070\u3089\u7B4B', '\u4E0B\u7AEF\u7B4B'],
+    ['帯筋', '主筋'],
+    ['あばら筋', '上端筋'],
+    ['あばら筋', '下端筋'],
   ].map(([left, right]) => {
     const scope = {
       sameMemberOnly: true,
@@ -360,14 +360,14 @@ export function runGeometryCheck(input: CheckInput): CheckResult {
       let basis: Finding['basis'] | null = null
       if (result.clearanceMm < -NUMERICAL_TOLERANCE_MM) {
         kind = CLASH
-        basis = { kind: '\u5E7E\u4F55\u5B66\u7684\u91CD\u306A\u308A' }
+        basis = { kind: '幾何学的重なり' }
       } else if (Math.abs(result.clearanceMm) <= NUMERICAL_TOLERANCE_MM) {
         kind = CONTACT
-        basis = { kind: '\u63A5\u89E6\uFF08\u8A31\u5BB9\u8AA4\u5DEE\u5185\uFF09' }
+        basis = { kind: '接触（許容誤差内）' }
       } else if (input.settings.clearance !== null && result.clearanceMm < input.settings.clearance.valueMm) {
         kind = CLEARANCE
         basis = {
-          kind: '\u5229\u7528\u8005\u5165\u529B\u3042\u304D',
+          kind: '利用者入力あき',
           valueMm: input.settings.clearance.valueMm,
           scope: input.settings.clearance.scope,
         }

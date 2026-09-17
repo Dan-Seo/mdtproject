@@ -23,18 +23,18 @@ import {
 
 function generatedGirderRebars(project: ReturnType<typeof createSampleProject>, memberId: string) {
   const member = project.members.find(({ id }) => id === memberId)
-  if (!member || member.kind !== '\u5927\u6881') throw new Error(`大梁 not found: ${memberId}`)
+  if (!member || member.kind !== '大梁') throw new Error(`大梁 not found: ${memberId}`)
   const section = findSection(project, member.sectionId)
-  if (section.kind !== '\u5927\u6881') throw new Error(`大梁 section not found: ${memberId}`)
+  if (section.kind !== '大梁') throw new Error(`大梁 section not found: ${memberId}`)
   return generateGirderRebar({ run: girderRun(project, member), section }, jpMlitRulePack)
 }
 
 function generatedColumnRebars(project: ReturnType<typeof createSampleProject>, memberId: string) {
   const member = project.members.find(({ id }) => id === memberId)
-  if (!member || member.kind !== '\u67f1') throw new Error(`柱 not found: ${memberId}`)
+  if (!member || member.kind !== '柱') throw new Error(`柱 not found: ${memberId}`)
   const section = findSection(project, member.sectionId)
   const story = project.stories.find(({ id }) => id === member.storyId)
-  if (section.kind !== '\u67f1' || !story) throw new Error(`柱 fixture not found: ${memberId}`)
+  if (section.kind !== '柱' || !story) throw new Error(`柱 fixture not found: ${memberId}`)
   return generateColumnRebar({
     member,
     section,
@@ -71,7 +71,7 @@ describe('review fingerprints', () => {
     const settings = {
       clearance: {
         valueMm: 30,
-        source: '\u5229\u7528\u8005\u5165\u529b' as const,
+        source: '利用者入力' as const,
         scope: 'same-story' as const,
         enteredAt: 'a',
         note: 'a',
@@ -79,7 +79,7 @@ describe('review fingerprints', () => {
     }
     const exclusions = [{
       id: 'x',
-      scope: { sameMemberOnly: true, roles: ['\u4e3b\u7b4b', '\u5e2f\u7b4b'] as [string, string], kinds: ['\u5e72\u6e09\u5019\u88dc'] as ['\u5e72\u6e09\u5019\u88dc'] },
+      scope: { sameMemberOnly: true, roles: ['主筋', '帯筋'] as [string, string], kinds: ['干渉候補'] as ['干渉候補'] },
       reason: 'a',
       createdAt: 'a',
     }]
@@ -97,9 +97,9 @@ describe('review fingerprints', () => {
       sections: [
         ...project.sections,
         ...project.sections
-          .filter((section) => section.id === 'section-C1' && section.kind === '\u67f1')
+          .filter((section) => section.id === 'section-C1' && section.kind === '柱')
           .map((section) => {
-            if (section.kind !== '\u67f1') throw new Error('column section expected')
+            if (section.kind !== '柱') throw new Error('column section expected')
             return { ...section, id: 'section-C1-changed', b: section.b + 1 }
           }),
       ],
@@ -117,7 +117,7 @@ describe('review fingerprints', () => {
 
     const g2Pitch = {
       ...project,
-      sections: project.sections.map((section) => section.id === 'section-G2' && section.kind === '\u5927\u6881' ? { ...section, stirrup: { ...section.stirrup, pitch: section.stirrup.pitch + 1 } } : section),
+      sections: project.sections.map((section) => section.id === 'section-G2' && section.kind === '大梁' ? { ...section, stirrup: { ...section.stirrup, pitch: section.stirrup.pitch + 1 } } : section),
     }
     expect(memberInputFingerprint(project, '1F-X2Y2')).toBe(memberInputFingerprint(g2Pitch, '1F-X2Y2'))
     const baseTakeoff = generatedGirderRebars(project, '1F-G2-X1Y2-X')
@@ -126,7 +126,7 @@ describe('review fingerprints', () => {
 
     const hoopPitch = {
       ...project,
-      sections: project.sections.map((section) => section.id === 'section-C1' && section.kind === '\u67f1' ? { ...section, hoop: { ...section.hoop, pitch: section.hoop.pitch + 1 } } : section),
+      sections: project.sections.map((section) => section.id === 'section-C1' && section.kind === '柱' ? { ...section, hoop: { ...section.hoop, pitch: section.hoop.pitch + 1 } } : section),
     }
     const baseColumnRebars = generatedColumnRebars(project, '1F-X1Y1')
     const changedColumnRebars = generatedColumnRebars(hoopPitch, '1F-X1Y1')

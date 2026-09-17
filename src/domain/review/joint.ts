@@ -13,13 +13,13 @@ import {
 } from '../model/project'
 import { MemberUnsupportedError } from '../model/unsupported'
 
-const COLUMN = '\u67f1'
-const GIRDER = '\u5927\u6881'
+const COLUMN = '柱'
+const GIRDER = '大梁'
 
 export interface JointGirder {
   member: Member
   section: Extract<ReturnType<typeof findSection>, { kind: typeof GIRDER }>
-  end: '\u59cb\u7aef' | '\u7d42\u7aef'
+  end: '始端' | '終端'
 }
 
 export interface Joint {
@@ -33,7 +33,7 @@ export type JointResolution =
   | { status: 'joint'; joint: Joint }
   | {
       status: 'unsupported'
-      reason: '\u67f1\u3067\u306f\u306a\u3044' | '\u5186\u5f62\u67f1' | '\u53d6\u308a\u4ed8\u304f\u5927\u6881\u306a\u3057' | '\u90e8\u6750\u306a\u3057'
+      reason: '柱ではない' | '円形柱' | '取り付く大梁なし' | '部材なし'
     }
 
 function columnPosition(position: Member['position']): position is ColumnPosition {
@@ -77,8 +77,8 @@ function orderedGirders(girders: Member[]): Member[] {
 
 function endAtColumn(position: GirderPosition, column: ColumnPosition): JointGirder['end'] {
   return position.axis === 'X'
-    ? position.ix === column.ix ? '\u59cb\u7aef' : '\u7d42\u7aef'
-    : position.iy === column.iy ? '\u59cb\u7aef' : '\u7d42\u7aef'
+    ? position.ix === column.ix ? '始端' : '終端'
+    : position.iy === column.iy ? '始端' : '終端'
 }
 
 function adjacentColumnIds(project: Project, member: Member): string[] {
@@ -94,18 +94,18 @@ function adjacentColumnIds(project: Project, member: Member): string[] {
 
 export function resolveJoint(project: Project, columnMemberId: string): JointResolution {
   const member = project.members.find(({ id }) => id === columnMemberId)
-  if (!member) return { status: 'unsupported', reason: '\u90e8\u6750\u306a\u3057' }
+  if (!member) return { status: 'unsupported', reason: '部材なし' }
   if (member.kind !== COLUMN || !columnPosition(member.position)) {
-    return { status: 'unsupported', reason: '\u67f1\u3067\u306f\u306a\u3044' }
+    return { status: 'unsupported', reason: '柱ではない' }
   }
 
   const section = findSection(project, member.sectionId)
-  if (section.kind !== COLUMN) return { status: 'unsupported', reason: '\u67f1\u3067\u306f\u306a\u3044' }
-  if (section.shape === '\u5186\u5f62') {
-    return { status: 'unsupported', reason: '\u5186\u5f62\u67f1' }
+  if (section.kind !== COLUMN) return { status: 'unsupported', reason: '柱ではない' }
+  if (section.shape === '円形') {
+    return { status: 'unsupported', reason: '円形柱' }
   }
   const story = project.stories.find(({ id }) => id === member.storyId)
-  if (!story) return { status: 'unsupported', reason: '\u90e8\u6750\u306a\u3057' }
+  if (!story) return { status: 'unsupported', reason: '部材なし' }
 
   const girders = orderedGirders(
     project.members.filter(
@@ -117,7 +117,7 @@ export function resolveJoint(project: Project, columnMemberId: string): JointRes
     ),
   )
   if (girders.length === 0) {
-    return { status: 'unsupported', reason: '\u53d6\u308a\u4ed8\u304f\u5927\u6881\u306a\u3057' }
+    return { status: 'unsupported', reason: '取り付く大梁なし' }
   }
 
   const jointGirders = girders.map((girder) => {

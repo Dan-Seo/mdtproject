@@ -16,22 +16,22 @@ import {
 } from './types'
 
 const HUMAN_STATUSES: readonly ReviewHumanStatus[] = [
-  '\u672A\u78BA\u8A8D',
-  '\u78BA\u8A8D\u6E08',
-  '\u4FDD\u7559',
-  '\u5224\u65AD\u4E0D\u53EF',
+  '未確認',
+  '確認済',
+  '保留',
+  '判断不可',
 ]
 const FINDING_KINDS: readonly FindingKind[] = [
-  '\u5E72\u6E09\u5019\u88DC',
-  '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC',
-  '\u63A5\u89E6',
+  '干渉候補',
+  'あき不足候補',
+  '接触',
 ]
 const CHECKLIST_STATUSES: readonly ChecklistStatus[] = [
-  '\u672A\u5165\u529B',
-  '\u672A\u78BA\u8A8D',
-  '\u78BA\u8A8D\u6E08',
-  '\u4FDD\u7559',
-  '\u9664\u5916',
+  '未入力',
+  '未確認',
+  '確認済',
+  '保留',
+  '除外',
 ]
 
 function invalid(path: string): never {
@@ -203,7 +203,7 @@ function validateItem(value: unknown, path: string): void {
   string(item.title, `${path}.title`)
   string(item.body, `${path}.body`)
   const status = oneOf(item.status, HUMAN_STATUSES, `${path}.status`)
-  if (status === '\u4FDD\u7559') nonEmptyString(item.holdReason, `${path}.holdReason`)
+  if (status === '保留') nonEmptyString(item.holdReason, `${path}.holdReason`)
   else optionalString(item.holdReason, `${path}.holdReason`)
   array(item.confirmations, `${path}.confirmations`).forEach((confirmation, index) => {
     validateConfirmation(confirmation, `${path}.confirmations[${index}]`)
@@ -216,7 +216,7 @@ function validateClearance(value: unknown, path: string): void {
   const clearance = record(value, path)
   const valueMm = finite(clearance.valueMm, `${path}.valueMm`)
   if (valueMm <= 0) invalid(`${path}.valueMm`)
-  if (clearance.source !== '\u5229\u7528\u8005\u5165\u529B') invalid(`${path}.source`)
+  if (clearance.source !== '利用者入力') invalid(`${path}.source`)
   string(clearance.scope, `${path}.scope`)
   string(clearance.enteredAt, `${path}.enteredAt`)
   string(clearance.note, `${path}.note`)
@@ -251,7 +251,7 @@ function validateChecklist(value: unknown, path: string): void {
   boolean(entry.required, `${path}.required`)
   stringArray(entry.reviewItemIds, `${path}.reviewItemIds`)
   const status = oneOf(entry.status, CHECKLIST_STATUSES, `${path}.status`)
-  if (status === '\u4FDD\u7559' || status === '\u9664\u5916') {
+  if (status === '保留' || status === '除外') {
     nonEmptyString(entry.reason, `${path}.reason`)
   } else {
     optionalString(entry.reason, `${path}.reason`)
@@ -259,7 +259,7 @@ function validateChecklist(value: unknown, path: string): void {
   if (entry.confirmation !== undefined) {
     validateChecklistConfirmation(entry.confirmation, `${path}.confirmation`)
   }
-  if (status === '\u78BA\u8A8D\u6E08' && stringArray(entry.reviewItemIds, `${path}.reviewItemIds`).length === 0 && entry.confirmation === undefined) {
+  if (status === '確認済' && stringArray(entry.reviewItemIds, `${path}.reviewItemIds`).length === 0 && entry.confirmation === undefined) {
     invalid(`${path}.confirmation`)
   }
 }
@@ -375,7 +375,7 @@ export function confirmItem(
   const items = current.items.slice()
   items[index] = {
     ...item,
-    status: '\u78BA\u8A8D\u6E08',
+    status: '確認済',
     updatedAt: confirmation.at,
     confirmations: [...item.confirmations, confirmation],
   }
@@ -386,7 +386,7 @@ export function holdItem(state: ReviewState, id: string, reason: string): Review
   const current = validated(state)
   const index = itemIndex(current, id)
   const items = current.items.slice()
-  items[index] = { ...items[index], status: '\u4FDD\u7559', holdReason: reason }
+  items[index] = { ...items[index], status: '保留', holdReason: reason }
   return validated({ ...current, items })
 }
 
@@ -451,8 +451,8 @@ export function setChecklistStatus(
 
   const checklist = workPackage.checklist.slice()
   const entry: ChecklistEntry = { ...checklist[entryPosition], status }
-  if (status !== '\u4FDD\u7559' && status !== '\u9664\u5916') delete entry.reason
-  if (status !== '\u78BA\u8A8D\u6E08') delete entry.confirmation
+  if (status !== '保留' && status !== '除外') delete entry.reason
+  if (status !== '確認済') delete entry.confirmation
   if (extra.reason !== undefined) entry.reason = extra.reason
   if (extra.confirmation !== undefined) entry.confirmation = extra.confirmation
   checklist[entryPosition] = entry

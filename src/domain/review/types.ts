@@ -45,7 +45,7 @@ export interface ReviewSnapshot {
   }
 }
 
-export type FindingKind = '\u5E72\u6E09\u5019\u88DC' | '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC' | '\u63A5\u89E6'
+export type FindingKind = '干渉候補' | 'あき不足候補' | '接触'
 
 export interface RecordedFinding {
   checkId: string
@@ -58,7 +58,7 @@ export interface RecordedFinding {
   basis: string
 }
 
-export type ReviewHumanStatus = '\u672A\u78BA\u8A8D' | '\u78BA\u8A8D\u6E08' | '\u4FDD\u7559' | '\u5224\u65AD\u4E0D\u53EF'
+export type ReviewHumanStatus = '未確認' | '確認済' | '保留' | '判断不可'
 
 export interface Confirmation {
   by: string
@@ -82,7 +82,7 @@ export interface ReviewItem {
 
 export interface ClearanceBasis {
   valueMm: number
-  source: '\u5229\u7528\u8005\u5165\u529B'
+  source: '利用者入力'
   scope: string
   enteredAt: string
   note: string
@@ -100,7 +100,7 @@ export interface CheckExclusion {
   createdAt: string
 }
 
-export type ChecklistStatus = '\u672A\u5165\u529B' | '\u672A\u78BA\u8A8D' | '\u78BA\u8A8D\u6E08' | '\u4FDD\u7559' | '\u9664\u5916'
+export type ChecklistStatus = '未入力' | '未確認' | '確認済' | '保留' | '除外'
 
 export interface ChecklistConfirmation extends Confirmation {
   fingerprints: ReviewFingerprints

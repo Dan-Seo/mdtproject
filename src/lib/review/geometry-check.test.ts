@@ -23,11 +23,11 @@ import {
   type FindingKind,
 } from './geometry-check'
 
-const CLASH: FindingKind = '\u5E72\u6E09\u5019\u88DC'
-const CLEARANCE: FindingKind = '\u3042\u304D\u4E0D\u8DB3\u5019\u88DC'
-const CONTACT: FindingKind = '\u63A5\u89E6'
-const UPPER = '\u4E0A\u7AEF\u7B4B'
-const HOOP = '\u5E2F\u7B4B'
+const CLASH: FindingKind = '干渉候補'
+const CLEARANCE: FindingKind = 'あき不足候補'
+const CONTACT: FindingKind = '接触'
+const UPPER = '上端筋'
+const HOOP = '帯筋'
 
 function sampleInput(
   jointId = '1F-X2Y1',
@@ -44,7 +44,7 @@ function sampleInput(
     : {
         clearance: {
           valueMm: clearance,
-          source: '\u5229\u7528\u8005\u5165\u529B' as const,
+          source: '利用者入力' as const,
           scope: 'test boundary',
           enteredAt: '2026-09-17T00:00:00Z',
           note: 'test input',
@@ -176,7 +176,7 @@ describe('geometry check', () => {
     )
     expect(finding).toBeDefined()
     expect(finding?.clearanceMm).toBeCloseTo(-22, 6)
-    expect(finding?.basis).toEqual({ kind: '\u5E7E\u4F55\u5B66\u7684\u91CD\u306A\u308A' })
+    expect(finding?.basis).toEqual({ kind: '幾何学的重なり' })
     expect(finding?.midpoint[0]).toBeGreaterThanOrEqual(result.scope.regionMm.x[0])
     expect(finding?.midpoint[0]).toBeLessThanOrEqual(result.scope.regionMm.x[1])
     expect(finding?.midpoint[2]).toBeGreaterThanOrEqual(result.scope.regionMm.z[0])
@@ -185,7 +185,7 @@ describe('geometry check', () => {
 
   it('keeps the 25 mm lower-main gap distinct from its user threshold', () => {
     const noBasis = check('1F-X2Y1', null)
-    expect(noBasis.verdict.clearance).toBe('\u5224\u65AD\u4E0D\u53EF\uFF08\u3042\u304D\u57FA\u6E96\u672A\u5165\u529B\uFF09')
+    expect(noBasis.verdict.clearance).toBe('判断不可（あき基準未入力）')
     expect(noBasis.findings.some(({ kind, clearanceMm }) => kind === CLEARANCE && Math.abs(clearanceMm - 25) < 1e-6)).toBe(false)
 
     const below = check('1F-X2Y1', 24)
@@ -194,18 +194,18 @@ describe('geometry check', () => {
     const above = check('1F-X2Y1', 26)
     const finding = above.findings.find(({ kind, clearanceMm }) => kind === CLEARANCE && Math.abs(clearanceMm - 25) < 1e-6)
     expect(finding).toBeDefined()
-    expect(finding?.basis).toEqual({ kind: '\u5229\u7528\u8005\u5165\u529B\u3042\u304D', valueMm: 26, scope: 'test boundary' })
+    expect(finding?.basis).toEqual({ kind: '利用者入力あき', valueMm: 26, scope: 'test boundary' })
   })
 
   it('reports fixed unchecked items without a global pass claim', () => {
     const result = check()
     expect(result.unchecked.map(({ what }) => what)).toEqual(expect.arrayContaining([
-      '\u7D99\u624B\u4F4D\u7F6E',
-      '\u30D1\u30CD\u30EB\u30BE\u30FC\u30F3\u5E2F\u7B4B',
+      '継手位置',
+      'パネルゾーン帯筋',
     ]))
-    expect(JSON.stringify(result)).not.toContain('\u5408\u683C')
-    expect(JSON.stringify(result)).not.toContain('\u5B89\u5168')
-    expect(JSON.stringify(result)).not.toContain('\u65BD\u5DE5\u53EF\u80FD')
+    expect(JSON.stringify(result)).not.toContain('合格')
+    expect(JSON.stringify(result)).not.toContain('安全')
+    expect(JSON.stringify(result)).not.toContain('施工可能')
   })
 
   it('excludes only the three intended same-member contacts', () => {
@@ -213,7 +213,7 @@ describe('geometry check', () => {
     const excluded = check('1F-X2Y1', null, defaultExclusions('2026-09-17T00:00:00Z'))
     expect(raw.findings.some(({ kind }) => kind === CLASH)).toBe(true)
     expect(raw.findings.some(({ kind }) => kind === CONTACT)).toBe(true)
-    expect(excluded.verdict.contact).toBe('\u63A5\u89E6\u306A\u3057\uFF08\u691C\u67FB\u6761\u4EF6\u5185\uFF09')
+    expect(excluded.verdict.contact).toBe('接触なし（検査条件内）')
     expect(excluded.verdict.excludedCounts[CONTACT]).toBeGreaterThan(0)
     expect(excluded.findings.some(({ kind, excludedBy }) => kind === CONTACT && excludedBy !== null)).toBe(true)
     expect(excluded.findings.some(({ kind }) => kind === CLASH)).toBe(true)
@@ -221,8 +221,8 @@ describe('geometry check', () => {
 
   it('matches exclusions by kind, unordered roles, member scope, and same-member flag', () => {
     const a = ref('m1', HOOP)
-    const b = ref('m1', '\u4E3B\u7B4B')
-    const other = ref('m2', '\u4E3B\u7B4B')
+    const b = ref('m1', '主筋')
+    const other = ref('m2', '主筋')
     const exclusion = defaultExclusions('now')[0]
     expect(exclusionMatches(exclusion, CONTACT, a, b)).toBe(true)
     expect(exclusionMatches(exclusion, CONTACT, a, other)).toBe(false)
@@ -300,10 +300,10 @@ describe('geometry check', () => {
     const allTargetIds = new Set(jointRebarMemberIds(input.project, input.joint))
     const result = runGeometryCheck({ ...input, unsupportedMemberIds: allTargetIds })
     expect(result.scope.unsupportedMemberIds).toEqual(expect.arrayContaining([...allTargetIds]))
-    expect(result.unchecked.some(({ what }) => what.startsWith('\u672A\u5BFE\u5FDC\u90E8\u6750'))).toBe(true)
-    expect(result.verdict.clash).toBe('\u691C\u67FB\u5BFE\u8C61\u306A\u3057')
-    expect(result.verdict.clearance).toBe('\u691C\u67FB\u5BFE\u8C61\u306A\u3057')
-    expect(result.verdict.contact).toBe('\u691C\u67FB\u5BFE\u8C61\u306A\u3057')
+    expect(result.unchecked.some(({ what }) => what.startsWith('未対応部材'))).toBe(true)
+    expect(result.verdict.clash).toBe('検査対象なし')
+    expect(result.verdict.clearance).toBe('検査対象なし')
+    expect(result.verdict.contact).toBe('検査対象なし')
   })
 
   it('keeps the terminal run-owner girder in the inspected member set', () => {

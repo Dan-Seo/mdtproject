@@ -8,9 +8,9 @@ import { memberDependencies } from './dependency'
 
 function girderRebars(project: ReturnType<typeof createSampleProject>, memberId: string) {
   const member = project.members.find(({ id }) => id === memberId)
-  if (!member || member.kind !== '\u5927\u6881') throw new Error(`大梁 not found: ${memberId}`)
+  if (!member || member.kind !== '大梁') throw new Error(`大梁 not found: ${memberId}`)
   const section = findSection(project, member.sectionId)
-  if (section.kind !== '\u5927\u6881') throw new Error(`大梁 section not found: ${memberId}`)
+  if (section.kind !== '大梁') throw new Error(`大梁 section not found: ${memberId}`)
   return generateGirderRebar({ run: girderRun(project, member), section }, jpMlitRulePack)
 }
 
@@ -21,9 +21,9 @@ describe('review dependencies', () => {
     expect(x.status).toBe('tracked')
     if (x.status === 'tracked') {
       expect(x.missing).toEqual([])
-      expect(x.dependencies.filter(({ via }) => via === '\u652f\u6301\u67f1')).toEqual([
-        expect.objectContaining({ memberId: '1F-X1Y1', reads: { shape: '\u77e9\u5f62', b: 800, d: 800 } }),
-        expect.objectContaining({ memberId: '1F-X2Y1', reads: { shape: '\u77e9\u5f62', b: 800, d: 800 } }),
+      expect(x.dependencies.filter(({ via }) => via === '支持柱')).toEqual([
+        expect.objectContaining({ memberId: '1F-X1Y1', reads: { shape: '矩形', b: 800, d: 800 } }),
+        expect.objectContaining({ memberId: '1F-X2Y1', reads: { shape: '矩形', b: 800, d: 800 } }),
       ])
     }
 
@@ -31,10 +31,10 @@ describe('review dependencies', () => {
     expect(y.status).toBe('tracked')
     if (y.status === 'tracked') {
       expect(y.dependencies).toEqual(expect.arrayContaining([
-        expect.objectContaining({ memberId: '1F-G1-X1Y2-Y', via: '\u9023\u7d9a\u30b9\u30d1\u30f3' }),
-        expect.objectContaining({ memberId: '1F-X1Y1', via: '\u652f\u6301\u67f1' }),
-        expect.objectContaining({ memberId: '1F-X1Y2', via: '\u652f\u6301\u67f1' }),
-        expect.objectContaining({ memberId: '1F-X1Y3', via: '\u652f\u6301\u67f1' }),
+        expect.objectContaining({ memberId: '1F-G1-X1Y2-Y', via: '連続スパン' }),
+        expect.objectContaining({ memberId: '1F-X1Y1', via: '支持柱' }),
+        expect.objectContaining({ memberId: '1F-X1Y2', via: '支持柱' }),
+        expect.objectContaining({ memberId: '1F-X1Y3', via: '支持柱' }),
       ]))
     }
   })
@@ -44,21 +44,21 @@ describe('review dependencies', () => {
     const column = memberDependencies(project, '1F-X2Y2')
     expect(column.status).toBe('tracked')
     if (column.status === 'tracked') {
-      expect(column.dependencies.filter(({ via }) => via === '\u4e0a\u90e8\u5927\u6881')).toHaveLength(3)
+      expect(column.dependencies.filter(({ via }) => via === '上部大梁')).toHaveLength(3)
       expect(column.dependencies).toContainEqual(expect.objectContaining({
         memberId: '2F-X2Y2',
-        via: '\u4e0a\u4e0b\u968e\u67f1',
+        via: '上下階柱',
         reads: { exists: true },
       }))
     }
 
     expect(memberDependencies(project, '1F-W1-X1Y1-Y')).toEqual({
       status: 'untracked',
-      reason: '\u4f9d\u5b58\u7d4c\u8def\u672a\u8ffd\u8de1\uff08\u8010\u9707\u58c1\u30fb\u5e8a\u677f\uff09',
+      reason: '依存経路未追跡（耐震壁・床板）',
     })
     expect(memberDependencies(project, '1F-S1-X1Y1')).toEqual({
       status: 'untracked',
-      reason: '\u4f9d\u5b58\u7d4c\u8def\u672a\u8ffd\u8de1\uff08\u8010\u9707\u58c1\u30fb\u5e8a\u677f\uff09',
+      reason: '依存経路未追跡（耐震壁・床板）',
     })
   })
 
@@ -71,7 +71,7 @@ describe('review dependencies', () => {
     const result = memberDependencies(missing, '1F-G1-X1Y1-X')
     expect(result.status).toBe('tracked')
     if (result.status === 'tracked') {
-      expect(result.missing).toContainEqual({ via: '\u652f\u6301\u67f1', detail: '\u7d42\u7aef \u652f\u6301\u67f1\u306a\u3057' })
+      expect(result.missing).toContainEqual({ via: '支持柱', detail: '終端 支持柱なし' })
     }
   })
 
@@ -80,7 +80,7 @@ describe('review dependencies', () => {
     const supportChanged = {
       ...project,
       sections: project.sections.map((section) =>
-        section.id === 'section-C1' && section.kind === '\u67f1'
+        section.id === 'section-C1' && section.kind === '柱'
           ? { ...section, b: section.b + 1 }
           : section,
       ),
@@ -92,7 +92,7 @@ describe('review dependencies', () => {
     const mainOnly = {
       ...project,
       sections: project.sections.map((section) =>
-        section.id === 'section-C1' && section.kind === '\u67f1'
+        section.id === 'section-C1' && section.kind === '柱'
           ? { ...section, main: { ...section.main, count: section.main.count + 1 } }
           : section,
       ),

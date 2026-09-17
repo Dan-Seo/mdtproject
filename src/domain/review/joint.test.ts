@@ -11,8 +11,8 @@ import {
   supportColumnIds,
 } from './joint'
 
-const COLUMN = '\u67f1'
-const GIRDER = '\u5927\u6881'
+const COLUMN = '柱'
+const GIRDER = '大梁'
 
 describe('joint review model', () => {
   it('resolves sample joints by story, grid position, and girder end', () => {
@@ -22,8 +22,8 @@ describe('joint review model', () => {
     expect(first.status).toBe('joint')
     if (first.status === 'joint') {
       expect(first.joint.girders.map(({ member, end }) => [member.id, end])).toEqual([
-        ['1F-G1-X1Y1-X', '\u59cb\u7aef'],
-        ['1F-G1-X1Y1-Y', '\u59cb\u7aef'],
+        ['1F-G1-X1Y1-X', '始端'],
+        ['1F-G1-X1Y1-Y', '始端'],
       ])
     }
 
@@ -31,8 +31,8 @@ describe('joint review model', () => {
     expect(corner.status).toBe('joint')
     if (corner.status === 'joint') {
       expect(corner.joint.girders.map(({ member, end }) => [member.id, end])).toEqual([
-        ['1F-G1-X1Y1-X', '\u7d42\u7aef'],
-        ['1F-G2-X2Y1-Y', '\u59cb\u7aef'],
+        ['1F-G1-X1Y1-X', '終端'],
+        ['1F-G2-X2Y1-Y', '始端'],
       ])
     }
 
@@ -41,9 +41,9 @@ describe('joint review model', () => {
     if (mixed.status === 'joint') {
       expect(mixed.joint.girders).toHaveLength(3)
       expect(mixed.joint.girders.map(({ end }) => end)).toEqual([
-        '\u7d42\u7aef',
-        '\u7d42\u7aef',
-        '\u59cb\u7aef',
+        '終端',
+        '終端',
+        '始端',
       ])
       expect(mixed.joint.reference.memberIds).not.toContain('1F-G2-X2Y1-Y')
     }
@@ -68,7 +68,7 @@ describe('joint review model', () => {
       const ownerSection = findSection(project, ownerMember.sectionId)
       if (ownerMember.kind !== GIRDER || ownerSection.kind !== GIRDER) throw new Error('大梁 fixture expected')
       const rebars = generateGirderRebar({ run: girderRun(project, ownerMember), section: ownerSection }, jpMlitRulePack)
-      expect(rebars.some(({ memberId, role }) => memberId === owner && role === '\u4e0a\u7aef\u7b4b')).toBe(true)
+      expect(rebars.some(({ memberId, role }) => memberId === owner && role === '上端筋')).toBe(true)
     }
   })
 
@@ -81,20 +81,20 @@ describe('joint review model', () => {
 
     expect(resolveJoint(project, '1F-G1-X1Y1-X')).toEqual({
       status: 'unsupported',
-      reason: '\u67f1\u3067\u306f\u306a\u3044',
+      reason: '柱ではない',
     })
 
     const circular = {
       ...project,
       sections: project.sections.map((section) =>
         section.id === 'section-C1' && section.kind === COLUMN
-          ? { ...section, shape: '\u5186\u5f62' as const }
+          ? { ...section, shape: '円形' as const }
           : section,
       ),
     }
     expect(resolveJoint(circular, '1F-X1Y1')).toEqual({
       status: 'unsupported',
-      reason: '\u5186\u5f62\u67f1',
+      reason: '円形柱',
     })
 
     const noGirders = {
@@ -105,11 +105,11 @@ describe('joint review model', () => {
     }
     expect(resolveJoint(noGirders, '1F-X1Y1')).toEqual({
       status: 'unsupported',
-      reason: '\u53d6\u308a\u4ed8\u304f\u5927\u6881\u306a\u3057',
+      reason: '取り付く大梁なし',
     })
     expect(resolveJoint(project, 'missing')).toEqual({
       status: 'unsupported',
-      reason: '\u90e8\u6750\u306a\u3057',
+      reason: '部材なし',
     })
   })
 })

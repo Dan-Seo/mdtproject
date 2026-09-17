@@ -27,10 +27,10 @@ import {
   updatePackage,
 } from './state'
 
-const HOLD = '\u4FDD\u7559'
-const CONFIRMED = '\u78BA\u8A8D\u6E08'
-const UNCONFIRMED = '\u672A\u78BA\u8A8D'
-const USER_INPUT = '\u5229\u7528\u8005\u5165\u529B'
+const HOLD = '保留'
+const CONFIRMED = '確認済'
+const UNCONFIRMED = '未確認'
+const USER_INPUT = '利用者入力'
 
 const fingerprints: ReviewFingerprints = {
   rulepack: 'rules-1',
@@ -73,7 +73,7 @@ const workPackage: WorkPackage = {
       label: 'review entry',
       required: true,
       reviewItemIds: [],
-      status: '\u672A\u5165\u529B',
+      status: '未入力',
     },
   ],
   createdAt: '2026-09-17T10:00:00+09:00',
@@ -139,7 +139,7 @@ describe('review state parser', () => {
       ...validState(),
       exclusions: [{
         id: 'exclusion-1',
-        scope: { sameMemberOnly: true, roles: ['\u5E2F\u7B4B', '\u4E3B\u7B4B'], kinds: [] },
+        scope: { sameMemberOnly: true, roles: ['帯筋', '主筋'], kinds: [] },
         reason: 'intentional contact',
         createdAt: '2026-09-17',
       }],
@@ -209,8 +209,8 @@ describe('review state reducers', () => {
       id: 'exclusion-1',
       scope: {
         sameMemberOnly: true,
-        roles: ['\u5E2F\u7B4B', '\u4E3B\u7B4B'],
-        kinds: ['\u63A5\u89E6'],
+        roles: ['帯筋', '主筋'],
+        kinds: ['接触'],
       },
       reason: 'intentional contact',
       createdAt: '2026-09-17',
@@ -233,8 +233,8 @@ describe('review state reducers', () => {
     expect(updatePackage(state, 'package-1', { name: 'updated package' }).packages[0].name).toBe(
       'updated package',
     )
-    expect(setChecklistStatus(state, 'package-1', 'check-1', '\u672A\u78BA\u8A8D').packages[0].checklist[0].status).toBe(
-      '\u672A\u78BA\u8A8D',
+    expect(setChecklistStatus(state, 'package-1', 'check-1', '未確認').packages[0].checklist[0].status).toBe(
+      '未確認',
     )
     expect(setBaseline(state, baseline).baseline).toEqual(baseline)
     expect(newReviewId('item', ['item-1', 'item-2'])).toBe('item-3')
@@ -245,8 +245,8 @@ describe('review state reducers', () => {
     expect(() => removeExclusion(state, 'missing')).toThrow('not found')
     expect(() => addPackage(state, workPackage)).toThrow('duplicate id')
     expect(() => updatePackage(state, 'missing', {})).toThrow('not found')
-    expect(() => setChecklistStatus(state, 'missing', 'check-1', '\u672A\u5165\u529B')).toThrow('not found')
-    expect(() => setChecklistStatus(state, 'package-1', 'missing', '\u672A\u5165\u529B')).toThrow('not found')
+    expect(() => setChecklistStatus(state, 'missing', 'check-1', '未入力')).toThrow('not found')
+    expect(() => setChecklistStatus(state, 'package-1', 'missing', '未入力')).toThrow('not found')
     expect(() => setBaseline(state, { ...baseline, project: { ...baseline.project, schemaVersion: 2 } })).toThrow(
       'Unsupported Project schemaVersion; expected 11',
     )

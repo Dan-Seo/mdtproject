@@ -8,22 +8,22 @@ import {
 import { MemberUnsupportedError } from '../model/unsupported'
 import { supportColumnIds } from './joint'
 
-const COLUMN = '\u67f1'
-const GIRDER = '\u5927\u6881'
-const WALL = '\u8010\u9707\u58c1'
-const SLAB = '\u5e8a\u677f'
+const COLUMN = '柱'
+const GIRDER = '大梁'
+const WALL = '耐震壁'
+const SLAB = '床板'
 
-export type DependencyVia = '\u652f\u6301\u67f1' | '\u4e0a\u90e8\u5927\u6881' | '\u9023\u7d9a\u30b9\u30d1\u30f3' | '\u4e0a\u4e0b\u968e\u67f1'
+export type DependencyVia = '支持柱' | '上部大梁' | '連続スパン' | '上下階柱'
 
 export type Dependency =
-  | { memberId: string; via: '\u652f\u6301\u67f1'; detail: string; reads: { shape: string; b: number; d: number } }
-  | { memberId: string; via: '\u4e0a\u90e8\u5927\u6881'; detail: string; reads: { depth: number } }
-  | { memberId: string; via: '\u9023\u7d9a\u30b9\u30d1\u30f3'; detail: string; reads: { sectionId: string; position: GirderPosition } }
-  | { memberId: string; via: '\u4e0a\u4e0b\u968e\u67f1'; detail: string; reads: { exists: true } }
+  | { memberId: string; via: '支持柱'; detail: string; reads: { shape: string; b: number; d: number } }
+  | { memberId: string; via: '上部大梁'; detail: string; reads: { depth: number } }
+  | { memberId: string; via: '連続スパン'; detail: string; reads: { sectionId: string; position: GirderPosition } }
+  | { memberId: string; via: '上下階柱'; detail: string; reads: { exists: true } }
 
 export type DependencyResolution =
   | { status: 'tracked'; dependencies: Dependency[]; missing: { via: DependencyVia; detail: string }[] }
-  | { status: 'untracked'; reason: '\u4f9d\u5b58\u7d4c\u8def\u672a\u8ffd\u8de1\uff08\u8010\u9707\u58c1\u30fb\u5e8a\u677f\uff09' }
+  | { status: 'untracked'; reason: '依存経路未追跡（耐震壁・床板）' }
 
 function isGirder(member: Member): member is Member & { kind: typeof GIRDER; position: GirderPosition } {
   return member.kind === GIRDER && 'axis' in member.position
@@ -32,26 +32,26 @@ function isGirder(member: Member): member is Member & { kind: typeof GIRDER; pos
 function supportDependency(
   project: Project,
   memberId: string | null,
-  end: '\u59cb\u7aef' | '\u7d42\u7aef',
+  end: '始端' | '終端',
   dependencies: Dependency[],
   missing: { via: DependencyVia; detail: string }[],
 ): void {
   if (memberId === null) {
-    missing.push({ via: '\u652f\u6301\u67f1', detail: `${end} \u652f\u6301\u67f1\u306a\u3057` })
+    missing.push({ via: '支持柱', detail: `${end} 支持柱なし` })
     return
   }
   const member = project.members.find(({ id }) => id === memberId)
   if (!member) {
-    missing.push({ via: '\u652f\u6301\u67f1', detail: `${end} \u652f\u6301\u67f1\u306a\u3057` })
+    missing.push({ via: '支持柱', detail: `${end} 支持柱なし` })
     return
   }
   const section = findSection(project, member.sectionId)
   if (section.kind !== COLUMN) throw new Error(`支持柱 member references a non-柱 section: ${member.id}`)
-  if (dependencies.some((dependency) => dependency.memberId === memberId && dependency.via === '\u652f\u6301\u67f1')) return
+  if (dependencies.some((dependency) => dependency.memberId === memberId && dependency.via === '支持柱')) return
   dependencies.push({
     memberId,
-    via: '\u652f\u6301\u67f1',
-    detail: `${end} \u652f\u6301\u67f1 ${memberId}`,
+    via: '支持柱',
+    detail: `${end} 支持柱 ${memberId}`,
     reads: { shape: section.shape, b: section.b, d: section.d },
   })
 }
@@ -70,8 +70,8 @@ function columnDependencies(project: Project, member: Member): Dependency[] {
       if (section.kind !== GIRDER) throw new Error(`大梁 member references a non-大梁 section: ${candidate.id}`)
       dependencies.push({
         memberId: candidate.id,
-        via: '\u4e0a\u90e8\u5927\u6881',
-        detail: `\u4e0a\u90e8\u5927\u6881 ${candidate.id}`,
+        via: '上部大梁',
+        detail: `上部大梁 ${candidate.id}`,
         reads: { depth: section.depth },
       })
     }
@@ -90,8 +90,8 @@ function columnDependencies(project: Project, member: Member): Dependency[] {
     if (column) {
       dependencies.push({
         memberId: column.id,
-        via: '\u4e0a\u4e0b\u968e\u67f1',
-        detail: `\u4e0a\u4e0b\u968e\u67f1 ${column.id}`,
+        via: '上下階柱',
+        detail: `上下階柱 ${column.id}`,
         reads: { exists: true },
       })
     }
@@ -103,7 +103,7 @@ export function memberDependencies(project: Project, memberId: string): Dependen
   const member = project.members.find(({ id }) => id === memberId)
   if (!member) throw new Error(`Member not found: ${memberId}`)
   if (member.kind === WALL || member.kind === SLAB) {
-    return { status: 'untracked', reason: '\u4f9d\u5b58\u7d4c\u8def\u672a\u8ffd\u8de1\uff08\u8010\u9707\u58c1\u30fb\u5e8a\u677f\uff09' }
+    return { status: 'untracked', reason: '依存経路未追跡（耐震壁・床板）' }
   }
 
   const dependencies: Dependency[] = []
@@ -122,15 +122,15 @@ export function memberDependencies(project: Project, memberId: string): Dependen
       if (!isGirder(runMember)) throw new Error(`大梁 run contains a non-大梁 member: ${runMember.id}`)
       dependencies.push({
         memberId: runMember.id,
-        via: '\u9023\u7d9a\u30b9\u30d1\u30f3',
-        detail: `\u9023\u7d9a\u30b9\u30d1\u30f3 ${runMember.id}`,
+        via: '連続スパン',
+        detail: `連続スパン ${runMember.id}`,
         reads: { sectionId: runMember.sectionId, position: runMember.position },
       })
     }
     for (const runMember of runMembers) {
       const supportIds = supportColumnIds(project, runMember.id)
-      supportDependency(project, supportIds.start, '\u59cb\u7aef', dependencies, missing)
-      supportDependency(project, supportIds.end, '\u7d42\u7aef', dependencies, missing)
+      supportDependency(project, supportIds.start, '始端', dependencies, missing)
+      supportDependency(project, supportIds.end, '終端', dependencies, missing)
     }
   } else {
     return { status: 'tracked', dependencies, missing }
