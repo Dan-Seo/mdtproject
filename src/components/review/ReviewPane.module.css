@@ -56,3 +56,31 @@
 .excluded {
   color: var(--text-muted);
 }
+
+.itemCard {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+}
+
+.itemStatus {
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  font-weight: 600;
+}
+
+.itemStatus[data-review-status='確認済'] {
+  color: var(--text-body);
+}
+
+.itemStatus[data-review-status='保留'] {
+  color: var(--text-muted);
+}
+
+.itemStatus[data-review-status='判断不可'],
+.itemStatus[data-review-status='再検討必要'] {
+  color: var(--color-error);
+}

@@ -8,6 +8,7 @@ import { quantityLineId } from '@/domain/quantity'
 import { checkConditionsFingerprint, projectFingerprints } from '@/domain/review/fingerprint'
 import { resolveJoint } from '@/domain/review/joint'
 import { emptyReviewState } from '@/domain/review/state'
+import { itemTargetMemberIds } from '@/domain/review/validity'
 import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
 import { xrayForRow } from '@/lib/review/xray'
@@ -53,6 +54,22 @@ describe('ReviewPane', () => {
       exclusions: review.exclusions,
       fingerprints,
     })
+  }
+
+  function currentFingerprints() {
+    const { project, review } = useAppStore.getState()
+    const takeoff = buildTakeoff(project)
+    const unsupportedMemberIds = new Set(
+      takeoff.unsupportedMembers.map(({ memberId }) => memberId),
+    )
+    return projectFingerprints(
+      project,
+      takeoff.rebars,
+      unsupportedMemberIds,
+      jpMlitRulePack,
+      geometryCheck.GEOMETRY_CHECK_VERSION,
+      checkConditionsFingerprint(review.settings, review.exclusions),
+    )
   }
 
   it('shows the selected column joint and rejects a selected girder', () => {
@@ -230,5 +247,128 @@ describe('ReviewPane', () => {
     for (const verdict of screen.getAllByTestId('review-verdict')) {
       expect(verdict).not.toHaveTextContent(/合格|安全|承認|施工可能|適合/)
     }
+  })
+
+  it('creates findings and plain review items with scoped snapshots', () => {
+    const expected = directGeometryCheck()
+    render(<ReviewPane />)
+
+    fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+    const rows = screen.getByTestId('review-findings').querySelectorAll('tbody tr')
+    const findingRow = rows[4] as HTMLElement
+    fireEvent.click(within(findingRow).getByRole('button', { name: '検討項目にする' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    const first = useAppStore.getState().review.items[0]
+    if (!first) throw new Error('review item expected')
+    expect(first.finding?.clearanceMm).toBe(-22)
+    expect(new Set(Object.keys(first.snapshot.fingerprints.members))).toEqual(
+      new Set(itemTargetMemberIds(first, useAppStore.getState().project).memberIds),
+    )
+    expect(first.snapshot.viewer.clip).toEqual(useAppStore.getState().viewerClip)
+    expect(expected.findings[4]?.clearanceMm).toBe(-22)
+
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    expect('finding' in useAppStore.getState().review.items[1]).toBe(false)
+  })
+
+  it('confirms only after a by value and refreshes target fingerprints', () => {
+    render(<ReviewPane />)
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    act(() => useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) => section.id === 'section-C1'
+        ? { ...section, b: 900 }
+        : section),
+    })))
+    fireEvent.click(screen.getByRole('button', { name: '確認' }))
+
+    const by = screen.getByLabelText('確認者（ローカル入力・本人認証ではない）')
+    fireEvent.click(screen.getByRole('button', { name: '確認を保存' }))
+    expect(useAppStore.getState().review.items[0]?.status).toBe('未確認')
+    expect(useAppStore.getState().review.items[0]?.confirmations).toHaveLength(0)
+
+    fireEvent.change(by, { target: { value: 'reviewer' } })
+    fireEvent.click(screen.getByRole('button', { name: '確認を保存' }))
+    const item = useAppStore.getState().review.items[0]
+    expect(item?.status).toBe('確認済')
+    expect(item?.confirmations).toHaveLength(1)
+    expect(item?.snapshot.fingerprints.rulepack).toBe(currentFingerprints().rulepack)
+    const targetMemberId = itemTargetMemberIds(item!, useAppStore.getState().project).memberIds[0]
+    expect(item?.snapshot.fingerprints.members[targetMemberId]).toEqual(
+      currentFingerprints().members[targetMemberId],
+    )
+  })
+
+  it('requires a hold reason and keeps form edits local until commit', () => {
+    const setReview = vi.spyOn(useAppStore.getState(), 'setReview')
+    render(<ReviewPane />)
+    setReview.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    const title = screen.getByLabelText('タイトル')
+    const body = screen.getByLabelText('本文')
+    for (const value of ['a', 'ab', 'abc', 'abcd', '']) {
+      fireEvent.change(title, { target: { value } })
+      fireEvent.change(body, { target: { value } })
+    }
+    expect(setReview).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    expect(setReview).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '保留' }))
+    fireEvent.click(screen.getByRole('button', { name: '保留を保存' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('保留理由')
+    expect(useAppStore.getState().review.items[0]?.status).toBe('未確認')
+    fireEvent.change(screen.getByLabelText('保留理由'), { target: { value: 'later' } })
+    fireEvent.click(screen.getByRole('button', { name: '保留を保存' }))
+    expect(useAppStore.getState().review.items[0]?.status).toBe('保留')
+    setReview.mockRestore()
+  })
+
+  it('marks changed target members for recheck and filters them', () => {
+    render(<ReviewPane />)
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    act(() => useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) => section.id === 'section-C1'
+        ? { ...section, b: 900 }
+        : section),
+    })))
+
+    const card = screen.getByTestId('review-item-1')
+    expect(card.querySelector('[data-review-status]')).toHaveTextContent('再検討必要')
+    expect(card).toHaveTextContent('入力が変更されています: 1F-X2Y1')
+    fireEvent.click(screen.getByLabelText('今回の変更で再検討が必要なものだけ'))
+    expect(screen.getByTestId('review-item-1')).toBeInTheDocument()
+  })
+
+  it('replays a saved viewer state and renders the safety notice', () => {
+    render(<ReviewPane />)
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    const snapshot = useAppStore.getState().review.items[0]?.snapshot
+    if (!snapshot) throw new Error('snapshot expected')
+
+    act(() => {
+      useAppStore.getState().setViewerMode('building')
+      useAppStore.getState().setViewerClip({ enabled: true, axis: 'z', ratio: 0.2 })
+      useAppStore.getState().toggleViewerLayer('main')
+      useAppStore.getState().setHoverRow('changed')
+      useAppStore.getState().requestViewerPose(null)
+    })
+    fireEvent.click(screen.getByRole('button', { name: '再現' }))
+
+    const state = useAppStore.getState()
+    expect(state.viewerMode).toBe(snapshot.viewer.mode)
+    expect(state.viewerClip).toEqual(snapshot.viewer.clip)
+    expect(state.viewerLayers).toEqual(snapshot.viewer.layers)
+    expect(state.sel.memberId).toBe(snapshot.viewer.selection.memberId)
+    expect(state.hoverRowId).toBe(snapshot.viewer.selection.rowId)
+    expect(state.requestedViewerPose).toEqual(snapshot.viewer.pose)
+    expect(screen.getByTestId('data-review-notice')).toHaveTextContent('構造安全・法規適合・施工承認')
   })
 })

@@ -1,21 +1,35 @@
 'use client'
 
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { sectionMarkLabel } from '@/domain/model/member'
 import { findSection } from '@/domain/model/project'
 import { jointRebarMemberIds, resolveJoint } from '@/domain/review/joint'
 import type { TakeoffSnapshot } from '@/domain/review/impact'
 import {
+  addItem,
   addExclusion,
+  confirmItem,
+  holdItem,
+  newReviewId,
   removeExclusion,
   setClearance,
+  updateItem,
 } from '@/domain/review/state'
 import type {
   CheckExclusion,
+  ElementRef,
   FindingKind,
   ClearanceBasis,
+  RecordedFinding,
+  ReviewItem,
 } from '@/domain/review/types'
+import {
+  effectiveItemStatus,
+  itemTargetMemberIds,
+  itemValidity,
+  itemsNeedingRecheck,
+} from '@/domain/review/validity'
 import type { RuleHit } from '@/domain/rules/types'
 import type { RebarRole } from '@/domain/model/rebar'
 import {
@@ -74,7 +88,7 @@ function basisText(finding: geometryCheck.Finding): string {
 }
 
 interface ReviewCheckProps {
-  onCreateItem?: (finding: geometryCheck.Finding) => void
+  onCreateItem?: (finding: geometryCheck.Finding, checkId?: string) => void
 }
 
 function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
@@ -332,7 +346,7 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
                     <td>{finding.clearanceMm.toFixed(1)}</td>
                     <td>{basisText(finding)}</td>
                     <td>{exclusion === null || exclusion === undefined ? null : <span className={styles.excluded}>{t(locale, 'review.check.excluded')}: {exclusion.reason}</span>}</td>
-                    <td><button type="button" onClick={() => onCreateItem(finding)}>{t(locale, 'review.check.createItem')}</button></td>
+                    <td><button type="button" onClick={() => onCreateItem(finding, result.checkId)}>{t(locale, 'review.check.createItem')}</button></td>
                   </tr>
                 )
               })}
@@ -620,12 +634,390 @@ function XRaySection() {
   )
 }
 
+const REVIEW_LAYERS = ['main', 'hoop', 'concrete'] as const
+
+type ReviewDraft = {
+  title: string
+  body: string
+  targets: ElementRef[]
+  finding?: RecordedFinding
+}
+
+interface ReviewItemRequest {
+  token: number
+  finding: geometryCheck.Finding | null
+  checkId: string | null
+}
+
+function recordedFinding(finding: geometryCheck.Finding, checkId: string): RecordedFinding {
+  const [firstPoint, secondPoint] = finding.closestPoints
+  return {
+    checkId,
+    findingId: finding.id,
+    kind: finding.kind,
+    clearanceMm: finding.clearanceMm,
+    a: {
+      memberId: finding.a.memberId,
+      rebarId: finding.a.rebarId,
+      role: finding.a.role,
+      barIndex: finding.a.barIndex,
+      segmentIndex: finding.a.segmentIndex,
+    },
+    b: {
+      memberId: finding.b.memberId,
+      rebarId: finding.b.rebarId,
+      role: finding.b.role,
+      barIndex: finding.b.barIndex,
+      segmentIndex: finding.b.segmentIndex,
+    },
+    closestPoints: [
+      [firstPoint[0], firstPoint[1], firstPoint[2]],
+      [secondPoint[0], secondPoint[1], secondPoint[2]],
+    ],
+    basis: basisText(finding),
+  }
+}
+
+function fingerprintsForItem(
+  item: ReviewItem,
+  project: TakeoffSnapshot['project'],
+  fingerprints: ReturnType<typeof useReviewModel>['current']['fingerprints'],
+) {
+  const members = Object.fromEntries(
+    itemTargetMemberIds(item, project).memberIds.flatMap((memberId) => {
+      const fingerprint = fingerprints.members[memberId]
+      return fingerprint === undefined ? [] : [[memberId, fingerprint] as const]
+    }),
+  )
+  return { ...fingerprints, members }
+}
+
+function targetMemberId(ref: ElementRef): string | null {
+  if (ref.kind === 'member' || ref.kind === 'joint') {
+    return ref.kind === 'member' ? ref.memberId : ref.columnMemberId
+  }
+  if (ref.kind === 'rebar') return ref.rebarId.split('|', 1)[0] ?? null
+  return null
+}
+
+function targetLabel(ref: ElementRef): string {
+  if (ref.kind === 'member') return ref.memberId
+  if (ref.kind === 'joint') return `接合部 ${ref.columnMemberId}`
+  if (ref.kind === 'rebar') return `鉄筋 ${ref.rebarId}`
+  return `内訳 ${ref.lineId}`
+}
+
+function itemStatusLabel(locale: Parameters<typeof t>[0], status: ReturnType<typeof effectiveItemStatus>): string {
+  if (status === '未確認') return t(locale, 'review.items.status.unconfirmed')
+  if (status === '確認済') return t(locale, 'review.items.status.confirmed')
+  if (status === '保留') return t(locale, 'review.items.status.hold')
+  if (status === '判断不可') return t(locale, 'review.items.status.unavailable')
+  return t(locale, 'review.items.status.recheck')
+}
+
+function ReviewItemsSection({
+  request,
+  onRequestConsumed,
+}: {
+  request: ReviewItemRequest | null
+  onRequestConsumed(): void
+}) {
+  const project = useAppStore(({ project }) => project)
+  const review = useAppStore(({ review }) => review)
+  const sel = useAppStore(({ sel }) => sel)
+  const hoverRowId = useAppStore(({ hoverRowId }) => hoverRowId)
+  const locale = useAppStore(({ locale }) => locale)
+  const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
+  const viewerLayers = useAppStore(({ viewerLayers }) => viewerLayers)
+  const viewerClip = useAppStore(({ viewerClip }) => viewerClip)
+  const viewerPose = useAppStore(({ viewerPose }) => viewerPose)
+  const setReview = useAppStore(({ setReview }) => setReview)
+  const selectMember = useAppStore(({ selectMember }) => selectMember)
+  const setViewerMode = useAppStore(({ setViewerMode }) => setViewerMode)
+  const toggleViewerLayer = useAppStore(({ toggleViewerLayer }) => toggleViewerLayer)
+  const setViewerClip = useAppStore(({ setViewerClip }) => setViewerClip)
+  const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
+  const requestViewerPose = useAppStore(({ requestViewerPose }) => requestViewerPose)
+  const { current } = useReviewModel()
+  const [draft, setDraft] = useState<ReviewDraft | null>(null)
+  const [showRecheckOnly, setShowRecheckOnly] = useState(false)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [confirmBy, setConfirmBy] = useState('')
+  const [confirmNote, setConfirmNote] = useState('')
+  const [confirmError, setConfirmError] = useState(false)
+  const [holdingId, setHoldingId] = useState<string | null>(null)
+  const [holdReason, setHoldReason] = useState('')
+  const [holdError, setHoldError] = useState(false)
+
+  const openDraft = (finding?: geometryCheck.Finding, checkId?: string) => {
+    const columnMemberId = sel.memberId ?? finding?.a.memberId ?? null
+    const targets: ElementRef[] = columnMemberId === null
+      ? []
+      : [{ kind: 'joint', columnMemberId }]
+    if (finding !== undefined) {
+      targets.push(
+        { kind: 'rebar', rebarId: finding.a.rebarId },
+        { kind: 'rebar', rebarId: finding.b.rebarId },
+      )
+    }
+    setDraft({
+      title: finding === undefined ? '' : `${finding.kind}: ${formatBarRef(project, finding.a)} × ${formatBarRef(project, finding.b)}`,
+      body: '',
+      targets,
+      ...(finding === undefined || checkId === undefined ? {} : { finding: recordedFinding(finding, checkId) }),
+    })
+  }
+
+  useEffect(() => {
+    if (request === null) return
+    openDraft(request.finding ?? undefined, request.checkId ?? undefined)
+    onRequestConsumed()
+  }, [openDraft, onRequestConsumed, request])
+
+  const saveDraft = () => {
+    if (draft === null) return
+    const capturedAt = new Date().toISOString()
+    const item: ReviewItem = {
+      id: newReviewId('review-item', review.items.map(({ id }) => id)),
+      createdAt: capturedAt,
+      updatedAt: capturedAt,
+      targets: draft.targets,
+      title: draft.title,
+      body: draft.body,
+      status: '未確認',
+      confirmations: [],
+      snapshot: {
+        capturedAt,
+        fingerprints: current.fingerprints,
+        viewer: {
+          mode: viewerMode,
+          pose: viewerPose,
+          clip: viewerClip,
+          layers: { ...viewerLayers },
+          selection: {
+            group: sel.group,
+            memberId: sel.memberId,
+            rowId: hoverRowId,
+          },
+        },
+      },
+      ...(draft.finding === undefined ? {} : { finding: draft.finding }),
+    }
+    item.snapshot = {
+      ...item.snapshot,
+      fingerprints: fingerprintsForItem(item, project, current.fingerprints),
+    }
+    setReview((state) => addItem(state, item))
+    setDraft(null)
+  }
+
+  const saveConfirmation = (itemId: string) => {
+    const by = confirmBy.trim()
+    if (by === '') {
+      setConfirmError(true)
+      return
+    }
+    const at = new Date().toISOString()
+    const confirmation = { by, at, note: confirmNote }
+    setReview((state) => {
+      const item = state.items.find(({ id }) => id === itemId)
+      if (item === undefined) return state
+      const confirmed = confirmItem(state, itemId, confirmation)
+      return updateItem(confirmed, itemId, {
+        snapshot: {
+          ...item.snapshot,
+          fingerprints: fingerprintsForItem(item, project, current.fingerprints),
+        },
+      })
+    })
+    setConfirmingId(null)
+    setConfirmBy('')
+    setConfirmNote('')
+    setConfirmError(false)
+  }
+
+  const saveHold = (itemId: string) => {
+    const reason = holdReason.trim()
+    if (reason === '') {
+      setHoldError(true)
+      return
+    }
+    setReview((state) => holdItem(state, itemId, reason))
+    setHoldingId(null)
+    setHoldReason('')
+    setHoldError(false)
+  }
+
+  const replay = (item: ReviewItem) => {
+    const { viewer } = item.snapshot
+    setViewerMode(viewer.mode)
+    setViewerClip(viewer.clip)
+    for (const layer of REVIEW_LAYERS) {
+      if (viewerLayers[layer] !== viewer.layers[layer]) toggleViewerLayer(layer)
+    }
+    if (viewer.selection.memberId !== null) selectMember(viewer.selection.memberId)
+    setHoverRow(viewer.selection.rowId)
+    requestViewerPose(viewer.pose)
+  }
+
+  const visibleItems = showRecheckOnly
+    ? itemsNeedingRecheck(review.items, current)
+    : review.items
+
+  return (
+    <section aria-labelledby="review-items-title" data-testid="review-items">
+      <h2 id="review-items-title">{t(locale, 'review.items.title')}</h2>
+      <button type="button" onClick={() => openDraft()}>
+        {t(locale, 'review.items.add')}
+      </button>
+      <label>
+        <input
+          type="checkbox"
+          checked={showRecheckOnly}
+          onChange={(event) => setShowRecheckOnly(event.target.checked)}
+        />
+        {t(locale, 'review.items.filterRecheck')}
+      </label>
+
+      {draft !== null && (
+        <form onSubmit={(event) => { event.preventDefault(); saveDraft() }}>
+          <label>
+            {t(locale, 'review.items.formTitle')}
+            <input
+              aria-label={t(locale, 'review.items.formTitle')}
+              value={draft.title}
+              onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+            />
+          </label>
+          <label>
+            {t(locale, 'review.items.body')}
+            <textarea
+              aria-label={t(locale, 'review.items.body')}
+              value={draft.body}
+              onChange={(event) => setDraft({ ...draft, body: event.target.value })}
+            />
+          </label>
+          <button type="submit">{t(locale, 'review.items.save')}</button>
+          <button type="button" onClick={() => setDraft(null)}>{t(locale, 'review.items.cancel')}</button>
+        </form>
+      )}
+
+      <div>
+        {visibleItems.map((item) => {
+          const validity = itemValidity(item, current)
+          const status = effectiveItemStatus(item, validity)
+          return (
+            <article key={item.id} data-testid={item.id} className={styles.itemCard}>
+              <h3>{item.title || t(locale, 'review.items.untitled')}</h3>
+              <p>{item.body}</p>
+              <p className={styles.itemStatus} data-review-status={status}>
+                {itemStatusLabel(locale, status)}
+              </p>
+              {validity.state === '再検討必要' && (
+                <ul>
+                  {validity.reasons.map((reason) => (
+                    <li key={`${reason.kind}-${reason.memberId ?? ''}`}>
+                      {reason.kind}{reason.memberId === undefined ? '' : ` · ${reason.memberId}`} — {reason.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div>
+                {item.targets.map((target, index) => {
+                  const memberId = targetMemberId(target)
+                  return (
+                    <button
+                      key={`${target.kind}-${index}`}
+                      type="button"
+                      disabled={memberId === null}
+                      onClick={() => { if (memberId !== null) selectMember(memberId) }}
+                    >
+                      {targetLabel(target)}
+                    </button>
+                  )
+                })}
+              </div>
+              {item.finding !== undefined && (
+                <p>
+                  <strong>{t(locale, 'review.items.recordedMeasurement')}</strong>:{' '}
+                  {item.finding.kind} · {item.finding.clearanceMm}mm · {t(locale, 'review.items.notCurrentValue')}
+                </p>
+              )}
+              <div>
+                <button type="button" onClick={() => replay(item)}>{t(locale, 'review.items.replay')}</button>
+                <button type="button" onClick={() => { setConfirmingId(item.id); setHoldingId(null); setConfirmError(false) }}>
+                  {t(locale, 'review.items.confirm')}
+                </button>
+                <button type="button" onClick={() => { setHoldingId(item.id); setConfirmingId(null); setHoldError(false) }}>
+                  {t(locale, 'review.items.hold')}
+                </button>
+                <button type="button" onClick={() => setReview((state) => updateItem(state, item.id, { status: '判断不可' }))}>
+                  {t(locale, 'review.items.unavailable')}
+                </button>
+              </div>
+              {confirmingId === item.id && (
+                <div>
+                  <label>
+                    {t(locale, 'review.items.confirmBy')}
+                    <input
+                      aria-label={t(locale, 'review.items.confirmBy')}
+                      value={confirmBy}
+                      onChange={(event) => setConfirmBy(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t(locale, 'review.items.confirmNote')}
+                    <input
+                      aria-label={t(locale, 'review.items.confirmNote')}
+                      value={confirmNote}
+                      onChange={(event) => setConfirmNote(event.target.value)}
+                    />
+                  </label>
+                  {confirmError && <p role="alert">{t(locale, 'review.items.confirmByRequired')}</p>}
+                  <button type="button" onClick={() => saveConfirmation(item.id)}>{t(locale, 'review.items.saveConfirmation')}</button>
+                </div>
+              )}
+              {holdingId === item.id && (
+                <div>
+                  <label>
+                    {t(locale, 'review.items.holdReason')}
+                    <input
+                      aria-label={t(locale, 'review.items.holdReason')}
+                      value={holdReason}
+                      onChange={(event) => setHoldReason(event.target.value)}
+                    />
+                  </label>
+                  {holdError && <p role="alert">{t(locale, 'review.items.holdReasonRequired')}</p>}
+                  <button type="button" onClick={() => saveHold(item.id)}>{t(locale, 'review.items.saveHold')}</button>
+                </div>
+              )}
+              {validity.state === '再検討必要' && (
+                <p>{t(locale, 'review.items.staleNotice')}</p>
+              )}
+            </article>
+          )
+        })}
+      </div>
+      <p data-testid="data-review-notice">{t(locale, 'review.items.notice')}</p>
+    </section>
+  )
+}
+
 export function ReviewPane({ onCreateItem }: ReviewCheckProps) {
+  const [request, setRequest] = useState<ReviewItemRequest | null>(null)
+  const requestToken = useRef(0)
+  const requestItem = (finding: geometryCheck.Finding, checkId?: string) => {
+    requestToken.current += 1
+    setRequest({ token: requestToken.current, finding, checkId: checkId ?? null })
+    onCreateItem?.(finding, checkId)
+  }
+
   return (
     <div className={styles.pane}>
       <JointSection />
       <XRaySection />
-      <ReviewCheckSection onCreateItem={onCreateItem} />
+      <ReviewCheckSection onCreateItem={requestItem} />
+      <ReviewItemsSection request={request} onRequestConsumed={() => setRequest(null)} />
     </div>
   )
 }

@@ -48,7 +48,8 @@
       "name": "review-items",
       "status": "pending",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T20:45:51+0900"
     },
     {
       "step": 6,
