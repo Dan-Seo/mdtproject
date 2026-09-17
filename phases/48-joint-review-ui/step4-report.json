@@ -1,0 +1,35 @@
+{
+  "changed_files": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/ReviewPane.module.css",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "tests_added": [
+    "src/components/review/ReviewPane.test.tsx"
+  ],
+  "mutations": [
+    {
+      "id": 1,
+      "mutation": "あき入力をキーストロークごとに setReview する",
+      "fails_in": "src/components/review/ReviewPane.test.tsx — commits clearance and exclusion edits only at their boundaries"
+    },
+    {
+      "id": 2,
+      "mutation": "excludedBy のある finding 行を表から除去する",
+      "fails_in": "src/components/review/ReviewPane.test.tsx — adds default exclusions without removing excluded findings"
+    },
+    {
+      "id": 3,
+      "mutation": "断面変更時に検査を自動再実行する",
+      "fails_in": "src/components/review/ReviewPane.test.tsx — never runs automatically when the project or review inputs change"
+    }
+  ],
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx"
+  ],
+  "paths_expected_absent": [],
+  "fabricated_paths": []
+}

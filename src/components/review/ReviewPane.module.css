@@ -52,3 +52,7 @@
   font-size: var(--type-code-size);
   white-space: pre-wrap;
 }
+
+.excluded {
+  color: var(--text-muted);
+}
