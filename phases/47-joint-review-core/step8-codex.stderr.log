@@ -1,0 +1,6 @@
+2026-09-17T09:36:13.402643Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\Users\emper\mdtproject\src\lib\review\geometry-check.test.ts
+2026-09-17T09:39:50.026118Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\review\geometry-check.ts:
+function segmentIntersectsRegion(instance: RebarInstance, region: CheckScope['regionMm']): boolean {
+  return rangesOverlap(segmentRange(instance, 0), region.x)
+    && rangesOverlap(segmentRange(instance, 2), region.z)
+}
