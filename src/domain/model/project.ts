@@ -1597,11 +1597,11 @@ const isFiniteNumber = (value: unknown): boolean =>
 const isPositiveFiniteNumber = (value: unknown): boolean =>
   isFiniteNumber(value) && (value as number) > 0
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function hasShape(
+export function hasShape(
   value: unknown,
   fields: Record<string, (field: unknown) => boolean>,
 ): boolean {
@@ -1967,23 +1967,25 @@ function isProjectShape(value: unknown): boolean {
   )
 }
 
-export function deserializeProject(json: string): Project {
-  const parsed: unknown = JSON.parse(json)
-
+export function parseProject(value: unknown): Project {
   if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('schemaVersion' in parsed) ||
-    parsed.schemaVersion !== PROJECT_SCHEMA_VERSION
+    typeof value !== 'object' ||
+    value === null ||
+    !('schemaVersion' in value) ||
+    value.schemaVersion !== PROJECT_SCHEMA_VERSION
   ) {
     throw new Error(
       `Unsupported Project schemaVersion; expected ${PROJECT_SCHEMA_VERSION}`,
     )
   }
 
-  if (!isProjectShape(parsed)) {
+  if (!isProjectShape(value)) {
     throw new Error('Project shape mismatch')
   }
 
-  return parsed as Project
+  return value as Project
+}
+
+export function deserializeProject(json: string): Project {
+  return parseProject(JSON.parse(json))
 }
