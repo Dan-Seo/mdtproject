@@ -3,12 +3,20 @@ import {
   serializeProject,
   type Project,
 } from '@/domain/model/project'
+import { parseReviewState } from '@/domain/review/state'
+import type { ReviewState } from '@/domain/review/types'
 
 const DATABASE_NAME = 'kijun'
 const DATABASE_VERSION = 1
 const STORE_NAME = 'project'
 /** 保存する案件は常に一つ。案件一覧はまだ無い。 */
 const RECORD_KEY = 'current'
+const REVIEW_KEY = 'review'
+
+export interface StoredBundle {
+  project: Project
+  review: ReviewState
+}
 
 /**
  * 断面一覧はセルを打つたびに Project を差し替えるので、1打鍵1書き込みだと
@@ -31,9 +39,9 @@ function openDatabase(): Promise<IDBDatabase> {
   })
 }
 
-function run<T>(
+function runTransaction<T>(
   mode: IDBTransactionMode,
-  operation: (store: IDBObjectStore) => IDBRequest<T>,
+  operation: (store: IDBObjectStore) => T,
 ): Promise<T> {
   return openDatabase().then(
     (database) =>
@@ -43,10 +51,10 @@ function run<T>(
         // その接続が開いたまま呼び出しの数だけ残る—以後の自動保存は
         // 永遠に失敗し、版を上げるとき onblocked で止まる。
         let transaction: IDBTransaction
-        let request: IDBRequest<T>
+        let value: T
         try {
           transaction = database.transaction(STORE_NAME, mode)
-          request = operation(transaction.objectStore(STORE_NAME))
+          value = operation(transaction.objectStore(STORE_NAME))
         } catch (error) {
           database.close()
           reject(error)
@@ -55,7 +63,7 @@ function run<T>(
 
         transaction.oncomplete = () => {
           database.close()
-          resolve(request.result)
+          resolve(value)
         }
         transaction.onerror = () => {
           database.close()
@@ -69,10 +77,25 @@ function run<T>(
   )
 }
 
+function run<T>(
+  mode: IDBTransactionMode,
+  operation: (store: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
+  return runTransaction(mode, operation).then((request) => request.result)
+}
+
 export async function saveProject(project: Project): Promise<void> {
   await run('readwrite', (store) =>
     store.put(serializeProject(project), RECORD_KEY),
   )
+}
+
+/** Project と review を一つの readwrite transaction に保存する。 */
+export async function saveBundle(bundle: StoredBundle): Promise<void> {
+  await runTransaction('readwrite', (store) => {
+    store.put(serializeProject(bundle.project), RECORD_KEY)
+    store.put(JSON.stringify(bundle.review), REVIEW_KEY)
+  })
 }
 
 /**
@@ -93,16 +116,53 @@ export async function loadStoredProject(): Promise<Project | null> {
   }
 }
 
+export async function loadStoredBundle(): Promise<{
+  project: Project | null
+  review: ReviewState | null
+}> {
+  try {
+    const records = await runTransaction('readonly', (store) => ({
+      project: store.get(RECORD_KEY) as IDBRequest<string | undefined>,
+      review: store.get(REVIEW_KEY) as IDBRequest<string | undefined>,
+    }))
+
+    let project: Project | null = null
+    if (typeof records.project.result === 'string') {
+      try {
+        project = deserializeProject(records.project.result)
+      } catch {
+        project = null
+      }
+    }
+    if (project === null) return { project: null, review: null }
+
+    let review: ReviewState | null = null
+    if (typeof records.review.result === 'string') {
+      try {
+        review = parseReviewState(JSON.parse(records.review.result))
+      } catch {
+        review = null
+      }
+    }
+    return { project, review }
+  } catch {
+    return { project: null, review: null }
+  }
+}
+
 export async function clearStoredProject(): Promise<void> {
   try {
-    await run('readwrite', (store) => store.delete(RECORD_KEY))
+    await runTransaction('readwrite', (store) => {
+      store.delete(RECORD_KEY)
+      store.delete(REVIEW_KEY)
+    })
   } catch {
     // 消せないことを利用者に伝えても打つ手が無い。
   }
 }
 
-export interface Autosave {
-  (project: Project): void
+export interface Autosave<T> {
+  (value: T): void
   /**
    * 待っている書き込みを今すぐ出す。頁を離れる時に呼ぶ — 打ち終わって
    * 500ms 以内に閉じられると、「前回の続き」を戻す機能が最後の一打を落とす。
@@ -111,10 +171,16 @@ export interface Autosave {
 }
 
 export function createAutosave(
-  write: (project: Project) => Promise<void> = saveProject,
-): Autosave {
+  write?: (project: Project) => Promise<void>,
+): Autosave<Project>
+export function createAutosave<T>(write: (value: T) => Promise<void>): Autosave<T>
+export function createAutosave<T>(
+  write: (value: T) => Promise<void> = saveProject as (
+    value: T,
+  ) => Promise<void>,
+): Autosave<T> {
   let timer: ReturnType<typeof setTimeout> | null = null
-  let pending: Project | null = null
+  let pending: T | null = null
   // 書き込みは呼び出しごとに接続を開き直すので、重なると commit の順が
   // 入れ替わりうる — 遅れた古い案件が最後に残る。順に一つずつ出す。
   //
@@ -123,7 +189,7 @@ export function createAutosave(
   // 居るのはまさにその場合だ。案件は毎回まるごと書き直すので、待つ間に
   // 追い越された古い版は落としてよい。
   let inFlight: Promise<void> | null = null
-  let queued: Project | null = null
+  let queued: T | null = null
 
   const drain = () => {
     if (inFlight !== null || queued === null) return
@@ -154,8 +220,8 @@ export function createAutosave(
     drain()
   }
 
-  const autosave = (project: Project) => {
-    pending = project
+  const autosave = (value: T) => {
+    pending = value
     if (timer !== null) clearTimeout(timer)
     timer = setTimeout(flush, AUTOSAVE_DEBOUNCE_MS)
   }

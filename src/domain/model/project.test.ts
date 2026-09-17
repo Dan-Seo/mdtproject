@@ -23,6 +23,7 @@ import {
   gridPoint,
   gridPointCount,
   memberGroupKey,
+  parseProject,
   placeableSlabPositions,
   placeableWallPositions,
   serializeProject,
@@ -1053,6 +1054,17 @@ describe('project serialization', () => {
     })
 
     expect(() => deserializeProject(incompatible)).toThrow()
+  })
+
+  it('parseProject uses the same gate as deserializeProject', () => {
+    const project = createProject()
+
+    expect(parseProject(project)).toEqual(
+      deserializeProject(serializeProject(project)),
+    )
+    expect(() => parseProject({ ...project, schemaVersion: PROJECT_SCHEMA_VERSION + 1 })).toThrow(
+      `Unsupported Project schemaVersion; expected ${PROJECT_SCHEMA_VERSION}`,
+    )
   })
 
   // 取り込む案件は他人が作った文字列だ。schemaVersion だけを見て通すと、

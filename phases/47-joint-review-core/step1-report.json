@@ -1,0 +1,38 @@
+{
+  "changed_files": [
+    "src/domain/review/types.ts",
+    "src/domain/review/state.ts",
+    "src/domain/review/state.test.ts",
+    "src/domain/model/project.ts",
+    "src/domain/model/project.test.ts"
+  ],
+  "tests_added": [
+    "src/domain/review/state.test.ts",
+    "src/domain/model/project.test.ts"
+  ],
+  "mutations": [
+    {
+      "site": "validateReviewState reviewSchemaVersion guard",
+      "failing_tests": [
+        "src/domain/review/state.test.ts > review state parser > rejects an unsupported review schema version"
+      ]
+    },
+    {
+      "site": "validateReviewState item collection unique-id guard",
+      "failing_tests": [
+        "src/domain/review/state.test.ts > review state parser > rejects duplicate item ids"
+      ]
+    },
+    {
+      "site": "validateItem held-status holdReason guard",
+      "failing_tests": [
+        "src/domain/review/state.test.ts > review state parser > rejects a held item without a reason"
+      ]
+    }
+  ],
+  "paths_verified": [
+    "src/domain/review/types.ts",
+    "src/domain/review/state.ts",
+    "src/domain/model/project.ts"
+  ]
+}

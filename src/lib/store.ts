@@ -7,6 +7,8 @@ import {
   memberGroupKey,
   type Project,
 } from '@/domain/model/project'
+import { emptyReviewState } from '@/domain/review/state'
+import type { ReviewState } from '@/domain/review/types'
 
 export interface Selection {
   group: string | null
@@ -22,6 +24,7 @@ export type ViewerLayer = 'main' | 'hoop' | 'concrete'
 
 export interface AppState {
   project: Project
+  review: ReviewState
   sel: Selection
   hoverRowId: string | null
   locale: Locale
@@ -36,7 +39,8 @@ export interface AppState {
   setViewerMode(mode: ViewerMode): void
   toggleViewerLayer(layer: ViewerLayer): void
   updateProject(updater: (project: Project) => Project): void
-  loadProject(project: Project): void
+  setReview(updater: (review: ReviewState) => ReviewState): void
+  loadProject(project: Project, review?: ReviewState): void
 }
 
 function findMember(project: Project, memberId: string) {
@@ -73,6 +77,7 @@ function storyOf(project: Project, selection: Selection): string {
 
 export const useAppStore = create<AppState>((set) => ({
   project: initialProject,
+  review: emptyReviewState(),
   sel: initialSel,
   hoverRowId: null,
   locale: 'ja',
@@ -123,16 +128,20 @@ export const useAppStore = create<AppState>((set) => ({
   updateProject(updater) {
     set(({ project }) => ({ project: updater(project) }))
   },
+  setReview(updater) {
+    set(({ review }) => ({ review: updater(review) }))
+  },
   /**
    * 案件まるごとの差し替え（自動保存からの復元・JSON 取り込み）。
    * updateProject と違って選択を持ち越せない — 取り込んだ案件に前の案件の
    * 部材 id は無く、3ペインが存在しない部材を指したままになる。
    */
-  loadProject(project) {
+  loadProject(project, review) {
     const sel = initialSelection(project)
 
     set({
       project,
+      review: review ?? emptyReviewState(),
       sel,
       hoverRowId: null,
       activeStoryId: storyOf(project, sel),

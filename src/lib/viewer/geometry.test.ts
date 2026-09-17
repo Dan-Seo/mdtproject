@@ -1413,8 +1413,10 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
       [
         {
           from: [0, 450, 0],
-          to: [2400, 450, 0],
-          radius: 1,
+        to: [2400, 450, 0],
+        radius: 1,
+        barIndex: 4,
+        hookTail: true,
         },
       ],
       [rangeOpening],
@@ -1424,6 +1426,7 @@ describe('開口部の3D — 鉄筋を断ち、コンクリートをくり抜く
       [0, 800],
       [1600, 2400],
     ])
+    expect(segments.every(({ barIndex, hookTail }) => barIndex === 4 && hookTail)).toBe(true)
   })
 })
 

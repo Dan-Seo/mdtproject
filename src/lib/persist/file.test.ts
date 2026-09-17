@@ -1,16 +1,98 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { emptyReviewState } from '@/domain/review/state'
+import type { ReviewState } from '@/domain/review/types'
 import {
   PROJECT_SCHEMA_VERSION,
   serializeProject,
   type Project,
 } from '@/domain/model/project'
 
-import { downloadProjectJson, projectFileName, readProjectFile } from './file'
+import {
+  downloadProjectJson,
+  projectFileName,
+  readProjectFile,
+  serializeProjectFile,
+} from './file'
 
 function projectFile(contents: string, name = 'x.json'): File {
   return new File([contents], name, { type: 'application/json' })
+}
+
+function reviewState(): ReviewState {
+  const project = createSampleProject()
+  const fingerprints = {
+    rulepack: 'rules-v1',
+    checkVersion: 1,
+    checkConditions: null,
+    members: {},
+  }
+  return {
+    ...emptyReviewState(),
+    baseline: {
+      label: 'baseline',
+      capturedAt: '2026-09-17T00:00:00.000Z',
+      project,
+      fingerprints,
+    },
+    settings: {
+      clearance: {
+        valueMm: 20,
+        source: '利用者入力',
+        scope: 'same-member',
+        enteredAt: '2026-09-17T00:00:00.000Z',
+        note: 'note',
+      },
+    },
+    exclusions: [
+      {
+        id: 'exclusion-1',
+        scope: {
+          sameMemberOnly: true,
+          roles: ['main', 'hoop'],
+          kinds: ['干渉候補'],
+        },
+        reason: 'reason',
+        createdAt: '2026-09-17T00:00:00.000Z',
+      },
+    ],
+    packages: [
+      {
+        id: 'package-1',
+        name: 'package',
+        targets: [],
+        assignee: 'assignee',
+        dueDate: null,
+        checklist: [],
+        createdAt: '2026-09-17T00:00:00.000Z',
+        updatedAt: '2026-09-17T00:00:00.000Z',
+      },
+    ],
+    items: [
+      {
+        id: 'item-1',
+        createdAt: '2026-09-17T00:00:00.000Z',
+        updatedAt: '2026-09-17T00:00:00.000Z',
+        targets: [],
+        title: 'title',
+        body: 'body',
+        status: '未確認',
+        confirmations: [],
+        snapshot: {
+          capturedAt: '2026-09-17T00:00:00.000Z',
+          fingerprints,
+          viewer: {
+            mode: 'member',
+            pose: null,
+            clip: { enabled: false, axis: 'x', ratio: 0.5 },
+            layers: { main: true, hoop: true, concrete: true },
+            selection: { group: null, memberId: null, rowId: null },
+          },
+        },
+      },
+    ],
+  }
 }
 
 describe('projectFileName', () => {
@@ -43,7 +125,41 @@ describe('readProjectFile', () => {
 
     await expect(
       readProjectFile(projectFile(serializeProject(project))),
-    ).resolves.toEqual(project)
+    ).resolves.toEqual({ project, review: emptyReviewState() })
+  })
+
+  it('omits an empty review from the file and preserves the old bytes', () => {
+    const project = createSampleProject()
+
+    expect(serializeProjectFile(project, emptyReviewState())).toBe(
+      serializeProject(project),
+    )
+  })
+
+  it('round-trips every persisted review section', async () => {
+    const project = createSampleProject()
+    const review = reviewState()
+
+    await expect(
+      readProjectFile(projectFile(serializeProjectFile(project, review))),
+    ).resolves.toEqual({ project, review })
+  })
+
+  it('rejects a file with an unsupported review version', async () => {
+    const project = createSampleProject()
+    const review = { ...emptyReviewState(), reviewSchemaVersion: 2 }
+
+    await expect(
+      readProjectFile(projectFile(JSON.stringify({ ...project, review }))),
+    ).rejects.toThrow(/reviewSchemaVersion/)
+  })
+
+  it('rejects the whole file when the review record is corrupted', async () => {
+    const project = createSampleProject()
+
+    await expect(
+      readProjectFile(projectFile(JSON.stringify({ ...project, review: {} }))),
+    ).rejects.toThrow(/ReviewState/)
   })
 
   it('rejects a file saved under an older schema', async () => {
@@ -98,8 +214,9 @@ describe('downloadProjectJson', () => {
 
     expect(filename).toBe('保存テスト.json')
     expect(blob?.type).toBe('application/json')
-    await expect(readProjectFile(projectFile(await blob!.text()))).resolves.toEqual(
+    await expect(readProjectFile(projectFile(await blob!.text()))).resolves.toEqual({
       project,
-    )
+      review: emptyReviewState(),
+    })
   })
 })

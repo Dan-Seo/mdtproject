@@ -1,0 +1,59 @@
+{
+  "changed_files": [
+    "src/domain/model/project.ts",
+    "src/domain/quantity/index.ts",
+    "src/domain/review/joint.ts",
+    "src/domain/review/joint.test.ts",
+    "src/domain/review/dependency.ts",
+    "src/domain/review/dependency.test.ts",
+    "src/domain/review/fingerprint.ts",
+    "src/domain/review/fingerprint.test.ts",
+    "src/lib/viewer/geometry.ts",
+    "src/lib/viewer/geometry.test.ts",
+    "src/lib/viewer/building.ts",
+    "src/lib/viewer/building.test.ts",
+    "tests/fixtures/viewer/building-layout-sample.json"
+  ],
+  "tests_added": [
+    "src/domain/review/joint.test.ts",
+    "src/domain/review/dependency.test.ts",
+    "src/domain/review/fingerprint.test.ts",
+    "tests/fixtures/viewer/building-layout-sample.json"
+  ],
+  "mutations": [
+    {
+      "mutation": "resolveJoint storyId comparison removed",
+      "result": "refuted: joint.test.ts failed 2 tests"
+    },
+    {
+      "mutation": "memberInputs dependencies removed",
+      "result": "refuted: fingerprint.test.ts failed 1 test"
+    },
+    {
+      "mutation": "clipSegment barIndex and hookTail propagation removed",
+      "result": "refuted: geometry.test.ts failed 1 test"
+    },
+    {
+      "mutation": "memberInputs dependency reads replaced with full dependency sections",
+      "result": "refuted: fingerprint.test.ts failed 1 test"
+    }
+  ],
+  "exported_from_project_ts": [
+    "touchesColumn"
+  ],
+  "exported_from_quantity_ts": [
+    "ruleIdentity"
+  ],
+  "world_point_extraction": {
+    "fixture": "tests/fixtures/viewer/building-layout-sample.json",
+    "identical": true,
+    "projection": "boxes/rebar/bounds with rebarId, barIndex, and segmentIndex excluded"
+  },
+  "paths_verified": [
+    "src/domain/review/joint.ts",
+    "src/domain/review/dependency.ts",
+    "src/domain/review/fingerprint.ts",
+    "src/lib/viewer/building.ts",
+    "src/lib/viewer/geometry.ts"
+  ]
+}

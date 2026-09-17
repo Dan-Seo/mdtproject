@@ -48,6 +48,9 @@ export interface ConcreteBox {
 
 export interface RebarInstance {
   memberId: string
+  rebarId: string
+  barIndex: number
+  segmentIndex: number
   from: Point3
   to: Point3
   /** buildingLayout に渡した radiusOf が出した半径 (mm)。既定は表示値だ。 */
@@ -109,6 +112,94 @@ function expandBounds(bounds: Bounds, point: Point3, margin = 0): void {
 
 function translate(point: Point3, offset: Point3): Point3 {
   return [point[0] + offset[0], point[1] + offset[1], point[2] + offset[2]]
+}
+
+export function memberWorldPoint(
+  project: Project,
+  member: Member,
+): (point: Point3) => Point3 {
+  const section = findSection(project, member.sectionId)
+
+  if (member.kind === '柱') {
+    if (section.kind !== '柱' || 'axis' in member.position) {
+      throw new Error(`柱 member references a non-柱 section: ${member.id}`)
+    }
+    const { x, y } = gridPoint(project.grid, member.position.ix, member.position.iy)
+    const offset: Point3 = [
+      x - section.b / 2,
+      storyElevation(project.stories, member.storyId),
+      y - section.d / 2,
+    ]
+    return (point) => translate(point, offset)
+  }
+
+  if (member.kind === '大梁') {
+    if (section.kind !== '大梁' || !('axis' in member.position)) {
+      throw new Error(`大梁 member references a non-大梁 section: ${member.id}`)
+    }
+    const story = project.stories.find(({ id }) => id === member.storyId)
+    if (!story) throw storyNotFound(member.storyId)
+    const start = gridPoint(project.grid, member.position.ix, member.position.iy)
+    const span = girderSpan(project, member)
+    const base = storyElevation(project.stories, member.storyId) + story.height - section.depth
+
+    return member.position.axis === 'X'
+      ? ([x, y, z]) => [
+          start.x + span.startFaceOffsetMm + x,
+          base + y,
+          start.y - section.b / 2 + z,
+        ]
+      : ([x, y, z]) => [
+          start.x - section.b / 2 + z,
+          base + y,
+          start.y + span.startFaceOffsetMm + x,
+        ]
+  }
+
+  if (member.kind === '床板') {
+    if (section.kind !== '床板') {
+      throw new Error(`床板 member references a non-床板 section: ${member.id}`)
+    }
+    const story = project.stories.find(({ id }) => id === member.storyId)
+    if (!story) throw storyNotFound(member.storyId)
+    const base = storyElevation(project.stories, member.storyId) + story.height - section.thickness
+
+    if (isCantileverSlabMember(member)) {
+      const geometry = cantileverSlabGeometry(project, member)
+      return ([x, y, z]) => [geometry.originX + x, base + z, geometry.originY + y]
+    }
+
+    if ('axis' in member.position) {
+      throw new Error(`床板 position is invalid: ${member.id}`)
+    }
+    const origin = gridPoint(project.grid, member.position.ix, member.position.iy)
+    const bay = slabBay(project, member)
+    return ([x, y, z]) => [
+      origin.x + bay.startFaceOffsetXMm + x,
+      base + z,
+      origin.y + bay.startFaceOffsetYMm + y,
+    ]
+  }
+
+  if (section.kind !== '耐震壁' || !('axis' in member.position)) {
+    throw new Error(`耐震壁 member references a non-耐震壁 section: ${member.id}`)
+  }
+  const start = gridPoint(project.grid, member.position.ix, member.position.iy)
+  const span = wallSpan(project, member)
+  const rangeOrigin = span.originOffsetMm ?? { along: 0, height: 0 }
+  const base = storyElevation(project.stories, member.storyId)
+
+  return member.position.axis === 'X'
+    ? ([x, y, z]) => [
+        start.x + span.startFaceOffsetMm + rangeOrigin.along + x,
+        base + rangeOrigin.height + y,
+        start.y - section.thickness / 2 + z,
+      ]
+    : ([x, y, z]) => [
+        start.x - section.thickness / 2 + z,
+        base + rangeOrigin.height + y,
+        start.y + span.startFaceOffsetMm + rangeOrigin.along + x,
+      ]
 }
 
 /**
@@ -303,141 +394,35 @@ export function buildingLayout(
     if (unsupportedMemberIds.has(member.id)) continue
 
     const section = findSection(project, member.sectionId)
-    let worldPoint: (point: Point3) => Point3
+    const worldPoint = memberWorldPoint(project, member)
     // 開口部は鉄筋の局所座標系で切る (1通則8))。壁は部材局所そのまま、床板は
     // 鉄筋がランで測られているのでラン座標のものを使う。
     let openings: Opening[] = []
 
-    if (member.kind === '柱') {
-      if (section.kind !== '柱' || 'axis' in member.position) {
-        throw new Error(`柱 member references a non-柱 section: ${member.id}`)
-      }
-      const { x, y } = gridPoint(
-        project.grid,
-        member.position.ix,
-        member.position.iy,
-      )
-      const offset: Point3 = [
-        x - section.b / 2,
-        storyElevation(project.stories, member.storyId),
-        y - section.d / 2,
-      ]
-      worldPoint = (point) => translate(point, offset)
-    } else if (member.kind === '大梁') {
-      if (section.kind !== '大梁' || !('axis' in member.position)) {
-        throw new Error(
-          `大梁 member references a non-大梁 section: ${member.id}`,
-        )
-      }
-      const story = project.stories.find(({ id }) => id === member.storyId)
-      if (!story) {
-        throw storyNotFound(member.storyId)
-      }
-      const start = gridPoint(
-        project.grid,
-        member.position.ix,
-        member.position.iy,
-      )
-      const span = girderSpan(project, member)
-      const base =
-        storyElevation(project.stories, member.storyId) +
-        story.height -
-        section.depth
-
-      worldPoint =
-        member.position.axis === 'X'
-          ? ([x, y, z]) => [
-              start.x + span.startFaceOffsetMm + x,
-              base + y,
-              start.y - section.b / 2 + z,
-            ]
-          : ([x, y, z]) => [
-              start.x - section.b / 2 + z,
-              base + y,
-              start.y + span.startFaceOffsetMm + x,
-            ]
-    } else if (member.kind === '床板') {
-      if (section.kind !== '床板') {
-        throw new Error(`床板 member references a non-床板 section: ${member.id}`)
-      }
-      const slabStory = project.stories.find(({ id }) => id === member.storyId)
-      if (!slabStory) {
-        throw storyNotFound(member.storyId)
-      }
+    if (member.kind === '床板') {
       openings = slabRun(
         project,
         member,
         rebar.role.startsWith('X方向') ? 'X' : 'Y',
       ).openings
-      // 床板のローカル原点は「内法域の X 最小・Y 最小の隅、板の下端」。鉄筋は
-      // ランの持ち主に帰属するので、その持ち主のベイの内法原点がランの原点だ。
-      const base =
-        storyElevation(project.stories, member.storyId) +
-        slabStory.height -
-        section.thickness
-
-      if (isCantileverSlabMember(member)) {
-        const geometry = cantileverSlabGeometry(project, member)
-        worldPoint = ([x, y, z]) => [
-          geometry.originX + x,
-          base + z,
-          geometry.originY + y,
-        ]
-      } else {
-        if ('axis' in member.position) {
-          throw new Error(`床板 position is invalid: ${member.id}`)
-        }
-        const origin = gridPoint(
-          project.grid,
-          member.position.ix,
-          member.position.iy,
-        )
-        const bay = slabBay(project, member)
-        worldPoint = ([x, y, z]) => [
-          origin.x + bay.startFaceOffsetXMm + x,
-          base + z,
-          origin.y + bay.startFaceOffsetYMm + y,
-        ]
-      }
-    } else {
-      if (section.kind !== '耐震壁' || !('axis' in member.position)) {
-        throw new Error(
-          `耐震壁 member references a non-耐震壁 section: ${member.id}`,
-        )
-      }
-      const start = gridPoint(
-        project.grid,
-        member.position.ix,
-        member.position.iy,
-      )
-      const span = wallSpan(project, member)
-      const rangeOrigin = span.originOffsetMm ?? { along: 0, height: 0 }
+    } else if (member.kind === '耐震壁') {
       openings = member.openings ?? []
-      // 壁のローカル原点は「始端の柱内側面・壁下端・厚さの手前面」。壁下端は
-      // 階の床板上面＝階の基準標高そのものである（大梁と違い天井から下げない）。
-      const base = storyElevation(project.stories, member.storyId)
-
-      worldPoint =
-        member.position.axis === 'X'
-          ? ([x, y, z]) => [
-              start.x + span.startFaceOffsetMm + rangeOrigin.along + x,
-              base + rangeOrigin.height + y,
-              start.y - section.thickness / 2 + z,
-            ]
-          : ([x, y, z]) => [
-              start.x - section.thickness / 2 + z,
-              base + rangeOrigin.height + y,
-              start.y + span.startFaceOffsetMm + rangeOrigin.along + x,
-            ]
     }
 
     const layer = roleToLayer(rebar.role)
+    const segmentIndices = new Map<number, number>()
 
     for (const segment of rebarSegments(rebar, section, radiusOf, openings)) {
       const from = worldPoint(segment.from)
       const to = worldPoint(segment.to)
+      const barIndex = segment.barIndex ?? 0
+      const segmentIndex = segmentIndices.get(barIndex) ?? 0
+      segmentIndices.set(barIndex, segmentIndex + 1)
       instances.push({
         memberId: member.id,
+        rebarId: rebar.id,
+        barIndex,
+        segmentIndex,
         from,
         to,
         radius: segment.radius,

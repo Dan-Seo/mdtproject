@@ -1,0 +1,38 @@
+{
+  "changed_files": [
+    "src/lib/review/geometry-check.ts",
+    "src/lib/review/geometry-check.test.ts",
+    "src/domain/review/impact.ts",
+    "src/domain/review/impact.test.ts"
+  ],
+  "tests_added": [
+    "src/lib/review/geometry-check.test.ts",
+    "src/domain/review/impact.test.ts"
+  ],
+  "before_fix": {
+    "clearance_40_missing": 28
+  },
+  "after_fix": {
+    "clearance_40_missing": 0,
+    "clearance_26_missing": 0,
+    "clearance_null_missing": 0
+  },
+  "mutations": [
+    {
+      "mutation": "remove radius-plus-padding expansion from region prefilter",
+      "command": "npx vitest run src/lib/review/geometry-check.test.ts",
+      "result": "failed as expected: 1 test failed; actual 738 findings versus oracle 766, leaving 28 missing"
+    },
+    {
+      "mutation": "remove instance.radius from region prefilter expansion",
+      "command": "npx vitest run src/lib/review/geometry-check.test.ts",
+      "result": "passed: 11 tests; no observed regression because user padding remained and the midpoint gate still enforced region membership"
+    }
+  ],
+  "paths_verified": [
+    "src/lib/review/geometry-check.ts",
+    "src/lib/review/geometry-check.test.ts",
+    "src/domain/review/impact.ts",
+    "src/domain/review/impact.test.ts"
+  ]
+}

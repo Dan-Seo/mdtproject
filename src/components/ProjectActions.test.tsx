@@ -2,11 +2,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { emptyReviewState } from '@/domain/review/state'
 import {
   PROJECT_SCHEMA_VERSION,
   serializeProject,
   type Project,
 } from '@/domain/model/project'
+import { serializeProjectFile } from '@/lib/persist/file'
 import { useAppStore } from '@/lib/store'
 
 import { ProjectActions } from './ProjectActions'
@@ -24,6 +26,19 @@ beforeEach(() => {
 
 describe('ProjectActions', () => {
   it('hands the browser the current 案件 as JSON', async () => {
+    const review = {
+      ...emptyReviewState(),
+      settings: {
+        clearance: {
+          valueMm: 20,
+          source: '利用者入力' as const,
+          scope: 'same-member',
+          enteredAt: '2026-09-17T00:00:00.000Z',
+          note: 'note',
+        },
+      },
+    }
+    useAppStore.setState({ review })
     let blob: Blob | undefined
     let filename: string | undefined
     Object.defineProperty(URL, 'createObjectURL', {
@@ -54,7 +69,7 @@ describe('ProjectActions', () => {
 
     expect(filename).toBe('サンプル案件 RC 2階建て.json')
     expect(await blob!.text()).toBe(
-      serializeProject(useAppStore.getState().project),
+      serializeProjectFile(useAppStore.getState().project, review),
     )
   })
 
@@ -95,6 +110,30 @@ describe('ProjectActions', () => {
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(useAppStore.getState().project).toBe(before)
+  })
+
+  it('loads review metadata with the selected project', async () => {
+    const loaded = createSampleProject()
+    const review = {
+      ...emptyReviewState(),
+      settings: {
+        clearance: {
+          valueMm: 20,
+          source: '利用者入力' as const,
+          scope: 'same-member',
+          enteredAt: '2026-09-17T00:00:00.000Z',
+          note: 'note',
+        },
+      },
+    }
+    render(<ProjectActions />)
+
+    choose(serializeProjectFile(loaded, review))
+
+    await waitFor(() => {
+      expect(useAppStore.getState().project).toEqual(loaded)
+    })
+    expect(useAppStore.getState().review).toEqual(review)
   })
 
   it('clears the failure once a valid file is chosen', async () => {

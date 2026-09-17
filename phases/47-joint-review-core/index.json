@@ -6,52 +6,85 @@
     {
       "step": 1,
       "name": "review-state",
-      "status": "pending",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T15:40:10+0900",
+      "status": "completed",
+      "summary": "Added review state types, validation/reducers, and parseProject delegation with TDD coverage.",
+      "completed_at": "2026-09-17T15:56:03+0900"
     },
     {
       "step": 2,
       "name": "review-persistence",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T15:56:03+0900",
+      "summary": "Added review-aware file and IndexedDB bundle persistence, generic autosave, store slice, and ProjectActions integration.",
+      "completed_at": "2026-09-17T16:13:15+0900"
     },
     {
       "step": 3,
       "name": "joint-and-fingerprint",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T16:13:16+0900",
+      "summary": "Added joint resolution, read-field dependencies, fingerprints, stable 3D identity, and world-point extraction with regression coverage.",
+      "completed_at": "2026-09-17T16:51:35+0900"
     },
     {
       "step": 4,
       "name": "impact-validity-readiness",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T16:51:35+0900",
+      "summary": "Added dependency-aware impact classification, review validity, package readiness, and TDD coverage.",
+      "completed_at": "2026-09-17T17:15:21+0900"
     },
     {
       "step": 5,
       "name": "geometry-check",
-      "status": "pending",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T17:15:22+0900",
+      "status": "completed",
+      "summary": "Added pure segment capsule distance and joint-scoped geometry findings, exclusions, verdicts, unchecked items, and TDD/performance evidence.",
+      "completed_at": "2026-09-17T17:38:20+0900"
     },
     {
       "step": 6,
       "name": "xray",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T17:38:21+0900",
+      "summary": "Added calculation X-Ray view models for design quantity, drawn geometry, quantity rows, rule provenance, and reverse lookup with TDD and mutation coverage.",
+      "completed_at": "2026-09-17T17:50:18+0900"
     },
     {
       "step": 7,
       "name": "refute-core",
       "kind": "verify",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T17:50:20+0900",
+      "summary": "Cross-verified steps 1-6 with 12 counterexamples, base/HEAD quantity digests, and six reproduced mutations; no refutation found.",
+      "completed_at": "2026-09-17T18:33:06+0900"
+    },
+    {
+      "step": 8,
+      "name": "region-prefilter-fix",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T18:34:33+0900",
+      "status": "completed",
+      "summary": "Expanded the region prefilter by radius plus clearance padding and localized impact labels in Japanese.",
+      "completed_at": "2026-09-17T18:43:34+0900"
     }
-  ]
+  ],
+  "created_at": "2026-09-17T15:40:10+0900",
+  "completed_at": "2026-09-17T18:43:35+0900"
 }

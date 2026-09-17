@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
 import { createStressProject } from '@/domain/model/stress-project'
+import { emptyReviewState } from '@/domain/review/state'
 
 import { useAppStore } from './store'
 
@@ -32,6 +33,7 @@ describe('useAppStore', () => {
   beforeEach(() => {
     useAppStore.setState({
       project: createSampleProject(),
+      review: emptyReviewState(),
       sel: { group: null, memberId: null },
       hoverRowId: null,
       locale: 'ja',
@@ -103,6 +105,27 @@ describe('useAppStore', () => {
     expect(state).not.toHaveProperty('rebars')
     expect(state).not.toHaveProperty('quantityLines')
   })
+
+  it('changes review without changing the project reference', () => {
+    const project = useAppStore.getState().project
+    const review = { ...emptyReviewState(), items: [] }
+
+    useAppStore.getState().setReview(() => review)
+
+    expect(useAppStore.getState().project).toBe(project)
+    expect(useAppStore.getState().review).toBe(review)
+  })
+
+  it('does not change review when updating the project', () => {
+    const review = { ...emptyReviewState(), items: [] }
+    useAppStore.getState().setReview(() => review)
+
+    useAppStore
+      .getState()
+      .updateProject((project) => ({ ...project, name: 'updated' }))
+
+    expect(useAppStore.getState().review).toBe(review)
+  })
 })
 
 describe('loadProject', () => {
@@ -138,5 +161,24 @@ describe('loadProject', () => {
     useAppStore.getState().loadProject(createSampleProject())
 
     expect(useAppStore.getState().hoverRowId).toBeNull()
+  })
+
+  it('clears review when loading a project without review', () => {
+    const review = { ...emptyReviewState(), items: [] }
+    useAppStore.getState().setReview(() => review)
+
+    useAppStore.getState().loadProject(createSampleProject())
+
+    expect(useAppStore.getState().review).toEqual(emptyReviewState())
+  })
+
+  it('loads review together with the project', () => {
+    const review = { ...emptyReviewState(), items: [] }
+    const project = createSampleProject()
+
+    useAppStore.getState().loadProject(project, review)
+
+    expect(useAppStore.getState().project).toBe(project)
+    expect(useAppStore.getState().review).toBe(review)
   })
 })

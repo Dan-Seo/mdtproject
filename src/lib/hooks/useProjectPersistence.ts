@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react'
 
+import { emptyReviewState } from '@/domain/review/state'
 import {
   createAutosave,
-  loadStoredProject,
+  loadStoredBundle,
+  saveBundle,
 } from '@/lib/persist/indexeddb'
+import type { StoredBundle } from '@/lib/persist/indexeddb'
 import { useAppStore } from '@/lib/store'
 
 export interface ProjectPersistence {
@@ -26,16 +29,21 @@ export function useProjectPersistence(): ProjectPersistence {
     let flushOnLeave: (() => void) | null = null
     let flushOnHide: (() => void) | null = null
 
-    void loadStoredProject().then((stored) => {
+    void loadStoredBundle().then((stored) => {
       if (cancelled) return
 
       // 読み込みは非同期だ。その間に打たれたセルを復元が上書きすると、
       // 利用者から見れば入力が消える。手つかずのときだけ差し替える。
+      const current = useAppStore.getState()
+      const initialState = useAppStore.getInitialState()
       const untouched =
-        useAppStore.getState().project === useAppStore.getInitialState().project
+        current.project === initialState.project &&
+        current.review === initialState.review
       try {
-        if (stored !== null && untouched) {
-          useAppStore.getState().loadProject(stored)
+        if (stored.project !== null && untouched) {
+          useAppStore
+            .getState()
+            .loadProject(stored.project, stored.review ?? emptyReviewState())
         }
       } catch {
         // 参照切れは deserializeProject が切る (ここには来ない)。残るのは
@@ -44,13 +52,18 @@ export function useProjectPersistence(): ProjectPersistence {
         // 「形は通ったが中身が壊れた記録」を止めるのはここではない。
       }
 
-      const autosave = createAutosave()
-      unsubscribe = useAppStore.subscribe(({ project }, previous) => {
-        if (project !== previous.project) autosave(project)
+      const autosave = createAutosave<StoredBundle>(saveBundle)
+      unsubscribe = useAppStore.subscribe(({ project, review }, previous) => {
+        if (project !== previous.project || review !== previous.review) {
+          autosave({ project, review })
+        }
       })
       // 読み込みを待つ間に打たれた編集は購読より前なので、一度だけなら
       // 書かれないまま消える—購読は「変化」でしか発火しない。ここで拾う。
-      if (!untouched) autosave(useAppStore.getState().project)
+      if (!untouched) {
+        const { project, review } = useAppStore.getState()
+        autosave({ project, review })
+      }
       // 打ち終わって 500ms 以内に閉じられると待機中の書き込みが消える。
       // ただし flush は IndexedDB を開き直すので、pagehide まで待つと
       // 頁が壊される経路では open も transaction も終わらない — まだ

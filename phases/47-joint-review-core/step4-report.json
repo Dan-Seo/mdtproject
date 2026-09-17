@@ -1,0 +1,81 @@
+{
+  "changed_files": [
+    "src/domain/review/impact.ts",
+    "src/domain/review/validity.ts",
+    "src/domain/review/readiness.ts",
+    "src/domain/review/impact.test.ts",
+    "src/domain/review/validity.test.ts",
+    "src/domain/review/readiness.test.ts",
+    "tests/fixtures/review/snapshot.ts",
+    "phases/47-joint-review-core/index.json",
+    "phases/47-joint-review-core/step4-report.json"
+  ],
+  "tests_added": [
+    "src/domain/review/impact.test.ts",
+    "src/domain/review/validity.test.ts",
+    "src/domain/review/readiness.test.ts"
+  ],
+  "mutations": [
+    {
+      "mutation": "remove reverse dependency propagation",
+      "command": "npx vitest run src/domain/review/impact.test.ts",
+      "result": "failed as expected"
+    },
+    {
+      "mutation": "coerce null designKg to zero",
+      "command": "npx vitest run src/domain/review/impact.test.ts",
+      "result": "failed as expected"
+    },
+    {
+      "mutation": "skip finding checkConditions comparison",
+      "command": "npx vitest run src/domain/review/validity.test.ts",
+      "result": "failed as expected"
+    },
+    {
+      "mutation": "skip confirmation fingerprint comparison",
+      "command": "npx vitest run src/domain/review/readiness.test.ts",
+      "result": "failed as expected"
+    }
+  ],
+  "propagation_example": {
+    "change": "section-C1.b 800→900",
+    "affected": [
+      "1F-X1Y1",
+      "1F-X2Y1",
+      "1F-X1Y2",
+      "1F-X2Y2",
+      "1F-X1Y3",
+      "1F-X2Y3",
+      "2F-X1Y1",
+      "2F-X2Y1",
+      "2F-X1Y2",
+      "2F-X2Y2",
+      "2F-X1Y3",
+      "2F-X2Y3",
+      "1F-G1-X1Y1-X",
+      "1F-G2-X1Y2-X",
+      "1F-G1-X1Y3-X",
+      "1F-G1-X1Y1-Y",
+      "1F-G1-X1Y2-Y",
+      "1F-G2-X2Y1-Y",
+      "1F-G2-X2Y2-Y",
+      "2F-G1-X1Y1-X",
+      "2F-G2-X1Y2-X",
+      "2F-G1-X1Y3-X",
+      "2F-G1-X1Y1-Y",
+      "2F-G1-X1Y2-Y",
+      "2F-G2-X2Y1-Y",
+      "2F-G2-X2Y2-Y"
+    ],
+    "not_affected_sample": [
+      "1F-W1-X1Y1-Y",
+      "1F-S1-X1Y1"
+    ]
+  },
+  "paths_verified": [
+    "src/domain/review/impact.ts",
+    "src/domain/review/validity.ts",
+    "src/domain/review/readiness.ts",
+    "tests/fixtures/review/snapshot.ts"
+  ]
+}

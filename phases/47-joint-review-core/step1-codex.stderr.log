@@ -1,0 +1,1 @@
+2026-09-17T06:45:14.350393Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\Users\emper\mdtproject\src\domain\review\state.test.ts

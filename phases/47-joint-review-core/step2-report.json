@@ -1,0 +1,49 @@
+{
+  "changed_files": [
+    "src/lib/persist/file.ts",
+    "src/lib/persist/file.test.ts",
+    "src/lib/persist/indexeddb.ts",
+    "src/lib/persist/indexeddb.test.ts",
+    "src/lib/hooks/useProjectPersistence.ts",
+    "src/lib/hooks/useProjectPersistence.test.tsx",
+    "src/lib/store.ts",
+    "src/lib/store.test.ts",
+    "src/components/ProjectActions.tsx",
+    "src/components/ProjectActions.test.tsx"
+  ],
+  "tests_added": [
+    "src/lib/persist/file.test.ts",
+    "src/lib/persist/indexeddb.test.ts",
+    "src/lib/hooks/useProjectPersistence.test.tsx",
+    "src/lib/store.test.ts",
+    "src/components/ProjectActions.test.tsx"
+  ],
+  "mutations": [
+    {
+      "site": "serializeProjectFile empty-review omission",
+      "failing_tests": [
+        "src/lib/persist/file.test.ts > readProjectFile > omits an empty review from the file and preserves the old bytes"
+      ]
+    },
+    {
+      "site": "setReview project reference isolation",
+      "failing_tests": [
+        "src/lib/store.test.ts > useAppStore > changes review without changing the project reference"
+      ]
+    },
+    {
+      "site": "useProjectPersistence review reference restoration guard",
+      "failing_tests": [
+        "src/lib/hooks/useProjectPersistence.test.tsx > useProjectPersistence > keeps a review edit made while the stored bundle was loading"
+      ]
+    }
+  ],
+  "file_format_note": "빈 review는 serializeProject와 바이트 동일성을 유지하도록 생략한다. uc15 호환은 IndexedDB v1, store project, current 키의 Project JSON 문자열 부분 문자열 검증으로 확인한다.",
+  "paths_verified": [
+    "src/lib/persist/file.ts",
+    "src/lib/persist/indexeddb.ts",
+    "src/lib/hooks/useProjectPersistence.ts",
+    "src/lib/store.ts",
+    "src/components/ProjectActions.tsx"
+  ]
+}

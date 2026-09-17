@@ -1,0 +1,21 @@
+2026-09-17T06:59:01.507529Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\persist\indexeddb.test.ts:
+describe('IndexedDB ?멥겗?ゅ땿岳앭춼', () => {
+2026-09-17T07:00:01.741058Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\hooks\useProjectPersistence.test.tsx:
+  it('saves the edited 旅덁뻑 so the next visit starts there', async () => {
+2026-09-17T07:03:32.204983Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\ProjectActions.test.tsx:
+    expect(filename).toBe('?듐꺍?쀣꺂旅덁뻑 RC 2?롥뻠??json')
+    expect(await blob!.text()).toBe(
+      serializeProject(useAppStore.getState().project),
+    )
+  })
+2026-09-17T07:04:59.414410Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\persist\indexeddb.ts:
+/** 岳앭춼?쇻굥旅덁뻑??만?ヤ??ㅳ귝죭餓뜸?誤㎯겘?얇걽?▲걚??*/
+const RECORD_KEY = 'current'
+2026-09-17T07:05:05.285303Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\persist\indexeddb.ts:
+const STORE_NAME = 'project'
+const RECORD_KEY = 'current'
+2026-09-17T07:08:14.447711Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\hooks\useProjectPersistence.ts:
+      // 이용자에게서 보면 입력이消える. 손대지 않은 때만差し替える.
+      const current = useAppStore.getState()
+      const untouched =
+        current.project === initialProject && current.review === initialReview

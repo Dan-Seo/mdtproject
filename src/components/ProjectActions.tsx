@@ -16,6 +16,7 @@ import styles from './ProjectActions.module.css'
  */
 export function ProjectActions() {
   const project = useAppStore(({ project }) => project)
+  const review = useAppStore(({ review }) => review)
   const loadProject = useAppStore(({ loadProject }) => loadProject)
   const locale = useAppStore(({ locale }) => locale)
   const [failed, setFailed] = useState(false)
@@ -28,7 +29,8 @@ export function ProjectActions() {
     if (!file) return
 
     try {
-      loadProject(await readProjectFile(file))
+      const loaded = await readProjectFile(file)
+      loadProject(loaded.project, loaded.review)
       setFailed(false)
       capture('project_imported', { locale })
     } catch (error) {
@@ -46,7 +48,7 @@ export function ProjectActions() {
         type="button"
         className={styles.actionButton}
         onClick={() => {
-          downloadProjectJson(project)
+          downloadProjectJson(project, review)
           capture('project_exported', { locale })
         }}
       >

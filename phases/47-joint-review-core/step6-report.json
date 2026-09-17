@@ -1,0 +1,31 @@
+{
+  "changed_files": [
+    "src/lib/review/xray.ts",
+    "src/lib/review/xray.test.ts",
+    "phases/47-joint-review-core/index.json",
+    "phases/47-joint-review-core/step6-report.json"
+  ],
+  "tests_added": [
+    "src/lib/review/xray.test.ts"
+  ],
+  "mutations": [
+    {
+      "mutation": "omit hookTails from drawnLengthMm",
+      "command": "npx vitest run src/lib/review/xray.test.ts -t \"closed edges\"",
+      "result": "failed as expected"
+    },
+    {
+      "mutation": "remove conditions comparison from rebarsUsingRule",
+      "command": "npx vitest run src/lib/review/xray.test.ts -t \"exact rule identity\"",
+      "result": "failed as expected"
+    },
+    {
+      "mutation": "fall back to the first rule when a zone rule is missing",
+      "command": "npx vitest run src/lib/review/xray.test.ts -t \"rejects a zone\"",
+      "result": "failed as expected"
+    }
+  ],
+  "paths_verified": [
+    "src/lib/review/xray.ts"
+  ]
+}
