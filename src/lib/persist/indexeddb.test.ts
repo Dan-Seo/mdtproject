@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
 import { PROJECT_SCHEMA_VERSION, type Project } from '@/domain/model/project'
+import { emptyReviewState } from '@/domain/review/state'
+import type { ReviewState } from '@/domain/review/types'
 
 import {
   AUTOSAVE_DEBOUNCE_MS,
   clearStoredProject,
   createAutosave,
+  loadStoredBundle,
   loadStoredProject,
+  saveBundle,
   saveProject,
 } from './indexeddb'
 
@@ -100,6 +104,116 @@ describe('IndexedDB への自動保存', () => {
     await corrupted
 
     expect(await loadStoredProject()).toBeNull()
+  })
+})
+
+describe('review bundle persistence', () => {
+  it('stores and restores the project and review as one bundle', async () => {
+    const project = createSampleProject()
+    const review = {
+      ...emptyReviewState(),
+      settings: {
+        clearance: {
+          valueMm: 20,
+          source: '利用者入力' as const,
+          scope: 'same-member',
+          enteredAt: '2026-09-17T00:00:00.000Z',
+          note: 'note',
+        },
+      },
+    }
+
+    await saveBundle({ project, review })
+
+    await expect(loadStoredBundle()).resolves.toEqual({ project, review })
+  })
+
+  it('clears both the project and review records', async () => {
+    await saveBundle({ project: createSampleProject(), review: emptyReviewState() })
+
+    await clearStoredProject()
+
+    await expect(loadStoredBundle()).resolves.toEqual({
+      project: null,
+      review: null,
+    })
+  })
+
+  it('returns a null review for a corrupted review record', async () => {
+    const project = createSampleProject()
+    await saveProject(project)
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('kijun', 1)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const database = request.result
+        const transaction = database.transaction('project', 'readwrite')
+        transaction.objectStore('project').put('{ not json', 'review')
+        transaction.oncomplete = () => {
+          database.close()
+          resolve()
+        }
+        transaction.onerror = () => reject(transaction.error)
+      }
+    })
+
+    await expect(loadStoredBundle()).resolves.toEqual({
+      project,
+      review: null,
+    })
+  })
+
+  it('does not restore a review without its project', async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('kijun', 1)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const database = request.result
+        const transaction = database.transaction('project', 'readwrite')
+        transaction.objectStore('project').put(
+          JSON.stringify(emptyReviewState()),
+          'review',
+        )
+        transaction.oncomplete = () => {
+          database.close()
+          resolve()
+        }
+        transaction.onerror = () => reject(transaction.error)
+      }
+    })
+
+    await expect(loadStoredBundle()).resolves.toEqual({
+      project: null,
+      review: null,
+    })
+  })
+
+  it('writes both bundle keys in one readwrite transaction', async () => {
+    const transaction = vi.spyOn(IDBDatabase.prototype, 'transaction')
+    const put = vi.spyOn(IDBObjectStore.prototype, 'put')
+    let transactionCallCount = 0
+    let transactionArgs: unknown[] = []
+    let putCallCount = 0
+    let putKeys: unknown[] = []
+
+    try {
+      await saveBundle({
+        project: createSampleProject(),
+        review: emptyReviewState(),
+      })
+      transactionCallCount = transaction.mock.calls.length
+      transactionArgs = transaction.mock.calls[0]
+      putCallCount = put.mock.calls.length
+      putKeys = put.mock.calls.map(([, key]) => key)
+    } finally {
+      transaction.mockRestore()
+      put.mockRestore()
+    }
+
+    expect(transactionCallCount).toBe(1)
+    expect(transactionArgs).toEqual(['project', 'readwrite'])
+    expect(putCallCount).toBe(2)
+    expect(putKeys).toEqual(['current', 'review'])
   })
 })
 
@@ -255,5 +369,17 @@ describe('createAutosave', () => {
     await expect(
       vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS),
     ).resolves.not.toThrow()
+  })
+
+  it('accepts non-project bundles through its generic value type', async () => {
+    const written: ReviewState[] = []
+    const autosave = createAutosave<ReviewState>(async (review) => {
+      written.push(review)
+    })
+
+    autosave(emptyReviewState())
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS)
+
+    expect(written).toEqual([emptyReviewState()])
   })
 })

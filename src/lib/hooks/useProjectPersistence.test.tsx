@@ -4,10 +4,13 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { emptyReviewState } from '@/domain/review/state'
 import {
   AUTOSAVE_DEBOUNCE_MS,
   clearStoredProject,
+  loadStoredBundle,
   loadStoredProject,
+  saveBundle,
   saveProject,
 } from '@/lib/persist/indexeddb'
 import { useAppStore } from '@/lib/store'
@@ -73,6 +76,53 @@ describe('useProjectPersistence', () => {
       },
       { timeout: AUTOSAVE_DEBOUNCE_MS * 6 },
     )
+  })
+
+  it('saves a review-only edit as a project and review bundle', async () => {
+    const { result } = renderHook(() => useProjectPersistence())
+    await waitFor(() => expect(result.current.restored).toBe(true))
+    const review = { ...emptyReviewState(), items: [] }
+
+    act(() => {
+      useAppStore.getState().setReview(() => review)
+    })
+
+    await waitFor(
+      async () => {
+        await expect(loadStoredBundle()).resolves.toEqual({
+          project: useAppStore.getState().project,
+          review,
+        })
+      },
+      { timeout: AUTOSAVE_DEBOUNCE_MS * 6 },
+    )
+  })
+
+  it('keeps a review edit made while the stored bundle was loading', async () => {
+    const storedReview = { ...emptyReviewState(), items: [] }
+    await saveBundle({
+      project: { ...createSampleProject(), name: 'stored' },
+      review: storedReview,
+    })
+    const editedReview = { ...emptyReviewState(), packages: [] }
+
+    const { result } = renderHook(() => useProjectPersistence())
+    act(() => {
+      useAppStore.getState().setReview(() => editedReview)
+    })
+
+    await waitFor(() => expect(result.current.restored).toBe(true))
+    expect(useAppStore.getState().review).toBe(editedReview)
+    expect(useAppStore.getState().project.name).not.toBe('stored')
+  })
+
+  it('uses an empty review when an old stored project has no review', async () => {
+    await saveProject({ ...createSampleProject(), name: 'stored' })
+
+    const { result } = renderHook(() => useProjectPersistence())
+    await waitFor(() => expect(result.current.restored).toBe(true))
+
+    expect(useAppStore.getState().review).toEqual(emptyReviewState())
   })
 
   it('writes the pending edit when the tab hides, not only on pagehide', async () => {
