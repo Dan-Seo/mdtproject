@@ -8,7 +8,11 @@ import { quantityLineId } from '@/domain/quantity'
 import { checkConditionsFingerprint, projectFingerprints } from '@/domain/review/fingerprint'
 import { resolveJoint } from '@/domain/review/joint'
 import { emptyReviewState } from '@/domain/review/state'
-import { itemTargetMemberIds } from '@/domain/review/validity'
+import {
+  effectiveItemStatus,
+  itemTargetMemberIds,
+  itemValidity,
+} from '@/domain/review/validity'
 import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import { useAppStore } from '@/lib/store'
 import { xrayForRow } from '@/lib/review/xray'
@@ -26,6 +30,10 @@ describe('ReviewPane', () => {
       sel: { group: null, memberId: '1F-X2Y1' },
       hoverRowId: null,
       viewerMode: 'member',
+      viewerLayers: { main: true, hoop: true, concrete: true },
+      viewerClip: { enabled: false, axis: 'x', ratio: 0.5 },
+      viewerPose: null,
+      requestedViewerPose: null,
     })
   })
 
@@ -257,7 +265,7 @@ describe('ReviewPane', () => {
     const rows = screen.getByTestId('review-findings').querySelectorAll('tbody tr')
     const findingRow = rows[4] as HTMLElement
     fireEvent.click(within(findingRow).getByRole('button', { name: '検討項目にする' }))
-    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', { name: '保存' }))
 
     const first = useAppStore.getState().review.items[0]
     if (!first) throw new Error('review item expected')
@@ -268,8 +276,8 @@ describe('ReviewPane', () => {
     expect(first.snapshot.viewer.clip).toEqual(useAppStore.getState().viewerClip)
     expect(expected.findings[4]?.clearanceMm).toBe(-22)
 
-    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
-    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', { name: '保存' }))
     expect('finding' in useAppStore.getState().review.items[1]).toBe(false)
   })
 
@@ -317,20 +325,73 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
     expect(setReview).toHaveBeenCalledTimes(1)
 
+    setReview.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: '確認' }))
+    const confirmBy = screen.getByLabelText('確認者（ローカル入力・本人認証ではない）')
+    const confirmNote = screen.getByLabelText('確認メモ')
+    for (const value of ['r', 're', 'rev', 'revi', 'reviewer']) {
+      fireEvent.change(confirmBy, { target: { value } })
+      fireEvent.change(confirmNote, { target: { value } })
+    }
+    expect(setReview).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '確認を保存' }))
+    expect(setReview).toHaveBeenCalledTimes(1)
+
+    setReview.mockClear()
     fireEvent.click(screen.getByRole('button', { name: '保留' }))
     fireEvent.click(screen.getByRole('button', { name: '保留を保存' }))
     expect(screen.getByRole('alert')).toHaveTextContent('保留理由')
-    expect(useAppStore.getState().review.items[0]?.status).toBe('未確認')
-    fireEvent.change(screen.getByLabelText('保留理由'), { target: { value: 'later' } })
+    expect(useAppStore.getState().review.items[0]?.status).toBe('確認済')
+    const holdReason = screen.getByLabelText('保留理由')
+    for (const value of ['l', 'la', 'lat', 'late', 'later']) {
+      fireEvent.change(holdReason, { target: { value } })
+    }
+    expect(setReview).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: '保留を保存' }))
+    expect(setReview).toHaveBeenCalledTimes(1)
     expect(useAppStore.getState().review.items[0]?.status).toBe('保留')
     setReview.mockRestore()
   })
 
   it('marks changed target members for recheck and filters them', () => {
+    act(() => useAppStore.getState().updateProject((project) => {
+      const section = project.sections.find((candidate) => candidate.id === 'section-C1')
+      if (!section || section.kind !== '柱') throw new Error('sample column section expected')
+      return {
+        ...project,
+        sections: [...project.sections, { ...section, id: 'section-C2', mark: 'C2' }],
+        members: project.members.map((member) => member.id === '2F-X1Y1'
+          ? { ...member, sectionId: 'section-C2' }
+          : member),
+      }
+    }))
     render(<ReviewPane />)
     fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    act(() => useAppStore.getState().selectMember('2F-X1Y1'))
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    const item2BaselineFingerprints = currentFingerprints()
+    const item2MemberFingerprint = item2BaselineFingerprints.members['2F-X1Y1']
+    if (item2MemberFingerprint === undefined) throw new Error('second target fingerprint expected')
+    act(() => useAppStore.getState().setReview((review) => ({
+      ...review,
+      items: review.items.map((item, index) => index === 1
+        ? {
+            ...item,
+            targets: [{ kind: 'member' as const, memberId: '2F-X1Y1' }],
+            snapshot: {
+              ...item.snapshot,
+              fingerprints: {
+                ...item2BaselineFingerprints,
+                members: { '2F-X1Y1': item2MemberFingerprint },
+              },
+            },
+          }
+        : item),
+    })))
 
     act(() => useAppStore.getState().updateProject((project) => ({
       ...project,
@@ -339,14 +400,50 @@ describe('ReviewPane', () => {
         : section),
     })))
 
-    const card = screen.getByTestId('review-item-1')
-    expect(card.querySelector('[data-review-status]')).toHaveTextContent('再検討必要')
-    expect(card).toHaveTextContent('入力が変更されています: 1F-X2Y1')
+    const state = useAppStore.getState()
+    const current = { project: state.project, fingerprints: currentFingerprints(), impact: null }
+    const changedItem = state.review.items[0]
+    const unchangedItem = state.review.items[1]
+    if (!changedItem || !unchangedItem) throw new Error('review items expected')
+    const changedCard = screen.getByTestId(changedItem.id)
+    const unchangedCard = screen.getByTestId(unchangedItem.id)
+    expect(changedCard.querySelector('[data-review-status]')).toHaveTextContent(
+      effectiveItemStatus(changedItem, itemValidity(changedItem, current)),
+    )
+    expect(changedCard).toHaveTextContent('入力が変更されています: 1F-X2Y1')
+    expect(unchangedCard.querySelector('[data-review-status]')).toHaveTextContent(
+      effectiveItemStatus(unchangedItem, itemValidity(unchangedItem, current)),
+    )
+    expect(unchangedCard.querySelector('[data-review-status]')).toHaveTextContent('未確認')
+
+    const statusesBeforeUnrelatedChanges = [...screen.getByTestId('review-items').querySelectorAll('[data-review-status]')]
+      .map((status) => status.textContent)
+    act(() => {
+      useAppStore.getState().updateProject((project) => ({
+        ...project,
+        name: 'renamed',
+        notes: { unrelated: 'memo' },
+      }))
+      useAppStore.getState().setViewerClip({ enabled: true, axis: 'z', ratio: 0.25 })
+      useAppStore.getState().setViewerPose({
+        position: [1, 2, 3],
+        target: [4, 5, 6],
+      })
+    })
+    expect([...screen.getByTestId('review-items').querySelectorAll('[data-review-status]')]
+      .map((status) => status.textContent)).toEqual(statusesBeforeUnrelatedChanges)
+
     fireEvent.click(screen.getByLabelText('今回の変更で再検討が必要なものだけ'))
-    expect(screen.getByTestId('review-item-1')).toBeInTheDocument()
+    expect(screen.getByTestId(changedItem.id)).toBeInTheDocument()
+    expect(screen.queryByTestId(unchangedItem.id)).not.toBeInTheDocument()
   })
 
   it('replays a saved viewer state and renders the safety notice', () => {
+    const savedPose = {
+      position: [10, 20, 30] as [number, number, number],
+      target: [40, 50, 60] as [number, number, number],
+    }
+    act(() => useAppStore.getState().setViewerPose(savedPose))
     render(<ReviewPane />)
     fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
@@ -358,6 +455,7 @@ describe('ReviewPane', () => {
       useAppStore.getState().setViewerClip({ enabled: true, axis: 'z', ratio: 0.2 })
       useAppStore.getState().toggleViewerLayer('main')
       useAppStore.getState().setHoverRow('changed')
+      useAppStore.getState().selectMember('2F-X1Y1')
       useAppStore.getState().requestViewerPose(null)
     })
     fireEvent.click(screen.getByRole('button', { name: '再現' }))
@@ -370,5 +468,23 @@ describe('ReviewPane', () => {
     expect(state.hoverRowId).toBe(snapshot.viewer.selection.rowId)
     expect(state.requestedViewerPose).toEqual(snapshot.viewer.pose)
     expect(screen.getByTestId('data-review-notice')).toHaveTextContent('構造安全・法規適合・施工承認')
+    expect(screen.getByTestId('data-review-notice')).toHaveAttribute('data-review-notice')
+  })
+
+  it('keeps review status attributes free of approval language and review actions off the project', () => {
+    const updateProject = vi.spyOn(useAppStore.getState(), 'updateProject')
+    render(<ReviewPane />)
+    fireEvent.click(screen.getByRole('button', { name: '検討項目を追加' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    for (const status of screen.getByTestId('review-items').querySelectorAll('[data-review-status]')) {
+      expect(status.textContent).not.toMatch(/合格|安全|承認|施工可能|適合/)
+    }
+    fireEvent.click(screen.getByRole('button', { name: '再現' }))
+    fireEvent.click(screen.getByRole('button', { name: '確認' }))
+    fireEvent.click(screen.getByRole('button', { name: '保留' }))
+    fireEvent.click(screen.getByRole('button', { name: '判断不可' }))
+    expect(updateProject).not.toHaveBeenCalled()
+    updateProject.mockRestore()
   })
 })

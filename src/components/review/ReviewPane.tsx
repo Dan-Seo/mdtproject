@@ -998,7 +998,7 @@ function ReviewItemsSection({
           )
         })}
       </div>
-      <p data-testid="data-review-notice">{t(locale, 'review.items.notice')}</p>
+      <p data-testid="data-review-notice" data-review-notice>{t(locale, 'review.items.notice')}</p>
     </section>
   )
 }
