@@ -1,0 +1,4 @@
+2026-09-17T08:46:58.313618Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\lib\review\xray.ts:
+    const rule = rebar.ruleHits.find(({ key }) => key === zone.ruleKey) ?? rebar.ruleHits[0]
+
+    return {
