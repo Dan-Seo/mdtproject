@@ -46,7 +46,7 @@ interface QuantityGroup {
   lines: QuantityLine[]
 }
 
-function formatLength(lengthMm: number): string {
+export function formatLength(lengthMm: number): string {
   return (lengthMm / 1000).toFixed(3)
 }
 
@@ -158,7 +158,7 @@ function SourceChip({ rule }: { rule: RuleHit }) {
   )
 }
 
-function SourceChips({ rules }: { rules: RuleHit[] }) {
+export function SourceChips({ rules }: { rules: RuleHit[] }) {
   // 똑같이 그려질 칩만 하나로 묶는다 — 문헌 위치로 묶으면 같은 표의 다른 행
   // (label·expr·confidence가 다른 지배 룰)이 뒤엣것에 덮여 툴팁에서 사라진다.
   // 툴팁은 위치·label·expr·확신도·note를 모두 담으므로 표시 동일성의 키다.
@@ -182,16 +182,18 @@ function SourceChips({ rules }: { rules: RuleHit[] }) {
  * 붙인다 — 예전에는 둘 다 ▲ 여서 전 행에 ▲ 가 붙었고, 그래서 ▲ 가 아무것도
  * 가리키지 못했다.
  */
-function ConfidenceWarning({ line }: { line: QuantityLine }) {
+export function ConfidenceWarning({ line }: { line: QuantityLine | RuleHit }) {
   if (line.confidence === 'stated') return null
 
   const inferredRow = line.confidence === 'inferred'
-  const labels = line.rules
-    .filter(({ confidence }) =>
-      inferredRow ? confidence === 'inferred' : confidence !== 'stated',
-    )
-    .map(({ label }) => label)
-    .join('、')
+  const labels = 'rules' in line
+    ? line.rules
+      .filter(({ confidence }) =>
+        inferredRow ? confidence === 'inferred' : confidence !== 'stated',
+      )
+      .map(({ label }) => label)
+      .join('、')
+    : line.label
 
   return (
     <span

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
@@ -9,6 +9,14 @@ vi.mock('@/components/viewer/Viewer3D', () => ({
   Viewer3D: () => <div data-testid="viewer3d" />,
 }))
 
+const { reviewPane } = vi.hoisted(() => ({ reviewPane: vi.fn() }))
+vi.mock('@/components/review/ReviewPane', () => ({
+  ReviewPane: () => {
+    reviewPane()
+    return <div data-testid="review-pane" />
+  },
+}))
+
 import Home from './page'
 
 describe('Home', () => {
@@ -17,6 +25,7 @@ describe('Home', () => {
       project: createSampleProject(),
       locale: 'ja',
       viewerMode: 'member',
+      takeoffTab: '内訳書',
     })
   })
 
@@ -32,4 +41,13 @@ describe('Home', () => {
     // 収まらないことがある (実測 4.9 秒)。遅いのは描画であって待ち合わせでは
     // ないため、待つ時間だけを広げる。
   }, 20_000)
+
+  it('mounts ReviewPane only on the 検討 tab', () => {
+    reviewPane.mockClear()
+    render(<Home />)
+
+    expect(reviewPane).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: '検討' }))
+    expect(reviewPane).toHaveBeenCalledTimes(1)
+  })
 })

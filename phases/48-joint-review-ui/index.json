@@ -26,9 +26,12 @@
     {
       "step": 3,
       "name": "review-tabs-joint-xray",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T20:07:45+0900",
+      "summary": "ReviewTabs·ReviewPane·useReviewModel과 接合部·Calculation X-Ray 테스트를 추가했다.",
+      "completed_at": "2026-09-17T20:24:30+0900"
     },
     {
       "step": 4,

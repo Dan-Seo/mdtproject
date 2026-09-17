@@ -1,0 +1,48 @@
+{
+  "changed_files": [
+    "src/components/quantity/TakeoffPane.tsx",
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.module.css",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/ReviewTabs.tsx",
+    "src/components/review/ReviewTabs.test.tsx",
+    "src/lib/hooks/useReviewModel.ts",
+    "src/lib/hooks/useReviewModel.test.ts",
+    "src/app/page.tsx",
+    "src/app/page.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json"
+  ],
+  "tests_added": [
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/ReviewTabs.test.tsx",
+    "src/lib/hooks/useReviewModel.test.ts"
+  ],
+  "mutations": [
+    {
+      "id": 1,
+      "mutation": "X-Ray의 設計·形状 값을 하나의 셀로 합침",
+      "fails_in": "src/components/review/ReviewPane.test.tsx — keeps design and 3D values separate and expands exact rule users"
+    },
+    {
+      "id": 2,
+      "mutation": "baseline fingerprints를 재계산값으로 대체",
+      "fails_in": "src/lib/hooks/useReviewModel.test.ts — uses stored baseline fingerprints and assesses the same impact as the core"
+    },
+    {
+      "id": 3,
+      "mutation": "内訳書 탭에서도 ReviewPane을 마운트",
+      "fails_in": "src/app/page.test.tsx — mounts ReviewPane only on the 検討 tab"
+    }
+  ],
+  "i18n_keys_added": 23,
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewTabs.tsx",
+    "src/lib/hooks/useReviewModel.ts",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/lib/hooks/useReviewModel.test.ts"
+  ],
+  "paths_expected_absent": [],
+  "fabricated_paths": []
+}
