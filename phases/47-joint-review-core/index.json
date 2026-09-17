@@ -12,27 +12,41 @@
     },
     {
       "step": 2,
-      "name": "joint-and-fingerprint",
+      "name": "review-persistence",
       "status": "pending",
       "model": "gpt-5.6-luna",
       "reasoning_effort": "xhigh"
     },
     {
       "step": 3,
-      "name": "impact-and-validity",
+      "name": "joint-and-fingerprint",
       "status": "pending",
       "model": "gpt-5.6-luna",
       "reasoning_effort": "xhigh"
     },
     {
       "step": 4,
-      "name": "geometry-check-xray",
+      "name": "impact-validity-readiness",
       "status": "pending",
       "model": "gpt-5.6-luna",
       "reasoning_effort": "xhigh"
     },
     {
       "step": 5,
+      "name": "geometry-check",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 6,
+      "name": "xray",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 7,
       "name": "refute-core",
       "kind": "verify",
       "status": "pending",

@@ -1,88 +1,54 @@
-# Step 2: joint-and-fingerprint — 접합부 판정·의존관계·fingerprint, 3D 개체 식별과 부재→세계좌표 변환 추출
+# Step 2: review-persistence — 파일 번들, IndexedDB 한 트랜잭션 저장/복원, 자동저장 generic, 스토어 슬라이스, `ProjectActions` 인자
 
-`phases/47-joint-review-core/README.md`의 공통 결정을 먼저 읽어라. 특히 결정 6(의존관계는 실제 산정 함수).
+README 결정 1·7과 step 1의 타입·`parseReviewState`·`parseProject`를 전제로 한다.
 
 ## 읽어야 할 파일
-- `src/domain/model/project.ts` — `girderSupportSections`(≈L548)·`supportColumnSection`(위치로 지점 柱를 찾는다)·`girderRun`(≈L1378)·`columnEnds`(≈L1480)·`beamDepthAbove`(≈L1512, `touchesColumn` ≈L512)·`MemberUnsupportedError`
-- `src/domain/model/member.ts` — `ColumnSection.shape`(円形은 이번 접합부 범위 밖), `Member.position` 판별은 항상 `kind`로
-- `src/domain/model/rebar.ts` — `Rebar` 필드 전부
-- `src/domain/rules/types.ts` — `RuleEntry`·`RulePack`; `src/rulepack/index.ts` — `jpMlitRulePack`
-- `src/domain/quantity/index.ts` — `ruleIdentity`(≈L150, key＋conditions) — export해서 재사용
-- `src/lib/viewer/geometry.ts` — `Segment`(≈L23), `rebarSegmentRuns`(≈L963, `placements.flatMap`가 개체를 펼친다), `clipSegments`(≈L917, 세그먼트를 다시 만든다 — 필드 보존 주의), `rebarSegments`, `rebarBatches`
-- `src/lib/viewer/building.ts` — `RebarInstance`(≈L49), `buildingLayout`(≈L120; 柱·大梁의 `worldPoint` 클로저 ≈L310~355)
-- `src/lib/export/gltf.ts` — `RebarInstance` 소비자(필드 추가에 무영향인지 확인)
-- 테스트 스타일: `src/domain/model/project.test.ts`, `src/lib/viewer/building.test.ts`, `src/lib/viewer/geometry.test.ts`, `src/lib/hooks/useTakeoff.test.tsx`(부분 案件 만드는 법)
+- `src/lib/store.ts` — 슬라이스 형태, `loadProject`(≈L131, 현재 `(project: Project): void`)
+- `src/lib/persist/indexeddb.ts` — 단일 스토어 `project`·키 `current`, `createAutosave(write)`(≈L113; `write`·pending·queued가 전부 `Project` 고정 — generic화가 필요하다), `clearStoredProject`
+- `src/lib/persist/file.ts` — `downloadProjectJson`·`readProjectFile`
+- `src/lib/hooks/useProjectPersistence.ts` — 복원→자동저장 구독 순서, 복원 중 사용자 편집 보호(≈L34, `project` 참조만 본다)
+- `src/components/ProjectActions.tsx` — 저장 버튼은 `downloadProjectJson(project)`만 호출(≈L49), 파일 읽기 UI
+- 테스트 스타일: `src/lib/store.test.ts`, `src/lib/persist/file.test.ts`, `src/lib/persist/indexeddb.test.ts`, `src/lib/hooks/useProjectPersistence.test.tsx`, `src/components/ProjectActions.test.tsx`
+- `tests/e2e/uc15-revisit.js` — IndexedDB `kijun` v1, store `project`, 키 `current`의 **문자열을 부분 문자열로** 확인한다(전체 문자열 비교는 없다). 이 키 이름·형식(Project JSON 문자열)은 유지.
 
 ## 만들 것
 
-### 1. `src/domain/review/joint.ts` — 접합부 판정 (순수)
-```ts
-export interface JointGirder { member: Member; section: GirderSection; end: '始端' | '終端' }  // 柱가 그 大梁의 어느 끝인가
-export interface Joint {
-  columnMemberId: string
-  column: { member: Member; section: ColumnSection; story: Story }
-  girders: JointGirder[]                 // 같은 階, touchesColumn 관계. 축·index 오름차순
-  /** 참고 표시 대상: 上下階의 같은 격자점 柱, 各 大梁의 런 동료 (girderRun.members − 자신) */
-  reference: { memberIds: string[] }
-}
-export type JointResolution =
-  | { status: 'joint'; joint: Joint }
-  | { status: 'unsupported'; reason: '柱ではない' | '円形柱' | '取り付く大梁なし' | '部材なし' }
-export function resolveJoint(project: Project, columnMemberId: string): JointResolution
-export function jointMemberIds(joint: Joint): string[]   // 柱 + girders (reference 제외)
-/**
- * 접합부에 **철근이 지나가는** 부재 id ＝ jointMemberIds ∪ 각 大梁 런의 대표(`girderRun(...).ownerId`).
- * 通し筋·カットオフ筋은 런 대표 부재에 귀속되므로(`generateMain`의 `memberId: run.ownerId`),
- * 접합부 大梁가 대표가 아니면 그 主筋의 `Rebar.memberId`는 접합부 밖 부재다 — 이 목록으로 걸러야 빠지지 않는다.
- * `girderRun`이 throw(支持柱なし)하면 그 大梁는 자기 id만.
- */
-export function jointRebarMemberIds(project: Project, joint: Joint): string[]
-```
-- 판정은 **위치와 階**로 한다: `candidate.kind === '大梁' && candidate.storyId === column.storyId && touchesColumn(candidate.position, column.position)`. `touchesColumn`은 `project.ts`의 private 함수다 — **export해서 재사용**하고 복사하지 마라. 大梁가 `MemberUnsupportedError`(支持柱なし 등)인지는 여기서 판정하지 않는다(그건 `buildTakeoff`의 결과이고 step 4가 `unsupportedMemberIds`로 받는다).
-- `円形柱`는 `unsupported`로 명시한다(첫 지원 대상은 矩形 柱 — 화면은 이 사유를 그대로 보여줄 것이다). 大梁가 하나도 없으면 `取り付く大梁なし`.
-- `reference.memberIds`: `columnEnds`와 같은 방식으로 `stories` 순서 ±1 階의 같은 `ix,iy` 柱, 그리고 각 大梁의 `girderRun(project, girder).members`에서 자신을 뺀 것. `girderRun`이 throw하면(支持柱なし) 그 大梁의 동료는 비운다 — throw를 밖으로 내지 마라.
+### 1. `src/lib/persist/file.ts`
+- `serializeProjectFile(project, review): string` — `JSON.stringify({ ...project, review })`. `review`가 `emptyReviewState()`와 `deepEqual`이면 **키를 생략**(구 형식과 바이트 동일).
+- `readProjectFile(file): Promise<{ project: Project; review: ReviewState }>` — 한 번 파싱해 `review` 키를 떼고 나머지를 `parseProject`, `review`를 `parseReviewState`. 둘 중 하나라도 throw면 전체 throw(원본 案件 유지는 `ProjectActions`가 한다).
+- `downloadProjectJson(project, review)`.
 
-### 2. `src/domain/review/dependency.ts` — 산정 의존관계 (순수)
-```ts
-export type DependencyVia = '支持柱' | '上部大梁' | '連続スパン' | '上下階柱'
-export interface Dependency { memberId: string; via: DependencyVia; detail: string }  // detail: 「始端 支持柱 — 内法・定着の判定に使う」
-export type DependencyResolution =
-  | { status: 'tracked'; dependencies: Dependency[] }
-  | { status: 'untracked'; reason: '依存経路未追跡（耐震壁・床板）' }
-export function memberDependencies(project: Project, memberId: string): DependencyResolution
-```
-- 大梁: `girderRun`의 모든 런 부재(자신 제외, via 連続スパン) ＋ 런의 각 스팬 지점 柱(`girderSupportSections`, via 支持柱; 内法·定着·かぶり 조건이 柱 断面에서 온다). `girderRun`/`girderSupportSections`가 `MemberUnsupportedError`를 던지면 얻은 것까지만 담고 `detail`에 「支持柱なし」를 남긴다(throw 금지). 다른 Error는 그대로 던진다.
-- 柱: 같은 階의 `touchesColumn` 大梁(via 上部大梁; `beamDepthAbove`가 せい를 읽는다) ＋ 上下階의 같은 격자점 柱(via 上下階柱; `columnEnds`).
-- 耐震壁·床板: `untracked`. 조용히 빈 배열을 주지 마라 — 「영향 없음」과 「추적 안 함」은 다른 사실이다.
+### 2. `src/lib/persist/indexeddb.ts`
+- `export interface StoredBundle { project: Project; review: ReviewState }`.
+- `saveBundle(bundle): Promise<void>` — **한 readwrite 트랜잭션**에서 키 `current`(Project JSON 문자열 — 현행 형식)와 키 `review`(ReviewState JSON 문자열) 둘을 put. 트랜잭션이 실패하면 둘 다 안 써진다(원자성이 목적 — 주석에).
+- `loadStoredBundle(): Promise<{ project: Project | null; review: ReviewState | null }>` — 한 readonly 트랜잭션에서 둘 다 읽는다. `current` 파싱 실패 → `project: null`(현행 `loadStoredProject`와 같은 이유 — 복원 경로라 throw하지 않는다, 주석에). `review` 파싱 실패 → `review: null`. **project가 null이면 review도 null로 돌려준다**(다른 案件의 검토가 빈 案件에 붙지 않게).
+- `clearStoredProject`가 `review`도 지운다. `DATABASE_VERSION`은 **올리지 않는다**(키 추가에 upgrade가 필요 없다 — `uc15`의 `open(…, 1)`이 깨진다).
+- `createAutosave<T>(write: (value: T) => Promise<void>)` — generic화. pending·queued도 `T`. 기존 `saveProject`·`loadStoredProject`는 **유지**(기존 테스트·호출부 회귀 방지; 내부에서 같은 put/get을 쓴다).
 
-### 3. `src/domain/review/fingerprint.ts` (순수)
-- `canonicalJson(value: unknown): string` — 객체 키를 재귀적으로 정렬. `undefined` 값 키는 생략(JSON.stringify와 같게).
-- `hashString(text: string): string` — 결정적 문자열 해시(예: cyrb53 또는 FNV-1a 두 번). 16진 문자열. **암호 해시가 아님**을 주석에. 해시 상수는 규준값이 아니다(README 결정 8).
-- `rulepackFingerprint(pack: RulePack): string` — 각 entry의 `{key, conditions, value, unit, confidence, source.doc, source.page, source.section}`를 `ruleIdentity` 순으로 정렬해 해시. `note`·`label`은 넣지 않는다(표시 문구 변경은 근거 변경이 아니다).
-- `memberInputs(project, memberId): unknown` — 그 부재의 산정 입력을 **한 객체**로: `{ member, section, story: {id,name,height}, gridSpansAround, dependencies: [{memberId, via, section, story}] }` (의존 부재의 断面·階高까지 포함 — 柱 断面 b가 바뀌면 大梁 입력 fingerprint가 바뀌어야 한다). `gridSpansAround`는 그 부재가 걸친 通り芯 스팬 값(柱면 인접 스팬 4개 이하, 大梁면 자기 스팬). `untracked`(壁·床板)면 `dependencies: 'untracked'`.
-- `memberInputFingerprint(project, memberId): string` ＝ `hashString(canonicalJson(memberInputs(...)))`.
-- `memberResultFingerprint(rebars: Rebar[]): string` — 그 부재에 귀속된 `Rebar[]`(`rebar.memberId === memberId`, id 순 정렬)의 `{id, role, size, shape, points, closed, hookTails, length, count, placement, axisOffsetsMm, axisSlotStart, zones, splice:{method,countPerBar,lengthMm}, ruleHits:[{key,conditions,value,unit,confidence}]}`를 해시. `formula`는 넣지 않는다(문구).
-- `projectFingerprints(project, rebars, unsupportedMemberIds, pack, checkVersion): ReviewFingerprints` — 전 부재. 未対応 부재는 `result: null`.
-- 주의: 通し筋은 런 대표 부재(`run.ownerId`)에 귀속된다. 런 동료의 result fingerprint에는 자기 あばら筋만 들어간다 — 그래서 大梁의 입력 fingerprint가 런 전체를 포함해야 한다(위 `memberInputs`).
+### 3. `src/lib/hooks/useProjectPersistence.ts`
+- 복원: `loadStoredBundle()` → `loadProject(project, review ?? emptyReviewState())`. 복원 중 사용자 편집 보호는 **`project` 또는 `review` 참조가 마운트 시점과 달라졌으면** 복원을 건너뛴다(현재는 project만 본다).
+- 자동저장: `createAutosave<StoredBundle>(saveBundle)` **하나**. 구독은 `project`·`review` 어느 쪽 참조가 바뀌어도 `{ project, review }`를 넘긴다. flush 두 곳(pagehide·visibilitychange) 유지.
 
-### 4. 3D 개체 식별 — `src/lib/viewer/geometry.ts`·`building.ts`
-- `Segment`에 선택 필드 `barIndex?: number`(같은 `Rebar`의 몇 번째 배치 개체인가 — `rebarPlacements` 순서)와 `hookTail?: boolean`을 싣는다. `rebarSegmentRuns`의 `placements.flatMap((offset, barIndex) => …)`에서 넣고, `clipSegments`/`clipSegment`가 세그먼트를 쪼갤 때 **보존**한다.
-- `RebarInstance`에 `rebarId: string`·`barIndex: number`·`segmentIndex: number`(그 개체 안 순번)를 추가. `buildingLayout`의 인스턴스 push에서 채운다. glTF 노드명 등 기존 출력은 불변(테스트로 고정).
-- `memberWorldPoint(project: Project, member: Member, options?: { role?: RebarRole }): (point: Point3) => Point3`를 `building.ts`에서 **export**로 추출한다 — 현재 `buildingLayout` 안의 `worldPoint` 클로저 4분기(柱·大梁·床板·耐震壁)를 그대로 옮기고 `buildingLayout`이 그것을 호출하게. 床板은 role로 X/Y 런을 고른다(현재 `openings` 계산과 같은 분기). 추출 전후 `buildingLayout` 출력이 `toEqual`로 같아야 한다(테스트로 고정).
+### 4. 스토어 `src/lib/store.ts`
+- `review: ReviewState`(초기 `emptyReviewState()`), `setReview(updater: (review: ReviewState) => ReviewState)`, `loadProject(project, review?)` — `review` 생략 시 `emptyReviewState()`(다른 案件의 검토가 남지 않는다). `updateProject`는 `review`를 건드리지 않는다.
+
+### 5. `src/components/ProjectActions.tsx`
+- 저장 버튼: `downloadProjectJson(project, review)` — `review`는 스토어에서 구독.
+- 파일 읽기: `readProjectFile` 반환 형태에 맞춰 `loadProject(project, review)`. 실패 시 현행대로 원본 유지.
 
 ## 테스트 (먼저 쓴다)
-- `src/domain/review/joint.test.ts`: 샘플 案件 `1F-X1Y1`(모서리, 大梁 2개)·`1F-X2Y2`(大梁 4개, 始端/終端 혼재)·`2F-X1Y1`(위층 없음 → reference에 1F 柱만); **`1F-X1Y3`**(Y 런의 終端 — 접합 大梁 `1F-G1-X1Y2-Y`의 런 대표는 `1F-G1-X1Y1-Y`라 `jointMemberIds`에는 없고 `jointRebarMemberIds`에는 있다; 그 대표에 귀속된 `上端筋` Rebar의 memberId가 후자에 포함됨을 `buildTakeoff`로 확인); 大梁를 선택하면 `柱ではない`; `shape: '円形'` 断面이면 `円形柱`; 大梁를 전부 지운 柱면 `取り付く大梁なし`; 격자에 가까이 있어도 **다른 階**의 大梁는 들어가지 않는다(반례).
-- `src/domain/review/dependency.test.ts`: 大梁 `1F-G1-X1Y1-X`의 의존에 始端·終端 柱가 via 支持柱로, Y방향 連続 大梁의 의존에 런 동료와 3개 柱; 柱의 의존에 上部大梁 4개(X2Y2)와 2F 柱; 耐震壁·床板은 `untracked`; 支持柱를 지운 大梁는 throw 없이 `detail`에 支持柱なし.
-- `src/domain/review/fingerprint.test.ts`: `canonicalJson` 키 순서 무관; `rulepackFingerprint`가 `note` 변경에 불변·`value` 변경에 가변; 柱 断面 `b`를 바꾸면 그 柱와 **인접 大梁**의 input fingerprint가 바뀌고 반대편 격자의 大梁·다른 階는 불변; `unitMass`·`notes`·`xLabels`·案件名 변경은 어떤 부재 fingerprint도 바꾸지 않는다; 帯筋 피치 변경은 柱 result 변경·大梁 result 불변; 通し筋 런 동료의 断面 변경이 대표 부재 input에 반영.
-- `src/lib/viewer/building.test.ts`·`geometry.test.ts`: `barIndex`가 배치 수만큼 0..n-1로 나오고 開口 clip 뒤에도 유지; `memberWorldPoint` 추출 전후 `buildingLayout` 동일(추출 **전에** 샘플·스트레스 案件의 `buildingLayout` 결과를 JSON으로 픽스처에 저장해 두고 비교 — 픽스처는 `tests/fixtures/viewer/building-layout-sample.json`, 크기가 크면 해시만).
-- `src/lib/export/gltf.test.ts`: 기존 통과.
+- `src/lib/persist/file.test.ts`: 빈 review면 기존 형식과 **문자열 동일**(`serializeProject`와 `toBe`); review가 있으면 round-trip으로 `items`·`packages`·`baseline`·`settings`·`exclusions` `toEqual`; review 版 불일치 파일은 throw(문구); 검토 키 없는 구 파일은 `emptyReviewState()`; `review`가 깨졌으면 project도 반환하지 않는다(throw).
+- `src/lib/persist/indexeddb.test.ts`: `saveBundle` 후 `current`·`review` 둘 다 읽힘; `clearStoredProject`가 둘 다 지움; `review` 문자열이 깨졌으면 `review: null`·project는 정상; `current`가 없으면 review가 있어도 둘 다 null; `saveBundle`이 `transaction`을 **한 번** 열고 두 키를 put한다(테스트의 fake IDB에서 트랜잭션 호출 수를 센다 — 기존 테스트의 목 방식을 따른다); `createAutosave<T>`가 기존 `Project` 사용처와 타입 호환(기존 테스트 통과).
+- `src/lib/hooks/useProjectPersistence.test.tsx`: review만 바꿔도 `saveBundle`이 `{project, review}`로 불린다; project만 바꿔도 같다; 마운트 직후 사용자가 `setReview`를 한 뒤 복원이 도착하면 복원이 **건너뛰어진다**(review 편집 보존); 복원 번들의 review가 null이면 `emptyReviewState()`.
+- `src/lib/store.test.ts`: `setReview`가 `project` 참조를 바꾸지 않는다(`toBe`) — 결정 1의 핵심 회귀; `updateProject`가 `review` 참조를 바꾸지 않는다; `loadProject(p)`가 review를 비운다; `loadProject(p, r)`가 r을 넣는다.
+- `src/components/ProjectActions.test.tsx`: 저장 클릭 시 `downloadProjectJson`이 스토어의 `review`와 함께 불린다(목); 검토가 있는 파일을 읽으면 `loadProject(project, review)`.
 
 ## 변이 확인 (report `mutations`)
-① `resolveJoint`의 `storyId` 비교 제거 ② `memberInputs`에서 dependencies 제거 ③ `clipSegment`에서 `barIndex` 전파 제거.
+① `serializeProjectFile`의 빈 review 키 생략 제거 ② `setReview`가 `project`를 spread로 새로 만들게 변경 ③ 복원 보호에서 `review` 참조 비교 제거 — 각각 어느 테스트가 빨개지는지 기록하고 원복.
 
 ## Acceptance Criteria
 ```bash
-npx vitest run src/domain/review src/lib/viewer src/lib/export src/domain/model/project.test.ts
+npx vitest run src/lib/persist src/lib/hooks/useProjectPersistence.test.tsx src/lib/store.test.ts src/components/ProjectActions.test.tsx
 npm run test:golden
 npx tsc --noEmit
 npm run lint
@@ -90,12 +56,11 @@ npx vitest run
 ```
 
 ## 산출물
-`step2-report.json`: `{ "changed_files", "tests_added", "mutations", "exported_from_project_ts": ["touchesColumn", ...], "world_point_extraction": { "fixture": "...", "identical": true }, "paths_verified": ["src/domain/review/joint.ts", "src/domain/review/dependency.ts", "src/domain/review/fingerprint.ts", "src/lib/viewer/building.ts", "src/lib/viewer/geometry.ts"] }`
+`step2-report.json`: `{ "changed_files", "tests_added", "mutations", "file_format_note": "빈 review 생략 근거와 uc15 호환(키 current·부분 문자열) 확인 방법", "paths_verified": ["src/lib/persist/file.ts", "src/lib/persist/indexeddb.ts", "src/lib/hooks/useProjectPersistence.ts", "src/lib/store.ts", "src/components/ProjectActions.tsx"] }`
 
 ## 금지사항
-- 접합·의존을 좌표 근접·박스 겹침으로 판정하지 마라. 이유: README 결정 6.
-- `girderRun`·`columnEnds`·`beamDepthAbove`·`girderSpan`의 동작을 바꾸지 마라. `src/domain/rebar/**`·`src/domain/quantity/**`의 값을 바꾸지 마라(`ruleIdentity` export만).
-- `buildingLayout`의 출력 좌표·순서를 바꾸지 마라(필드 추가만).
-- 壁·床板의 의존을 「없음」으로 내지 마라 — `untracked`다.
-- fingerprint에 `formula`·`note`·`label`·`notes`·`unitMass`·案件名을 넣지 마라. 이유: 표시만 달라진 변경이 검토를 무효화하면 안 된다(§5.2).
-- 규준 수치 리터럴 금지, `src/domain`에서 `@/lib` import 금지.
+- IndexedDB `DATABASE_VERSION`·키 `current`·그 값의 형식을 바꾸지 마라. 이유: uc15·기존 저장 案件.
+- `project`와 `review`를 서로 다른 트랜잭션·서로 다른 autosave로 쓰지 마라. 이유: 案件 전환 중 한쪽만 써지면 다른 案件의 검토가 붙는다(반증 4(a)).
+- 검토 데이터를 `capture()`로 보내지 마라.
+- 화면을 만들지 마라 — `ProjectActions`의 호출 인자 변경만. 이유: UI는 phase 48.
+- 테스트를 구현에 맞추지 마라.

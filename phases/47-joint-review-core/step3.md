@@ -1,119 +1,97 @@
-# Step 3: impact-and-validity — 기준안 대비 변경 분류·의존관계 기반 영향과 경로·검토 항목 유효성·작업 패키지 준비 상태
+# Step 3: joint-and-fingerprint — 접합부 판정·의존관계(읽는 필드 단위)·fingerprint, 3D 개체 식별과 부재→세계좌표 변환 추출
 
-`phases/47-joint-review-core/README.md` 결정 2·4·6, step 1·2의 타입과 함수를 전제로 한다.
+README의 공통 결정을 먼저 읽어라. 특히 결정 6(의존관계는 실제 산정 함수, fingerprint는 그 함수가 읽는 필드만)과 「샘플 案件의 사실」.
 
 ## 읽어야 할 파일
-- step 1·2 산출물: `src/domain/review/{types,state,joint,dependency,fingerprint}.ts`
-- `src/lib/hooks/useTakeoff.ts` — `buildTakeoff(project): TakeoffResult`(순수, `'use client'` 파일이지만 Node 테스트에서 import 가능 — `useTakeoff.test.tsx` 참조), `UnsupportedMember`
-- `src/domain/quantity/index.ts` — `QuantityLine`(`MassQuantityLine.designKg: number | null` — **null은 0이 아니다**), `isMassLine`
-- `src/domain/model/project.ts` — `Member`·`Section` 필드(변경 필드 이름을 경로 문장에 쓴다)
+- `src/domain/model/project.ts` — `touchesColumn`(≈L512, private `(GirderPosition, ColumnPosition): boolean`, 階 비교는 호출자 몫)·`girderSupportSections`(≈L548, `{start, end}: ColumnSection` 반환 — 부재 id는 돌려주지 않는다)·`supportColumnSection`(≈L566, 같은 階·격자점의 柱)·`girderRun`(≈L1378; 연속 조건은 같은 断面 id·같은 階·인접)·`columnEnds`(≈L1480; 上下階 柱의 **존재**만 읽는다)·`beamDepthAbove`(≈L1512; 접속 大梁의 `depth`만 읽는다)·`MemberUnsupportedError`
+- `src/domain/rebar/girder-ends.ts`·`src/domain/rebar/girder.ts` — 支持柱 断面에서 실제로 읽는 필드(`b`/`d`·`shape`; 定着 수용·面 오프셋)
+- `src/domain/model/member.ts` — `ColumnSection.shape`(円形은 이번 접합부 범위 밖), `Member.position` 판별은 항상 `kind`로
+- `src/domain/model/rebar.ts` — `Rebar` 필드 전부
+- `src/domain/rules/types.ts` — `RuleEntry`·`RulePack`·`RuleSource`(edition·url 포함); `src/rulepack/index.ts` — `jpMlitRulePack`
+- `src/domain/quantity/index.ts` — `ruleIdentity`(≈L150, key＋정렬된 conditions, private) — export해서 재사용
+- `src/lib/viewer/geometry.ts` — `Segment`(≈L23), `rebarSegmentRuns`(≈L963, `placements.flatMap`가 개체를 펼친다), private `clipSegment`(≈L917; 조각 객체를 930·940행에서 다시 만든다 — 필드 보존 주의)와 public `clipSegments`(≈L955), `rebarSegments`, `rebarBatches`
+- `src/lib/viewer/building.ts` — `RebarInstance`(≈L49), `buildingLayout`(≈L120; 柱 `worldPoint` ≈L311, 大梁 ≈L347~358, 床板 ≈L367~395(`slabBay`·`cantileverSlabGeometry`로 원점; role은 `openings` 계산에만 쓰인다), 耐震壁)
+- `src/lib/export/gltf.ts` — `RebarInstance` 소비자(필드 추가에 무영향인지 확인)
+- 테스트 스타일: `src/domain/model/project.test.ts`, `src/lib/viewer/building.test.ts`, `src/lib/viewer/geometry.test.ts`, `src/lib/hooks/useTakeoff.test.tsx`(부분 案件 만드는 법)
 
 ## 만들 것
 
-### 1. `src/domain/review/impact.ts` (순수)
-입력은 계산 결과를 **받는다**(domain은 `@/lib`를 import할 수 없으므로 `buildTakeoff`는 호출 측이 돌린다):
+### 1. `src/domain/review/joint.ts` — 접합부 판정 (순수)
 ```ts
-export interface TakeoffSnapshot {
-  project: Project
-  rebars: Rebar[]
-  lines: QuantityLine[]
-  unsupportedMemberIds: ReadonlySet<string>
-  fingerprints: ReviewFingerprints      // projectFingerprints(...) 결과
+export interface JointGirder { member: Member; section: GirderSection; end: '始端' | '終端' }  // 柱가 그 大梁의 어느 끝인가
+export interface Joint {
+  columnMemberId: string
+  column: { member: Member; section: ColumnSection; story: Story }
+  girders: JointGirder[]                 // 같은 階, touchesColumn 관계. 축·index 오름차순
+  /** 참고 표시 대상: 上下階의 같은 격자점 柱, 各 大梁의 런 동료 (girderRun.members − jointMemberIds) */
+  reference: { memberIds: string[] }
 }
-
-export type EntityChange =
-  | { kind: 'member'; change: '追加' | '削除' | '変更' | '対応要確認'; memberId: string; fields?: string[]; detail: string }
-  | { kind: 'section'; change: '追加' | '削除' | '変更'; sectionId: string; fields: string[]; detail: string }   // detail: 「C1 b 800→900」
-  | { kind: 'story'; change: '追加' | '削除' | '変更'; storyId: string; fields: string[]; detail: string }
-  | { kind: 'grid'; change: '変更'; detail: string }
-  | { kind: 'unitMass'; change: '変更'; sizes: string[]; detail: string }
-  | { kind: 'rulepack'; change: '変更'; detail: string }
-  | { kind: 'displayOnly'; what: '案件名' | '備考' | '通り芯名'; detail: string }
-
-export type ImpactCategory = '入力' | '形状' | '数量' | '対応状態' | '根拠'
-export interface MemberImpact {
-  memberId: string
-  categories: ImpactCategory[]                 // 비지 않는다
-  /** 왜 영향을 받았는가 — 짧은 경로. 예: ["柱 1F-X1Y1 断面 C1 b 800→900", "支持柱 → 大梁 1F-G1-X1Y1-X（内法・定着の判定に使う）"] */
-  path: string[]
-  support: { before: '対応' | '未対応'; after: '対応' | '未対応' }
-}
-export type MassState = '算出' | '単位質量未入力'
-export interface LineChange {
-  lineId: string
-  change: '追加' | '削除' | '変更'
-  fields: string[]                              // lengthMm, countPerMember, places, designKg …
-  mass?: { before: MassState | null; after: MassState | null; beforeKg: number | null; afterKg: number | null }  // 「단위질량 미입력」은 0이 아니라 상태
-}
-export interface ImpactReport {
-  entities: EntityChange[]
-  members: MemberImpact[]
-  lines: LineChange[]
-  rulepackChanged: boolean
-  checkVersionChanged: boolean
-  displayOnly: EntityChange[]                   // entities의 displayOnly만 추린 것
-}
-export function assessImpact(baseline: TakeoffSnapshot, current: TakeoffSnapshot): ImpactReport
+export type JointResolution =
+  | { status: 'joint'; joint: Joint }
+  | { status: 'unsupported'; reason: '柱ではない' | '円形柱' | '取り付く大梁なし' | '部材なし' }
+export function resolveJoint(project: Project, columnMemberId: string): JointResolution
+export function jointMemberIds(joint: Joint): string[]   // 柱 + girders (reference 제외)
+/**
+ * 접합부에 **철근이 지나가는** 부재 id ＝ jointMemberIds ∪ 각 大梁 런의 대표(`girderRun(...).ownerId`).
+ * 通し筋·カットオフ筋은 런 대표 부재에 귀속되므로(`generateMain`의 `memberId: run.ownerId`),
+ * 접합부 大梁가 대표가 아니면 그 主筋의 `Rebar.memberId`는 접합부 밖 부재다 — 이 목록으로 걸러야 빠지지 않는다.
+ * `girderRun`이 throw(支持柱なし)하면 그 大梁는 자기 id만.
+ */
+export function jointRebarMemberIds(project: Project, joint: Joint): string[]
+/** 大梁의 始端·終端 지점 柱 부재 id (위치·階로). 없으면 null — phase 48의 「柱へ」 이동에 쓴다 */
+export function supportColumnIds(project: Project, girderMemberId: string): { start: string | null; end: string | null }
 ```
-규칙:
-- **부재 대응**은 `member.id`로 한다. 같은 id가 양쪽에 있는데 `kind`·`storyId`·`position`이 다르면 `変更`(fields에 이름). id가 사라졌는데 **같은 kind·storyId·position**의 다른 id 부재가 생겼으면 둘 다 `対応要確認`으로 내고(삭제＋추가로 처리하지 않는다), 그 부재의 `MemberImpact.path`에 「id 変更の可能性 — 対応要確認」을 넣는다. 그 밖의 사라짐/생김은 削除/追加.
-- 입력 변경의 **직접 대상**(section 변경 → 그 section을 쓰는 부재, story 변경 → 그 階 부재, grid 변경 → 걸친 스팬이 바뀐 부재, member 변경 → 자신)을 구한 뒤, **역의존**으로 전파한다: 현재 案件의 모든 부재에 대해 `memberDependencies`를 구해 「직접 대상을 의존하는 부재」를 영향 대상에 넣고 path에 `via`와 `detail`을 붙인다(한 홉. 連続スパン은 런 전체가 한 단위이므로 런 동료를 거친 두 홉까지 — 그 이상은 넣지 않는다). `untracked` 부재(壁·床板)는 입력 전파를 하지 않는다 — 대신 아래 결과 비교로만 잡히며 path에 「依存経路未追跡 — 結果差分で検出」을 쓴다.
-- **결과 비교**: 양쪽 `fingerprints.members`를 비교해 `input`이 다르면 `入力`, `result`가 다르면 `形状`(＋数量 행이 달라졌으면 `数量`), `result`의 null 여부가 바뀌면 `対応状態`. `rulepack`이 다르면 전 부재에 `根拠`를 넣고 `rulepackChanged: true`. 입력 전파로 잡혔는데 결과가 같은 부재는 categories에 `入力`만 두고 path 끝에 「結果は不変」을 붙인다(영향 범위는 의존관계 근거이되 결과가 같다는 사실도 보인다).
-- **数量 행**: `lines`를 `id`로 대응. 값 필드 비교. `designKg`가 `null`↔숫자면 `mass`에 상태 전이로 기록하고 `fields`에 `designKg`. `null`→`null`은 변경 아님. 숫자 비교는 `Object.is`.
-- `displayOnly`: `name`, `notes`, `grid.xLabels/yLabels`. 이것만 다르면 `members`·`lines`는 비고 `displayOnly`만 찬다.
-- 경로 문장은 일본어 부재 용어 그대로(ADR-008). 断面 필드 변경은 `断面 C1 b 800→900`처럼 **값을 같이** 적는다(원문 그대로의 입력값이지 규준값이 아니다).
+- 판정은 **위치와 階**로 한다: `candidate.kind === '大梁' && candidate.storyId === column.storyId && touchesColumn(candidate.position, column.position)`. `touchesColumn`은 `project.ts`의 private 함수다 — **export해서 재사용**하고 복사하지 마라. 大梁가 `MemberUnsupportedError`(支持柱なし 등)인지는 여기서 판정하지 않는다(그건 `buildTakeoff`의 결과이고 step 5가 `unsupportedMemberIds`로 받는다).
+- `円形柱`는 `unsupported`로 명시한다(첫 지원 대상은 矩形 柱). 大梁가 하나도 없으면 `取り付く大梁なし`.
+- `reference.memberIds`: `columnEnds`와 같은 방식으로 `stories` 순서 ±1 階의 같은 `ix,iy` 柱, 그리고 각 大梁의 `girderRun(project, girder).members`에서 **jointMemberIds에 없는 것**. `girderRun`이 throw하면 그 大梁의 동료는 비운다 — throw를 밖으로 내지 마라.
 
-### 2. `src/domain/review/validity.ts` (순수)
+### 2. `src/domain/review/dependency.ts` — 산정 의존관계 (순수)
 ```ts
-export type StaleReasonKind = '入力変更' | '結果変更' | '対応状態変更' | '根拠変更' | '検査版変更' | '対象なし' | '対応要確認'
-export interface StaleReason { kind: StaleReasonKind; memberId?: string; detail: string }
-export type ReviewValidity = { state: '有効' } | { state: '再検討必要'; reasons: StaleReason[] }
-
-export interface CurrentModel {
-  project: Project
-  fingerprints: ReviewFingerprints             // 현재 전 부재
-  impact: ImpactReport | null                  // 기준안이 없으면 null
-}
-export function itemTargetMemberIds(item: ReviewItem, project: Project): { memberIds: string[]; missing: ElementRef[]; unresolved: ElementRef[] }
-export function itemValidity(item: ReviewItem, current: CurrentModel): ReviewValidity
-export type EffectiveItemStatus = ReviewHumanStatus | '再検討必要'
-export function effectiveItemStatus(item: ReviewItem, validity: ReviewValidity): EffectiveItemStatus
-export function itemsNeedingRecheck(items: ReviewItem[], current: CurrentModel): ReviewItem[]   // 「이번 변경으로 다시 봐야 하는 것만」
+export type DependencyVia = '支持柱' | '上部大梁' | '連続スパン' | '上下階柱'
+/** reads: 그 의존에서 산정 함수가 실제로 읽는 값 — fingerprint는 이것만 해시한다 */
+export type Dependency =
+  | { memberId: string; via: '支持柱';   detail: string; reads: { shape: string; b: number; d: number } }     // girderSupportSections → 定着 수용·面 오프셋
+  | { memberId: string; via: '上部大梁'; detail: string; reads: { depth: number } }                            // beamDepthAbove
+  | { memberId: string; via: '連続スパン'; detail: string; reads: { sectionId: string; position: GirderPosition } }  // girderRun 연속 조건·스팬
+  | { memberId: string; via: '上下階柱'; detail: string; reads: { exists: true } }                              // columnEnds
+export type DependencyResolution =
+  | { status: 'tracked'; dependencies: Dependency[]; missing: { via: DependencyVia; detail: string }[] }   // missing: 「始端 支持柱なし」
+  | { status: 'untracked'; reason: '依存経路未追跡（耐震壁・床板）' }
+export function memberDependencies(project: Project, memberId: string): DependencyResolution
 ```
-- `itemTargetMemberIds`: `member` → 자신; `joint` → `resolveJoint`가 `joint`면 `jointRebarMemberIds(project, joint)`(런 대표 포함 — 通し筋 결과 변경을 놓치지 않기 위해), 아니면 `missing`; `rebar` → `rebarId`의 `|` 앞 부분(`Rebar.id` 규약)이 존재하면 그 부재; `quantityLine` → 부재를 특정할 수 없으므로 memberIds에 기여하지 않고 `unresolved`에 넣는다(무시가 아니다). validity는 다른 ref로 판정하고, quantityLine만 있는 항목은 `対象なし`.
-- `itemValidity`: 대상 부재마다 `item.snapshot.fingerprints.members[id]`와 `current.fingerprints.members[id]`를 비교 — `input` 다름→`入力変更`, `result` 다름→`結果変更`, null 전이→`対応状態変更`; `snapshot.fingerprints.rulepack !== current.fingerprints.rulepack`→`根拠変更`; `item.finding`이 있고 `checkVersion` 다름→`検査版変更`; 대상 없음→`対象なし`; `impact`에 그 부재가 `対応要確認`이면→`対応要確認`. 이유가 하나도 없으면 `有効`.
-- **무효화하지 않는 것**(테스트로 고정): 카메라 pose·clip·layers·selection·案件名·備考·通り芯名·다른 부재의 변경.
-- `effectiveItemStatus`: validity가 `再検討必要`면 그것(사람 status와 별개로 표시). `有効`면 사람 status.
+- 大梁: `girderRun`의 모든 런 부재(자신 제외, via 連続スパン) ＋ 런의 각 스팬 지점 柱(via 支持柱; `supportColumnIds`로 부재 id). `girderRun`/`girderSupportSections`가 `MemberUnsupportedError`를 던지면 얻은 것까지만 담고 `missing`에 「始端 支持柱なし」처럼 남긴다(throw 금지). 다른 Error는 그대로 던진다.
+- 柱: 같은 階의 `touchesColumn` 大梁(via 上部大梁, `reads.depth`) ＋ 上下階의 같은 격자점 柱(via 上下階柱, 존재만).
+- 耐震壁·床板: `untracked`. 조용히 빈 배열을 주지 마라 — 「영향 없음」과 「추적 안 함」은 다른 사실이다.
+- `reads`에 넣는 필드가 실제 산정 함수가 읽는 필드와 같다는 것을 **테스트로 고정**한다(아래).
 
-### 3. `src/domain/review/readiness.ts` (순수)
-```ts
-export type ReadinessState = '準備未完' | '準備完了' | '準備完了（例外あり）'
-export interface Blocker { entryId: string | null; kind: '前モデルの検討が残っている' | '必須の詳細情報が未入力' | '確認記録がない' | '未入力' | '判断不可' | '理由のない保留' | '担当者未入力' | '対象部材なし'; detail: string }
-export interface Exception { entryId: string; kind: '保留' | '除外'; reason: string }
-export interface PackageReadiness { state: ReadinessState; blockers: Blocker[]; exceptions: Exception[]; memberIds: string[]; missingTargets: ElementRef[] }
-export function packageReadiness(pkg: WorkPackage, items: ReviewItem[], current: CurrentModel): PackageReadiness
-```
-- `required` 항목마다: `未入力`·`未確認` → blocker `未入力`; `確認済`인데 연결 항목이 하나라도 `再検討必要` → `前モデルの検討が残っている`(어느 항목·이유를 detail에); 연결 항목이 `判断不可` → `必須の詳細情報が未入力`; 연결 항목이 없는데 `confirmation` 없음 → `確認記録がない`; `保留`·`除外`는 reason이 있으면 exception, 없으면 blocker `理由のない保留`. `assignee`가 빈 문자열 → `担当者未入力`. 대상 ref가 현재 案件에 없으면 `対象部材なし`.
-- 상태: blockers 비고 exceptions 비면 `準備完了`, blockers 비고 exceptions 있으면 `準備完了（例外あり）`, 아니면 `準備未完`. **퍼센트를 만들지 않는다.**
-- 필수가 아닌 항목은 상태에 영향 없음(정보로만).
+### 3. `src/domain/review/fingerprint.ts` (순수)
+- `canonicalJson(value: unknown): string` — 객체 키를 재귀적으로 정렬. `undefined` 값 키는 생략(JSON.stringify와 같게).
+- `hashString(text: string): string` — 결정적 문자열 해시(예: cyrb53 또는 FNV-1a 두 번). 16진 문자열. **암호 해시가 아님**을 주석에. 해시 상수는 규준값이 아니다(README 결정 8).
+- `rulepackFingerprint(pack: RulePack): string` — 각 entry의 `{key, conditions, value, unit, confidence, source}`(**`source` 객체 전체** — doc·edition·url·page·section 등 있는 것 전부)를 `ruleIdentity` 순으로 정렬해 해시. `note`·`label`은 넣지 않는다(표시 문구 변경은 근거 변경이 아니다).
+- `checkConditionsFingerprint(settings: { clearance: ClearanceBasis | null }, exclusions: CheckExclusion[]): string` — `{ clearance: clearance ? { valueMm, scope } : null, exclusions: exclusions.map(e => e.scope) (canonical 정렬) }` 해시. `enteredAt`·`note`·`reason`·`id`는 넣지 않는다.
+- `memberInputs(project, memberId): unknown` — 그 부재의 산정 입력을 **한 객체**로: `{ member(kind·storyId·position·sectionId·openings), section(전체), story: {id,name,height}, gridSpansAround, dependencies: [{memberId, via, reads}] | 'untracked', missing }`. `gridSpansAround`는 그 부재가 걸친 通り芯 스팬 값(柱면 인접 스팬 4개 이하, 大梁면 자기 스팬). **의존 부재의 断面 전체를 넣지 마라** — `reads`만.
+- `memberInputFingerprint(project, memberId): string` ＝ `hashString(canonicalJson(memberInputs(...)))`.
+- `memberResultFingerprint(memberId: string, rebars: Rebar[]): string` — `rebar.memberId === memberId`인 것만 골라 id 순 정렬 후 `{id, role, size, shape, points, closed, hookTails, length, count, placement, axisOffsetsMm, axisSlotStart, zones, splice:{method,countPerBar,lengthMm}, ruleHits:[{key,conditions,value,unit,confidence}]}`를 해시. `formula`는 넣지 않는다(문구). 귀속 철근이 0개인 정상 부재(런 동료의 主筋은 대표에 귀속)는 빈 배열의 해시다 — null이 아니다(null은 未対応).
+- `projectFingerprints(project, rebars, unsupportedMemberIds, pack, checkVersion, checkConditions: string | null): ReviewFingerprints` — 전 부재. 未対応 부재는 `result: null`.
 
-## 테스트 (먼저 쓴다) — `src/domain/review/{impact,validity,readiness}.test.ts`
-샘플 案件으로 `TakeoffSnapshot`을 만드는 헬퍼 `tests/fixtures/review/snapshot.ts`(테스트 전용, `buildTakeoff`＋`projectFingerprints`)를 두고:
-- **영향 전파**: 柱 `section-C1.b` 800→900 → 영향 부재 ＝ C1을 쓰는 모든 柱(입력) ＋ 그 柱를 지점으로 하는 大梁(支持柱 경로, 결과도 변함) ＋ 그 柱의 上下階柱(입력만·結果は不変이 아닐 수도 — 실제 결과로 판정). 壁·床板은 결과가 바뀐 것만 「依存経路未追跡」 path로. **반례**: `section-G2`의 `stirrup.pitch` 변경 → G2 大梁만 영향, G1·柱는 미포함(가까운 부재를 전부 넣지 않는다).
-- **표시만**: 案件名·備考·通り芯名 변경 → `members`·`lines` 빈 배열, `displayOnly` 3건.
-- **단위질량**: `unitMass.D13` 추가 → 해당 행들 `mass.before='単位質量未入力'`·`after='算出'`, `beforeKg null`, `afterKg` 숫자; 어떤 행도 `0`으로 나오지 않는다.
-- **부재 대응**: 柱 id를 바꾸고 나머지 동일 → `対応要確認` 2건(삭제＋추가가 아님); id는 같은데 階를 옮김 → `変更`(fields에 storyId).
-- **미지원 전이**: 지점 柱를 지워 大梁가 未対応이 되면 `対応状態` ＋ support before/after.
-- **룰팩**: baseline `fingerprints.rulepack`을 다른 문자열로 바꾼 스냅샷 → `rulepackChanged`, 전 부재 `根拠`.
-- **유효성**: 항목 targets `[joint 1F-X2Y2]`; `section-C1.b` 변경 → `再検討必要`(入力変更·結果変更 with memberIds); `section-G2` 피치 변경 → 그 항목은 **유효**하고, targets `[member 1F-G2-…]` 항목만 재검토; pose/clip/備考 변경 → 유효; 대상 柱 삭제 → `対象なし`; `finding` 있는 항목의 `checkVersion` 증가 → `検査版変更`; `quantityLine`만 참조 → `対象なし`.
-- **준비 상태**: 필수 항목이 確認済＋연결 항목 유효 → `準備完了`; 모델 변경으로 그 항목이 再検討必要 → `準備未完`＋blocker `前モデルの検討が残っている`; 保留 with reason → `準備完了（例外あり）`; 保留 no reason → blocker; assignee 빈값 → blocker; 연결 없는 確認済 without confirmation → blocker; 비필수 항목 未入力은 무영향.
+### 4. 3D 개체 식별 — `src/lib/viewer/geometry.ts`·`building.ts`
+- `Segment`에 선택 필드 `barIndex?: number`(같은 `Rebar`의 몇 번째 배치 개체인가 — `rebarPlacements` 순서)와 `hookTail?: boolean`을 싣는다. `rebarSegmentRuns`의 `placements.flatMap((offset, barIndex) => …)`에서 넣고, `clipSegment`가 조각을 다시 만들 때(930·940행) **보존**한다.
+- `RebarInstance`에 `rebarId: string`·`barIndex: number`·`segmentIndex: number`(그 개체 안 순번)를 추가. `buildingLayout`의 인스턴스 push에서 채운다. glTF 노드명 등 기존 출력은 불변(테스트로 고정).
+- `memberWorldPoint(project: Project, member: Member): (point: Point3) => Point3`를 `building.ts`에서 **export**로 추출한다 — 현재 `buildingLayout` 안의 `worldPoint` 클로저 4분기(柱·大梁·床板·耐震壁)를 그대로 옮기고 `buildingLayout`이 그것을 호출하게. 床板의 `openings` 계산은 `buildingLayout`에 남긴다(변환 함수는 role에 의존하지 않는다). 추출 전후 `buildingLayout` 출력이 같아야 한다(아래 픽스처).
 
-## 변이 확인
-① 역의존 전파 제거(직접 대상만) ② `designKg` null을 0으로 취급 ③ `itemValidity`에서 rulepack 비교 제거 ④ `packageReadiness`에서 再検討必要 blocker 제거.
+## 테스트 (먼저 쓴다)
+- `src/domain/review/joint.test.ts`(샘플 案件 — README 「샘플 案件의 사실」): `1F-X1Y1`(大梁 2개, 둘 다 始端)·`1F-X2Y1`(G1 X 終端·G2 Y 始端)·`1F-X2Y2`(大梁 3개 전부 G2, 始端/終端 혼재; Y 런 대표 `1F-G2-X2Y1-Y`가 jointMemberIds에 있으므로 reference에 없다)·`2F-X1Y1`(위층 없음 → reference에 1F 柱만); **`1F-X1Y3`**(Y 런 終端 — 접합 大梁 `1F-G1-X1Y2-Y`의 런 대표 `1F-G1-X1Y1-Y`는 `jointMemberIds`에 없고 `jointRebarMemberIds`·`reference`에 있다; 그 대표에 귀속된 `上端筋` Rebar의 memberId가 전자에 포함됨을 `buildTakeoff`로 확인); `supportColumnIds('1F-G1-X1Y1-X') === { start: '1F-X1Y1', end: '1F-X2Y1' }`; 大梁를 선택하면 `柱ではない`; `shape: '円形'` 断面이면 `円形柱`; 大梁를 전부 지운 柱면 `取り付く大梁なし`; 격자에 가까이 있어도 **다른 階**의 大梁는 들어가지 않는다(반례).
+- `src/domain/review/dependency.test.ts`: 大梁 `1F-G1-X1Y1-X`의 의존에 始端·終端 柱가 via 支持柱로 `reads: {shape,b,d}`; Y 런 `1F-G1-X1Y1-Y`의 의존에 런 동료 `1F-G1-X1Y2-Y`(reads sectionId·position)와 柱 3개; 柱 `1F-X2Y2`의 의존에 上部大梁 **3개**(`reads: {depth}`)와 2F 柱(`exists`); 耐震壁·床板은 `untracked`; 支持柱를 지운 大梁는 throw 없이 `missing`에 支持柱なし. **읽는 필드 고정**: 柱 断面 `b`만 바꾼 案件에서 大梁 의존의 `reads.b`가 바뀌고, 柱 `mainBar` 본수만 바꾼 案件에서는 `reads`가 불변(그리고 그 大梁의 `buildTakeoff` 결과도 불변 — 산정이 그 필드를 읽지 않는다는 근거).
+- `src/domain/review/fingerprint.test.ts`: `canonicalJson` 키 순서 무관; `rulepackFingerprint`가 `note` 변경에 불변·`value`·`source.url` 변경에 가변; `checkConditionsFingerprint`가 `valueMm`·exclusion scope 변경에 가변, `enteredAt`·`reason` 변경에 불변; 柱 断面 `b`를 바꾸면 그 柱와 **인접 大梁**의 input fingerprint가 바뀌고 반대편 격자의 大梁·다른 階는 불변; **`section-G2.stirrup.pitch` 변경은 柱 input을 바꾸지 않는다**(柱는 depth만 읽는다) — G2 大梁의 result만 바뀐다; `unitMass`·`notes`·`xLabels`·案件名 변경은 어떤 부재 fingerprint도 바꾸지 않는다; 帯筋 피치 변경은 柱 result 변경·大梁 result 불변; 런 동료의 断面 id 변경이 대표 부재 input에 반영(런이 끊긴다).
+- `src/lib/viewer/building.test.ts`·`geometry.test.ts`: `barIndex`가 배치 수만큼 0..n-1로 나오고 開口 clip 뒤에도 유지; `memberWorldPoint` 추출 전후 동일 — 추출 **전에** 샘플·스트레스 案件의 `buildingLayout` 결과를 **기존 필드로 투영한**(`from`·`to`·`radius`·`memberId`·`rowId`… 새 필드 제외) JSON을 픽스처 `tests/fixtures/viewer/building-layout-sample.json`에 저장하고(크면 해시만), 추출 후 같은 투영이 `toEqual`; 새 필드(`rebarId`·`barIndex`·`segmentIndex`)는 별도 검사.
+- `src/lib/export/gltf.test.ts`: 기존 통과.
+
+## 변이 확인 (report `mutations`)
+① `resolveJoint`의 `storyId` 비교 제거 ② `memberInputs`에서 `dependencies` 제거 ③ `clipSegment`에서 `barIndex` 전파 제거 ④ `memberInputs`의 上部大梁 `reads`를 断面 전체로 교체(→ G2 피치 테스트가 빨개져야 한다).
 
 ## Acceptance Criteria
 ```bash
-npx vitest run src/domain/review
+npx vitest run src/domain/review src/lib/viewer src/lib/export src/domain/model/project.test.ts
 npm run test:golden
 npx tsc --noEmit
 npm run lint
@@ -121,12 +99,12 @@ npx vitest run
 ```
 
 ## 산출물
-`step3-report.json`: `{ "changed_files", "tests_added", "mutations", "propagation_example": { "change": "section-C1.b 800→900", "affected": [...], "not_affected_sample": [...] }, "paths_verified": ["src/domain/review/impact.ts", "src/domain/review/validity.ts", "src/domain/review/readiness.ts"] }`
+`step3-report.json`: `{ "changed_files", "tests_added", "mutations", "exported_from_project_ts": ["touchesColumn", ...], "world_point_extraction": { "fixture": "...", "identical": true }, "paths_verified": ["src/domain/review/joint.ts", "src/domain/review/dependency.ts", "src/domain/review/fingerprint.ts", "src/lib/viewer/building.ts", "src/lib/viewer/geometry.ts"] }`
 
 ## 금지사항
-- 영향 범위를 「선택 부재와 같은 階 전부」·「거리 안의 부재」로 만들지 마라. 이유: §5.1, README 결정 6.
-- 카메라·clip·layers·selection·案件名·備考·通り芯名 변경으로 검토를 무효화하지 마라.
-- `designKg: null`을 0이나 「변화 없음」으로 다루지 마라.
-- 퍼센트 진척도를 만들지 마라. 「確認済」·「準備完了」를 안전·승인으로 표현하는 문구를 쓰지 마라.
-- id가 사라진 요소를 자동으로 같은 요소로 확정하지 마라(`対応要確認`).
-- `src/domain`에서 `@/lib` import 금지(`buildTakeoff`는 테스트 헬퍼가 호출).
+- 접합·의존을 좌표 근접·박스 겹침으로 판정하지 마라. 이유: README 결정 6.
+- `girderRun`·`columnEnds`·`beamDepthAbove`·`girderSpan`의 동작을 바꾸지 마라. `src/domain/rebar/**`·`src/domain/quantity/**`의 값을 바꾸지 마라(`ruleIdentity` export만).
+- `buildingLayout`의 출력 좌표·순서를 바꾸지 마라(필드 추가만).
+- 壁·床板의 의존을 「없음」으로 내지 마라 — `untracked`다.
+- fingerprint에 의존 부재의 断面 전체·`formula`·`note`·`label`·`notes`·`unitMass`·案件名을 넣지 마라. 이유: 표시만 달라진 변경·무관한 필드 변경이 검토를 무효화하면 안 된다.
+- 규준 수치 리터럴 금지, `src/domain`에서 `@/lib` import 금지.
