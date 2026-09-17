@@ -38,7 +38,11 @@
       "name": "impact-validity-readiness",
       "status": "pending",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T16:51:35+0900",
+      "status": "completed",
+      "summary": "Added dependency-aware impact classification, review validity, package readiness, and TDD coverage.",
+      "completed_at": "2026-09-17T17:12:20+0900"
     },
     {
       "step": 5,
