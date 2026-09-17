@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "joint-and-fingerprint",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 498.4725865999935,
+  "stdout_log": "phases\\47-joint-review-core\\step3-codex.stdout.log",
+  "stderr_log": "phases\\47-joint-review-core\\step3-codex.stderr.log"
+}

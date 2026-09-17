@@ -1,0 +1,4 @@
+2026-09-17T07:49:32.565650Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\phases\47-joint-review-core\index.json:
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T16:13:16+0900",
+      "status": "pending"
