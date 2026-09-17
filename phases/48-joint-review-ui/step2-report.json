@@ -1,0 +1,38 @@
+{
+  "changed_files": [
+    "src/components/viewer/Viewer3D.tsx",
+    "src/components/viewer/Viewer3D.test.tsx",
+    "src/components/viewer/Viewer3D.module.css"
+  ],
+  "tests_added": [
+    "joint scene row picking and non-pickable reference boxes",
+    "unsupported girder navigation to terminal columns",
+    "review marker nearest-point geometry without content rebuild",
+    "reversed focus segments recompute marker endpoints",
+    "requested and captured viewer pose"
+  ],
+  "mutations": [
+    {
+      "mutation": "review marker updates also rebuild scene content",
+      "failing_tests": [
+        "Viewer3D > updates a joint review marker without rebuilding content and uses nearest points"
+      ]
+    },
+    {
+      "mutation": "setViewerPose runs from the render loop on every frame",
+      "failing_tests": [
+        "Viewer3D > applies and clears a requested viewer pose, and records pose only at controls end"
+      ]
+    },
+    {
+      "mutation": "reference box edges are added to pickableMeshes",
+      "failing_tests": [
+        "Viewer3D > renders a joint scene with pickable rows and non-pickable reference boxes"
+      ]
+    }
+  ],
+  "paths_verified": [
+    "src/components/viewer/Viewer3D.tsx",
+    "src/components/viewer/Viewer3D.test.tsx"
+  ]
+}

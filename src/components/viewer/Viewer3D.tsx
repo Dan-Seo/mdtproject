@@ -31,6 +31,11 @@ import {
   type WallSpan,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
+import {
+  resolveJoint,
+  supportColumnIds,
+  type JointResolution,
+} from '@/domain/review/joint'
 import type { ClipState } from '@/domain/review/types'
 import type { UnsupportedReason } from '@/domain/model/unsupported'
 import {
@@ -51,6 +56,8 @@ import {
   type ViewerLayer,
 } from '@/lib/store'
 import { capture } from '@/lib/telemetry'
+import { closestPointsBetweenSegments } from '@/lib/review/segment-distance'
+import { jointLayout, type JointLayout } from '@/lib/review/joint-layout'
 
 import {
   buildingLayout,
@@ -73,6 +80,7 @@ import {
   type CameraFit,
   type ClipAxis,
   type Point3,
+  type Segment,
 } from '@/lib/viewer/geometry'
 import { legendEntries } from './legend'
 import { REBAR_ZONE_COLORS } from './palette'
@@ -114,6 +122,7 @@ type HoverTooltip =
         | 'confidence'
         | 'rules'
       >
+      memberIds?: string[]
     }
   | {
       key: string
@@ -192,6 +201,7 @@ type SelectedMemberView =
 type ViewerView =
   | { mode: 'member'; member: SelectedSupportedMemberView }
   | { mode: 'building'; layout: BuildingLayout }
+  | { mode: 'joint'; columnMemberId: string; layout: JointLayout }
 
 interface CameraTween {
   from: CameraFit
@@ -209,6 +219,7 @@ interface ViewerRuntime {
   envTexture: THREE.Texture
   clipPlane: THREE.Plane
   content: THREE.Group | null
+  reviewMarker: THREE.Group | null
   /**
    * 머티리얼은 씬 콘텐츠가 아니라 **마운트 수명**이다. 재구축마다 새로 만들어
    * 폐기하면 그때마다 WebGL 프로그램이 삭제·재링크된다 — 断面 편집 1회당
@@ -245,6 +256,7 @@ type MaterialKey =
   | 'shadow'
   | 'buildingConcrete'
   | 'buildingConcreteSelected'
+  | 'reviewFocus'
 
 /** 풀에 있으면 그대로 쓰고 없으면 만들어 넣는다. 폐기는 언마운트에서만 한다. */
 function pooledMaterial<T extends THREE.Material>(
@@ -273,6 +285,7 @@ interface KijunViewerRuntimeHook {
   getRendererInfo(): { calls: number; triangles: number }
   getFrameTimestamps(): number[]
   getRebuildStats(): RebuildStats
+  getCameraTween(): CameraFit | null
 }
 type WindowWithViewerHook = Window & {
   __kijunViewerRuntime?: KijunViewerRuntimeHook
@@ -301,6 +314,22 @@ function applyClipPlane(
   )
   plane.normal.set(...normal)
   plane.constant = constantMm * MILLIMETRES_TO_SCENE
+}
+
+function disposeReviewMarker(runtime: ViewerRuntime): void {
+  const marker = runtime.reviewMarker
+  if (marker === null) return
+
+  const geometries = new Set<THREE.BufferGeometry>()
+  marker.traverse((object) => {
+    if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
+      geometries.add(object.geometry)
+    }
+  })
+  runtime.scene.remove(marker)
+  for (const geometry of geometries) geometry.dispose()
+  marker.clear()
+  runtime.reviewMarker = null
 }
 
 function disposeContent(runtime: ViewerRuntime): void {
@@ -743,6 +772,93 @@ function createBatchMesh(
   return mesh
 }
 
+function rebuildReviewMarker(
+  runtime: ViewerRuntime,
+  focus: {
+    point: Point3
+    segments: [Segment, Segment]
+    label: string
+  } | null,
+): void {
+  disposeReviewMarker(runtime)
+  if (focus === null) return
+
+  const marker = new THREE.Group()
+  marker.userData.reviewFocus = true
+  marker.userData.label = focus.label
+  const material = pooledMaterial(
+    runtime,
+    'reviewFocus',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_ZONE_COLORS.定着,
+        metalness: 0.35,
+        roughness: 0.3,
+        emissive: REBAR_ZONE_COLORS.定着,
+        emissiveIntensity: 0.45,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+
+  focus.segments.forEach((segment, index) => {
+    const mesh = createBatchMesh(
+      {
+        rowId: `review-focus:${index}`,
+        layer: 'main',
+        zone: null,
+        segments: [segment],
+      },
+      material,
+    )
+    if (mesh === null) return
+    mesh.userData.reviewFocusSegment = index
+    marker.add(mesh)
+  })
+
+  const closest = closestPointsBetweenSegments(
+    focus.segments[0],
+    focus.segments[1],
+  )
+  const pointA = vector(closest.pa)
+  const pointB = vector(closest.pb)
+  const connectorDirection = pointB.clone().sub(pointA)
+  const connectorLength = connectorDirection.length()
+  const connectorRadius =
+    Math.max(0.5, Math.min(focus.segments[0].radius, focus.segments[1].radius) * 0.4) *
+    MILLIMETRES_TO_SCENE
+  const connector = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      connectorRadius,
+      connectorRadius,
+      Math.max(connectorLength, Number.EPSILON),
+      CYLINDER_RADIAL_SEGMENTS,
+    ),
+    material,
+  )
+  if (connectorLength > 0) {
+    connector.quaternion.setFromUnitVectors(
+      Y_AXIS,
+      connectorDirection.normalize(),
+    )
+  }
+  connector.position.copy(pointA).add(pointB).multiplyScalar(0.5)
+  connector.userData.reviewMarker = 'connector'
+  connector.userData.endpointsMm = [closest.pa, closest.pb]
+  marker.add(connector)
+
+  const midpoint = new THREE.Mesh(
+    new THREE.SphereGeometry(connectorRadius * 2, CYLINDER_RADIAL_SEGMENTS, 6),
+    material,
+  )
+  midpoint.position.copy(connector.position)
+  midpoint.userData.reviewMarker = 'midpoint'
+  marker.add(midpoint)
+
+  runtime.reviewMarker = marker
+  runtime.scene.add(marker)
+}
+
 function toSceneFit(fit: CameraFit): CameraFit {
   const scale = (point: Point3): Point3 => [
     point[0] * MILLIMETRES_TO_SCENE,
@@ -870,12 +986,18 @@ function tooltipFromHit(
 ): HoverTooltip | null {
   if (hit === undefined || view === null) return null
 
-  if (view.mode === 'member') {
+  if (view.mode === 'member' || view.mode === 'joint') {
     const rowId: unknown = hit.object.userData.rowId
     if (typeof rowId !== 'string') return null
     const line = massLines(lines).find(({ id }) => id === rowId)
     if (line === undefined) return null
-    return { key: `row:${line.id}`, kind: 'member', line }
+    return {
+      key: `row:${line.id}`,
+      kind: 'member',
+      line,
+      memberIds:
+        view.mode === 'joint' ? view.layout.rowMembers.get(rowId) : undefined,
+    }
   }
 
   const memberId = memberIdFromHit(hit)
@@ -956,6 +1078,10 @@ function rebuildScene(
 
   if (view.mode === 'building') {
     rebuildBuildingScene(runtime, view.layout)
+    return
+  }
+  if (view.mode === 'joint') {
+    rebuildJointScene(runtime, view, hoverRowId)
     return
   }
   rebuildMemberScene(runtime, view.member, hoverRowId)
@@ -1101,6 +1227,142 @@ function rebuildMemberScene(
   runtime.pickableMeshes = pickableMeshes
   runtime.scene.add(content)
   frameContent(runtime, bounds, `member:${view.member.id}`)
+  applyHighlight(runtime, hoverRowId)
+}
+
+function rebuildJointScene(
+  runtime: ViewerRuntime,
+  view: Extract<ViewerView, { mode: 'joint' }>,
+  hoverRowId: string | null,
+): void {
+  const content = new THREE.Group()
+  content.userData.viewerContent = true
+  content.userData.viewerMode = 'joint'
+  const outlineMaterial = pooledMaterial(
+    runtime,
+    'outline',
+    () =>
+      new THREE.LineBasicMaterial({
+        color: OUTLINE_COLOR,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const concreteMaterial = pooledMaterial(
+    runtime,
+    'concrete',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: CONCRETE_COLOR,
+        transparent: true,
+        opacity: 0.14,
+        roughness: 0.9,
+        metalness: 0,
+        depthWrite: false,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+
+  const addBox = (
+    box: ConcreteBox,
+    kind: 'target' | 'reference',
+  ): void => {
+    const geometry = concreteGeometry(box)
+    const outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      outlineMaterial,
+    )
+    outline.position.copy(vector(box.center))
+    outline.userData.layer = 'concrete'
+    outline.userData.jointBox = kind
+    content.add(outline)
+
+    if (kind === 'target') {
+      const solid = new THREE.Mesh(geometry, concreteMaterial)
+      solid.position.copy(outline.position)
+      solid.receiveShadow = true
+      solid.userData.layer = 'concrete'
+      solid.userData.jointBox = kind
+      content.add(solid)
+    } else {
+      geometry.dispose()
+    }
+  }
+
+  for (const box of view.layout.boxes.target) addBox(box, 'target')
+  for (const box of view.layout.boxes.reference) addBox(box, 'reference')
+
+  const coreMaterial = pooledMaterial(
+    runtime,
+    'rebarCore',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const anchorageMaterial = pooledMaterial(
+    runtime,
+    'rebarAnchorage',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: REBAR_ZONE_COLORS.定着,
+        metalness: 0.6,
+        roughness: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const highlightMaterial = pooledMaterial(
+    runtime,
+    'rebarHighlight',
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: HIGHLIGHT_COLOR,
+        metalness: 0.6,
+        roughness: 0.35,
+        emissive: HIGHLIGHT_COLOR,
+        emissiveIntensity: 0.35,
+        clippingPlanes: [runtime.clipPlane],
+        clipShadows: true,
+      }),
+  )
+  const zoneMaterials = {
+    core: coreMaterial,
+    定着: anchorageMaterial,
+  } satisfies Record<
+    'core' | NonNullable<RebarBatch['zone']>,
+    THREE.MeshStandardMaterial
+  >
+  const pickableMeshes: THREE.Mesh[] = []
+
+  for (const batch of view.layout.batches) {
+    const mesh = createBatchMesh(
+      batch,
+      batch.zone === null ? zoneMaterials.core : zoneMaterials[batch.zone],
+    )
+    if (mesh === null) continue
+    content.add(mesh)
+    pickableMeshes.push(mesh)
+  }
+
+  addGround(content, view.layout.bounds, runtime)
+  runtime.content = content
+  runtime.highlightMaterial = highlightMaterial
+  runtime.pickableMeshes = pickableMeshes
+  runtime.scene.add(content)
+  frameContent(runtime, view.layout.bounds, `joint:${view.columnMemberId}`)
+  const focusTarget = vector(view.layout.focusTarget)
+  runtime.controls.target.set(focusTarget.x, focusTarget.y, focusTarget.z)
+  runtime.camera.lookAt(runtime.controls.target)
+  runtime.controls.update()
+  if (runtime.cameraTween !== null) {
+    runtime.cameraTween.to.target = focusTarget.toArray() as Point3
+  }
   applyHighlight(runtime, hoverRowId)
 }
 
@@ -1318,6 +1580,14 @@ function buildingGeometryKey(project: Project): string {
     project.stories,
     project.sections,
     project.members,
+  ])
+}
+
+function jointGeometryKey(layout: JointLayout): string {
+  return JSON.stringify([
+    layout.boxes.target,
+    layout.boxes.reference,
+    layout.batches,
   ])
 }
 
@@ -1550,6 +1820,10 @@ export function Viewer3D() {
   const setViewerClip = useAppStore(({ setViewerClip }) => setViewerClip)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
   const selectMember = useAppStore(({ selectMember }) => selectMember)
+  const setViewerPose = useAppStore(({ setViewerPose }) => setViewerPose)
+  const requestViewerPose = useAppStore(
+    ({ requestViewerPose }) => requestViewerPose,
+  )
   const locale = useAppStore(({ locale }) => locale)
   const project = useAppStore(({ project }) => project)
   const selectedMemberId = useAppStore(({ sel }) => sel.memberId)
@@ -1557,9 +1831,15 @@ export function Viewer3D() {
   const hoverRowId = useAppStore(({ hoverRowId: rowId }) => rowId)
   const viewerMode = useAppStore(({ viewerMode }) => viewerMode)
   const viewerLayers = useAppStore(({ viewerLayers }) => viewerLayers)
+  const requestedViewerPose = useAppStore(
+    ({ requestedViewerPose: pose }) => pose,
+  )
+  const reviewFocus = useAppStore(({ reviewFocus }) => reviewFocus)
   const { rebars, lines, unsupportedMembers } = useTakeoff()
   const setHoverRowRef = useRef(setHoverRow)
   const selectMemberRef = useRef(selectMember)
+  const setViewerPoseRef = useRef(setViewerPose)
+  const requestViewerPoseRef = useRef(requestViewerPose)
   const selectedMemberIdRef = useRef(selectedMemberId)
   const hoverRowIdRef = useRef(hoverRowId)
   const viewerLayersRef = useRef(viewerLayers)
@@ -1567,6 +1847,8 @@ export function Viewer3D() {
   const projectRef = useRef(project)
   setHoverRowRef.current = setHoverRow
   selectMemberRef.current = selectMember
+  setViewerPoseRef.current = setViewerPose
+  requestViewerPoseRef.current = requestViewerPose
   selectedMemberIdRef.current = selectedMemberId
   hoverRowIdRef.current = hoverRowId
   viewerLayersRef.current = viewerLayers
@@ -1607,22 +1889,47 @@ export function Viewer3D() {
       viewerMode,
     ],
   )
+  const jointResolution = useMemo<JointResolution | null>(
+    () =>
+      viewerMode === 'joint' && selectedMemberId !== null
+        ? resolveJoint(project, selectedMemberId)
+        : null,
+    [project, selectedMemberId, viewerMode],
+  )
+  const jointScene = useMemo(() => {
+    if (jointResolution?.status !== 'joint') return null
+    return {
+      columnMemberId: jointResolution.joint.columnMemberId,
+      layout: jointLayout(
+        project,
+        rebars,
+        unsupportedMemberIds,
+        jointResolution.joint,
+      ),
+    }
+  }, [jointResolution, project, rebars, unsupportedMemberIds])
   const view = useMemo((): ViewerView | null => {
     if (layout !== null) return { mode: 'building', layout }
+    if (jointScene !== null) return { mode: 'joint', ...jointScene }
     if (selectedMember?.status === 'supported') {
       return { mode: 'member', member: selectedMember.view }
     }
     return null
-  }, [layout, selectedMember])
+  }, [jointScene, layout, selectedMember])
   const clipBounds = useMemo((): Bounds | null => {
     if (view === null) return null
-    return view.mode === 'building' ? view.layout.bounds : memberBounds(view.member)
+    return view.mode === 'building' || view.mode === 'joint'
+      ? view.layout.bounds
+      : memberBounds(view.member)
   }, [view])
   const viewRef = useRef(view)
   viewRef.current = view
   const sceneKey = useMemo(() => {
     if (view === null) return ''
     if (view.mode === 'building') return `b:${buildingGeometryKey(project)}`
+    if (view.mode === 'joint') {
+      return `j:${view.columnMemberId}:${jointGeometryKey(view.layout)}`
+    }
     return `m:${geometryKey(view.member)}`
   }, [project, view])
 
@@ -1685,6 +1992,7 @@ export function Viewer3D() {
         CLIP_DISABLED_CONSTANT,
       ),
       content: null,
+      reviewMarker: null,
       materialPool: new Map(),
       highlightMaterial: null,
       concreteNormalMaterial: null,
@@ -1706,7 +2014,26 @@ export function Viewer3D() {
         }),
         getFrameTimestamps: () => [...frameTimestamps],
         getRebuildStats: () => ({ ...rebuildStatsRef.current }),
+        getCameraTween: () =>
+          runtime.cameraTween === null
+            ? null
+            : { ...runtime.cameraTween.to },
       }
+    }
+
+    const captureViewerPose = () => {
+      setViewerPoseRef.current({
+        position: [
+          camera.position.x / MILLIMETRES_TO_SCENE,
+          camera.position.y / MILLIMETRES_TO_SCENE,
+          camera.position.z / MILLIMETRES_TO_SCENE,
+        ],
+        target: [
+          controls.target.x / MILLIMETRES_TO_SCENE,
+          controls.target.y / MILLIMETRES_TO_SCENE,
+          controls.target.z / MILLIMETRES_TO_SCENE,
+        ],
+      })
     }
 
     // 사용자가 잡으면 사용자가 이긴다 — 연출을 즉시 끊는다.
@@ -1714,6 +2041,7 @@ export function Viewer3D() {
       runtime.cameraTween = null
       runtime.lastInteractionAt = performance.now()
     })
+    controls.addEventListener('end', captureViewerPose)
 
     const observer = new ResizeObserver((entries) => {
       const { width, height } = entries[0]?.contentRect ?? {
@@ -1821,7 +2149,10 @@ export function Viewer3D() {
         const fit = lerpCameraFit(tween.from, tween.to, easeOutCubic(progress))
         camera.position.set(...fit.position)
         controls.target.set(...fit.target)
-        if (progress >= 1) runtime.cameraTween = null
+        if (progress >= 1) {
+          runtime.cameraTween = null
+          captureViewerPose()
+        }
       }
       controls.autoRotate =
         runtime.cameraTween === null &&
@@ -1844,7 +2175,9 @@ export function Viewer3D() {
         'webglcontextlost',
         handleContextLost,
       )
+      controls.removeEventListener('end', captureViewerPose)
       observer.disconnect()
+      disposeReviewMarker(runtime)
       disposeContent(runtime)
       for (const material of runtime.materialPool.values()) material.dispose()
       runtime.materialPool.clear()
@@ -1869,6 +2202,50 @@ export function Viewer3D() {
     }
     applyViewerLayers(runtime, viewerLayersRef.current)
   }, [sceneKey])
+
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null || requestedViewerPose === null) return
+
+    runtime.cameraTween = null
+    applyCameraFit(runtime, toSceneFit(requestedViewerPose))
+    requestViewerPoseRef.current(null)
+  }, [requestedViewerPose])
+
+  useEffect(() => {
+    const runtime = runtimeRef.current
+    if (runtime === null) return
+
+    const focus =
+      viewerMode === 'joint' && jointScene !== null ? reviewFocus : null
+    rebuildReviewMarker(runtime, focus)
+    if (focus === null || jointScene === null) return
+
+    const columnBox = jointScene.layout.boxes.target.find(
+      ({ memberId }) => memberId === jointScene.columnMemberId,
+    )
+    if (columnBox === undefined) return
+
+    const segmentLength = (segment: Segment): number =>
+      Math.hypot(
+        segment.to[0] - segment.from[0],
+        segment.to[1] - segment.from[1],
+        segment.to[2] - segment.from[2],
+      )
+    const radiusMm = Math.max(
+      Math.max(...focus.segments.map(segmentLength)) * 2,
+      Math.min(...columnBox.size) / 4,
+    )
+    const cameraOffset = LIGHT_DIRECTION.clone().multiplyScalar(radiusMm)
+    startCameraTween(runtime, {
+      position: [
+        focus.point[0] + cameraOffset.x,
+        focus.point[1] + cameraOffset.y,
+        focus.point[2] + cameraOffset.z,
+      ],
+      target: focus.point,
+    })
+  }, [jointScene, reviewFocus, viewerMode])
 
   useEffect(() => {
     const runtime = runtimeRef.current
@@ -1901,13 +2278,34 @@ export function Viewer3D() {
       'aria-label',
       t(
         locale,
-        viewerMode === 'building' ? 'viewer.canvasBuilding' : 'viewer.canvas',
+        viewerMode === 'building'
+          ? 'viewer.canvasBuilding'
+          : viewerMode === 'joint'
+            ? 'viewer.canvasJoint'
+            : 'viewer.canvas',
       ),
     )
   }, [locale, viewerMode])
 
   const unsupportedReason =
-    selectedMember?.status === 'unsupported' ? selectedMember.reason : null
+    viewerMode === 'joint'
+      ? jointResolution?.status === 'unsupported'
+        ? jointResolution.reason
+        : null
+      : selectedMember?.status === 'unsupported'
+        ? selectedMember.reason
+        : null
+  const selectedJointMember =
+    viewerMode === 'joint'
+      ? project.members.find(({ id }) => id === selectedMemberId)
+      : undefined
+  const jointSupportColumns =
+    viewerMode === 'joint' &&
+    selectedJointMember?.kind === '大梁' &&
+    selectedMemberId !== null &&
+    unsupportedReason === '柱ではない'
+      ? supportColumnIds(project, selectedMemberId)
+      : null
   const selectedSupported =
     selectedMember?.status === 'supported' ? selectedMember.view : null
   const entries =
@@ -1939,7 +2337,11 @@ export function Viewer3D() {
   })()
 
   return (
-    <div ref={mountRef} className={styles.viewer}>
+    <div
+      ref={mountRef}
+      className={styles.viewer}
+      data-review-focus={reviewFocus === null ? undefined : '1'}
+    >
       <div className={styles.meta}>
         <span className={styles.memberId}>
           {selectedMemberId ?? t(locale, 'viewer.selectMember')}
@@ -2053,8 +2455,14 @@ export function Viewer3D() {
         role="tooltip"
         hidden={tooltip === null}
       >
-        {tooltip?.kind === 'member' ? (
+      {tooltip?.kind === 'member' ? (
           <dl className={styles.tooltipList}>
+            {tooltip.memberIds !== undefined && (
+              <>
+                <dt>{t(locale, 'viewer.tooltip.memberId')}</dt>
+                <dd>{tooltip.memberIds.join('、')}</dd>
+              </>
+            )}
             <dt>{t(locale, 'viewer.tooltip.role')}</dt>
             <dd>{tooltip.line.role}</dd>
             <dt>{t(locale, 'viewer.tooltip.diameter')}</dt>
@@ -2102,16 +2510,59 @@ export function Viewer3D() {
         ) : null}
       </div>
       {view === null && (
-        <div className={styles.empty}>
-          {unsupportedReason !== null
-            ? `${t(locale, 'viewer.unsupported.title')}: ${t(
-                locale,
-                `viewer.unsupported.reason.${unsupportedReason}`,
-              )} — ${t(
-                locale,
-                `viewer.unsupported.plan.${unsupportedReason}`,
-              )}`
-            : t(locale, 'viewer.empty')}
+        <div
+          className={
+            jointSupportColumns === null
+              ? styles.empty
+              : `${styles.empty} ${styles.jointUnsupported}`
+          }
+        >
+          {viewerMode === 'joint' && unsupportedReason !== null ? (
+            <div className={styles.jointPanel} role="alert">
+              <span>
+                {`${t(locale, 'viewer.unsupported.title')}: ${t(
+                  locale,
+                  `viewer.joint.unsupported.${unsupportedReason}`,
+                )}`}
+              </span>
+              {jointSupportColumns !== null && (
+                <div className={styles.jointActions}>
+                  <button
+                    type="button"
+                    disabled={jointSupportColumns.start === null}
+                    onClick={() => {
+                      if (jointSupportColumns.start !== null) {
+                        selectMember(jointSupportColumns.start)
+                      }
+                    }}
+                  >
+                    {t(locale, 'viewer.joint.toStartColumn')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={jointSupportColumns.end === null}
+                    onClick={() => {
+                      if (jointSupportColumns.end !== null) {
+                        selectMember(jointSupportColumns.end)
+                      }
+                    }}
+                  >
+                    {t(locale, 'viewer.joint.toEndColumn')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : unsupportedReason !== null ? (
+            `${t(locale, 'viewer.unsupported.title')}: ${t(
+              locale,
+              `viewer.unsupported.reason.${unsupportedReason}`,
+            )} — ${t(
+              locale,
+              `viewer.unsupported.plan.${unsupportedReason}`,
+            )}`
+          ) : (
+            t(locale, 'viewer.empty')
+          )}
         </div>
       )}
     </div>

@@ -10,11 +10,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
 import type { Member } from '@/domain/model/member'
+import { resolveJoint } from '@/domain/review/joint'
 import { girderSpan } from '@/domain/model/project'
 import { stirrupPositions } from '@/domain/rebar/stirrup-layout'
 import { lookupRule } from '@/domain/rules/lookup'
 import { massLines } from '@/domain/quantity'
 import { useTakeoff } from '@/lib/hooks/useTakeoff'
+import { jointLayout } from '@/lib/review/joint-layout'
+import { closestPointsBetweenSegments } from '@/lib/review/segment-distance'
 import { sourceLabel } from '@/lib/rule-source'
 import { useAppStore } from '@/lib/store'
 import { jpMlitRulePack } from '@/rulepack'
@@ -37,6 +40,16 @@ const mocks = vi.hoisted(() => ({
   }>,
   pickableCounts: [] as number[],
   pickableMeshes: [] as import('three').Object3D[][],
+  controlsInstances: [] as Array<{
+    camera: import('three').PerspectiveCamera
+    target: {
+      x: number
+      y: number
+      z: number
+      set(x: number, y: number, z: number): unknown
+    }
+    dispatch(type: string): void
+  }>,
   raycastIntersections: null as null | ((
     objects: import('three').Object3D[],
   ) => Array<{ object: import('three').Object3D; instanceId?: number }>),
@@ -114,12 +127,39 @@ vi.mock('three', async (importOriginal) => {
 
 vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
   OrbitControls: class OrbitControlsMock {
-    target = { set: mocks.controlsTargetSet }
+    camera: import('three').PerspectiveCamera
+    target = {
+      x: 0,
+      y: 0,
+      z: 0,
+      set: (x: number, y: number, z: number) => {
+        this.target.x = x
+        this.target.y = y
+        this.target.z = z
+        mocks.controlsTargetSet(x, y, z)
+        return this.target
+      },
+    }
+    private listeners = new Map<string, () => void>()
     enableDamping = false
     dampingFactor = 0
     update = vi.fn()
-    addEventListener = vi.fn()
+    addEventListener = vi.fn((type: string, listener: () => void) => {
+      this.listeners.set(type, listener)
+    })
+    removeEventListener = vi.fn((type: string) => {
+      this.listeners.delete(type)
+    })
     dispose = mocks.controlsDispose
+
+    constructor(camera: import('three').PerspectiveCamera) {
+      this.camera = camera
+      mocks.controlsInstances.push(this)
+    }
+
+    dispatch(type: string) {
+      this.listeners.get(type)?.()
+    }
   },
 }))
 
@@ -130,6 +170,7 @@ vi.mock('three/examples/jsm/environments/RoomEnvironment.js', () => ({
 import {
   ACESFilmicToneMapping,
   BoxGeometry,
+  CylinderGeometry,
   GridHelper,
   Group,
   InstancedMesh,
@@ -137,6 +178,7 @@ import {
   Mesh,
   PCFSoftShadowMap,
   SRGBColorSpace,
+  SphereGeometry,
 } from 'three'
 
 import { Viewer3D } from './Viewer3D'
@@ -208,6 +250,16 @@ function runNextAnimationFrame(): void {
   act(() => callback(performance.now()))
 }
 
+type TestViewerHook = {
+  getRebuildStats(): { lastRebuildMs: number | null; rebuildCount: number }
+  getCameraTween(): { position: [number, number, number]; target: [number, number, number] } | null
+}
+
+function viewerHook(): TestViewerHook | undefined {
+  return (window as unknown as { __kijunViewerRuntime?: TestViewerHook })
+    .__kijunViewerRuntime
+}
+
 describe('Viewer3D', () => {
   beforeEach(() => {
     capture.mockClear()
@@ -219,6 +271,7 @@ describe('Viewer3D', () => {
     mocks.rendererInstances.length = 0
     mocks.pickableCounts.length = 0
     mocks.pickableMeshes.length = 0
+    mocks.controlsInstances.length = 0
     mocks.raycastIntersections = null
     mocks.animationFrames.length = 0
     mocks.sceneObjects.length = 0
@@ -1188,5 +1241,232 @@ describe('Viewer3D', () => {
     expect(
       mocks.controlsTargetSet.mock.calls.length,
     ).toBeGreaterThan(framesAfterMount)
+  })
+
+  it('renders a joint scene with pickable rows and non-pickable reference boxes', () => {
+    const project = createSampleProject()
+    const takeoff = renderHook(() => useTakeoff()).result.current
+    const resolution = resolveJoint(project, '1F-X2Y1')
+    if (resolution.status !== 'joint') throw new Error('Expected a joint')
+    const expected = jointLayout(
+      project,
+      takeoff.rebars,
+      new Set(takeoff.unsupportedMembers.map(({ memberId }) => memberId)),
+      resolution.joint,
+    )
+
+    useAppStore.setState({
+      project,
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y1' },
+      viewerMode: 'joint',
+    })
+    render(<Viewer3D />)
+
+    const canvas = screen.getByLabelText('接合部の配筋3D')
+    fireEvent.click(canvas, { clientX: 320, clientY: 180 })
+    const lineIds = new Set(massLines(takeoff.lines).map(({ id }) => id))
+    expect(
+      mocks.pickableMeshes.at(-1)?.every(({ userData }) =>
+        lineIds.has(userData.rowId as string),
+      ),
+    ).toBe(true)
+
+    const content = mocks.sceneObjects
+      .filter((object) => object instanceof Group && object.userData.viewerContent)
+      .at(-1)
+    expect(content).toBeDefined()
+    const referenceMeshes = content?.children.filter(
+      ({ userData }) => userData.jointBox === 'reference',
+    )
+    expect(referenceMeshes?.length).toBe(expected.boxes.reference.length * 1)
+    expect(
+      referenceMeshes?.every((object) => !mocks.pickableMeshes.at(-1)?.includes(object)),
+    ).toBe(true)
+    expect(mocks.controlsInstances.at(-1)?.target).toMatchObject({
+      x: expected.focusTarget[0] * 0.001,
+      y: expected.focusTarget[1] * 0.001,
+      z: expected.focusTarget[2] * 0.001,
+    })
+  })
+
+  it('shows terminal column navigation for an unsupported girder joint', () => {
+    act(() => useAppStore.getState().selectMember('1F-G1-X1Y1-X'))
+    act(() => useAppStore.setState({ viewerMode: 'joint' }))
+    render(<Viewer3D />)
+
+    expect(screen.getByText(/柱ではありません/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '始端柱へ' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '終端柱へ' }))
+    expect(useAppStore.getState().sel.memberId).toBe('1F-X2Y1')
+  })
+
+  it('updates a joint review marker without rebuilding content and uses nearest points', () => {
+    useAppStore.setState({
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y1' },
+      viewerMode: 'joint',
+    })
+    render(<Viewer3D />)
+    const contentBefore = mocks.sceneObjects
+      .filter((object) => object instanceof Group && object.userData.viewerContent)
+      .at(-1)
+    const rebuildsBefore = viewerHook()?.getRebuildStats().rebuildCount
+    const first = {
+      from: [100, 0, 0] as [number, number, number],
+      to: [900, 0, 0] as [number, number, number],
+      radius: 5,
+    }
+    const second = {
+      from: [300, 100, 0] as [number, number, number],
+      to: [700, 100, 0] as [number, number, number],
+      radius: 5,
+    }
+    const expected = closestPointsBetweenSegments(first, second)
+
+    act(() =>
+      useAppStore.getState().setReviewFocus({
+        point: [500, 50, 0],
+        segments: [first, second],
+        label: 'focus',
+      }),
+    )
+
+    const marker = mocks.sceneObjects
+      .filter((object) => object instanceof Group && object.userData.reviewFocus)
+      .at(-1)
+    expect(marker).toBeDefined()
+    expect(
+      marker?.children.filter(({ userData }) => userData.reviewFocusSegment !== undefined),
+    ).toHaveLength(2)
+    const connector = marker?.children.find(
+      ({ userData }) => userData.reviewMarker === 'connector',
+    )
+    const midpoint = marker?.children.find(
+      ({ userData }) => userData.reviewMarker === 'midpoint',
+    )
+    expect(connector?.userData.endpointsMm).toEqual([expected.pa, expected.pb])
+    expect(midpoint?.position.toArray()).toEqual(
+      [
+        (expected.pa[0] + expected.pb[0]) * 0.5 * 0.001,
+        (expected.pa[1] + expected.pb[1]) * 0.5 * 0.001,
+        (expected.pa[2] + expected.pb[2]) * 0.5 * 0.001,
+      ],
+    )
+    expect(connector).toBeInstanceOf(Mesh)
+    expect(midpoint).toBeInstanceOf(Mesh)
+    expect((connector as Mesh).geometry).toBeInstanceOf(CylinderGeometry)
+    expect((midpoint as Mesh).geometry).toBeInstanceOf(SphereGeometry)
+    expect(contentBefore).toBe(
+      mocks.sceneObjects
+        .filter((object) => object instanceof Group && object.userData.viewerContent)
+        .at(-1),
+    )
+    expect(viewerHook()?.getRebuildStats().rebuildCount).toBe(
+      rebuildsBefore,
+    )
+    expect(screen.getByLabelText('接合部の配筋3D').parentElement).toHaveAttribute(
+      'data-review-focus',
+      '1',
+    )
+    expect(viewerHook()?.getCameraTween()?.target).toEqual([
+      0.5,
+      0.05,
+      0,
+    ])
+
+    act(() => useAppStore.getState().setReviewFocus(null))
+    expect(
+      mocks.sceneObjects.filter(
+        (object) => object instanceof Group && object.userData.reviewFocus,
+      ).at(-1)?.children,
+    ).toHaveLength(0)
+    expect(screen.getByLabelText('接合部の配筋3D').parentElement).not.toHaveAttribute(
+      'data-review-focus',
+    )
+  })
+
+  it('changes marker connector endpoints when focus segments are reversed', () => {
+    useAppStore.setState({
+      sel: { group: '1階|C|C1', memberId: '1F-X2Y1' },
+      viewerMode: 'joint',
+    })
+    render(<Viewer3D />)
+    const first = {
+      from: [100, 0, 0] as [number, number, number],
+      to: [900, 0, 0] as [number, number, number],
+      radius: 5,
+    }
+    const second = {
+      from: [300, 100, 0] as [number, number, number],
+      to: [700, 100, 0] as [number, number, number],
+      radius: 5,
+    }
+    act(() =>
+      useAppStore.getState().setReviewFocus({
+        point: [500, 50, 0],
+        segments: [first, second],
+        label: 'focus',
+      }),
+    )
+    const firstEndpoints = mocks.sceneObjects
+      .filter((object) => object instanceof Group && object.userData.reviewFocus)
+      .at(-1)?.children.find(({ userData }) => userData.reviewMarker === 'connector')
+      ?.userData.endpointsMm
+
+    act(() =>
+      useAppStore.getState().setReviewFocus({
+        point: [500, 50, 0],
+        segments: [second, first],
+        label: 'focus',
+      }),
+    )
+    const secondEndpoints = mocks.sceneObjects
+      .filter((object) => object instanceof Group && object.userData.reviewFocus)
+      .at(-1)?.children.find(({ userData }) => userData.reviewMarker === 'connector')
+      ?.userData.endpointsMm
+    expect(secondEndpoints).toEqual([
+      closestPointsBetweenSegments(second, first).pa,
+      closestPointsBetweenSegments(second, first).pb,
+    ])
+    expect(secondEndpoints).not.toEqual(firstEndpoints)
+  })
+
+  it('applies and clears a requested viewer pose, and records pose only at controls end', () => {
+    render(<Viewer3D />)
+    const controls = mocks.controlsInstances.at(-1)
+    if (controls === undefined) throw new Error('Controls were not created')
+    const originalSetViewerPose = useAppStore.getState().setViewerPose
+    const setViewerPose = vi.fn((pose: Parameters<typeof originalSetViewerPose>[0]) => {
+      originalSetViewerPose(pose)
+    })
+    useAppStore.setState({ setViewerPose })
+
+    const requested = {
+      position: [1200, 2300, 3400] as [number, number, number],
+      target: [400, 500, 600] as [number, number, number],
+    }
+    act(() => useAppStore.getState().requestViewerPose(requested))
+    expect(controls.camera.position.toArray()).toEqual(
+      expect.arrayContaining([1.2, expect.closeTo(2.3), 3.4]),
+    )
+    expect(controls.target).toMatchObject({ x: 0.4, y: 0.5, z: 0.6 })
+    expect(useAppStore.getState().requestedViewerPose).toBeNull()
+
+    controls.camera.position.set(1.5, 2.5, 3.5)
+    controls.target.set(0.5, 0.6, 0.7)
+    act(() => controls.dispatch('end'))
+    expect(setViewerPose).toHaveBeenCalledTimes(1)
+    const pose = useAppStore.getState().viewerPose
+    expect(pose).not.toBeNull()
+    pose?.position.forEach((value, index) => {
+      expect(value).toBeCloseTo([1500, 2500, 3500][index])
+    })
+    pose?.target.forEach((value, index) => {
+      expect(value).toBeCloseTo([500, 600, 700][index])
+    })
+    const callsAfterEnd = setViewerPose.mock.calls.length
+    runNextAnimationFrame()
+    runNextAnimationFrame()
+    expect(setViewerPose).toHaveBeenCalledTimes(callsAfterEnd)
+    useAppStore.setState({ setViewerPose: originalSetViewerPose })
   })
 })

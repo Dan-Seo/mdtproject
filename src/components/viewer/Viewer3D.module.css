@@ -240,3 +240,38 @@ a.legendSource:hover {
   color: var(--viewer-rebar);
   font-size: var(--type-body-sm-size);
 }
+
+.jointUnsupported {
+  pointer-events: auto;
+}
+
+.jointPanel {
+  display: grid;
+  gap: var(--space-sm);
+  justify-items: center;
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: rgb(27 26 20 / 88%);
+}
+
+.jointActions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.jointActions button {
+  padding: var(--space-xxs) var(--space-xs);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+  color: var(--text-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-caption-size);
+}
+
+.jointActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
