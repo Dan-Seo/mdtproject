@@ -126,6 +126,33 @@ describe('useAppStore', () => {
 
     expect(useAppStore.getState().review).toBe(review)
   })
+
+  it('changes viewer review controls without changing project or review', () => {
+    const { project, review } = useAppStore.getState()
+    const focus = {
+      point: [1, 2, 3] as [number, number, number],
+      segments: [
+        { from: [0, 0, 0] as [number, number, number], to: [1, 0, 0] as [number, number, number], radius: 1 },
+        { from: [0, 1, 0] as [number, number, number], to: [1, 1, 0] as [number, number, number], radius: 1 },
+      ] as [{ from: [number, number, number]; to: [number, number, number]; radius: number }, { from: [number, number, number]; to: [number, number, number]; radius: number }],
+      label: 'focus',
+    }
+    const pose = { position: [1, 2, 3] as [number, number, number], target: [4, 5, 6] as [number, number, number] }
+
+    useAppStore.getState().setViewerClip({ enabled: true, axis: 'z', ratio: 0.75 })
+    useAppStore.getState().setViewerPose(pose)
+    useAppStore.getState().requestViewerPose(pose)
+    useAppStore.getState().setReviewFocus(focus)
+    useAppStore.getState().setTakeoffTab('検討')
+
+    expect(useAppStore.getState().project).toBe(project)
+    expect(useAppStore.getState().review).toBe(review)
+    expect(useAppStore.getState().viewerClip).toEqual({ enabled: true, axis: 'z', ratio: 0.75 })
+    expect(useAppStore.getState().viewerPose).toBe(pose)
+    expect(useAppStore.getState().requestedViewerPose).toBe(pose)
+    expect(useAppStore.getState().reviewFocus).toBe(focus)
+    expect(useAppStore.getState().takeoffTab).toBe('検討')
+  })
 })
 
 describe('loadProject', () => {
@@ -161,6 +188,28 @@ describe('loadProject', () => {
     useAppStore.getState().loadProject(createSampleProject())
 
     expect(useAppStore.getState().hoverRowId).toBeNull()
+  })
+
+  it('clears joint focus and pending pose and leaves joint mode on project load', () => {
+    const pose = { position: [1, 2, 3] as [number, number, number], target: [4, 5, 6] as [number, number, number] }
+    useAppStore.setState({
+      viewerMode: 'joint',
+      requestedViewerPose: pose,
+      reviewFocus: {
+        point: [1, 2, 3],
+        segments: [
+          { from: [0, 0, 0], to: [1, 0, 0], radius: 1 },
+          { from: [0, 1, 0], to: [1, 1, 0], radius: 1 },
+        ],
+        label: 'stale',
+      },
+    })
+
+    useAppStore.getState().loadProject(createSampleProject())
+
+    expect(useAppStore.getState().viewerMode).toBe('member')
+    expect(useAppStore.getState().requestedViewerPose).toBeNull()
+    expect(useAppStore.getState().reviewFocus).toBeNull()
   })
 
   it('clears review when loading a project without review', () => {

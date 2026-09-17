@@ -3,16 +3,86 @@
   "phase": "48-joint-review-ui",
   "status": "pending",
   "steps": [
-    { "step": 1, "name": "viewer-state-and-joint-layout", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 2, "name": "viewer-joint-scene", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 3, "name": "review-tabs-joint-xray", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 4, "name": "review-check", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 5, "name": "review-items", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 6, "name": "review-compare", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 7, "name": "work-packages", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 8, "name": "e2e-flow", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 9, "name": "perf-browser", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 10, "name": "docs-sync", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 11, "name": "refute-ui", "kind": "verify", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" }
-  ]
+    {
+      "step": 1,
+      "name": "viewer-state-and-joint-layout",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T19:21:39+0900",
+      "summary": "스토어 viewer 상태·접합부 순수 레이아웃·ViewerTabs 3탭·i18n을 추가하고 좌표/범위/변이 회귀를 통과시켰다."
+    },
+    {
+      "step": 2,
+      "name": "viewer-joint-scene",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 3,
+      "name": "review-tabs-joint-xray",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 4,
+      "name": "review-check",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 5,
+      "name": "review-items",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 6,
+      "name": "review-compare",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 7,
+      "name": "work-packages",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 8,
+      "name": "e2e-flow",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 9,
+      "name": "perf-browser",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 10,
+      "name": "docs-sync",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 11,
+      "name": "refute-ui",
+      "kind": "verify",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    }
+  ],
+  "created_at": "2026-09-17T19:21:39+0900"
 }

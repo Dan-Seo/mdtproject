@@ -8,7 +8,12 @@ import {
   type Project,
 } from '@/domain/model/project'
 import { emptyReviewState } from '@/domain/review/state'
-import type { ReviewState } from '@/domain/review/types'
+import type {
+  ClipState,
+  ReviewState,
+  ViewerPose,
+} from '@/domain/review/types'
+import type { Point3, Segment } from '@/lib/viewer/geometry'
 
 export interface Selection {
   group: string | null
@@ -18,7 +23,7 @@ export interface Selection {
 export type Locale = 'ja' | 'ko'
 
 /** 3D 페인의 페인-로컬 탭 (DESIGN.md §7): 部材 = 선택 부재 1개, 建物 = 전 부재 */
-export type ViewerMode = 'member' | 'building'
+export type ViewerMode = 'member' | 'building' | 'joint'
 
 export type ViewerLayer = 'main' | 'hoop' | 'concrete'
 
@@ -31,6 +36,15 @@ export interface AppState {
   activeStoryId: string
   viewerMode: ViewerMode
   viewerLayers: Record<ViewerLayer, boolean>
+  viewerClip: ClipState
+  viewerPose: ViewerPose | null
+  requestedViewerPose: ViewerPose | null
+  reviewFocus: {
+    point: Point3
+    segments: [Segment, Segment]
+    label: string
+  } | null
+  takeoffTab: '内訳書' | '検討' | '作業'
   selectMember(memberId: string): void
   selectGroup(groupId: string, memberId: string): void
   setHoverRow(rowId: string | null): void
@@ -38,6 +52,11 @@ export interface AppState {
   setActiveStory(storyId: string): void
   setViewerMode(mode: ViewerMode): void
   toggleViewerLayer(layer: ViewerLayer): void
+  setViewerClip(clip: ClipState): void
+  setViewerPose(pose: ViewerPose | null): void
+  requestViewerPose(pose: ViewerPose | null): void
+  setReviewFocus(focus: AppState['reviewFocus']): void
+  setTakeoffTab(tab: AppState['takeoffTab']): void
   updateProject(updater: (project: Project) => Project): void
   setReview(updater: (review: ReviewState) => ReviewState): void
   loadProject(project: Project, review?: ReviewState): void
@@ -84,6 +103,11 @@ export const useAppStore = create<AppState>((set) => ({
   activeStoryId: storyOf(initialProject, initialSel),
   viewerMode: 'member',
   viewerLayers: { main: true, hoop: true, concrete: true },
+  viewerClip: { enabled: false, axis: 'x', ratio: 0.5 },
+  viewerPose: null,
+  requestedViewerPose: null,
+  reviewFocus: null,
+  takeoffTab: '内訳書',
   selectMember(memberId) {
     set(({ project }) => {
       const member = findMember(project, memberId)
@@ -117,6 +141,21 @@ export const useAppStore = create<AppState>((set) => ({
   setViewerMode(mode) {
     set({ viewerMode: mode })
   },
+  setViewerClip(clip) {
+    set({ viewerClip: clip })
+  },
+  setViewerPose(pose) {
+    set({ viewerPose: pose })
+  },
+  requestViewerPose(pose) {
+    set({ requestedViewerPose: pose })
+  },
+  setReviewFocus(focus) {
+    set({ reviewFocus: focus })
+  },
+  setTakeoffTab(tab) {
+    set({ takeoffTab: tab })
+  },
   toggleViewerLayer(layer) {
     set(({ viewerLayers }) => ({
       viewerLayers: {
@@ -139,13 +178,16 @@ export const useAppStore = create<AppState>((set) => ({
   loadProject(project, review) {
     const sel = initialSelection(project)
 
-    set({
+    set(({ viewerMode }) => ({
       project,
       review: review ?? emptyReviewState(),
       sel,
       hoverRowId: null,
       activeStoryId: storyOf(project, sel),
-    })
+      viewerMode: viewerMode === 'joint' ? 'member' : viewerMode,
+      requestedViewerPose: null,
+      reviewFocus: null,
+    }))
   },
 }))
 

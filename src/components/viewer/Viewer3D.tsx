@@ -31,6 +31,7 @@ import {
   type WallSpan,
 } from '@/domain/model/project'
 import type { Rebar } from '@/domain/model/rebar'
+import type { ClipState } from '@/domain/review/types'
 import type { UnsupportedReason } from '@/domain/model/unsupported'
 import {
   massLines,
@@ -97,12 +98,6 @@ const AUTO_ROTATE_DELAY_MS = 8000
 const AUTO_ROTATE_SPEED = 0.5
 const CLIP_DISABLED_CONSTANT = 1e6
 const CLIP_AXES: ClipAxis[] = ['x', 'y', 'z']
-
-interface ClipState {
-  enabled: boolean
-  axis: ClipAxis
-  ratio: number
-}
 
 type HoverTooltip =
   | {
@@ -1551,11 +1546,8 @@ export function Viewer3D() {
     rebuildCount: 0,
   })
   const [tooltip, setTooltip] = useState<HoverTooltip | null>(null)
-  const [clip, setClip] = useState<ClipState>({
-    enabled: false,
-    axis: 'x',
-    ratio: 0.5,
-  })
+  const clip = useAppStore(({ viewerClip }) => viewerClip)
+  const setViewerClip = useAppStore(({ setViewerClip }) => setViewerClip)
   const setHoverRow = useAppStore(({ setHoverRow }) => setHoverRow)
   const selectMember = useAppStore(({ selectMember }) => selectMember)
   const locale = useAppStore(({ locale }) => locale)
@@ -1972,12 +1964,7 @@ export function Viewer3D() {
             clip.enabled ? styles.clipButtonActive : ''
           }`}
           aria-pressed={clip.enabled}
-          onClick={() =>
-            setClip((current) => ({
-              ...current,
-              enabled: !current.enabled,
-            }))
-          }
+          onClick={() => setViewerClip({ ...clip, enabled: !clip.enabled })}
         >
           {t(locale, 'viewer.clip.toggle')}
         </button>
@@ -1989,7 +1976,7 @@ export function Viewer3D() {
               clip.axis === axis ? styles.clipButtonActive : ''
             }`}
             aria-pressed={clip.axis === axis}
-            onClick={() => setClip((current) => ({ ...current, axis }))}
+            onClick={() => setViewerClip({ ...clip, axis })}
           >
             {t(locale, `viewer.clip.axis${axis.toUpperCase()}`)}
           </button>
@@ -2004,10 +1991,7 @@ export function Viewer3D() {
           aria-label={t(locale, 'viewer.clip.position')}
           onChange={(event) => {
             const ratio = event.currentTarget.valueAsNumber
-            setClip((current) => ({
-              ...current,
-              ratio,
-            }))
+            setViewerClip({ ...clip, ratio })
           }}
         />
       </div>

@@ -237,6 +237,7 @@ describe('Viewer3D', () => {
       locale: 'ja',
       viewerMode: 'member',
       viewerLayers: { main: true, hoop: true, concrete: true },
+      viewerClip: { enabled: false, axis: 'x', ratio: 0.5 },
     })
   })
 
@@ -397,6 +398,11 @@ describe('Viewer3D', () => {
 
     expect(latestContent()).toBe(contentBefore)
     expect(clipTargetMaterials(latestContent())).toEqual(materialsBefore)
+    expect(useAppStore.getState().viewerClip).toEqual({
+      enabled: true,
+      axis: 'y',
+      ratio: 0.75,
+    })
     const plane = materialsBefore[0].clippingPlanes?.[0]
     expect(plane?.normal.toArray()).toEqual([0, 1, 0])
   })

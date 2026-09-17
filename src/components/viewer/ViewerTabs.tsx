@@ -11,7 +11,7 @@ import { capture } from '@/lib/telemetry'
 import bar from './viewerBar.module.css'
 import styles from './ViewerTabs.module.css'
 
-const MODES: ViewerMode[] = ['member', 'building']
+const MODES: ViewerMode[] = ['member', 'building', 'joint']
 const LAYERS: ViewerLayer[] = ['main', 'hoop', 'concrete']
 
 export function ViewerTabs() {
