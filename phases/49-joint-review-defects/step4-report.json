@@ -2,7 +2,7 @@
   "step": 4,
   "name": "uc25-self-assertion",
   "status": "completed",
-  "summary": "The two literal checks now carry their own observations, a twentieth check fails on any page or console error, and the schemaVersion comparison needs a value on both sides. The C7 section of this step was not implemented: step 0 refuted the claim it rested on.",
+  "summary": "The two literal checks now carry their own observations, a twentieth check fails on any page or console error, and the schemaVersion comparison needs a value on both sides. The C7 camera guard was first left out on a refutation that was later overturned; it is now in, on both sides of the drag.",
   "change": {
     "product": [],
     "tests": [
@@ -14,7 +14,9 @@
           "a twentieth check, noUnexpectedBrowserErrors, fails on any page error or console error not in ALLOWED_BROWSER_ERRORS, which is currently empty. collectDiagnostics drains the in-page accumulator before each of the two later reloads and once at the end, because installBrowserDiagnostics builds a fresh object on every reload and the old one would otherwise be dropped unread.",
           "the reviewBundleRoundTrip comparison now requires savedShape.schemaVersion and savedShape.storedSchemaVersion to be non-null before comparing them.",
           "the check-count guard went from nineteen to twenty. No existing check changed meaning and none was removed.",
-          "two comments were corrected: both stated the z-fighting cause that the phase 48 cross-verification retracted. The measurement they cite stands; the cause is recorded as not established, with a pointer to the cross-verification."
+          "two comments were corrected: both stated the z-fighting cause that the phase 48 cross-verification retracted. The measurement they cite stands; the cause is recorded as not established, with a pointer to the cross-verification.",
+          "C7: the camera oracle must not be blind on EITHER side of the drag. resolvesToRebar now requires hidden === false and the tooltip to contain 役割 (building-mode tooltips carry 部材 id and 符号 only, so a non-rebar reading was being counted as one), at least FINGERPRINT_COVERAGE_FLOOR = 1 of the 5 sampled points must resolve to a rebar before and after, and 'the fingerprint differs' was narrowed to 'a point that reads a rebar changed'. The run now prints UC25 CAMERA_ORACLE with the coverage on both sides so the floor can be raised from measurement rather than from guesswork.",
+          "after cross-verification: collectDiagnostics drains the in-page arrays on read (it was accumulating without clearing, so two reads in one session counted the same error twice), the very first page session now installs diagnostics too, and the drain moved after clearStore rather than before it."
         ]
       },
       {
@@ -26,11 +28,16 @@
   "verification": {
     "command": "npx dev-browser --browser kijun --timeout 300 run tests/e2e/uc25-joint-review.js",
     "server": "production build — rm -rf .next, npm run build, npx next start -p 3000, started only after the build finished",
-    "result": "20/20 checks true, UC25 ALL CHECKS PASSED",
+    "result": "20/20 checks true, UC25 ALL CHECKS PASSED, on two consecutive runs of the final script",
     "browser_diagnostics_observed": {
       "pageErrors": [],
       "consoleErrors": [],
       "unexpected": []
+    },
+    "camera_oracle_measured": {
+      "viewerPerturbation": "coverageBefore 1, coverageAfter 1, of 5",
+      "displayPerturbation": "coverageBefore 4, coverageAfter 4, of 5",
+      "both runs": "identical"
     }
   },
   "falsifiability": [
@@ -55,24 +62,44 @@
       "reverted": true
     }
   ],
-  "c7_not_implemented": {
-    "verdict": "refuted at step 0",
-    "what_the_spec_asked_for": "put the not-blind guard on fingerprintAfter as well, narrow 'differs' to 'at least one point changed rebar', and prove it by giving a drag large enough that the joint leaves the screen so that Scenario 7 fails",
-    "why_not_done": "The drag cannot take the joint off screen. OrbitControls orbits the target, so fourteen large left-button drags never blinded more than 2 of the 5 sample points and the prescribed proof cannot be carried out on this build. Doing the change anyway would mean the session that reported the defect approving its own claim after the gate had refuted it, which is the thing the gate is for.",
-    "what_is_still_open": "fingerprintAfter has no not-blind guard. The reachable mechanism is not a drag but anything that empties the tooltip after it — the viewer unmounting, the tooltip element being removed, a render error. A correct falsifiability method is to remove the tooltip element between the drag and fingerprintAfter and require Scenario 7 to fail. Recorded against phase 48's own entry at phases/48-joint-review-ui/step8-report.json#/desktop_host_run/repairs/1/known_holes."
-  },
   "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
   "paths_verified": [
-    "tests/e2e/uc25-joint-review.js",
-    "tests/e2e/README.md",
-    "phases/49-joint-review-defects/step4.md",
-    "phases/49-joint-review-defects/step0-report.json",
+    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md",
     "phases/48-joint-review-ui/step8-report.json",
-    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md"
+    "phases/49-joint-review-defects/cross-verification-2-c7-guard.md",
+    "phases/49-joint-review-defects/cross-verification-3-diagnostics.md",
+    "phases/49-joint-review-defects/cross-verification.md",
+    "phases/49-joint-review-defects/mut6-uc25.js",
+    "phases/49-joint-review-defects/step0-report.json",
+    "phases/49-joint-review-defects/step4.md",
+    "src/components/viewer/Viewer3D.tsx",
+    "tests/e2e/README.md",
+    "tests/e2e/uc25-joint-review.js"
   ],
   "paths_expected_absent": [
     "phases/49-joint-review-defects/mut1-uc25.js",
     "phases/49-joint-review-defects/mut2-uc25.js",
-    "phases/49-joint-review-defects/mut3-uc25.js"
-  ]
+    "phases/49-joint-review-defects/mut3-uc25.js",
+    "phases/49-joint-review-defects/mut5-uc25.js"
+  ],
+  "known_limits_of_the_new_diagnostics_check": [
+    "Its practical value is low, and an independent cross-verification refuted the claim that what it catches is worth catching. Client code in src/ has essentially no console.error (the one occurrence is the server-side oncall route), and a fatal exception fails an earlier scenario before this check is reached. What is left for it to catch is third-party noise and silent async rejections. It is kept because the cost is one check, not because it is expected to fire.",
+    "It is an end-of-run oracle. If any earlier scenario throws, the assignment is never reached and no diagnostics are reported at all.",
+    "Within each watched session, only errors after installBrowserDiagnostics runs are seen. The install is the first thing after each navigation, but it is not synchronous with document creation, so a very early error could still be missed.",
+    "console.error is captured by replacing console.error at install time. A module that captured a reference to the original before then would bypass the recorder.",
+    "ALLOWED_BROWSER_ERRORS is empty, so the check currently fails on anything. That is deliberate — an allowlist should be earned by an observed harmless error, not guessed at in advance.",
+    "Fixed after cross-verification, and listed here because the earlier version of this report claimed otherwise: all four page sessions are now watched (the first was not), the accumulator is drained on read (it was not, so a second read in one session double-counted), and the drain runs after clearStore rather than before it (errors raised during clearStore were being discarded unread)."
+  ],
+  "c7_implemented": {
+    "verdict_history": "step 0 recorded C7 as refuted and this step shipped without the guard. An independent cross-verification overturned that refutation; the guard is now in. See phases/49-joint-review-defects/cross-verification.md and step0-report.json#/claims/6.",
+    "what_the_spec_asked_for": "put the not-blind guard on fingerprintAfter as well, narrow 'differs' to 'at least one point changed rebar', and prove it by giving a drag large enough that the joint leaves the screen so that Scenario 7 fails",
+    "how_it_was_proved": {
+      "command": "npx dev-browser --browser kijun --timeout 300 run phases/49-joint-review-defects/mut6-uc25.js",
+      "mutation": "the Scenario 7 drag replaced by six repeated Shift-held left-drags across 85% of the canvas; a modifier-held left drag pans in OrbitControls (OrbitControls.js:1677-1687) and enablePan is left at its default true",
+      "observed": "coverage 1 of 5 before, 0 of 5 after — the run threw the camera evidence blocker, which is exactly the state that passed as 'the camera moved' before this guard",
+      "failed_first_attempt": "M5, a single Shift-pan of 2.2x the canvas width, PASSED with 4 of 5 still resolving: one pan of that size slides the view onto the 大梁 rather than off the model. The mutation had to be larger, not different."
+    },
+    "what_the_guard_still_cannot_see": "tooltipFromHit keys on the schedule row (row:${line.id}), not the individual bar, so a camera move that swaps every sampled point for a sibling bar of the same 部材·役割·径 is invisible and would raise a false 'camera did not move' blocker. Recorded, not fixed.",
+    "coverage_floor_correction": "The floor was first set to 3 and that was wrong. Coverage is decided by the call site, not by chance: perturbViewer is called twice and viewerPerturbation sits at 1 of 5 on a healthy run, displayPerturbation at 4 of 5, identical on two consecutive runs. A floor of 3 blocked a run that passed all 20 checks. The floor is 1 — the oracle only has to be not blind — and the measurement is printed on every run."
+  }
 }

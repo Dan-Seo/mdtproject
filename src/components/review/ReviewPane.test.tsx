@@ -801,4 +801,32 @@ describe('ReviewPane', () => {
       .toBe('再検討必要')
     expect(within(screen.getByTestId(item.id)).getByText(notice)).toBeInTheDocument()
   })
+
+  // phase 49 追補 — 所見から作る項目は、その所見を出した検査の接合部を指す。
+  // 以前は sel.memberId が優先されたので、検査後に別の柱を選んでから
+  // 「検討項目にする」を押すと、B の接合部の所見を A の接合部に結びつけた項目が
+  // できていた(独立検証の指摘2)。
+  it('targets the checked joint, not the current selection, when an item comes from a finding', () => {
+    render(<ReviewPane />)
+
+    fireEvent.click(screen.getByRole('button', { name: t('ja', 'review.check.execute') }))
+    act(() => useAppStore.getState().selectMember('1F-X1Y2'))
+    fireEvent.click(
+      within(screen.getByTestId('review-findings')).getAllByRole('button', {
+        name: t('ja', 'review.check.createItem'),
+      })[0],
+    )
+    fireEvent.change(screen.getByLabelText(t('ja', 'review.items.formTitle')), {
+      target: { value: 'from finding' },
+    })
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', {
+      name: t('ja', 'review.items.save'),
+    }))
+
+    const item = useAppStore.getState().review.items[0]
+    if (!item) throw new Error('review item expected')
+    expect(item.targets[0]).toEqual({ kind: 'joint', columnMemberId: '1F-X2Y1' })
+    // 検査を実行して 698 件の所見表を描き、そのうえで項目を作り直す分だけ重い。
+    // 単独では 3 秒弱だが全体実行の並列下で既定の 5 秒を超える。
+  }, 20000)
 })

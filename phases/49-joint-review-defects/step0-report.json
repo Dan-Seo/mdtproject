@@ -3,8 +3,8 @@
   "name": "refute-defect-claims",
   "kind": "verify",
   "gate": true,
-  "verdict": "holds-with-one-refutation",
-  "note": "C1 through C6 hold and steps 1 to 4 proceed on them. C7 is refuted as stated and its work was not done. Two of the surviving claims were worded wrongly — C1's 最上層柱 example and C5's judgment method — and both corrections are recorded against the claim rather than folded away.",
+  "verdict": "holds",
+  "note": "All seven claims hold and steps 1 to 4 proceed on them. This step first recorded C7 as refuted and shipped without its guard; that refutation was overturned by an independent cross-verification and is withdrawn — see the C7 entry, which keeps the withdrawn reasoning rather than overwriting it. Two of the surviving claims were also worded wrongly — C1's 最上層柱 example and C5's judgment method — and both corrections are recorded against the claim.",
   "claims": [
     {
       "claim": "C1",
@@ -93,43 +93,54 @@
     },
     {
       "claim": "C7",
-      "verdict": "refuted",
-      "summary": "The mechanism the claim names is not reachable with the drag the script performs. Fourteen large left-button drags never blinded all five sample points.",
+      "verdict": "holds",
+      "verdict_history": "This step first recorded C7 as refuted. That refutation was itself refuted by an independent cross-verification and is withdrawn; the record below is the corrected judgment. The withdrawn reasoning and why it was wrong are kept under retracted_refutation so the mistake is not silently overwritten.",
+      "summary": "fingerprintAfter had no not-blind guard, so a camera state that resolves to nothing passed as 'the camera moved'. The state is reachable through an ordinary product interaction, and the guard now added fails on it.",
       "evidence": {
-        "command": "npx dev-browser --browser kijun --timeout 200 run phases/49-joint-review-defects/probe-c7.js",
-        "setup": "the Scenario 7 state — 1F-X2Y1 selected, 接合部 tab, the check run, the first finding row clicked, the cut plane moved — then the fingerprint before, then repeated large drags",
+        "mechanism": "OrbitControls maps a LEFT-button drag with ctrlKey, metaKey or shiftKey held to PAN, not to rotate (node_modules/three/examples/jsm/controls/OrbitControls.js:1677-1687). enablePan defaults to true (:271) and src/components/viewer/Viewer3D.tsx:1969-1970 sets only enableDamping, so panning is live in the joint viewer. A pan translates the target, so it can take the joint off screen — which orbiting cannot.",
+        "command": "npx dev-browser --browser kijun --timeout 300 run phases/49-joint-review-defects/mut6-uc25.js",
+        "mutation": "M6 — the Scenario 7 drag replaced by six repeated Shift-held left-drags across 85% of the canvas, everything else identical to the shipped script",
         "observed": {
-          "horizontal drags": "8 rounds, blind count 0 of 5 throughout",
-          "vertical drags": "3 rounds, blind count 1 of 5",
-          "diagonal drags": "3 rounds, blind count 0 to 2 of 5",
-          "all five points hidden at any point": false
+          "coverage before the pans": "1 of 5 sample points resolve to a rebar",
+          "coverage after the six pans": "0 of 5 — every point reads hidden",
+          "result": "the run threw 'UC25 camera evidence blocker: only 0 of 5 sampled points resolve to a rebar after the drag, so the camera is looking at nothing'"
         },
-        "why": "OrbitControls rotates the camera around the target, so the joint stays in the middle of the canvas however far it is dragged. Two of the five sample points sit near the centre (0.45,0.5 and 0.55,0.45) and keep hitting geometry. A left drag cannot take the joint out of view; only a pan or a dolly could, and the script performs neither.",
-        "reverted": "the probe file was deleted after judging"
+        "control": "the shipped script, whose own drag holds no modifier and therefore orbits, passes all 20 checks on two consecutive runs with coverage unchanged across the drag at both call sites (1/5 -> 1/5 at viewerPerturbation, 4/5 -> 4/5 at displayPerturbation).",
+        "failed_first_attempt": "M5 — a single Shift-held pan of 2.2x the canvas width — PASSED, i.e. it did not falsify. Instrumentation showed 4 of 5 points still resolving afterwards at the second call site: one pan of that size merely slid the view onto the 大梁 rather than off the model. A single failed falsification attempt is not evidence that the guard is inert; M6 shows the difference was the size of the displacement, not the mechanism.",
+        "coverage_floor": "The guard requires at least 1 of the 5 points to resolve, on both sides. A floor of 3 was tried first and was wrong: coverage is a property of the call site, not of the run — perturbViewer is called twice, and the first call sits at 1 of 5 on a perfectly healthy run, so the floor blocked a passing run. Both values were identical on two consecutive runs; the script now prints them as UC25 CAMERA_ORACLE so a future floor can be set from measurement."
       },
-      "what_survives": "fingerprintAfter still has no not-blind guard, which is a static fact about the script and is unchanged by this refutation. Any mechanism that empties the tooltip after the drag — the viewer unmounting, the tooltip element being removed, a render error — would read as five hidden points, would differ from the before fingerprint, and would pass as the camera moved. What is refuted is that a drag can produce that state, which was the only mechanism the claim offered and the only one step 4 was told to reproduce.",
-      "consequence": "The C7 section of step 4 was NOT implemented. The claim that justified it did not survive, and the falsifiability method it prescribes — give a drag large enough that the joint leaves the screen, and Scenario 7 must fail — cannot be carried out on this build. Adding the guard anyway would make the maker of the claim its own approver, which is what the gate exists to prevent. It is handed on with the corrected mechanism and a method that matches it."
+      "retracted_refutation": {
+        "what_was_claimed": "that the mechanism is unreachable, because 'OrbitControls rotates the camera around the target, so the joint stays in the middle of the canvas however far it is dragged. A left drag cannot take the joint out of view; only a pan or a dolly could, and the script performs neither.'",
+        "why_it_was_wrong": "The premise is false as stated. A left drag CAN pan — OrbitControls.js:1677-1687 routes the left button to pan whenever a modifier key is held. The probe that produced the 'fourteen drags, never blind' measurement held no modifier, so it exercised only the rotate path and could not have reached the state it was looking for. The measurement was real; the generalisation from it was not.",
+        "how_it_was_caught": "An independent cross-verification (Antigravity CLI, run at the user's instruction) read OrbitControls and cited the modifier branch by line. It was confirmed here by reading the same source and then by M6.",
+        "consequence_of_the_error": "step 4 shipped without the C7 guard. It has since been added, and this report is the corrected record."
+      },
+      "what_the_guard_cannot_see": "tooltipFromHit keys on the schedule row (row:${line.id}), not on the individual bar, so two different bars of the same 部材·役割·径 read identically. A camera move that swaps one bar for a sibling of the same row is invisible to the oracle and, if every sampled point does that, would raise a false 'camera did not move' blocker. This is recorded rather than fixed."
     }
   ],
   "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
-  "independent_review": "None yet for this phase. The phase 48 findings these claims restate were independently confirmed by the Antigravity CLI cross-verification recorded at phases/48-joint-review-ui/step8-cross-verification-antigravity.md, but this step's own judgments, and everything steps 1 to 4 build on them, were produced by the same session that reported the defects. A cross-verification is owed.",
+  "independent_review": "Done, after the first version of this report. Four independent agents (Antigravity CLI at bypermissions, driven through Herdr panes at the user's instruction) judged the phase: one on the whole diff, one on the C7 refutation, one on the diagnostics check, one on the leftovers. Their verdicts and what each changed are recorded at phases/49-joint-review-defects/cross-verification.md. Three findings were upheld and fixed; the C7 refutation above was overturned by the second.",
   "paths_verified": [
-    "src/components/review/ReviewPane.tsx",
-    "src/components/review/WorkPackageBoard.tsx",
-    "src/components/review/WorkPackageBoard.test.tsx",
-    "src/domain/review/readiness.ts",
-    "src/domain/review/joint.ts",
-    "src/domain/review/validity.ts",
-    "src/domain/model/sample-project.ts",
-    "tests/e2e/uc25-joint-review.js",
-    "phases/48-joint-review-ui/step8-report.json",
     "phases/48-joint-review-ui/step8-cross-verification-antigravity.md",
-    "phases/49-joint-review-defects/step0.md"
+    "phases/48-joint-review-ui/step8-report.json",
+    "phases/49-joint-review-defects/cross-verification.md",
+    "phases/49-joint-review-defects/mut6-uc25.js",
+    "phases/49-joint-review-defects/step0.md",
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/WorkPackageBoard.test.tsx",
+    "src/components/review/WorkPackageBoard.tsx",
+    "src/components/viewer/Viewer3D.tsx",
+    "src/domain/model/sample-project.ts",
+    "src/domain/review/joint.ts",
+    "src/domain/review/readiness.ts",
+    "src/domain/review/validity.ts",
+    "tests/e2e/uc25-joint-review.js"
   ],
   "paths_expected_absent": [
-    "src/components/review/phase49probe.test.tsx",
-    "phases/49-joint-review-defects/probe.mts",
+    "phases/49-joint-review-defects/mut5-uc25.js",
+    "phases/49-joint-review-defects/probe-c7.js",
     "phases/49-joint-review-defects/probe-uc25.mjs",
-    "phases/49-joint-review-defects/probe-c7.js"
+    "phases/49-joint-review-defects/probe.mts",
+    "src/components/review/phase49probe.test.tsx"
   ]
 }

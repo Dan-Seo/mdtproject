@@ -179,6 +179,7 @@
   "review.work.targets": "対象",
   "review.work.targetCount": "対象部材数",
   "review.work.addCurrentTarget": "現在の選択を追加",
+  "review.work.jointUnavailable": "接合部が成立しないため、この部材は作業パッケージの対象に入れられません",
   "review.work.target.member": "部材",
   "review.work.target.joint": "接合部",
   "review.work.target.rebar": "鉄筋",

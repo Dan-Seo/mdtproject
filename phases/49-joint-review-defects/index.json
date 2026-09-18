@@ -9,14 +9,14 @@
       "kind": "verify",
       "gate": true,
       "status": "completed",
-      "summary": "C1-C6 hold, each by a mutation or a runnable reproduction; C7 is refuted — fourteen large drags never blinded all five fingerprint points, because OrbitControls orbits the target. C1's 最上層柱 example and C5's judgment method were also wrong as written and are corrected against the claims.",
+      "summary": "C1-C6 hold, each by a mutation or a runnable reproduction. C7 was first recorded as refuted; that refutation was overturned by an independent cross-verification (a modifier-held left drag pans in OrbitControls, so the mechanism is reachable) and is withdrawn — the guard was added and mut6-uc25.js demonstrates it firing. C1's 最上層柱 example and C5's judgment method were also wrong as written and are corrected against the claims.",
       "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
       "step": 1,
       "name": "joint-target-kind",
       "status": "completed",
-      "summary": "The add button is disabled with the domain's own reason, and openDraft refuses, whenever resolveJoint reports the selection unsupported. No member-kind branch was added to the component.",
+      "summary": "The add button is disabled with the domain's own reason, and openDraft refuses, whenever resolveJoint reports the target unsupported — in ReviewPane and, after cross-verification, in WorkPackageBoard too. openDraft also now takes the finding's own column rather than the ambient selection. No member-kind branch was added to either component.",
       "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
@@ -37,11 +37,26 @@
       "step": 4,
       "name": "uc25-self-assertion",
       "status": "completed",
-      "summary": "jointCanvas and findingFocus now carry their own observations, a twentieth check fails on any page or console error accumulated across all three page sessions, and schemaVersion must be present on both sides. The C7 section was not implemented — step 0 refuted it.",
+      "summary": "jointCanvas and findingFocus now carry their own observations, a twentieth check fails on any page or console error accumulated across all four page sessions (the first was unwatched until cross-verification), the accumulator drains on read so one error is not counted twice, and schemaVersion must be present on both sides. The C7 camera guard is in: the fingerprint must resolve to at least one rebar on both sides of the drag, and the change must be in a point that reads a rebar.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
+    },
+    {
+      "step": 5,
+      "name": "cross-verification",
+      "kind": "verify",
+      "status": "refuted",
+      "summary": "Four Antigravity CLI agents, read-only, each on a different scope. Refutations that landed: (a) step 0's refutation of C7 — a modifier-held left drag pans in OrbitControls, so the mechanism IS reachable; (b) WorkPackageBoard has the same unguarded joint target ReviewPane had; (c) openDraft let the ambient selection override the finding's own column; (d) the new diagnostics check misses the first page session, drains before clearStore, never clears the in-page accumulator, and catches almost nothing of value. Surviving: claims A-E on the phase diff, and the C7 guard itself once written. Verdicts kept verbatim as cross-verification-1..4; the index is cross-verification.md.",
+      "verified_by": "Antigravity CLI (agy, bypermissions), four agents in Herdr panes at the user's instruction"
+    },
+    {
+      "step": 6,
+      "name": "close-cross-verification-findings",
+      "status": "completed",
+      "summary": "Added the C7 camera guard on both sides of the drag (floor 1, measured and printed as UC25 CAMERA_ORACLE — a floor of 3 was tried and blocked a passing run), guarded WorkPackageBoard, made openDraft take the finding's own column, and fixed the three diagnostics holes. Corrected the records the refutations falsified: step0 C7, step1, step4, this index, and phase 48's step8-report known holes and index summary. The z-fighting cause that phase 48 retracted was still asserted as fact in three closed-phase documents; all three now state the measurement without the cause.",
       "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     }
   ],
   "created_at": "2026-09-18T18:30:00+0900",
-  "completed_at": "2026-09-18T20:30:00+0900",
-  "note": "Implemented directly by Claude rather than by scripts/execute.py, at the user instruction \"그래 지금 너가 직접 다 끝내\". The gate (step 0) upheld C1-C6 and refuted C7; the C7 work in step 4 was therefore not done. A cross-verification by a different agent is owed for the whole phase."
+  "completed_at": "2026-09-18T21:45:00+0900",
+  "note": "Implemented directly by Claude rather than by scripts/execute.py, at the user instruction \"그래 지금 너가 직접 다 끝내\". The gate (step 0) upheld C1-C6 and at first refuted C7. Four Antigravity CLI agents then cross-verified the phase at the user's instruction: they overturned the C7 refutation and found two further real defects (WorkPackageBoard unguarded, openDraft taking the ambient selection over the finding's own column) plus three holes in the new diagnostics check. All were fixed and the step records corrected. See cross-verification.md."
 }

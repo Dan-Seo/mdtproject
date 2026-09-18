@@ -155,6 +155,25 @@ describe('WorkPackageBoard', () => {
     expect(useAppStore.getState().review.packages[0]?.checklist[0]?.reviewItemIds).toEqual([item.id])
   })
 
+  // phase 49 追補 — 接合部が成立しない部材は作業パッケージの対象にも入れない。
+  // 入れられると readiness が 対象部材なし で止まり、パッケージを消す手段が無い
+  // ので永久に 準備未完 のまま残る(独立検証の指摘1)。
+  it('refuses to add an unresolvable joint target and says why', () => {
+    useAppStore.setState({ viewerMode: 'joint', sel: { group: null, memberId: '1F-G1-X1Y1-X' } })
+    render(<WorkPackageBoard />)
+
+    fireEvent.click(screen.getByRole('button', { name: '作業パッケージを追加' }))
+    const add = screen.getByRole('button', { name: '現在の選択を追加' })
+    expect(add).toBeDisabled()
+    expect(screen.getByTestId('work-package-joint-unavailable')).toHaveTextContent('柱ではない')
+
+    fireEvent.click(add)
+    fireEvent.change(screen.getByLabelText('作業パッケージ名'), { target: { value: '不成立' } })
+    fireEvent.change(screen.getByLabelText('担当者（ローカル入力・本人認証ではない）'), { target: { value: 'reviewer' } })
+    fireEvent.click(within(screen.getByTestId('work-package-form')).getByRole('button', { name: '保存' }))
+    expect(useAppStore.getState().review.packages[0]?.targets).toEqual([])
+  })
+
   it('keeps a linked item blocked when its target model is stale', () => {
     const item = reviewItem('1F-X2Y1')
     const pkg = packageFixture({

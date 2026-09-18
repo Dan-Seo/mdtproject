@@ -179,6 +179,7 @@
   "review.work.targets": "대상",
   "review.work.targetCount": "대상 부재 수",
   "review.work.addCurrentTarget": "현재 선택 추가",
+  "review.work.jointUnavailable": "접합부가 성립하지 않아 이 부재는 작업 묶음의 대상으로 넣을 수 없습니다",
   "review.work.target.member": "部材",
   "review.work.target.joint": "接合部",
   "review.work.target.rebar": "철근",

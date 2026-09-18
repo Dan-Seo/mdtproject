@@ -634,11 +634,11 @@
         "product_change": false,
         "known_holes": [
           "resetIdleTimer performs a real click on the canvas, which Viewer3D handleClick turns into a pick (setHoverRow + rebuildScene + telemetry). The claim that the oracle changes no product state is therefore wrong for that one click; it is true only of the hovers.",
-          "There is no not-blind guard on fingerprintAfter, so any state in which all five points read hidden after the drag would differ from before and pass as a camera move. The mechanism named here — that a drag rotates the joint out of view — was REFUTED by phase 49 step 0: fourteen large left-button drags (8 horizontal, 3 vertical, 3 diagonal) never blinded more than 2 of the 5 points, because OrbitControls orbits the target and the joint stays centred. A left drag cannot take it off screen; only a pan or a dolly could, and the script performs neither. The missing guard is still real, but it is reachable only by something that empties the tooltip (the viewer unmounting, the tooltip element going away, a render error), not by a drag. See phases/49-joint-review-defects/step0-report.json#/claims/6.",
+          "CLOSED by phase 49. There was no not-blind guard on fingerprintAfter, so any state in which all five points read hidden after the drag would differ from before and pass as a camera move. Phase 49 step 0 first recorded the mechanism as REFUTED — fourteen large left-button drags never blinded more than 2 of 5 points — but that refutation held no modifier key and so exercised only the rotate path. A left drag with Shift, Ctrl or Meta held PANS (OrbitControls.js:1677-1687; enablePan defaults true and Viewer3D does not disable it), and a pan does take the joint off screen: six repeated Shift-pans take the coverage to 0 of 5. The guard is now in the script on both sides of the drag (at least one of the 5 points must resolve to a rebar) and phases/49-joint-review-defects/mut6-uc25.js demonstrates it firing. See phases/49-joint-review-defects/step0-report.json#/claims/6.",
           "The still-camera repeat guard can pass vacuously: tooltipFromHit keys on the schedule row (row:${line.id}), so a camera drifting slowly enough to stay on the same rows produces two identical fingerprints.",
           "Conversely, a real camera move that leaves every sampled point on the same schedule rows raises a false blocker."
         ],
-        "known_holes_note": "Phase 49 did NOT close hole 2. Its step 4 was told to close it by reproducing the drag mechanism, and step 0 refuted that mechanism, so the work was not done on a claim that had not survived. The guard is handed on with a corrected mechanism and a method that matches it."
+        "known_holes_note": "Phase 49 closed hole 2, but not on the first pass: its gate refuted the mechanism, step 4 shipped without the guard, and an independent cross-verification overturned the refutation. Holes 1, 3 and 4 remain open and are unchanged."
       },
       {
         "id": "buffer_base64",
@@ -657,7 +657,7 @@
         "status": "declared assumption, not an unnoticed defect",
         "source": "src/lib/review/geometry-check.ts",
         "reported_by_product": "The shape check reports these as 干渉候補/接触: 698 findings with clearances from -25mm through 0mm and no positive row.",
-        "second_order_effect": "Coincident surfaces z-fight, so no frame of the joint is byte-reproducible. Any future test that compares rendered frames of a joint will hit this.",
+        "second_order_effect": "No frame of the joint was byte-reproducible under any tested condition (11 distinct hashes in 11 captures), so a pixel-equality oracle cannot settle on this scene. The report previously gave z-fighting between these coincident surfaces as the cause; that cause was retracted as unestablished (no camera position was ever logged) and only the measurement stands. Any future test that compares rendered frames of a joint will hit the measurement whatever its cause.",
         "why_not_fixed_here": "Giving 大梁 crossings an over/under relationship and main bars their 段配置 is a product modelling change the current scope excludes. It needs its own ADR and phase.",
         "surfaced_by": "src/components/review/ReviewPane.tsx renders the same ASSUMPTIONS list in the 検討 pane."
       }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { resolveJoint } from '@/domain/review/joint'
 import { addPackage, newReviewId, setChecklistStatus } from '@/domain/review/state'
 import { packageReadiness } from '@/domain/review/readiness'
 import type {
@@ -121,8 +122,18 @@ export function WorkPackageBoard() {
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingChecklist | null>(null)
 
+  // 接合部が成立しない部材を対象に入れると readiness が 対象部材なし で止まり、
+  // パッケージを消す手段が無いので永久に 準備未完 で残る。ReviewPane と同じく
+  // 判定は domain の resolveJoint に任せる。
+  const jointUnavailableReason = viewerMode !== 'joint' || selection.memberId === null
+    ? null
+    : (() => {
+        const resolution = resolveJoint(current.project, selection.memberId)
+        return resolution.status === 'unsupported' ? resolution.reason : null
+      })()
+
   function addCurrentTarget(): void {
-    if (!draft || !selection.memberId) return
+    if (!draft || !selection.memberId || jointUnavailableReason !== null) return
     const target: ElementRef = viewerMode === 'joint'
       ? { kind: 'joint', columnMemberId: selection.memberId }
       : { kind: 'member', memberId: selection.memberId }
@@ -289,9 +300,18 @@ export function WorkPackageBoard() {
 
           <div className={styles.formGroup}>
             <h4>{t(locale, 'review.work.targets')}</h4>
-            <button type="button" onClick={addCurrentTarget}>
+            <button
+              type="button"
+              disabled={jointUnavailableReason !== null}
+              onClick={addCurrentTarget}
+            >
               {t(locale, 'review.work.addCurrentTarget')}
             </button>
+            {jointUnavailableReason !== null && (
+              <p role="status" data-testid="work-package-joint-unavailable">
+                {t(locale, 'review.work.jointUnavailable')} — {jointUnavailableReason}
+              </p>
+            )}
             {draft.targets.length > 0 && (
               <ul className={styles.targetList}>
                 {draft.targets.map((target) => (

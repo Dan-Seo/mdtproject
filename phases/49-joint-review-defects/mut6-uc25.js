@@ -473,16 +473,20 @@ const perturbViewer = async () => {
     );
   }
 
-  await page.mouse.move(
-    canvasBox.x + canvasBox.width * 0.48,
-    canvasBox.y + canvasBox.height * 0.48,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    canvasBox.x + canvasBox.width * 0.57,
-    canvasBox.y + canvasBox.height * 0.53,
-  );
-  await page.mouse.up();
+  // MUTATION M6: repeated modifier-held pans push the joint off screen.
+  for (let round = 0; round < 6; round += 1) {
+    await page.keyboard.down("Shift");
+    await page.mouse.move(canvasBox.x + canvasBox.width * 0.1, canvasBox.y + canvasBox.height * 0.1);
+    await page.mouse.down();
+    for (const step of [0.25, 0.5, 0.75, 1]) {
+      await page.mouse.move(
+        canvasBox.x + canvasBox.width * (0.1 + 0.85 * step),
+        canvasBox.y + canvasBox.height * (0.1 + 0.85 * step),
+      );
+    }
+    await page.mouse.up();
+    await page.keyboard.up("Shift");
+  }
 
   const fingerprintAfter = await cameraFingerprint(canvasBox);
   console.log(

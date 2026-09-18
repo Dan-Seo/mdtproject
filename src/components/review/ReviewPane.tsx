@@ -90,7 +90,11 @@ function basisText(finding: geometryCheck.Finding): string {
 }
 
 interface ReviewCheckProps {
-  onCreateItem?: (finding: geometryCheck.Finding, checkId?: string) => void
+  onCreateItem?: (
+    finding: geometryCheck.Finding,
+    checkId?: string,
+    jointColumnMemberId?: string,
+  ) => void
 }
 
 function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
@@ -348,7 +352,7 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
                     <td>{finding.clearanceMm.toFixed(1)}</td>
                     <td>{basisText(finding)}</td>
                     <td>{exclusion === null || exclusion === undefined ? null : <span className={styles.excluded}>{t(locale, 'review.check.excluded')}: {exclusion.reason}</span>}</td>
-                    <td><button type="button" onClick={() => onCreateItem(finding, result.checkId)}>{t(locale, 'review.check.createItem')}</button></td>
+                    <td><button type="button" onClick={() => onCreateItem(finding, result.checkId, result.jointRef.columnMemberId)}>{t(locale, 'review.check.createItem')}</button></td>
                   </tr>
                 )
               })}
@@ -649,6 +653,8 @@ interface ReviewItemRequest {
   token: number
   finding: geometryCheck.Finding | null
   checkId: string | null
+  /** 所見を出した検査の接合部。選択ではなくこれが対象になる。 */
+  jointColumnMemberId: string | null
 }
 
 function recordedFinding(finding: geometryCheck.Finding, checkId: string): RecordedFinding {
@@ -985,17 +991,20 @@ function ReviewItemsSection({
   const [holdReason, setHoldReason] = useState('')
   const [holdError, setHoldError] = useState(false)
 
-  // 接合部が成立しない部材に接合部タゲットを付けると、validity が 対象なし を
+  // 接合部が成立しない部材に接合部ターゲットを付けると、validity が 対象なし を
   // 付け続けて項目が永久に 再検討必要 になる。判定は domain の resolveJoint が持つ
   // ので、ここで種別分岐を書き直さずにその結果を使う。
-  const draftColumnMemberId = sel.memberId ?? null
-  const draftJoint = draftColumnMemberId === null
+  const draftJoint = sel.memberId === null
     ? ({ status: 'unsupported', reason: '部材なし' } as const)
-    : resolveJoint(project, draftColumnMemberId)
+    : resolveJoint(project, sel.memberId)
   const jointUnavailableReason = draftJoint.status === 'unsupported' ? draftJoint.reason : null
 
-  const openDraft = (finding?: geometryCheck.Finding, checkId?: string) => {
-    const columnMemberId = sel.memberId ?? finding?.a.memberId ?? null
+  const openDraft = (
+    finding?: geometryCheck.Finding,
+    checkId?: string,
+    jointColumnMemberId?: string,
+  ) => {
+    const columnMemberId = jointColumnMemberId ?? sel.memberId ?? null
     if (columnMemberId === null || resolveJoint(project, columnMemberId).status !== 'joint') return
     const targets: ElementRef[] = [{ kind: 'joint', columnMemberId }]
     if (finding !== undefined) {
@@ -1014,7 +1023,11 @@ function ReviewItemsSection({
 
   useEffect(() => {
     if (request === null) return
-    openDraft(request.finding ?? undefined, request.checkId ?? undefined)
+    openDraft(
+      request.finding ?? undefined,
+      request.checkId ?? undefined,
+      request.jointColumnMemberId ?? undefined,
+    )
     onRequestConsumed()
   }, [openDraft, onRequestConsumed, request])
 
@@ -1255,10 +1268,19 @@ function ReviewItemsSection({
 export function ReviewPane({ onCreateItem }: ReviewCheckProps) {
   const [request, setRequest] = useState<ReviewItemRequest | null>(null)
   const requestToken = useRef(0)
-  const requestItem = (finding: geometryCheck.Finding, checkId?: string) => {
+  const requestItem = (
+    finding: geometryCheck.Finding,
+    checkId?: string,
+    jointColumnMemberId?: string,
+  ) => {
     requestToken.current += 1
-    setRequest({ token: requestToken.current, finding, checkId: checkId ?? null })
-    onCreateItem?.(finding, checkId)
+    setRequest({
+      token: requestToken.current,
+      finding,
+      checkId: checkId ?? null,
+      jointColumnMemberId: jointColumnMemberId ?? null,
+    })
+    onCreateItem?.(finding, checkId, jointColumnMemberId)
   }
 
   return (
