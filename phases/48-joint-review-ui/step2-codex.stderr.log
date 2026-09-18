@@ -1,0 +1,19 @@
+2026-09-17T10:49:39.999598Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\viewer\Viewer3D.test.tsx:
+vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
+  OrbitControls: class OrbitControlsMock {
+    target = { set: mocks.controlsTargetSet }
+    enableDamping = false
+    dampingFactor = 0
+    update = vi.fn()
+    addEventListener = vi.fn()
+    dispose = mocks.controlsDispose
+  },
+}))
+2026-09-17T10:51:07.731867Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\viewer\Viewer3D.tsx:
+  content: THREE.Group | null,
+2026-09-17T10:58:59.058871Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\viewer\Viewer3D.test.tsx:
+    expect(screen.getByLabelText('接합부의配筋3D')).toHaveAttribute(
+      'aria-label',
+      '接合部の配筋3D',
+    )
+    expect(screen.getByLabelText('接合部の配筋3D').parentElement).toHaveAttribute(

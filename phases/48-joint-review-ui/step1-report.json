@@ -1,0 +1,47 @@
+{
+  "changed_files": [
+    "src/lib/store.ts",
+    "src/lib/review/joint-layout.ts",
+    "src/lib/review/joint-layout.test.ts",
+    "src/components/viewer/Viewer3D.tsx",
+    "src/components/viewer/Viewer3D.test.tsx",
+    "src/components/viewer/ViewerTabs.tsx",
+    "src/components/viewer/ViewerTabs.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "src/lib/store.test.ts"
+  ],
+  "tests_added": [
+    "src/lib/review/joint-layout.test.ts",
+    "src/lib/store.test.ts",
+    "src/components/viewer/Viewer3D.test.tsx",
+    "src/components/viewer/ViewerTabs.test.tsx"
+  ],
+  "mutations": [
+    {
+      "mutation": "joint-layout에서 런 대표 제외",
+      "failed_tests": [
+        "jointLayout > keeps a continuous-run representative rebar for a terminal joint"
+      ]
+    },
+    {
+      "mutation": "帯筋 세계 x에서 かぶり 누락",
+      "failed_tests": [
+        "jointLayout > places the column hoop and girder upper main in independent world-coordinate oracles",
+        "jointLayout > matches buildingLayout for every displayed segment reference"
+      ]
+    },
+    {
+      "mutation": "loadProject가 focus를 남김",
+      "failed_tests": [
+        "loadProject > clears joint focus and pending pose and leaves joint mode on project load"
+      ]
+    }
+  ],
+  "paths_verified": [
+    "src/lib/review/joint-layout.ts",
+    "src/lib/review/joint-layout.test.ts",
+    "src/lib/store.ts",
+    "src/components/viewer/ViewerTabs.tsx"
+  ]
+}

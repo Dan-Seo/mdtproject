@@ -14,7 +14,11 @@ import { StbImport } from '@/components/stb/StbImport'
 import { SectionImport } from '@/components/section/SectionImport'
 import { ViewerExportButton } from '@/components/viewer/ViewerExportButton'
 import { ViewerTabs } from '@/components/viewer/ViewerTabs'
+import { ReviewPane } from '@/components/review/ReviewPane'
+import { ReviewTabs } from '@/components/review/ReviewTabs'
+import { WorkPackageBoard } from '@/components/review/WorkPackageBoard'
 import { useProjectPersistence } from '@/lib/hooks/useProjectPersistence'
+import { useAppStore } from '@/lib/store'
 
 // three.js가 초기 블로킹 JS의 절반 이상이다. 청크를 갈라 하이드레이션 경로에서 뺀다.
 // ssr은 기본값(true)을 유지한다 — false로 두면 프리렌더 마크업에서 뷰어 페인이
@@ -27,6 +31,7 @@ export default function Home() {
   // 前回の案件を戻し、以後の編集を自動保存する (docs/UX.md §4 段階5)。
   // 復元中も画面はサンプル案件で動く — 待たせない (§4.2)。
   useProjectPersistence()
+  const takeoffTab = useAppStore(({ takeoffTab }) => takeoffTab)
 
   return (
     <AppShell
@@ -47,8 +52,12 @@ export default function Home() {
           <ViewerExportButton />
         </>
       }
-      takeoff={<TakeoffPane />}
-      takeoffActions={<TakeoffActions />}
+      takeoff={
+        takeoffTab === '内訳書' ? <TakeoffPane /> : takeoffTab === '検討' ? <ReviewPane /> : (
+          <WorkPackageBoard />
+        )
+      }
+      takeoffActions={<><ReviewTabs /><TakeoffActions /></>}
     />
   )
 }

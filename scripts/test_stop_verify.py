@@ -6,6 +6,7 @@ npm 출력이 stdout으로 새지 않고, 실패 시에만 block JSON이 나오�
 """
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -29,8 +30,12 @@ def run_hook(cwd: Path, *, stop_hook_active: bool = False):
         "cwd": str(cwd),
         "stop_hook_active": stop_hook_active,
     }
+    # 훅은 CI에서 검증을 건너뛴다(hooks/stop-verify.sh의 CI 가드). 이 테스트가 보는
+    # 것은 그 가드 뒤의 동작이므로 CI를 지우고 부른다 — 안 지우면 GitHub Actions에서만
+    # stdout이 비어 JSONDecodeError로 죽는다.
+    env = {k: v for k, v in os.environ.items() if k != "CI"}
     r = subprocess.run(
-        [BASH, HOOK], cwd=str(cwd),
+        [BASH, HOOK], cwd=str(cwd), env=env,
         input=json.dumps(payload), capture_output=True, text=True, encoding="utf-8",
     )
     assert r.returncode == 0, f"hook이 비정상 종료: {r.stderr}"

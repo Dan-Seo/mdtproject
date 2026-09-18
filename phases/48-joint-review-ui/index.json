@@ -3,16 +3,108 @@
   "phase": "48-joint-review-ui",
   "status": "pending",
   "steps": [
-    { "step": 1, "name": "viewer-state-and-joint-layout", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 2, "name": "viewer-joint-scene", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 3, "name": "review-tabs-joint-xray", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 4, "name": "review-check", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 5, "name": "review-items", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 6, "name": "review-compare", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 7, "name": "work-packages", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 8, "name": "e2e-flow", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 9, "name": "perf-browser", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 10, "name": "docs-sync", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" },
-    { "step": 11, "name": "refute-ui", "kind": "verify", "status": "pending", "model": "gpt-5.6-luna", "reasoning_effort": "xhigh" }
-  ]
+    {
+      "step": 1,
+      "name": "viewer-state-and-joint-layout",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T19:21:39+0900",
+      "summary": "스토어 viewer 상태·접합부 순수 레이아웃·ViewerTabs 3탭·i18n을 추가하고 좌표/범위/변이 회귀를 통과시켰다.",
+      "completed_at": "2026-09-17T19:42:32+0900"
+    },
+    {
+      "step": 2,
+      "name": "viewer-joint-scene",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T19:42:33+0900",
+      "summary": "Viewer3D에 접합부 씬, 참고 박스, 검사 마커, 카메라 pose 캡처/복원, 미지원 大梁 이동 UI와 회귀 테스트를 추가했다.",
+      "completed_at": "2026-09-17T20:07:44+0900"
+    },
+    {
+      "step": 3,
+      "name": "review-tabs-joint-xray",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T20:07:45+0900",
+      "summary": "ReviewTabs·ReviewPane·useReviewModel과 接合部·Calculation X-Ray 테스트를 추가했다.",
+      "completed_at": "2026-09-17T20:29:47+0900"
+    },
+    {
+      "step": 4,
+      "name": "review-check",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh",
+      "started_at": "2026-09-17T20:29:51+0900",
+      "summary": "形状検査のあき入力・除外・手動実行・判定結果・指摘行フォーカスを ReviewPane に追加し、i18n と反証テストを整えた。",
+      "completed_at": "2026-09-17T20:45:49+0900"
+    },
+    {
+      "step": 5,
+      "name": "review-items",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "started_at": "2026-09-17T20:45:51+0900",
+      "summary": "検討項目の生成·確認·保留·判断不可·再現·再検討 필터·고지를 완성하고 대상 fingerprint 및 변경 불변 테스트와 3개 변이 반증을 기록했다.",
+      "completed_at": "2026-09-17T22:42:34+0900"
+    },
+    {
+      "step": 6,
+      "name": "review-compare",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "started_at": "2026-09-17T22:42:34+0900",
+      "summary": "HOLDのS1〜S3を修正し、深い基準案コピー・entity/表示差分・対応確認バッジ・選択/support表示をTDDと実変異で検証した。",
+      "completed_at": "2026-09-17T23:47:21+0900",
+      "previous_hold": "Archived .git/phase48-run/step6-hold-original; must obtain fresh independent PASS"
+    },
+    {
+      "step": 7,
+      "name": "work-packages",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "started_at": "2026-09-17T23:47:21+0900",
+      "summary": "作業パッケージの作成·チェックリスト·準備状態派生表示を実装し、作業タブ接続と変異回帰を追加した。",
+      "completed_at": "2026-09-17T15:17:05+0000"
+    },
+    {
+      "step": 8,
+      "name": "e2e-flow",
+      "status": "completed",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "summary": "uc25 19/19 checks true on two consecutive runs and the seven regressions pass on a production build (BUILD_ID IV5UMpDB0S9L8kK-uCe2y); vitest 2032/2032, tsc and lint exit 0. Three test-side repairs, no product change: a declared 1440x900 viewport fixture, a raycast-based camera oracle replacing the pixel comparison (the joint scene never renders two byte-identical frames because coincident rebar surfaces z-fight - measured 11 distinct hashes in 11 captures, pointer held, cut plane at maximum), and base64 Buffer input matching the other e2e scripts. Details in step8-report.json under desktop_host_run.",
+      "authored_by": "claude-opus-5 (desktop host session) - repairs written here, so this session is not their independent reviewer"
+    },
+    {
+      "step": 9,
+      "name": "perf-browser",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max"
+    },
+    {
+      "step": 10,
+      "name": "docs-sync",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max"
+    },
+    {
+      "step": 11,
+      "name": "refute-ui",
+      "kind": "verify",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max"
+    }
+  ],
+  "created_at": "2026-09-17T19:21:39+0900"
 }

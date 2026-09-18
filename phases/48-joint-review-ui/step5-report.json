@@ -1,0 +1,47 @@
+{
+  "changed_files": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx"
+  ],
+  "tests_added": [
+    "finding and plain item creation with target-scoped fingerprints",
+    "confirmation fingerprint refresh and required confirmer",
+    "hold reason validation and local commit timing for title/body/by/reason",
+    "changed and unchanged target recheck filtering with unrelated state changes",
+    "viewer replay perturbation and review notice attribute",
+    "status forbidden-word and project-protection assertions"
+  ],
+  "mutations": [
+    {
+      "id": 1,
+      "mutation": "확인 저장의 snapshot.fingerprints 대상 부재 갱신 제거",
+      "failed_tests": [
+        "ReviewPane > confirms only after a by value and refreshes target fingerprints"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "현재 모델의 대상 부재 fingerprint와 기록 시점 fingerprint가 달라진다"
+    },
+    {
+      "id": 2,
+      "mutation": "검토 항목 snapshot.fingerprints의 부재 범위를 전체 모델로 변경",
+      "failed_tests": [
+        "ReviewPane > creates findings and plain review items with scoped snapshots"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "전체 부재 키 집합이 itemTargetMemberIds의 정확한 대상 집합과 달라진다"
+    },
+    {
+      "id": 3,
+      "mutation": "保留 이유 빈 값 검증 제거",
+      "failed_tests": [
+        "ReviewPane > requires a hold reason and keeps form edits local until commit"
+      ],
+      "exit_code": 1,
+      "failure_evidence": "빈 이유 저장 시 필수 오류가 나타나지 않고 core holdItem의 Invalid ReviewState.items[0].holdReason이 발생한다"
+    }
+  ],
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx"
+  ]
+}

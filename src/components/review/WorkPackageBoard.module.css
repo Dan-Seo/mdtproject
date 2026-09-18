@@ -1,0 +1,225 @@
+.board {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+  overflow: auto;
+}
+
+.board h2,
+.board h3,
+.board h4,
+.board p,
+.board ul {
+  margin: 0;
+}
+
+.heading,
+.cardHeading,
+.formActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.eyebrow {
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: var(--type-caption-uppercase-ls);
+  text-transform: uppercase;
+}
+
+.action {
+  white-space: nowrap;
+}
+
+.notice {
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  background: var(--color-canvas-soft);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.form,
+.card {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+}
+
+.form {
+  background: var(--color-canvas-soft);
+}
+
+.form label,
+.inlineForm label {
+  display: grid;
+  gap: var(--space-xxs);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.form input,
+.form select,
+.inlineForm input,
+.inlineForm select,
+.checklistRow select {
+  min-width: 0;
+  padding: var(--space-xxs) var(--space-xs);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-body);
+  font: inherit;
+}
+
+.formGroup,
+.checklistRow,
+.inlineForm {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.formGroup {
+  padding-top: var(--space-xs);
+  border-top: var(--border-hairline-soft);
+}
+
+.targetList,
+.blockers ul,
+.exceptions ul {
+  display: grid;
+  gap: var(--space-xxs);
+  padding-left: var(--space-md);
+}
+
+.draftChecklist {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border: var(--border-hairline-soft);
+  background: var(--surface-card);
+}
+
+.checkbox {
+  display: flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  width: fit-content;
+}
+
+.checkbox input {
+  width: auto;
+}
+
+.error {
+  color: var(--color-error);
+  font-size: var(--type-caption-size);
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.cardHeading h3 {
+  margin-bottom: var(--space-xxs);
+}
+
+.cardHeading p,
+.targets,
+.checklist,
+.blockers,
+.exceptions,
+.footer {
+  font-size: var(--type-caption-size);
+}
+
+.cardHeading p {
+  color: var(--text-muted);
+}
+
+.state {
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  color: var(--text-body);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.state[data-package-state='準備未完'] {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.state[data-package-state='準備完了（例外あり）'] {
+  color: var(--text-muted);
+}
+
+.blockers,
+.exceptions,
+.targets,
+.checklist {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.blockers {
+  color: var(--color-error);
+}
+
+.exceptions {
+  color: var(--text-muted);
+}
+
+.targetChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.targetChip {
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-body);
+}
+
+.checklistRow {
+  padding: var(--space-xs);
+  border-top: var(--border-hairline-soft);
+}
+
+.checklistRow > label {
+  display: grid;
+  gap: var(--space-xxs);
+  color: var(--text-muted);
+}
+
+.required {
+  margin-left: var(--space-xs);
+  color: var(--text-muted);
+  font-size: var(--type-caption-size);
+  font-weight: 400;
+}
+
+.inlineForm {
+  padding: var(--space-xs);
+  border-left: var(--border-hairline);
+  background: var(--color-canvas-soft);
+}
+
+.footer {
+  padding-top: var(--space-xs);
+  border-top: var(--border-hairline-soft);
+  color: var(--text-muted);
+}
+
+.empty {
+  color: var(--text-muted);
+}

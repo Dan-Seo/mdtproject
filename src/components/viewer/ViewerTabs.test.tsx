@@ -26,6 +26,10 @@ describe('ViewerTabs', () => {
       'aria-selected',
       'false',
     )
+    expect(screen.getByRole('tab', { name: '接合部' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    )
   })
 
   it('switches the store mode on click', () => {
@@ -34,6 +38,14 @@ describe('ViewerTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: '建物' }))
 
     expect(useAppStore.getState().viewerMode).toBe('building')
+  })
+
+  it('switches to the joint mode on click', () => {
+    render(<ViewerTabs />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '接合部' }))
+
+    expect(useAppStore.getState().viewerMode).toBe('joint')
   })
 
   it('reports the mode switch', () => {
@@ -65,5 +77,6 @@ describe('ViewerTabs', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '부재' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '건물' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '接合部' })).toBeInTheDocument()
   })
 })

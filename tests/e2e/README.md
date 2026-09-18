@@ -54,6 +54,26 @@ done
 | `uc20-slab.js` | 床板(スラブ) — 断面一覧の2方向×2面 입력 · 内訳 4행 · 単独床板↔連続床板으로 継手 조문 교체 · 開口部 미계상 고지(R14)에 床板 명시 · 平面에서 床板을 놓아도 大梁·壁이 선택 가능 · 部材/建物 3D |
 | `uc21-opening.js` | 開口部(数量積算基準 1通則8)) — 平面에서 壁·床板을 골라야 입력이 뜨는 것 · 開口을 넣으면 内訳이 欠除量별로 갈리는 것 · 断たれた縦筋의 継手가 2（５）壁1)② 但書로 0か所가 되는 것 · 0.5㎡以下면 欠除가 사라지는 것 · 床板 開口가 平面에 실촌으로 그려지는 것 · 開口補強筋 미계상 고지(R14) · 部材/建物 3D |
 | `uc24-drawing-set.js` | 図面セットの全PDF格子競合、ページ・ブロックの明示選択、基準軸組図と階範囲、既存部材の破棄同意後の格子反映を tsu ゴールデンで検証 |
+| `uc25-joint-review.js` | 接合部検討・形状検査・検討項目・基準案・作業パッケージ・保存/復元の全19段階（負例含む） |
+
+### uc25 샘플 案件의 clearance oracle 사실
+
+이 항목은 규준값이나 제품 기본값이 아니라 `src/domain/model/sample-project.ts`의 synthetic
+fixture 사실이다. `C1 帯筋 径`은 `D13`, `C1 帯筋 ピッチ`는 `100`이며, `uc25`가 실행 중
+ordinary SectionTable control을 각각 하나씩 읽어 이 사실이 유지되는지 먼저 확인한다. 그 뒤
+호칭에서 `d`를 파싱하고 `g = p - d`를 계산해 `low = g - 1`, `high = g + 1`을 만든다.
+`86`·`88` 같은 계산 결과를 스크립트에 고정하지 않는다.
+
+null basis run은 원래의 `checkId0`·`findings0`·세 verdict·継手位置 미검토 assertion을
+그대로 보존하면서 `あき不足候補`가 없음을 추가로 확인한다. low run은 C1 `帯筋` `D13`
+`#0`·`#1`의 unordered row class에 clearance 행이 없는지 확인하고, high run은 같은 row
+class의 양의 gap witness가 `あき不足候補`·`利用者入力`·high 값·화면 scope를 가지며
+제외되지 않았는지 확인한다. DOM은 mark/role/size/bar index만 내놓으므로 `segmentIndex`는
+주장하지 않는다. high 결과는 기존 downstream의 첫 번째 행 조작에 그대로 사용한다.
+
+이 oracle의 static/helper 실행은 browser acceptance가 아니다. 원래 실패한 browser receipt와
+수정 후 아직 실행하지 않은 script는 `phases/48-joint-review-ui/step8-correction.md`와
+`step8-report.json`에 분리해 기록한다.
 
 ### 자동저장을 지우고 시작한다
 

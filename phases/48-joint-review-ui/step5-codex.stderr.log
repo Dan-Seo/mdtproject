@@ -1,0 +1,5 @@
+2026-09-17T11:55:09.835153Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in C:\Users\emper\mdtproject\src\components\review\ReviewPane.tsx:
+interface ReviewItemRequest {
+  token: number
+  finding: geometryCheck.Finding | null
+}

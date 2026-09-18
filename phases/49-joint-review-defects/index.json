@@ -1,0 +1,45 @@
+{
+  "project": "Kijun",
+  "phase": "49-joint-review-defects",
+  "status": "pending",
+  "steps": [
+    {
+      "step": 0,
+      "name": "refute-defect-claims",
+      "kind": "verify",
+      "gate": true,
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 1,
+      "name": "joint-target-kind",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 2,
+      "name": "stale-notice-coverage",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "high"
+    },
+    {
+      "step": 3,
+      "name": "work-package-link-and-assertions",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    },
+    {
+      "step": 4,
+      "name": "uc25-self-assertion",
+      "status": "pending",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "xhigh"
+    }
+  ],
+  "created_at": "2026-09-18T18:30:00+0900"
+}

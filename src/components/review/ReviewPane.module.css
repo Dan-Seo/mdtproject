@@ -1,0 +1,121 @@
+.pane {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+  overflow: auto;
+}
+
+.pane section {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.pane h2,
+.pane h3,
+.pane p,
+.pane ul,
+.pane pre {
+  margin: 0;
+}
+
+.pane ul {
+  padding-left: var(--space-md);
+}
+
+.table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  font-size: var(--type-caption-size);
+}
+
+.table th,
+.table td {
+  padding: var(--space-xs);
+  border-right: var(--border-hairline-soft);
+  border-bottom: var(--border-hairline);
+  background: var(--surface-card);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.formula {
+  padding: var(--space-sm);
+  background: var(--color-canvas-soft);
+  color: var(--text-body);
+  font-family: var(--font-mono);
+  font-size: var(--type-code-size);
+  white-space: pre-wrap;
+}
+
+.excluded {
+  color: var(--text-muted);
+}
+
+.itemCard {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+}
+
+.itemStatus {
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  font-weight: 600;
+}
+
+.itemStatus[data-review-status='確認済'] {
+  color: var(--text-body);
+}
+
+.itemStatus[data-review-status='保留'] {
+  color: var(--text-muted);
+}
+
+.itemStatus[data-review-status='判断不可'],
+.itemStatus[data-review-status='再検討必要'] {
+  color: var(--color-error);
+}
+
+.compare {
+  gap: var(--space-xs);
+}
+
+.compare .compareEntityKind,
+.compare .compareEntityChange,
+.compare .compareNeedsReview,
+.compare .compareCategory {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+}
+
+.compare .compareEntityKind {
+  color: var(--text-muted);
+}
+
+.compare .compareEntityChange {
+  color: var(--text-body);
+}
+
+.compare .compareNeedsReview {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  font-weight: 600;
+}
+
+.compare .compareCategory {
+  margin-right: var(--space-xs);
+  color: var(--text-muted);
+  border-color: var(--border-hairline-soft);
+}
