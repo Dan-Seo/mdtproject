@@ -313,75 +313,90 @@ const readStoredBundle = () =>
       }),
   );
 
+// The QuickJS `Buffer` only accepts base64 input, which is why every other
+// scenario in this directory passes `Buffer.from(x, "base64")`.  The saved 案件
+// JSON carries Japanese text, so `btoa` alone is not enough — encode UTF-8
+// first, in the page, which has both `TextEncoder` and `btoa`.
 const loadJsonObject = async (value, name) => {
+  const base64 = await page.evaluate((text) => {
+    const bytes = new TextEncoder().encode(text);
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 1) {
+      binary += String.fromCharCode(bytes[index]);
+    }
+    return btoa(binary);
+  }, JSON.stringify(value));
   await page.setInputFiles("input[type='file'][accept*='json']", {
     name,
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(value), "utf8"),
+    buffer: Buffer.from(base64, "base64"),
   });
 };
 
-// The canvas itself is the user-facing rendered frame. Hashing its PNG data
-// keeps the observation compact while still requiring the pixels to change.
-// No viewer state, React internals, or application state is injected or read here.
-const readCanvasFrame = () =>
-  page.evaluate(() => {
-    const canvas = document.querySelector("canvas[aria-label='接合部の配筋3D'], canvas");
-    if (!canvas) return null;
-    try {
-      const dataUrl = canvas.toDataURL("image/png");
-      let hash = 2166136261;
-      for (let index = 0; index < dataUrl.length; index += 1) {
-        hash = Math.imul(hash ^ dataUrl.charCodeAt(index), 16777619);
-      }
-      return {
-        width: canvas.width,
-        height: canvas.height,
-        dataLength: dataUrl.length,
-        hash: hash >>> 0,
-      };
-    } catch (error) {
-      return { error: String(error) };
-    }
-  });
+// The camera evidence cannot be pixels.  The rebars of a joint interpenetrate by
+// a declared product assumption — src/lib/review/geometry-check.ts lists
+// 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 among the assumptions the
+// review pane shows — so coincident surfaces z-fight and the winner of the depth
+// test is undefined per frame.  Measured on this build at the Scenario 7
+// close-up: eleven consecutive captures, eleven distinct hashes, with no input
+// between them, with the pointer held down, and with the cut plane at its
+// maximum.  No two frames of this scene are ever byte-identical, so frame
+// equality can never settle and frame difference proves nothing.
+//
+// Ask the product instead.  The viewer's tooltip is produced by a raycast
+// against the real geometry (Viewer3D handlePointerMove -> tooltipFromHit), so
+// which bar sits under a fixed screen point is exact arithmetic on the camera,
+// with no rasterisation in it.  Hovering reads that; it does not click, so it
+// picks nothing and changes no product state.
+const JOINT_CANVAS = "canvas[aria-label='接合部の配筋3D']";
 
-const waitForStableCanvasFrame = async (name) => {
-  let previous = await readCanvasFrame();
-  const started = Date.now();
-  while (Date.now() - started < 3000) {
-    await page.waitForTimeout(120);
-    const current = await readCanvasFrame();
-    if (
-      previous !== null &&
-      current !== null &&
-      previous.error === undefined &&
-      current.error === undefined &&
-      previous.width > 0 &&
-      previous.height > 0 &&
-      previous.dataLength > 0 &&
-      current.width > 0 &&
-      current.height > 0 &&
-      current.dataLength > 0 &&
-      previous.width === current.width &&
-      previous.height === current.height &&
-      previous.dataLength === current.dataLength &&
-      previous.hash === current.hash
-    ) {
-      return current;
-    }
-    previous = current;
+const FINGERPRINT_POINTS = [[0.3, 0.35], [0.45, 0.5], [0.55, 0.45], [0.65, 0.6], [0.4, 0.65]];
+
+// A press with no movement is trusted input with no rotation in it.  It exists
+// only to reset the viewer's idle timer: Viewer3D turns auto-rotation on eight
+// seconds after the last OrbitControls 'start'
+// (AUTO_ROTATE_DELAY_MS), and a camera that drifts on its own would make the
+// fingerprint differ without any drag.
+const resetIdleTimer = async (box) => {
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.up();
+};
+
+const cameraFingerprint = async (box) => {
+  const readings = [];
+  for (const [fx, fy] of FINGERPRINT_POINTS) {
+    await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy);
+    await sleep(120);
+    readings.push(
+      await page.evaluate(() => {
+        const tip = document.querySelector("[role='tooltip']");
+        if (tip === null) return null;
+        return {
+          hidden: tip.hidden === true,
+          text: (tip.textContent ?? "").replace(/\s+/g, " ").trim(),
+        };
+      }),
+    );
   }
-  throw new Error(
-    `UC25 camera evidence blocker: ${name} rendered canvas did not stabilize: ${JSON.stringify(previous)}`,
-  );
+  return readings;
 };
 
-const canvasFrameChanged = (before, after) =>
-  before.width === after.width &&
-  before.height === after.height &&
-  (before.dataLength !== after.dataLength || before.hash !== after.hash);
+const CLIP_TOGGLE = "[aria-label='断面カット'] button:nth-of-type(1)";
 
 const perturbViewer = async () => {
+  // Order matters, and not for the reason it looks like.  The camera evidence
+  // compares two rendered frames, so the frame has to be repeatable — and
+  // repeatability here is a function of how much interpenetrating rebar is in
+  // view.  Measured on this build at the Scenario 7 close-up: with the cut
+  // plane applied the frame is stable (949x303, ~125 kB of PNG), with it off it
+  // never stabilises (~390 kB) even with the pointer held down, and the same
+  // holds at 536x294 (~235 kB).  The cut removes coincident surfaces from the
+  // view.  So move the cut first, then measure the camera — which is also the
+  // order Scenario 7 describes.  The overlap itself is a declared product
+  // assumption rather than a surprise — geometry-check.ts lists
+  // 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 among the assumptions the
+  // pane shows.  This script only has to observe the viewer, not fix it.
   const clipFacts = await page.evaluate(() => {
     const input = document.querySelector("input[aria-label='切断位置']");
     if (!input) return null;
@@ -389,7 +404,7 @@ const perturbViewer = async () => {
   });
   if (clipFacts === null) throw new Error("UC25 missing clip position input");
   const clipBefore = clipFacts.value;
-  await page.click("[aria-label='断面カット'] button:nth-of-type(1)");
+  await page.click(CLIP_TOGGLE);
   await page.focus("input[aria-label='切断位置']");
   const clipKey = Number(clipBefore) >= Number(clipFacts.max) ? "ArrowLeft" : "ArrowRight";
   await page.keyboard.press(clipKey);
@@ -397,25 +412,32 @@ const perturbViewer = async () => {
     () => document.querySelector("input[aria-label='切断位置']")?.value ?? null,
   );
 
-  const canvasBox = await page.evaluate(() => {
-    const canvas = document.querySelector("canvas");
+  const canvasBox = await page.evaluate((selector) => {
+    const canvas = document.querySelector(selector);
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
-  });
+  }, JOINT_CANVAS);
   if (canvasBox === null) throw new Error("UC25 missing viewer canvas for camera drag");
 
-  // A no-movement pointer interaction is trusted browser input and resets the
-  // viewer's auto-rotate timer. Two equal canvas frames are the gate that the
-  // before/after evidence is not produced by damping or auto-rotate.
-  const settlePoint = {
-    x: canvasBox.x + canvasBox.width * 0.92,
-    y: canvasBox.y + canvasBox.height * 0.92,
-  };
-  await page.mouse.move(settlePoint.x, settlePoint.y);
-  await page.mouse.down();
-  await page.mouse.up();
-  const cameraFrameBefore = await waitForStableCanvasFrame("before trusted camera drag");
+  // Auto-rotation would move the camera without a drag, so reset the idle timer
+  // first, then read the same screen points twice.  Two identical readings are
+  // the gate that the fingerprint is a property of the camera and not of the
+  // clock; without them a later difference would prove nothing.
+  await resetIdleTimer(canvasBox);
+  const fingerprintBefore = await cameraFingerprint(canvasBox);
+  const fingerprintRepeat = await cameraFingerprint(canvasBox);
+  if (JSON.stringify(fingerprintBefore) !== JSON.stringify(fingerprintRepeat)) {
+    throw new Error(
+      `UC25 camera evidence blocker: the scene changed under a still camera, so a later difference would not be the drag: ${JSON.stringify({ fingerprintBefore, fingerprintRepeat })}`,
+    );
+  }
+  // A fingerprint that reads nothing anywhere cannot detect a camera move.
+  if (!fingerprintBefore.some((reading) => reading !== null && !reading.hidden && reading.text !== "")) {
+    throw new Error(
+      `UC25 camera evidence blocker: no sampled point resolves to a rebar, so the camera oracle is blind: ${JSON.stringify(fingerprintBefore)}`,
+    );
+  }
 
   await page.mouse.move(
     canvasBox.x + canvasBox.width * 0.48,
@@ -427,11 +449,12 @@ const perturbViewer = async () => {
     canvasBox.y + canvasBox.height * 0.53,
   );
   await page.mouse.up();
-  const cameraFrameAfter = await waitForStableCanvasFrame("after trusted camera drag");
-  const cameraMoved = canvasFrameChanged(cameraFrameBefore, cameraFrameAfter);
+
+  const fingerprintAfter = await cameraFingerprint(canvasBox);
+  const cameraMoved = JSON.stringify(fingerprintBefore) !== JSON.stringify(fingerprintAfter);
   if (!cameraMoved) {
     throw new Error(
-      `UC25 camera evidence blocker: trusted drag did not change rendered canvas: ${JSON.stringify({ cameraFrameBefore, cameraFrameAfter })}`,
+      `UC25 camera evidence blocker: the trusted drag left every sampled point on the same rebar: ${JSON.stringify({ fingerprintBefore, fingerprintAfter })}`,
     );
   }
   return {
@@ -439,14 +462,25 @@ const perturbViewer = async () => {
     clipAfter,
     clipMoved: clipBefore !== clipAfter,
     cameraMoved,
-    cameraFrameBefore,
-    cameraFrameAfter,
+    fingerprintBefore,
+    fingerprintAfter,
   };
 };
 
 // Each scenario owns its IndexedDB starting point.  The first landing is only
 // a handle on the database; the reload is the sample-project starting point.
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+
+// Scenario 7 and 14 sample fixed fractions of the canvas and require a rebar
+// under them, so the canvas has to be big enough for the joint to cover those
+// points.  The window is therefore a declared fixture of this scenario rather
+// than an assumption about the host, and it is restored at the end so the other
+// scripts sharing this browser are unaffected.
+const hostViewport = await page.evaluate(() => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+}));
+await page.setViewportSize({ width: 1440, height: 900 });
 await clearStore();
 await page.reload({ waitUntil: "domcontentloaded" });
 await installBrowserDiagnostics();
@@ -564,7 +598,12 @@ const quantityRowPoint = await page.evaluate(() => {
   };
 });
 if (quantityRowPoint === null) throw new Error("UC25 could not find a 柱 主筋 quantity row");
-await page.mouse.move(quantityRowPoint.x, quantityRowPoint.y);
+// The row is wider than its pane, so its own centre is not necessarily a
+// visible point: on a narrow window it lands outside the viewport, no
+// mouseenter fires, and the X-Ray wait below times out against an empty pane.
+// page.hover() targets the visible part of the element, whatever the window
+// size, so this scenario does not depend on the host's window width.
+await page.hover(`[data-testid="${quantityRowPoint.testId}"]`);
 const beforeEnter = await page.evaluate(() => {
   const reviewTab = [...document.querySelectorAll("[aria-label='内訳書切替'] [role='tab']")]
     .find((tab) => tab.textContent?.trim() === "検討");
@@ -1241,6 +1280,8 @@ observations.browserDiagnostics = await page.evaluate(() =>
 
 await clickReviewTab();
 const screenshot = await saveScreenshot(await page.screenshot(), "uc25-joint-review.png");
+// Hand the shared browser back at the size it was found at.
+await page.setViewportSize(hostViewport);
 observations.screenshot = screenshot;
 console.log(JSON.stringify({ checks, observations }, null, 2));
 console.log(JSON.stringify(checks));

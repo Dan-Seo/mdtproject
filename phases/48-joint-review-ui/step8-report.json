@@ -1,20 +1,40 @@
 {
   "step": 8,
   "name": "e2e-flow",
-  "status": "error",
-  "runtime_acceptance": "FAIL_CORRECTED_SCENARIO7_CAMERA",
-  "checks": null,
-  "regressions": {
-    "uc1": "not_run_host_browser",
-    "uc2": "not_run_host_browser",
-    "uc3": "not_run_host_browser",
-    "uc7": "not_run_host_browser",
-    "uc9": "not_run_host_browser",
-    "uc10": "not_run_host_browser",
-    "uc15": "not_run_host_browser"
+  "status": "completed",
+  "runtime_acceptance": "PASS_DESKTOP_HOST",
+  "checks": {
+    "jointCanvas": true,
+    "reviewJointTwoGirdersAndReference": true,
+    "xrayDesignShapeAndSource": true,
+    "initialCheckFindings": true,
+    "clearanceRecheckFindings": true,
+    "findingFocus": true,
+    "checkStableAfterViewerPose": true,
+    "reviewItemConfirmed": true,
+    "packageReady": true,
+    "baselineCaptured": true,
+    "sectionEditCommitted": true,
+    "comparisonShowsImpactAndRecheck": true,
+    "packageBlockedByModelChange": true,
+    "displayStateStableAfterUiEdits": true,
+    "reviewBundleRoundTrip": true,
+    "autosaveReviewPersistence": true,
+    "legacyFileLoadsWithoutReview": true,
+    "incompatibleReviewRejectedWithoutMutation": true,
+    "statusVocabularyAndNotices": true
   },
-  "screenshot": null,
-  "blocker": "Corrected clearance oracle passed in actual production browser. Unchanged scenario7 camera evidence assertion then failed: trusted drag produced identical canvas frame hash. No full19-check result, screenshot, or seven regressions reached; Step8 remains error. Product defect is not established by this observation.",
+  "regressions": {
+    "uc1": "pass",
+    "uc2": "pass",
+    "uc3": "pass",
+    "uc7": "pass",
+    "uc9": "pass",
+    "uc10": "pass",
+    "uc15": "pass"
+  },
+  "screenshot": "C:\\Users\\emper\\.dev-browser\\tmp\\uc25-joint-review.png",
+  "blocker": null,
   "original_failure": {
     "status": "unchanged_archived_failure",
     "full_rerun_receipt": ".git/phase48-run/browser-step8-1789662484080595265/receipt.json",
@@ -115,35 +135,20 @@
     }
   },
   "paths_verified": [
-    "tests/e2e/uc25-joint-review.js",
-    "tests/e2e/README.md",
-    "phases/48-joint-review-ui/step8.md",
+    "phases/48-joint-review-ui/index.json",
     "phases/48-joint-review-ui/step8-correction.md",
     "phases/48-joint-review-ui/step8-report.json",
-    "phases/48-joint-review-ui/index.json",
-    ".git/phase48-run/step8-corrective-plan-v2.md",
-    ".git/phase48-run/step8-sol-review.md",
-    ".git/phase48-run/step8-before-spec-correction/manifest.json",
-    ".git/phase48-run/browser-step8-1789662484080595265/receipt.json",
-    ".git/phase48-run/browser-step8-1789662709634825985/receipt.json",
-    ".git/phase48-run/step8-clearance-blocker.json",
-    "src/lib/review/geometry-check.ts",
-    "src/domain/model/sample-project.ts",
+    "phases/48-joint-review-ui/step8.md",
+    "src/components/review/ReviewPane.tsx",
     "src/components/section/SectionTable.tsx",
+    "src/domain/model/sample-project.ts",
     "src/domain/rebar/column.ts",
     "src/domain/rebar/stirrup-layout.ts",
-    "src/lib/viewer/geometry.ts",
+    "src/lib/review/geometry-check.ts",
     "src/lib/viewer/building.ts",
-    "src/components/review/ReviewPane.tsx",
-    ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
-    ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
-    ".git/phase48-run/step8-correction-browser-result.json",
-    ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
-    ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
-    ".git/phase48-run/step8-correction-opus-review.json",
-    ".git/phase48-run/step8-correction-gates-result.json",
-    ".git/phase48-run/browser-step8-1789665896533303664/receipt.json",
-    ".git/phase48-run/step8-camera-diagnostic/step8-camera-pixel-analysis.json"
+    "src/lib/viewer/geometry.ts",
+    "tests/e2e/README.md",
+    "tests/e2e/uc25-joint-review.js"
   ],
   "paths_expected_absent": [],
   "fabricated_paths": [],
@@ -377,5 +382,276 @@
     "screenshots": ".git/phase48-run/step8-camera-diagnostic",
     "pixel_analysis": ".git/phase48-run/step8-camera-diagnostic/step8-camera-pixel-analysis.json",
     "observation": "One canvas, correct joint aria-label, drag hits CANVAS, preserveDrawingBuffer false. toDataURL hashes remain constant while compositor screenshots change, including BEFORE vs NO-DRAG control. Visual review confirms nonblank joint scene and different viewpoint. Readback/stability oracle is invalid here; screenshot inequality alone is NOT yet a valid replacement because no-drag control also changes. No product defect or camera assertion pass claimed. Headless matches failed run; no claim of headed execution or software renderer."
+  },
+  "jetson_local_evidence_not_transferred": {
+    "note": "These raw artefacts live under the Jetson checkout's .git/phase48-run/ and are not carried by a git push. They were listed in paths_verified by the Jetson run, where they did exist; on this host scripts/check-citations.py reported all of them as path_claim_missing. They are moved here so the report stops claiming they exist in this repository, as phases/48-joint-review-ui/step8-desktop-handoff.md instructs.",
+    "paths": [
+      ".git/phase48-run/step8-corrective-plan-v2.md",
+      ".git/phase48-run/step8-sol-review.md",
+      ".git/phase48-run/step8-before-spec-correction/manifest.json",
+      ".git/phase48-run/browser-step8-1789662484080595265/receipt.json",
+      ".git/phase48-run/browser-step8-1789662709634825985/receipt.json",
+      ".git/phase48-run/step8-clearance-blocker.json",
+      ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
+      ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
+      ".git/phase48-run/step8-correction-browser-result.json",
+      ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
+      ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
+      ".git/phase48-run/step8-correction-opus-review.json",
+      ".git/phase48-run/step8-correction-gates-result.json",
+      ".git/phase48-run/browser-step8-1789665896533303664/receipt.json",
+      ".git/phase48-run/step8-camera-diagnostic/step8-camera-pixel-analysis.json"
+    ]
+  },
+  "desktop_host_run": {
+    "status": "browser_acceptance_reached",
+    "host": "desktop (Windows 11), separate machine from the Jetson run recorded above",
+    "build_id": "IV5UMpDB0S9L8kK-uCe2y",
+    "base_commit": "3e632fb",
+    "commands": [
+      "npm run build",
+      "npx next start -p 3000",
+      "npx dev-browser --browser kijun --timeout 300 run tests/e2e/uc25-joint-review.js",
+      "npx dev-browser --browser kijun --timeout 180 run tests/e2e/uc{1,2,3,7,9,10,15}-*.js",
+      "npx dev-browser stop",
+      "npx vitest run",
+      "npx tsc --noEmit",
+      "npm run lint"
+    ],
+    "host_gates": {
+      "uc25": {
+        "exit_code": 0,
+        "checks_true": 19,
+        "consecutive_green_runs": 2
+      },
+      "regressions": {
+        "exit_code": 0,
+        "scripts": [
+          "uc1-initial-load.js",
+          "uc2-plan-selection.js",
+          "uc3-section-edit-recalc.js",
+          "uc7-source-and-formula.js",
+          "uc9-building-view.js",
+          "uc10-viewer-features.js",
+          "uc15-revisit.js"
+        ]
+      },
+      "vitest": {
+        "exit_code": 0,
+        "test_files": 400,
+        "tests": 2032,
+        "failed": 0
+      },
+      "typecheck": {
+        "exit_code": 0
+      },
+      "lint": {
+        "exit_code": 0
+      },
+      "vitest_first_attempt": "On an earlier attempt 5 files / 10 tests failed with 'Test timed out in 5000ms' while the dev-browser headless Chrome was still running; all 2032 passed after 'npx dev-browser stop'. Recorded as CPU contention, not a product failure."
+    },
+    "clearance_oracle": {
+      "fixture": {
+        "sizeControl": "D13",
+        "pitchControl": "100",
+        "syntheticFact": true
+      },
+      "derivation": {
+        "pitchMm": 100,
+        "diameterMm": 13,
+        "gapMm": 87
+      },
+      "thresholds": {
+        "lowMm": 86,
+        "highMm": 88
+      },
+      "scope": "接合部の全鉄筋",
+      "pairLabels": [
+        "C1 / 帯筋 / D13 / #0",
+        "C1 / 帯筋 / D13 / #1"
+      ],
+      "witness": {
+        "kind": "あき不足候補",
+        "a": {
+          "member": "C1",
+          "role": "帯筋",
+          "size": "D13",
+          "barIndex": 0
+        },
+        "b": {
+          "member": "C1",
+          "role": "帯筋",
+          "size": "D13",
+          "barIndex": 1
+        },
+        "gapText": "87.0",
+        "basis": "利用者入力あき: 88mm (接合部の全鉄筋)",
+        "exclusionText": ""
+      },
+      "checkIds": {
+        "initial": "検査ID: 3c2d45d852de02c1",
+        "low": "検査ID: d93d1059ce2d71ae",
+        "high": "検査ID: 860fe37c2b91ab95"
+      },
+      "predicate": {
+        "lowForbiddenCount": 0,
+        "highWitnessCount": 24
+      }
+    },
+    "viewer_perturbation": {
+      "clipBefore": "0.5",
+      "clipAfter": "0.51",
+      "clipMoved": true,
+      "cameraMoved": true,
+      "fingerprintBefore": [
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割上端筋径D22設計本数4設計長さ14720 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-X2Y1役割主筋径D25設計本数12設計長さ6200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-X2Y1役割主筋径D25設計本数12設計長さ6200 mm▲"
+        },
+        {
+          "hidden": true,
+          "text": ""
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8200 mm▲"
+        }
+      ],
+      "fingerprintAfter": [
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-X2Y1役割主筋径D25設計本数12設計長さ6200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割上端筋径D22設計本数4設計長さ14720 mm▲"
+        }
+      ]
+    },
+    "display_perturbation": {
+      "clipBefore": "0.51",
+      "clipAfter": "0.52",
+      "clipMoved": true,
+      "cameraMoved": true,
+      "fingerprintBefore": [
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割上端筋径D22設計本数4設計長さ14720 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-X2Y1役割主筋径D25設計本数12設計長さ6200 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-X2Y1役割主筋径D25設計本数12設計長さ6200 mm▲"
+        },
+        {
+          "hidden": true,
+          "text": ""
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割下端筋径D22設計本数4設計長さ14720 mm▲"
+        }
+      ],
+      "fingerprintAfter": [
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8100 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割上端筋径D22設計本数4設計長さ14720 mm▲"
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G1-X1Y1-X役割上端筋径D25設計本数4設計長さ8100 mm▲"
+        },
+        {
+          "hidden": true,
+          "text": ""
+        },
+        {
+          "hidden": false,
+          "text": "部材 id1F-G2-X2Y1-Y役割上端筋径D22設計本数4設計長さ14720 mm▲"
+        }
+      ]
+    },
+    "repairs": [
+      {
+        "id": "viewport",
+        "scope": "tests/e2e/uc25-joint-review.js",
+        "defect": "Every pointer step derives coordinates from getBoundingClientRect, so the script silently assumed the layout fits the host window. On a 929px-wide window the 内訳書 柱 主筋 row centre was x=1013, outside the viewport.",
+        "measured": {
+          "innerWidth": 929,
+          "rowCentreX": 1013,
+          "elementFromPoint": null,
+          "rowMatchesHover": false,
+          "symptom": "Scenario 3 'UC25 TIMEOUT X-Ray hover' with cards=0"
+        },
+        "repair": "await page.setViewportSize({ width: 1440, height: 900 }) at the top",
+        "product_change": false
+      },
+      {
+        "id": "camera_evidence_oracle",
+        "scope": "tests/e2e/uc25-joint-review.js",
+        "defect": "The Scenario 7/14 camera-moved evidence hashed canvas.toDataURL(). Two separate mechanisms were wrong. (1) src/components/viewer/Viewer3D.tsx builds the renderer as new THREE.WebGLRenderer({ antialias: true }) with no preserveDrawingBuffer, so an ordinary evaluate always reads the composited-and-cleared image. (2) Reading inside the frame fixes that but does not make the frame reproducible: the joint scene never renders two byte-identical frames, so neither 'settled' nor 'changed' can be decided from pixels at all.",
+        "measured": {
+          "cleared_buffer_dataLength": 9206,
+          "cleared_buffer_hash": 3323779968,
+          "identical_before_and_after_a_visible_drag": true,
+          "in_frame_capture_distinct_hashes": "11 consecutive captures produced 11 distinct hashes with no input between them; dataLength drifted 389454-395986 for a 949x303 canvas",
+          "with_pointer_held_down": "still all-distinct hashes, so OrbitControls autoRotate (skipped while state !== NONE) is excluded",
+          "with_cut_plane_at_maximum": "5 captures, 5 distinct hashes, dataLength 63854-89366, so the density of the view is not the cause either",
+          "cause": "Coincident rebar surfaces z-fight. The overlap is a declared product assumption, not a defect discovered here: src/lib/review/geometry-check.ts lists 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 and 「主筋は帯筋内面に接する作図規則の位置（設計図書の段配置ではない）」 among the assumptions ReviewPane shows. The depth-test winner between coplanar surfaces is undefined per frame.",
+          "element_screenshot_alternative_rejected": "compositor screenshots do see the layer but cost ~5.6s each and never settle either."
+        },
+        "repair": "Stop measuring pixels. The viewer's tooltip is produced by a raycast against the real geometry (Viewer3D handlePointerMove -> tooltipFromHit), so which bar sits under a fixed screen point is exact arithmetic on the camera with no rasterisation in it. Hover five fixed canvas fractions, read the tooltip at each, and compare the readings across the drag. Hovering does not click, so it picks nothing and changes no product state. Two guards keep it falsifiable: the fingerprint is read twice before the drag and must be identical (otherwise the scene is moving under a still camera and a later difference would prove nothing), and at least one sampled point must resolve to a rebar (otherwise the oracle is blind).",
+        "evidence": "See viewer_perturbation and display_perturbation below.",
+        "product_change": false
+      },
+      {
+        "id": "buffer_base64",
+        "scope": "tests/e2e/uc25-joint-review.js",
+        "defect": "loadJsonObject used Buffer.from(json, 'utf8'); the dev-browser QuickJS runtime rejects it with 'QuickJS Buffer only supports base64 string input'. uc25 was the only script in tests/e2e using the utf8 form.",
+        "repair": "Encode UTF-8 to base64 in the page (TextEncoder + btoa) and pass Buffer.from(base64, 'base64'), matching uc12/uc17/uc22/uc23/uc24.",
+        "product_change": false
+      }
+    ],
+    "unchanged": "No src, product, core, rulepack, fixture or store file was touched. The only modified file outside this phase directory is tests/e2e/uc25-joint-review.js; phases/48-joint-review-ui/index.json and this report are phase bookkeeping. The 19 top-level checks, the Scenario 5 clearance oracle and every invariance assertion are unchanged - only the broken observation mechanisms were repaired.",
+    "independent_review": "The three repairs were written in this session, so this session is not their independent reviewer. The step8 index entry records the author, not an approver.",
+    "acceptance": true,
+    "product_findings_for_followup": {
+      "rebar_overlap": {
+        "observed": "Rebars visibly interpenetrate in the joint 3D view (user-reported from a screenshot of the running build).",
+        "status": "declared assumption, not an unnoticed defect",
+        "source": "src/lib/review/geometry-check.ts",
+        "reported_by_product": "The shape check reports these as 干渉候補/接触: 698 findings with clearances from -25mm through 0mm and no positive row.",
+        "second_order_effect": "Coincident surfaces z-fight, so no frame of the joint is byte-reproducible. Any future test that compares rendered frames of a joint will hit this.",
+        "why_not_fixed_here": "Giving 大梁 crossings an over/under relationship and main bars their 段配置 is a product modelling change the current scope excludes. It needs its own ADR and phase.",
+        "surfaced_by": "src/components/review/ReviewPane.tsx renders the same ASSUMPTIONS list in the 検討 pane."
+      }
+    }
   }
 }

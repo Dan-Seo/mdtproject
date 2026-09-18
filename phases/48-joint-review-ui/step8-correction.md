@@ -114,3 +114,45 @@ The report therefore keeps runtime checks null, preserves the original failed re
 references, and labels the corrected runtime `not_run_host_browser`. Host sequential build,
 browser, seven-regression, typecheck/lint, screenshot review, and independent review gates
 remain pending.
+
+## Desktop host run (2026-09-18)
+
+The verification boundary above describes the correction turn on the Jetson. It has since
+been closed on the desktop host. The corrected script was run against a production build
+(`npm run build`, `npx next start -p 3000`, BUILD_ID `IV5UMpDB0S9L8kK-uCe2y`, base commit
+`3e632fb`): uc25 reports 19/19 checks true on two consecutive runs, the seven regressions
+(`uc1`, `uc2`, `uc3`, `uc7`, `uc9`, `uc10`, `uc15`) exit 0, and `vitest` 2032/2032, `tsc`
+and `lint` all exit 0.
+
+Three further test-side defects were found and repaired on the host. None of them touch
+`src`:
+
+1. **Host-dependent coordinates.** Every pointer step derived its coordinates from
+   `getBoundingClientRect`, so the script silently assumed the layout fits the host window.
+   At 929px the 内訳書 row centre was x=1013, outside the viewport, and Scenario 3 timed out
+   with `cards=0`. The row is hovered by selector now, and the 1440x900 window is a declared
+   fixture because the fingerprint points below need the joint to cover them.
+
+2. **The camera oracle could not work.** It hashed `canvas.toDataURL()`, which reads the
+   composited-and-cleared buffer because the renderer is built without
+   `preserveDrawingBuffer` — constant 9206 bytes before and after a visibly different drag.
+   Reading inside the frame (wrapping `requestAnimationFrame`) fixes the blindness but not
+   the oracle: **the joint scene never renders two byte-identical frames.** Measured: 11
+   consecutive captures, 11 distinct hashes, with no input between them, with the pointer
+   held down (which excludes `autoRotate`), and with the cut plane at its maximum (which
+   excludes view density). The cause is the product's own declared assumption —
+   `src/lib/review/geometry-check.ts` lists 「大梁の交差部で上下関係を持たない（同じ高さに描く）」,
+   so coincident surfaces z-fight and the depth-test winner is undefined per frame.
+
+   The oracle was therefore replaced rather than tuned. The viewer's tooltip is produced by
+   a raycast against the real geometry, so which bar sits under a fixed screen point is
+   exact arithmetic on the camera with no rasterisation in it. The script hovers five fixed
+   canvas fractions and compares the readings across the drag. Two guards keep it
+   falsifiable: the fingerprint is read twice before the drag and must be identical, and at
+   least one sampled point must resolve to a rebar.
+
+3. **`Buffer` input.** `loadJsonObject` used `Buffer.from(json, 'utf8')`, which the QuickJS
+   runtime rejects; uc25 was the only script in `tests/e2e` using that form.
+
+These three repairs were written in this session, so this session is not their independent
+reviewer. `index.json` records the author, not an approver.

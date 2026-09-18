@@ -77,10 +77,11 @@
     {
       "step": 8,
       "name": "e2e-flow",
-      "status": "error",
+      "status": "completed",
       "model": "gpt-5.6-luna",
       "reasoning_effort": "max",
-      "summary": "Sol-validated bounded SPEC_DEFECT correction authored by Luna max; actual browser derived hoop gap87, low86 absent/high88 positive user-input witness passed. Full run stops at unchanged scenario7 camera pixel-change assertion. Seven regressions and Step8 acceptance still unobserved; no core edits."
+      "summary": "uc25 19/19 checks true on two consecutive runs and the seven regressions pass on a production build (BUILD_ID IV5UMpDB0S9L8kK-uCe2y); vitest 2032/2032, tsc and lint exit 0. Three test-side repairs, no product change: a declared 1440x900 viewport fixture, a raycast-based camera oracle replacing the pixel comparison (the joint scene never renders two byte-identical frames because coincident rebar surfaces z-fight - measured 11 distinct hashes in 11 captures, pointer held, cut plane at maximum), and base64 Buffer input matching the other e2e scripts. Details in step8-report.json under desktop_host_run.",
+      "authored_by": "claude-opus-5 (desktop host session) - repairs written here, so this session is not their independent reviewer"
     },
     {
       "step": 9,
