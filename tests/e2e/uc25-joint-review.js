@@ -39,8 +39,22 @@ const installBrowserDiagnostics = () =>
     };
   });
 
+// installBrowserDiagnostics はリロードのたびに新しい入れ物を作る。捨てる前に
+// 読んで繋いでおかないと、最後のページ区間より前のエラーは誰も見ないままになる。
+const collectedDiagnostics = { pageErrors: [], consoleErrors: [] };
+const collectDiagnostics = async () => {
+  const current = await page.evaluate(() => window.__uc25Diagnostics ?? null);
+  if (current === null) return;
+  collectedDiagnostics.pageErrors.push(...current.pageErrors);
+  collectedDiagnostics.consoleErrors.push(...current.consoleErrors);
+};
+
+// ここに無いものは全部失敗にする。既知の無害な項目が出たらここに理由付きで足す。
+const ALLOWED_BROWSER_ERRORS = [];
+
 const checks = {
   jointCanvas: false,
+  noUnexpectedBrowserErrors: false,
   reviewJointTwoGirdersAndReference: false,
   xrayDesignShapeAndSource: false,
   initialCheckFindings: false,
@@ -333,15 +347,18 @@ const loadJsonObject = async (value, name) => {
   });
 };
 
-// The camera evidence cannot be pixels.  The rebars of a joint interpenetrate by
-// a declared product assumption — src/lib/review/geometry-check.ts lists
-// 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 among the assumptions the
-// review pane shows — so coincident surfaces z-fight and the winner of the depth
-// test is undefined per frame.  Measured on this build at the Scenario 7
-// close-up: eleven consecutive captures, eleven distinct hashes, with no input
-// between them, with the pointer held down, and with the cut plane at its
-// maximum.  No two frames of this scene are ever byte-identical, so frame
+// The camera evidence cannot be pixels.  Measured on this build at the
+// Scenario 7 close-up: eleven consecutive captures, eleven distinct hashes, with
+// no input between them, with the pointer held down, and with the cut plane at
+// its maximum.  No two frames of this scene were ever byte-identical, so frame
 // equality can never settle and frame difference proves nothing.
+//
+// **Why the frames differ is not established.**  An earlier revision of this
+// comment blamed z-fighting between coincident rebar surfaces.  An independent
+// cross-verification refuted that as fitted after the fact: no camera position
+// was ever logged, so a slowly moving camera was never ruled out by observation.
+// The measurement above stands; the cause is open.  See
+// phases/48-joint-review-ui/step8-cross-verification-antigravity.md.
 //
 // Ask the product instead.  The viewer's tooltip is produced by a raycast
 // against the real geometry (Viewer3D handlePointerMove -> tooltipFromHit), so
@@ -385,18 +402,12 @@ const cameraFingerprint = async (box) => {
 const CLIP_TOGGLE = "[aria-label='断面カット'] button:nth-of-type(1)";
 
 const perturbViewer = async () => {
-  // Order matters, and not for the reason it looks like.  The camera evidence
-  // compares two rendered frames, so the frame has to be repeatable — and
-  // repeatability here is a function of how much interpenetrating rebar is in
-  // view.  Measured on this build at the Scenario 7 close-up: with the cut
-  // plane applied the frame is stable (949x303, ~125 kB of PNG), with it off it
-  // never stabilises (~390 kB) even with the pointer held down, and the same
-  // holds at 536x294 (~235 kB).  The cut removes coincident surfaces from the
-  // view.  So move the cut first, then measure the camera — which is also the
-  // order Scenario 7 describes.  The overlap itself is a declared product
-  // assumption rather than a surprise — geometry-check.ts lists
-  // 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 among the assumptions the
-  // pane shows.  This script only has to observe the viewer, not fix it.
+  // Move the cut before measuring the camera, which is the order Scenario 7
+  // describes anyway.  That ordering was originally chosen for a reason that no
+  // longer holds — the oracle here no longer compares rendered frames, so frame
+  // repeatability is not a requirement of it, and the explanation once given for
+  // that repeatability (z-fighting between coincident surfaces) was refuted.
+  // The order is kept because the scenario prescribes it.
   const clipFacts = await page.evaluate(() => {
     const input = document.querySelector("input[aria-label='切断位置']");
     if (!input) return null;
@@ -497,7 +508,27 @@ await page.click("svg g[role='button'][aria-label*='1F-X2Y1']", { force: true })
 await page.waitForSelector("svg g[role='button'][aria-label*='1F-X2Y1'][aria-pressed='true']");
 await page.click("[aria-label='表示切替'] [role='tab']:has-text('接合部')");
 await page.waitForSelector("canvas[aria-label='接合部の配筋3D']");
-checks.jointCanvas = true;
+// 直前の waitForSelector が投げるからこの行は true でよい、とは書かない。
+// checks はそれ自体が観察値でなければ記録として何も意味しない(phase 48 の C5)。
+const jointViewerFacts = await page.evaluate((selector) => {
+  const canvas = document.querySelector(selector);
+  const tab = document.querySelector("[aria-label='表示切替'] [role='tab'][aria-selected='true']");
+  const column = document.querySelector("svg g[role='button'][aria-pressed='true']");
+  return {
+    canvasLabel: canvas === null ? null : canvas.getAttribute("aria-label"),
+    canvasWidth: canvas === null ? 0 : canvas.clientWidth,
+    canvasHeight: canvas === null ? 0 : canvas.clientHeight,
+    selectedTab: tab === null ? null : (tab.textContent ?? "").trim(),
+    selectedColumn: column === null ? null : column.getAttribute("aria-label"),
+  };
+}, JOINT_CANVAS);
+checks.jointCanvas =
+  jointViewerFacts.canvasLabel === "接合部の配筋3D" &&
+  jointViewerFacts.canvasWidth > 0 &&
+  jointViewerFacts.canvasHeight > 0 &&
+  jointViewerFacts.selectedTab === "接合部" &&
+  (jointViewerFacts.selectedColumn ?? "").includes("1F-X2Y1");
+observations.jointViewer = jointViewerFacts;
 observations.columnLabel = columnLabel;
 
 // 2. The selected column has exactly G1 and G2, and the reference list is visible.
@@ -784,10 +815,30 @@ observations.verdicts1 = verdicts1;
 console.log("UC25 CLEARANCE_ORACLE " + JSON.stringify(clearanceOracleEvidence));
 
 // 6. A finding row focuses the joint viewer.
+// 焦点が「行を押したから付いた」ことを示すには、押す前に付いていなかったことも
+// 見ておく必要がある。後だけ見ると、初めから付いていた場合と区別できない。
+const focusBefore = await page.evaluate(
+  () => document.querySelector("[data-review-focus='1']") !== null,
+);
 await page.click("[data-testid='review-findings'] tbody tr:nth-of-type(1)", { force: true });
 await page.waitForSelector("[data-review-focus='1']");
 await page.waitForSelector("canvas[aria-label='接合部の配筋3D']");
-checks.findingFocus = true;
+const findingFocusFacts = await page.evaluate((selector) => {
+  const canvas = document.querySelector(selector);
+  return {
+    focused: document.querySelector("[data-review-focus='1']") !== null,
+    canvasLabel: canvas === null ? null : canvas.getAttribute("aria-label"),
+    canvasWidth: canvas === null ? 0 : canvas.clientWidth,
+    canvasHeight: canvas === null ? 0 : canvas.clientHeight,
+  };
+}, JOINT_CANVAS);
+checks.findingFocus =
+  focusBefore === false &&
+  findingFocusFacts.focused === true &&
+  findingFocusFacts.canvasLabel === "接合部の配筋3D" &&
+  findingFocusFacts.canvasWidth > 0 &&
+  findingFocusFacts.canvasHeight > 0;
+observations.findingFocus = { focusBefore, ...findingFocusFacts };
 
 // 7. Negative case: clip movement and a real camera drag must not rerun the check.
 const viewerPerturbation = await perturbViewer();
@@ -1077,8 +1128,11 @@ const savedShapeValid =
   savedShape.packages === 1 &&
   savedShape.baseline === baselineLabel &&
   savedShape.reviewSchemaVersion === 1 &&
+  savedShape.schemaVersion !== null &&
+  savedShape.storedSchemaVersion !== null &&
   savedShape.schemaVersion === savedShape.storedSchemaVersion;
 
+await collectDiagnostics();
 await clearStore();
 await page.reload({ waitUntil: "domcontentloaded" });
 await installBrowserDiagnostics();
@@ -1126,6 +1180,7 @@ const autosavedBundle = await waitUntil(
     }
   },
 );
+await collectDiagnostics();
 await page.reload({ waitUntil: "domcontentloaded" });
 await installBrowserDiagnostics();
 await land();
@@ -1270,13 +1325,20 @@ checks.statusVocabularyAndNotices =
   workVocabulary.notices[0].includes("準備完了");
 observations.vocabulary = { review: reviewVocabulary, work: workVocabulary, forbiddenVocabulary };
 
-observations.browserDiagnostics = await page.evaluate(() =>
-  window.__uc25Diagnostics ?? {
-    supported: false,
-    pageErrors: [],
-    consoleErrors: [],
-  },
+await collectDiagnostics();
+const browserErrorTexts = [
+  ...collectedDiagnostics.pageErrors.map((entry) => JSON.stringify(entry)),
+  ...collectedDiagnostics.consoleErrors,
+];
+const unexpectedBrowserErrors = browserErrorTexts.filter(
+  (text) => !ALLOWED_BROWSER_ERRORS.some((allowed) => text.includes(allowed)),
 );
+checks.noUnexpectedBrowserErrors = unexpectedBrowserErrors.length === 0;
+observations.browserDiagnostics = {
+  ...collectedDiagnostics,
+  allowed: ALLOWED_BROWSER_ERRORS,
+  unexpected: unexpectedBrowserErrors,
+};
 
 await clickReviewTab();
 const screenshot = await saveScreenshot(await page.screenshot(), "uc25-joint-review.png");
@@ -1290,8 +1352,8 @@ console.log("SHOT " + screenshot);
 const failed = Object.entries(checks)
   .filter(([, ok]) => ok !== true)
   .map(([name]) => name);
-if (Object.keys(checks).length !== 19) {
-  throw new Error(`UC25 expected nineteen checks, found ${Object.keys(checks).length}`);
+if (Object.keys(checks).length !== 20) {
+  throw new Error(`UC25 expected twenty checks, found ${Object.keys(checks).length}`);
 }
 if (failed.length > 0) throw new Error("UC25 FAILED CHECKS: " + failed.join(", "));
 console.log("UC25 ALL CHECKS PASSED");

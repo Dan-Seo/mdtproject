@@ -1,0 +1,135 @@
+{
+  "step": 0,
+  "name": "refute-defect-claims",
+  "kind": "verify",
+  "gate": true,
+  "verdict": "holds-with-one-refutation",
+  "note": "C1 through C6 hold and steps 1 to 4 proceed on them. C7 is refuted as stated and its work was not done. Two of the surviving claims were worded wrongly — C1's 最上層柱 example and C5's judgment method — and both corrections are recorded against the claim rather than folded away.",
+  "claims": [
+    {
+      "claim": "C1",
+      "verdict": "holds",
+      "summary": "openDraft builds a joint target whatever the selection is, and an item born that way is permanently 再検討必要. Demonstrated on three member kinds. One of the three example cases the claim names is wrong as stated, and the correction is recorded below.",
+      "evidence": {
+        "command": "npx vitest run src/components/review/phase49probe.test.tsx",
+        "probe": "a temporary component test that created an item through the UI, ran the whole confirm flow, then read data-review-status",
+        "observed": {
+          "大梁 (1F-G1-X1Y1-X)": "再検討必要",
+          "円形柱 (column section shape set to 円形)": "再検討必要",
+          "取り付く大梁なし柱 (all 大梁 removed)": "再検討必要",
+          "通常柱 (1F-X2Y1)": "確認済",
+          "最上層柱 (2F-X2Y1)": "確認済"
+        },
+        "result": "5 passed (5)",
+        "reverted": "the probe file was deleted after judging; it is not in the commit"
+      },
+      "correction_to_the_claim": "The claim names 最上層柱 as a third failing case. It is not one in this model: a storey carries its own 大梁, so the sample's 2F columns resolve and reach 確認済, which the probe observed. The real third case is 取り付く大梁なし — a column with no 大梁 attached, whatever storey it is on. The substance of C1 is unaffected, because the fix keys on resolveJoint's status rather than on a list of member kinds."
+    },
+    {
+      "claim": "C2",
+      "verdict": "holds",
+      "summary": "Nothing in the suite depends on the stale replay notice.",
+      "evidence": {
+        "mutation": "replaced the rendered t(locale, 'review.items.staleNotice') with a sentinel literal in src/components/review/ReviewPane.tsx",
+        "command": "npx vitest run",
+        "observed": "120 files, 2037 tests, 0 failed",
+        "reverted": true
+      }
+    },
+    {
+      "claim": "C3",
+      "verdict": "holds",
+      "summary": "The checklist-to-review-item link select is never driven by a test.",
+      "evidence": {
+        "mutation": "replaced the select's onChange in src/components/review/WorkPackageBoard.tsx with a no-op",
+        "command": "npx vitest run src/components/review/WorkPackageBoard.test.tsx",
+        "observed": "5 passed (5) — the broken handler changed nothing",
+        "reverted": true
+      }
+    },
+    {
+      "claim": "C4",
+      "verdict": "holds",
+      "summary": "One mutation proves both halves at once: the assertion that compares the card against the same packageReadiness call passes whatever that function returns, and 準備完了 substring-matches 準備完了（例外あり）.",
+      "evidence": {
+        "mutation": "made packageReadiness return 準備完了（例外あり） on the clean path in src/domain/review/readiness.ts",
+        "command": "npx vitest run src/components/review/WorkPackageBoard.test.tsx",
+        "observed": "5 passed (5). The test named 'derives the core readiness state' passed while the component reported an exception state.",
+        "reverted": true
+      }
+    },
+    {
+      "claim": "C5",
+      "verdict": "holds",
+      "summary": "Both checks are assigned a bare literal and carry no observation of their own. The judgment method the spec proposes is wrong, and the correction is recorded below.",
+      "evidence": {
+        "command": "node phases/49-joint-review-defects/probe-uc25.mjs",
+        "observed": {
+          "checks.jointCanvas right-hand side": "true",
+          "checks.findingFocus right-hand side": "true",
+          "total checks.* assignments parsed": 19
+        },
+        "reverted": "the probe file was deleted after judging"
+      },
+      "correction_to_the_claim": "The spec says to judge this by seeing whether the check is still true with nothing to check. It would not be: the waitForSelector on the line above throws when the canvas is absent, so the check is never assigned and the run fails. The defect is not a silent pass — it is that the recorded check value restates the script's control flow instead of observing what the scenario claims, so the recorded evidence cannot tell a correct joint viewer from a wrong one."
+    },
+    {
+      "claim": "C6",
+      "verdict": "holds",
+      "summary": "The diagnostics gate nothing, and the schemaVersion comparison passes when the field is absent on both sides.",
+      "evidence": {
+        "command": "node phases/49-joint-review-defects/probe-uc25.mjs",
+        "observed": {
+          "checks reading __uc25Diagnostics / browserDiagnostics / pageErrors / consoleErrors": [],
+          "schemaVersion comparison evaluated with both fields absent": true,
+          "values compared": {
+            "schemaVersion": null,
+            "storedSchemaVersion": null
+          }
+        },
+        "note": "The comparison was not read off the page — the expression was re-evaluated in node with both objects empty, and it returned true.",
+        "reverted": "the probe file was deleted after judging"
+      }
+    },
+    {
+      "claim": "C7",
+      "verdict": "refuted",
+      "summary": "The mechanism the claim names is not reachable with the drag the script performs. Fourteen large left-button drags never blinded all five sample points.",
+      "evidence": {
+        "command": "npx dev-browser --browser kijun --timeout 200 run phases/49-joint-review-defects/probe-c7.js",
+        "setup": "the Scenario 7 state — 1F-X2Y1 selected, 接合部 tab, the check run, the first finding row clicked, the cut plane moved — then the fingerprint before, then repeated large drags",
+        "observed": {
+          "horizontal drags": "8 rounds, blind count 0 of 5 throughout",
+          "vertical drags": "3 rounds, blind count 1 of 5",
+          "diagonal drags": "3 rounds, blind count 0 to 2 of 5",
+          "all five points hidden at any point": false
+        },
+        "why": "OrbitControls rotates the camera around the target, so the joint stays in the middle of the canvas however far it is dragged. Two of the five sample points sit near the centre (0.45,0.5 and 0.55,0.45) and keep hitting geometry. A left drag cannot take the joint out of view; only a pan or a dolly could, and the script performs neither.",
+        "reverted": "the probe file was deleted after judging"
+      },
+      "what_survives": "fingerprintAfter still has no not-blind guard, which is a static fact about the script and is unchanged by this refutation. Any mechanism that empties the tooltip after the drag — the viewer unmounting, the tooltip element being removed, a render error — would read as five hidden points, would differ from the before fingerprint, and would pass as the camera moved. What is refuted is that a drag can produce that state, which was the only mechanism the claim offered and the only one step 4 was told to reproduce.",
+      "consequence": "The C7 section of step 4 was NOT implemented. The claim that justified it did not survive, and the falsifiability method it prescribes — give a drag large enough that the joint leaves the screen, and Scenario 7 must fail — cannot be carried out on this build. Adding the guard anyway would make the maker of the claim its own approver, which is what the gate exists to prevent. It is handed on with the corrected mechanism and a method that matches it."
+    }
+  ],
+  "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
+  "independent_review": "None yet for this phase. The phase 48 findings these claims restate were independently confirmed by the Antigravity CLI cross-verification recorded at phases/48-joint-review-ui/step8-cross-verification-antigravity.md, but this step's own judgments, and everything steps 1 to 4 build on them, were produced by the same session that reported the defects. A cross-verification is owed.",
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/WorkPackageBoard.tsx",
+    "src/components/review/WorkPackageBoard.test.tsx",
+    "src/domain/review/readiness.ts",
+    "src/domain/review/joint.ts",
+    "src/domain/review/validity.ts",
+    "src/domain/model/sample-project.ts",
+    "tests/e2e/uc25-joint-review.js",
+    "phases/48-joint-review-ui/step8-report.json",
+    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md",
+    "phases/49-joint-review-defects/step0.md"
+  ],
+  "paths_expected_absent": [
+    "src/components/review/phase49probe.test.tsx",
+    "phases/49-joint-review-defects/probe.mts",
+    "phases/49-joint-review-defects/probe-uc25.mjs",
+    "phases/49-joint-review-defects/probe-c7.js"
+  ]
+}

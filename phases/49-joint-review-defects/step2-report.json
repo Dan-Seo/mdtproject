@@ -1,0 +1,32 @@
+{
+  "step": 2,
+  "name": "stale-notice-coverage",
+  "status": "completed",
+  "summary": "One test now pins the stale replay notice in both directions: absent while the item is 有効, present once the model moves under it. No product code changed.",
+  "change": {
+    "product": [],
+    "tests": [
+      {
+        "path": "src/components/review/ReviewPane.test.tsx",
+        "what": "creates an item on the sample column, asserts itemValidity is 有効 and the notice is not in the card, then widens section-C1 and asserts itemValidity is 再検討必要 and the notice is. The wording is read with t('ja', 'review.items.staleNotice') rather than written into the test."
+      }
+    ]
+  },
+  "both_directions": "Asserting only the present case would still pass if the notice were changed to render always; asserting only the absent case would still pass if it never rendered. The test fixes both.",
+  "verification": {
+    "npx vitest run src/components/review/ReviewPane.test.tsx": "24 passed (24)"
+  },
+  "falsifiability": {
+    "mutation": "inverted the render condition to validity.state !== '再検討必要'",
+    "observed": "1 failed | 23 passed (24) — 'shows the stale replay notice only while the item needs re-review'",
+    "reverted": true
+  },
+  "product_defects_found_while_writing_the_test": "None. The notice's condition was already correct; only the coverage was missing.",
+  "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/locales/ja.json",
+    "phases/49-joint-review-defects/step2.md"
+  ]
+}

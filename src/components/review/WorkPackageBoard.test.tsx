@@ -5,7 +5,6 @@ import { createSampleProject } from '@/domain/model/sample-project'
 import type { Project } from '@/domain/model/project'
 import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import { checkConditionsFingerprint, projectFingerprints } from '@/domain/review/fingerprint'
-import { packageReadiness } from '@/domain/review/readiness'
 import { emptyReviewState } from '@/domain/review/state'
 import type {
   ReviewItem,
@@ -124,12 +123,36 @@ describe('WorkPackageBoard', () => {
     fireEvent.change(within(checklist).getByLabelText('確認者（ローカル入力・本人認証ではない）'), { target: { value: 'reviewer' } })
     fireEvent.click(within(checklist).getByRole('button', { name: 'チェックリスト状態を保存' }))
 
-    const state = useAppStore.getState()
-    const pkg = state.review.packages[0]
-    if (!pkg) throw new Error('work package expected after save')
-    const readiness = packageReadiness(pkg, state.review.items, currentModel())
-    expect(within(card).getByTestId('data-package-state')).toHaveTextContent(readiness.state)
-    expect(within(card).getByTestId('data-package-state')).toHaveTextContent('準備完了')
+    // 期待値はテストが直接書く。コンポーネントと同じ packageReadiness を呼んで
+    // 突き合わせると、実装が何を返しても通る項進命題になる(phase 48 の C4)。
+    // 完全一致にするのは 準備完了 が 準備完了（例外あり） に部分一致するからだ。
+    expect(useAppStore.getState().review.packages[0]?.checklist[0]?.status).toBe('確認済')
+    expect(within(card).getByTestId('data-package-state')).toHaveTextContent(/^準備完了$/)
+    expect(within(card).queryByTestId('data-blocker')).toBeNull()
+  })
+
+  // phase 49 step 3 — チェックリストと検討項目の連結を UI から作る。
+  // reviewItemIds をフィクスチャで直接入れていたので、連結ハンドラを no-op に
+  // しても全テストが通っていた(phase 48 の C3)。
+  it('links a checklist entry to a review item through the select', () => {
+    const item = reviewItem('1F-X2Y1')
+    setReviewState({ ...emptyReviewState(), items: [item] })
+    render(<WorkPackageBoard />)
+
+    fireEvent.click(screen.getByRole('button', { name: '作業パッケージを追加' }))
+    fireEvent.change(screen.getByLabelText('作業パッケージ名'), { target: { value: '連結確認' } })
+    fireEvent.change(screen.getByLabelText('担当者（ローカル入力・本人認証ではない）'), { target: { value: 'reviewer' } })
+    fireEvent.click(screen.getByRole('button', { name: 'チェックリスト項目を追加' }))
+    fireEvent.change(screen.getByLabelText('チェックリスト項目 1'), { target: { value: '接合部を確認' } })
+
+    const link = screen.getByLabelText('関連する検討項目 1') as HTMLSelectElement
+    expect(link.value).toBe('')
+    expect([...link.options].map((option) => option.value)).toContain(item.id)
+    fireEvent.change(link, { target: { value: item.id } })
+    expect((screen.getByLabelText('関連する検討項目 1') as HTMLSelectElement).value).toBe(item.id)
+
+    fireEvent.click(within(screen.getByTestId('work-package-form')).getByRole('button', { name: '保存' }))
+    expect(useAppStore.getState().review.packages[0]?.checklist[0]?.reviewItemIds).toEqual([item.id])
   })
 
   it('keeps a linked item blocked when its target model is stale', () => {

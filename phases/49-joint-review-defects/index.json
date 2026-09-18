@@ -1,45 +1,47 @@
 {
   "project": "Kijun",
   "phase": "49-joint-review-defects",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     {
       "step": 0,
       "name": "refute-defect-claims",
       "kind": "verify",
       "gate": true,
-      "status": "pending",
-      "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "status": "completed",
+      "summary": "C1-C6 hold, each by a mutation or a runnable reproduction; C7 is refuted — fourteen large drags never blinded all five fingerprint points, because OrbitControls orbits the target. C1's 最上層柱 example and C5's judgment method were also wrong as written and are corrected against the claims.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
       "step": 1,
       "name": "joint-target-kind",
-      "status": "pending",
-      "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "status": "completed",
+      "summary": "The add button is disabled with the domain's own reason, and openDraft refuses, whenever resolveJoint reports the selection unsupported. No member-kind branch was added to the component.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
       "step": 2,
       "name": "stale-notice-coverage",
-      "status": "pending",
-      "model": "gpt-5.6-luna",
-      "reasoning_effort": "high"
+      "status": "completed",
+      "summary": "The stale replay notice is pinned in both directions from the locale key; inverting its condition fails the test.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
       "step": 3,
       "name": "work-package-link-and-assertions",
-      "status": "pending",
-      "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "status": "completed",
+      "summary": "The checklist link is now made through the select and read back from the store; the readiness assertion states its own expected value and matches /^準備完了$/ exactly.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     },
     {
       "step": 4,
       "name": "uc25-self-assertion",
-      "status": "pending",
-      "model": "gpt-5.6-luna",
-      "reasoning_effort": "xhigh"
+      "status": "completed",
+      "summary": "jointCanvas and findingFocus now carry their own observations, a twentieth check fails on any page or console error accumulated across all three page sessions, and schemaVersion must be present on both sides. The C7 section was not implemented — step 0 refuted it.",
+      "authored_by": "Claude Opus 5 (direct, outside the codex harness — user instruction)"
     }
   ],
-  "created_at": "2026-09-18T18:30:00+0900"
+  "created_at": "2026-09-18T18:30:00+0900",
+  "completed_at": "2026-09-18T20:30:00+0900",
+  "note": "Implemented directly by Claude rather than by scripts/execute.py, at the user instruction \"그래 지금 너가 직접 다 끝내\". The gate (step 0) upheld C1-C6 and refuted C7; the C7 work in step 4 was therefore not done. A cross-verification by a different agent is owed for the whole phase."
 }

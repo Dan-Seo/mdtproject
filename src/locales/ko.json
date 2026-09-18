@@ -439,6 +439,7 @@
   "review.check.createItem": "검토 항목으로 만들기",
   "review.items.title": "検討項目",
   "review.items.add": "検討項目 추가",
+  "review.items.jointUnavailable": "접합부가 성립하지 않아 이 부재에서는 검토항목을 만들 수 없습니다",
   "review.items.save": "저장",
   "review.items.cancel": "취소",
   "review.items.formTitle": "제목",

@@ -1,0 +1,53 @@
+{
+  "step": 1,
+  "name": "joint-target-kind",
+  "status": "completed",
+  "summary": "The 検討項目を追加 button is disabled, and says why, whenever resolveJoint reports the current selection as unsupported. openDraft refuses in the same condition, so the finding-triggered path cannot get round the button either. The judgment is the domain function's; the component adds no member-kind branch of its own.",
+  "change": {
+    "product": [
+      {
+        "path": "src/components/review/ReviewPane.tsx",
+        "what": "ReviewItemsSection resolves the selection through resolveJoint. openDraft returns without opening a draft when the resolved column is not a joint; the add button carries disabled, and an unavailable notice renders the domain's own reason (柱ではない / 円形柱 / 取り付く大梁なし / 部材なし)."
+      },
+      {
+        "path": "src/locales/ja.json",
+        "what": "added review.items.jointUnavailable"
+      },
+      {
+        "path": "src/locales/ko.json",
+        "what": "added review.items.jointUnavailable"
+      }
+    ],
+    "tests": [
+      {
+        "path": "src/components/review/ReviewPane.test.tsx",
+        "what": "three cases (大梁, 円形柱, 取り付く大梁なし柱) assert the button is disabled, the notice names the domain reason, clicking opens nothing and no item is stored; a fourth asserts the resolving column is untouched — button enabled, no notice, the item saved with the joint target and a 未確認 status."
+      }
+    ]
+  },
+  "no_new_member_kind_branch": "The component never names 柱, 大梁 or 円形 anywhere in this change. It reads resolveJoint's status and, for the message, its reason string. Neutralising resolveJoint therefore neutralises the UI, which is what the falsifiability run below shows.",
+  "verification": {
+    "npx vitest run src/components/review/ReviewPane.test.tsx": "24 passed (24)",
+    "npx vitest run": "119 files, 2038 passed (2038)",
+    "npx tsc --noEmit": "exit 0",
+    "npm run lint": "exit 0 — 2 warnings, both pre-existing on HEAD (verified by stashing this file and re-running)",
+    "browser": "uc25 20/20, including reviewItemConfirmed — the creation flow on a resolving column is unchanged"
+  },
+  "falsifiability": {
+    "mutation": "made jointUnavailableReason always null and dropped the resolveJoint guard from openDraft, so an item can be created on any selection again",
+    "observed": "3 failed | 20 passed (23) — exactly the three new refusal tests",
+    "reverted": true,
+    "second_witness": "The step 0 reproduction probe, which asserted the pre-fix behaviour, fails after this change with 'Unable to find a label with the text of: タイトル' on all three unresolvable cases — the draft form never opens. The probe was then deleted."
+  },
+  "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/locales/ja.json",
+    "src/locales/ko.json",
+    "src/domain/review/joint.ts",
+    "phases/49-joint-review-defects/step1.md",
+    "phases/49-joint-review-defects/step0-report.json"
+  ],
+  "finding_triggered_path": "openDraft is also reached from the findings table's 検討項目にする button, through the request effect. That button only exists once a check has run, which needs a resolving joint — but the selection can move to a 大梁 afterwards while the findings stay on screen, and that is the state the guard catches. In it openDraft returns without opening a draft and the request is consumed, so nothing visibly happens at the button itself. Not observed, inferred from the code: the unavailable notice is computed from the selection in ReviewItemsSection and renders unconditionally on it, independently of the findings table, so it should be on screen at that moment. The three new tests observe the notice for each unresolvable selection, but none of them has findings on screen at the same time."
+}

@@ -14,6 +14,7 @@ import {
   itemTargetMemberIds,
   itemValidity,
 } from '@/domain/review/validity'
+import { t } from '@/lib/i18n'
 import { buildTakeoff } from '@/lib/hooks/useTakeoff'
 import { toSnapshot } from '@/lib/hooks/useReviewModel'
 import { useAppStore } from '@/lib/store'
@@ -686,5 +687,118 @@ describe('ReviewPane', () => {
     expect(updateProject).not.toHaveBeenCalled()
     setReview.mockRestore()
     updateProject.mockRestore()
+  })
+
+  // phase 49 step 1 — 接合部が成立しない部材では接合部の検討項目を作れない。
+  // 作れてしまうと validity が 対象なし を付け続け、その項目は永久に 再検討必要 で
+  // 確認済 に到達しない(phase 48 の C1)。判定は domain/review/joint.ts が持つ。
+  const unresolvableSelections = [
+    {
+      name: '大梁',
+      project: () => createSampleProject(),
+      memberId: '1F-G1-X1Y1-X',
+      reason: '柱ではない',
+    },
+    {
+      name: '円形柱',
+      project: () => {
+        const base = createSampleProject()
+        return {
+          ...base,
+          sections: base.sections.map((section) => section.kind === '柱'
+            ? { ...section, shape: '円形' as const }
+            : section),
+        }
+      },
+      memberId: '1F-X2Y1',
+      reason: '円形柱',
+    },
+    {
+      name: '取り付く大梁なし柱',
+      project: () => {
+        const base = createSampleProject()
+        return { ...base, members: base.members.filter(({ kind }) => kind !== '大梁') }
+      },
+      memberId: '1F-X2Y1',
+      reason: '取り付く大梁なし',
+    },
+  ]
+
+  for (const { name, project, memberId, reason } of unresolvableSelections) {
+    it(`refuses to create a joint review item for ${name} and shows the domain reason`, () => {
+      useAppStore.setState({ project: project(), sel: { group: null, memberId } })
+      render(<ReviewPane />)
+
+      const add = screen.getByRole('button', { name: t('ja', 'review.items.add') })
+      expect(add).toBeDisabled()
+
+      const notice = screen.getByTestId('review-items-joint-unavailable')
+      expect(notice).toHaveTextContent(t('ja', 'review.items.jointUnavailable'))
+      expect(notice).toHaveTextContent(reason)
+
+      fireEvent.click(add)
+      expect(screen.queryByLabelText(t('ja', 'review.items.formTitle'))).toBeNull()
+      expect(useAppStore.getState().review.items).toHaveLength(0)
+    })
+  }
+
+  it('leaves the creation flow untouched on a column whose joint resolves', () => {
+    render(<ReviewPane />)
+
+    const add = screen.getByRole('button', { name: t('ja', 'review.items.add') })
+    expect(add).toBeEnabled()
+    expect(screen.queryByTestId('review-items-joint-unavailable')).toBeNull()
+
+    fireEvent.click(add)
+    fireEvent.change(screen.getByLabelText(t('ja', 'review.items.formTitle')), {
+      target: { value: 'joint item' },
+    })
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', {
+      name: t('ja', 'review.items.save'),
+    }))
+
+    const item = useAppStore.getState().review.items[0]
+    if (!item) throw new Error('review item expected')
+    expect(item.targets).toEqual([{ kind: 'joint', columnMemberId: '1F-X2Y1' }])
+    const card = screen.getByTestId(item.id)
+    expect(card.querySelector('[data-review-status]')?.getAttribute('data-review-status')).toBe('未確認')
+  })
+
+  // phase 49 step 2 — 前モデル再現の注意書きは 再検討必要 のときだけ出す。
+  // 片側だけ書くと「常に描画」に変えても通ってしまうので、出る状態と出ない状態を
+  // 両方固定する(phase 48 の C2 — この文言には参照が一つも無かった)。
+  it('shows the stale replay notice only while the item needs re-review', () => {
+    render(<ReviewPane />)
+
+    fireEvent.click(screen.getByRole('button', { name: t('ja', 'review.items.add') }))
+    fireEvent.change(screen.getByLabelText(t('ja', 'review.items.formTitle')), {
+      target: { value: 'stale notice' },
+    })
+    fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', {
+      name: t('ja', 'review.items.save'),
+    }))
+
+    const item = useAppStore.getState().review.items[0]
+    if (!item) throw new Error('review item expected')
+    const notice = t('ja', 'review.items.staleNotice')
+
+    const currentModel = () => ({
+      project: useAppStore.getState().project,
+      fingerprints: currentFingerprints(),
+      impact: null,
+    })
+    expect(itemValidity(item, currentModel()).state).toBe('有効')
+    expect(within(screen.getByTestId(item.id)).queryByText(notice)).toBeNull()
+
+    act(() => useAppStore.getState().updateProject((project) => ({
+      ...project,
+      sections: project.sections.map((section) => section.id === 'section-C1'
+        ? { ...section, b: 900 }
+        : section),
+    })))
+
+    expect(itemValidity(useAppStore.getState().review.items[0]!, currentModel()).state)
+      .toBe('再検討必要')
+    expect(within(screen.getByTestId(item.id)).getByText(notice)).toBeInTheDocument()
   })
 })

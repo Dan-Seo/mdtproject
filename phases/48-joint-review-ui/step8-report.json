@@ -634,10 +634,11 @@
         "product_change": false,
         "known_holes": [
           "resetIdleTimer performs a real click on the canvas, which Viewer3D handleClick turns into a pick (setHoverRow + rebuildScene + telemetry). The claim that the oracle changes no product state is therefore wrong for that one click; it is true only of the hovers.",
-          "There is no not-blind guard on fingerprintAfter. If the drag rotates the joint entirely out of view, all five points read hidden, which differs from before, and cameraMoved passes while the camera looks at nothing.",
+          "There is no not-blind guard on fingerprintAfter, so any state in which all five points read hidden after the drag would differ from before and pass as a camera move. The mechanism named here — that a drag rotates the joint out of view — was REFUTED by phase 49 step 0: fourteen large left-button drags (8 horizontal, 3 vertical, 3 diagonal) never blinded more than 2 of the 5 points, because OrbitControls orbits the target and the joint stays centred. A left drag cannot take it off screen; only a pan or a dolly could, and the script performs neither. The missing guard is still real, but it is reachable only by something that empties the tooltip (the viewer unmounting, the tooltip element going away, a render error), not by a drag. See phases/49-joint-review-defects/step0-report.json#/claims/6.",
           "The still-camera repeat guard can pass vacuously: tooltipFromHit keys on the schedule row (row:${line.id}), so a camera drifting slowly enough to stay on the same rows produces two identical fingerprints.",
           "Conversely, a real camera move that leaves every sampled point on the same schedule rows raises a false blocker."
-        ]
+        ],
+        "known_holes_note": "Phase 49 did NOT close hole 2. Its step 4 was told to close it by reproducing the drag mechanism, and step 0 refuted that mechanism, so the work was not done on a claim that had not survived. The guard is handed on with a corrected mechanism and a method that matches it."
       },
       {
         "id": "buffer_base64",

@@ -1,0 +1,78 @@
+{
+  "step": 4,
+  "name": "uc25-self-assertion",
+  "status": "completed",
+  "summary": "The two literal checks now carry their own observations, a twentieth check fails on any page or console error, and the schemaVersion comparison needs a value on both sides. The C7 section of this step was not implemented: step 0 refuted the claim it rested on.",
+  "change": {
+    "product": [],
+    "tests": [
+      {
+        "path": "tests/e2e/uc25-joint-review.js",
+        "what": [
+          "checks.jointCanvas reads the canvas's aria-label, its client width and height, the selected 表示切替 tab and the pressed plan button, and requires all five to be right.",
+          "checks.findingFocus reads whether data-review-focus was absent before the row click and present after, plus the joint canvas's label and pixel size. Reading only the after state could not tell a focus the click caused from one that was already there.",
+          "a twentieth check, noUnexpectedBrowserErrors, fails on any page error or console error not in ALLOWED_BROWSER_ERRORS, which is currently empty. collectDiagnostics drains the in-page accumulator before each of the two later reloads and once at the end, because installBrowserDiagnostics builds a fresh object on every reload and the old one would otherwise be dropped unread.",
+          "the reviewBundleRoundTrip comparison now requires savedShape.schemaVersion and savedShape.storedSchemaVersion to be non-null before comparing them.",
+          "the check-count guard went from nineteen to twenty. No existing check changed meaning and none was removed.",
+          "two comments were corrected: both stated the z-fighting cause that the phase 48 cross-verification retracted. The measurement they cite stands; the cause is recorded as not established, with a pointer to the cross-verification."
+        ]
+      },
+      {
+        "path": "tests/e2e/README.md",
+        "what": "the uc25 row says twenty stages and describes what the twentieth watches"
+      }
+    ]
+  },
+  "verification": {
+    "command": "npx dev-browser --browser kijun --timeout 300 run tests/e2e/uc25-joint-review.js",
+    "server": "production build — rm -rf .next, npm run build, npx next start -p 3000, started only after the build finished",
+    "result": "20/20 checks true, UC25 ALL CHECKS PASSED",
+    "browser_diagnostics_observed": {
+      "pageErrors": [],
+      "consoleErrors": [],
+      "unexpected": []
+    }
+  },
+  "falsifiability": [
+    {
+      "requirement": "the joint canvas is not rendered and jointCanvas fails",
+      "mutation": "hid the joint canvas for the duration of the observation and restored it straight after, so only this check sees the change",
+      "observed": "jointCanvas=false with canvasWidth 0 and canvasHeight 0, while canvasLabel, selectedTab and selectedColumn stayed correct; the run ended with UC25 FAILED CHECKS: jointCanvas",
+      "note": "A first attempt hid the canvas and left it hidden. That killed the run at a later waitForSelector with a timeout, which proves nothing about this check, so it was redone as above.",
+      "reverted": true
+    },
+    {
+      "requirement": "a page error makes the new diagnostics check fail",
+      "mutation": "dispatched one ErrorEvent and called console.error once, right after the diagnostics were installed",
+      "observed": "UC25 FAILED CHECKS: noUnexpectedBrowserErrors",
+      "reverted": true
+    },
+    {
+      "requirement": "removing schemaVersion from the saved data fails the comparison",
+      "mutation": "dropped schemaVersion from the comparison's two inputs and put it back immediately after savedShape had copied the values, so the bundle still loaded",
+      "observed": "savedShapeValid=false with schemaVersion null and storedSchemaVersion null; the run ended with UC25 FAILED CHECKS: reviewBundleRoundTrip. Before this step the same input passed, because null === null",
+      "note": "A first attempt deleted schemaVersion from the whole saved bundle. The persist layer then refused to load it, so the round trip produced no cards and the script timed out before reaching the comparison — a failure, but not of this check.",
+      "reverted": true
+    }
+  ],
+  "c7_not_implemented": {
+    "verdict": "refuted at step 0",
+    "what_the_spec_asked_for": "put the not-blind guard on fingerprintAfter as well, narrow 'differs' to 'at least one point changed rebar', and prove it by giving a drag large enough that the joint leaves the screen so that Scenario 7 fails",
+    "why_not_done": "The drag cannot take the joint off screen. OrbitControls orbits the target, so fourteen large left-button drags never blinded more than 2 of the 5 sample points and the prescribed proof cannot be carried out on this build. Doing the change anyway would mean the session that reported the defect approving its own claim after the gate had refuted it, which is the thing the gate is for.",
+    "what_is_still_open": "fingerprintAfter has no not-blind guard. The reachable mechanism is not a drag but anything that empties the tooltip after it — the viewer unmounting, the tooltip element being removed, a render error. A correct falsifiability method is to remove the tooltip element between the drag and fingerprintAfter and require Scenario 7 to fail. Recorded against phase 48's own entry at phases/48-joint-review-ui/step8-report.json#/desktop_host_run/repairs/1/known_holes."
+  },
+  "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
+  "paths_verified": [
+    "tests/e2e/uc25-joint-review.js",
+    "tests/e2e/README.md",
+    "phases/49-joint-review-defects/step4.md",
+    "phases/49-joint-review-defects/step0-report.json",
+    "phases/48-joint-review-ui/step8-report.json",
+    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md"
+  ],
+  "paths_expected_absent": [
+    "phases/49-joint-review-defects/mut1-uc25.js",
+    "phases/49-joint-review-defects/mut2-uc25.js",
+    "phases/49-joint-review-defects/mut3-uc25.js"
+  ]
+}

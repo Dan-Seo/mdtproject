@@ -439,6 +439,7 @@
   "review.check.createItem": "検討項目にする",
   "review.items.title": "検討項目",
   "review.items.add": "検討項目を追加",
+  "review.items.jointUnavailable": "接合部が成立しないため、この部材では検討項目を作成できません",
   "review.items.save": "保存",
   "review.items.cancel": "キャンセル",
   "review.items.formTitle": "タイトル",

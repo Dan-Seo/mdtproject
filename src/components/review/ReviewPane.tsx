@@ -985,11 +985,19 @@ function ReviewItemsSection({
   const [holdReason, setHoldReason] = useState('')
   const [holdError, setHoldError] = useState(false)
 
+  // 接合部が成立しない部材に接合部タゲットを付けると、validity が 対象なし を
+  // 付け続けて項目が永久に 再検討必要 になる。判定は domain の resolveJoint が持つ
+  // ので、ここで種別分岐を書き直さずにその結果を使う。
+  const draftColumnMemberId = sel.memberId ?? null
+  const draftJoint = draftColumnMemberId === null
+    ? ({ status: 'unsupported', reason: '部材なし' } as const)
+    : resolveJoint(project, draftColumnMemberId)
+  const jointUnavailableReason = draftJoint.status === 'unsupported' ? draftJoint.reason : null
+
   const openDraft = (finding?: geometryCheck.Finding, checkId?: string) => {
     const columnMemberId = sel.memberId ?? finding?.a.memberId ?? null
-    const targets: ElementRef[] = columnMemberId === null
-      ? []
-      : [{ kind: 'joint', columnMemberId }]
+    if (columnMemberId === null || resolveJoint(project, columnMemberId).status !== 'joint') return
+    const targets: ElementRef[] = [{ kind: 'joint', columnMemberId }]
     if (finding !== undefined) {
       targets.push(
         { kind: 'rebar', rebarId: finding.a.rebarId },
@@ -1103,9 +1111,14 @@ function ReviewItemsSection({
   return (
     <section aria-labelledby="review-items-title" data-testid="review-items">
       <h2 id="review-items-title">{t(locale, 'review.items.title')}</h2>
-      <button type="button" onClick={() => openDraft()}>
+      <button type="button" disabled={jointUnavailableReason !== null} onClick={() => openDraft()}>
         {t(locale, 'review.items.add')}
       </button>
+      {jointUnavailableReason !== null && (
+        <p role="status" data-testid="review-items-joint-unavailable">
+          {t(locale, 'review.items.jointUnavailable')} — {jointUnavailableReason}
+        </p>
+      )}
       <label>
         <input
           type="checkbox"

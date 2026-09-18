@@ -1,0 +1,42 @@
+{
+  "step": 3,
+  "name": "work-package-link-and-assertions",
+  "status": "completed",
+  "summary": "The checklist-to-review-item link is now made through the select and read back from the store, and the readiness assertion states its own expected value and matches it exactly. Tests only; the component and the domain are untouched.",
+  "change": {
+    "product": [],
+    "tests": [
+      {
+        "path": "src/components/review/WorkPackageBoard.test.tsx",
+        "what": "a new test seeds one review item, opens the package form, adds a checklist entry, reads the link select's options, fires the change, re-reads the select's value, saves, and asserts review.packages[0].checklist[0].reviewItemIds equals [item.id]. The readiness assertion no longer calls packageReadiness: it asserts the checklist status is 確認済, matches the state cell against /^準備完了$/, and asserts there is no blocker. The packageReadiness import went with it."
+      }
+    ]
+  },
+  "verification": {
+    "npx vitest run src/components/review/WorkPackageBoard.test.tsx": "6 passed (6)"
+  },
+  "falsifiability": [
+    {
+      "mutation": "the link select's onChange made a no-op",
+      "observed": "1 failed | 5 passed (6) — 'links a checklist entry to a review item through the select'",
+      "reverted": true
+    },
+    {
+      "mutation": "packageReadiness returns 準備完了（例外あり） on the clean path",
+      "observed": "1 failed | 5 passed (6) — 'creates a package, confirms a required unlinked item, and derives the core readiness state'. Before this step the same mutation left all five passing, which is what C4 claimed.",
+      "reverted": true
+    },
+    {
+      "mutation": "packageReadiness returns 準備未完 on the clean path",
+      "observed": "2 failed | 4 passed (6) — the readiness test and the exception-state test",
+      "reverted": true
+    }
+  ],
+  "authored_by": "Claude Opus 5 (direct implementation at the user's instruction, outside the codex harness)",
+  "paths_verified": [
+    "src/components/review/WorkPackageBoard.tsx",
+    "src/components/review/WorkPackageBoard.test.tsx",
+    "src/domain/review/readiness.ts",
+    "phases/49-joint-review-defects/step3.md"
+  ]
+}
