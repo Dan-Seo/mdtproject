@@ -1,0 +1,381 @@
+{
+  "step": 8,
+  "name": "e2e-flow",
+  "status": "error",
+  "runtime_acceptance": "FAIL_CORRECTED_SCENARIO7_CAMERA",
+  "checks": null,
+  "regressions": {
+    "uc1": "not_run_host_browser",
+    "uc2": "not_run_host_browser",
+    "uc3": "not_run_host_browser",
+    "uc7": "not_run_host_browser",
+    "uc9": "not_run_host_browser",
+    "uc10": "not_run_host_browser",
+    "uc15": "not_run_host_browser"
+  },
+  "screenshot": null,
+  "blocker": "Corrected clearance oracle passed in actual production browser. Unchanged scenario7 camera evidence assertion then failed: trusted drag produced identical canvas frame hash. No full19-check result, screenshot, or seven regressions reached; Step8 remains error. Product defect is not established by this observation.",
+  "original_failure": {
+    "status": "unchanged_archived_failure",
+    "full_rerun_receipt": ".git/phase48-run/browser-step8-1789662484080595265/receipt.json",
+    "probe_receipt": ".git/phase48-run/browser-step8-1789662709634825985/receipt.json",
+    "clearance_blocker": ".git/phase48-run/step8-clearance-blocker.json",
+    "diagnosis_session": "95a93280-f4ca-424d-8ffc-24dd7aca8e4a",
+    "build_id": "1oTG9othuqzswv5u-nqFx",
+    "commands": [
+      {
+        "name": "build",
+        "exit_code": 0
+      },
+      {
+        "name": "uc25-joint-review",
+        "exit_code": 1
+      },
+      {
+        "name": "browser-cleanup",
+        "exit_code": 0
+      }
+    ],
+    "observed_table": {
+      "rowCount": 698,
+      "kinds": {
+        "干渉候補": 106,
+        "接触": 592
+      },
+      "finiteCount": 698,
+      "positiveCount": 0,
+      "min": -25,
+      "max": 0,
+      "clearanceInput": "",
+      "verdicts": [
+        "干渉: 干渉候補あり",
+        "あき: 判断不可（あき基準未入力）",
+        "接触: 接触あり"
+      ]
+    },
+    "acceptance": false
+  },
+  "correction": {
+    "status": "clearance_oracle_browser_observed_full_flow_blocked",
+    "validated_by": "Sol gpt-5.6-sol max, thread 01a0b040-9817-7502-83e3-f161c9a205f7",
+    "proposal": ".git/phase48-run/step8-corrective-plan-v2.md",
+    "independent_review": ".git/phase48-run/step8-sol-review.md",
+    "top_level_checks": 19,
+    "scenario5": {
+      "fixture_controls": [
+        "C1 帯筋 径",
+        "C1 帯筋 ピッチ"
+      ],
+      "synthetic_fixture_facts": {
+        "size": "D13",
+        "pitchMm": 100
+      },
+      "derivation": "d is parsed from the nominal designation; g = p - d; low = g - 1; high = g + 1",
+      "witness_identity": "unordered C1 / 帯筋 / D13 / #0 and #1 row class; segmentIndex not claimed",
+      "downstream_rows": "original first-row actions retained"
+    },
+    "static_verification": [
+      {
+        "command": "/opt/node/bin/node --check tests/e2e/uc25-joint-review.js",
+        "exit_code": 0,
+        "result": "passed"
+      },
+      {
+        "command": "/opt/node/bin/node with bounded stdin harness extracting evaluateClearanceOracle verbatim from tests/e2e/uc25-joint-review.js",
+        "exit_code": 0,
+        "result": "passed; valid synthetic row accepted and all 11 negative controls rejected"
+      }
+    ],
+    "oracle_harness": {
+      "fixture": {
+        "size": "D13",
+        "pitchMm": 100
+      },
+      "derived": {
+        "diameterMm": 13,
+        "gapMm": 87,
+        "lowMm": 86,
+        "highMm": 88
+      },
+      "valid_synthetic_witness": "accepted",
+      "negative_controls": {
+        "zero_gap": "rejected",
+        "negative_gap": "rejected",
+        "wrong_kind_contact": "rejected",
+        "wrong_pair": "rejected",
+        "missing_user_threshold": "rejected",
+        "wrong_user_threshold": "rejected",
+        "wrong_user_scope": "rejected",
+        "excluded_witness": "rejected",
+        "unchanged_ids": "rejected",
+        "missing_high_witness": "rejected",
+        "forbidden_low_witness": "rejected"
+      },
+      "browser_acceptance": "clearance_oracle_observed_pass_full_step_failed_scenario7"
+    }
+  },
+  "paths_verified": [
+    "tests/e2e/uc25-joint-review.js",
+    "tests/e2e/README.md",
+    "phases/48-joint-review-ui/step8.md",
+    "phases/48-joint-review-ui/step8-correction.md",
+    "phases/48-joint-review-ui/step8-report.json",
+    "phases/48-joint-review-ui/index.json",
+    ".git/phase48-run/step8-corrective-plan-v2.md",
+    ".git/phase48-run/step8-sol-review.md",
+    ".git/phase48-run/step8-before-spec-correction/manifest.json",
+    ".git/phase48-run/browser-step8-1789662484080595265/receipt.json",
+    ".git/phase48-run/browser-step8-1789662709634825985/receipt.json",
+    ".git/phase48-run/step8-clearance-blocker.json",
+    "src/lib/review/geometry-check.ts",
+    "src/domain/model/sample-project.ts",
+    "src/components/section/SectionTable.tsx",
+    "src/domain/rebar/column.ts",
+    "src/domain/rebar/stirrup-layout.ts",
+    "src/lib/viewer/geometry.ts",
+    "src/lib/viewer/building.ts",
+    "src/components/review/ReviewPane.tsx",
+    ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
+    ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
+    ".git/phase48-run/step8-correction-browser-result.json",
+    ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
+    ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
+    ".git/phase48-run/step8-correction-opus-review.json",
+    ".git/phase48-run/step8-correction-gates-result.json",
+    ".git/phase48-run/browser-step8-1789665896533303664/receipt.json",
+    ".git/phase48-run/step8-camera-diagnostic/step8-camera-pixel-analysis.json"
+  ],
+  "paths_expected_absent": [],
+  "fabricated_paths": [],
+  "corrected_runtime": {
+    "receipt": ".git/phase48-run/browser-step8-1789664947623972792/receipt.json",
+    "log": ".git/phase48-run/browser-step8-1789664947623972792/uc25-joint-review.log",
+    "build_id": "RW2bvjX2KZ4v8JjBCcVPb",
+    "input_unchanged": true,
+    "clearance_oracle": {
+      "fixture": {
+        "sizeControl": "D13",
+        "pitchControl": "100",
+        "syntheticFact": true
+      },
+      "derivation": {
+        "pitchMm": 100,
+        "diameterMm": 13,
+        "gapMm": 87
+      },
+      "thresholds": {
+        "lowMm": 86,
+        "highMm": 88
+      },
+      "scope": "接合部の全鉄筋",
+      "pairLabels": [
+        "C1 / 帯筋 / D13 / #0",
+        "C1 / 帯筋 / D13 / #1"
+      ],
+      "witness": {
+        "kind": "あき不足候補",
+        "a": {
+          "member": "C1",
+          "role": "帯筋",
+          "size": "D13",
+          "barIndex": 0
+        },
+        "b": {
+          "member": "C1",
+          "role": "帯筋",
+          "size": "D13",
+          "barIndex": 1
+        },
+        "gapText": "87.0",
+        "basis": "利用者入力あき: 88mm (接合部の全鉄筋)",
+        "exclusionText": ""
+      },
+      "checkIds": {
+        "initial": "検査ID: 3c2d45d852de02c1",
+        "low": "検査ID: d93d1059ce2d71ae",
+        "high": "検査ID: 860fe37c2b91ab95"
+      },
+      "predicate": {
+        "lowForbiddenCount": 0,
+        "highWitnessCount": 24
+      }
+    },
+    "failure": "UC25 camera evidence blocker: trusted drag did not change rendered canvas",
+    "commands": [
+      {
+        "name": "build",
+        "command": [
+          "npm",
+          "run",
+          "build"
+        ],
+        "exit_code": 0,
+        "started_at": 1789664947.6873457,
+        "finished_at": 1789665020.7695792
+      },
+      {
+        "name": "uc25-joint-review",
+        "command": [
+          "npm",
+          "exec",
+          "--offline",
+          "--yes",
+          "--package=dev-browser@0.2.9",
+          "--",
+          "dev-browser",
+          "--headless",
+          "--browser",
+          "kijun",
+          "--timeout",
+          "180",
+          "run",
+          "tests/e2e/uc25-joint-review.js"
+        ],
+        "exit_code": 1,
+        "started_at": 1789665022.8123362,
+        "finished_at": 1789665167.797346
+      },
+      {
+        "name": "browser-cleanup",
+        "command": [
+          "npm",
+          "exec",
+          "--offline",
+          "--yes",
+          "--package=dev-browser@0.2.9",
+          "--",
+          "dev-browser",
+          "stop"
+        ],
+        "exit_code": 0,
+        "started_at": 1789665167.7992575,
+        "finished_at": 1789665176.4477332
+      }
+    ],
+    "acceptance": false
+  },
+  "independent_correction_review": {
+    "model": "claude-opus-5",
+    "effort": "xhigh",
+    "session": "b792a4e1-49d3-40f6-8479-dc95cbb2bf5c",
+    "result": {
+      "correction_verdict": "PASS",
+      "step8_verdict": "HOLD",
+      "findings": [
+        "ROOT CAUSE CONFIRMED: original Scenario 5 (archived step8.md) demanded a positive clearance read from a null-basis run, but geometry-check.ts:361-373 cannot emit あき不足候補 without a non-null user basis; preserved evidence step8-report.json#/original_failure/observed_table shows 698 rows, positiveCount 0, max 0. The correction deletes the impossible premise; it does not relax an expectation.",
+        "ORACLE INDEPENDENCE HOLDS: the diff removes the old Math.min(positive gaps) derivation and replaces it with g = p - d read from the two ordinary input controls (uc25 clearanceFixtureControls; SectionTable.tsx:776-805). The test parses the nominal designation itself, so a product change to the diameter convention fails the test rather than following it. No findings-derived value, calibration search, or fallback remains. 86/88 appear nowhere as literals - only g±1.",
+        "LOW/HIGH DISCRIMINATION IS REAL AND BROWSER-OBSERVED: step8-report.json#/corrected_runtime/clearance_oracle records lowForbiddenCount 0 at 86, a witness at 88 with gapText exactly '87.0', basis '利用者入力あき: 88mm (接合部の全鉄筋)', empty exclusion text, and three distinct check IDs. The oracle pins the independently predicted gap exactly, so mere row existence cannot pass it.",
+        "ORIGINAL SEMANTICS PRESERVED AND STRENGTHENED: a strictly positive geometric gap becomes あき不足候補 solely because of a user-entered threshold. Scenario 4 additionally now asserts !findings.includes('あき不足候補') for the null run (diff at checks.initialCheckFindings), which the original never did.",
+        "DOWNSTREAM INVARIANTS INTACT: secondResult = highResult re-binds checkId1/findings1/verdicts1, scenarios 6/7/8 keep their original first-row actions (no witness retargeting), and the 19 top-level checks are preserved and enforced by the Object.keys(checks).length !== 19 throw.",
+        "SCOPE CLEAN: diff is test-only; boundary receipt reports src_unchanged true with changed tracked paths limited to index.json, step8.md, tests/e2e/README.md (script/report/correction are untracked, consistent with git status). Fresh host checks (2008 vitest, 393 golden, typecheck 0, lint 0 errors / 2 warnings) show no collateral damage but are not evidence for the e2e correction itself.",
+        "WEAKNESS - LOW-ARM LIVENESS UNWITNESSED (the one control that can pass while wrong): the low run asserts only checkId !== checkId0 plus absence of the pair class. Nothing proves the value 86 reached the engine; if fill/blur silently failed, clearance stays null and the low arm passes vacuously, degrading the demonstration from '86 vs 88' to 'null vs 88'. checkId derivation is not in the evidence pack, so the ID change is not established as liveness proof. lowResult.verdicts is already captured - asserting the low clearance verdict is no longer 判断不可（あき基準未入力） closes this in one line and is a strengthening, not a relaxation. This does not undermine the claim under review (high arm + strengthened null arm carry it), which is why the verdict is PASS rather than HOLD.",
+        "WEAKNESS - NEW HARD FAILURE SURFACE: parseFindingRows throws on any row with fewer than six cells or an unparsable bar ref and is applied to the full ~700-row table at Scenario 4, where only initialFindingRowCount is observed. That adds spurious-failure risk to an already fragile step for no assertion value at that point.",
+        "UNEXPLAINED MULTIPLICITY: highWitnessCount 24 for a single bar-index pair is not explained by the supplied evidence (segment-pair count and/or both orderings emitted). Not contradictory, and the oracle is deliberately class-level with no segmentIndex claim, but the number should be explained before it becomes a silent baseline.",
+        "STATIC CONTROLS ARE GENUINE BUT NOT SUBSTITUTION: the 11 negative controls (step8-report.json#/correction/oracle_harness) exercise evaluateClearanceOracle verbatim and are real falsifiability evidence for that predicate only - no DOM parse, no fill/blur path, no product behaviour. step8-correction.md 'Verification boundary' labels this correctly, the report keeps checks null and regressions not_run_host_browser, and the blocker text states 'Product defect is not established by this observation'. No overclaim found; the review chain (Sol read-only VALIDATED before amendment, Luna implementing) is not self-approving.",
+        "EXECUTION DEVIATION: the corrected run used --headless (step8-report.json#/corrected_runtime/commands[1]); step8.md's 実行 procedure specifies no such flag. Material precisely because the only failing assertion is pixel-based.",
+        "CAMERA EVIDENCE CHANNEL IS UNSOUND AS WRITTEN: readCanvasFrame's selector \"canvas[aria-label='接合部の配筋3D'], canvas\" resolves to the first canvas in document order regardless of aria-label, and perturbViewer takes its drag box from querySelector('canvas'); neither is asserted to be the joint viewer. waitForStableCanvasFrame's two-equal-frames gate, intended to exclude damping/auto-rotate, is vacuous if the readback is constant.",
+        "STEP 8 ACCEPTANCE NOT REACHED: run threw at perturbViewer before checks were printed. No checks JSON, no uc25-joint-review.png, no uc1/2/3/7/9/10/15 regressions, no vitest && tsc --noEmit && lint under the AC sequence. A passing clearance arm inside a failed run is not step acceptance."
+      ],
+      "camera_classification": "NOT_A_PROVEN_PRODUCT_DEFECT - unresolved between three confounds, evidence-channel artifact leading. (1) toDataURL on a three.js WebGL canvas with preserveDrawingBuffer:false returns a cleared buffer, giving a constant hash regardless of camera; an 843x223 canvas serialising to only 6230 chars and stabilizing on the first comparison are both consistent with a blank readback, and the pack contains no proof the before-frame was non-blank. (2) Canvas identity is unverified - the hashed canvas and the drag-target canvas are both 'first canvas in document order', not necessarily canvas[aria-label='接合部の配筋3D']. (3) The run added --headless, which step8.md does not specify, so a software renderer is in the path of the only pixel assertion. Any one of these yields the observed identical hash with a fully working camera. Note also this assertion has never once been observed passing - the original run failed at Scenario 5 and never reached Scenario 7 - so this is first execution of previously unreachable code, not a regression. A genuine camera/pointer defect remains possible but is not established.",
+      "next_bounded_action": "One read-only dev-browser probe: a new scratch script under tests/e2e/, no src/ edit, no uc25 edit, no assertion relaxed, run with step8.md's documented non-headless command. After landing, selecting 1F-X2Y1 and opening the 接合部 tab, it records for every <canvas>: DOM index, aria-label, getBoundingClientRect, and getContext('webgl2')||getContext('webgl') -> getContextAttributes().preserveDrawingBuffer. It then performs the identical perturbViewer trusted drag and captures, before and after, both the toDataURL length/hash and a page.screenshot() hash (the compositor path is not subject to preserveDrawingBuffer). Classification: preserveDrawingBuffer false + screenshot hash changed + dataURL hash unchanged => evidence channel is invalid, camera is fine, and uc25's capture mechanism must be replaced while keeping the camera-change and check-invariance assertions exactly as they are; both hashes unchanged => pointer/camera path becomes the suspect and a separately authorized product-side diagnosis follows; dataURL hash changed => the selector picked the wrong canvas. Nothing in uc25, src/, or the meaning of the assertion changes until the probe classifies. Fold the one-line low-arm liveness assertion into the same later test-side pass, not into this probe."
+    },
+    "evidence": ".git/phase48-run/step8-correction-opus-review.json",
+    "input_hashes_receipt": ".git/phase48-run/step8-correction-gates-result.json"
+  },
+  "fresh_host_checks": [
+    {
+      "check": "review-tests",
+      "command": [
+        "npx",
+        "--no-install",
+        "vitest",
+        "run",
+        "src/components/review",
+        "--maxWorkers=1"
+      ],
+      "exit_code": 0,
+      "started_at": 1789665348.1348238,
+      "finished_at": 1789665378.5542474,
+      "log": "/home/jetsonseo/projects/mdtproject/.git/phase48-run/step8-correction-review-tests.log",
+      "summary": [
+        "\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m3 passed\u001b[39m\u001b[22m\u001b[90m (3)\u001b[39m",
+        "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m25 passed\u001b[39m\u001b[22m\u001b[90m (25)\u001b[39m"
+      ]
+    },
+    {
+      "check": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "started_at": 1789665378.5560896,
+      "finished_at": 1789665388.1923983,
+      "log": "/home/jetsonseo/projects/mdtproject/.git/phase48-run/step8-correction-typecheck.log",
+      "summary": []
+    },
+    {
+      "check": "lint",
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exit_code": 0,
+      "started_at": 1789665388.1943285,
+      "finished_at": 1789665412.7918468,
+      "log": "/home/jetsonseo/projects/mdtproject/.git/phase48-run/step8-correction-lint.log",
+      "summary": [
+        "✖ 2 problems (0 errors, 2 warnings)"
+      ]
+    },
+    {
+      "check": "all-tests",
+      "command": [
+        "npx",
+        "--no-install",
+        "vitest",
+        "run",
+        "--maxWorkers=1"
+      ],
+      "exit_code": 0,
+      "started_at": 1789665412.7938352,
+      "finished_at": 1789665680.089427,
+      "log": "/home/jetsonseo/projects/mdtproject/.git/phase48-run/step8-correction-all-tests.log",
+      "summary": [
+        "\u001b[90mstderr\u001b[2m | src/app/global-error.test.tsx\u001b[2m > \u001b[22m\u001b[2mGlobalError\u001b[2m > \u001b[22m\u001b[2mreports the crash that killed the whole app",
+        "This will cause a hydration error.",
+        " \u001b[32m✓\u001b[39m \u001b[30m\u001b[45m ui \u001b[49m\u001b[39m src/app/global-error.test.tsx \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 99\u001b[2mms\u001b[22m\u001b[39m",
+        "This will cause a hydration error.",
+        "\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m117 passed\u001b[39m\u001b[22m\u001b[2m | \u001b[22m\u001b[33m2 skipped\u001b[39m\u001b[90m (119)\u001b[39m",
+        "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m2008 passed\u001b[39m\u001b[22m\u001b[2m | \u001b[22m\u001b[33m4 skipped\u001b[39m\u001b[90m (2012)\u001b[39m"
+      ]
+    },
+    {
+      "check": "golden",
+      "command": [
+        "npm",
+        "run",
+        "test:golden",
+        "--",
+        "--maxWorkers=1"
+      ],
+      "exit_code": 0,
+      "started_at": 1789665680.0918334,
+      "finished_at": 1789665687.237964,
+      "log": "/home/jetsonseo/projects/mdtproject/.git/phase48-run/step8-correction-golden.log",
+      "summary": [
+        "\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m7 passed\u001b[39m\u001b[22m\u001b[90m (7)\u001b[39m",
+        "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m393 passed\u001b[39m\u001b[22m\u001b[90m (393)\u001b[39m"
+      ]
+    }
+  ],
+  "camera_diagnostic": {
+    "receipt": ".git/phase48-run/browser-step8-1789665896533303664/receipt.json",
+    "log": ".git/phase48-run/browser-step8-1789665896533303664/probe8-camera.log",
+    "screenshots": ".git/phase48-run/step8-camera-diagnostic",
+    "pixel_analysis": ".git/phase48-run/step8-camera-diagnostic/step8-camera-pixel-analysis.json",
+    "observation": "One canvas, correct joint aria-label, drag hits CANVAS, preserveDrawingBuffer false. toDataURL hashes remain constant while compositor screenshots change, including BEFORE vs NO-DRAG control. Visual review confirms nonblank joint scene and different viewpoint. Readback/stability oracle is invalid here; screenshot inequality alone is NOT yet a valid replacement because no-drag control also changes. No product defect or camera assertion pass claimed. Headless matches failed run; no claim of headed execution or software renderer."
+  }
+}

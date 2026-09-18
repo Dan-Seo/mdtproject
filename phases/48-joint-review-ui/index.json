@@ -77,9 +77,10 @@
     {
       "step": 8,
       "name": "e2e-flow",
-      "status": "pending",
+      "status": "error",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "summary": "Sol-validated bounded SPEC_DEFECT correction authored by Luna max; actual browser derived hoop gap87, low86 absent/high88 positive user-input witness passed. Full run stops at unchanged scenario7 camera pixel-change assertion. Seven regressions and Step8 acceptance still unobserved; no core edits."
     },
     {
       "step": 9,
