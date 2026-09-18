@@ -1,0 +1,107 @@
+{
+  "step": 9,
+  "name": "perf-browser",
+  "status": "completed",
+  "perf_browser": {
+    "conditions": "production build (npm run build; npx next start -p 3000), dev-browser headless chromium 145, viewport 1440x900, warm-up 1 run then the median of 3. Windows 11 desktop host. Every figure is measured by polling the DOM from inside the page; none of them waits for a frame, because a headless page throttles requestAnimationFrame to about 1Hz and any rAF-based figure would read ~1000ms regardless of the work done (the same reading rule as uc17).",
+    "measured_operations": {
+      "joint_tab_ms": "click a 柱 in the plan, then the 接合部 viewer tab, until canvas[aria-label='接合部の配筋3D'] exists",
+      "check_ms": "click 検査を実行 until [data-testid='review-findings'] exists",
+      "compare_ms": "commit 断面 b until [data-testid='review-compare'] text changes",
+      "tab_switch_ms": "click the 作業 tab until [data-testid='work-packages'] exists"
+    },
+    "budget_ms": {
+      "joint_tab_ms": 1500,
+      "check_ms": 3000,
+      "compare_ms": 3000,
+      "tab_switch_ms": 500
+    },
+    "sample": {
+      "joint_tab_ms": 39,
+      "check_ms": 96,
+      "compare_ms": 157,
+      "tab_switch_ms": 35
+    },
+    "stress5": {
+      "joint_tab_ms": 138,
+      "check_ms": 551,
+      "compare_ms": 925,
+      "tab_switch_ms": 414
+    },
+    "raw_samples": {
+      "sample": {
+        "jointTab": [
+          48,
+          39,
+          103,
+          31
+        ],
+        "check": [
+          88,
+          70,
+          231,
+          96
+        ],
+        "compare": [
+          126,
+          129,
+          316,
+          157
+        ],
+        "tabSwitch": [
+          51,
+          22,
+          35,
+          99
+        ]
+      },
+      "stress5": {
+        "jointTab": [
+          211,
+          138,
+          116,
+          1497
+        ],
+        "check": [
+          397,
+          230,
+          551,
+          572
+        ],
+        "compare": [
+          1040,
+          742,
+          3034,
+          925
+        ],
+        "tabSwitch": [
+          231,
+          414,
+          219,
+          765
+        ]
+      }
+    },
+    "budget_met": true,
+    "spread_note": "The medians meet every budget, but two individual samples do not. On the 5-storey stress project one 断面 b commit took 3034 ms against a 3000 ms budget and one tab switch took 765 ms against 500 ms; a joint-tab entry of 1497 ms sat just inside its 1500 ms budget. The acceptance criterion is the median, so this step is completed, but the worst case is at or past the budget and this is recorded rather than smoothed away.",
+    "individual_samples_over_budget": {
+      "sample": [],
+      "stress5": [
+        {
+          "metric": "compare_ms",
+          "sample_ms": 3034,
+          "budget_ms": 3000
+        },
+        {
+          "metric": "tab_switch_ms",
+          "sample_ms": 765,
+          "budget_ms": 500
+        }
+      ]
+    }
+  },
+  "paths_verified": [
+    "tests/e2e/uc25-perf.js",
+    "tests/e2e/README.md"
+  ]
+}

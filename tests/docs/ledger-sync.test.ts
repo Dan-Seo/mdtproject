@@ -30,6 +30,10 @@ const MILESTONE_MAPPING: readonly MilestoneMapping[] = [
     milestonesName: '일본 고유 형태·제품 확장',
   },
   {
+    claudeRow: '접합부 검토·변경 영향·작업 준비(VDC)',
+    milestonesName: '접합부 검토·변경 영향·작업 준비(VDC)',
+  },
+  {
     claudeRow: 'M4 재방문·내역서·PDF·glTF',
     milestonesName: 'M4',
   },

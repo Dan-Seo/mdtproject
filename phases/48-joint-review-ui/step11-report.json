@@ -1,0 +1,118 @@
+{
+  "step": 11,
+  "name": "refute-ui",
+  "verdict": "upheld",
+  "note": "This verification was run by the same session that wrote steps 9 and 10, so it is not an independent refutation of those two. Steps 1-8 came from the codex harness and are refuted here from the outside. An independent cross-verification of step 8 by a different agent is recorded at phases/48-joint-review-ui/step8-cross-verification-antigravity.md; it refuted two of that step's four claims, and those corrections are already folded into step8-report.json and handed to phase 49.",
+  "checks": [
+    {
+      "item": 1,
+      "oracle": "git diff --name-only e1031a2..HEAD over src/app, src/rulepack, src/domain/rebar, src/domain/quantity, src/lib/telemetry.ts, package.json; plus git diff e1031a2..HEAD -- src filtered to added capture( lines",
+      "result": "No new route directory under src/app (git diff --diff-filter=A produced no new directories); src/app/page.tsx and page.test.tsx changed, which is not the failure condition. No rulepack, rebar, quantity or telemetry file changed. package.json dependencies unchanged. Zero added capture( lines.",
+      "passed": true
+    },
+    {
+      "item": 2,
+      "oracle": "buildTakeoff of the sample project and of createStressProject({xSpanCount:4,ySpanCount:3,storyCount:2}), lines serialised and sha256'd, at e1031a2 in a separate worktree and at HEAD",
+      "result": "Byte-identical. sample: 64 lines, sha256 999b8f186e3f124fe5b6b84dfbbb3668ae39a04842443a99a31e6980f2df10a4. stress: 46 lines, sha256 aa872511f1dff8497e372d722f289e07d81d390230f7b70a022a25257812810c. The same two hashes came from both commits. The probe test was deleted and the worktree removed.",
+      "passed": true
+    },
+    {
+      "item": 3,
+      "oracle": "(a) grep for lookupRule(, girderSpan(, capsuleClearanceMm(, memberDependencies(, memberInputs( in src/components/review, Viewer3D.tsx, useReviewModel.ts; (b) the same files' imports of @/rulepack, @/domain/review/dependency, segment-distance, @/domain/rebar",
+      "result": "(a) zero hits. (b) three hits, all inside the declared allowances: useReviewModel.ts:15 imports jpMlitRulePack as the projectFingerprints argument and Viewer3D.tsx:59 imports closestPointsBetweenSegments for marker placement. ReviewPane.test.tsx:22 and WorkPackageBoard.test.tsx:17 also import jpMlitRulePack, but those are test fixtures rather than the display layer judging.",
+      "passed": true
+    },
+    {
+      "item": "4(1)",
+      "oracle": "npx vitest run src/components/review src/components/viewer/Viewer3D.test.tsx",
+      "result": "'ReviewPane focuses both finding segments in the joint viewer' and 'Viewer3D changes marker connector endpoints when focus segments are reversed' are both present and passing.",
+      "passed": true
+    },
+    {
+      "item": "4(6)",
+      "oracle": "same run - display-only operations leave data-review-status unchanged",
+      "result": "Covered by the passing review suite (77/77). uc25 Scenario 7 and 14 assert the same invariant end to end with the check ID unchanged.",
+      "passed": true
+    },
+    {
+      "item": "4(10)",
+      "oracle": "same run - package state is not the ready state after a section change",
+      "result": "'WorkPackageBoard creates a package, confirms a required unlinked item, and derives the core readiness state' passes. uc25 packageBlockedByModelChange is true in step8-report.json.",
+      "passed": true
+    },
+    {
+      "item": "4(13)",
+      "oracle": "for each of the seven text inputs, a test asserting setReview is not called while typing",
+      "result": "All seven have a not.toHaveBeenCalled assertion inside their test body (ReviewPane.test.tsx:229 and :258, :346, :334, :334, WorkPackageBoard.test.tsx:236, ReviewPane.test.tsx:513, :249 and :359). 77/77 pass.",
+      "passed": true
+    },
+    {
+      "item": "4(14)",
+      "oracle": "apply a mutation reported in a step report and confirm the reported test fails",
+      "result": "Applied the step1-report.json mutation that makes loadProject keep the focus, by deleting the reviewFocus reset from loadProject in src/lib/store.ts. Exactly one test failed, and it is the one the report names. Reverted; 16/16 pass again and git status for src/ is clean.",
+      "passed": true
+    },
+    {
+      "item": 5,
+      "oracle": "step8-report.json checks has 19 keys all true, each key is assigned in tests/e2e/uc25-joint-review.js, and the negative assertions are present",
+      "result": "19 keys, none not-true, none missing from the script. Both negative assertions are in the script.",
+      "passed": true
+    },
+    {
+      "item": 6,
+      "oracle": "step9-report.json has the four medians for both projects, within the README decision 9 budget, with conditions stated",
+      "result": "Present. sample 39/96/157/35 ms and stress5 138/551/925/414 ms against 1500/3000/3000/500. budget_met is true and consistent with the medians. conditions names the production build, headless dev-browser, viewport, warm-up of 1 and median of 3. Two individual samples exceed their budget (a 3034 ms section-edit and a 765 ms tab switch on stress5) and the report records that instead of hiding it.",
+      "passed": true
+    },
+    {
+      "item": 7,
+      "oracle": "the component tests' data-* element checks and the uc25 19 checks (a page-wide grep is not the oracle)",
+      "result": "uc25 statusVocabularyAndNotices is true and the review suite passes. The verdict-like words that exist in ja.json sit inside the disclaimers that negate them (review.work.notice, review.items.notice), which is what the notice requirement asks for.",
+      "passed": true
+    },
+    {
+      "item": 8,
+      "oracle": "diff of the shared section of CLAUDE.md and AGENTS.md; ADR-049 and R18 present; the schema field named as in the code; check-citations.py; the forbidden-word count in types.ts and indexeddb.ts",
+      "result": "The shared architecture section is identical in both files. ADR-049 is present with its ten decisions and R18 is present. ADR-049 names reviewSchemaVersion (2 occurrences in docs/ADR.md) and never review.version. check-citations.py exits 0 over every phase 48 report. The forbidden-word count is 0 in both files.",
+      "passed": true
+    },
+    {
+      "item": 9,
+      "oracle": "ripgrep for a literal backslash-u escape in src/components/review, src/lib/review, useReviewModel.ts and tests/e2e/uc25*.js",
+      "result": "No matches. An earlier bash grep reported four files, but the shell ate its backslash so it was matching the letter u followed by four hex characters inside ordinary identifiers such as excludedBy. That was a false positive of the oracle, not of the code.",
+      "passed": true
+    },
+    {
+      "item": 10,
+      "oracle": "npx vitest run src/lib/persist/file.test.ts src/lib/persist/indexeddb.test.ts, and a test that reading a file with a newer review schema version throws",
+      "result": "30/30 pass. file.test.ts:150-154 builds a review state one version ahead and asserts the read rejects with a message naming the field.",
+      "passed": true
+    }
+  ],
+  "mutation_tried": {
+    "step": 1,
+    "mutation": "loadProject stops clearing the review focus (delete the reviewFocus reset in src/lib/store.ts loadProject)",
+    "failed_tests": [
+      "loadProject clears joint focus and pending pose and leaves joint mode on project load"
+    ],
+    "reverted": true
+  },
+  "paths_verified": [
+    "src/lib/store.ts",
+    "src/lib/store.test.ts",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/components/review/WorkPackageBoard.test.tsx",
+    "src/lib/persist/file.test.ts",
+    "src/lib/persist/indexeddb.test.ts",
+    "src/lib/hooks/useReviewModel.ts",
+    "src/components/viewer/Viewer3D.tsx",
+    "tests/e2e/uc25-joint-review.js",
+    "phases/48-joint-review-ui/step8-report.json",
+    "phases/48-joint-review-ui/step9-report.json",
+    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md",
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "CLAUDE.md",
+    "AGENTS.md"
+  ]
+}

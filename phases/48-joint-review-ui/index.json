@@ -1,7 +1,7 @@
 {
   "project": "Kijun",
   "phase": "48-joint-review-ui",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     {
       "step": 1,
@@ -86,25 +86,32 @@
     {
       "step": 9,
       "name": "perf-browser",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "summary": "uc25-perf.js로 접합부 4조작을 프로덕션 빌드·headless에서 실측했다. 중앙값은 샘플 39/96/157/35 ms, 5층 스트레스 138/551/925/414 ms로 예산(1500/3000/3000/500) 안이다. rAF은 헤드리스에서 1Hz로 조여지므로 전부 DOM 폴링으로 쟀다. 개별 표본 2건(3034 ms·765 ms)은 예산을 넘었고 report에 그대로 적었다.",
+      "authored_by": "claude-opus-5 (desktop host session)"
     },
     {
       "step": 10,
       "name": "docs-sync",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "summary": "ADR-049(검토 계층 10결정)·R18(형상 검사 가정 5 ＋ あき 出典 부재)을 쓰고, CLAUDE.md＝AGENTS.md에 마일스톤 행·아키텍처 규칙·R18 행을 같은 문장으로 넣었다. ARCHITECTURE 트리에 review 3디렉터리, tests/e2e/README에 uc25-perf 행. 코드 무변경.",
+      "authored_by": "claude-opus-5 (desktop host session)"
     },
     {
       "step": 11,
       "name": "refute-ui",
       "kind": "verify",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
-      "reasoning_effort": "max"
+      "reasoning_effort": "max",
+      "summary": "phase 48 전체를 10항목 오라클로 반증 시도했고 전부 성립(upheld). 数量은 e1031a2와 HEAD가 바이트 동일(sha256 2건 일치), 표시부는 판정 함수를 부르지 않으며, step1이 보고한 변이를 실제로 넣자 보고된 그 테스트 하나만 실패했다(되돌림). 항목 9의 이스케이프 검출은 셸이 백슬래시를 먹은 오라클 쪽 거짓 양성이었다.",
+      "authored_by": "claude-opus-5 (desktop host session)"
     }
   ],
-  "created_at": "2026-09-17T19:21:39+0900"
+  "created_at": "2026-09-17T19:21:39+0900",
+  "completed_at": "2026-09-18T19:40:00+0900"
 }

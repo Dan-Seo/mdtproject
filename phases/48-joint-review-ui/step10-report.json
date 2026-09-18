@@ -1,0 +1,40 @@
+{
+  "step": 10,
+  "name": "docs-sync",
+  "status": "completed",
+  "changed_files": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "docs/ARCHITECTURE.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "tests/e2e/README.md"
+  ],
+  "adr": "ADR-049",
+  "risk": "R18",
+  "cited": [
+    {
+      "claim": "the region prefilter dropped 28 pairs at a 40mm user clearance before the fix",
+      "source": "phases/47-joint-review-core/step8-report.json#/before_fix/clearance_40_missing"
+    },
+    {
+      "claim": "after the fix nothing is dropped at that clearance",
+      "source": "phases/47-joint-review-core/step8-report.json#/after_fix/clearance_40_missing"
+    },
+    {
+      "claim": "the joint scene never renders two byte-identical frames under the tested conditions",
+      "source": "phases/48-joint-review-ui/step8-report.json#/desktop_host_run/repairs/1/measured"
+    }
+  ],
+  "notes": "ADR-049 records the ten decisions of the review layer and names reviewSchemaVersion as the code does. R18 records the five declared assumptions of the shape check plus the absent provenance of the user clearance, and carries the phase 47 prefilter defect as its history. The milestone row and the architecture rule were added identically to CLAUDE.md and AGENTS.md; the shared section diffs clean. docs/ARCHITECTURE.md gained domain/review, lib/review and components/review in the tree. tests/e2e/README.md gained the uc25-perf row with its fixture prerequisite. No code was changed in this step.",
+  "paths_verified": [
+    "docs/ADR.md",
+    "docs/RISKS.md",
+    "docs/MILESTONES.md",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "docs/ARCHITECTURE.md",
+    "tests/e2e/README.md",
+    "src/domain/review/types.ts"
+  ]
+}

@@ -9,15 +9,18 @@ src/
 │   ├── plan/             # 평면 입력 에디터
 │   ├── section/          # 부재 단면일람 테이블
 │   ├── viewer/           # three.js 3D 뷰어
-│   └── quantity/         # 물량 내역서 테이블
+│   ├── quantity/         # 물량 내역서 테이블
+│   └── review/           # 접합부 검토 화면 (검토항목·비교·작업묶음)
 ├── domain/               # 순수 TypeScript. React·DOM·three.js 의존 금지
 │   ├── model/            # Project / Member / Rebar 타입
 │   ├── rules/            # 룰팩 로더 + 조회 엔진
 │   ├── rebar/            # 철근 생성기 (柱, 大梁)
-│   └── quantity/         # 물량 집계 (設計数量 → 할증률 조회 → 所要数量)
+│   ├── quantity/         # 물량 집계 (設計数量 → 할증률 조회 → 所要数量)
+│   └── review/           # 접합부·의존·영향·유효성·준비 (Project 밖, ADR-049)
 ├── rulepack/
 │   └── jp-mlit/          # YAML 룰팩 (定着·重ね継手·折曲げ·かぶり·할증률)
 ├── lib/                  # 직렬화, IndexedDB, exceljs, glTF, i18n
+│   └── review/           # 형상 검사·X-Ray·fingerprint (표시부가 아니라 계산)
 └── locales/              # ja.json (기본), ko.json (fallback → ja)
 tests/
 └── golden/               # 標準仕様書·수량적산기준 표 ↔ 엔진 출력 대조
