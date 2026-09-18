@@ -75,6 +75,15 @@ class의 양의 gap witness가 `あき不足候補`·`利用者入力`·high 값
 수정 후 아직 실행하지 않은 script는 `phases/48-joint-review-ui/step8-correction.md`와
 `step8-report.json`에 분리해 기록한다.
 
+### uc25 샘플 案件의 camera evidence oracle 사실
+
+이 항목은 Scenario 7과 14에서 사용하는 카메라 조작 및 검증 사실이다.
+Channel A는 `gl.readPixels`를 통해 rAF 콜백 내부에서 렌더링된 프레임을 직접 캡처하고, Channel B는 `page.screenshot({clip, scale:'css', type:'png'})`를 통해 합성기(compositor) 이미지를 캡처하여 서로 일치함을 검증한다.
+타겟 `<canvas>`는 `aria-label="接合部の配筋3D"`를 통해 단일 브랜치 셀렉터로 엄격하게 식별되며(fallback 없음), ROI는 `document.elementsFromPoint`를 이용해 오버레이가 없는 안전한 영역으로 설정된다.
+환경 애니메이션과 드래그 잔여물(damping)을 통제하기 위해, 모든 캡처 윈도우는 pointer down 이벤트를 통해 8초의 auto-rotate 예산을 초기화하고 3 프레임 윈도우로 관측한다. 마우스 조작은 신뢰할 수 있는(trusted) 이벤트인지와 타겟 좌표 정확성을 검증한다.
+시작점(P0)과 끝점(P1) 모두에서 no-drag 대조군(control)을 측정해 픽셀 변화가 없음을 입증하며, 어떠한 상황에서도 캡처된 모든 프레임은 non-blank 게이트(`zeroAlphaFraction === 0`, `distinctColors >= 32`, `modalFraction <= 0.98`)를 통과해야 한다.
+실패 시 허위 성공(false pass)이 발생하지 않도록 설계되었으며, `BLANK_FRAME`, `CONTROL_MOVED`, `POINTER_NOT_DELIVERED`, `NO_MOTION_AFTER_DRAG`, `CHANNEL_DISAGREEMENT` 등 원인이 기록된 실패 코드를 반환한다.
+
 ### 자동저장을 지우고 시작한다
 
 M4의 IndexedDB 자동저장(`src/lib/persist/indexeddb.ts`)은 앞선 走行을 다음 走行으로

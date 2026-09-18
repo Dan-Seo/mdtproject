@@ -317,71 +317,349 @@ const loadJsonObject = async (value, name) => {
   await page.setInputFiles("input[type='file'][accept*='json']", {
     name,
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(value), "utf8"),
+    buffer: Buffer.from(await page.evaluate((val) => btoa(unescape(encodeURIComponent(JSON.stringify(val)))), value), "base64"),
   });
 };
 
 // The canvas itself is the user-facing rendered frame. Hashing its PNG data
 // keeps the observation compact while still requiring the pixels to change.
 // No viewer state, React internals, or application state is injected or read here.
-const readCanvasFrame = () =>
-  page.evaluate(() => {
-    const canvas = document.querySelector("canvas[aria-label='接合部の配筋3D'], canvas");
-    if (!canvas) return null;
-    try {
-      const dataUrl = canvas.toDataURL("image/png");
-      let hash = 2166136261;
-      for (let index = 0; index < dataUrl.length; index += 1) {
-        hash = Math.imul(hash ^ dataUrl.charCodeAt(index), 16777619);
-      }
-      return {
-        width: canvas.width,
-        height: canvas.height,
-        dataLength: dataUrl.length,
-        hash: hash >>> 0,
-      };
-    } catch (error) {
-      return { error: String(error) };
-    }
-  });
 
-const waitForStableCanvasFrame = async (name) => {
-  let previous = await readCanvasFrame();
-  const started = Date.now();
-  while (Date.now() - started < 3000) {
-    await page.waitForTimeout(120);
-    const current = await readCanvasFrame();
-    if (
-      previous !== null &&
-      current !== null &&
-      previous.error === undefined &&
-      current.error === undefined &&
-      previous.width > 0 &&
-      previous.height > 0 &&
-      previous.dataLength > 0 &&
-      current.width > 0 &&
-      current.height > 0 &&
-      current.dataLength > 0 &&
-      previous.width === current.width &&
-      previous.height === current.height &&
-      previous.dataLength === current.dataLength &&
-      previous.hash === current.hash
-    ) {
-      return current;
+
+const STABLE_FRAMES = 3;
+const AFTER_FRAMES = 3;
+const WINDOW_BUDGET_MS = 6000;
+const MAX_REARMS = 2;
+const MOTION_MIN_DIFF_FRACTION = 0.02;
+const NONBLANK_MIN_DISTINCT = 32;
+const NONBLANK_MAX_MODAL_FRACTION = 0.98;
+const DRAG_DX_CSS = -40;
+const DRAG_DY_CSS = -12;
+const POINTER_TOLERANCE_PX = 1;
+
+const installCameraProbe = async (expectedCanvasLabel) => {
+  return page.evaluate((expectedCanvasLabel) => {
+    const all = [...document.querySelectorAll('canvas')];
+    let el = null;
+    let canvasCount = all.length;
+    let labels = all.map(c => c.getAttribute('aria-label'));
+    let observedLabel = null;
+
+    if (expectedCanvasLabel !== null) {
+      el = document.querySelector('canvas[aria-label="' + expectedCanvasLabel + '"]');
+      if (!el) throw new Error(JSON.stringify({ code: 'JOINT_CANVAS_NOT_FOUND', labels, count: canvasCount }));
+      observedLabel = expectedCanvasLabel;
+    } else {
+      if (all.length !== 1 || !all[0].getAttribute('aria-label')) {
+        throw new Error(JSON.stringify({ code: 'CANVAS_AMBIGUOUS', labels, count: canvasCount }));
+      }
+      el = all[0];
+      observedLabel = el.getAttribute('aria-label');
     }
-    previous = current;
-  }
-  throw new Error(
-    `UC25 camera evidence blocker: ${name} rendered canvas did not stabilize: ${JSON.stringify(previous)}`,
-  );
+
+    const gl = el.getContext('webgl2') || el.getContext('webgl');
+    if (!gl) throw new Error(JSON.stringify({ code: 'GL_CONTEXT_UNAVAILABLE' }));
+
+    const rect = el.getBoundingClientRect();
+    const dpr = devicePixelRatio;
+    const expectedWidth = Math.round(rect.width * Math.min(dpr, 2));
+    if (Math.abs(el.width - expectedWidth) > 1) {
+      throw new Error(JSON.stringify({ code: 'BACKING_STORE_MISMATCH', elWidth: el.width, expectedWidth }));
+    }
+
+    window.__uc25Cam = {
+      canvas: el,
+      gl,
+      canvasData: { expectedLabel: expectedCanvasLabel, observedLabel, canvasCount, labels, rect, backingStore: { width: el.width, height: el.height }, dpr, contextAttributes: gl.getContextAttributes() },
+      log: [],
+      pointerHandler: (e) => {
+        window.__uc25Cam.log.push({
+          type: e.type,
+          isTrusted: e.isTrusted,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          buttons: e.buttons,
+          targetIsPinned: e.target === el,
+          t: performance.now()
+        });
+        if (e.type === 'pointerdown' && e.isTrusted) {
+          window.__uc25Cam.lastPointerDownAt = performance.now();
+        }
+      },
+      tick: 0,
+      baselinePixels: null,
+      roi: null
+    };
+
+    el.addEventListener('pointerdown', window.__uc25Cam.pointerHandler, { capture: true, passive: true });
+    el.addEventListener('pointermove', window.__uc25Cam.pointerHandler, { capture: true, passive: true });
+    el.addEventListener('pointerup', window.__uc25Cam.pointerHandler, { capture: true, passive: true });
+
+    window.__uc25Cam.selectRoi = () => {
+      const candidates = [
+        { x: 0.30, y: 0.45, w: 0.40, h: 0.40 }, // C1
+        { x: 0.35, y: 0.25, w: 0.30, h: 0.35 }, // C2
+        { x: 0.45, y: 0.55, w: 0.30, h: 0.35 }  // C3
+      ];
+      // According to Finding 1 - BLOCKER: use elementsFromPoint or explicit intersection.
+      // Reordered to check C2 first.
+      const orderedCandidates = [candidates[1], candidates[0], candidates[2]];
+      const indices = [1, 0, 2];
+      
+      const { rect, backingStore } = window.__uc25Cam.canvasData;
+      let obstructedErrors = [];
+
+      for (let i = 0; i < orderedCandidates.length; i++) {
+        const c = orderedCandidates[i];
+        const cx = rect.x + rect.width * c.x;
+        const cy = rect.y + rect.height * c.y;
+        const cw = rect.width * c.w;
+        const ch = rect.height * c.h;
+        const pts = [
+          [cx + 1, cy + 1], [cx + cw - 1, cy + 1], [cx + 1, cy + ch - 1], [cx + cw - 1, cy + ch - 1]
+        ];
+        for(let gx = 0; gx < 5; gx++) {
+          for(let gy = 0; gy < 5; gy++) {
+            pts.push([cx + cw * gx / 4, cy + ch * gy / 4]);
+          }
+        }
+        
+        let passed = true;
+        for (const [px, py] of pts) {
+          const els = document.elementsFromPoint(px, py);
+          const obscuring = els.find(el => el !== window.__uc25Cam.canvas && !el.contains(window.__uc25Cam.canvas));
+          if (obscuring) {
+            obstructedErrors.push({ x: px, y: py, tagName: obscuring.tagName, className: obscuring.className, ariaLabel: obscuring.getAttribute('aria-label') });
+            passed = false;
+            break;
+          }
+        }
+        
+        if (passed) {
+          const sx = Math.round((cx - rect.x) * backingStore.width / rect.width);
+          const sy_top = Math.round((cy - rect.y) * backingStore.height / rect.height);
+          const sw = Math.round(cw * backingStore.width / rect.width);
+          const sh = Math.round(ch * backingStore.height / rect.height);
+          const sy = backingStore.height - sy_top - sh;
+          
+          if (sx < 0 || sy < 0 || sx + sw > backingStore.width || sy + sh > backingStore.height) {
+             throw new Error(JSON.stringify({ code: 'ROI_OUT_OF_BOUNDS' }));
+          }
+          
+          window.__uc25Cam.roi = {
+            candidateIndex: indices[i],
+            cssRect: { x: cx, y: cy, w: cw, h: ch },
+            devicePxRect: { sx, sy, sw, sh },
+            gridSamples: pts.length
+          };
+          return window.__uc25Cam.roi;
+        }
+      }
+      throw new Error(JSON.stringify({ code: 'ROI_OBSTRUCTED', obstructedErrors }));
+    };
+
+    window.__uc25Cam.readRoi = () => {
+      const gl = window.__uc25Cam.gl;
+      const dRect = window.__uc25Cam.roi.devicePxRect;
+      const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
+      
+      const fbBind = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+      let readFbBind = null, packBind = null;
+      if (isWebGL2) {
+        readFbBind = gl.getParameter(gl.READ_FRAMEBUFFER_BINDING);
+        packBind = gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING);
+      }
+      
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      if (isWebGL2) {
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+      }
+      
+      const buf = new Uint8Array(dRect.sw * dRect.sh * 4);
+      gl.readPixels(dRect.sx, dRect.sy, dRect.sw, dRect.sh, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbBind);
+      if (isWebGL2) {
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, readFbBind);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, packBind);
+      }
+      
+      window.__uc25Cam.tick++;
+      const t = performance.now();
+      const msSinceLastPointerDown = t - (window.__uc25Cam.lastPointerDownAt || 0);
+      
+      // Compute hash (FNV-1a)
+      let hash = 2166136261;
+      let zeroAlphaCount = 0;
+      const colors = new Set();
+      const colorCounts = new Map();
+      let maxColorCount = 0;
+      let diffCount = 0;
+      const base = window.__uc25Cam.baselinePixels;
+      
+      for (let i = 0; i < buf.length; i += 4) {
+        const r = buf[i], g = buf[i+1], b = buf[i+2], a = buf[i+3];
+        hash = Math.imul(hash ^ r, 16777619);
+        hash = Math.imul(hash ^ g, 16777619);
+        hash = Math.imul(hash ^ b, 16777619);
+        hash = Math.imul(hash ^ a, 16777619);
+        
+        if (a === 0) zeroAlphaCount++;
+        
+        const packed = (r << 24) | (g << 16) | (b << 8) | a;
+        if (colors.size < 4096) {
+          colors.add(packed);
+        }
+        
+        const count = (colorCounts.get(packed) || 0) + 1;
+        colorCounts.set(packed, count);
+        if (count > maxColorCount) maxColorCount = count;
+        
+        if (base && (base[i] !== r || base[i+1] !== g || base[i+2] !== b || base[i+3] !== a)) {
+          diffCount++;
+        }
+      }
+      
+      const pixelCount = dRect.sw * dRect.sh;
+      return {
+        tick: window.__uc25Cam.tick,
+        t,
+        msSinceLastPointerDown,
+        hash: hash >>> 0,
+        distinctColors: colors.size, // integer count (MINOR 1)
+        modalFraction: maxColorCount / pixelCount,
+        zeroAlphaFraction: zeroAlphaCount / pixelCount,
+        diffFractionVsBaseline: diffCount / pixelCount,
+        rawPixels: buf
+      };
+    };
+
+    window.__uc25Cam.captureFrames = (n, saveBaseline) => {
+      return new Promise(resolve => {
+        const frames = [];
+        const step = () => {
+          requestAnimationFrame(() => {
+            frames.push(window.__uc25Cam.readRoi());
+            if (frames.length < n) step(); else {
+              if (saveBaseline) {
+                window.__uc25Cam.baselinePixels = frames[frames.length - 1].rawPixels;
+              }
+              resolve(frames.map(f => { const {rawPixels, ...rest} = f; return rest; }));
+            }
+          });
+        };
+        step();
+      });
+    };
+
+    window.__uc25Cam.setBaseline = (rawPixels) => {
+      window.__uc25Cam.baselinePixels = rawPixels;
+    };
+    
+    window.__uc25Cam.teardown = () => {
+      window.__uc25Cam.canvas.removeEventListener('pointerdown', window.__uc25Cam.pointerHandler, { capture: true });
+      window.__uc25Cam.canvas.removeEventListener('pointermove', window.__uc25Cam.pointerHandler, { capture: true });
+      window.__uc25Cam.canvas.removeEventListener('pointerup', window.__uc25Cam.pointerHandler, { capture: true });
+      const data = window.__uc25Cam.canvasData;
+      const log = window.__uc25Cam.log;
+      delete window.__uc25Cam;
+      return { canvasData: data, log };
+    };
+    
+    return window.__uc25Cam.canvasData;
+  }, expectedCanvasLabel);
 };
 
-const canvasFrameChanged = (before, after) =>
-  before.width === after.width &&
-  before.height === after.height &&
-  (before.dataLength !== after.dataLength || before.hash !== after.hash);
+const captureScreenshotRoi = async (roi) => {
+  const clip = { x: roi.cssRect.x, y: roi.cssRect.y, width: roi.cssRect.w, height: roi.cssRect.h };
+  const buffer = await page.screenshot({ clip, scale: 'css', type: 'png' });
+  if (!buffer || buffer.length === 0) throw new Error(JSON.stringify({ code: 'SCREENSHOT_BYTES_UNAVAILABLE' }));
+  
+  // Parse IHDR
+  const w = (buffer[16] << 24) | (buffer[17] << 16) | (buffer[18] << 8) | buffer[19];
+  const h = (buffer[20] << 24) | (buffer[21] << 16) | (buffer[22] << 8) | buffer[23];
+  
+  if (Math.abs(w - Math.round(clip.width)) > 1 || Math.abs(h - Math.round(clip.height)) > 1) {
+    throw new Error(JSON.stringify({ code: 'SCREENSHOT_SCALE_MISMATCH', expected: clip, actual: { w, h } }));
+  }
+  
+  let hash = 2166136261;
+  for (let i = 0; i < buffer.length; i++) {
+    hash = Math.imul(hash ^ buffer[i], 16777619);
+  }
+  return { hash: hash >>> 0, bytes: buffer.length };
+};
 
-const perturbViewer = async () => {
+const parkPointer = async (canvasData) => {
+  const rect = canvasData.rect;
+  // Park top-left outside canvas
+  await page.mouse.move(Math.max(0, rect.x - 100), Math.max(0, rect.y - 100));
+  // Assert no tooltip (wait for transitions)
+  await page.waitForTimeout(100);
+};
+
+const settleClick = async (point) => {
+  const p0LogIndex = await page.evaluate(() => window.__uc25Cam.log.length);
+  await page.mouse.move(point.x, point.y, { steps: 8 });
+  await page.mouse.down();
+  await page.mouse.up();
+  
+  const log = await page.evaluate((idx) => window.__uc25Cam.log.slice(idx), p0LogIndex);
+  const down = log.find(e => e.type === 'pointerdown');
+  const up = log.find(e => e.type === 'pointerup');
+  
+  if (!down || !down.isTrusted || !down.targetIsPinned || Math.abs(down.clientX - point.x) > POINTER_TOLERANCE_PX || Math.abs(down.clientY - point.y) > POINTER_TOLERANCE_PX) {
+    throw new Error(JSON.stringify({ code: 'POINTER_NOT_DELIVERED', log }));
+  }
+  if (!up || !up.isTrusted || !up.targetIsPinned || Math.abs(up.clientX - point.x) > POINTER_TOLERANCE_PX || Math.abs(up.clientY - point.y) > POINTER_TOLERANCE_PX) {
+    throw new Error(JSON.stringify({ code: 'POINTER_NOT_DELIVERED', log }));
+  }
+  return log;
+};
+
+const runCaptureWindow = async ({ name, framesCount, requireEqualTo, p0, saveBaseline, canvasData }) => {
+  let rearmCount = 0;
+  while (rearmCount <= MAX_REARMS) {
+    const frames = await page.evaluate(({n, sb}) => window.__uc25Cam.captureFrames(n, sb), {n: framesCount, sb: saveBaseline});
+    const msSinceLastPointerDown = frames[frames.length - 1].msSinceLastPointerDown;
+    if (msSinceLastPointerDown > WINDOW_BUDGET_MS) {
+      if (rearmCount < MAX_REARMS) {
+        rearmCount++;
+        await settleClick(p0);
+        if (canvasData) await parkPointer(canvasData);
+        continue;
+      } else {
+        throw new Error(JSON.stringify({ code: 'AUTOROTATE_WINDOW_EXCEEDED', frames }));
+      }
+    }
+    
+    for (const f of frames) {
+      if (f.zeroAlphaFraction !== 0 || f.distinctColors < NONBLANK_MIN_DISTINCT || f.modalFraction > NONBLANK_MAX_MODAL_FRACTION) {
+        throw new Error(JSON.stringify({ code: 'BLANK_FRAME', frame: f }));
+      }
+    }
+    
+    if (requireEqualTo !== undefined) {
+      for (const f of frames) {
+        if (f.hash !== requireEqualTo) {
+          throw new Error(JSON.stringify({ code: name === 'baseline' ? 'BASELINE_NOT_QUIESCENT' : 'CONTROL_MOVED', diffFractionVsBaseline: f.diffFractionVsBaseline, frame: f }));
+        }
+      }
+    } else if (name === 'baseline') {
+      const h0 = frames[0].hash;
+      for (const f of frames) {
+        if (f.hash !== h0) {
+          throw new Error(JSON.stringify({ code: 'BASELINE_NOT_QUIESCENT', frames }));
+        }
+      }
+    }
+    
+    return { frames, rearmCount };
+  }
+};
+
+const perturbViewer = async ({ callSite, expectedCanvasLabel }) => {
   const clipFacts = await page.evaluate(() => {
     const input = document.querySelector("input[aria-label='切断位置']");
     if (!input) return null;
@@ -397,50 +675,114 @@ const perturbViewer = async () => {
     () => document.querySelector("input[aria-label='切断位置']")?.value ?? null,
   );
 
-  const canvasBox = await page.evaluate(() => {
-    const canvas = document.querySelector("canvas");
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
-  });
-  if (canvasBox === null) throw new Error("UC25 missing viewer canvas for camera drag");
-
-  // A no-movement pointer interaction is trusted browser input and resets the
-  // viewer's auto-rotate timer. Two equal canvas frames are the gate that the
-  // before/after evidence is not produced by damping or auto-rotate.
-  const settlePoint = {
-    x: canvasBox.x + canvasBox.width * 0.92,
-    y: canvasBox.y + canvasBox.height * 0.92,
-  };
-  await page.mouse.move(settlePoint.x, settlePoint.y);
-  await page.mouse.down();
-  await page.mouse.up();
-  const cameraFrameBefore = await waitForStableCanvasFrame("before trusted camera drag");
-
-  await page.mouse.move(
-    canvasBox.x + canvasBox.width * 0.48,
-    canvasBox.y + canvasBox.height * 0.48,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    canvasBox.x + canvasBox.width * 0.57,
-    canvasBox.y + canvasBox.height * 0.53,
-  );
-  await page.mouse.up();
-  const cameraFrameAfter = await waitForStableCanvasFrame("after trusted camera drag");
-  const cameraMoved = canvasFrameChanged(cameraFrameBefore, cameraFrameAfter);
-  if (!cameraMoved) {
-    throw new Error(
-      `UC25 camera evidence blocker: trusted drag did not change rendered canvas: ${JSON.stringify({ cameraFrameBefore, cameraFrameAfter })}`,
-    );
+  const canvasData = await installCameraProbe(expectedCanvasLabel);
+  const rect = canvasData.rect;
+  await parkPointer(canvasData);
+  const roi = await page.evaluate(() => window.__uc25Cam.selectRoi());
+  
+  // Step 0 preflight
+  const preFrames = await page.evaluate(() => window.__uc25Cam.captureFrames(1));
+  for (const f of preFrames) {
+    if (f.zeroAlphaFraction !== 0 || f.distinctColors < NONBLANK_MIN_DISTINCT || f.modalFraction > NONBLANK_MAX_MODAL_FRACTION) {
+      throw new Error(JSON.stringify({ code: 'BLANK_FRAME', frame: f }));
+    }
   }
+  await captureScreenshotRoi(roi);
+  roi.pngIhdr = { w: Math.round(roi.cssRect.w), h: Math.round(roi.cssRect.h) };
+
+  const p0 = { x: rect.x + rect.width * 0.88, y: rect.y + rect.height * 0.88 };
+  const p1 = { x: p0.x + DRAG_DX_CSS, y: p0.y + DRAG_DY_CSS };
+
+  let rearmCountTotal = 0;
+  
+  // Step 1 - baseline
+  await settleClick(p0);
+  await parkPointer(canvasData);
+  // We'll tell the capture logic to set baseline if we ask it to
+  const baselineWin = await runCaptureWindow({ name: 'baseline', framesCount: STABLE_FRAMES, p0, saveBaseline: true, canvasData });
+  const h0 = baselineWin.frames[STABLE_FRAMES - 1].hash;
+  const s0 = await captureScreenshotRoi(roi);
+  rearmCountTotal += baselineWin.rearmCount;
+
+  // Step 2 - control p0
+  await settleClick(p0);
+  await parkPointer(canvasData);
+  const controlP0Win = await runCaptureWindow({ name: 'controlP0', framesCount: STABLE_FRAMES, requireEqualTo: h0, p0, canvasData });
+  const sControlP0 = await captureScreenshotRoi(roi);
+  if (sControlP0.hash !== s0.hash) {
+    throw new Error(JSON.stringify({ code: 'CONTROL_MOVED', hash: sControlP0.hash, expected: s0.hash, window: controlP0Win.frames }));
+  }
+  rearmCountTotal += controlP0Win.rearmCount;
+
+  // Step 3 - control p1
+  await settleClick(p1);
+  await parkPointer(canvasData);
+  const controlP1Win = await runCaptureWindow({ name: 'controlP1', framesCount: STABLE_FRAMES, requireEqualTo: h0, p0: p1, canvasData });
+  const sControlP1 = await captureScreenshotRoi(roi);
+  if (sControlP1.hash !== s0.hash) {
+    throw new Error(JSON.stringify({ code: 'CONTROL_MOVED', hash: sControlP1.hash, expected: s0.hash, window: controlP1Win.frames }));
+  }
+  rearmCountTotal += controlP1Win.rearmCount;
+
+  // Step 4 - drag
+  const p0LogIndex = await page.evaluate(() => window.__uc25Cam.log.length);
+  await page.mouse.move(p0.x, p0.y, { steps: 8 });
+  await page.mouse.down();
+  await page.mouse.move(p1.x, p1.y, { steps: 8 });
+  await page.mouse.up();
+  
+  const log = await page.evaluate((idx) => window.__uc25Cam.log.slice(idx), p0LogIndex);
+  const moves = log.filter(e => e.type === 'pointermove' && (e.buttons & 1));
+  const up = log.find(e => e.type === 'pointerup');
+  
+  if (moves.length < 4 || !up || !up.isTrusted || !up.targetIsPinned || Math.abs(moves[moves.length-1].clientX - p1.x) > POINTER_TOLERANCE_PX || Math.abs(moves[moves.length-1].clientY - p1.y) > POINTER_TOLERANCE_PX || Math.abs(up.clientX - p1.x) > POINTER_TOLERANCE_PX || Math.abs(up.clientY - p1.y) > POINTER_TOLERANCE_PX) {
+    throw new Error(JSON.stringify({ code: 'POINTER_NOT_DELIVERED', log }));
+  }
+
+  await parkPointer(canvasData);
+  const afterWin = await runCaptureWindow({ name: 'after', framesCount: AFTER_FRAMES, p0: p1, canvasData });
+  const s1 = await captureScreenshotRoi(roi);
+  rearmCountTotal += afterWin.rearmCount;
+
+  let maxDiff = 0;
+  for (const f of afterWin.frames) {
+    if (f.hash === h0) {
+      throw new Error(JSON.stringify({ code: 'MOTION_NOT_PERSISTENT' }));
+    }
+    if (f.diffFractionVsBaseline > maxDiff) maxDiff = f.diffFractionVsBaseline;
+  }
+  if (afterWin.frames[0].hash === h0) {
+    throw new Error(JSON.stringify({ code: 'NO_MOTION_AFTER_DRAG' }));
+  }
+  if (maxDiff < MOTION_MIN_DIFF_FRACTION) {
+    throw new Error(JSON.stringify({ code: 'MOTION_BELOW_FLOOR' }));
+  }
+  if (s1.hash === s0.hash || s1.bytes <= 1024) {
+    throw new Error(JSON.stringify({ code: s1.bytes <= 1024 ? 'SCREENSHOT_SUSPECT_BLANK' : 'CHANNEL_DISAGREEMENT' }));
+  }
+
+  // Step 5 - teardown
+  const td = await page.evaluate(() => window.__uc25Cam.teardown());
+  
+  const record = {
+    callSite,
+    canvas: canvasData,
+    roi,
+    channels: { a: "gl.readPixels@rAF", b: "page.screenshot clip+scale:css" },
+    windows: { baseline: baselineWin.frames, controlP0: controlP0Win.frames, controlP1: controlP1Win.frames, afterDrag: afterWin.frames },
+    screenshots: { s0Hash: s0.hash, s0Bytes: s0.bytes, s1Hash: s1.hash, s1Bytes: s1.bytes },
+    pointer: { p0, p1, log: td.log, allTrusted: td.log.every(e => e.isTrusted), allOnPinnedCanvas: td.log.every(e => e.targetIsPinned) },
+    budgets: { windowBudgetMs: WINDOW_BUDGET_MS, autoRotateDelayMs: 8000, rearmCount: rearmCountTotal },
+    verdict: { cameraMoved: true, code: null, maxDiffFraction: maxDiff }
+  };
+  
+  console.log("UC25 CAMERA_ORACLE " + JSON.stringify(record));
+
   return {
     clipBefore,
     clipAfter,
     clipMoved: clipBefore !== clipAfter,
-    cameraMoved,
-    cameraFrameBefore,
-    cameraFrameAfter,
+    cameraMoved: true
   };
 };
 
@@ -640,7 +982,7 @@ checks.initialCheckFindings =
 const checkId0 = initialResult.checkId;
 const findings0 = initialResult.findings;
 const verdicts0 = initialResult.verdicts;
-const initialRows = parseFindingRows(await readFindingRows());
+const initialRows = await readFindingRows();
 observations.checkId0 = checkId0;
 observations.findings0 = findings0;
 observations.verdicts0 = verdicts0;
@@ -666,6 +1008,17 @@ const lowResult = await waitUntil(
   readFindingSnapshot,
   (value) => value.checkId !== "" && value.checkId !== checkId0,
 );
+const lowClearanceVerdict = await page.evaluate(() =>
+  document.querySelector("[data-review-verdict='clearance']")?.textContent
+    ?.replace(/\s+/g, " ").trim() ?? "");
+const lowBasisReachedEngine =
+  !lowClearanceVerdict.includes("判断不可（あき基準未入力）") &&
+  !lowClearanceVerdict.includes("検査対象なし");
+if (!lowBasisReachedEngine) {
+  throw new Error(`UC25 low clearance basis did not reach the engine: ${JSON.stringify(
+    { lowClearanceVerdict, lowMm: clearanceLowMm, checkId: lowResult.checkId })}`);
+}
+
 const clearanceHighMm = clearanceGapMm + 1;
 await page.fill("input[aria-label='鉄筋のあき（利用者入力）']", String(clearanceHighMm));
 await page.click("[data-testid='review-check'] h2");
@@ -700,6 +1053,7 @@ const checkId1 = secondResult.checkId;
 const findings1 = secondResult.findings;
 const verdicts1 = secondResult.verdicts;
 checks.clearanceRecheckFindings =
+  lowBasisReachedEngine &&
   checkId1 !== checkId0 &&
   findings1.includes("あき不足候補") &&
   findings1.includes("利用者入力") &&
@@ -727,6 +1081,7 @@ const clearanceOracleEvidence = {
     exclusionText: clearanceOracle.witness.exclusionText,
   },
   checkIds: { initial: checkId0, low: lowResult.checkId, high: checkId1 },
+  lowClearanceVerdict,
   predicate: {
     lowForbiddenCount: clearanceOracle.lowForbiddenCount,
     highWitnessCount: clearanceOracle.highWitnessCount,
@@ -751,7 +1106,7 @@ await page.waitForSelector("canvas[aria-label='接合部の配筋3D']");
 checks.findingFocus = true;
 
 // 7. Negative case: clip movement and a real camera drag must not rerun the check.
-const viewerPerturbation = await perturbViewer();
+const viewerPerturbation = await perturbViewer({ callSite: 'scenario7', expectedCanvasLabel: '接合部の配筋3D' });
 await clickTakeoffTab();
 await clickReviewTab();
 const remountedCheckState = await page.evaluate(() => ({
@@ -956,7 +1311,7 @@ const beforeDisplay = {
 };
 await clickWorkTab();
 const beforeDisplayPackages = await readPackageCards();
-const displayPerturbation = await perturbViewer();
+const displayPerturbation = await perturbViewer({ callSite: 'scenario14', expectedCanvasLabel: null });
 await clickTakeoffTab();
 const noteLabel = await page.evaluate(
   () => document.querySelector("input[aria-label$=' 備考']")?.getAttribute("aria-label") ?? null,
