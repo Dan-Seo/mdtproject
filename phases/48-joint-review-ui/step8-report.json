@@ -148,7 +148,8 @@
     "src/lib/viewer/building.ts",
     "src/lib/viewer/geometry.ts",
     "tests/e2e/README.md",
-    "tests/e2e/uc25-joint-review.js"
+    "tests/e2e/uc25-joint-review.js",
+    "phases/48-joint-review-ui/step8-cross-verification-antigravity.md"
   ],
   "paths_expected_absent": [],
   "fabricated_paths": [],
@@ -624,12 +625,19 @@
           "in_frame_capture_distinct_hashes": "11 consecutive captures produced 11 distinct hashes with no input between them; dataLength drifted 389454-395986 for a 949x303 canvas",
           "with_pointer_held_down": "still all-distinct hashes, so OrbitControls autoRotate (skipped while state !== NONE) is excluded",
           "with_cut_plane_at_maximum": "5 captures, 5 distinct hashes, dataLength 63854-89366, so the density of the view is not the cause either",
-          "cause": "Coincident rebar surfaces z-fight. The overlap is a declared product assumption, not a defect discovered here: src/lib/review/geometry-check.ts lists 「大梁の交差部で上下関係を持たない（同じ高さに描く）」 and 「主筋は帯筋内面に接する作図規則の位置（設計図書の段配置ではない）」 among the assumptions ReviewPane shows. The depth-test winner between coplanar surfaces is undefined per frame.",
-          "element_screenshot_alternative_rejected": "compositor screenshots do see the layer but cost ~5.6s each and never settle either."
+          "cause": "NOT ESTABLISHED. The report previously asserted z-fighting between coincident rebar surfaces as the cause. An independent cross-verification (Antigravity CLI, verdict at phases/48-joint-review-ui/step8-cross-verification-antigravity.md) refuted that as an after-the-fact story: no camera position was ever logged, so a slowly moving camera was never excluded by observation, only by argument. What IS measured is the operational fact below - under every tested condition no two consecutive frames were byte-identical, so a pixel-equality oracle could not settle. The cause remains open.",
+          "element_screenshot_alternative_rejected": "compositor screenshots do see the layer but cost ~5.6s each and never settle either.",
+          "cross_verification_note": "The refuter's own counter-argument is also incomplete: OrbitControls damping decays the residual delta by (1 - 0.08) per frame, and the captures were ~1.2s (hundreds of frames) apart over 12s, so damping residue cannot explain frames still differing at the end. The decisive observation nobody made is logging camera.position across frames; __kijunViewerRuntime exposes it in a dev build."
         },
         "repair": "Stop measuring pixels. The viewer's tooltip is produced by a raycast against the real geometry (Viewer3D handlePointerMove -> tooltipFromHit), so which bar sits under a fixed screen point is exact arithmetic on the camera with no rasterisation in it. Hover five fixed canvas fractions, read the tooltip at each, and compare the readings across the drag. Hovering does not click, so it picks nothing and changes no product state. Two guards keep it falsifiable: the fingerprint is read twice before the drag and must be identical (otherwise the scene is moving under a still camera and a later difference would prove nothing), and at least one sampled point must resolve to a rebar (otherwise the oracle is blind).",
         "evidence": "See viewer_perturbation and display_perturbation below.",
-        "product_change": false
+        "product_change": false,
+        "known_holes": [
+          "resetIdleTimer performs a real click on the canvas, which Viewer3D handleClick turns into a pick (setHoverRow + rebuildScene + telemetry). The claim that the oracle changes no product state is therefore wrong for that one click; it is true only of the hovers.",
+          "There is no not-blind guard on fingerprintAfter. If the drag rotates the joint entirely out of view, all five points read hidden, which differs from before, and cameraMoved passes while the camera looks at nothing.",
+          "The still-camera repeat guard can pass vacuously: tooltipFromHit keys on the schedule row (row:${line.id}), so a camera drifting slowly enough to stay on the same rows produces two identical fingerprints.",
+          "Conversely, a real camera move that leaves every sampled point on the same schedule rows raises a false blocker."
+        ]
       },
       {
         "id": "buffer_base64",
@@ -640,7 +648,7 @@
       }
     ],
     "unchanged": "No src, product, core, rulepack, fixture or store file was touched. The only modified file outside this phase directory is tests/e2e/uc25-joint-review.js; phases/48-joint-review-ui/index.json and this report are phase bookkeeping. The 19 top-level checks, the Scenario 5 clearance oracle and every invariance assertion are unchanged - only the broken observation mechanisms were repaired.",
-    "independent_review": "The three repairs were written in this session, so this session is not their independent reviewer. The step8 index entry records the author, not an approver.",
+    "independent_review": "Cross-verified by Antigravity CLI (agy --dangerously-skip-permissions --effort high), read-only refutation. Verdict: Claim 1 (no product code changed) SURVIVES, Claim 2 (pixel oracle cannot work) REFUTED as to its stated cause, Claim 3 (replacement oracle is sound and falsifiable) REFUTED, Claim 4 (the reported review findings are real) SURVIVES - all five findings independently confirmed with file:line citations. Full verdict at phases/48-joint-review-ui/step8-cross-verification-antigravity.md.",
     "acceptance": true,
     "product_findings_for_followup": {
       "rebar_overlap": {
