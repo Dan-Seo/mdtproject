@@ -1,9 +1,9 @@
-# Phase 49 step 3 — browser verification: blocked on host capability, not on this change
+# Phase 50 step 3 — browser verification: blocked on host capability, not on this change
 
 ## Verdict
 
 `tests/e2e/uc25-joint-review.js` **cannot complete on the Jetson host**, with or without the
-Phase 49 filter. Browser acceptance for this branch must run on the desktop host, exactly as
+Phase 50 filter. Browser acceptance for this branch must run on the desktop host, exactly as
 Phase 48 step 8 did.
 
 This is a host limit. It is not evidence for or against the filter change.
@@ -16,7 +16,7 @@ same production build path (`npm run build` → `next start -p 3000` → headles
 | run | tree | script timeout | result | receipt |
 |---|---|---|---|---|
 | 1 | `feat-49-findings-filter` @ `d24d3fa` | 300 s | timed out at 300 s | `.git/phase48-run/browser-p49-step8-1789785380985865075/` |
-| 2 | **`main` @ `632bead`, no Phase 49 changes** | 900 s | **timed out at 903 s** | `.git/phase48-run/browser-p49-step8-1789785900147265793/` |
+| 2 | **`main` @ `632bead`, no Phase 50 changes** | 900 s | **timed out at 903 s** | `.git/phase48-run/browser-p49-step8-1789785900147265793/` |
 
 Run 2 is the control. `git status --porcelain` showed no tracked modifications; the only
 untracked entries were pre-existing phase-48 harness logs. The baseline fails the same way the

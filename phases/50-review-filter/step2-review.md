@@ -1,6 +1,6 @@
 VERDICT: PASS
 
-# Phase 49 step 2 — independent review of the findings-table filter bar
+# Phase 50 step 2 — independent review of the findings-table filter bar
 
 Reviewer: Claude Code, acting as independent reviewer. I did not write this implementation.
 Reviewed: uncommitted working tree on `feat-49-findings-filter` at `a88c588`.
@@ -33,8 +33,13 @@ export function matchesFindingFilter(
 
 The only in-repo caller is `filterFindings` (`finding-filter.ts:169`), which always passes the
 fourth argument explicitly. `src/lib/review/finding-filter.test.ts:12` imports
-`matchesFindingFilter` but never calls it — that is the second of the two lint warnings the
-orchestrator flagged.
+`matchesFindingFilter` but never calls it.
+
+> **Correction (step 5).** This document attributed the repo's two lint warnings to the two unused
+> imports. That is wrong: the 2-warning baseline predates this branch
+> (`phases/49-joint-review-defects/step1-report.json:50` — "2 warnings, both pre-existing on HEAD
+> (verified by stashing this file and re-running)"). Had these imports warned, the pre-edit count
+> would have been four. The finding itself stands; only the lint attribution was false.
 
 **Assessment of the orchestrator's concern (priority 5): the predicate itself is NOT untested.**
 All three of its branches are exercised transitively through `filterFindings`:

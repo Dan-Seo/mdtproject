@@ -25,21 +25,38 @@
       "authored_by": "gemini-3.8-flash-high (implementation), Claude Opus 5 (independent review)",
       "summary": "src/lib/review/finding-filter.ts と ReviewPane への配線。独立レビューは PASS(BLOCKER・MAJOR なし、MINOR 5件)。うち3件をこのブランチで閉じた — matchesFindingFilter の effectivePairKey を必須化(未検証の既定引数を試験するのではなく除去)、未使用 import の削除、述語の直接呼び出しと照合分岐を固定する試験の追加。照合分岐の修正は変異で確認済み: `const effectiveFilter = filter` に置換すると新しい参照同一性の試験だけが落ちる。",
       "host_gates": {
-        "typecheck": { "exit_code": 0 },
-        "lint": { "exit_code": 0, "warnings": 2, "note": "両方とも既存のもので本変更とは無関係" },
-        "vitest": { "exit_code": 0, "tests": 2046, "skipped": 4, "failed": 0, "test_files": 118 }
+        "typecheck": {
+          "exit_code": 0
+        },
+        "lint": {
+          "exit_code": 0,
+          "warnings": 2,
+          "note": "両方とも既存のもので本変更とは無関係"
+        },
+        "vitest": {
+          "exit_code": 0,
+          "tests": 2046,
+          "skipped": 4,
+          "failed": 0,
+          "test_files": 118
+        }
       },
-      "artifacts": ["phases/50-review-filter/step2-review.md"]
+      "artifacts": [
+        "phases/50-review-filter/step2-review.md"
+      ],
+      "cross_checked_by": "phases/50-review-filter/step5-post-edit-review.md (Claude Opus 5, independent) — VERDICT: PASS, BLOCKER 0 / MAJOR 0 / MINOR 10"
     },
     {
       "step": 3,
       "name": "browser-acceptance",
       "kind": "verify",
-      "gate": true,
       "status": "blocked",
       "summary": "uc25-joint-review.js は Jetson では完走しない。未変更の main を対照として 900秒予算で走らせても 903秒で打ち切られた — デスクトップ側の 300秒(step8-report.json#/desktop_host_run)に対して3倍でも足りない。両実行とも CLEARANCE_ORACLE と CAMERA_ORACLE は通過を出力してから死ぬので、この二つのオラクル自体は Jetson でも動く。受入判定はデスクトップ側で行う。",
       "blocked_on": "desktop host browser run",
-      "artifacts": ["phases/50-review-filter/step3-browser-blocked.md"]
+      "artifacts": [
+        "phases/50-review-filter/step3-browser-blocked.md"
+      ],
+      "gate_note": "CLAUDE.md の gate:true は step0 の verify が refuted になったとき後続を止める旗で、blocked には効かない。ここは実行できなかっただけなので blocked のまま旗は外す。受入は phases/index.json の status:in-progress と本ステップの blocked_on が示す。"
     },
     {
       "step": 4,
@@ -47,7 +64,41 @@
       "kind": "verify",
       "status": "completed",
       "summary": "uc25-perf.js をブランチと未変更 main で連続 A/B 実測(この host で初の実測 — phase 48 のハーネスは fixture 経路を塞いでいた)。R1 の性能 BLOCKER は実測で解消: 5層ストレスで check_ms がブランチ 3219ms 対 main 3476ms と257ms速い。予算超過2件(check_ms・tab_switch_ms)は main でも出るので本変更由来ではなく、tab_switch はフィルターの経路上にない(681 対 691ms)。ストレスの joint_tab +298ms・compare +398ms は生値の分布が重なるため「記録するが結論しない」。",
-      "artifacts": ["phases/50-review-filter/step4-perf-jetson.md"]
+      "artifacts": [
+        "phases/50-review-filter/step4-perf-jetson.md"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "post-edit-review",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Claude Opus 5 (independent; did not author the plan, the implementation or the post-review edits)",
+      "summary": "step2 の PASS 以降にオーケストレータが加えた3つの編集(effectivePairKey の必須化・未使用 import の削除・試験3件の追加)は誰の検証も受けていなかった。その穴を閉じる回。VERDICT: PASS — BLOCKER 0・MAJOR 0・MINOR 10。既定状態の DOM 同一性と元配列参照の返却は編集後も成立を再確認。未解決で残す MINOR は3件: (7) 別案件を読み込むと stale な filter.pairKey が解除ボタンで消せない(main にも同種の残留があり、表示は常に自己整合)、(9) ALL_FINDING_KINDS が保存される CheckExclusion.scope.kinds に流れる方向結合(現挙動は同一)、(10) ReviewPane.test.tsx:898-900 の2行が変異で落ちない。",
+      "open_minors": [
+        {
+          "id": 7,
+          "where": "src/components/review/ReviewPane.tsx:300",
+          "note": "if (!active) return を外すのが両レビュー一致の最小修正。ブラウザ受入前の挙動変更は避け、受入後に単独で扱う。"
+        },
+        {
+          "id": 9,
+          "where": "src/components/review/ReviewPane.tsx:427",
+          "note": "表示層の ALL_FINDING_KINDS がドメインの保存値に流れる。現時点の挙動は同一(KIND_TABLE の挿入順が旧リテラルと一致し、消費側は includes のみ)。"
+        },
+        {
+          "id": 10,
+          "where": "src/components/review/ReviewPane.test.tsx:898-900",
+          "note": "無効状態の解除ボタン click が no-op であることを主張するが、guard を消しても通る。stale-pairKey の状況を作らないと反証可能にならない。"
+        }
+      ],
+      "resolved_here": [
+        "3: step3 の gate:true を外した — CLAUDE.md の gate は refuted 用で blocked には効かない",
+        "6: phases/50-review-filter/*.md の本文の Phase 49 表記を Phase 50 に統一"
+      ],
+      "artifacts": [
+        "phases/50-review-filter/step5-post-edit-review.md"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 VERDICT: REFUTED
 
-# Phase 49-1 — Findings Table Filter: Independent Falsification, Round 3
+# Phase 50-1 — Findings Table Filter: Independent Falsification, Round 3
 
 Reviewer: independent (did not author the plan, did not write round 1 or round 2, will not implement).
 Checkout: `632bead fix(49-joint-review-defects): close the cross-verification findings` (`git log --oneline -3`

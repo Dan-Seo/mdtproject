@@ -1,8 +1,8 @@
-# Phase 49 — `uc25-perf.js` on the Jetson: budget misses are the host, not this change
+# Phase 50 — `uc25-perf.js` on the Jetson: budget misses are the host, not this change
 
 ## Verdict
 
-`uc25-perf.js` fails its budgets on the Jetson **with and without** the Phase 49 filter. The
+`uc25-perf.js` fails its budgets on the Jetson **with and without** the Phase 50 filter. The
 controlled comparison shows no regression attributable to this branch; on the stress fixture the
 branch is *faster* than `main` on the one metric the filter could plausibly affect.
 
@@ -15,7 +15,7 @@ Same resource-capped unit (`MemoryMax=2G`, `CPUQuota=150%`), same production pat
 The only variable is the checkout.
 
 - branch: `feat-49-findings-filter` @ `e598233` — receipt `browser-p49-step9-1789795387335938291`
-- control: **`main` @ `632bead`, no Phase 49 changes** — receipt `browser-p49-step9-1789795772165194934`
+- control: **`main` @ `632bead`, no Phase 50 changes** — receipt `browser-p49-step9-1789795772165194934`
 
 Both were run with the harness at `.git/phase48-run/browser-host49.py`, which now materialises the
 stress fixture where the script expects it (`~/.dev-browser/tmp/uc25-stress.json.b64`); the phase-48
@@ -72,7 +72,7 @@ are real and worth chasing; on this evidence they are not attributable.
 
 ## Status
 
-- Phase 49's R1 performance BLOCKER: **answered** — `check_ms` improves against `main` on the
+- Phase 50's R1 performance BLOCKER: **answered** — `check_ms` improves against `main` on the
   stress fixture, on real measurements.
 - `uc25-perf.js` acceptance: **not reached on the Jetson, and not reachable** — the budgets fail on
   `main` too. Desktop host required, same as `uc25-joint-review.js`.
