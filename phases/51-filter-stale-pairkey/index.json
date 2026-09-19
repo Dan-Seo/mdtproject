@@ -11,7 +11,7 @@
       "reasoning_effort": "max",
       "started_at": "2026-09-19T22:29:07+0900",
       "summary": "解除ボタンの stale な pairKey 早期 return を除去し、別案件読み込み後の再活性化を防ぐ反証テスト2本を追加した。全 acceptance と citation check を通過した。",
-      "completed_at": "2026-09-19T22:45:46+0900"
+      "completed_at": "2026-09-19T22:56:24+0900"
     }
   ],
   "created_at": "2026-09-19T22:29:07+0900",
