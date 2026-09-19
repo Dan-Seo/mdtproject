@@ -47,7 +47,7 @@ not the browser-acceptance host.
 
 ## What has been verified for this branch, and what has not
 
-**Verified** (see `phases/49-review-filter/step2-review.md` for the full list):
+**Verified** (see `phases/50-review-filter/step2-review.md` for the full list):
 
 - `npm run typecheck` exit 0; `npm run lint` exit 0 (2 pre-existing warnings, both untouched here);
   `npm test` **2046 passed / 4 skipped**, 118 files.

@@ -27,7 +27,7 @@ non-blocking.
 
 ### R4-B1. §6.2 item 2 gives two activation methods for the reset button; the first one cannot pass, and the plausible repair for it changes shipped code
 
-`phases/49-review-filter/step1-plan.md:765`:
+`phases/50-review-filter/step1-plan.md:765`:
 > Trigger activation via keyboard: `fireEvent.keyDown(resetButton, { key: 'Enter' })` (or click).
 
 `:766` (the very next line) then asserts the reset actually happened:

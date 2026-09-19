@@ -1,0 +1,53 @@
+{
+  "project": "Kijun",
+  "phase": "50-review-filter",
+  "status": "in-progress",
+  "steps": [
+    {
+      "step": 1,
+      "name": "filter-plan",
+      "kind": "plan",
+      "status": "completed",
+      "authored_by": "gemini-3.8-flash-high (plan), Claude Opus 5 (four independent refutation rounds)",
+      "summary": "所見表のフィルター(種別チップ・部材ペア・除外の非表示)の仕様。既定状態は現行DOMと観測上同一で、filterFindings は元配列の参照を返す。4回の独立反証を経て全BLOCKERを閉じた: R1は uc25-perf の予算見落とし・再検査時のフィルター状態未定義・CLAUDE.md の存在しない引用、R2は checkId 再マウントと焦点クリーンアップが互いを破壊し reviewFocus が永久に残る経路、R3は同一規則の二通り記述(コード片と散文の不一致)、R4は jsdom で成立しない起動手順を書いた受入テスト。",
+      "artifacts": [
+        "phases/50-review-filter/step1-plan.md",
+        "phases/50-review-filter/step1-falsification.md",
+        "phases/50-review-filter/step1-falsification-r2.md",
+        "phases/50-review-filter/step1-falsification-r3.md",
+        "phases/50-review-filter/step1-falsification-r4.md"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "filter-implementation",
+      "status": "completed",
+      "authored_by": "gemini-3.8-flash-high (implementation), Claude Opus 5 (independent review)",
+      "summary": "src/lib/review/finding-filter.ts と ReviewPane への配線。独立レビューは PASS(BLOCKER・MAJOR なし、MINOR 5件)。うち3件をこのブランチで閉じた — matchesFindingFilter の effectivePairKey を必須化(未検証の既定引数を試験するのではなく除去)、未使用 import の削除、述語の直接呼び出しと照合分岐を固定する試験の追加。照合分岐の修正は変異で確認済み: `const effectiveFilter = filter` に置換すると新しい参照同一性の試験だけが落ちる。",
+      "host_gates": {
+        "typecheck": { "exit_code": 0 },
+        "lint": { "exit_code": 0, "warnings": 2, "note": "両方とも既存のもので本変更とは無関係" },
+        "vitest": { "exit_code": 0, "tests": 2046, "skipped": 4, "failed": 0, "test_files": 118 }
+      },
+      "artifacts": ["phases/50-review-filter/step2-review.md"]
+    },
+    {
+      "step": 3,
+      "name": "browser-acceptance",
+      "kind": "verify",
+      "gate": true,
+      "status": "blocked",
+      "summary": "uc25-joint-review.js は Jetson では完走しない。未変更の main を対照として 900秒予算で走らせても 903秒で打ち切られた — デスクトップ側の 300秒(step8-report.json#/desktop_host_run)に対して3倍でも足りない。両実行とも CLEARANCE_ORACLE と CAMERA_ORACLE は通過を出力してから死ぬので、この二つのオラクル自体は Jetson でも動く。受入判定はデスクトップ側で行う。",
+      "blocked_on": "desktop host browser run",
+      "artifacts": ["phases/50-review-filter/step3-browser-blocked.md"]
+    },
+    {
+      "step": 4,
+      "name": "perf-measurement",
+      "kind": "verify",
+      "status": "completed",
+      "summary": "uc25-perf.js をブランチと未変更 main で連続 A/B 実測(この host で初の実測 — phase 48 のハーネスは fixture 経路を塞いでいた)。R1 の性能 BLOCKER は実測で解消: 5層ストレスで check_ms がブランチ 3219ms 対 main 3476ms と257ms速い。予算超過2件(check_ms・tab_switch_ms)は main でも出るので本変更由来ではなく、tab_switch はフィルターの経路上にない(681 対 691ms)。ストレスの joint_tab +298ms・compare +398ms は生値の分布が重なるため「記録するが結論しない」。",
+      "artifacts": ["phases/50-review-filter/step4-perf-jetson.md"]
+    }
+  ]
+}
