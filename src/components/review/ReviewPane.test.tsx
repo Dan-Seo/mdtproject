@@ -829,4 +829,278 @@ describe('ReviewPane', () => {
     // 検査を実行して 698 件の所見表を描き、そのうえで項目を作り直す分だけ重い。
     // 単独では 3 秒弱だが全体実行の並列下で既定の 5 秒を超える。
   }, 20000)
+
+  describe('Finding Filter', () => {
+    it('renders default filter bar with all kinds selected, reset disabled via aria-disabled, and full row count', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const filterBar = screen.getByTestId('review-findings-filter')
+      const findingsTable = screen.getByTestId('review-findings')
+
+      // Verify filter bar renders above review-findings table
+      expect(filterBar.compareDocumentPosition(findingsTable) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+      // Verify kind chips have aria-pressed="true"
+      const chipInterference = screen.getByRole('button', { name: '干渉候補' })
+      const chipClearance = screen.getByRole('button', { name: 'あき不足候補' })
+      const chipContact = screen.getByRole('button', { name: '接触' })
+      expect(chipInterference).toHaveAttribute('aria-pressed', 'true')
+      expect(chipClearance).toHaveAttribute('aria-pressed', 'true')
+      expect(chipContact).toHaveAttribute('aria-pressed', 'true')
+
+      // Verify table row count equals directGeometryCheck().findings.length (dynamic oracle)
+      const rows = findingsTable.querySelectorAll('tbody tr')
+      expect(rows).toHaveLength(expected.findings.length)
+
+      // Verify hideExcluded checkbox defaults to unchecked
+      const hideExcludedCheckbox = screen.getByLabelText('除外された指摘を非表示') as HTMLInputElement
+      expect(hideExcludedCheckbox.checked).toBe(false)
+
+      // Verify reset button has aria-disabled="true" and disabled === false
+      const resetButton = screen.getByRole('button', { name: 'フィルターを解除' }) as HTMLButtonElement
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+      expect(resetButton.disabled).toBe(false)
+      expect(resetButton).not.toBeDisabled()
+    }, 20000)
+
+    it('handles focus-safe reset button activation and chips interaction', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const resetButton = screen.getByRole('button', { name: 'フィルターを解除' }) as HTMLButtonElement
+      const chipClearance = screen.getByRole('button', { name: 'あき不足候補' })
+
+      // Initial state: reset button has aria-disabled="true"
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+
+      // Click 'あき不足候補' chip -> aria-pressed becomes "false". Row count unchanged.
+      fireEvent.click(chipClearance)
+      expect(chipClearance).toHaveAttribute('aria-pressed', 'false')
+
+      // Verify reset button becomes aria-disabled="false" (structural check M1 succeeds)
+      expect(resetButton).toHaveAttribute('aria-disabled', 'false')
+
+      // Keyboard activate reset button: focus it, verify activeElement, fireEvent.click
+      resetButton.focus()
+      expect(document.activeElement).toBe(resetButton)
+
+      fireEvent.click(resetButton)
+
+      // After reset: aria-disabled is "true", disabled is false, activeElement preserved, chip re-selected
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+      expect(resetButton.disabled).toBe(false)
+      expect(resetButton).not.toBeDisabled()
+      expect(document.activeElement).toBe(resetButton)
+      expect(chipClearance).toHaveAttribute('aria-pressed', 'true')
+
+      // Verify clicking reset button while aria-disabled="true" is a no-op
+      fireEvent.click(resetButton)
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+    }, 20000)
+
+    it('resets filter state and clears 3D focus when check is re-run with changed clearance', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const select = screen.getByLabelText('部材・役割ペア') as HTMLSelectElement
+      expect(select.options.length).toBeGreaterThan(1)
+      const firstNonAllPair = select.options[1].value
+      expect(firstNonAllPair).not.toBe('all')
+
+      fireEvent.change(select, { target: { value: firstNonAllPair } })
+      expect(select.value).toBe(firstNonAllPair)
+
+      // Click a finding row to focus it
+      const findingsTable = screen.getByTestId('review-findings')
+      const firstRow = findingsTable.querySelector('tbody tr') as HTMLElement
+      fireEvent.click(firstRow)
+      expect(useAppStore.getState().reviewFocus).not.toBeNull()
+
+      // Enter a clearance basis (26mm) and click 検査を実行 (producing new checkId)
+      const clearanceInput = screen.getByLabelText('鉄筋のあき（利用者入力）')
+      fireEvent.change(clearanceInput, { target: { value: '26' } })
+      fireEvent.blur(clearanceInput)
+
+      const expected = directGeometryCheck()
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Falsifying assertion for R2-B2: reviewFocus is cleared when checkId changes
+      expect(useAppStore.getState().reviewFocus).toBeNull()
+
+      // Invariance / state reset assertions: select reset to 'all'
+      const newSelect = screen.getByLabelText('部材・役割ペア') as HTMLSelectElement
+      expect(newSelect.value).toBe('all')
+
+      // Table renders all findings from the new check
+      const newFindings = screen.getByTestId('review-findings')
+      expect(newFindings.querySelectorAll('tbody tr')).toHaveLength(expected.findings.length)
+    }, 20000)
+
+    it('renders empty notice outside table without role="status" and updates polite live region', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const chipInterference = screen.getByRole('button', { name: '干渉候補' })
+      const chipClearance = screen.getByRole('button', { name: 'あき不足候補' })
+      const chipContact = screen.getByRole('button', { name: '接触' })
+
+      // Deselect all three kind chips
+      fireEvent.click(chipInterference)
+      fireEvent.click(chipClearance)
+      fireEvent.click(chipContact)
+
+      // Verify tbody tr has length 0
+      const findingsTable = screen.getByTestId('review-findings')
+      expect(findingsTable.querySelectorAll('tbody tr')).toHaveLength(0)
+
+      // Verify empty notice displays without role="status"
+      const emptyNotice = screen.getByTestId('review-findings-empty')
+      expect(emptyNotice).toHaveTextContent('該当する指摘はありません')
+      expect(emptyNotice).not.toHaveAttribute('role')
+
+      // Verify count summary polite live region displays 0 / total件
+      const liveRegion = screen.getByRole('status')
+      expect(liveRegion).toHaveTextContent(`0 / ${expected.findings.length}件`)
+
+      // Re-select a chip -> empty notice is removed and matching rows render
+      fireEvent.click(chipInterference)
+      expect(screen.queryByTestId('review-findings-empty')).toBeNull()
+      expect(findingsTable.querySelectorAll('tbody tr').length).toBeGreaterThan(0)
+    }, 20000)
+
+    it('maintains single live region for filter summary and no live region on empty notice', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Count summary is the sole live region with role="status"
+      const statuses = screen.getAllByRole('status')
+      expect(statuses).toHaveLength(1)
+      expect(statuses[0]).toHaveAttribute('aria-live', 'polite')
+
+      // Deselect all chips to trigger empty notice
+      fireEvent.click(screen.getByRole('button', { name: '干渉候補' }))
+      fireEvent.click(screen.getByRole('button', { name: 'あき不足候補' }))
+      fireEvent.click(screen.getByRole('button', { name: '接触' }))
+
+      const emptyNotice = screen.getByTestId('review-findings-empty')
+      expect(emptyNotice).not.toHaveAttribute('role')
+      expect(screen.getAllByRole('status')).toHaveLength(1)
+    }, 20000)
+
+    it('clears reviewFocus when focused row is hidden by filter within the same check', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Click first row (干渉候補)
+      const findingsTable = screen.getByTestId('review-findings')
+      const firstRow = findingsTable.querySelector('tbody tr') as HTMLElement
+      expect(firstRow).toHaveTextContent('干渉候補')
+      fireEvent.click(firstRow)
+
+      expect(useAppStore.getState().reviewFocus).not.toBeNull()
+      expect(useAppStore.getState().viewerMode).toBe('joint')
+
+      // Deselect 干渉候補 chip -> reviewFocus becomes null
+      fireEvent.click(screen.getByRole('button', { name: '干渉候補' }))
+      expect(useAppStore.getState().reviewFocus).toBeNull()
+
+      // Re-test with still-visible finding:
+      // Re-select 干渉候補 chip
+      fireEvent.click(screen.getByRole('button', { name: '干渉候補' }))
+
+      // Click a 接触 row to focus it
+      const allRows = findingsTable.querySelectorAll('tbody tr')
+      const contactRow = Array.from(allRows).find((row) => row.textContent?.includes('接触')) as HTMLElement
+      expect(contactRow).toBeTruthy()
+      fireEvent.click(contactRow)
+      expect(useAppStore.getState().reviewFocus).not.toBeNull()
+
+      // Deselect 干渉候補 chip -> verify reviewFocus remains set because 接触 finding is still visible
+      fireEvent.click(screen.getByRole('button', { name: '干渉候補' }))
+      expect(useAppStore.getState().reviewFocus).not.toBeNull()
+    }, 20000)
+
+    it('targets the correct finding and item id on row actions under an active filter', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Hide 干渉候補 -> only 接触 rows remain
+      fireEvent.click(screen.getByRole('button', { name: '干渉候補' }))
+
+      const findingsTable = screen.getByTestId('review-findings')
+      const visibleRows = findingsTable.querySelectorAll('tbody tr')
+      const expectedContactFindings = expected.findings.filter((f) => f.kind === '接触')
+      expect(visibleRows).toHaveLength(expectedContactFindings.length)
+
+      // (a) Click first visible row: assert reviewFocus.point matches the midpoint of first 接触 finding
+      const firstVisibleRow = visibleRows[0] as HTMLElement
+      expect(firstVisibleRow).toHaveTextContent('接触')
+      fireEvent.click(firstVisibleRow)
+
+      const focus = useAppStore.getState().reviewFocus
+      const firstContactFinding = expectedContactFindings[0]
+      expect(focus?.point[0]).toBeCloseTo(firstContactFinding.midpoint[0])
+      expect(focus?.point[1]).toBeCloseTo(firstContactFinding.midpoint[1])
+      expect(focus?.point[2]).toBeCloseTo(firstContactFinding.midpoint[2])
+
+      // (b) Click 検討項目にする on that first visible row: save item, assert review.items[0].finding.id matches
+      const createButton = within(firstVisibleRow).getByRole('button', { name: '検討項目にする' })
+      fireEvent.click(createButton)
+
+      fireEvent.change(screen.getByLabelText('タイトル'), {
+        target: { value: 'filtered item' },
+      })
+      fireEvent.click(within(screen.getByTestId('review-items')).getByRole('button', { name: '保存' }))
+
+      const savedItem = useAppStore.getState().review.items[0]
+      expect(savedItem).toBeTruthy()
+      expect(savedItem?.finding?.findingId).toBe(firstContactFinding.id)
+    }, 20000)
+
+    it('displays default exclusions by default and hides them when hideExcluded is checked', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '既定の除外を追加' }))
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const findingsTable = screen.getByTestId('review-findings')
+      const rowsWithExcluded = findingsTable.querySelectorAll('tbody tr')
+      expect(findingsTable).toHaveTextContent('除外:')
+      const initialRowCount = rowsWithExcluded.length
+
+      // Check hideExcluded checkbox -> verify excluded rows are hidden
+      const hideExcludedCheckbox = screen.getByLabelText('除外された指摘を非表示')
+      fireEvent.click(hideExcludedCheckbox)
+
+      const filteredRows = findingsTable.querySelectorAll('tbody tr')
+      expect(filteredRows.length).toBeLessThan(initialRowCount)
+      expect(findingsTable).not.toHaveTextContent('除外:')
+    }, 20000)
+
+    it('persists filter selections when check is re-run with identical inputs', () => {
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Deselect あき不足候補 and 接触 -> only 干渉候補 selected
+      const chipClearance = screen.getByRole('button', { name: 'あき不足候補' })
+      const chipContact = screen.getByRole('button', { name: '接触' })
+      fireEvent.click(chipClearance)
+      fireEvent.click(chipContact)
+
+      expect(chipClearance).toHaveAttribute('aria-pressed', 'false')
+      expect(chipContact).toHaveAttribute('aria-pressed', 'false')
+
+      // Click 検査を実行 again with identical inputs (checkId unchanged)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      // Verify filter state persisted
+      expect(chipClearance).toHaveAttribute('aria-pressed', 'false')
+      expect(chipContact).toHaveAttribute('aria-pressed', 'false')
+      const findingsTable = screen.getByTestId('review-findings')
+      expect(findingsTable).not.toHaveTextContent('接触')
+    }, 20000)
+  })
 })
