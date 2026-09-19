@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { sectionMarkLabel } from '@/domain/model/member'
 import { findSection } from '@/domain/model/project'
@@ -21,10 +21,10 @@ import type {
   Baseline,
   CheckExclusion,
   ElementRef,
-  FindingKind,
   ClearanceBasis,
   RecordedFinding,
   ReviewItem,
+  ReviewState,
 } from '@/domain/review/types'
 import {
   effectiveItemStatus,
@@ -48,9 +48,17 @@ import {
   SourceChips,
 } from '@/components/quantity/TakeoffPane'
 import { t } from '@/lib/i18n'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, type AppState, type Locale, type ViewerMode } from '@/lib/store'
 import * as geometryCheck from '@/lib/review/geometry-check'
-import { jointLayout, segmentFor } from '@/lib/review/joint-layout'
+import { jointLayout, segmentFor, type JointLayout } from '@/lib/review/joint-layout'
+import {
+  ALL_FINDING_KINDS,
+  defaultFindingFilterState,
+  extractAvailablePairs,
+  filterFindings,
+  isFilterActive,
+  type FindingFilterState,
+} from '@/lib/review/finding-filter'
 
 import styles from './ReviewPane.module.css'
 
@@ -74,8 +82,6 @@ const CHECK_ROLES: readonly RebarRole[] = [
   '横筋',
 ]
 
-const CHECK_KINDS: FindingKind[] = ['干渉候補', 'あき不足候補', '接触']
-
 function formatBarRef(project: TakeoffSnapshot['project'], ref: geometryCheck.BarRef): string {
   const member = project.members.find(({ id }) => id === ref.memberId)
   const mark = member === undefined ? ref.memberId : sectionMarkLabel(findSection(project, member.sectionId))
@@ -87,6 +93,242 @@ function basisText(finding: geometryCheck.Finding): string {
     return `${finding.basis.kind}: ${finding.basis.valueMm}mm (${finding.basis.scope})`
   }
   return finding.basis.kind
+}
+
+interface FindingsTableBodyProps {
+  findings: readonly geometryCheck.Finding[]
+  project: TakeoffSnapshot['project']
+  review: ReviewState
+  locale: Locale
+  checkId: string
+  jointColumnMemberId: string | undefined
+  onCreateItem: (finding: geometryCheck.Finding, checkId?: string, jointColumnMemberId?: string) => void
+  onFocus: (finding: geometryCheck.Finding) => void
+}
+
+const FindingsTableBody = memo(function FindingsTableBody({
+  findings,
+  project,
+  review,
+  locale,
+  checkId,
+  jointColumnMemberId,
+  onCreateItem,
+  onFocus,
+}: FindingsTableBodyProps) {
+  return (
+    <tbody>
+      {findings.map((finding) => {
+        const exclusion = finding.excludedBy === null
+          ? null
+          : review.exclusions.find(({ id }) => id === finding.excludedBy)
+        return (
+          <tr
+            key={finding.id}
+            tabIndex={0}
+            onClick={() => onFocus(finding)}
+            onKeyDown={(event) => { if (event.key === 'Enter') onFocus(finding) }}
+          >
+            <td>{finding.kind}</td>
+            <td>{formatBarRef(project, finding.a)}</td>
+            <td>{formatBarRef(project, finding.b)}</td>
+            <td>{finding.clearanceMm.toFixed(1)}</td>
+            <td>{basisText(finding)}</td>
+            <td>{exclusion === null || exclusion === undefined ? null : <span className={styles.excluded}>{t(locale, 'review.check.excluded')}: {exclusion.reason}</span>}</td>
+            <td><button type="button" onClick={() => onCreateItem(finding, checkId, jointColumnMemberId)}>{t(locale, 'review.check.createItem')}</button></td>
+          </tr>
+        )
+      })}
+    </tbody>
+  )
+})
+
+interface ReviewFindingsViewProps {
+  result: geometryCheck.CheckResult
+  project: TakeoffSnapshot['project']
+  memberKinds: ReadonlyMap<string, string>
+  layout: JointLayout | null
+  locale: Locale
+  review: ReviewState
+  focusedFindingId: string | null
+  setFocusedFindingId: (id: string | null) => void
+  onCreateItem: (finding: geometryCheck.Finding, checkId?: string, jointColumnMemberId?: string) => void
+  setReviewFocus: (focus: AppState['reviewFocus']) => void
+  setViewerMode: (mode: ViewerMode) => void
+}
+
+function ReviewFindingsView({
+  result,
+  project,
+  memberKinds,
+  layout,
+  locale,
+  review,
+  focusedFindingId,
+  setFocusedFindingId,
+  onCreateItem,
+  setReviewFocus,
+  setViewerMode,
+}: ReviewFindingsViewProps) {
+  const [filter, setFilter] = useState<FindingFilterState>(defaultFindingFilterState)
+
+  const availablePairs = useMemo(
+    () => extractAvailablePairs(memberKinds, result.findings),
+    [memberKinds, result.findings],
+  )
+
+  // Reconciliation: safePairKey computed once and shared with isFilterActive (R2-m6)
+  const safePairKey = availablePairs.includes(filter.pairKey) ? filter.pairKey : 'all'
+  const effectiveFilter = useMemo(
+    () => (filter.pairKey === safePairKey ? filter : { ...filter, pairKey: safePairKey }),
+    [filter, safePairKey],
+  )
+  const active = isFilterActive(effectiveFilter)
+
+  const filteredFindings = useMemo(
+    () => filterFindings(result.findings, effectiveFilter, memberKinds, safePairKey),
+    [result.findings, effectiveFilter, memberKinds, safePairKey],
+  )
+
+  // Clean up reviewFocus if the focused finding is hidden by filter changes (M4, R2-B2)
+  useEffect(() => {
+    if (focusedFindingId !== null && !filteredFindings.some((f) => f.id === focusedFindingId)) {
+      setReviewFocus(null)
+      setFocusedFindingId(null)
+    }
+  }, [filteredFindings, focusedFindingId, setReviewFocus, setFocusedFindingId])
+
+  // Memoized row focus handler: stable callback avoids re-rendering FindingsTableBody on row click (R3-M2)
+  const focusFinding = useCallback(
+    (finding: geometryCheck.Finding) => {
+      if (layout === null) return
+      const a = segmentFor(layout, finding.a)
+      const b = segmentFor(layout, finding.b)
+      if (a === null || b === null) return
+      const [pa, pb] = finding.closestPoints
+      setFocusedFindingId(finding.id)
+      setReviewFocus({
+        point: [
+          (pa[0] + pb[0]) / 2,
+          (pa[1] + pb[1]) / 2,
+          (pa[2] + pb[2]) / 2,
+        ],
+        segments: [a, b],
+        label: `${finding.kind}: ${formatBarRef(project, finding.a)} × ${formatBarRef(project, finding.b)}`,
+      })
+      setViewerMode('joint')
+    },
+    [layout, project, setFocusedFindingId, setReviewFocus, setViewerMode],
+  )
+
+  return (
+    <>
+      <div
+        className={styles.findingsFilterBar}
+        data-testid="review-findings-filter"
+      >
+        {/* 1. Kind Chips */}
+        <div
+          role="group"
+          aria-label={t(locale, 'review.check.filter.kind')}
+          className={styles.filterChips}
+        >
+          {ALL_FINDING_KINDS.map((kind) => {
+            const pressed = filter.kinds.has(kind)
+            return (
+              <button
+                key={kind}
+                type="button"
+                className={`${styles.filterChip} ${pressed ? styles.filterChipActive : ''}`}
+                aria-pressed={pressed}
+                onClick={() => {
+                  setFilter((prev) => {
+                    const nextKinds = new Set(prev.kinds)
+                    if (nextKinds.has(kind)) {
+                      nextKinds.delete(kind)
+                    } else {
+                      nextKinds.add(kind)
+                    }
+                    return { ...prev, kinds: nextKinds }
+                  })
+                }}
+              >
+                {kind}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 2. Member / Role Pair Select */}
+        <label className={styles.filterPairLabel}>
+          {t(locale, 'review.check.filter.pair')}
+          <select
+            aria-label={t(locale, 'review.check.filter.pair')}
+            value={safePairKey}
+            onChange={(e) => setFilter((prev) => ({ ...prev, pairKey: e.target.value }))}
+          >
+            <option value="all">{t(locale, 'review.check.filter.pair.all')}</option>
+            {availablePairs.map((pair) => (
+              <option key={pair} value={pair}>
+                {pair}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 3. Hide Excluded Toggle */}
+        <label className={styles.filterCheckboxLabel}>
+          <input
+            type="checkbox"
+            checked={filter.hideExcluded}
+            onChange={(e) => setFilter((prev) => ({ ...prev, hideExcluded: e.target.checked }))}
+          />
+          {t(locale, 'review.check.filter.hideExcluded')}
+        </label>
+
+        {/* Count display & focus-safe reset button (R2-B1, M1, M3) */}
+        <div className={styles.filterSummary}>
+          <span role="status" aria-live="polite">
+            {filteredFindings.length} / {result.findings.length}
+            {t(locale, 'review.check.filter.itemsUnit')}
+          </span>
+          <button
+            type="button"
+            className={styles.filterResetButton}
+            aria-disabled={!active}
+            onClick={() => {
+              if (!active) return
+              setFilter(defaultFindingFilterState())
+            }}
+          >
+            {t(locale, 'review.check.filter.reset')}
+          </button>
+        </div>
+      </div>
+
+      {/* Findings Table untouched testid and container */}
+      <table className={styles.table} data-testid="review-findings">
+        <caption>{t(locale, 'review.check.findings')}</caption>
+        <FindingsTableBody
+          findings={filteredFindings}
+          project={project}
+          review={review}
+          locale={locale}
+          checkId={result.checkId}
+          jointColumnMemberId={result.jointRef.columnMemberId}
+          onCreateItem={onCreateItem}
+          onFocus={focusFinding}
+        />
+      </table>
+
+      {/* Empty State outside review-findings table (M2, open ground 1 & 2) */}
+      {filteredFindings.length === 0 && (
+        <p className={styles.emptyNotice} data-testid="review-findings-empty">
+          {t(locale, 'review.check.filter.empty')}
+        </p>
+      )}
+    </>
+  )
 }
 
 interface ReviewCheckProps {
@@ -122,6 +364,14 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
         ),
     [project, currentSnapshot.rebars, currentSnapshot.unsupportedMemberIds, joint],
   )
+  const memberKinds = useMemo(
+    () => new Map(project.members.map((m) => [m.id, m.kind])),
+    [project.members], // R2-m9: Tighter memoization on members array reference
+  )
+
+  // Focus bookkeeping lifted to parent (R2-B2)
+  const [focusedFindingId, setFocusedFindingId] = useState<string | null>(null)
+
   const [clearanceInput, setClearanceInput] = useState(
     review.settings.clearance === null ? '' : String(review.settings.clearance.valueMm),
   )
@@ -174,7 +424,7 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
       scope: {
         sameMemberOnly,
         roles: [firstRole, secondRole],
-        kinds: CHECK_KINDS,
+        kinds: [...ALL_FINDING_KINDS],
       },
       reason,
       createdAt,
@@ -185,7 +435,7 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
 
   const runCheck = () => {
     if (joint === null) return
-    setResult(geometryCheck.runGeometryCheck({
+    const nextResult = geometryCheck.runGeometryCheck({
       project,
       rebars: currentSnapshot.rebars,
       unsupportedMemberIds: currentSnapshot.unsupportedMemberIds,
@@ -193,25 +443,13 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
       settings: review.settings,
       exclusions: review.exclusions,
       fingerprints: current.fingerprints,
-    }))
-  }
-
-  const focusFinding = (finding: geometryCheck.Finding) => {
-    if (layout === null) return
-    const a = segmentFor(layout, finding.a)
-    const b = segmentFor(layout, finding.b)
-    if (a === null || b === null) return
-    const [pa, pb] = finding.closestPoints
-    setReviewFocus({
-      point: [
-        (pa[0] + pb[0]) / 2,
-        (pa[1] + pb[1]) / 2,
-        (pa[2] + pb[2]) / 2,
-      ],
-      segments: [a, b],
-      label: `${finding.kind}: ${formatBarRef(project, finding.a)} × ${formatBarRef(project, finding.b)}`,
     })
-    setViewerMode('joint')
+    // Explicitly clear focus when a new checkId is produced (R2-B2, R3-B1)
+    if (nextResult.checkId !== result?.checkId) {
+      setReviewFocus(null)
+      setFocusedFindingId(null)
+    }
+    setResult(nextResult)
   }
 
   return (
@@ -332,32 +570,20 @@ function ReviewCheckSection({ onCreateItem = () => {} }: ReviewCheckProps) {
             <ul>{result.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>
           </div>
           <p>{t(locale, 'review.check.tolerance')}: {result.toleranceMm}</p>
-          <table className={styles.table} data-testid="review-findings">
-            <caption>{t(locale, 'review.check.findings')}</caption>
-            <tbody>
-              {result.findings.map((finding) => {
-                const exclusion = finding.excludedBy === null
-                  ? null
-                  : review.exclusions.find(({ id }) => id === finding.excludedBy)
-                return (
-                  <tr
-                    key={finding.id}
-                    tabIndex={0}
-                    onClick={() => focusFinding(finding)}
-                    onKeyDown={(event) => { if (event.key === 'Enter') focusFinding(finding) }}
-                  >
-                    <td>{finding.kind}</td>
-                    <td>{formatBarRef(project, finding.a)}</td>
-                    <td>{formatBarRef(project, finding.b)}</td>
-                    <td>{finding.clearanceMm.toFixed(1)}</td>
-                    <td>{basisText(finding)}</td>
-                    <td>{exclusion === null || exclusion === undefined ? null : <span className={styles.excluded}>{t(locale, 'review.check.excluded')}: {exclusion.reason}</span>}</td>
-                    <td><button type="button" onClick={() => onCreateItem(finding, result.checkId, result.jointRef.columnMemberId)}>{t(locale, 'review.check.createItem')}</button></td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <ReviewFindingsView
+            key={result.checkId}
+            result={result}
+            project={project}
+            memberKinds={memberKinds}
+            layout={layout}
+            locale={locale}
+            review={review}
+            focusedFindingId={focusedFindingId}
+            setFocusedFindingId={setFocusedFindingId}
+            onCreateItem={onCreateItem}
+            setReviewFocus={setReviewFocus}
+            setViewerMode={setViewerMode}
+          />
         </div>
       )}
     </section>

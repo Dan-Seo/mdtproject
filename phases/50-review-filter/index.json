@@ -1,0 +1,148 @@
+{
+  "project": "Kijun",
+  "phase": "50-review-filter",
+  "status": "in-progress",
+  "steps": [
+    {
+      "step": 1,
+      "name": "filter-plan",
+      "kind": "plan",
+      "status": "completed",
+      "authored_by": "gemini-3.8-flash-high (plan), Claude Opus 5 (four independent refutation rounds)",
+      "summary": "所見表のフィルター(種別チップ・部材ペア・除外の非表示)の仕様。既定状態は現行DOMと観測上同一で、filterFindings は元配列の参照を返す。4回の独立反証を経て全BLOCKERを閉じた: R1は uc25-perf の予算見落とし・再検査時のフィルター状態未定義・CLAUDE.md の存在しない引用、R2は checkId 再マウントと焦点クリーンアップが互いを破壊し reviewFocus が永久に残る経路、R3は同一規則の二通り記述(コード片と散文の不一致)、R4は jsdom で成立しない起動手順を書いた受入テスト。",
+      "artifacts": [
+        "phases/50-review-filter/step1-plan.md",
+        "phases/50-review-filter/step1-falsification.md",
+        "phases/50-review-filter/step1-falsification-r2.md",
+        "phases/50-review-filter/step1-falsification-r3.md",
+        "phases/50-review-filter/step1-falsification-r4.md"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "filter-implementation",
+      "status": "completed",
+      "authored_by": "gemini-3.8-flash-high (implementation), Claude Opus 5 (independent review)",
+      "summary": "src/lib/review/finding-filter.ts と ReviewPane への配線。独立レビューは PASS(BLOCKER・MAJOR なし、MINOR 5件)。うち3件をこのブランチで閉じた — matchesFindingFilter の effectivePairKey を必須化(未検証の既定引数を試験するのではなく除去)、未使用 import の削除、述語の直接呼び出しと照合分岐を固定する試験の追加。照合分岐の修正は変異で確認済み: `const effectiveFilter = filter` に置換すると新しい参照同一性の試験だけが落ちる。",
+      "host_gates": {
+        "typecheck": {
+          "exit_code": 0
+        },
+        "lint": {
+          "exit_code": 0,
+          "warnings": 2,
+          "note": "両方とも既存のもので本変更とは無関係"
+        },
+        "vitest": {
+          "exit_code": 0,
+          "tests": 2046,
+          "skipped": 4,
+          "failed": 0,
+          "test_files": 118
+        }
+      },
+      "artifacts": [
+        "phases/50-review-filter/step2-review.md"
+      ],
+      "cross_checked_by": "phases/50-review-filter/step5-post-edit-review.md (Claude Opus 5, independent) — VERDICT: PASS, BLOCKER 0 / MAJOR 0 / MINOR 10"
+    },
+    {
+      "step": 3,
+      "name": "browser-acceptance",
+      "kind": "verify",
+      "status": "completed",
+      "summary": "uc25-joint-review.js は Jetson では完走しない。未変更の main を対照として 900秒予算で走らせても 903秒で打ち切られた — デスクトップ側の 300秒(step8-report.json#/desktop_host_run)に対して3倍でも足りない。両実行とも CLEARANCE_ORACLE と CAMERA_ORACLE は通過を出力してから死ぬので、この二つのオラクル自体は Jetson でも動く。受入判定はデスクトップ側で行う。",
+      "blocked_on": "desktop host browser run",
+      "artifacts": [
+        "phases/50-review-filter/step3-browser-blocked.md"
+      ],
+      "gate_note": "CLAUDE.md の gate:true は step0 の verify が refuted になったとき後続を止める旗で、blocked には効かない。ここは実行できなかっただけなので blocked のまま旗は外す。受入は phases/index.json の status:in-progress と本ステップの blocked_on が示す。",
+      "discharged_by": "step 6 (desktop host browser run); see phases/50-review-filter/step6-desktop-acceptance.md"
+    },
+    {
+      "step": 4,
+      "name": "perf-measurement",
+      "kind": "verify",
+      "status": "completed",
+      "summary": "uc25-perf.js をブランチと未変更 main で連続 A/B 実測(この host で初の実測 — phase 48 のハーネスは fixture 経路を塞いでいた)。R1 の性能 BLOCKER は実測で解消: 5層ストレスで check_ms がブランチ 3219ms 対 main 3476ms と257ms速い。予算超過2件(check_ms・tab_switch_ms)は main でも出るので本変更由来ではなく、tab_switch はフィルターの経路上にない(681 対 691ms)。ストレスの joint_tab +298ms・compare +398ms は生値の分布が重なるため「記録するが結論しない」。",
+      "artifacts": [
+        "phases/50-review-filter/step4-perf-jetson.md"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "post-edit-review",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Claude Opus 5 (independent; did not author the plan, the implementation or the post-review edits)",
+      "summary": "step2 の PASS 以降にオーケストレータが加えた3つの編集(effectivePairKey の必須化・未使用 import の削除・試験3件の追加)は誰の検証も受けていなかった。その穴を閉じる回。VERDICT: PASS — BLOCKER 0・MAJOR 0・MINOR 10。既定状態の DOM 同一性と元配列参照の返却は編集後も成立を再確認。未解決で残す MINOR は3件: (7) 別案件を読み込むと stale な filter.pairKey が解除ボタンで消せない(main にも同種の残留があり、表示は常に自己整合)、(9) ALL_FINDING_KINDS が保存される CheckExclusion.scope.kinds に流れる方向結合(現挙動は同一)、(10) ReviewPane.test.tsx:898-900 の2行が変異で落ちない。",
+      "open_minors": [
+        {
+          "id": 7,
+          "where": "src/components/review/ReviewPane.tsx:300",
+          "note": "if (!active) return を外すのが両レビュー一致の最小修正。ブラウザ受入前の挙動変更は避け、受入後に単独で扱う。"
+        },
+        {
+          "id": 9,
+          "where": "src/components/review/ReviewPane.tsx:427",
+          "note": "表示層の ALL_FINDING_KINDS がドメインの保存値に流れる。現時点の挙動は同一(KIND_TABLE の挿入順が旧リテラルと一致し、消費側は includes のみ)。"
+        },
+        {
+          "id": 10,
+          "where": "src/components/review/ReviewPane.test.tsx:898-900",
+          "note": "無効状態の解除ボタン click が no-op であることを主張するが、guard を消しても通る。stale-pairKey の状況を作らないと反証可能にならない。"
+        }
+      ],
+      "resolved_here": [
+        "3: step3 の gate:true を外した — CLAUDE.md の gate は refuted 用で blocked には効かない",
+        "6: phases/50-review-filter/*.md の本文の Phase 49 表記を Phase 50 に統一"
+      ],
+      "artifacts": [
+        "phases/50-review-filter/step5-post-edit-review.md"
+      ]
+    },
+    {
+      "step": 6,
+      "name": "desktop-browser-acceptance",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Claude Opus 5 (desktop host run; authored neither the plan nor the implementation)",
+      "summary": "デスクトップ host で受入に到達し、step3 の blocked_on を解除する。uc25-joint-review.js は exit 0 で checks 20件すべて true(台本が件数20を自ら表明する)、回帰7本(uc1・uc2・uc3・uc7・uc9・uc10・uc15)も exit 0、uc25-perf.js は budget_met: true。既定フィルター状態の表の同一性は main@632bead を建てて同じ台本を対照実行して実測した — ブランチ差分は tests/ に一切触れないので台本は両者でバイト同一であり、findings0 40,522字・findings1 121,966字が sha256 一致、行数も 698 で一致する。step4 がストレスで「記録するが結論しない」とした joint_tab +298ms・compare +398ms は再現せず(それぞれ +5ms・+14ms)、Jetson の予算超過2件も host 由来と確定した(check_ms 3219→610前後、tab_switch_ms 681→75前後)。ただし ストレスの compare_ms だけは main 238 に対しブランチ 251・252 と、別々に建てた2回が 1ms 以内で一致するため小さいが実在の公算が高い — 予算3000msの0.5%であり合否には影響しない。最大の所見は受入項目の外にあった: uc25 はフィルター bar に一切触れないため(grep 0件)、緑は無回帰の証拠にとどまり、bar が描画されなくても同じく緑になる。機能自体は別台本で7項目を実測した(既定698行、干渉候補を外すと592行で残る種別は接触のみ、初期化で表本文が完全復元、ペア絞り込み24行、全解除で0行かつ空案内が表の外)。その台本はリポジトリ外(session scratchpad)にあり未コミットなので、この部分はリポジトリだけでは再現できず CI も将来の退行を検知しない。hideExcluded は既定値の確認のみで操作していない。本記録は Claude が書いたものであり独立検証を受けていない。",
+      "artifacts": [
+        "phases/50-review-filter/step6-desktop-acceptance.md"
+      ],
+      "discharges": "step 3 blocked_on: desktop host browser run",
+      "host": "desktop Windows 11, Node v24.15.0, npm 11.12.1",
+      "commits_measured": {
+        "branch": [
+          "b5687c5",
+          "4d80262"
+        ],
+        "control": "632bead",
+        "code_identity_note": "git diff --name-only b5687c5..4d80262 -- src tests is empty; the two commits renumber phase 49 to 50 and add documents only"
+      }
+    },
+    {
+      "step": 7,
+      "name": "filter-e2e-coverage",
+      "status": "pending-verification",
+      "authored_by": "Hermes Astra (orchestrator)",
+      "summary": "step6 が指摘した穴を塞ぐ: uc25 はフィルターバーに一度も触れないので、バーが描画に失敗しても uc25 は同じだけ緑になる。step6 の実測はセッション外の使い捨てスクリプトで取られ、リポジトリに残らなかった。tests/e2e/uc26-findings-filter.js はその観察を8つの check として常設化する。期待件数は走行時の観察から取り固定値を置かない — 標本が変わっても意味が保たれる。",
+      "checks": [
+        "defaultStateIsFullTable — チップ3つが全て押下、ペアは all、除外非表示は off、解除は aria-disabled=true、件数表示が N / N件",
+        "kindChipNarrowsAndRemovesOnlyThatKind — 件数が厳密に減り、外した区分だけが表から消え、他の区分は残る",
+        "resetRestoresTableExactly — 表の本文が baseline と文字列一致",
+        "pairSelectNarrows — ペア選択で件数が厳密に減る",
+        "hideExcludedIsHonoured — 除外がある標本では baseline - 除外件数、無い標本では不変",
+        "emptyNoticeOutsideTableWhenNothingMatches — 全区分を外すと0件・空表示が review-findings の外",
+        "filterBarOutsideFindingsTable — バーが表の子孫でない(中に入ると uc25 の readFindingRows が6セル規則で落ちる)",
+        "noUnexpectedBrowserErrors"
+      ],
+      "verification_status": "NOT RUN — この host ではブラウザ受入が成立しないため、実行はデスクトップ側が必要。構文は node の vm.Script でパース確認のみ。",
+      "artifacts": [
+        "tests/e2e/uc26-findings-filter.js",
+        "tests/e2e/README.md"
+      ]
+    }
+  ]
+}

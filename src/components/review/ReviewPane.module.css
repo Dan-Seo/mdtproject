@@ -119,3 +119,66 @@
   color: var(--text-muted);
   border-color: var(--border-hairline-soft);
 }
+
+.findingsFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+}
+
+.filterChips {
+  display: inline-flex;
+  gap: var(--space-xs);
+}
+
+.filterChip {
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.filterChipActive {
+  color: var(--text-body);
+  font-weight: 600;
+}
+
+.filterPairLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.filterCheckboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.filterSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.filterResetButton {
+  padding: 0 var(--space-xs);
+  border: var(--border-hairline);
+  background: var(--surface-card);
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.filterResetButton[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.emptyNotice {
+  margin: var(--space-xs) 0;
+  color: var(--text-muted);
+}
+
