@@ -121,6 +121,28 @@
         "control": "632bead",
         "code_identity_note": "git diff --name-only b5687c5..4d80262 -- src tests is empty; the two commits renumber phase 49 to 50 and add documents only"
       }
+    },
+    {
+      "step": 7,
+      "name": "filter-e2e-coverage",
+      "status": "pending-verification",
+      "authored_by": "Hermes Astra (orchestrator)",
+      "summary": "step6 が指摘した穴を塞ぐ: uc25 はフィルターバーに一度も触れないので、バーが描画に失敗しても uc25 は同じだけ緑になる。step6 の実測はセッション外の使い捨てスクリプトで取られ、リポジトリに残らなかった。tests/e2e/uc26-findings-filter.js はその観察を8つの check として常設化する。期待件数は走行時の観察から取り固定値を置かない — 標本が変わっても意味が保たれる。",
+      "checks": [
+        "defaultStateIsFullTable — チップ3つが全て押下、ペアは all、除外非表示は off、解除は aria-disabled=true、件数表示が N / N件",
+        "kindChipNarrowsAndRemovesOnlyThatKind — 件数が厳密に減り、外した区分だけが表から消え、他の区分は残る",
+        "resetRestoresTableExactly — 表の本文が baseline と文字列一致",
+        "pairSelectNarrows — ペア選択で件数が厳密に減る",
+        "hideExcludedIsHonoured — 除外がある標本では baseline - 除外件数、無い標本では不変",
+        "emptyNoticeOutsideTableWhenNothingMatches — 全区分を外すと0件・空表示が review-findings の外",
+        "filterBarOutsideFindingsTable — バーが表の子孫でない(中に入ると uc25 の readFindingRows が6セル規則で落ちる)",
+        "noUnexpectedBrowserErrors"
+      ],
+      "verification_status": "NOT RUN — この host ではブラウザ受入が成立しないため、実行はデスクトップ側が必要。構文は node の vm.Script でパース確認のみ。",
+      "artifacts": [
+        "tests/e2e/uc26-findings-filter.js",
+        "tests/e2e/README.md"
+      ]
     }
   ]
 }
