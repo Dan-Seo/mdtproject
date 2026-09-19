@@ -1,0 +1,46 @@
+{
+  "chosen_fix": "ReviewPane の解除ボタンから active 判定による早期 return だけを外し、クリック時は常に defaultFindingFilterState() をセットする。aria-disabled は現行のまま残し、HTML disabled 属性は追加しない。stale な pairKey は effectiveFilter では表示上 all に見えても state に残るため、状態そのものを解除するこの 1 箇所が最小である。",
+  "changed_files": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx"
+  ],
+  "tests_added": [
+    {
+      "name": "clears a stale pair key after loading another project",
+      "path": "src/components/review/ReviewPane.test.tsx",
+      "guarantee": "別案件の読み込みで pairKey が availablePairs から消えた後に解除し、元案件へ戻っても絞り込みが再活性化しない。"
+    },
+    {
+      "name": "keeps the default filter state unchanged when reset is clicked",
+      "path": "src/components/review/ReviewPane.test.tsx",
+      "guarantee": "既定状態で解除を押しても行数・kind chip の aria-pressed・pair select・aria-disabled・focus-safe な disabled 不在が変わらない。"
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "採用した修正を元に戻し、解除クリックの if (!active) return を残した。",
+      "failing_test": "clears a stale pair key after loading another project",
+      "observed": "AssertionError: expected 'all' ... Received: '大梁主筋 × 大梁主筋'。RED 実行では 36 tests 中 1 failed / 35 passed となった。"
+    }
+  ],
+  "default_state_unchanged": "既存の finding-filter.test.ts の Default State Passthrough が filterFindings の元配列参照を toBe で固定し、この step の UI テストが既定状態の行数・全 kind chip・pair select='all'・aria-disabled='true'・HTML disabled 不在を解除前後で比較した。",
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/lib/review/finding-filter.test.ts"
+  ],
+  "paths_expected_absent": [],
+  "fabricated_paths": [],
+  "validation": {
+    "red": "npx vitest run src/components/review/ReviewPane.test.tsx — 36 tests中 35 passed, 1 failed; failure was the stale pairKey reactivation assertion.",
+    "green": "npx vitest run src/components/review/ReviewPane.test.tsx --testNamePattern='clears a stale pair key|keeps the default filter state' — 2 passed, 34 skipped.",
+    "acceptance": {
+      "review_tests": "3 files passed, 44 tests passed.",
+      "typecheck": "npx tsc --noEmit passed.",
+      "lint": "npm run lint passed with the existing 2 warnings and no errors.",
+      "all_tests": "118 files passed, 2 skipped; 2048 tests passed, 4 skipped.",
+      "golden": "7 files passed; 393 tests passed.",
+      "coverage": "npx vitest run src/components/review --coverage was attempted but the repository does not install @vitest/coverage-v8; no dependency was added."
+    }
+  }
+}
