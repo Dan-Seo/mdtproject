@@ -12,6 +12,17 @@
       "started_at": "2026-09-19T22:29:07+0900",
       "summary": "解除ボタンの stale な pairKey 早期 return を除去し、別案件読み込み後の再活性化を防ぐ反証テスト2本を追加した。全 acceptance と citation check を通過した。",
       "completed_at": "2026-09-19T22:56:24+0900"
+    },
+    {
+      "step": 2,
+      "name": "ci-parity",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Hermes (orchestrator, local reproduction)",
+      "summary": "draft PR は review.yml の if: !draft で CI が全ジョブ skipping になる。verify ジョブのコマンド列を Jetson で実行した代替証跡。lint/typecheck/test:ci-scripts/pytest(133)/build/blocking-graph は exit 0。npm test の 1 件失敗は phase 49 のテストのタイムアウトで、未変更 main の対照実行が同じテスト＋もう1件で落ちるため host 由来と確定。",
+      "artifacts": [
+        "phases/51-filter-stale-pairkey/step2-ci-parity.md"
+      ]
     }
   ],
   "created_at": "2026-09-19T22:29:07+0900",
