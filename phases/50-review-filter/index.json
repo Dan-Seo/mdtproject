@@ -50,13 +50,14 @@
       "step": 3,
       "name": "browser-acceptance",
       "kind": "verify",
-      "status": "blocked",
+      "status": "completed",
       "summary": "uc25-joint-review.js は Jetson では完走しない。未変更の main を対照として 900秒予算で走らせても 903秒で打ち切られた — デスクトップ側の 300秒(step8-report.json#/desktop_host_run)に対して3倍でも足りない。両実行とも CLEARANCE_ORACLE と CAMERA_ORACLE は通過を出力してから死ぬので、この二つのオラクル自体は Jetson でも動く。受入判定はデスクトップ側で行う。",
       "blocked_on": "desktop host browser run",
       "artifacts": [
         "phases/50-review-filter/step3-browser-blocked.md"
       ],
-      "gate_note": "CLAUDE.md の gate:true は step0 の verify が refuted になったとき後続を止める旗で、blocked には効かない。ここは実行できなかっただけなので blocked のまま旗は外す。受入は phases/index.json の status:in-progress と本ステップの blocked_on が示す。"
+      "gate_note": "CLAUDE.md の gate:true は step0 の verify が refuted になったとき後続を止める旗で、blocked には効かない。ここは実行できなかっただけなので blocked のまま旗は外す。受入は phases/index.json の status:in-progress と本ステップの blocked_on が示す。",
+      "discharged_by": "step 6 (desktop host browser run); see phases/50-review-filter/step6-desktop-acceptance.md"
     },
     {
       "step": 4,
