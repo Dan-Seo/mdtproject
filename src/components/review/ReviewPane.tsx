@@ -297,7 +297,6 @@ function ReviewFindingsView({
             className={styles.filterResetButton}
             aria-disabled={!active}
             onClick={() => {
-              if (!active) return
               setFilter(defaultFindingFilterState())
             }}
           >
