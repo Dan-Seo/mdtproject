@@ -99,6 +99,27 @@
       "artifacts": [
         "phases/50-review-filter/step5-post-edit-review.md"
       ]
+    },
+    {
+      "step": 6,
+      "name": "desktop-browser-acceptance",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Claude Opus 5 (desktop host run; authored neither the plan nor the implementation)",
+      "summary": "デスクトップ host で受入に到達し、step3 の blocked_on を解除する。uc25-joint-review.js は exit 0 で checks 20件すべて true(台本が件数20を自ら表明する)、回帰7本(uc1・uc2・uc3・uc7・uc9・uc10・uc15)も exit 0、uc25-perf.js は budget_met: true。既定フィルター状態の表の同一性は main@632bead を建てて同じ台本を対照実行して実測した — ブランチ差分は tests/ に一切触れないので台本は両者でバイト同一であり、findings0 40,522字・findings1 121,966字が sha256 一致、行数も 698 で一致する。step4 がストレスで「記録するが結論しない」とした joint_tab +298ms・compare +398ms は再現せず(それぞれ +5ms・+14ms)、Jetson の予算超過2件も host 由来と確定した(check_ms 3219→610前後、tab_switch_ms 681→75前後)。ただし ストレスの compare_ms だけは main 238 に対しブランチ 251・252 と、別々に建てた2回が 1ms 以内で一致するため小さいが実在の公算が高い — 予算3000msの0.5%であり合否には影響しない。最大の所見は受入項目の外にあった: uc25 はフィルター bar に一切触れないため(grep 0件)、緑は無回帰の証拠にとどまり、bar が描画されなくても同じく緑になる。機能自体は別台本で7項目を実測した(既定698行、干渉候補を外すと592行で残る種別は接触のみ、初期化で表本文が完全復元、ペア絞り込み24行、全解除で0行かつ空案内が表の外)。その台本はリポジトリ外(session scratchpad)にあり未コミットなので、この部分はリポジトリだけでは再現できず CI も将来の退行を検知しない。hideExcluded は既定値の確認のみで操作していない。本記録は Claude が書いたものであり独立検証を受けていない。",
+      "artifacts": [
+        "phases/50-review-filter/step6-desktop-acceptance.md"
+      ],
+      "discharges": "step 3 blocked_on: desktop host browser run",
+      "host": "desktop Windows 11, Node v24.15.0, npm 11.12.1",
+      "commits_measured": {
+        "branch": [
+          "b5687c5",
+          "4d80262"
+        ],
+        "control": "632bead",
+        "code_identity_note": "git diff --name-only b5687c5..4d80262 -- src tests is empty; the two commits renumber phase 49 to 50 and add documents only"
+      }
     }
   ]
 }
