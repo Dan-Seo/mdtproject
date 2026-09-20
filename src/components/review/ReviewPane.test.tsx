@@ -900,6 +900,111 @@ describe('ReviewPane', () => {
       expect(resetButton).toHaveAttribute('aria-disabled', 'true')
     }, 20000)
 
+    it('clears a stale pair key after loading another project', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const select = screen.getByLabelText('部材・役割ペア') as HTMLSelectElement
+      expect(select.options.length).toBeGreaterThan(1)
+      const originalPair = select.options[1].value
+      expect(originalPair).not.toBe('all')
+      fireEvent.change(select, { target: { value: originalPair } })
+
+      const filteredRows = screen.getByTestId('review-findings').querySelectorAll('tbody tr')
+      expect(filteredRows.length).toBeLessThan(expected.findings.length)
+
+      const originalProject = useAppStore.getState().project
+      const alternateProject = {
+        ...originalProject,
+        members: originalProject.members.map((member) => ({
+          ...member,
+          id: `alternate-${member.id}`,
+        })),
+      }
+      act(() => useAppStore.getState().loadProject(alternateProject))
+
+      // The previous check result remains mounted while the new project's member map is used.
+      expect(screen.getByTestId('review-findings')).toBeInTheDocument()
+      expect(screen.getByTestId('review-findings').querySelectorAll('tbody tr').length).toBeGreaterThan(0)
+
+      const resetButton = screen.getByRole('button', { name: 'フィルターを解除' })
+      // stale な pairKey を利用者が直せる唯一の入口なので、select が all に見えても解除できる。
+      expect(resetButton).toHaveAttribute('aria-disabled', 'false')
+      fireEvent.click(resetButton)
+
+      act(() => useAppStore.getState().loadProject(originalProject))
+
+      // If the stale key survived the reset, the old pair filter reappears here.
+      expect((screen.getByLabelText('部材・役割ペア') as HTMLSelectElement).value).toBe('all')
+      expect(screen.getByTestId('review-findings').querySelectorAll('tbody tr')).toHaveLength(
+        expected.findings.length,
+      )
+    }, 20000)
+
+    it('exposes reset when the displayed pair key is stale', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const select = screen.getByLabelText('部材・役割ペア') as HTMLSelectElement
+      expect(select.options.length).toBeGreaterThan(1)
+      const originalPair = select.options[1].value
+      expect(originalPair).not.toBe('all')
+      fireEvent.change(select, { target: { value: originalPair } })
+
+      expect(screen.getByTestId('review-findings').querySelectorAll('tbody tr').length).toBeLessThan(
+        expected.findings.length,
+      )
+
+      const originalProject = useAppStore.getState().project
+      const alternateProject = {
+        ...originalProject,
+        members: originalProject.members.map((member) => ({
+          ...member,
+          id: `alternate-${member.id}`,
+        })),
+      }
+      act(() => useAppStore.getState().loadProject(alternateProject))
+
+      // The check result stays mounted while the selected pair disappears from the new project.
+      expect(screen.getByTestId('review-findings')).toBeInTheDocument()
+      const resetButton = screen.getByRole('button', { name: 'フィルターを解除' })
+      expect(resetButton).toHaveAttribute('aria-disabled', 'false')
+      expect(select.value).toBe('all')
+      expect(screen.getByRole('status')).toHaveTextContent(
+        `${expected.findings.length} / ${expected.findings.length}件`,
+      )
+    }, 20000)
+
+    it('keeps the default filter state unchanged when reset is clicked', () => {
+      const expected = directGeometryCheck()
+      render(<ReviewPane />)
+      fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))
+
+      const findingsTable = screen.getByTestId('review-findings')
+      const resetButton = screen.getByRole('button', { name: 'フィルターを解除' })
+      const chips = [
+        screen.getByRole('button', { name: '干渉候補' }),
+        screen.getByRole('button', { name: 'あき不足候補' }),
+        screen.getByRole('button', { name: '接触' }),
+      ]
+
+      expect(findingsTable.querySelectorAll('tbody tr')).toHaveLength(expected.findings.length)
+      expect(chips.map((chip) => chip.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
+      expect((screen.getByLabelText('部材・役割ペア') as HTMLSelectElement).value).toBe('all')
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+
+      fireEvent.click(resetButton)
+
+      const findingsTableAfterReset = screen.getByTestId('review-findings')
+      expect(findingsTableAfterReset.querySelectorAll('tbody tr')).toHaveLength(expected.findings.length)
+      expect(chips.map((chip) => chip.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
+      expect((screen.getByLabelText('部材・役割ペア') as HTMLSelectElement).value).toBe('all')
+      expect(resetButton).toHaveAttribute('aria-disabled', 'true')
+      expect(resetButton).not.toBeDisabled()
+    }, 20000)
+
     it('resets filter state and clears 3D focus when check is re-run with changed clearance', () => {
       render(<ReviewPane />)
       fireEvent.click(screen.getByRole('button', { name: '検査を実行' }))

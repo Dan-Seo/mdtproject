@@ -1,0 +1,9 @@
+{
+  "step": 3,
+  "name": "honest-active-flag",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsed": 1594.8046736069955,
+  "stdout_log": "phases/51-filter-stale-pairkey/step3-codex.stdout.log",
+  "stderr_log": "phases/51-filter-stale-pairkey/step3-codex.stderr.log"
+}
