@@ -1,0 +1,53 @@
+{
+  "chosen_fix": "ReviewPane の active を isFilterActive(effectiveFilter) || filter.pairKey !== safePairKey にした。通常の絞り込みは従来どおり可視化し、表示上 all に正規化された stale な state では pairKey の不一致を検出して解除ボタンを aria-disabled=\"false\" にするため、可視性と ARIA の整合を同じ式で満たす。",
+  "changed_files": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx"
+  ],
+  "tests_added": [
+    {
+      "test": "ReviewPane > Finding Filter > exposes reset when the displayed pair key is stale",
+      "path": "src/components/review/ReviewPane.test.tsx",
+      "guarantee": "別案件読込後に select が all と表示され、全件が表示されていても stale な pairKey の解除ボタンが活性であることを、解除前の画面状態で検証する。"
+    }
+  ],
+  "tests_amended": [
+    {
+      "test": "clears a stale pair key after loading another project",
+      "from": "stale 状態の解除ボタン aria-disabled が true",
+      "to": "stale 状態の解除ボタン aria-disabled が false",
+      "why": "select 上は all でも state に残った pairKey を利用者が直せる唯一の入口なので、解除ボタンを活性にする変更を固定する。"
+    },
+    {
+      "test": "keeps the default filter state unchanged when reset is clicked",
+      "from": "クリック前に取得した findingsTable をクリック後も再利用",
+      "to": "クリック後に screen.getByTestId('review-findings') で再取得",
+      "why": "部分木が remount しても古い DOM 参照で通らないようにする。"
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "active を isFilterActive(effectiveFilter) に戻した",
+      "failing_test": "ReviewPane > Finding Filter > exposes reset when the displayed pair key is stale",
+      "observed": "Error: expect(element).toHaveAttribute(\"aria-disabled\", \"false\") // element.getAttribute(\"aria-disabled\") === \"false\"\n\nExpected the element to have attribute:\n  aria-disabled=\"false\"\nReceived:\n  aria-disabled=\"true\"\n ❯ src/components/review/ReviewPane.test.tsx:973:27\n    971|       expect(screen.getByTestId('review-findings')).toBeInTheDocument()\n    972|       const resetButton = screen.getByRole('button', { name: 'フィルターを解除…\n    973|       expect(resetButton).toHaveAttribute('aria-disabled', 'false')\n       |                           ^\n    974|       expect(select.value).toBe('all')\n    975|       expect(screen.getByRole('status')).toHaveTextContent(\n\n[1/1]\n\n Test Files  1 failed (1)\n      Tests  1 failed | 36 skipped (37)"
+    }
+  ],
+  "default_state_unchanged": "src/lib/review/finding-filter.ts の filterFindings は変更하지 않았고、既存の元配列参照テストを含む review テスト 3 files / 45 tests が通過した。UI の既定状態テストは reset 前後の全件数・kind chip・pair select・aria-disabled・disabled 属性不在を確認し、クリック後の table は screen.getByTestId で再取得した。",
+  "known_host_failure": "今回の実行では既知の host timeout は発生しなかった。npx vitest run は 118 files passed / 2 skipped、2049 tests passed / 4 skipped で終了した。",
+  "validation": {
+    "review_tests": "npx vitest run src/components/review — 3 files passed, 45 tests passed",
+    "typecheck": "npx tsc --noEmit — passed",
+    "lint": "npm run lint — passed with the existing 2 warnings and no errors",
+    "all_tests": "npx vitest run — 118 files passed, 2 skipped; 2049 tests passed, 4 skipped",
+    "golden": "npm run test:golden — 7 files passed; 393 tests passed",
+    "restored_mutation_test": "npx vitest run src/components/review/ReviewPane.test.tsx --testNamePattern='exposes reset when the displayed pair key is stale' — 1 passed, 36 skipped"
+  },
+  "paths_verified": [
+    "src/components/review/ReviewPane.tsx",
+    "src/components/review/ReviewPane.test.tsx",
+    "src/lib/review/finding-filter.ts",
+    "src/lib/review/finding-filter.test.ts"
+  ],
+  "paths_expected_absent": [],
+  "fabricated_paths": []
+}

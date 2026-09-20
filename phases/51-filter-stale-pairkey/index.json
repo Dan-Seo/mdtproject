@@ -1,7 +1,7 @@
 {
   "project": "Kijun",
   "phase": "51-filter-stale-pairkey",
-  "status": "in-progress",
+  "status": "completed",
   "steps": [
     {
       "step": 1,
@@ -27,12 +27,18 @@
     {
       "step": 3,
       "name": "honest-active-flag",
-      "status": "pending",
+      "status": "completed",
       "model": "gpt-5.6-luna",
       "reasoning_effort": "max",
-      "reason": "step3-review.md の MAJOR 指摘1: step1 は stale な pairKey を消せるようにしたが、画面から見えるようにはしていない。解除ボタンが aria-disabled のままなので利用者は押す理由がなく、別案件を戻すと絞り込みが黙って再適用される経路は残っている。"
+      "reason": "step3-review.md の MAJOR 指摘1: step1 は stale な pairKey を消せるようにしたが、画面から見えるようにはしていない。解除ボタンが aria-disabled のままなので利用者は押す理由がなく、別案件を戻すと絞り込みが黙って再適用される経路は残っている。",
+      "started_at": "2026-09-20T10:13:05+0900",
+      "summary": "active が effectiveFilter だけでなく stale な filter.pairKey と safePairKey の不一致も検出するようにし、解除ボタンの可視性と ARIA を一致させた。stale 状態の活性化・既定状態の DOM 再取得テストを追加・更新し、AC 全件を通過した。",
+      "completed_at": "2026-09-20T10:30:02+0900",
+      "artifacts": [
+        "phases/51-filter-stale-pairkey/step3-report.json"
+      ]
     }
   ],
   "created_at": "2026-09-19T22:29:07+0900",
-  "completed_at": "2026-09-19T22:56:24+0900"
+  "completed_at": "2026-09-20T10:30:02+0900"
 }

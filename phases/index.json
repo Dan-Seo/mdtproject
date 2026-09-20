@@ -263,8 +263,9 @@
     },
     {
       "dir": "51-filter-stale-pairkey",
-      "status": "in-progress",
-      "created_at": "2026-09-19T22:30:00+0900"
+      "status": "completed",
+      "created_at": "2026-09-19T22:30:00+0900",
+      "completed_at": "2026-09-20T10:30:02+0900"
     }
   ]
 }

@@ -183,7 +183,7 @@ function ReviewFindingsView({
     () => (filter.pairKey === safePairKey ? filter : { ...filter, pairKey: safePairKey }),
     [filter, safePairKey],
   )
-  const active = isFilterActive(effectiveFilter)
+  const active = isFilterActive(effectiveFilter) || filter.pairKey !== safePairKey
 
   const filteredFindings = useMemo(
     () => filterFindings(result.findings, effectiveFilter, memberKinds, safePairKey),
