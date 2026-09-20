@@ -1,10 +1,7 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 
-import { decodeStbBytes } from '@/lib/import/stb/decode'
-import { parseStbDocument } from '@/lib/import/stb/document'
-import { toSkeletonCandidate } from '@/lib/import/stb/candidates'
 import { applyStbGrid, applyStbStories } from '@/lib/import/stb/apply'
 import type { StbGridCandidate, StbSkeletonCandidate } from '@/lib/import/stb/types'
 import { t } from '@/lib/i18n'
@@ -12,9 +9,14 @@ import { useAppStore } from '@/lib/store'
 
 import styles from './StbImport.module.css'
 
-interface StbImportProps {
+export interface StbImportProps {
   /** 테스트에서 파일 해석을 건너뛰고 후보를 직접 넣는 컴포넌트 테스트용 경계. */
   initialCandidate?: StbSkeletonCandidate
+  /**
+   * 遅延の殻 (`LazyStbImport`) が受け取った .stb をそのまま渡す。殻には釦と
+   * ファイル入力しか無く、解析と候補の表示はここが引き受ける。
+   */
+  initialFile?: File
 }
 
 type GridApplyResult = ReturnType<typeof applyStbGrid>
@@ -75,15 +77,17 @@ function ApplyResult({
   )
 }
 
-export function StbImport({ initialCandidate }: StbImportProps) {
+export function StbImport({ initialCandidate, initialFile }: StbImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const inputRef = useRef<HTMLInputElement>(null)
   const [candidate, setCandidate] = useState<StbSkeletonCandidate | null>(
     initialCandidate ?? null,
   )
-  const [open, setOpen] = useState(initialCandidate !== undefined)
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(
+    initialCandidate !== undefined || initialFile !== undefined,
+  )
+  const [loading, setLoading] = useState(initialFile !== undefined)
   const [failed, setFailed] = useState(false)
   const [gridResult, setGridResult] = useState<GridApplyResult | null>(null)
   const [storiesResult, setStoriesResult] = useState<StoriesApplyResult | null>(
@@ -93,11 +97,7 @@ export function StbImport({ initialCandidate }: StbImportProps) {
   const [discardStoryMembers, setDiscardStoryMembers] = useState(false)
   const requestRef = useRef(0)
 
-  const selectFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget
-    const file = input.files?.[0]
-    if (!file) return
-
+  const readFile = async (file: File, input?: HTMLInputElement) => {
     const requestId = ++requestRef.current
     setOpen(true)
     setLoading(true)
@@ -109,6 +109,14 @@ export function StbImport({ initialCandidate }: StbImportProps) {
     setDiscardStoryMembers(false)
 
     try {
+      // .stb 해석기는 파일을 고른 뒤에야 받는다 — 여는 단추만으로는 오지 않으므로
+      // 초기 로드의 전송 바이트에 들어가지 않는다.
+      const [{ decodeStbBytes }, { parseStbDocument }, { toSkeletonCandidate }] =
+        await Promise.all([
+          import('@/lib/import/stb/decode'),
+          import('@/lib/import/stb/document'),
+          import('@/lib/import/stb/candidates'),
+        ])
       const decoded = decodeStbBytes(await file.arrayBuffer())
       if (requestRef.current !== requestId) return
 
@@ -130,9 +138,23 @@ export function StbImport({ initialCandidate }: StbImportProps) {
       setFailed(true)
     } finally {
       if (requestRef.current === requestId) setLoading(false)
-      input.value = ''
+      if (input) input.value = ''
     }
   }
+
+  const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file) return
+    void readFile(file, input)
+  }
+
+  // 殻が受け取った .stb を、殻の入力欄で選んだのと同じ経路で読む。
+  useEffect(() => {
+    if (initialFile !== undefined) void readFile(initialFile)
+    // 受け渡しは一度きり — 読み直しは殻ではなくこの画面の入力欄が受ける。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const applyGrid = () => {
     if (!candidate) return
@@ -184,7 +206,7 @@ export function StbImport({ initialCandidate }: StbImportProps) {
         type="file"
         accept=".stb"
         aria-label={t(locale, 'stbImport.file')}
-        onChange={(event) => void selectFile(event)}
+        onChange={selectFile}
       />
 
       {open ? (

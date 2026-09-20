@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
 import type { WallSection } from '@/domain/model/member'
+import { loadSectionListParser } from '@/lib/import/lazy'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 
@@ -49,7 +50,10 @@ const headerlessPage: TextPage = {
 }
 
 describe('SectionImport', () => {
-  beforeEach(() => {
+  // 断面リストの解析器は選択時に取りに行く境界の向こうにある (@/lib/import/lazy)。
+  // この筋書きは解析の結果を見るものなので、先に受け取っておいて描画を同期に保つ。
+  beforeEach(async () => {
+    await loadSectionListParser()
     useAppStore.setState({
       project: createSampleProject(),
       locale: 'ja',

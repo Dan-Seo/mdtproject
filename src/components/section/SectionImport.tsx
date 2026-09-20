@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -16,8 +17,12 @@ import {
   type WallSection,
 } from '@/domain/model/member'
 import type { Project } from '@/domain/model/project'
+import {
+  loadSectionListParser,
+  peekSectionListParser,
+  type SectionListParser,
+} from '@/lib/import/lazy'
 import { extractTextPages } from '@/lib/import/pdf-text'
-import { parseSectionLists } from '@/lib/import/section-list/parse'
 import type {
   ListIssue,
   ParsedSectionList,
@@ -30,10 +35,15 @@ import { useAppStore, type Locale } from '@/lib/store'
 
 import styles from './SectionImport.module.css'
 
-interface SectionImportProps {
+export interface SectionImportProps {
   /** pdf.js 없이 TextPage 픽스처를 주입하는 컴포넌트 테스트용 경계. */
   initialPages?: TextPage[]
   extractPages?(file: File): Promise<TextPage[]>
+  /**
+   * 遅延の殻 (`LazySectionImport`) が受け取った PDF をそのまま渡す。殻には
+   * 釦とファイル入力しか無く、読み取りと候補の表示はここが引き受ける。
+   */
+  initialFile?: File
 }
 
 interface CandidateRow {
@@ -822,13 +832,16 @@ function Candidate({
 export function SectionImport({
   initialPages,
   extractPages = extractTextPages,
+  initialFile,
 }: SectionImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const inputRef = useRef<HTMLInputElement>(null)
   const [pages, setPages] = useState<TextPage[] | null>(initialPages ?? null)
-  const [open, setOpen] = useState(initialPages !== undefined)
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(
+    initialPages !== undefined || initialFile !== undefined,
+  )
+  const [loading, setLoading] = useState(initialFile !== undefined)
   const [failed, setFailed] = useState(false)
   const [ignored, setIgnored] = useState<Set<string>>(() => new Set())
   const [slabDirections, setSlabDirections] = useState<
@@ -839,9 +852,27 @@ export function SectionImport({
   >({})
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
+  // 断面リスト 해석기는 頁을 읽은 뒤에야 필요하다 — 파일을 고르기 전에는 받지
+  // 않는다 (`@/lib/import/lazy`). 초기 로드의 전송 바이트에서 통째로 빠진다.
+  const [parser, setParser] = useState<SectionListParser | null>(
+    peekSectionListParser,
+  )
+  useEffect(() => {
+    if (pages === null || parser !== null) return
+    let live = true
+    void loadSectionListParser().then((module) => {
+      if (live) setParser(module)
+    })
+    return () => {
+      live = false
+    }
+  }, [pages, parser])
   const lists = useMemo(
-    () => (pages ?? []).flatMap((page) => parseSectionLists(page)),
-    [pages],
+    () =>
+      parser === null
+        ? []
+        : (pages ?? []).flatMap((page) => parser.parseSectionLists(page)),
+    [pages, parser],
   )
   const rows = useMemo(() => parsedCandidates(lists), [lists])
   // 사유별로 어느 리스트가 걸렸는지 묶는다 — 후보가 하나라도 있으면 실패한 표가
@@ -859,11 +890,7 @@ export function SectionImport({
   const supported = rows.filter(({ candidate }) => candidate.kind !== '対象外')
   const outOfScope = rows.filter(({ candidate }) => candidate.kind === '対象外')
 
-  const selectFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget
-    const file = input.files?.[0]
-    if (!file) return
-
+  const readFile = async (file: File, input?: HTMLInputElement) => {
     const requestId = ++requestRef.current
     setOpen(true)
     setLoading(true)
@@ -881,9 +908,23 @@ export function SectionImport({
       setFailed(true)
     } finally {
       if (requestRef.current === requestId) setLoading(false)
-      input.value = ''
+      if (input) input.value = ''
     }
   }
+
+  const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file) return
+    void readFile(file, input)
+  }
+
+  // 殻が受け取った PDF を、殻の入力欄で選んだのと同じ経路で読む。
+  useEffect(() => {
+    if (initialFile !== undefined) void readFile(initialFile)
+    // 受け渡しは一度きり — 読み直しは殻ではなくこの画面の入力欄が受ける。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className={styles.control}>
@@ -904,7 +945,7 @@ export function SectionImport({
         type="file"
         accept="application/pdf"
         aria-label={t(locale, 'sectionImport.file')}
-        onChange={(event) => void selectFile(event)}
+        onChange={selectFile}
       />
       {open ? (
         <section

@@ -8,30 +8,34 @@ import {
   type ChangeEvent,
 } from 'react'
 
-import {
-  applyElevation,
-  applyFramingPlan,
-  type ElevationApplyResult,
-  type PlanApplyResult,
+import type {
+  ElevationApplyResult,
+  PlanApplyResult,
 } from '@/lib/import/framing-plan/apply'
-import { parseFrameElevations } from '@/lib/import/framing-plan/elevation'
-import { parseFramingPlan } from '@/lib/import/framing-plan/parse'
 import type {
   ElevationCandidate,
   PlanBlock,
   PlanGridCandidate,
 } from '@/lib/import/framing-plan/types'
+import {
+  loadDrawingSetModules,
+  loadFramingModules,
+  peekDrawingSetModules,
+  peekFramingModules,
+  type DrawingSetModules,
+  type FramingModules,
+} from '@/lib/import/lazy'
 import { extractTextPages } from '@/lib/import/pdf-text'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
 import { t } from '@/lib/i18n'
 import { storyKey, storyLabelFromTitle } from '@/lib/import/story-label'
-import { assembleDrawingSet } from '@/lib/import/drawing-set/reconcile'
-import { previewDrawingSetPlan, resolveDrawingSetPlan, type DrawingSetChoices } from '@/lib/import/drawing-set/plan'
-import { applyDrawingSet, type DrawingSetApplyResult } from '@/lib/import/drawing-set/apply'
-import type { Conflict, DrawingSetMembership, DrawingSetPage, Evidence, SeriesRef } from '@/lib/import/drawing-set/types'
+import type { DrawingSetChoices } from '@/lib/import/drawing-set/plan'
+import type { DrawingSetApplyResult } from '@/lib/import/drawing-set/apply'
+import type { Conflict, DrawingSetCandidate, DrawingSetMembership, DrawingSetPage, Evidence, SeriesRef } from '@/lib/import/drawing-set/types'
 
 import styles from './PlanImport.module.css'
+
 
 /**
  * 伏図·軸組図에서 읽은 형상을 **후보로** 보여주고, 사용자가 승인하면 案件에
@@ -42,10 +46,17 @@ import styles from './PlanImport.module.css'
  * 빈 후보로 정직하게 실패하고, 그때 형상을 넣는 길은 손입력뿐이다 (ADR-004).
  */
 
-interface PlanImportProps {
+export interface PlanImportProps {
   /** 테스트에서 PDF 추출을 건너뛰고 페이지를 직접 넣는다 */
   initialPages?: TextPage[]
   extractPages?: (file: File) => Promise<TextPage[]>
+  /**
+   * 遅延の殻 (`LazyPlanImport`) が受け取った図面をそのまま渡す。殻には釦と
+   * ファイル入力しか無く、読み取りと候補の表示はここが引き受ける。
+   */
+  initialFile?: File
+  /** 同じく、図面セット側で選ばれた複数の PDF。 */
+  initialSetFiles?: File[]
 }
 
 interface SelectionEvidence {
@@ -249,6 +260,8 @@ function Elevation({
 export function PlanImport({
   initialPages,
   extractPages = extractTextPages,
+  initialFile,
+  initialSetFiles,
 }: PlanImportProps) {
   const locale = useAppStore(({ locale }) => locale)
   const stories = useAppStore(({ project }) => project.stories)
@@ -256,8 +269,10 @@ export function PlanImport({
   const updateProject = useAppStore(({ updateProject }) => updateProject)
   const inputRef = useRef<HTMLInputElement>(null)
   const [pages, setPages] = useState<TextPage[] | null>(initialPages ?? null)
-  const [open, setOpen] = useState(initialPages !== undefined)
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(
+    initialPages !== undefined || initialFile !== undefined,
+  )
+  const [loading, setLoading] = useState(initialFile !== undefined)
   const [failed, setFailed] = useState(false)
   const [storyId, setStoryId] = useState('')
   const [storySelectionWasManual, setStorySelectionWasManual] = useState(false)
@@ -281,13 +296,33 @@ export function PlanImport({
   // 연속 선택 시 늦게 끝난 이전 파일의 결과가 최신 결과를 덮지 않게 한다
   const requestRef = useRef(0)
 
+  const [framing, setFraming] = useState<FramingModules | null>(peekFramingModules)
+  useEffect(() => {
+    if (pages === null || framing !== null) return
+    let live = true
+    void loadFramingModules().then((modules) => {
+      if (live) setFraming(modules)
+    })
+    return () => {
+      live = false
+    }
+  }, [pages, framing])
+
   const plans = useMemo(
-    () => (pages ?? []).map((page) => parseFramingPlan(page)),
-    [pages],
+    () =>
+      framing === null
+        ? []
+        : (pages ?? []).map((page) => framing.parse.parseFramingPlan(page)),
+    [pages, framing],
   )
   const elevations = useMemo(
-    () => (pages ?? []).flatMap((page) => parseFrameElevations(page).elevations),
-    [pages],
+    () =>
+      framing === null
+        ? []
+        : (pages ?? []).flatMap(
+            (page) => framing.elevation.parseFrameElevations(page).elevations,
+          ),
+    [pages, framing],
   )
   const grids = plans.flatMap((plan) => plan.grids)
   const gridIndexes = { X: 0, Y: 0 }
@@ -318,11 +353,7 @@ export function PlanImport({
   // 사유는 페이지마다 나오므로 접는다 — 같은 말이 페이지 수만큼 늘어서면 읽히지 않는다
   const issues = [...new Set(plans.flatMap((plan) => plan.issues))]
 
-  const selectFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget
-    const file = input.files?.[0]
-    if (!file) return
-
+  const readFile = async (file: File, input?: HTMLInputElement) => {
     const requestId = ++requestRef.current
     setOpen(true)
     setLoading(true)
@@ -339,11 +370,26 @@ export function PlanImport({
       setFailed(true)
     } finally {
       if (requestRef.current === requestId) setLoading(false)
-      input.value = ''
+      if (input) input.value = ''
     }
   }
 
+  const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file) return
+    void readFile(file, input)
+  }
+
+  // 殻が受け取った図面を、殻の入力欄で選んだのと同じ経路で読む。
+  useEffect(() => {
+    if (initialFile !== undefined) void readFile(initialFile)
+    // 受け渡しは一度きり — 読み直しは殻ではなくこの画面の入力欄が受ける。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const apply = (block: PlanBlock) => {
+    if (framing === null) return
     const automatic = automaticSelections(block, stories, sectionStoryLabels)
     const nextStoryId = storySelectionWasManual
       ? storyId
@@ -367,7 +413,7 @@ export function PlanImport({
 
     let applied: PlanApplyResult | undefined
     updateProject((project) => {
-      applied = applyFramingPlan(project, {
+      applied = framing.apply.applyFramingPlan(project, {
         block,
         storyId: nextStoryId,
         sectionStoryLabel: nextSectionStoryLabel,
@@ -384,9 +430,10 @@ export function PlanImport({
     topLevelIndex: number,
     bottomLevelIndex: number,
   ) => {
+    if (framing === null) return
     let applied: ElevationApplyResult | undefined
     updateProject((project) => {
-      applied = applyElevation(project, {
+      applied = framing.apply.applyElevation(project, {
         candidate,
         topLevelIndex,
         bottomLevelIndex,
@@ -402,7 +449,7 @@ export function PlanImport({
 
   return (
     <div className={styles.control}>
-      <DrawingSetImport />
+      <DrawingSetImport initialFiles={initialSetFiles} />
       <button
         type="button"
         className={styles.openButton}
@@ -420,7 +467,7 @@ export function PlanImport({
         type="file"
         accept="application/pdf"
         aria-label={t(locale, 'planImport.file')}
-        onChange={(event) => void selectFile(event)}
+        onChange={selectFile}
       />
       {open ? (
         <section
@@ -643,18 +690,30 @@ export function PlanImport({
   )
 }
 
+/** 図面セット 해석기가 오기 전의 자리표시 — 아무 면도 읽지 않은 상태와 같다. */
+const emptyDrawingSet = (membership: DrawingSetMembership): DrawingSetCandidate => ({
+  pages: [],
+  membership,
+  referenceChoices: [],
+  grid: null,
+  stories: null,
+  blocks: [],
+  conflicts: [],
+})
+const PENDING_SET = { refusal: '階未確定' as const, detail: null }
+
 const refKey = (r: SeriesRef) => `${r.source}#${r.pageNumber}#${r.index}`
 const samePage = (a: Evidence, b: Evidence) => a.source === b.source && a.pageNumber === b.pageNumber
 
 /** Selection state only. Reconciliation and future Story assignments live in lib. */
-function DrawingSetImport() {
+function DrawingSetImport({ initialFiles }: { initialFiles?: File[] }) {
   const locale = useAppStore(s => s.locale)
   const project = useAppStore(s => s.project)
   const loadProject = useAppStore(s => s.loadProject)
   const input = useRef<HTMLInputElement>(null)
   const request = useRef(0)
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(initialFiles !== undefined)
+  const [loading, setLoading] = useState(initialFiles !== undefined)
   const [failed, setFailed] = useState(false)
   const [pages, setPages] = useState<DrawingSetPage[]>([])
   const [membership, setMembership] = useState<DrawingSetMembership>({ excludedPages: [], excludedBlocks: [] })
@@ -665,14 +724,23 @@ function DrawingSetImport() {
   const [sectionStoryLabels, setSectionStoryLabels] = useState<Record<number, string>>({})
   const [discardMembers, setDiscardMembers] = useState(false)
   const [result, setResult] = useState<DrawingSetApplyResult>()
-  const candidate = useMemo(() => assembleDrawingSet(pages, membership, reference), [pages, membership, reference])
+  const [modules, setModules] = useState<DrawingSetModules | null>(peekDrawingSetModules)
+  const candidate = useMemo(
+    () =>
+      modules === null
+        ? emptyDrawingSet(membership)
+        : modules.reconcile.assembleDrawingSet(pages, membership, reference),
+    [modules, pages, membership, reference],
+  )
   const choices: DrawingSetChoices = {
     reference: candidate.stories?.reference ?? { source: '', pageNumber: 0, index: 0 },
     topLevelIndex: top === '' ? NaN : Number(top), bottomLevelIndex: bottom === '' ? NaN : Number(bottom),
     blockStories, sectionStoryLabels, discardMembers,
   }
-  const preview = previewDrawingSetPlan(candidate, choices)
-  const resolved = resolveDrawingSetPlan(candidate, choices)
+  // 해석기가 아직 오지 않은 동안은 階가 확정되지 않은 것과 같다 — 실제
+  // previewDrawingSetPlan 도 stories 가 없으면 이 거부를 낸다.
+  const preview = modules === null ? PENDING_SET : modules.plan.previewDrawingSetPlan(candidate, choices)
+  const resolved = modules === null ? PENDING_SET : modules.plan.resolveDrawingSetPlan(candidate, choices)
   const future = 'stories' in preview ? preview.stories : []
   // Initial duplicate suggestions are replaced by the selected range's final mapping.
   const conflicts = [
@@ -686,36 +754,50 @@ function DrawingSetImport() {
     setResult(undefined); setDiscardMembers(false)
   }
   const updateMembership = (next: DrawingSetMembership) => {
+    if (modules === null) return
     // Re-select automatically only if the old reference is no longer included.
-    const nextCandidate = assembleDrawingSet(pages, next, candidate.stories?.reference)
+    const nextCandidate = modules.reconcile.assembleDrawingSet(pages, next, candidate.stories?.reference)
     if (!nextCandidate.stories) { setReference(undefined); clearChoices() }
     else setReference(nextCandidate.stories.reference)
     setMembership(next); setResult(undefined); setDiscardMembers(false)
   }
-  const load = async (event: ChangeEvent<HTMLInputElement>) => {
-    const element = event.currentTarget
-    const files = Array.from(element.files ?? [])
+  const readFiles = async (files: File[], element?: HTMLInputElement) => {
     if (!files.length) return
     const id = ++request.current
     setOpen(true); setLoading(true); setFailed(false); setPages([])
     setReference(undefined); setMembership({ excludedPages: [], excludedBlocks: [] }); clearChoices()
     try {
+      // 도면을 고른 이 시점에 해석기를 받는다 — 頁 추출과 같이 기다리게 한다.
+      const loaded = loadDrawingSetModules()
       const next: DrawingSetPage[] = []
       for (const file of files) {
         const extracted = await extractTextPages(file)
         if (request.current !== id) return
         next.push(...extracted.map((page, i) => ({ source: file.name, pageNumber: i + 1, page })))
       }
+      const ready = await loaded
+      if (request.current !== id) return
+      setModules(ready)
       setPages(next)
     } catch {
       if (request.current === id) setFailed(true)
     } finally {
-      if (request.current === id) { setLoading(false); element.value = '' }
+      if (request.current === id) { setLoading(false); if (element) element.value = '' }
     }
   }
+  const load = (event: ChangeEvent<HTMLInputElement>) => {
+    const element = event.currentTarget
+    void readFiles(Array.from(element.files ?? []), element)
+  }
+  // 殻が受け取った図面セットを、殻の入力欄で選んだのと同じ経路で読む。
+  useEffect(() => {
+    if (initialFiles !== undefined) void readFiles(initialFiles)
+    // 受け渡しは一度きり — 選び直しは殻ではなくこの画面の入力欄が受ける。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const applySet = () => {
-    if (!('plan' in resolved) || loading) return
-    const applied = applyDrawingSet(useAppStore.getState().project, resolved.plan)
+    if (modules === null || !('plan' in resolved) || loading) return
+    const applied = modules.apply.applyDrawingSet(useAppStore.getState().project, resolved.plan)
     // Replacing the entire floor stack invalidates selection just like JSON import.
     if (!applied.refusal) loadProject(applied.project)
     setResult(applied)
@@ -732,7 +814,7 @@ function DrawingSetImport() {
   }
   return <>
     <button type="button" className={styles.openButton} onClick={() => pages.length ? setOpen(true) : input.current?.click()}>{t(locale, 'drawingSet.title')}</button>
-    <input ref={input} className={styles.fileInput} type="file" multiple accept="application/pdf" data-testid="drawing-set-files" aria-label={t(locale, 'drawingSet.files')} onChange={e => void load(e)} />
+    <input ref={input} className={styles.fileInput} type="file" multiple accept="application/pdf" data-testid="drawing-set-files" aria-label={t(locale, 'drawingSet.files')} onChange={load} />
     {open && <section className={`${styles.panel} ${styles.drawingSet}`} aria-label={t(locale, 'drawingSet.title')}>
       <header className={styles.panelHeader}><h3>{t(locale, 'drawingSet.title')}</h3><div className={styles.panelActions}>
         <button type="button" className={styles.chooseButton} onClick={() => input.current?.click()}>{t(locale, 'drawingSet.files')}</button>

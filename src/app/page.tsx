@@ -9,14 +9,12 @@ import {
   TakeoffPane,
 } from '@/components/quantity/TakeoffPane'
 import { SectionTable } from '@/components/section/SectionTable'
-import { PlanImport } from '@/components/plan/PlanImport'
-import { StbImport } from '@/components/stb/StbImport'
-import { SectionImport } from '@/components/section/SectionImport'
+import { LazyPlanImport } from '@/components/plan/LazyPlanImport'
+import { LazyStbImport } from '@/components/stb/LazyStbImport'
+import { LazySectionImport } from '@/components/section/LazySectionImport'
 import { ViewerExportButton } from '@/components/viewer/ViewerExportButton'
 import { ViewerTabs } from '@/components/viewer/ViewerTabs'
-import { ReviewPane } from '@/components/review/ReviewPane'
 import { ReviewTabs } from '@/components/review/ReviewTabs'
-import { WorkPackageBoard } from '@/components/review/WorkPackageBoard'
 import { useProjectPersistence } from '@/lib/hooks/useProjectPersistence'
 import { useAppStore } from '@/lib/store'
 
@@ -25,6 +23,17 @@ import { useAppStore } from '@/lib/store'
 // 통째로 빠져 화면에 보이는 것이 달라진다. import는 마운트 시점에 곧바로 걸린다.
 const Viewer3D = dynamic(() =>
   import('@/components/viewer/Viewer3D').then((module) => module.Viewer3D),
+)
+
+// 検討·作業 페인은 초기 표시가 아니다 — 既定 탭은 内訳書이고, 이 둘은 사용자가
+// 탭을 누른 뒤에야 마운트된다. 그래서 청크를 가르면 초기 로드에서 통째로 빠진다
+// (domain/review·lib/review 가 여기로 따라간다). 마운트 시점에 곧바로 받는
+// 지연 로드와 달리, 이쪽은 조작이 있어야 받으므로 전송 바이트가 실제로 줄어든다.
+const ReviewPane = dynamic(() =>
+  import('@/components/review/ReviewPane').then((module) => module.ReviewPane),
+)
+const WorkPackageBoard = dynamic(() =>
+  import('@/components/review/WorkPackageBoard').then((module) => module.WorkPackageBoard),
 )
 
 export default function Home() {
@@ -39,12 +48,12 @@ export default function Home() {
       planActions={
         <>
           <StoryTabs />
-          <PlanImport />
-          <StbImport />
+          <LazyPlanImport />
+          <LazyStbImport />
         </>
       }
       section={<SectionTable />}
-      sectionActions={<SectionImport />}
+      sectionActions={<LazySectionImport />}
       viewer={<Viewer3D />}
       viewerActions={
         <>
