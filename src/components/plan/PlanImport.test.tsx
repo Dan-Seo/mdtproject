@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSampleProject } from '@/domain/model/sample-project'
+import { loadFramingModules } from '@/lib/import/lazy'
 import type { TextItem } from '@/lib/import/types'
 import type { TextPage } from '@/lib/import/section-list/types'
 import { useAppStore } from '@/lib/store'
@@ -45,7 +46,11 @@ function framingPage(
   }
 }
 
-beforeEach(() => {
+// 伏図·軸組図の解析器は選択時に取りに行く境界の向こうにある (@/lib/import/lazy)。
+// この筋書きは解析の結果を見るものなので、先に受け取っておいて描画を同期に保つ。
+// 受け取る前の姿（候補なし）は取入経路を通る PlanImport.drawing-set.test.tsx が見る。
+beforeEach(async () => {
+  await loadFramingModules()
   act(() => {
     useAppStore.setState({ project: createSampleProject() })
   })

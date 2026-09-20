@@ -51,21 +51,24 @@ describe('Home', () => {
     // ないため、待つ時間だけを広げる。
   }, 20_000)
 
-  it('mounts ReviewPane only on the 検討 tab', () => {
+  // 두 페인은 Viewer3D와 같은 next/dynamic 경계 뒤에 있다 — 탭을 누른 뒤 청크가
+  // 풀려야 마운트된다. 단언은 그대로 두고(누르기 전 0회 / 누른 뒤 정확히 1회)
+  // 조회만 비동기로 바꾼다.
+  it('mounts ReviewPane only on the 検討 tab', async () => {
     reviewPane.mockClear()
     render(<Home />)
 
     expect(reviewPane).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('tab', { name: '検討' }))
-    expect(reviewPane).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(reviewPane).toHaveBeenCalledTimes(1))
   })
 
-  it('mounts WorkPackageBoard only on the 作業 tab', () => {
+  it('mounts WorkPackageBoard only on the 作業 tab', async () => {
     workPackageBoard.mockClear()
     render(<Home />)
 
     expect(workPackageBoard).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('tab', { name: '作業' }))
-    expect(workPackageBoard).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(workPackageBoard).toHaveBeenCalledTimes(1))
   })
 })
