@@ -36,6 +36,40 @@
       "completed_at": "2026-09-20T10:39:40+0900",
       "artifacts": [
         "phases/51-filter-stale-pairkey/step3-report.json"
+      ],
+      "cross_checked_by": "phases/51-filter-stale-pairkey/step4-review.md (Claude Opus 5, independent) — VERDICT: PASS, BLOCKER 0 / MAJOR 0 / MINOR 5"
+    },
+    {
+      "step": 4,
+      "name": "post-fix-review",
+      "kind": "verify",
+      "status": "completed",
+      "authored_by": "Claude Opus 5 (independent; authored neither step 1 nor step 3)",
+      "summary": "step3 の一式修正に対する独立レビュー。VERDICT: PASS — BLOCKER 0・MAJOR 0・MINOR 5。step3-review.md の MAJOR は閉じたと確認: stale 状態で active が真になり aria-disabled='false' となって CSS の opacity/cursor が外れ、利用者に見える。active の消費者は grep で解除ボタンの1箇所のみと確認、7状態すべてで期待値と一致、既定状態の DOM と filterFindings の元配列参照は不変。変異記録の出力は本物と判定。",
+      "open_minors": [
+        {
+          "id": 1,
+          "note": "解除ボタンが光るだけで文言は出ない。押さなければ元案件に戻したとき絞り込みは黙って再適用される。step3.md が effect を禁じたので実装の欠陥ではなく、残余として記録。除去するなら state 書き込みが要り、no-effect の判断を再議論できる phase で扱う。"
+        },
+        {
+          "id": 2,
+          "note": "step3-report.json の変異実行は --testNamePattern で絞られており(36 skipped)、排他性の主張は支えられない。実際には :933 も同時に落ちる。報告は『only』と書いていないので虚偽ではないが、数字を引用する際は注意。"
+        },
+        {
+          "id": 3,
+          "note": "クリック後の再取得は4つの表明のうち1つだけ。chips と resetButton はクリック前のノードのままで、remount 時に同じ空振りをする。"
+        },
+        {
+          "id": 4,
+          "note": "新テストの screen.getByRole('status') は loadProject 後の一意性に暗黙に賭けている。"
+        },
+        {
+          "id": 5,
+          "note": "step3-review.md の MINOR のうち2件(コメント文言、index.json 由来の細目)は step3.md の scope 外として未処理。"
+        }
+      ],
+      "artifacts": [
+        "phases/51-filter-stale-pairkey/step4-review.md"
       ]
     }
   ],
