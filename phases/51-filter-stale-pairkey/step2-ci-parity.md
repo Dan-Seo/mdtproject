@@ -29,7 +29,7 @@ Commands taken verbatim from `.github/workflows/review.yml` job `verify`.
 The last three had never been run on this host before; CI is their only other home, and CI has been
 skipping. All three are clean.
 
-## The one failure is the host, proven by control
+## The one failure is not introduced by this branch (control run)
 
 ```
 × targets the checked joint, not the current selection, when an item comes from a finding 21292ms
@@ -51,9 +51,14 @@ FAIL  ReviewPane.test.tsx > targets the checked joint, not the current selection
       Error: Test timed out in 20000ms.
 ```
 
-`main` fails the same test, **plus one more**. So the branch is not the cause; if anything the
-branch runs cleaner than the control on this host, because the phase-50 tests carry explicit
-`}, 20000)` timeouts that the older tests lack.
+`main` fails the same test, **plus one more**. What this establishes is the sound and sufficient
+claim: **the failure is not introduced by this branch**.
+
+It does not establish "host-caused" — a test genuinely broken in `main`'s own code would reproduce
+on `main` too. One run per side of a load-dependent timeout cannot separate those. Nor can this
+say the branch "runs cleaner": the branch adds two more 698-row renders to the same file
+(`ReviewPane.test.tsx:903`, `:944`), which raises load on the very test that timed out. With n=1
+per side, neither direction is concludable.
 
 Corroborating measurement from earlier in the session: the same test took **9827 ms** when it
 passed. It took 21292 ms here, after the host had been running builds and suites back to back. The
@@ -61,10 +66,14 @@ desktop host ran the full suite green at `2032 tests` for phase 48
 (`phases/48-joint-review-ui/step8-report.json#/desktop_host_run`), and again during phase 50's
 acceptance.
 
-**Not concluded:** that this test is safe. It is timeout-fragile on slow hardware and has no
-explicit timeout of its own, unlike its neighbour at `ReviewPane.test.tsx:831`. That is a
-pre-existing property of `main`, not something this branch introduced, and fixing it belongs to
-whoever owns phase 49's tests.
+**Correction (step 3 review).** An earlier version of this section said the failing test "has no
+explicit timeout of its own, unlike its neighbour at `ReviewPane.test.tsx:831`". That was wrong:
+`:831` is that same test's own closing `}, 20000)` — not a neighbour. The quoted error
+(`Test timed out in 20000ms`) says so directly. The control run's *other* failure is the one at the
+5000 ms default.
+
+**Not concluded:** that this test is safe. It is timeout-fragile on slow hardware even with 20 s,
+which is a pre-existing property of `main`, and fixing it belongs to whoever owns phase 49's tests.
 
 ## What this does not cover
 
